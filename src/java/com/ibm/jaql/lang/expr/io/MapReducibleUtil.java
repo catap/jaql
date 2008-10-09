@@ -1,0 +1,177 @@
+/*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.ibm.jaql.lang.expr.io;
+
+import com.ibm.jaql.io.Adapter;
+import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
+import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
+import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.ClassLoaderMgr;
+
+/**
+ * Utility methods for MapReduce and rewrites
+ */
+public class MapReducibleUtil
+{
+
+  /**
+   * Test whether the given expression can be used as an argument to mapReduce.
+   * You must specify if the expression is an input or an output expression.
+   * 
+   * @param input
+   * @param e
+   * @return
+   */
+  public static boolean isMapReducible(boolean input, Expr e)
+  {
+    if (e instanceof HadoopTempExpr || e instanceof MapReduceBaseExpr)
+    {
+      return true;
+    }
+    if (e instanceof StWriteExpr)
+    {
+      return ((StWriteExpr) e).isMapReducible();
+    }
+
+    if (e instanceof RecordExpr) return isMapReducible(input, (RecordExpr) e);
+
+    return false;
+
+    // FIXME: this is for unions (ie, stRead( [{fd1},{fd2}] ), but we need to allow nested arrays in map/reduce then.
+    //    boolean mapReducible = false;
+    //    if( e instanceof ListExpr) {
+    //      ListExpr le = (ListExpr) e;
+    //      int numChildren = le.exprs.length;
+    //      if (numChildren > 0) mapReducible = true;
+    //      for(int i = 0; i < numChildren; i++) {
+    //        if( !(le.exprs[i] instanceof RecordExpr) ) {
+    //          mapReducible = false;
+    //          break;
+    //        } else if (!isMapReducible(input, (RecordExpr)le.exprs[i])) {
+    //          mapReducible = false;
+    //          break;
+    //        }
+    //      }
+    //    }
+    //    return mapReducible;
+  }
+
+  /**
+   * @param input
+   * @param recExpr
+   * @return
+   */
+  public static boolean isMapReducible(boolean input, RecordExpr recExpr)
+  {
+    // walk the expressions, being conservative
+
+    // expect the top-level expression to be a RecordExpression
+    // TODO: look for a map-reduce expression
+    // TODO: write map-reducible input
+    try
+    {
+      Expr adapterField = null;
+      // expect the RecordExpression to have one of the following or both
+      // 1. a field name that is a ConstExpr with the String 'type'
+      Expr typeField = recExpr.findStaticFieldValue(Adapter.TYPE_NAME);
+      // 2. a field name that is a ConstExpr with the String INOPTIONS_NAME or OUTOPTIONS_NAME 
+      //    that is of type RecordExpr that has a field name that is a ConstExpr with the String ADAPTER_NAME
+      Expr optField = null;
+      if (input)
+        optField = recExpr.findStaticFieldValue(Adapter.INOPTIONS_NAME);
+      else
+        optField = recExpr.findStaticFieldValue(Adapter.OUTOPTIONS_NAME);
+
+      if (optField instanceof RecordExpr)
+      {
+        adapterField = ((RecordExpr) optField)
+            .findStaticFieldValue(Adapter.ADAPTER_NAME);
+      }
+      if (adapterField == null)
+      {
+        // test it from the registry
+        if (typeField instanceof ConstExpr)
+        {
+          String typeName = ((ConstExpr) typeField).value.get().toString();
+          if (input)
+          {
+            Class<?> c = JaqlUtil.getAdapterStore().input
+                .getAdapterClass(typeName);
+            if (HadoopInputAdapter.class.isAssignableFrom(c)) return true;
+          }
+          else
+          {
+            Class<?> c = JaqlUtil.getAdapterStore().output
+                .getAdapterClass(typeName);
+            if (HadoopOutputAdapter.class.isAssignableFrom(c)) return true;
+          }
+        }
+        return false;
+      }
+      else
+      {
+        // get the class string
+        if (adapterField instanceof ConstExpr)
+        {
+          String adapterName = ((ConstExpr) adapterField).value.get()
+              .toString();
+          Class<?> adapterClass = ClassLoaderMgr.resolveClass(adapterName);
+          //Class<?> adapterClass = Class.forName(adapterName);
+          if (input)
+          {
+            if (HadoopInputAdapter.class.isAssignableFrom(adapterClass))
+              return true;
+          }
+          else
+          {
+            if (HadoopOutputAdapter.class.isAssignableFrom(adapterClass))
+              return true;
+          }
+        }
+      }
+    }
+    catch (Exception x)
+    {
+    }
+    return false;
+  }
+
+  /**
+   * Rewrite the parameters of PotentialMapReducible to a target parameter. It
+   * is assumed that a PotentialMapReducible's parameters is the same as the
+   * MapReduce expression's input or output parameter.
+   * 
+   * @param fromExpr
+   * @param toExpr
+   * @return
+   */
+  public static RecordExpr rewriteToMapReduce(RecordExpr fromExpr,
+      RecordExpr toExpr)
+  {
+    //  echo all fields
+    int numFields = fromExpr.numChildren();
+    for (int i = 0; i < numFields; i++)
+    {
+      toExpr.addChild(fromExpr.child(i));
+    }
+
+    return toExpr;
+  }
+}

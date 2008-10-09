@@ -1,0 +1,705 @@
+//-------------------------- ATOMS --------------------------------
+1;##
+1
+
+
+10.5;##
+10.5
+
+
+15.5e-9;##
+1.55E-8
+
+
+d'2001-07-04T12:08:56Z';##
+d'2001-07-04T12:08:56Z'
+
+
+// an invalid date format
+d'12/10/1999'##
+FAILURE
+;
+
+'a string';##
+"a string"
+
+
+'a string
+with a newline';##
+"a string\nwith a newline"
+
+
+true;##
+true
+
+
+false;##
+false
+
+
+null;##
+null
+
+
+
+//-------------------------- ARRAYS -------------------------------
+[];##
+[]
+
+
+[ 1, 2, 3 ];##
+[
+  1,
+  2,
+  3
+]
+
+
+[ 'a', 2, 'c' ];##
+[
+  "a",
+  2,
+  "c"
+]
+
+
+// this one caused a bug with int/long serialization
+[d'2007-12-31T16:00:10Z'];##
+[
+  d'2007-12-31T16:00:10Z'
+]
+
+
+// nulls are fine elements of an array
+[ 1, null, 3 ];##
+[
+  1,
+  null,
+  3
+]
+
+
+//-------------------------- RECORDS ------------------------------
+{};##
+{}
+
+
+{ x: 1, y: 'b' };##
+{
+  "x": 1,
+  "y": "b"
+}
+
+
+// nulls are fine values of a field
+{ x: 1, y: null };##
+{
+  "x": 1,
+  "y": null
+}
+
+
+// Field names must be strings or ids
+{ x: 1, 3: 2 };##
+FAILURE
+
+
+// every field must be named
+{a: 1 ,2,##
+FAILURE
+3};
+
+// a field can be specified to disappear if its value is null
+{a:'foo', b?:null};##
+{
+  "a": "foo"
+}
+
+
+//-------------------------- NESTING ------------------------------
+[[[[[[[[[[[[]]]]]]]]]]]];##
+[
+  [
+    [
+      [
+        [
+          [
+            [
+              [
+                [
+                  [
+                    [
+                      []
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+]
+
+
+[{a:'some string', b:[{},{y:1, z:42},['a', 'b']]},1,'a string',['another string']];##
+[
+  {
+    "a": "some string",
+    "b": [
+      {},
+      {
+        "y": 1,
+        "z": 42
+      },
+      [
+        "a",
+        "b"
+      ]
+    ]
+  },
+  1,
+  "a string",
+  [
+    "another string"
+  ]
+]
+
+
+//-------------------------- ARITH/LOGIC OPS-----------------------
+1+2;##
+3
+
+
+1/2;##
+0.5
+
+
+true or false;##
+true
+
+
+true and true;##
+true
+
+
+true and false;##
+false
+
+
+true or null;##
+true
+
+
+true and null;##
+null
+
+
+false or not null;##
+null
+
+
+// all values are comparable, if not by value then by their type code
+'a' > {};##
+null
+
+
+// comparisons are deep 
+[1,2,3,{a:'foo', b:['bar']}] == [1,2,3,{a:'foo', b:['bar']}];##
+true
+
+
+// make sure numeric encodings hash and compare properly
+distinct( [1, 1.0, 1.1, 1.10] );##
+[
+  1.1,
+  1
+]
+ // 2 items
+
+1 == 1.0;##
+true
+ // true
+
+1 == 1.1;##
+false
+ // false
+
+1.1 == 1.10;##
+true
+ // true
+
+1.11 != 1.10;##
+true
+ // true
+
+// make sure array encodings hash and compare properly
+distinct( [
+  [1,2], 
+  for( $i in 1 to 2 ) if( $i > 0 ) [ $i ],  // [1,2]
+  [1,2,3], 
+  for( $i in 1 to 3 ) if( $i != 2 ) [ $i ], // [1,2]
+  for( $i in 1 to 3 ) if( $i > 0 ) [ $i ],  // [1,3]
+  [1,3]
+] );##
+[
+  [
+    1,
+    3
+  ],
+  [
+    1,
+    2,
+    3
+  ],
+  [
+    1,
+    2
+  ]
+]
+ // 3 items
+
+[1,2] == (for( $i in 1 to 2 ) if( $i > 0 ) [ $i ]);##
+true
+ // true
+
+[1,2] == (for( $i in 1 to 3 ) if( $i != 2 ) [ $i ]);##
+false
+ // false
+
+[1,3] == (for( $i in 1 to 3 ) if( $i != 2 ) [ $i ]);##
+true
+ // true
+
+[1,2] != (for( $i in 1 to 3 ) if( $i > 0 ) [ $i ]);##
+true
+ // true
+
+
+//-------------------------- CONDITIONAL --------------------------
+if( true ) 1 else 'really?';##
+1
+
+
+// expecting null when the false branch is empty
+if( false ) 1;##
+null
+
+
+//-------------------------- ARRAY OPS ----------------------------
+
+// group by field a, returning all records in each group
+group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+   by $a = $i.a
+   into $is )
+ [ { a:$a, i:$is } ];##
+[
+  {
+    "a": 1,
+    "i": [
+      {
+        "a": 1,
+        "b": "1x"
+      },
+      {
+        "a": 1,
+        "b": "1y"
+      }
+    ]
+  },
+  {
+    "a": 2,
+    "i": [
+      {
+        "a": 2,
+        "b": "2x"
+      },
+      {
+        "a": 2,
+        "b": "2y"
+      }
+    ]
+  }
+]
+
+
+// group by field a, returning b's from each group
+group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+   by $a = $i.a
+   into $is )
+ [ { a:$a, bs: $is[*].b } ];##
+[
+  {
+    "a": 1,
+    "bs": [
+      "1x",
+      "1y"
+    ]
+  },
+  {
+    "a": 2,
+    "bs": [
+      "2x",
+      "2y"
+    ]
+  }
+]
+
+
+// Count each distinct value
+group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $unique = $i
+   into $is )
+ [ { val: $unique, n: count($is) } ];##
+[
+  {
+    "n": 3,
+    "val": 1
+  },
+  {
+    "n": 2,
+    "val": 2
+  },
+  {
+    "n": 4,
+    "val": 3
+  }
+]
+
+
+// List distinct values
+group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $unique = $i
+   into $is )
+ [ $unique ];##
+[
+  1,
+  2,
+  3
+]
+
+
+// Count how many evens and odds
+group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $g = mod($i,2)
+   into $is )
+ [ { val: $g, n: count($is) } ];##
+[
+  {
+    "n": 2,
+    "val": 0
+  },
+  {
+    "n": 7,
+    "val": 1
+  }
+]
+
+
+// cogroup (generalizes inner/outer join for equality predicates)
+group(
+  $i in [ {a:1, b:'b1x'}, {a:2, b:'b2x'}, {a:3, b:'b3x'}, {a:1, b:'b1y'}, {a:2, b:'b2y'} ] 
+     by $g = $i.a
+     into $is,
+  $j in [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ] 
+     by $g = $j.c
+     into $js )
+ [ { g:$g, bs:$is[*].b, ds:$js[*].d } ];##
+[
+  {
+    "bs": [
+      "b1x",
+      "b1y"
+    ],
+    "ds": [
+      "d1x",
+      "d1y"
+    ],
+    "g": 1
+  },
+  {
+    "bs": [
+      "b2x",
+      "b2y"
+    ],
+    "ds": [
+      "d2x",
+      "d2y"
+    ],
+    "g": 2
+  },
+  {
+    "bs": [
+      "b3x"
+    ],
+    "ds": [],
+    "g": 3
+  },
+  {
+    "bs": [],
+    "ds": [
+      "d4x"
+    ],
+    "g": 4
+  }
+]
+
+
+// This will generate a semantic error because the 'by' names must be unique.
+group(
+  $i in [] by $g = $i.a into $is,
+  $j in [] by $h = $j.c into $js
+ [##
+FAILURE
+ { g:$g, bs:$is[*].b, ds:$js[*].d } ];
+
+
+sort( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+  by $i.a );##
+[
+  {
+    "a": 1,
+    "b": "1x"
+  },
+  {
+    "a": 1,
+    "b": "1y"
+  },
+  {
+    "a": 2,
+    "b": "2x"
+  },
+  {
+    "a": 2,
+    "b": "2y"
+  }
+]
+
+
+sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+  by $i.a, $i.b );##
+[
+  {
+    "a": 1,
+    "b": 1
+  },
+  {
+    "a": 1,
+    "b": 2
+  },
+  {
+    "a": 2,
+    "b": 1
+  },
+  {
+    "a": 2,
+    "b": 2
+  }
+]
+
+
+sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+  by $i.b, $i.a );##
+[
+  {
+    "a": 1,
+    "b": 1
+  },
+  {
+    "a": 2,
+    "b": 1
+  },
+  {
+    "a": 1,
+    "b": 2
+  },
+  {
+    "a": 2,
+    "b": 2
+  }
+]
+
+
+sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+  by $i );##
+[
+  {
+    "a": 1,
+    "b": 1
+  },
+  {
+    "a": 1,
+    "b": 2
+  },
+  {
+    "a": 2,
+    "b": 1
+  },
+  {
+    "a": 2,
+    "b": 2
+  }
+]
+
+
+(sort( $i in (for( $j in 1 to 10000 ) [ {x: [-$j,$j]} ]) by $i))[0];##
+{
+  "x": [
+    -10000,
+    10000
+  ]
+}
+
+(sort( $i in 1 to 1000 by {x:[-$i,$i],y:[$i,$i]})) [0];##
+1000
+
+(sort( $i in 1 to 1000 by [-$i,$i])) [0];##
+1000
+
+(sort( $i in 1 to 100 by {x:[-$i,$i]})) [0];##
+100
+
+
+//-------------------------- RECORD OPS ---------------------------
+
+//-------------------------- LET ---------------------------------
+
+( $r = { x:1, y:2 },
+
+  { $r.x, z: $r.y, t: $r.x+$r.y, $r.nope } );##
+{
+  "t": 3,
+  "x": 1,
+  "z": 2
+}
+
+
+( $r = { x:1, y:2 },
+  $s = {z:3},
+
+  [ $r, $s ] );##
+[
+  {
+    "x": 1,
+    "y": 2
+  },
+  {
+    "z": 3
+  }
+]
+
+
+//-------------------------- FOR ---------------------------------
+
+for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ] )
+ [ $r.x ];##
+[
+  [
+    {
+      "a": 1
+    },
+    {
+      "a": 2
+    }
+  ],
+  null,
+  [
+    {
+      "a": 1
+    }
+  ]
+]
+
+
+for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ],
+     $s in $r.x )
+ [ $s.a ];##
+[
+  1,
+  2,
+  1
+]
+
+
+//-------------------------- JOIN ---------------------------------
+
+join( $i in [ 1, 2, 3 ] on $i,
+      $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  }
+]
+
+
+join( optional $i in [ 1, 2, 3 ] on $i,
+               $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": null,
+    "j": 4
+  }
+]
+
+
+join(          $i in [ 1, 2, 3 ] on $i,
+      optional $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": 3,
+    "j": null
+  }
+]
+
+
+join( optional $i in [ 1, 2, 3 ] on $i,
+      optional $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": 3,
+    "j": null
+  },
+  {
+    "i": null,
+    "j": 4
+  }
+]
+
+
+//-------------------------- QUIT ---------------------------------
+
+quit;

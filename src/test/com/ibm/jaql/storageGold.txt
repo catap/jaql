@@ -1,0 +1,673 @@
+//-- hdfs write/read expressions --
+
+// write/read Items to SequenceFile: default adapter, default format, no converter
+stWrite({type: 'hdfs', location: 'jaqlTest/test1.dat'},
+        [1,2,3]);##
+{
+  "location": "jaqlTest/test1.dat",
+  "type": "hdfs"
+}
+
+
+stRead({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+[
+  1,
+  2,
+  3
+]
+
+
+stRead(stWrite({type: 'hdfs', location: 'jaqlTest/test1alt.dat'},
+               [1,2,3]));##
+[
+  1,
+  2,
+  3
+]
+
+
+// write/read Items to SequenceFile: specify FileAdapter, SequenceFileFormat, no converter
+stWrite({location: 'jaqlTest/test2.dat', 
+         outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+                         format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat',
+                         configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}}, 
+              [1,2,3]);##
+{
+  "location": "jaqlTest/test2.dat",
+  "outoptions": {
+    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
+    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
+    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
+  }
+}
+
+
+stRead({location: 'jaqlTest/test2.dat', 
+        inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                  format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
+                  configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
+[
+  1,
+  2,
+  3
+]
+
+                  
+stRead(stWrite({location: 'jaqlTest/test2alt.dat', 
+                outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat',
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'},
+                inoptions:  {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
+                             configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}}, 
+                [1,2,3]));##
+[
+  1,
+  2,
+  3
+]
+                 
+                        
+// write/read Items to Text in a SequenceFile: specify ConverterAdapter, SequenceFileFormat, Item <-> Text (JSON)
+// This assumes that the default, FileOutput(Input)Format can be passed a converter.
+stWrite({type: 'hdfs', location: 'jaqlTest/test3.dat', 
+         outoptions: {converter: 'com.foobar.store.ToJSONSeqConverter',
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}}, 
+         [{one: '1'}, {two: '2'}, {three: '3'}]);##
+{
+  "location": "jaqlTest/test3.dat",
+  "outoptions": {
+    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
+    "configurator": "com.foobar.store.TextFileOutputConfigurator",
+    "converter": "com.foobar.store.ToJSONSeqConverter",
+    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
+  },
+  "type": "hdfs"
+}
+
+              
+stRead({type: 'hdfs', location: 'jaqlTest/test3.dat', 
+        inoptions: {converter: 'com.foobar.store.FromJSONSeqConverter'}});##
+[
+  {
+    "one": "1"
+  },
+  {
+    "two": "2"
+  },
+  {
+    "three": "3"
+  }
+]
+
+
+stRead(stWrite({type: 'hdfs', location: 'jaqlTest/test3alt.dat', 
+               outoptions: {converter: 'com.foobar.store.ToJSONSeqConverter',
+                            configurator: 'com.foobar.store.TextFileOutputConfigurator'},
+               inoptions: {converter: 'com.foobar.store.FromJSONSeqConverter'}}, 
+              [{one: '1'}, {two: '2'}, {three: '3'}]));##
+[
+  {
+    "one": "1"
+  },
+  {
+    "two": "2"
+  },
+  {
+    "three": "3"
+  }
+]
+        
+              
+// write/read Items to Text in a TextFile: specify ConverterAdapter, TextFormat, Item <-> Text (JSON)
+stWrite({type: 'hdfs', location: 'jaqlTest/test4.txt', 
+         outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                      converter: 'com.foobar.store.ToJSONTxtConverter',
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}}, 
+         [{one: '1'}, {two: '2'}, {three: '3'}]);##
+{
+  "location": "jaqlTest/test4.txt",
+  "outoptions": {
+    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
+    "configurator": "com.foobar.store.TextFileOutputConfigurator",
+    "converter": "com.foobar.store.ToJSONTxtConverter",
+    "format": "org.apache.hadoop.mapred.TextOutputFormat"
+  },
+  "type": "hdfs"
+}
+
+              
+stRead({type: 'hdfs', location: 'jaqlTest/test4.txt',
+	    inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		converter: 'com.foobar.store.FromJSONTxtConverter'}});##
+[
+  {
+    "one": "1"
+  },
+  {
+    "two": "2"
+  },
+  {
+    "three": "3"
+  }
+]
+
+
+stRead(stWrite({type: 'hdfs', location: 'jaqlTest/test4alt.txt', 
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.foobar.store.ToJSONTxtConverter',
+                             configurator: 'com.foobar.store.TextFileOutputConfigurator'},
+                inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		        converter: 'com.foobar.store.FromJSONTxtConverter'}}, 
+              [{one: '1'}, {two: '2'}, {three: '3'}]));##
+[
+  {
+    "one": "1"
+  },
+  {
+    "two": "2"
+  },
+  {
+    "three": "3"
+  }
+]
+
+
+//-- hbase write/read expressions --
+
+// write/read Items to an HBase Table as Items: default adapter, default format, no converter (see hbaseQueries.txt)
+// stWrite({type: 'hbase', location: 'jaqlTesttest5'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);
+
+// stRead({type: 'hbase', location: 'jaqlTesttest5'});
+
+// stRead(stWrite({type: 'hbase', location: 'jaqlTesttest5alt1'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));
+
+// can do the same thing if you pass in the right options to HadoopRead
+// stWrite({location: 'jaqlTesttest5alt2', 
+//          outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+//                       format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
+//                       configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'}}, 
+//          [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);
+                            
+// stRead({location: 'jaqlTesttest5alt2',
+// 	    inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+// 			  	    format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
+// 			  	    configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}});
+
+// stRead(stWrite({location: 'jaqlTesttest5alt3', 
+//                 outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+//                              format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
+//                              configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'},
+//                 inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+// 			  	            format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
+// 			  	            configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}}, 
+//               [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));
+
+//-- local file read/write expressions
+
+// write/read Items to/from a local file
+stWrite({location: 'build/test/cache/mynewfile.txt', 
+         outoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                      format  : 'com.ibm.jaql.io.stream.converter.JSONOutputStream'}}, [1,2,3]);##
+{
+  "location": "build/test/cache/mynewfile.txt",
+  "outoptions": {
+    "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
+    "format": "com.ibm.jaql.io.stream.converter.JSONOutputStream"
+  }
+}
+
+
+stRead({location: 'build/test/cache/mynewfile.txt', 
+        inoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                    format  : 'com.ibm.jaql.io.stream.converter.JSONInputStream'}});##
+[
+  1,
+  2,
+  3
+]
+
+
+stWrite({type: 'local', location: 'build/test/cache/myotherfile.txt'}, [1,2,3]);##
+{
+  "location": "build/test/cache/myotherfile.txt",
+  "type": "local"
+}
+
+
+stRead({type: 'local', location: 'build/test/cache/myotherfile.txt'});##
+[
+  1,
+  2,
+  3
+]
+
+
+//-- test map/reduce --
+
+// input/output is hdfs sequence file of Items
+
+// note, 'g' is quoted so that it can be used as a key for subsequent hbase tests
+stWrite({ type: 'hdfs', location: 'jaqlTest/test6.dat'}, [
+  { key: 0, g:"0", text: 'zero' },
+  { key: 1, g:"1", text: 'one' },
+  { key: 2, g:"0", text: 'two' },
+  { key: 3, g:"1", text: 'three' },
+  { key: 4, g:"0", text: 'four' },
+  { key: 5, g:"1", text: 'five' },
+  { key: 6, g:"0", text: 'six' },
+  { key: 7, g:"1", text: 'seven' },
+  { key: 8, g:"0", text: 'eight' },
+]);##
+{
+  "location": "jaqlTest/test6.dat",
+  "type": "hdfs"
+}
+
+
+stRead({type: 'hdfs', location: 'jaqlTest/test6.dat'});##
+[
+  {
+    "g": "0",
+    "key": 0,
+    "text": "zero"
+  },
+  {
+    "g": "1",
+    "key": 1,
+    "text": "one"
+  },
+  {
+    "g": "0",
+    "key": 2,
+    "text": "two"
+  },
+  {
+    "g": "1",
+    "key": 3,
+    "text": "three"
+  },
+  {
+    "g": "0",
+    "key": 4,
+    "text": "four"
+  },
+  {
+    "g": "1",
+    "key": 5,
+    "text": "five"
+  },
+  {
+    "g": "0",
+    "key": 6,
+    "text": "six"
+  },
+  {
+    "g": "1",
+    "key": 7,
+    "text": "seven"
+  },
+  {
+    "g": "0",
+    "key": 8,
+    "text": "eight"
+  }
+]
+
+
+// input is hdfs sequence file of Items, output is hbase table (note that 'g' renamed to 'key') (see hbaseQueries.txt)
+// stWrite({type: 'hbase', location: 'jaqlTesttest6out'}, []);
+
+//stRead( 
+//  mapReduce( {
+//    'input' : {type: 'hdfs', location: 'jaqlTest/test6.dat'},
+//    'map'   : fn($i) [[ $i.g, 1 ]],
+//    'reduce': fn($key, $values) [{ key: $key, n: count($values) }],
+//    'output': {type: 'hbase', location: 'jaqlTesttest6out'}
+//    })
+// );
+ 
+// input is hbase table, output is sequence file of Items
+// stWrite({ type: 'hbase', location: 'jaqlTesttest7'}, [
+//   { key: "0", g:0, text: 'zero' },
+//   { key: "1", g:1, text: 'one' },
+//   { key: "2", g:0, text: 'two' },
+//   { key: "3", g:1, text: 'three' },
+//   { key: "4", g:0, text: 'four' },
+//   { key: "5", g:1, text: 'five' },
+//   { key: "6", g:0, text: 'six' },
+//   { key: "7", g:1, text: 'seven' },
+//   { key: "8", g:0, text: 'eight' },
+// ]);
+
+// stRead( 
+//   mapReduce( {
+//     'input' : {type: 'hbase', location: 'jaqlTesttest7'},
+//     'map'   : fn($i) [[ $i.g, 1 ]],
+//     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+//     'output': {type: 'hdfs', location: 'jaqlTest/test7.dat'}
+//     })
+//  );
+ 
+// input is a file with JSON text (one record per line), output is a SequenceFile of items
+stWrite({type: 'hdfs', location: 'jaqlTest/test8.txt', 
+         outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                      converter: 'com.foobar.store.ToJSONTxtConverter',
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}},
+[
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' },
+]);##
+{
+  "location": "jaqlTest/test8.txt",
+  "outoptions": {
+    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
+    "configurator": "com.foobar.store.TextFileOutputConfigurator",
+    "converter": "com.foobar.store.ToJSONTxtConverter",
+    "format": "org.apache.hadoop.mapred.TextOutputFormat"
+  },
+  "type": "hdfs"
+}
+
+
+stRead({type: 'hdfs', location: 'jaqlTest/test8.txt',
+	    inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		converter: 'com.foobar.store.FromJSONTxtConverter'}});##
+[
+  {
+    "g": 0,
+    "key": 0,
+    "text": "zero"
+  },
+  {
+    "g": 1,
+    "key": 1,
+    "text": "one"
+  },
+  {
+    "g": 0,
+    "key": 2,
+    "text": "two"
+  },
+  {
+    "g": 1,
+    "key": 3,
+    "text": "three"
+  },
+  {
+    "g": 0,
+    "key": 4,
+    "text": "four"
+  },
+  {
+    "g": 1,
+    "key": 5,
+    "text": "five"
+  },
+  {
+    "g": 0,
+    "key": 6,
+    "text": "six"
+  },
+  {
+    "g": 1,
+    "key": 7,
+    "text": "seven"
+  },
+  {
+    "g": 0,
+    "key": 8,
+    "text": "eight"
+  }
+]
+
+			  		    
+stRead(  
+  mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test8.txt', 
+               inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		       converter: 'com.foobar.store.FromJSONTxtConverter'}},
+    'map'   : fn($i) [[ $i.g, 1 ]],
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test8.dat'}
+    })
+ );##
+[
+  {
+    "g": 0,
+    "n": 5
+  },
+  {
+    "g": 1,
+    "n": 4
+  }
+]
+
+
+//-- test composite input adapter (see hbaseQueries.txt)
+
+// write out an hdfs file
+stWrite({ type: 'hdfs', location: 'jaqlTest/test9.dat'}, [
+  { key: "0", g:0, text: 'zero' },
+  { key: "1", g:1, text: 'one' },
+  { key: "2", g:0, text: 'two' },
+  { key: "3", g:1, text: 'three' },
+  { key: "4", g:0, text: 'four' }
+]);##
+{
+  "location": "jaqlTest/test9.dat",
+  "type": "hdfs"
+}
+
+
+// write out an hbase table
+// stWrite({ type: 'hbase', location: 'jaqlTesttest9'}, [
+//   { key: "5", g:1, text: 'five' },
+//   { key: "6", g:0, text: 'six' },
+//   { key: "7", g:1, text: 'seven' },
+//   { key: "8", g:0, text: 'eight' },
+// ]);
+
+// stRead([{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}]);
+
+// stRead(
+//   mapReduce( {
+//     'input': [ [{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}] ],
+//      'map'   : fn($i) [[ $i.g, 1 ]],
+//      'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+//      'output': {type: 'hdfs', location: 'jaqlTest/test9out.dat'}
+//    })
+// );
+
+//-- test co-group (see hbaseQueries.txt)
+
+// stRead(mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'}, 
+//                             {type: 'hbase', location: 'jaqlTesttest9'}],
+//                    map: [ fn($i) [[ $i.g, 1 ]], 
+//                           fn($i) [[ $i.g, 1 ]] ],
+//                    reduce: fn($key, $aVals, $bVals) [{ g: $key, as: count($aVals), bs: count($bVals) }],
+//                    output: {type: 'hdfs', location: 'jaqlTest/test10out.dat'}}));
+
+//-- test higher level interfaces
+
+write('local', 'build/test/cache/test11a.dat', [1,2,3]);##
+{
+  "location": "build/test/cache/test11a.dat",
+  "type": "local"
+}
+
+
+read('local', 'build/test/cache/test11a.dat');##
+[
+  1,
+  2,
+  3
+]
+
+
+localWrite('build/test/cache/test11b.dat', [1,2,3]);##
+{
+  "location": "build/test/cache/test11b.dat",
+  "type": "local"
+}
+
+
+localRead('build/test/cache/test11b.dat');##
+[
+  1,
+  2,
+  3
+]
+
+
+write('hdfs', 'jaqlTest/test12a.dat', [1,2,3]);##
+{
+  "location": "jaqlTest/test12a.dat",
+  "type": "hdfs"
+}
+
+
+read('hdfs', 'jaqlTest/test12a.dat');##
+[
+  1,
+  2,
+  3
+]
+
+
+hdfsWrite('jaqlTest/test12b.dat', [1,2,3]);##
+{
+  "location": "jaqlTest/test12b.dat",
+  "type": "hdfs"
+}
+
+
+hdfsRead('jaqlTest/test12b.dat');##
+[
+  1,
+  2,
+  3
+]
+
+
+// write('hbase', 'jaqlTesttest13a.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
+
+// read('hbase', 'jaqlTesttest13a.dat');
+
+// hbaseWrite('jaqlTesttest13b.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
+
+// hbaseRead('jaqlTesttest13b.dat');
+
+//-- test array read
+stRead({type: 'array', inoptions: {array: [1,2,3]}});##
+[
+  1,
+  2,
+  3
+]
+
+
+arrayRead([1,2,3]);##
+[
+  1,
+  2,
+  3
+]
+
+
+stRead(
+mapReduce( {
+    'input': {type: 'array', inoptions: {array: [1,2,3]}},
+    'map'   : fn($i) [[ null, $i ]],
+    'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
+  })
+);##
+[
+  1,
+  2,
+  3
+]
+
+
+stRead(
+mapReduce( {
+    'input': [ {type: 'array', inoptions: {array: [1,2,3]}},
+               {type: 'array', inoptions: {array: [1,3,5]}} ],
+    'map'   : [ fn($i) [[ null, $i + 10 ]],
+                fn($i) [[ null, $i + 20 ]] ],
+    'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
+  })
+);##
+[
+  11,
+  12,
+  13,
+  21,
+  23,
+  25
+]
+
+
+//-- test rewrites --
+
+// group by over hdfs read
+sort( $s in 
+  group( $i in stRead({type: 'hdfs', location: 'jaqlTest/test6.dat'}) 
+         by $a = $i.g
+         into $is )
+      [ { g:$a, i:count($is) } ]
+ by $s.g );##
+[
+  {
+    "g": "0",
+    "i": 5
+  },
+  {
+    "g": "1",
+    "i": 4
+  }
+]
+
+
+// group by over hbase read (see hbaseQueries.txt)
+// group( $i in stRead({type: 'hbase', location: 'jaqlTesttest7'}) 
+//        by $a = $i.g
+//        into $is
+//     [ { g:$a, i:count($is) } ];
+
+// for loop over hdfs read
+for( $r in stRead({type: 'hdfs', location: 'jaqlTest/test6.dat'}) )
+  [ $r.key ];##
+[
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8
+]
+
+
+// for loop over hbase read (see hbaseQueries.txt)
+// for( $r in stRead({type: 'hbase', location: 'jaqlTesttest7'}) )
+//   [ $r.key ];
+
+// co-group (see hbaseQueries.txt)
+// group(
+//   $i in stRead({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
+//      by $g = $i.g
+//      into $as,
+//   $j in stRead({type: 'hbase', location: 'jaqlTesttest9'}) 
+//      by $g = $j.g
+//      into $bs )
+//  [ { g: $g, as: count($as), bs: count($bs) } ];
