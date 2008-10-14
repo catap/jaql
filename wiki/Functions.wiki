@@ -392,7 +392,7 @@ but parameters should always be the general types.
     gcd1( for($i in 1000 to 2000) if( mod($i,3) == 0 ) [$i * 31] ); // 31*3 = 93
 }}}
 
-=== Aggregation using {{{combine}}} ===
+=== Aggregation using 'combine' ===
 
 Holistic aggregate functions suffer from a performance problem: Jaql
 can parallelize a holistic aggregate when there are multiple reducers,
