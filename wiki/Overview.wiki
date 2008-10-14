@@ -2,37 +2,22 @@
 
 = Introduction =
 
-!JavaScript Object Notation or [http://www.json.org/ JSON]
-has become a popular data format for many Web-based applications
-because of its simplicity and modeling flexibility.
-Wikipedia includes a nice
-[http://en.wikipedia.org/wiki/JSON summary]
-of JSON's advantages over other data formats like XML.
-In contrast to XML, which was originally designed as a markup language,
-JSON was actually designed for data.
-Moreover, JSON is a language-independent format, with bindings
-in a variety of programming languages.
-In short, JSON makes it easy to model a wide spectrum of 
-data, ranging from homogenous flat data to 
-heterogeneous nested data, and it can do this  
-in a language-independent format.
-We believe that these characteristics make JSON
-an ideal data format for many Hadoop applications
-and databases in general.
-
-= Overview =
-
-In this document, we introduce Jaql, a query language for JSON.
+In this document, we introduce Jaql, a query language for 
+!JavaScript Object Notation or [http://www.json.org/ JSON].
 Although Jaql has been designed specifically for JSON,
 we have tried to borrow some of the best features of
-[http://en.wikipedia.org/wiki/SQL SQL],
-[http://www.w3.org/TR/xquery/ XQuery], and
+[http://en.wikipedia.org/wiki/SQL SQL], [http://www.w3.org/TR/xquery/ XQuery], and
 [http://wiki.apache.org/pig/PigLatin PigLatin].
+Our high-level design objectives include:
+
+  * Semi-structured analytics: easy manipulation and analysis of JSON data
+  * Parallelism: Jaql queries that process large amounts of data must be able to take advantage of scaled-out architectures
+  * Extensibility: users must be able to easily extend Jaql
+
 We begin with an example of JSON data, then go on to describe
 the key features of Jaql and show how it can be used to process
 JSON data in parallel using Hadoop's map/reduce framework.
-
-Jaql is also designed to be extended. Both [Functions functions] 
+Jaql is designed to be extended. Both [Functions functions] 
 as well as [IO] can be extended so as to facilitate
 plugging in your computation for your data. While
 only a high-level description of Jaql is presented here,
@@ -97,6 +82,23 @@ in the array corresponds to a review.
 Each review consists of a 'rating', its 'user', and the text of the review. 
 Each review can also contain a 'discussion', which
 itself can be discussed, forming a discussion thread.
+
+[http://www.json.org/ JSON] has become a popular data format for many Web-based applications
+because of its simplicity and modeling flexibility.
+Wikipedia includes a nice
+[http://en.wikipedia.org/wiki/JSON summary]
+of JSON's advantages over other data formats like XML.
+In contrast to XML, which was originally designed as a markup language,
+JSON was actually designed for data.
+Moreover, JSON is a language-independent format, with bindings
+in a variety of programming languages.
+In short, JSON makes it easy to model a wide spectrum of 
+data, ranging from homogenous flat data to 
+heterogeneous nested data, and it can do this  
+in a language-independent format.
+We believe that these characteristics make JSON
+an ideal data format for many Hadoop applications
+and databases in general.
 
 It is important to point out that the Jaql 
 data model is actually a superset of JSON.
