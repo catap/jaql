@@ -1,4 +1,4 @@
-#Jaql: A JSON Query Language
+#summary Jaql: A JSON Query Language
 
 = Introduction =
 
