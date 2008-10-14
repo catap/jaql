@@ -2,7 +2,7 @@
 
 = Introduction =
 
-JavaScript Object Notation or [http://www.json.org/ JSON]
+!JavaScript Object Notation or [http://www.json.org/ JSON]
 has become a popular data format for many Web-based applications
 because of its simplicity and modeling flexibility.
 Wikipedia includes a nice
@@ -32,17 +32,17 @@ We begin with an example of JSON data, then go on to describe
 the key features of Jaql and show how it can be used to process
 JSON data in parallel using Hadoop's map/reduce framework.
 
-Jaql is also designed to be extended. Both JaqlFunctions 
-as well as [JaqlIO] can be extended so as to facilitate
+Jaql is also designed to be extended. Both [Functions functions] 
+as well as [IO] can be extended so as to facilitate
 plugging in your computation for your data. While
 only a high-level description of Jaql is presented here,
 all examples can be run by 
 [http://www.jaql.org/release/0.2/jaql-0.2.tgz downloading] the
-most recent release of Jaql and following the [JaqlRun instructions].
+most recent release of Jaql and following the [Running instructions].
 
 _Note:_ Jaql is still in early development, 
 so beware that it is likely to change over the next few months.
-The future development plans are outlined in the JaqlRoadMap.
+The future development plans are outlined in the [RoadMap roadmap].
 
 == A JSON Example ==
 
@@ -135,7 +135,7 @@ It is also possible to read and write JSON data to
 Hadoop [http://lucene.apache.org/hadoop/hdfs_design.html HDFS] files and
 [http://wiki.apache.org/lucene-hadoop/Hbase HBase] tables.
 We have made integration with Hadoop a priority by having all data types implement the 
-[http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/WritableComparable.html] WritableComparable] interface.
+[http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/WritableComparable.html WritableComparable] interface.
 By integrating Jaql with HDFS and HBase, we are able to store JSON data
 and process it in parallel using Hadoop's map/reduce framework.
 
@@ -460,7 +460,7 @@ where partial aggregates are combined into larger partial aggregates,
 and a "final phase" that transforms the largest partial aggregate into
 the desired result.
 
-<p/> The {{{combine}}} expression handles the combining
+The {{{combine}}} expression handles the combining
 phase. It takes any two partial aggregates from its input, aggregates
 them using the combining expression, and conceptually puts the result
 back into the input until the input is reduced to a single item.  The
@@ -495,7 +495,7 @@ JavaFunctions are also useful for defining both holistic and algebraic aggregate
 Jaql has been designed to be extensible.  Custom code can be
 plugged-in to extend Jaql's capability in two different ways:
 
-  * Jaql's library of <a href="jaql-java-functions.html">functions</a> to transform JSON data, and
+  * Jaql's library of [JaqlFunctions functions] to transform JSON data, and
   * JaqlIO to access any data and possibly convert into JSON.
 
 In this section, we briefly describe some interesting functions that
