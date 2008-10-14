@@ -200,6 +200,66 @@ invocation, and result are similar to the above:
     // "home"
 }}} 
 
+= Writing Aggregate Functions =
+
+Jaql includes standard database aggregate functions, like 
+{{{sum,count, min, max}}}, and {{{avg}}}.  Starting with Release
+0.2, Jaql supports partial aggregation for these functions using
+"combiners" inside Hadoop's map/reduce framework for greater
+parallelism and reduced data shipping.  Syntactically, these functions
+look like "holistic" aggregate functions -- an aggregate that requires
+all the data before returning an answer.  However, they actually
+expand into "algebraic" aggregates using the combine expression.
+Median is the typical example of a holistic function:
+
+{{{
+  $median = fn($items) (
+    $sorted = sort( $i in $items by $i ),
+
+    $sorted[int(count($sorted)/2)]
+  );
+
+  $median( [ 1, 4, 5, 3, 2 ] ); // 3
+}}}
+
+If you need the exact median, we cannot improve upon this much.  But
+consider variance instead.  It can be computed from the sum of the
+numbers and the sum of squares.  The {{{combine}}} expression
+is used to define "algebraic" aggregates -- an aggregate that can be
+applied on portions of the data and combined to produce a final
+result.  Such aggregates typically have an "initialization phase" that
+creates a partial aggregate from a single item, a "combining phase"
+where partial aggregates are combined into larger partial aggregates,
+and a "final phase" that transforms the largest partial aggregate into
+the desired result.
+
+The {{{combine}}} expression handles the combining
+phase. It takes any two partial aggregates from its input, aggregates
+them using the combining expression, and conceptually puts the result
+back into the input until the input is reduced to a single item.  The
+following example defines variance completely in Jaql using
+{{{combine}}}:
+
+{{{
+  $var = fn($items) (
+    $init = 
+       for( $i in $items )
+        if( not isnull($i) )
+         [{ n: 1, s1: $i, s2: $i*$i }],
+    $combined =
+       combine( $a, $b in $init )
+           { n: $a.n  + $b.n,
+            s1: $a.s1 + $b.s1,
+            s2: $a.s2 + $b.s2 },
+    $E_X  = $combined.s1 / $combined.n,
+    $E_X2 = $combined.s2 / $combined.n,
+
+    $E_X2 - $E_X * $E_X
+  );
+
+  $var( [ 1, 4, 5, 3, 2 ] ); // 2
+}}}
+
 == Greatest Common Divisor Example ==
 
 The greatest common divisor (gcd) of a set of integers is the largest
@@ -465,7 +525,7 @@ When {{{mrAggregate}}} is run using map/reduce,
 is called repeatedly during both the combine call and the reduce call,
 and {{{final}}} is called during the reduce call.
 
-== {{{JaqlType}}} Heirarchy ==
+= {{{JaqlType}}} Heirarchy =
 
 The following {{{JaqlType}}} classes implement the extended
 JSON types in Jaql:
@@ -502,66 +562,3 @@ very soon with two encodings, one for small fixed-sized arrays and one
 for large arrays that might need to spill to disk.  It is also quite
 likely that {{{JString}}} will be changed to eliminate the
 dependency on Hadoop's {{{Text}}} class.
-
-= Writing Aggregate Functions =
-
-Jaql includes standard database aggregate functions, like 
-{{{sum,count, min, max,}}} and {{{avg}}}.  Starting with Release
-0.2, Jaql supports partial aggregation for these functions using
-"combiners" inside Hadoop's map/reduce framework for greater
-parallelism and reduced data shipping.  Syntactically, these functions
-look like "holistic" aggregate functions -- an aggregate that requires
-all the data before returning an answer.  However, they actually
-expand into "algebraic" aggregates using the combine expression.
-Median is the typical example of a holistic function:
-
-{{{
-  $median = fn($items) (
-    $sorted = sort( $i in $items by $i ),
-
-    $sorted[int(count($sorted)/2)]
-  );
-
-  $median( [ 1, 4, 5, 3, 2 ] ); // 3
-}}}
-
-If you need the exact median, we cannot improve upon this much.  But
-consider variance instead.  It can be computed from the sum of the
-numbers and the sum of squares.  The {{{combine}}} expression
-is used to define "algebraic" aggregates -- an aggregate that can be
-applied on portions of the data and combined to produce a final
-result.  Such aggregates typically have an "initialization phase" that
-creates a partial aggregate from a single item, a "combining phase"
-where partial aggregates are combined into larger partial aggregates,
-and a "final phase" that transforms the largest partial aggregate into
-the desired result.
-
-The {{{combine}}} expression handles the combining
-phase. It takes any two partial aggregates from its input, aggregates
-them using the combining expression, and conceptually puts the result
-back into the input until the input is reduced to a single item.  The
-following example defines variance completely in Jaql using
-{{{combine}}}:
-
-{{{
-  $var = fn($items) (
-    $init = 
-       for( $i in $items )
-        if( not isnull($i) )
-         [{ n: 1, s1: $i, s2: $i*$i }],
-    $combined =
-       combine( $a, $b in $init )
-           { n: $a.n  + $b.n,
-            s1: $a.s1 + $b.s1,
-            s2: $a.s2 + $b.s2 },
-    $E_X  = $combined.s1 / $combined.n,
-    $E_X2 = $combined.s2 / $combined.n,
-
-    $E_X2 - $E_X * $E_X
-  );
-
-  $var( [ 1, 4, 5, 3, 2 ] ); // 2
-}}}
-
-Many functions are cumbersome to define in a query language.  
-JavaFunctions are also useful for defining both holistic and algebraic aggregates.
