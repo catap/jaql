@@ -400,6 +400,7 @@ from all the little details required to actually set up and run a map/reduce job
   for( $b in hdfsRead('books') )
     [{ $b.publisher, $b.title }];
 
+
   // Explain Query 1: Jaql automatically rewrites the query into a map-only job
   stRead(mapReduce(
           {input  : { type: "hdfs", location: "books"}, 
@@ -413,3 +414,5 @@ corresponds to a map-only job (i.e., a parallel scan of the input file).
 The {{{for}}} loop's input file directly corresponds to the {{{input}}} argument of
 mapReduce(). Since no output was specified, it is written to a temporary file that is then read ({{{stRead}}}) and returned to the client. The body of the {{{for}}} loop is
 translated to the {{{map}}} function of mapReduce(). In mapReduce(), the {{{map}}} function is assumed to take one input (a key is not required), and an array of key, value pairs are returned. For Query 1, no key returned and the value is a projection of the input record. 
+
+All of the other example queries listed here are rewritten into mapReduce() function calls and evaluated as map-reduce jobs. For example, {{{group}}} is translated to a mapReduce() that includes both a map and reduce function. Similarly, {{{join}}} is translated to {{{group}}}, which is then translated to mapReduce(). If the output of a {{{for}}} loop is {{{grouped}}}, both are translated into a single mapReduce(). For grouping, if additional information about the aggregate function is provided, Jaql can automatically rewrite queries so that they can take advantage of map/reduce's {{{combine}}}. Please refer to the discussion on [Functions aggregate functions] to see how you can define your own, plug them into Jaql, and how they're evaluated in parallel.
