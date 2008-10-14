@@ -2,7 +2,7 @@
 
 == Grep Example ==
 
-The next example is similar to the "grep" command in unix; it returns
+The following example is similar to the "grep" command in unix; it returns
 the substrings that match a regular expression over a list of input strings:
 
 {{{
