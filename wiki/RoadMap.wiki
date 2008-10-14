@@ -17,4 +17,4 @@ for storage and query processing.
 
   * Performance testing and performance improvements.
 
-One of the big things we are working on these days is a drastic simplification to the query syntax. Please check-out our PreviewOfNextVersion ... all feedback welcome!
+One of the big things we are working on these days is a drastic simplification to the query syntax. Please check-out our PreviewOfNextVersion ... all feedback greatly appreciated and welcome!
