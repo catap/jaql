@@ -1,4 +1,4 @@
-*Jaql: A JSON Query Language*
+#Jaql: A JSON Query Language
 
 = Introduction =
 
@@ -44,7 +44,7 @@ _Note:_ Jaql is still in early development,
 so beware that it is likely to change over the next few months.
 The future development plans are outlined in the [RoadMap roadmap].
 
-== A JSON Example ==
+= A JSON Example =
 
 Let's start off with an example of books and their reviews in JSON format:
 
@@ -111,102 +111,7 @@ For the remainder of this document, we will use the Jaql data
 model and JSON interchangeably, although strictly speaking
 the Jaql data model is a superset of JSON.
 
-== Reading and Writing JSON Data ==
-
-Using Jaql, JSON data can be stored and retrieved
-from a variety of data sources including ordinary files.
-Jaql queries can take a _collection_ as input and generate
-a new collection as output, where a
-collection corresponds to a JSON array.
-An example using an ordinary file to store a collection
-is as follows:
-
-{{{
-  // Example 1. Write to a file named 'hey.dat'.
-  localWrite('hey.dat', [{text: 'Hello World'}]);
-	
-  // Read it back...
-  localRead('hey.dat');
-}}}
-
-Here, a single object with the 'Hello World' string is 
-being written to a file called 'hey.dat' in the current directory. 
-It is also possible to read and write JSON data to
-Hadoop [http://lucene.apache.org/hadoop/hdfs_design.html HDFS] files and
-[http://wiki.apache.org/lucene-hadoop/Hbase HBase] tables.
-We have made integration with Hadoop a priority by having all data types implement the 
-[http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/WritableComparable.html WritableComparable] interface.
-By integrating Jaql with HDFS and HBase, we are able to store JSON data
-and process it in parallel using Hadoop's map/reduce framework.
-
-Examples using Hadoop are provided below.
-Our second example writes to an HDFS 
-[http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/SequenceFile.html SequenceFile].
-A SequenceFile is a collection of key-value pairs. 
-Jaql's hdfsWrite() function only writes data into the value field, leaving the key field empty.
-In example 2, the input data is represented as a literal, but in general the input
-can be an expression that is the result of a Jaql query.
-
-{{{
-  // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
-  hdfsWrite('orders.dat', [
-    {order: 1, cust: 'c1', items: [ 
-      {item: 1, qty: 2},
-      {item: 3, qty: 6},
-      {item: 5, qty: 10}]},
-    {order: 2, cust: 'c2', items: [
-      {item: 2, qty: 1},
-      {item: 5, qty: 2},
-      {item: 7, qty: 3}]},
-    {order: 3, cust: 'c1', items: [
-      {item: 1, qty: 2},
-      {item: 7, qty: 14},
-      {item: 5, qty: 10}]} 
-  ]);
-	
-  // Read it back...
-  hdfsRead('orders.dat');
-}}}
-
-Our third example writes to an HBase table.
-An HBase table is a collection of records, with each record containing a 
-primary key and a set of column name-value pairs.
-Column names in HBase are of type
-[http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/Text.html Text],
-while column values are simply byte arrays.
-HBase uses a two-part naming scheme for columns of the form 'column family:column'.
-In Jaql, we use a sharp '#' instead of a colon ':' to separate column families from columns,
-since the colon is already used as a separator in JSON.
-If a column family is not specified, a special 'default' column family is used, as in the
-following example.
-
-{{{
-  // Example 3. Write to an HBase table named 'webcrawl'.
-  hbaseWrite('webcrawl', [
-    {key: "www.cnn.com", page:'...', rank: 0.9,
-     inlinks:[
-       {link: 'www.news.com', anchor: 'newsite'},
-       {link: 'www.jscript.com', anchor: 'look here'}]},
-    {key: "www.json.org", page:'...', rank: 0.8}
-  ]);
-	
-  // Read it back...
-  hbaseRead('webcrawl');
-}}}
-
-In hbaseWrite(), all objects in the input are written to a 
-single HBase table.
-Each top-level JSON object is stored as an Hbase record with the specified key,
-and each name:value pair in the object is stored as a separate column-value pair in
-the record.
-Values are serialized as a byte array.
-Note that only the outermost name:value pairs in top-level objects are 
-stored as separate columns in Hbase.
-Nested arrays and objects are serialized within these.
-In example 3, two HBase records are written.
-Each record is used to store the content, rank, and in-links (if any) of a web page.
-
-== The Jaql Query Language ==
+= The Jaql Query Language =
 
 Jaql is a functional query language that provides users with a simple,
 declarative syntax to do things like filter, join, and group JSON data.
@@ -427,7 +332,7 @@ Query 9 shows an inner join on 'a' and 'c' in X and Y, respectively.
 Although it has not be shown, left-, right-, and full-outer joins 
 can also be specified using modifiers.
 
-== Writing Aggregate Functions ==
+= Writing Aggregate Functions =
 
 Jaql includes standard database aggregate functions, like 
 {{{sum,count, min, max,}}} and {{{avg}}}.  Starting with Release
@@ -490,7 +395,7 @@ following example defines variance completely in Jaql using
 Many functions are cumbersome to define in a query language.  
 JavaFunctions are also useful for defining both holistic and algebraic aggregates.
 
-== Extending Jaql ==
+= Extending Jaql =
 
 Jaql has been designed to be extensible.  Custom code can be
 plugged-in to extend Jaql's capability in two different ways:
