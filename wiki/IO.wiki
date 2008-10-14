@@ -153,7 +153,8 @@ What is needed is a way to convert a {{{Text Writable}}} into an {{{Item}}}.
 This is done by implementing the appropriate converter, then specifying it
 as an option to {{{read}}}. An example converter is implemented as follows:
 
-{{{  public class FromJSONTxtConverter extends HadoopRecordToItem { 
+{{{  
+  public class FromJSONTxtConverter extends HadoopRecordToItem { 
   ...
   @Override
   protected WritableToItem createValConverter() {
