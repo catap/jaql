@@ -2,7 +2,11 @@
 
 = Introduction =
 
-Add your content here.
+Jaql has been designed to be extensible.  There are several ways to extend Jaql's capability:
+
+  * Define new functions specified using Jaql
+  * Define new functions specified using Java (we are working on other language bindings)
+  * Customize or define new data accessors using JaqlIO
 
 = Writing Aggregate Functions =
 
@@ -68,12 +72,6 @@ Many functions are cumbersome to define in a query language.
 JavaFunctions are also useful for defining both holistic and algebraic aggregates.
 
 = Extending Jaql =
-
-Jaql has been designed to be extensible.  Custom code can be
-plugged-in to extend Jaql's capability in two different ways:
-
-  * Jaql's library of [JaqlFunctions functions] to transform JSON data, and
-  * JaqlIO to access any data and possibly convert into JSON.
 
 In this section, we briefly describe some interesting functions that
 we have added to Jaql.  The first example is mapReduce(), 
