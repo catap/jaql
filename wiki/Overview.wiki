@@ -429,8 +429,8 @@ can also be specified using modifiers.
 
 == Writing Aggregate Functions ==
 
-Jaql includes standard database aggregate functions, like {{{sum,
-count, min, max,}}} and {{{avg}}}.  Starting with Release
+Jaql includes standard database aggregate functions, like 
+{{{sum,count, min, max,}}} and {{{avg}}}.  Starting with Release
 0.2, Jaql supports partial aggregation for these functions using
 "combiners" inside Hadoop's map/reduce framework for greater
 parallelism and reduced data shipping.  Syntactically, these functions
