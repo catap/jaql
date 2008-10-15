@@ -276,7 +276,7 @@ The Hadoop-based IO is useful when processing large data sets.
 However, we expect that reading from an [http://java.sun.com/j2se/1.5.0/docs/api/java/io/InputStream.html InputStream]
 or writing to an [http://java.sun.com/j2se/1.5.0/docs/api/java/io/OutputStream.html OutputStream]
 will also be needed when manipulating small data sets. 
-For this purpose, we provide an additional type of adapter: _!StreamAdapters_ . 
+For this purpose, we provide an additional type of adapter: !StreamAdapters. 
 !StreamAdapters open an input or output stream given a URI. 
 For example, {{{localRead, localWrite}}} and {{{httpGet}}} expressions
 are based on !StreamAdapters. Just as Hadoop adapters allow for conversions between {{{Writables}}} and {{{Items}}}, Stream adapters also provide for converting between bytes and {{{Items}}}.
