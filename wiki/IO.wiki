@@ -112,7 +112,7 @@ Each record is used to store the content, rank, and in-links (if any) of a web p
 
 = Hadoop IO =
 
-In Hadoop's [http://hadoop.apache.org/core/docs/r0.15.3/mapred_tutorial.html MapReduce], data is accessed using [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] and [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/OutputFormat.html OutputFormat]. Classes that implement these interfaces provide enough information to the MapReduce framework so that the data can be partitioned and processed in parallel.
+In Hadoop's [http://hadoop.apache.org/core/docs/r0.15.3/mapred_tutorial.html map-reduce], data is accessed using [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] and [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/OutputFormat.html OutputFormat]. Classes that implement these interfaces provide enough information to map-reduce so that the data can be partitioned and processed in parallel.
 
 
 Jaql's I/O framework supports any Input(Output)Format to be plugged-in. 
