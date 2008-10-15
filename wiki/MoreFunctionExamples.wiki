@@ -11,8 +11,8 @@ the substrings that match a regular expression over a list of input strings:
     import java.util.regex.Matcher;
     import java.util.regex.Pattern;
 
-    import com.ibm.impliance.jaql.JIterator;
-    import com.ibm.impliance.jaql.JString;
+    import com.ibm.jaql.json.util.JIterator;
+    import com.ibm.jaql.json.type.JString;
 
 
     public class Grep
