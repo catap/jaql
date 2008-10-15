@@ -6,7 +6,7 @@ Jaql has been designed to be extensible.  There are several ways to extend Jaql'
 
   * Define new functions specified using Jaql
   * Define new functions specified using Java (we are working on other language bindings)
-  * Customize or define new data accessors using [IO]
+  * Customize or define new data accessors using Jaql's [IO] package.
 
 We briefly show how new functions can be written in Jaql, then show how you can 
 plug-in Java code to define new functions.
