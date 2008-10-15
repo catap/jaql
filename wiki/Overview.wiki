@@ -404,11 +404,12 @@ from all the little details required to actually set up and run a map/reduce job
 
 
   // Explain Query 1: Jaql automatically rewrites the query into a map-only job
-  stRead(mapReduce(
-          {input  : { type: "hdfs", location: "books"}, 
-           output : HadoopTemp(), 
-           map    : fn ($mapIn) [ [null,{ $mapIn.publisher, $mapIn.title }]]
-          }));
+  stRead(
+    mapReduce(
+      {input  : { type: "hdfs", location: "books"}, 
+       output : HadoopTemp(), 
+       map    : fn ($mapIn) [ [null,{ $mapIn.publisher, $mapIn.title }]]
+      }));
 }}}
 
 Note that Query 1 is rewritten into a valid Jaql query, namely one that directly
