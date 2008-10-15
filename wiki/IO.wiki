@@ -216,7 +216,7 @@ The Hadoop adapter allows any existing Input(Output)Format to be swapped in alon
 (as shown by the earlier example). Another example of an adapter in Jaql is the StreamAdapter. It allows
 access directly to byte stream data. Access to other data stores is possible by implementing the Adapter interface.
 
-If an Input(Output)Format can be specified for a given data store, Hadoop's MapReduce can use it as an input(output). Accordingly, the Hadoop adapter informs the Jaql compiler that Hadoop's MapReduce can be used if appropriate. However, Input(Output)Formats may require specific configuration prior to submitting a MapReduce job. In Jaql, this is exposed through the "configurator" option. For example, an Input(Output)Format requires
+If an Input(Output)Format can be specified for a given data store, Hadoop's map-reduce can use it as an input(output). Accordingly, the Hadoop adapter informs the Jaql compiler that Hadoop's map-reduce can be used if appropriate. However, Input(Output)Formats may require specific configuration prior to submitting a map-reduce job. In Jaql, this is exposed through the "configurator" option. For example, an Input(Output)Format requires
 that a file path be specified before the job is submitted. The {{{com.ibm.impliance.jaql.FileInputConfigurator}}}
 does exactly this: the Adapter passes 'books.jql' and all options to the configurator, which then configures the job appropriately. For many HDFS files, {{{com.ibm.impliance.jaql.FileInputConfigurator}}} is sufficient,
 but if needed, it can be overriden. 
@@ -231,7 +231,7 @@ Returning to the example, the new data store type is registered as follows:
                                  configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
 }}}
 
-The Hadoop adapter and configurator are specified, along with the TextInputFormat and custom converter. The newly registered data store is used as follows:
+The Hadoop adapter and configurator are specified, along with the {{{TextInputFormat}}} and custom converter. The newly registered data store is used as follows:
 
 {{{
   read('myHDFSFile', 'books.jql');
@@ -252,7 +252,7 @@ For HBase, the 'path' represents a table name. Columns and column families can b
 
 Finally, in order to do something more interesting with these examples,
 consider a query that will be rewritten to 
-Map/Reduce. The simplest example is a for-loop over a {{{read}}} expression. Jaql translates such a query into the following Map/Reduce expression:
+map-reduce. The simplest example is a for-loop over a {{{read}}} expression. Jaql translates such a query into the following map-reduce expression:
 
 {{{
   $q = for( $i in read('myHDFSFile', 'example.jql') )
@@ -268,18 +268,18 @@ Map/Reduce. The simplest example is a for-loop over a {{{read}}} expression. Jaq
   });
 }}}
 
-In this example, an HBase table is loaded in parallel with a projection from a JSON text formatted file. The {{{mapReduce}}} function specifies its input and output using records. Each record specifies the data store type, a location, and possibly additional options.
+In this example, an HBase table is loaded in parallel with a projection from a JSON text formatted file. The {{{mapReduce()}}} function specifies its input and output using records. Each record specifies the data store type, a location, and possibly additional options.
 
 = Stream IO =
 
-The Hadoop-based Input/Output is useful when processing large data sets.
+The Hadoop-based IO is useful when processing large data sets.
 However, we expect that reading from an [http://java.sun.com/j2se/1.5.0/docs/api/java/io/InputStream.html InputStream]
 or writing to an [http://java.sun.com/j2se/1.5.0/docs/api/java/io/OutputStream.html OutputStream]
 will also be needed when manipulating small data sets. 
-For this purpose, we provide an additional type of adapter: _StreamAdapters_. 
-StreamAdapeters open an input or output stream given a URI. 
+For this purpose, we provide an additional type of adapter: _StreamAdapters_ . 
+!StreamAdapters open an input or output stream given a URI. 
 For example, {{{localRead, localWrite}}} and {{{httpGet}}} expressions
-are based on StreamAdapters. Just as Hadoop adapters allow for conversions between {{{Writables}}} and {{{Items}}}, Stream adapters also provide for converting between bytes and {{{Items}}}.
+are based on !StreamAdapters. Just as Hadoop adapters allow for conversions between {{{Writables}}} and {{{Items}}}, Stream adapters also provide for converting between bytes and {{{Items}}}.
 
 For example, consider accessing a local file that is formatted as JSON text. The only
 class to implement is a converter that can borrow from the previous example:
