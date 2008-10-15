@@ -117,7 +117,7 @@ In Hadoop's [http://hadoop.apache.org/core/docs/r0.15.3/mapred_tutorial.html map
 
 Jaql's I/O framework supports any Input(Output)Format to be plugged-in. 
 However, Input(Output)Formats work with {{{Writables}}} while Jaql expects {{{Items}}}.
-Thus, the framework makes it easy to convert <code>Writables</code> to and from {{{Items}}}.
+Thus, the framework makes it easy to convert {{{Writables}}} to and from {{{Items}}}.
 In order to make the discussion more concrete, lets look under the hood of the 
 {{{hdfsRead('books.jqlb')}}} expression.
 First, {{{hdfsRead}}} is a {{{macro}}} expression that 
@@ -129,11 +129,11 @@ when using {{{hdfsRead}}}:
   read('hdfs', 'books.jqlb');
 }}}
 
-The first argument to the <code>read</code> expression is the name
+The first argument to the {{{read}}} expression is the name
 associated with a type of data store.  Just as names are associated to
 function implementations in the function registry, names are
 associated to data store types in the storage registry. The second
-argument to <code>read</code> is the path of a file stored in HDFS.
+argument to {{{read}}} is the path of a file stored in HDFS.
 
 For the hdfs data store type, the registry entry specifies default Input(Output)Formats.
 The defaults for Jaql are {{{SequenceFileInputFormat}}} and {{{SequenceFileOutputFormat}}}.
@@ -146,12 +146,10 @@ in this case is {{{TextInputFormat}}}. For this case, Jaql's default can be over
 
 The additional argument to {{{read}}} is a record that specifies which class
 will implement the InputFormat. More generally, this record can specify any options that 
-are specific to a give data store type. In the example above, it is necessary to specify 
-a converter from {{{Writables}}} to {{{Items}}}. Why?
-A TextFile's records are {{{Text}}} writables, not Jaql {{{Items}}} (i.e., binary JSON).
-What is needed is a way to convert a {{{Text Writable}}} into an {{{Item}}}.
-This is done by implementing the appropriate converter, then specifying it
-as an option to {{{read}}}. An example converter is implemented as follows:
+are specific to a give data store type. In the example above, a {{{TextFile}}}'s
+records are {{{Text}}}, not Jaql {{{Items}}} (i.e., binary JSON) so are converted
+by implementing a converter and specifying the converter as an option {{{read}}}.
+An example converter is implemented as follows:
 
 {{{  
   public class FromJSONTxtConverter extends HadoopRecordToItem { 
