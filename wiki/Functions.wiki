@@ -53,9 +53,9 @@ one way to define {{{split()}}}:
 {{{
    package com.acme.extensions.fn;
 
-   import com.ibm.impliance.jaql.JArray;
-   import com.ibm.impliance.jaql.SpillJArray;
-   import com.ibm.impliance.jaql.JString;
+   import com.ibm.jaql.json.type.JArray;
+   import com.ibm.jaql.json.type.SpillJArray;
+   import com.ibm.jaql.json.type.JString;
 
 1  public class Split1
    {
@@ -136,8 +136,8 @@ returns an iterator:
 {{{
     package com.acme.extensions.fn;
 
-    import com.ibm.impliance.jaql.JIterator;
-    import com.ibm.impliance.jaql.JString;
+    import com.ibm.jaql.json.util.JIterator;
+    import com.ibm.jaql.json.type.JString;
 
     public class Split2
     {
@@ -270,9 +270,9 @@ sum, it reduces a set of numbers down to a single number.
 {{{
     package com.acme.extensions.fn;
 
-    import com.ibm.impliance.jaql.JIterator;
-    import com.ibm.impliance.jaql.JLong;
-    import com.ibm.impliance.jaql.JNumber;
+    import com.ibm.jaql.json.util.JIterator;
+    import com.ibm.jaql.json.type.JLong;
+    import com.ibm.jaql.json.type.JNumber;
 
     public class GCD1
     {
@@ -352,8 +352,8 @@ gcd as a pair-wise function that computes the gcd of two numbers:
 {{{
     package com.acme.extensions.fn;
 
-    import com.ibm.impliance.jaql.JLong;
-    import com.ibm.impliance.jaql.JNumber;
+    import com.ibm.jaql.json.type.JLong;
+    import com.ibm.jaql.json.type.JNumber;
 
 
     public class GCD2
