@@ -83,10 +83,10 @@ Each review consists of a 'rating', its 'user', and the text of the review.
 Each review can also contain a 'discussion', which
 itself can be discussed, forming a discussion thread.
 
-[http://www.json.org/ JSON] has become a popular data format for many Web-based applications
-because of its simplicity and modeling flexibility.
-Wikipedia includes a nice
-[http://en.wikipedia.org/wiki/JSON summary]
+== Why did we pick JSON? ==
+
+[http://www.json.org/ JSON] has become a popular data format for many Web-based applications because of its simplicity and modeling flexibility.
+Wikipedia includes a nice [http://en.wikipedia.org/wiki/JSON summary]
 of JSON's advantages over other data formats like XML.
 In contrast to XML, which was originally designed as a markup language,
 JSON was actually designed for data.
