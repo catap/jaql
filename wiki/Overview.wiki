@@ -28,6 +28,9 @@ most recent release of Jaql and following the [Running instructions].
 _Note:_ Jaql is still in early development, 
 so beware that it is likely to change over the next few months.
 The future development plans are outlined in the [RoadMap roadmap].
+To see a preview of how we plan to further simplify Jaql, please see the
+[http://jaql.googlecode.com/files/Jaql-Pipes-Intro.ppt slides] that we
+presented at the Hadoop User Group on 10/16/2008.
 
 = A JSON Example =
 
