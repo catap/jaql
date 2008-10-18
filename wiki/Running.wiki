@@ -26,8 +26,8 @@ To get up and running, follow these steps:
 _Note:_ If you already have a Hadoop cluster installed, when running jaql in local mode,
 be sure to unset Hadoop related environment variables (e.g., HADOOP_HOME, HADOOP_CONF_DIR, ...).
 
-By default, JaqlShell launches a Hadoop MiniCluster. A MiniCluster
-runs HDFS, MapReduce, and HBase as multiple threads in a single process.
+By default, !JaqlShell launches a Hadoop !MiniCluster. A MiniCluster
+runs HDFS, map-reduce, and HBase as multiple threads in a single process.
 If you already have a distributed cluster installed and what to try out Jaql,
 pass in the {{{-cluster}}} flag as follows: {{{./jaql JaqlShell -cluster}}}.
 
