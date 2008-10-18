@@ -9,7 +9,7 @@ and run unit tests.
 == Jaql Shell ==
 
 The Jaql shell is a very simple way to run Jaql queries.
-Currently, it can run with a Hadoop MiniCluster or your own cluster.
+Currently, it can run with a Hadoop !MiniCluster or your own cluster.
 Its pre-requisites are as follows:
 
   * Java 1.5 or greater
