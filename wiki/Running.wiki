@@ -26,12 +26,12 @@ To get up and running, follow these steps:
 _Note:_ If you already have a Hadoop cluster installed, when running jaql in local mode,
 be sure to unset Hadoop related environment variables (e.g., HADOOP_HOME, HADOOP_CONF_DIR, ...).
 
-By default, !JaqlShell launches a Hadoop !MiniCluster. A MiniCluster
+By default, !JaqlShell launches a Hadoop !MiniCluster. A !MiniCluster
 runs HDFS, map-reduce, and HBase as multiple threads in a single process.
 If you already have a distributed cluster installed and what to try out Jaql,
 pass in the {{{-cluster}}} flag as follows: {{{./jaql JaqlShell -cluster}}}.
 
-JaqlShell supports the following options:
+!JaqlShell supports the following options:
 
 {{{
 -cluster [use an existing cluster, do not launch a MiniCluster]
@@ -44,7 +44,7 @@ JaqlShell supports the following options:
 == Examples ==
 
 All examples from the documentation can be found in DIR/jaql/docs/examples.txt.
-JaqlShell can be used to evaluate the examples either interactively or as a script.
+!JaqlShell can be used to evaluate the examples either interactively or as a script.
 To run interactively, fire up the shell, then cut-and-paste. 
 To run as a script, pipe in the example file to the shell, i.e.,
 {{{./jaql JaqlShell < docs/examples.txt}}}.
