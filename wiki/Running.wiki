@@ -12,11 +12,9 @@ The Jaql shell is a very simple way to run Jaql queries.
 Currently, it can run with a Hadoop MiniCluster or your own cluster.
 Its pre-requisites are as follows:
 
-  *Java 1.5 or greater
-  *[http://www.cygwin.com/ Cygwin] if using MS Windows
-  *If running your own, distributed cluster, [http://archive.apache.org/dist/hadoop/core/hadoop-0.15.3/ Hadoop 0.15.3], 
-[http://archive.apache.org/dist/hadoop/core/hadoop-0.16.4/ Hadoop 0.16.4], and 
-[http://archive.apache.org/dist/hadoop/core/hadoop-0.17.1/ Hadoop 0.17.1]
+  * Java 1.5 or greater
+  * [http://www.cygwin.com/ Cygwin] if using MS Windows
+  * If running your own, distributed cluster, [http://archive.apache.org/dist/hadoop/core/hadoop-0.15.3/ Hadoop 0.15.3], [http://archive.apache.org/dist/hadoop/core/hadoop-0.16.4/ Hadoop 0.16.4], and [http://archive.apache.org/dist/hadoop/core/hadoop-0.17.1/ Hadoop 0.17.1]
 
 To get up and running, follow these steps:
 
