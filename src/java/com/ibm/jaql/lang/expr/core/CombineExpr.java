@@ -169,8 +169,9 @@ public class CombineExpr extends PushAggExpr
   public PushAgg init(final Context context) throws Exception
   {
     final BindingExpr binding = (BindingExpr) exprs[0];
-    final Item agg = new Item(); // TODO: memory
-    context.setVar(binding.var, agg);
+    final Item[] agg = new Item[] {new Item(), new Item()};
+    //final Item agg = new Item(); // TODO: memory
+    context.setVar(binding.var, agg[0]);
     final Var var2 = binding.var2;
 
     final Expr input = binding.inExpr();
@@ -181,12 +182,13 @@ public class CombineExpr extends PushAggExpr
       {
         Iter iter = input.iter(context);
         Item item;
+        int bufIdx = 0;
         while ((item = iter.next()) != null)
         {
           if (!item.isNull())
           {
             Item combined;
-            if (agg.isNull())
+            if (agg[bufIdx].isNull())
             {
               combined = item;
             }
@@ -199,7 +201,9 @@ public class CombineExpr extends PushAggExpr
                 throw new RuntimeException("combiners cannot return null");
               }
             }
-            agg.copy(combined);
+            bufIdx = (bufIdx+1) %2;
+            agg[bufIdx].copy(combined);
+            context.setVar(binding.var, agg[bufIdx]);
           }
         }
       }
@@ -207,7 +211,8 @@ public class CombineExpr extends PushAggExpr
       @Override
       public Item eval() throws Exception
       {
-        return agg;
+        //return agg;
+        return context.getValue(binding.var);
       }
     };
   }

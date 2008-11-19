@@ -563,6 +563,29 @@ sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ]
 
 //-------------------------- RECORD OPS ---------------------------
 
+$pivot = fn($items) (
+   $srecs = for ($p in $items) [{ ($p.label):$p.value }],
+  
+   combine($a,$b in $srecs)
+     ( remap( $a, $b ) )
+);##
+"$pivot"
+
+
+$input = [ { label: "name", value: "joe" },
+           { label: "work", value: "acme plumbing" },
+           { label: "office", value: "b1" } ];##
+"$input"
+
+
+$pivot( $input );##
+{
+  "name": "joe",
+  "office": "b1",
+  "work": "acme plumbing"
+}
+
+
 //-------------------------- LET ---------------------------------
 
 ( $r = { x:1, y:2 },
