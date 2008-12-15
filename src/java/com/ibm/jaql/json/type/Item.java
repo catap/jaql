@@ -72,14 +72,12 @@ public final class Item implements WritableComparable // , Cloneable
     public final Class<? extends JValue>        clazz;
     public final String                         name;
     public final JString                        nameValue;
-    public final Item                           nameItem;
 
     Type(Class<? extends JValue> clazz, String name)
     {
       this.clazz = clazz;
       this.name = name;
       this.nameValue = new JString(name);
-      this.nameItem = new Item(nameValue);
     }
 
     public static Type getType(String name)

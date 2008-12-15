@@ -42,22 +42,23 @@ public class TypeofExpr extends Expr
   public Item eval(final Context context) throws Exception
   {
     Expr expr = exprs[0];
+    // FIXME: the Item created here should be cached.
     if (expr.isArray().always())
     {
       Iter iter = expr.iter(context);
       if (iter.isNull())
       {
-        return Item.Type.NULL.nameItem;
+        return new Item(Item.Type.NULL.nameValue);
       }
       else
       {
-        return Item.Type.ARRAY.nameItem;
+        return new Item(Item.Type.ARRAY.nameValue);
       }
     }
     else
     {
       Item item = expr.eval(context);
-      return item.getEncoding().type.nameItem;
+      return new Item(item.getEncoding().type.nameValue);
     }
   }
 }
