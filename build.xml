@@ -39,8 +39,10 @@
     <!-- <property name="hadoop.version" value="0.16.1"/> -->
     <!-- <property name="hadoop.version" value="0.16.3" /> -->
     <property name="hadoop.version" value="0.17.1" />
+    <!-- <property name="hadoop.version" value="0.18.1" /> -->
     <!-- hbase version -->
     <property name="hbase.version" value="0.1.3" />
+    <!-- <property name="hbase.version" value="0.18.1" /> -->
 
     <property name="hadoop.dir"
               value="${basedir}/vendor/hadoop/${hadoop.version}" />
@@ -150,6 +152,9 @@
             <fileset dir="${test.src.dir}" includes="*.dat" />
         </copy>
         <copy todir="${test.cache.data}">
+            <fileset dir="${test.src.dir}" includes="*.hdr" />
+        </copy>
+        <copy todir="${test.cache.data}">
             <fileset dir="${test.src.dir}" includes="*.jql" />
         </copy>
         <mkdir dir="${test.classes.dir}" />
@@ -216,7 +221,9 @@
         <mkdir dir="${build.classes}" />
         <mkdir dir="${build.src}" />
         <available file="${hadoop.dir}/src/jaql"
-                   property="vendor.hasoverrides" />
+                   property="vendor.hadoop.hasoverrides" />
+        <available file="${hbase.dir}/src/jaql"
+                   property="vendor.hbase.hasoverrides" />
     </target>
 
     <target name="init-copy">
@@ -238,10 +245,19 @@
         </copy>
     </target>
 
-    <target name="init-vendor-version" if="vendor.hasoverrides">
+    <target name="init-vendor-hadoop-version" if="vendor.hadoop.hasoverrides">
         <!-- copy over version override files -->
         <copy todir="${build.src}">
             <fileset dir="${hadoop.dir}/src/jaql">
+                <include name="**/*.java" />
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="init-vendor-hbase-version" if="vendor.hbase.hasoverrides">
+        <!-- copy over version override files -->
+        <copy todir="${build.src}">
+            <fileset dir="${hbase.dir}/src/jaql">
                 <include name="**/*.java" />
             </fileset>
         </copy>
@@ -262,7 +278,8 @@
                 javacchome="${javacc.home}" />
     </target>
 
-    <target name="compile" depends="init, init-vendor-version, init-copy">
+    <target name="compile"
+            depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy">
         <!-- place antlr output into build directory? outputdirectory="${build.src}" -->
         <!-- use ant contrib <for> to find all .g files? -->
         <antlr target="${src.dir}/com/ibm/jaql/lang/parser/jaql.g">
@@ -395,7 +412,7 @@
         </copy>
     </target>
     <target name="javadoc"
-            depends="init, init-copy, init-vendor-version, default-doc">
+            depends="init, init-copy, init-vendor-hadoop-version, init-vendor-hbase-version, default-doc">
         <mkdir dir="${build.javadocs}" />
         <javadoc overview="${build.src}/java/overview.html"
                  packagenames="com.ibm.jaql.*"
@@ -468,7 +485,7 @@
     <!-- Jaql Source Distribution                                           -->
     <!-- ================================================================== -->
     <target name="srcdistro"
-            depends="init, init-vendor-version, init-copy, javadoc">
+            depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy, javadoc">
         <mkdir dir="${build.dir}/jaql-${version}" />
 
         <mkdir dir="${build.dir}/jaql-${version}/conf" />
