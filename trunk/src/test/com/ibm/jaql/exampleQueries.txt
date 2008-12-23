@@ -447,3 +447,47 @@ $q = for( $i in read('myHDFSFile', 'example.jql') )
 // hbaseWrite('example', $q);
 
 localRead('build/test/cache/books.jql', {format : 'com.acme.extensions.data.FromJSONTxtConverter'});
+
+hdfsShell("-copyFromLocal docs/jaql-overview.html test");
+
+$lineRdr = hdfsRead("test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.acme.extensions.data.FromLineConverter"});
+
+registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
+
+$tokens  = for($line in $lineRdr) (
+             $tokens = splitArr($line, " "),
+             for($t in $tokens)
+               [ [$t, 1] ]
+           );
+           
+count(group($p in $tokens by $w = $p[0] into $words)
+  [ [$w, sum($words[*][1])] ]);
+  
+hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat");
+
+hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr");
+
+$dRead = fn($data) 
+           hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat", 
+                            converter: "com.acme.extensions.data.FromDelimitConverter"});
+
+$dhRead = fn($data, $header)
+            hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat",
+			                          converter: "com.acme.extensions.data.FromDelimitConverter",
+			                          header: $header});
+			               
+$dRead("delimited.dat");
+
+count($dRead("delimited.dat"));
+
+$dhRead("delimited.dat", ["a", "b", "c"]);
+
+count($dhRead("delimited.dat", ["a", "b", "c"]));
+
+$dRead("delimited.hdr");
+
+$dRead("delimited.hdr")[0];
+
+$dhRead("delimited.dat", $dRead("delimited.hdr")[0]);
+
+count($dhRead("delimited.dat", $dRead("delimited.hdr")[0]));
