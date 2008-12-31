@@ -422,3 +422,89 @@ mapReduce(). Since no output was specified, it is written to a temporary file th
 translated to the {{{map}}} function of mapReduce(). In mapReduce(), the {{{map}}} function is assumed to take one input (a key is not required), and an array of key, value pairs are returned. For Query 1, no key returned and the value is a projection of the input record. 
 
 All of the other example queries listed here are rewritten into mapReduce() function calls and evaluated as map-reduce jobs. For example, {{{group}}} is translated to a mapReduce() that includes both a map and reduce function. Similarly, {{{join}}} is translated to {{{group}}}, which is then translated to mapReduce(). If the output of a {{{for}}} loop is {{{grouped}}}, both are translated into a single mapReduce(). For grouping, if additional information about the aggregate function is provided, Jaql can automatically rewrite queries so that they can take advantage of map/reduce's {{{combine}}}. Please refer to the discussion on [Functions aggregate functions] to see how you can define your own, plug them into Jaql, and how they're evaluated in parallel.
+
+== Word-count Example ==
+
+Jaql can also be used to process non-JSON data; the 
+[http://hadoop.apache.org/core/docs/r0.19.0/mapred_tutorial.html#Example%3A+WordCount+v1.0 word-count] example provides a good case-study to see how various
+Jaql components work together. Lets say you have a file *docs/jaql-overview.html* whose words you want to count. First the input file is copied into HDFS:
+
+{{{
+hdfsShell("-copyFromLocal docs/jaql-overview.html test");
+}}}
+
+This command passes its argument, {{{"-copyFromLocal docs/jaql-overview.html test"}}} to the {{{hadoop fs}}} command that is available with hadoop. The input file is then available as {{{test}}} in hdfs so can be read by {{{hdfsRead}}} and processed in
+parallel using map-reduce. The {{{hdfsShell}}} function is a simple example of how Jaql
+can be extended using user-defined functions; more examples are provided in [Functions].
+The expression used in Jaql to read {{{test}}} is given below:
+
+{{{
+$lineRdr = hdfsRead("test", 
+                    {format: "org.apache.hadoop.mapred.TextInputFormat",  
+                     converter: "com.acme.extensions.data.FromLineConverter"});
+}}}
+
+This expression assigns the result of {{{hdfsRead}}} to the variable {{{$lineRdr}}}.
+{{{hdfsRead}}} always produces a JSON array; in this case, a JSON array of Strings, each String representing a line from the input file. The way this was achieved was to 
+specify a {{{format}}} to produce key,value pairs from the input and a {{{converter}}} to convert a pair into a JSON value. As in Hadoop's word-count example, the {{{TextInputFormat}}} is used to produce line-number, Text pairs. The {{{FromLineConverter}}} discards the line-number and trivially converts the {{{Text}}} line into a JSON String value. More examples of [IO] show how to further cutomize Jaql
+to read/write other data sources and formats. Before we can count words, we need to be
+able to tokenize a given line into words. The following expression registers an example user-defined function for this task:
+
+{{{
+registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
+}}}
+
+When the Jaql interpreter encounters a {{{splitArr}}} invocation, it will use its
+implementing class to evaluate the function. For now, it suffices to think of {{{splitArr}}} as calling Java's {{{String.split(...)}}} method. Further detalils are given in [Function]. Now that we know how to convert a file into JSON and tokenize lines, we can complete the word-count example:
+
+{{{
+1. $tokens = for($line in $lineRdr) (
+2.             $tokens = splitArr($line, " "),
+3.             for($t in $tokens)
+4.               [ [$t, 1] ]
+             );
+
+5. group($p in $tokens by $w = $p[0] into $words)
+6.   [ [$w, sum($words[*][1])] ]);
+}}}
+
+These Jaql queries are directly translated from the map-reduce word-count example.
+Each line is read in (1), tokenized in (2), and each word is output along
+with a count of 1 in lines (3-4). This expression produces an arrray of pairs ({{{[$t,1]}}}) that is assigned to the {{{$tokens}}} in line (1). The {{{$tokens}}} are
+then grouped on word ({{{$w = $p[0]}}}) in line (5). Each distinct word ({{{$w}}} is associated with an array of word, count pairs ({{{$words}}}) whose count ({{{[1]}}}) is
+summed in line (6) to produce a final array of pairs, associating for each distinct word in the input file ({{{test}}}), its count. A semantically equivalent, yet simpler Jaql query is as follows:
+
+{{{
+1. $tokens = for($line in $lineRdr) (
+2.             $tokens = splitArr($line, " "),
+3.             for($t in $tokens)
+4.               [ $t ]
+             );
+
+5. group($p in $tokens by $w = $p into $words)
+6.   [ [$w, count($words)] ];
+}}}
+
+As in the previous example, each line is read (1) and tokenized (2). Instead of returning an array of {{{<word, count>}}} pairs, an array of words is returned in lines (3-4). Next, the words are grouped in line (5) as before. Instead of summing word counts using explicit counts as in the previous example, the {{{$words}}} array is simply counted. To complete the example, the translated Jaql is shown below:
+
+{{{
+stRead(
+  mrAggregate(
+    {input: {type:"hdfs", location: "test", 
+             inoptions: {format:"org.apache.hadoop.mapred.TextInputFormat",          
+                         converter:"com.acme.extensions.data.FromLineConverter"}},
+     output: HadoopTemp(), 
+     init: fn($mapIn0) 
+             for( $p in splitArr($mapIn0, " ") )
+               [[$p, [1]]],
+     final: fn($w, $words) 
+              [[$w, firstNonNull(($words)[0], 0)]], 
+     combine: fn($ckey0, $ca0, $cb0) [
+                if(isnull($ca0[0]))
+                  $cb0[0]
+                else if(isnull($cb0[0]))
+                  $ca0[0]
+                else $ca0[0] + $cb0[0]
+              ]
+     }
+}}}
