@@ -2528,6 +2528,19 @@ count(group($p in $tokens by $w = $p[0] into $words)
 1615
 
 
+$tokens  = for($line in $lineRdr) (
+             $tokens = splitArr($line, " "),
+             for($t in $tokens)
+               [ $t ]
+           );##
+"$tokens"
+
+           
+count(group($p in $tokens by $w = $p into $words)
+  [ [$w, count($words)] ]);##
+1615
+
+  
 hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat");##
 0
 
