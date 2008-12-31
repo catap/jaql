@@ -462,7 +462,16 @@ $tokens  = for($line in $lineRdr) (
            
 count(group($p in $tokens by $w = $p[0] into $words)
   [ [$w, sum($words[*][1])] ]);
-  
+
+$tokens  = for($line in $lineRdr) (
+             $tokens = splitArr($line, " "),
+             for($t in $tokens)
+               [ $t ]
+           );
+           
+count(group($p in $tokens by $w = $p into $words)
+  [ [$w, count($words)] ]);
+             
 hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat");
 
 hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr");
