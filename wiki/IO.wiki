@@ -118,6 +118,9 @@ In Hadoop's [http://hadoop.apache.org/core/docs/r0.15.3/mapred_tutorial.html map
 Jaql's I/O framework supports any Input(Output)Format to be plugged-in. 
 However, Input(Output)Formats work with {{{Writables}}} while Jaql expects {{{Items}}}.
 Thus, the framework makes it easy to convert {{{Writables}}} to and from {{{Items}}}.
+
+== Default Input/Output Format ==
+
 In order to make the discussion more concrete, lets look under the hood of the 
 {{{hdfsRead('books.jqlb')}}} expression.
 First, {{{hdfsRead}}} is a {{{macro}}} expression that 
@@ -137,15 +140,17 @@ argument to {{{read}}} is the path of a file stored in HDFS.
 
 For the hdfs data store type, the registry entry specifies default Input(Output)Formats.
 The defaults for Jaql are {{{SequenceFileInputFormat}}} and {{{SequenceFileOutputFormat}}}.
-However, suppose that the HDFS file is a text file (i.e, new-line delimitted records). The InputFormat to use
-in this case is {{{TextInputFormat}}}. For this case, Jaql's default can be overriden as follows:
+
+== Text-based Input/Output Format ==
+
+Suppose that the HDFS file is a text file (i.e, new-line delimitted records). The [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] to use in this case is {{{TextInputFormat}}}. For this case, Jaql's default can be overriden as follows:
 
 {{{
   read('hdfs', 'books.jql', {format: 'org.apache.hadoop.mapred.TextInputFormat'});
 }}}
 
 The additional argument to {{{read}}} is a record that specifies which class
-will implement the InputFormat. More generally, this record can specify any options that 
+will implement the [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat]. More generally, this record can specify any options that 
 are specific to a give data store type. In the example above, a {{{TextFile}}}'s
 records are {{{Text}}}, not Jaql {{{Items}}} (i.e., binary JSON) so are converted
 by implementing a converter and specifying the converter as an option {{{read}}}.
@@ -179,6 +184,9 @@ The {{{FromJSONTxtConverter}}} takes as input a {{{Writable}}} value and sets th
 The {{{read}}} expression uses {{{TextInputFormat}}} to read the file
 specified at 'path' in HDFS. For each record retrieved from the file, it will use 
 {{{FromJSONTxtConverter}}} to convert each {{{Text Writable}}} to an {{{Item}}}.
+
+== Using Custom File Formats ==
+
 While extensible, the {{{read}}} expression is cumbersome to specify in this manner.
 There are several options to hide the details. The simplest is to define a function:
 
@@ -215,6 +223,8 @@ for Jaql from any data store. For Hadoop data, the adapter to use is {{{DefaultH
 The Hadoop adapter allows any existing Input(Output)Format to be swapped in along with any converter
 (as shown by the earlier example). Another example of an adapter in Jaql is the StreamAdapter. It allows
 access directly to byte stream data. Access to other data stores is possible by implementing the Adapter interface.
+
+== Using Custom File Formats in Map-Reduce ==
 
 If an Input(Output)Format can be specified for a given data store, Hadoop's map-reduce can use it as an input(output). Accordingly, the Hadoop adapter informs the Jaql compiler that Hadoop's map-reduce can be used if appropriate. However, Input(Output)Formats may require specific configuration prior to submitting a map-reduce job. In Jaql, this is exposed through the "configurator" option. For example, an Input(Output)Format requires
 that a file path be specified before the job is submitted. The {{{com.ibm.impliance.jaql.FileInputConfigurator}}}
@@ -269,6 +279,8 @@ map-reduce. The simplest example is a for-loop over a {{{read}}} expression. Jaq
 }}}
 
 In this example, an HBase table is loaded in parallel with a projection from a JSON text formatted file. The {{{mapReduce()}}} function specifies its input and output using records. Each record specifies the data store type, a location, and possibly additional options.
+
+== Example: Delimitted File Formats ==
 
 = Stream IO =
 
