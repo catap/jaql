@@ -282,6 +282,194 @@ In this example, an HBase table is loaded in parallel with a projection from a J
 
 == Example: Delimitted File Formats ==
 
+The previous examples showed how JSON binary data and JSON text data is processed using
+JAQL and Hadoop's Input/Output format interfaces. However, JSON-formatted data is not required for JAQL. In this example, we show how a delimitted file can be processed using JAQL. As in the previous examples, an appropriate [InputFormat] is needed along with a converter that transforms an [InputFormat] record into JSON. Lets start with the following data that is stored in a file named {{{delimited.dat}}}:
+
+{{{
+1,2,3
+foo,bar,baz
+a longer example of a string,followed by another followed by a number,42
+}}}
+
+First the file is loaded into HDFS:
+
+{{{
+hdfsShell("-copyFromLocal src/test/com/ibm/jaql/delimited.dat delimited.dat");
+}}}
+
+Next, an appropriate reader is defined by parameterizing {{{hdfsRead}}}:
+
+{{{
+$dRead = fn($data) 
+           hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat", 
+                            converter: "com.acme.extensions.data.FromDelimitConverter"});
+}}}
+
+The format is a {{{TextInputFormat}}}, as we've seen before and its converter is
+{{{FromDelimitConverter}}} whose core method is as follows:
+
+{{{
+public class FromDelimitConverter extends HadoopRecordToItem {
+...
+@Override
+  protected WritableToItem createValConverter()
+  {
+    return new WritableToItem() {
+      public void convert(Writable src, Item tgt)
+      {
+        if (src == null || tgt == null) return;
+        Text t = null;
+        if (src instanceof Text)
+        {
+          t = (Text) src;
+        }
+        else
+        {
+          throw new RuntimeException("tried to convert from: " + src);
+        }
+        
+        String[] vals = new String(t.getBytes()).split(delimitter);
+        try {
+          if(header == null) {
+1.          setArray(vals, (FixedJArray)tgt.get());
+          } else {
+2.          setRecord(vals, header, (MemoryJRecord)tgt.get());
+          }
+        } catch(Exception e) {
+          throw new RuntimeException(e);
+        }
+      }
+      
+      private void setRecord(String[] vals, JArray names, MemoryJRecord tgt) throws Exception
+      {
+        int n = (int) names.count();
+        if(n != vals.length) 
+          throw new RuntimeException("values and header disagree in length: " + vals.length + "," + n);
+        
+        for(int i = 0; i < n; i++) {
+          JString name = (JString) names.nth(i).get();
+          ((JString)tgt.getRequired(name.toString()).getNonNull()).set(vals[i]);
+        }
+      }
+      
+      private void setArray(String[] vals, FixedJArray tgt) {
+        tgt.clear();
+        int n = vals.length;
+        for(int i = 0; i < n; i++) {
+          tgt.add(new JString(vals[i])); // FIXME: memory
+        }
+      }
+      
+      public Item createTarget()
+      {
+        if(header == null)
+          return new Item(new FixedJArray());
+        else {
+          int n = (int)header.count();
+          MemoryJRecord r = new MemoryJRecord(n);
+          try {
+            for(int i = 0; i < n; i++) {
+              r.add( (JString)header.nth(i).getNonNull(), new JString());
+            }
+          } catch(Exception e) { throw new RuntimeException(e);}
+
+          return new Item(r);
+        }
+      }
+    };
+...
+}}}
+
+{{{FromDelimitConverter}}} actually does a bit more than convert a delimited file
+into JSON. It also permits an optional header file to be specified that is used
+to name the fields present in a data file. Like any other read expression, {{{dRead}}}
+returns a JSON array where each array element corresponds to a line from the input file.
+If no header is specified, then each line is converted into a JSON array (1), possibly varying in arity from one line to the other. If a header is specified, then each line is converted into a JSON record whose names are specified in the header file (2). {{{dRead}}} can be used to read {{{delimited.dat}}} as follows:
+
+{{{
+jaql> $dRead("delimited.dat");
+[
+  [
+    "1", "2", "3"
+  ],
+  [
+    "foo", "bar", "baz"
+  ],
+  [
+    "a longer example of a string","followed by another followed by a number","42"
+  ]
+]
+}}}
+
+To produce an array of records, the record field names can be specified using an
+array of names. When the {{{FromDelimitConverter}}} is parameterized by such an array,
+it produces records instead of arrays. The following, slightly different read expression, can be used:
+
+{{{
+$dhRead = fn($data, $header)
+            hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat",		                     converter: "com.acme.extensions.data.FromDelimitConverter",
+			     header: $header});
+}}}
+
+Using {{{dhRead}}}, the data file, {{{delimit.dat}}}, can be read as followed:
+
+{{{
+$dhRead("delimited.dat", ["a", "b", "c"]);##
+[
+  {
+    "a": "1", "b": "2", "c": "3"
+  },
+  {
+    "a": "foo", "b": "bar", "c": "baz"
+  },
+  {
+    "a": "a longer example of a string", 
+    "b": "followed by another followed by a number", 
+    "c": "42"
+  }
+]
+}}}
+
+Alternatively, the schema could have been stored in a header file, {{{delimited.hdr}}}:
+
+{{{
+a,b,c
+}}}
+
+and loaded into HDFS:
+
+{{{
+hdfsShell("-copyFromLocal build/test/com/ibm/jaql/delimited.hdr delimited.hdr");
+}}}
+
+Note that {{{dRead}}} can be used to convert the header into an array:
+
+{{{
+jaql> $dRead("delimited.hdr");
+[
+  [ "a", "b", "c" ]
+]
+}}}
+
+This in turn can be used to read {{{delimit.dat}}} using {{{delimit.hdr}}}:
+
+{{{
+$dhRead("delimited.dat", $dRead("delimited.hdr")[0]);##
+[
+  {
+    "a": "1", "b": "2", "c": "3"
+  },
+  {
+    "a": "foo", "b": "bar", "c": "baz"
+  },
+  {
+    "a": "a longer example of a string",
+    "b": "followed by another followed by a number",
+    "c": "42"
+  }
+]
+}}}
+
 = Stream IO =
 
 The Hadoop-based IO is useful when processing large data sets.
