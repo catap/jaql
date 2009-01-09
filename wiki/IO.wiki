@@ -280,7 +280,7 @@ map-reduce. The simplest example is a for-loop over a {{{read}}} expression. Jaq
 
 In this example, an HBase table is loaded in parallel with a projection from a JSON text formatted file. The {{{mapReduce()}}} function specifies its input and output using records. Each record specifies the data store type, a location, and possibly additional options.
 
-== Example: Delimitted File Formats ==
+== Example: Delimited File Formats ==
 
 The previous examples showed how JSON binary data and JSON text data is processed using
 JAQL and Hadoop's Input/Output format interfaces. However, JSON-formatted data is not required for JAQL. In this example, we show how a delimitted file can be processed using JAQL. As in the previous examples, an appropriate [InputFormat] is needed along with a converter that transforms an [InputFormat] record into JSON. Lets start with the following data that is stored in a file named {{{delimited.dat}}}:
@@ -384,7 +384,7 @@ public class FromDelimitConverter extends HadoopRecordToItem {
 into JSON. It also permits an optional header file to be specified that is used
 to name the fields present in a data file. Like any other read expression, {{{dRead}}}
 returns a JSON array where each array element corresponds to a line from the input file.
-If no header is specified, then each line is converted into a JSON array (1), possibly varying in arity from one line to the other. If a header is specified, then each line is converted into a JSON record whose names are specified in the header file (2). {{{dRead}}} can be used to read {{{delimited.dat}}} as follows:
+If no header is specified, then each line is converted into a JSON array (line 1), possibly varying in arity from one line to the other. If a header is specified, then each line is converted into a JSON record whose names are specified in the header file (line 2). {{{dRead}}} can be used to read {{{delimited.dat}}} as follows:
 
 {{{
 jaql> $dRead("delimited.dat");
@@ -414,7 +414,7 @@ $dhRead = fn($data, $header)
 Using {{{dhRead}}}, the data file, {{{delimit.dat}}}, can be read as followed:
 
 {{{
-$dhRead("delimited.dat", ["a", "b", "c"]);##
+$dhRead("delimited.dat", ["a", "b", "c"]);
 [
   {
     "a": "1", "b": "2", "c": "3"
