@@ -37,8 +37,8 @@
     <!-- hadoop version -->
     <!-- <property name="hadoop.version" value="0.15.3"/> -->
     <!-- <property name="hadoop.version" value="0.16.1"/> -->
-    <property name="hadoop.version" value="0.16.3" />
-    <!-- <property name="hadoop.version" value="0.17.1" /> -->
+    <!-- <property name="hadoop.version" value="0.16.3" /> -->
+    <property name="hadoop.version" value="0.17.1" />
     <!-- <property name="hadoop.version" value="0.18.1" /> -->
     <!-- hbase version -->
     <property name="hbase.version" value="0.1.3" />
