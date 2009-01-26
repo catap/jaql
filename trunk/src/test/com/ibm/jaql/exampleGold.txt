@@ -2503,7 +2503,7 @@ localRead('build/test/cache/books.jql', {format : 'com.acme.extensions.data.From
 ]
 
 
-hdfsShell("-copyFromLocal docs/jaql-overview.html test");##
+hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;##
 0
 
 
@@ -2541,11 +2541,11 @@ count(group($p in $tokens by $w = $p into $words)
 1615
 
   
-hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat");##
+hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat") * 0;##
 0
 
 
-hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr");##
+hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr") * 0;##
 0
 
 
