@@ -448,7 +448,7 @@ $q = for( $i in read('myHDFSFile', 'example.jql') )
 
 localRead('build/test/cache/books.jql', {format : 'com.acme.extensions.data.FromJSONTxtConverter'});
 
-hdfsShell("-copyFromLocal docs/jaql-overview.html test");
+hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;
 
 $lineRdr = hdfsRead("test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.acme.extensions.data.FromLineConverter"});
 
@@ -472,9 +472,9 @@ $tokens  = for($line in $lineRdr) (
 count(group($p in $tokens by $w = $p into $words)
   [ [$w, count($words)] ]);
              
-hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat");
+hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat") * 0;
 
-hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr");
+hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr") * 0;
 
 $dRead = fn($data) 
            hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat", 
