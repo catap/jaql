@@ -24,7 +24,7 @@ if [ "$JAQL_HOME" = "" ]; then
 fi
 
 if [ "$HADOOP_HOME" = "" ]; then
-	HADOOP_HOME=${JAQL_HOME}/vendor/hadoop/0.16.3
+	HADOOP_HOME=${JAQL_HOME}/vendor/hadoop/0.17.1
 fi
 
 if [ "$HADOOP_CONF_DIR" = "" ]; then
