@@ -34,7 +34,9 @@ presented at the Hadoop User Group on 10/16/2008.
 
 = A JSON Example =
 
-Let's start off with an example of books and their reviews in JSON format (Note: while Jaql can consume strict JSON, it can also consume minor variants of JSON as well. In the examples, for the sake of clarity, we omit double-quotes around field names and use single-quotes in place of double-quotes for string.)
+Let's start off with an example of books and their reviews in JSON format 
+
+_Note:_ while Jaql can consume strict JSON, it can also consume minor variants of JSON as well. In the examples, for the sake of clarity, we omit double-quotes around field names and use single-quotes in place of double-quotes for string.
 
 {{{
   [
