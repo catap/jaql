@@ -919,7 +919,8 @@ protected VAR1
 
 VAR
 	options { ignore=WS; }
-	: (VAR1 '=') => VAR1 {$setType(AVAR);}
+	: (VAR1 '=' ('='|'>')) => VAR1
+	| (VAR1 '=') => VAR1 {$setType(AVAR);}
 	| VAR1 
     ;
 
