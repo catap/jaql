@@ -1,0 +1,396 @@
+//-- test user defined storage registration
+
+registerAdapter({type: 'myAdapter1', 
+                 inoptions: {adapter: 'com.foobar.store.MyInputAdapter1', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}, 
+                 outoptions: {adapter: 'com.foobar.store.MyOutputAdapter1', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });##
+{
+  "inoptions": {
+    "adapter": "com.foobar.store.MyInputAdapter1",
+    "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
+    "format": "org.apache.hadoop.mapred.SequenceFileInputFormat"
+  },
+  "outoptions": {
+    "adapter": "com.foobar.store.MyOutputAdapter1",
+    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
+    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
+  },
+  "type": "myAdapter1"
+}
+
+
+stWrite({type: 'myAdapter1', location: 'jaqlTest/test10.dat'}, [
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' },
+]);##
+{
+  "location": "jaqlTest/test10.dat",
+  "type": "myAdapter1"
+}
+
+
+stRead({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+[
+  {
+    "g": 0,
+    "key": 0,
+    "text": "zero"
+  },
+  {
+    "g": 1,
+    "key": 1,
+    "text": "one"
+  },
+  {
+    "g": 0,
+    "key": 2,
+    "text": "two"
+  },
+  {
+    "g": 1,
+    "key": 3,
+    "text": "three"
+  },
+  {
+    "g": 0,
+    "key": 4,
+    "text": "four"
+  },
+  {
+    "g": 1,
+    "key": 5,
+    "text": "five"
+  },
+  {
+    "g": 0,
+    "key": 6,
+    "text": "six"
+  },
+  {
+    "g": 1,
+    "key": 7,
+    "text": "seven"
+  },
+  {
+    "g": 0,
+    "key": 8,
+    "text": "eight"
+  }
+]
+
+
+writeAdapterRegistry('build/test/cache/registryTest1.dat');##
+"build/test/cache/registryTest1.dat"
+
+
+readAdapterRegistry('registryTest1.dat');##
+"registryTest1.dat"
+
+
+stWrite({type: 'hdfs', location: 'jaqlTest/test1.dat'},
+        [1,2,3]);##
+{
+  "location": "jaqlTest/test1.dat",
+  "type": "hdfs"
+}
+
+        
+stRead({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+[
+  1,
+  2,
+  3
+]
+
+
+stRead({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+[
+  {
+    "g": 0,
+    "key": 0,
+    "text": "zero"
+  },
+  {
+    "g": 1,
+    "key": 1,
+    "text": "one"
+  },
+  {
+    "g": 0,
+    "key": 2,
+    "text": "two"
+  },
+  {
+    "g": 1,
+    "key": 3,
+    "text": "three"
+  },
+  {
+    "g": 0,
+    "key": 4,
+    "text": "four"
+  },
+  {
+    "g": 1,
+    "key": 5,
+    "text": "five"
+  },
+  {
+    "g": 0,
+    "key": 6,
+    "text": "six"
+  },
+  {
+    "g": 1,
+    "key": 7,
+    "text": "seven"
+  },
+  {
+    "g": 0,
+    "key": 8,
+    "text": "eight"
+  }
+]
+
+
+readAdapterRegistry('registryTest2.dat');##
+"registryTest2.dat"
+
+
+stWrite({type: 'myAdapter2', location: 'jaqlTest/test11.dat'}, [
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' },
+]);##
+{
+  "location": "jaqlTest/test11.dat",
+  "type": "myAdapter2"
+}
+
+
+stRead({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+[
+  {
+    "g": 0,
+    "key": 0,
+    "text": "zero"
+  },
+  {
+    "g": 1,
+    "key": 1,
+    "text": "one"
+  },
+  {
+    "g": 0,
+    "key": 2,
+    "text": "two"
+  },
+  {
+    "g": 1,
+    "key": 3,
+    "text": "three"
+  },
+  {
+    "g": 0,
+    "key": 4,
+    "text": "four"
+  },
+  {
+    "g": 1,
+    "key": 5,
+    "text": "five"
+  },
+  {
+    "g": 0,
+    "key": 6,
+    "text": "six"
+  },
+  {
+    "g": 1,
+    "key": 7,
+    "text": "seven"
+  },
+  {
+    "g": 0,
+    "key": 8,
+    "text": "eight"
+  }
+]
+
+
+unregisterAdapter('myAdapter2');##
+"myAdapter2"
+
+
+stRead({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+FAILURE
+
+
+stRead(
+  mapReduce( {
+    'input': {type: 'myAdapter1', location: 'jaqlTest/test10.dat'},
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test10out.dat'}
+  })
+);##
+[
+  {
+    "g": 0,
+    "n": 5
+  },
+  {
+    "g": 1,
+    "n": 4
+  }
+]
+
+
+registerAdapter({type: 'myAdapter3', 
+                 inoptions: {adapter: 'com.foobar.store.MyInputAdapter3', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}, 
+                 outoptions: {adapter: 'com.foobar.store.MyOutputAdapter3', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });##
+{
+  "inoptions": {
+    "adapter": "com.foobar.store.MyInputAdapter3",
+    "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
+    "format": "org.apache.hadoop.mapred.SequenceFileInputFormat"
+  },
+  "outoptions": {
+    "adapter": "com.foobar.store.MyOutputAdapter3",
+    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
+    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
+  },
+  "type": "myAdapter3"
+}
+
+
+stWrite({type: 'myAdapter3', location: 'jaqlTest/test12.dat'}, [
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' },
+]);##
+{
+  "location": "jaqlTest/test12.dat",
+  "type": "myAdapter3"
+}
+
+
+stRead({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
+[
+  {
+    "g": 0,
+    "key": 0,
+    "text": "zero"
+  },
+  {
+    "g": 1,
+    "key": 1,
+    "text": "one"
+  },
+  {
+    "g": 0,
+    "key": 2,
+    "text": "two"
+  },
+  {
+    "g": 1,
+    "key": 3,
+    "text": "three"
+  },
+  {
+    "g": 0,
+    "key": 4,
+    "text": "four"
+  },
+  {
+    "g": 1,
+    "key": 5,
+    "text": "five"
+  },
+  {
+    "g": 0,
+    "key": 6,
+    "text": "six"
+  },
+  {
+    "g": 1,
+    "key": 7,
+    "text": "seven"
+  },
+  {
+    "g": 0,
+    "key": 8,
+    "text": "eight"
+  }
+]
+
+
+stRead(
+  mapReduce( {
+    'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test12out.dat'}
+  })
+);##
+[
+  {
+    "g": 0,
+    "n": 5
+  },
+  {
+    "g": 1,
+    "n": 4
+  }
+]
+
+
+//-- test user defined storage registration
+registerFunction('heyya', 'com.foobar.function.MyNewFunction');##
+"heyya"
+
+
+heyya('world');##
+"Hello, world!"
+
+
+stRead(
+mapReduce( {
+    'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
+    'map'   : fn($i) [ [ heyya('world'), 1 ] ],
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test13out.dat'}
+  })
+);##
+[
+  {
+    "g": "Hello, world!",
+    "n": 9
+  }
+]
