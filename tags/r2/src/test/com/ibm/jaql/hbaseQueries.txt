@@ -1,0 +1,273 @@
+// the data
+$data = [
+  { key: "0", g:0, text: 'zero' },
+  { key: "1", g:0, text: 'one' },
+  { key: "2", g:0, text: 'two' },
+  { key: "3", text: 'three' },
+  { key: "4", g:0, text: 'four' },
+  { key: "5", g:1, text: 'five' },
+  { key: "6", g:0, text: 'six' },
+  { key: "7", g:1, text: 'seven' },
+  { key: "8", g:0, text: 'eight' }
+];
+
+// write it out
+hbaseWrite('test1', $data);
+
+// read it in
+hbaseRead('test1');
+
+// fetch a value from one record
+hbaseFetch('test1', ['5'], ['text']);
+
+// fetch multiple values from one record
+hbaseFetch('test1', ['5'], ['text', 'g']);
+
+// fetch entire record
+hbaseFetch('test1', ['5']);
+
+// fetch a value from multiple records
+hbaseFetch('test1', ['3', '7'], ['text']);
+
+// fetch multiple values from multiple records
+hbaseFetch('test1', ['3', '7'], ['text', 'g']);
+
+// fetch multiple entire records
+hbaseFetch('test1', ['3', '7']);
+
+// delete a value from one record 
+hbaseDelete('test1', ['5'], ['g']);
+
+// fetch the deleted value
+hbaseFetch('test1', ['5'], ['g']);
+
+// fetch a record with a deleted value
+hbaseFetch('test1', ['5']);
+
+// delete a value from multiple records
+hbaseDelete('test1', ['2', '8'], ['text']);
+
+// fetch a deleted value
+hbaseFetch('test1', ['2'], ['text']);
+
+// fetch a record with a deleted value
+hbaseFetch('test1', ['2']);
+
+// Example 3. Write to an HBase table named 'webcrawl'. (from exampleQueries)
+hbaseWrite('webcrawl', [
+    {key: "www.cnn.com", page:'...', rank: 0.9,
+     inlinks:[
+       {link: 'www.news.com', anchor: 'newsite'},
+       {link: 'www.jscript.com', anchor: 'look here'}]},
+    {key: "www.json.org", page:'...', rank: 0.8}
+  ]);
+  
+// Read it back... (from exampleQueries)
+hbaseRead('webcrawl');
+
+// the data (from exampleQueries)
+
+$books = [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     reviews: [
+       {rating: 10, user: 'joe', review: 'The best ...'},
+       {rating: 6, user: 'mary', review: 'Average ...'}]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1998},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1997, 
+     reviews: [
+       {rating: 8, user: 'rob', review: 'High on my list...'}, 
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
+        discussion:
+          [{user: 'ben', text: 'This is too harsh...'}, 
+           {user: 'jill', text: 'I agree ...'}]}]},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1930}
+  ];
+  
+// (from exampleQueries)
+write('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextOutputFormat',
+                              converter : 'com.acme.extensions.data.ToJSONTxtConverter'}, $books);
+                              
+// (from exampleQueries)
+registerAdapter({type     :	'myHDFSFile',
+                 inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                             format       : 'org.apache.hadoop.mapred.TextInputFormat', 
+                             converter    : 'com.acme.extensions.data.FromJSONTxtConverter',
+                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
+
+// (from exampleQueries)                             
+$q = for( $i in read('myHDFSFile', 'example.jql') )
+       [ {key: $i.publisher, ($i.title): $i.year} ];
+
+// (from exampleQueries)       
+hbaseWrite('example', []);
+
+// (from exampleQueries)
+hbaseWrite('example', $q);
+
+//-- hbase write/read expressions --
+
+// write/read Items to an HBase Table as Items: default adapter, default format, no converter (from storageQueries)
+stWrite({type: 'hbase', location: 'jaqlTesttest5'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);
+
+stRead({type: 'hbase', location: 'jaqlTesttest5'});
+
+stRead(stWrite({type: 'hbase', location: 'jaqlTesttest5alt1'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));
+
+// can do the same thing if you pass in the right options to HadoopRead
+stWrite({location: 'jaqlTesttest5alt2', 
+         outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+                      format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
+                      configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'}}, 
+         [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);
+                            
+stRead({location: 'jaqlTesttest5alt2',
+	    inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+			  	    format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
+			  	    configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}});
+
+stRead(stWrite({location: 'jaqlTesttest5alt3', 
+                outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+                             format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
+                             configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'},
+                inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+			  	            format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
+			  	            configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}}, 
+              [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));
+              
+// input is hdfs sequence file of Items, output is hbase table (note that 'g' renamed to 'key') (from storageQueries.txt)
+stWrite({type: 'hbase', location: 'jaqlTesttest6out'}, []);
+
+// note, 'g' is quoted so that it can be used as a key for subsequent hbase tests (from storageQueries.txt)
+stWrite({ type: 'hdfs', location: 'jaqlTest/test6.dat'}, [
+  { key: 0, g:"0", text: 'zero' },
+  { key: 1, g:"1", text: 'one' },
+  { key: 2, g:"0", text: 'two' },
+  { key: 3, g:"1", text: 'three' },
+  { key: 4, g:"0", text: 'four' },
+  { key: 5, g:"1", text: 'five' },
+  { key: 6, g:"0", text: 'six' },
+  { key: 7, g:"1", text: 'seven' },
+  { key: 8, g:"0", text: 'eight' },
+]);
+
+stRead( 
+  mapReduce( {
+   'input' : {type: 'hdfs', location: 'jaqlTest/test6.dat'},
+   'map'   : fn($i) [ [ $i.g, 1 ] ],
+   'reduce': fn($key, $values) [{ key: $key, n: count($values) }],
+   'output': {type: 'hbase', location: 'jaqlTesttest6out'}
+   })
+);
+ 
+// input is hbase table, output is sequence file of Items
+stWrite({ type: 'hbase', location: 'jaqlTesttest7'}, [
+  { key: "0", g:0, text: 'zero' },
+  { key: "1", g:1, text: 'one' },
+  { key: "2", g:0, text: 'two' },
+  { key: "3", g:1, text: 'three' },
+  { key: "4", g:0, text: 'four' },
+  { key: "5", g:1, text: 'five' },
+  { key: "6", g:0, text: 'six' },
+  { key: "7", g:1, text: 'seven' },
+  { key: "8", g:0, text: 'eight' },
+]);
+
+stRead( 
+  mapReduce( {
+    'input' : {type: 'hbase', location: 'jaqlTesttest7'},
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test7.dat'}
+    })
+ );
+ 
+//-- test composite input adapter (from storageQueries.txt)
+
+// write out an hdfs file
+stWrite({ type: 'hdfs', location: 'jaqlTest/test9.dat'}, [
+  { key: "0", g:0, text: 'zero' },
+  { key: "1", g:1, text: 'one' },
+  { key: "2", g:0, text: 'two' },
+  { key: "3", g:1, text: 'three' },
+  { key: "4", g:0, text: 'four' }
+]);
+
+// write out an hbase table
+stWrite({ type: 'hbase', location: 'jaqlTesttest9'}, [
+  { key: "5", g:1, text: 'five' },
+  { key: "6", g:0, text: 'six' },
+  { key: "7", g:1, text: 'seven' },
+  { key: "8", g:0, text: 'eight' },
+]);
+
+stRead([{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}]);
+
+stRead(
+  mapReduce( {
+    'input': [ [{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}] ],
+     'map'   : fn($i) [ [ $i.g, 1 ] ],
+     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+     'output': {type: 'hdfs', location: 'jaqlTest/test9out.dat'}
+   })
+);
+
+//-- test co-group (from storageQueries.txt)
+
+stRead(mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'}, 
+                            {type: 'hbase', location: 'jaqlTesttest9'}],
+                   map: [ fn($i) [ [ $i.g, 1 ] ],
+                          fn($i) [ [ $i.g, 1 ] ] ],
+                   reduce: fn($key, $aVals, $bVals) [ { g: $key, as: count($aVals), bs: count($bVals) } ],
+                   output: {type: 'hdfs', location: 'jaqlTest/test10out.dat'}}));
+
+// (from storageQueries.txt)
+write('hbase', 'jaqlTesttest13a.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
+
+// (from storageQueries.txt)
+read('hbase', 'jaqlTesttest13a.dat');
+
+// (from storageQueries.txt)                   
+hbaseWrite('jaqlTesttest13b.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
+
+// (from storageQueries.txt)
+hbaseRead('jaqlTesttest13b.dat');
+
+// group by over hbase read (from storageQueries.txt)
+group( $i in stRead({type: 'hbase', location: 'jaqlTesttest7'}) 
+       by $a = $i.g
+       into $is )
+ [ { g:$a, i:count($is) } ];
+
+// for loop over hbase read (from storageQueries.txt)
+for( $r in stRead({type: 'hbase', location: 'jaqlTesttest7'}) )
+  [ $r.key ];
+
+// co-group (from storageQueries.txt)
+group(
+  $i in stRead({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
+     by $g = $i.g
+     into $as,
+  $j in stRead({type: 'hbase', location: 'jaqlTesttest9'}) 
+     by $g = $j.g
+     into $bs )
+ [ { g: $g, as: count($as), bs: count($bs) } ];

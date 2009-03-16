@@ -1,0 +1,253 @@
+//-------------------------- ATOMS --------------------------------
+typeof([]);
+
+typeof({});
+
+typeof("foo");
+
+typeof(true);
+
+typeof(1);
+
+1;
+
+10.5;
+
+15.5e-9;
+
+d'2001-07-04T12:08:56Z';
+
+// an invalid date format
+d'12/10/1999';
+
+'a string';
+
+'a string
+with a newline';
+
+true;
+
+false;
+
+null;
+
+//-------------------------- ARRAYS -------------------------------
+[];
+
+[ 1, 2, 3 ];
+
+[ 'a', 2, 'c' ];
+
+// this one caused a bug with int/long serialization
+[d'2007-12-31T16:00:10Z'];
+
+// nulls are fine elements of an array
+[ 1, null, 3 ];
+
+//-------------------------- RECORDS ------------------------------
+{};
+
+{ x: 1, y: 'b' };
+
+// nulls are fine values of a field
+{ x: 1, y: null };
+
+// Field names must be strings or ids
+{ x: 1, 3: 2 };
+
+// every field must be named
+{a: 1 ,2,3};
+
+// a field can be specified to disappear if its value is null
+{a:'foo', b?:null};
+
+//-------------------------- NESTING ------------------------------
+[[[[[[[[[[[[]]]]]]]]]]]];
+
+[{a:'some string', b:[{},{y:1, z:42},['a', 'b']]},1,'a string',['another string']];
+
+//-------------------------- ARITH/LOGIC OPS-----------------------
+1+2;
+
+1/2;
+
+true or false;
+
+true and true;
+
+true and false;
+
+true or null;
+
+true and null;
+
+false or not null;
+
+// all values are comparable, if not by value then by their type code
+'a' > {};
+
+// comparisons are deep 
+[1,2,3,{a:'foo', b:['bar']}] == [1,2,3,{a:'foo', b:['bar']}];
+
+// make sure numeric encodings hash and compare properly
+distinct( [1, 1.0, 1.1, 1.10] ); // 2 items
+
+1 == 1.0; // true
+
+1 == 1.1; // false
+
+1.1 == 1.10; // true
+
+1.11 != 1.10; // true
+
+// make sure array encodings hash and compare properly
+distinct( [
+  [1,2], 
+  for( $i in 1 to 2 ) if( $i > 0 ) [ $i ],  // [1,2]
+  [1,2,3], 
+  for( $i in 1 to 3 ) if( $i != 2 ) [ $i ], // [1,2]
+  for( $i in 1 to 3 ) if( $i > 0 ) [ $i ],  // [1,3]
+  [1,3]
+] ); // 3 items
+
+[1,2] == (for( $i in 1 to 2 ) if( $i > 0 ) [ $i ]); // true
+
+[1,2] == (for( $i in 1 to 3 ) if( $i != 2 ) [ $i ]); // false
+
+[1,3] == (for( $i in 1 to 3 ) if( $i != 2 ) [ $i ]); // true
+
+[1,2] != (for( $i in 1 to 3 ) if( $i > 0 ) [ $i ]); // true
+
+typeof([]) == "array";
+
+typeof("foo") == "record";
+
+//-------------------------- CONDITIONAL --------------------------
+if( true ) 1 else 'really?';
+
+// expecting null when the false branch is empty
+if( false ) 1;
+
+//-------------------------- ARRAY OPS ----------------------------
+
+// group by field a, returning all records in each group
+group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+   by $a = $i.a
+   into $is )
+ [ { a:$a, i:$is } ];
+
+// group by field a, returning b's from each group
+group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+   by $a = $i.a
+   into $is )
+ [ { a:$a, bs: $is[*].b } ];
+
+// Count each distinct value
+group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $unique = $i
+   into $is )
+ [ { val: $unique, n: count($is) } ];
+
+// List distinct values
+group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $unique = $i
+   into $is )
+ [ $unique ];
+
+// Count how many evens and odds
+group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $g = mod($i,2)
+   into $is )
+ [ { val: $g, n: count($is) } ];
+
+// cogroup (generalizes inner/outer join for equality predicates)
+group(
+  $i in [ {a:1, b:'b1x'}, {a:2, b:'b2x'}, {a:3, b:'b3x'}, {a:1, b:'b1y'}, {a:2, b:'b2y'} ] 
+     by $g = $i.a
+     into $is,
+  $j in [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ] 
+     by $g = $j.c
+     into $js )
+ [ { g:$g, bs:$is[*].b, ds:$js[*].d } ];
+
+// This will generate a semantic error because the 'by' names must be unique.
+group(
+  $i in [] by $g = $i.a into $is,
+  $j in [] by $h = $j.c into $js
+ [ { g:$g, bs:$is[*].b, ds:$js[*].d } ];
+
+
+sort( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+  by $i.a );
+
+sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+  by $i.a, $i.b );
+
+sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+  by $i.b, $i.a );
+
+sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+  by $i );
+
+(sort( $i in (for( $j in 1 to 10000 ) [ {x: [-$j,$j]} ]) by $i))[0];
+(sort( $i in 1 to 1000 by {x:[-$i,$i],y:[$i,$i]})) [0];
+(sort( $i in 1 to 1000 by [-$i,$i])) [0];
+(sort( $i in 1 to 100 by {x:[-$i,$i]})) [0];
+
+//-------------------------- RECORD OPS ---------------------------
+
+$pivot = fn($items) (
+   $srecs = for ($p in $items) [{ ($p.label):$p.value }],
+  
+   combine($a,$b in $srecs)
+     ( remap( $a, $b ) )
+);
+
+$input = [ { label: "name", value: "joe" },
+           { label: "work", value: "acme plumbing" },
+           { label: "office", value: "b1" } ];
+
+$pivot( $input );
+
+//-------------------------- LET ---------------------------------
+
+( $r = { x:1, y:2 },
+
+  { $r.x, z: $r.y, t: $r.x+$r.y, $r.nope } );
+
+( $r = { x:1, y:2 },
+  $s = {z:3},
+
+  [ $r, $s ] );
+
+//-------------------------- FOR ---------------------------------
+
+for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ] )
+ [ $r.x ];
+
+for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ],
+     $s in $r.x )
+ [ $s.a ];
+
+//-------------------------- JOIN ---------------------------------
+
+join( $i in [ 1, 2, 3 ] on $i,
+      $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];
+
+join( optional $i in [ 1, 2, 3 ] on $i,
+               $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];
+
+join(          $i in [ 1, 2, 3 ] on $i,
+      optional $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];
+
+join( optional $i in [ 1, 2, 3 ] on $i,
+      optional $j in [ 1, 2, 4 ] on $j )
+ [ {i:$i, j:$j} ];
+
+//-------------------------- QUIT ---------------------------------
+
+quit;
+
