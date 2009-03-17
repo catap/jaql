@@ -265,4 +265,37 @@ public class MathExpr extends Expr
     }
     return new Item(new JDouble(n3)); // TODO: memory!
   }
+
+  public static void divide(JValue x, JValue y, Item result)
+  {
+    if( x == null || y == null )
+    {
+      result.set(null);
+      return;
+    }
+    
+    if( x instanceof JDouble )
+    {
+      JDouble dx = (JDouble)x;
+      JDouble dy = (JDouble)y;
+      double div = dx.value / dy.value;
+      result.set(new JDouble(div));
+    }
+    else
+    {
+      BigDecimal dx = ((JNumber)x).decimalValue();
+      BigDecimal dy = ((JNumber)y).decimalValue();
+      try
+      {
+        // dz = dx / dy
+        BigDecimal dz = dx.divide(dy, MathContext.DECIMAL128);
+        result.set(new JDecimal(dz)); // TODO: memory
+      }
+      catch (ArithmeticException e)
+      {
+        // TODO: need +INF, -INF, and NaN
+        result.set(null);
+      }
+    }
+  }
 }

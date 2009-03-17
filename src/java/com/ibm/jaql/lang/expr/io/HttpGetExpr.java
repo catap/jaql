@@ -25,11 +25,12 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.record.RemapFn;
 
 /**
  * 
  */
-@JaqlFn(fnName = "httpGet", minArgs = 1, maxArgs = 2)
+@JaqlFn(fnName = "httpGet", minArgs = 1, maxArgs = 3)
 public class HttpGetExpr extends MacroExpr
 {
 
@@ -54,19 +55,25 @@ public class HttpGetExpr extends MacroExpr
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
         exprs[0]);
     RecordExpr rec;
-    if (exprs.length == 2)
+    if (exprs.length > 1)
     {
       NameValueBinding aField = new NameValueBinding(
           StreamInputAdapter.ARGS_NAME, exprs[1]);
+      
       RecordExpr oRec = new RecordExpr(new Expr[]{aField});
+      Expr oExpr = oRec;
+      if(exprs.length > 2) 
+      {
+        oExpr = new RemapFn(oRec, exprs[2]);
+      } 
       NameValueBinding oField = new NameValueBinding(Adapter.INOPTIONS_NAME,
-          oRec);
+          oExpr);
       rec = new RecordExpr(new Expr[]{tField, lField, oField});
     }
     else
     {
       rec = new RecordExpr(new Expr[]{tField, lField});
     }
-    return new StReadExpr(rec);
+    return new ReadFn(rec);
   }
 }

@@ -18,16 +18,20 @@ package com.ibm.jaql.json.type;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+
 
 /**
  * 
  */
 public class JDate extends JAtom
 {
-  protected static final java.text.SimpleDateFormat iso8601UTC = new java.text.SimpleDateFormat(
-                                                                   "yyyy-MM-dd'T'HH:mm:ss'Z'");
+  public static final String iso8601UTCFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 
-  public long                                       millis;
+  protected static final SimpleDateFormat iso8601UTC = 
+    new SimpleDateFormat(iso8601UTCFormat);
+
+  public long millis;
   // todo: add timezone support
 
   /**

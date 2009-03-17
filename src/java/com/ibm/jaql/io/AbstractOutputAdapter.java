@@ -18,9 +18,7 @@ package com.ibm.jaql.io;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
 
-/**
- * 
- */
+/** Superclass for output adapters that take a {@link JRecord} for initialization. */
 public abstract class AbstractOutputAdapter implements OutputAdapter
 {
   /**

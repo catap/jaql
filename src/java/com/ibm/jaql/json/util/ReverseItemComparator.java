@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.json.util;
 
-import org.apache.hadoop.io.WritableComparable;
-
 import com.ibm.jaql.json.type.Item;
 
 /**
@@ -46,25 +44,4 @@ public class ReverseItemComparator extends ItemComparator
     return -super.compare(a, b);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.util.ItemComparator#compare(org.apache.hadoop.io.WritableComparable,
-   *      org.apache.hadoop.io.WritableComparable)
-   */
-  public int compare(WritableComparable a, WritableComparable b)
-  {
-    return -super.compare(a, b);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.util.ItemComparator#compare(java.lang.Object,
-   *      java.lang.Object)
-   */
-  public int compare(Object a, Object b)
-  {
-    return -super.compare(a, b);
-  }
 }

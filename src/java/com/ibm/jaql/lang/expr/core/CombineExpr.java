@@ -15,20 +15,16 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
-import java.util.HashSet;
-
 import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.agg.PushAgg;
-import com.ibm.jaql.lang.expr.agg.PushAggExpr;
+import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 /**
  * 
  */
-public class CombineExpr extends PushAggExpr
+@JaqlFn(fnName="combine", minArgs=2, maxArgs=2)
+public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr // TODO: kill PushAggExpr code
 {
   /**
    * BindingExpr in, Expr using, Expr init
@@ -40,79 +36,139 @@ public class CombineExpr extends PushAggExpr
     super(exprs);
   }
 
-  /**
-   * combine $i,$j in inExpr using usingExpr($i,$j)
-   * 
-   * @param var1
-   * @param var2
-   * @param inExpr
-   * @param usingExpr
-   */
-  public CombineExpr(Var var1, Var var2, Expr inExpr, Expr usingExpr)
+//  /**
+//   * combine $i,$j in inExpr using usingExpr($i,$j)
+//   * 
+//   * @param var1
+//   * @param var2
+//   * @param inExpr
+//   * @param usingExpr
+//   */
+//  public CombineExpr(Var var1, Var var2, Expr inExpr, Expr usingExpr)
+//  {
+//    super(
+//        new Expr[]{
+//            new BindingExpr(BindingExpr.Type.INPAIR, var1, var2, inExpr),
+//            usingExpr});
+//  }
+//
+//  //  public CombineExpr(Var var1, Var var2, Expr inExpr, Expr usingExpr, Expr emptyExpr)
+//  //  {
+//  //    super(new Expr[]{ 
+//  //        new BindingExpr(BindingExpr.Type.INPAIR, var1, var2, inExpr), 
+//  //        usingExpr,
+//  //        emptyExpr == null ? new ConstExpr(Item.nil) : emptyExpr
+//  //    });
+//  //  }
+
+//  /**
+//   * @return
+//   */
+//  public final BindingExpr binding()
+//  {
+//    return (BindingExpr) exprs[0];
+//  }
+
+//  /**
+//   * @return
+//   */
+//  public final Expr usingExpr()
+//  {
+//    return exprs[1];
+//  }
+
+//  /*
+//   * (non-Javadoc)
+//   * 
+//   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
+//   *      java.util.HashSet)
+//   */
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+//      throws Exception
+//  {
+//    BindingExpr b = binding();
+//    exprText.print("combine( ");
+//    exprText.print(b.var.name);
+//    exprText.print(",");
+//    exprText.print(b.var2.name);
+//    exprText.print(" in ");
+//    binding().inExpr().decompile(exprText, capturedVars);
+//    exprText.print(") ");
+//    usingExpr().decompile(exprText, capturedVars);
+//    capturedVars.remove(b.var);
+//    capturedVars.remove(b.var2);
+//    //    if( !( exprs[2] instanceof ConstExpr && 
+//    //           ((ConstExpr)exprs[2]).value.get() == null) )
+//    //    {
+//    //      exprText.print(" when empty (");
+//    //      emptyExpr().decompile(exprText, capturedVars);
+//    //      exprText.print(")");
+//    //    }
+//  }
+
+  // Not safe for recursion.
+  protected final Item[] agg = new Item[] {new Item(), new Item()};
+  protected Context context;
+  protected int bufIdx = 0;
+  protected JFunction combiner;
+  protected final Item[] args = new Item[2];
+
+      
+  @Override
+  public void initInitial(Context context) throws Exception
   {
-    super(
-        new Expr[]{
-            new BindingExpr(BindingExpr.Type.INPAIR, var1, var2, inExpr),
-            usingExpr});
+    this.context = context;
+    bufIdx = 0;
+    agg[0].set(null);
+    combiner = (JFunction)exprs[1].eval(context).getNonNull();
+    
+    // context.setVar(binding().var2, agg[0]);
   }
 
-  //  public CombineExpr(Var var1, Var var2, Expr inExpr, Expr usingExpr, Expr emptyExpr)
-  //  {
-  //    super(new Expr[]{ 
-  //        new BindingExpr(BindingExpr.Type.INPAIR, var1, var2, inExpr), 
-  //        usingExpr,
-  //        emptyExpr == null ? new ConstExpr(Item.nil) : emptyExpr
-  //    });
-  //  }
-
-  /**
-   * @return
-   */
-  public final BindingExpr binding()
+  @Override
+  public void addInitial(Item item) throws Exception
   {
-    return (BindingExpr) exprs[0];
+    // BindingExpr b = binding();
+    Item combined;
+    if (agg[bufIdx].isNull())
+    {
+      combined = item;
+    }
+    else
+    {
+      args[1] = item;
+      combined = combiner.eval(context, args);
+      // context.setVar(b.var, item);
+      // combined = usingExpr().eval(context);
+      if (combined.isNull())
+      {
+        throw new RuntimeException("combiners cannot return null");
+      }
+    }
+    // We need to use two buffers because we might copy part 
+    // of the previous result into the new result.
+    bufIdx = 1 - bufIdx; 
+    agg[bufIdx].copy(combined);
+    args[0] = agg[bufIdx];
+    // context.setVar(b.var2, agg[bufIdx]);
   }
 
-  /**
-   * @return
-   */
-  public final Expr usingExpr()
+  @Override
+  public Item getPartial() throws Exception
   {
-    return exprs[1];
+    return agg[bufIdx];
   }
 
-  //  public final Expr emptyExpr()
-  //  {
-  //    return exprs[2];
-  //  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-   *      java.util.HashSet)
-   */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
+  @Override
+  public void addPartial(Item item) throws Exception
   {
-    BindingExpr b = (BindingExpr) exprs[0];
-    exprText.print("combine( ");
-    exprText.print(b.var.name);
-    exprText.print(",");
-    exprText.print(b.var2.name);
-    exprText.print(" in ");
-    binding().inExpr().decompile(exprText, capturedVars);
-    exprText.print(") ");
-    usingExpr().decompile(exprText, capturedVars);
-    capturedVars.remove(b.var);
-    capturedVars.remove(b.var2);
-    //    if( !( exprs[2] instanceof ConstExpr && 
-    //           ((ConstExpr)exprs[2]).value.get() == null) )
-    //    {
-    //      exprText.print(" when empty (");
-    //      emptyExpr().decompile(exprText, capturedVars);
-    //      exprText.print(")");
-    //    }
+    addInitial(item);
+  }
+
+  @Override
+  public Item getFinal() throws Exception
+  {
+    return agg[bufIdx];
   }
 
   // remove all nulls from the input
@@ -160,60 +216,60 @@ public class CombineExpr extends PushAggExpr
   //    return agg;
   //  }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.agg.PushAggExpr#init(com.ibm.jaql.lang.core.Context)
-   */
-  @Override
-  public PushAgg init(final Context context) throws Exception
-  {
-    final BindingExpr binding = (BindingExpr) exprs[0];
-    final Item[] agg = new Item[] {new Item(), new Item()};
-    //final Item agg = new Item(); // TODO: memory
-    context.setVar(binding.var, agg[0]);
-    final Var var2 = binding.var2;
-
-    final Expr input = binding.inExpr();
-
-    return new PushAgg() {
-      @Override
-      public void addMore() throws Exception
-      {
-        Iter iter = input.iter(context);
-        Item item;
-        int bufIdx = 0;
-        while ((item = iter.next()) != null)
-        {
-          if (!item.isNull())
-          {
-            Item combined;
-            if (agg[bufIdx].isNull())
-            {
-              combined = item;
-            }
-            else
-            {
-              context.setVar(var2, item);
-              combined = exprs[1].eval(context);
-              if (combined.isNull())
-              {
-                throw new RuntimeException("combiners cannot return null");
-              }
-            }
-            bufIdx = (bufIdx+1) %2;
-            agg[bufIdx].copy(combined);
-            context.setVar(binding.var, agg[bufIdx]);
-          }
-        }
-      }
-
-      @Override
-      public Item eval() throws Exception
-      {
-        //return agg;
-        return context.getValue(binding.var);
-      }
-    };
-  }
+//  /*
+//   * (non-Javadoc)
+//   * 
+//   * @see com.ibm.jaql.lang.expr.agg.PushAggExpr#init(com.ibm.jaql.lang.core.Context)
+//   */
+//  @Override
+//  public PushAgg init(final Context context) throws Exception
+//  {
+//    final BindingExpr binding = (BindingExpr) exprs[0];
+//    final Item[] agg = new Item[] {new Item(), new Item()};
+//    //final Item agg = new Item(); // TODO: memory
+//    context.setVar(binding.var, agg[0]);
+//    final Var var2 = binding.var2;
+//
+//    final Expr input = binding.inExpr();
+//
+//    return new PushAgg() {
+//      @Override
+//      public void addMore() throws Exception
+//      {
+//        Iter iter = input.iter(context);
+//        Item item;
+//        int bufIdx = 0;
+//        while ((item = iter.next()) != null)
+//        {
+//          if (!item.isNull())
+//          {
+//            Item combined;
+//            if (agg[bufIdx].isNull())
+//            {
+//              combined = item;
+//            }
+//            else
+//            {
+//              context.setVar(var2, item);
+//              combined = exprs[1].eval(context);
+//              if (combined.isNull())
+//              {
+//                throw new RuntimeException("combiners cannot return null");
+//              }
+//            }
+//            bufIdx = (bufIdx+1) %2;
+//            agg[bufIdx].copy(combined);
+//            context.setVar(binding.var, agg[bufIdx]);
+//          }
+//        }
+//      }
+//
+//      @Override
+//      public Item eval() throws Exception
+//      {
+//        //return agg;
+//        return context.getValue(binding.var);
+//      }
+//    };
+//  }
 }

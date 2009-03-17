@@ -20,9 +20,8 @@ import java.util.HashMap;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.util.Iter;
 
-/**
- * 
- */
+/** Common API for accessing Java arrays. Each subclass implements these methods for a
+ * specific (atomic) type. */
 public abstract class MetaArray extends MetaValue
 {
   protected Class<?> clazz;
@@ -52,26 +51,26 @@ public abstract class MetaArray extends MetaValue
    */
   public abstract Item makeItem();
   /**
-   * @param obj
+   * @param obj a Java array
    * @return
    */
   public abstract long count(Object obj);
   /**
-   * @param obj
+   * @param obj a Java array
    * @return
    * @throws Exception
    */
   public abstract Iter iter(Object obj) throws Exception;
   /**
-   * @param obj
+   * @param obj a Java array
    * @param n
    * @param result
    * @throws Exception
    */
   public abstract void nth(Object obj, long n, Item result) throws Exception;
   /**
-   * @param toValue
-   * @param fromValue
+   * @param toValue a Java array
+   * @param fromValue a Java array
    * @return
    */
   public abstract Object copy(Object toValue, Object fromValue);

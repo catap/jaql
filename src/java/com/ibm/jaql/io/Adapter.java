@@ -30,6 +30,8 @@ public interface Adapter
 
   static String OUTOPTIONS_NAME = "outoptions";
 
+  static String OPTIONS_NAME    = "options";
+  
   static String ADAPTER_NAME    = "adapter";
 
   static String FORMAT_NAME     = "format";

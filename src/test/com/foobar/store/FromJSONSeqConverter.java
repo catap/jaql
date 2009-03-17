@@ -19,10 +19,10 @@ import java.io.ByteArrayInputStream;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
-import com.ibm.jaql.io.hadoop.converter.WritableComparableToItem;
-import com.ibm.jaql.io.hadoop.converter.WritableToItem;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.Item;
 
@@ -63,30 +63,13 @@ public class FromJSONSeqConverter extends HadoopRecordToItem
     }
   }
 
-  /**
-   * 
-   */
-  class ToItem implements WritableToItem
-  {
-
-    public void convert(Writable src, Item tgt)
-    {
-      convertWritableToItem(src, tgt);
-    }
-
-    public Item createTarget()
-    {
-      return new Item();
-    }
-  }
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected WritableComparableToItem createKeyConverter()
+  protected FromItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -97,9 +80,21 @@ public class FromJSONSeqConverter extends HadoopRecordToItem
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected WritableToItem createValConverter()
+  protected FromItem<Writable> createValConverter()
   {
-    return new ToItem();
+    return new FromItem<Writable>()
+    {
+
+      public void convert(Writable src, Item tgt)
+      {
+        convertWritableToItem(src, tgt);
+      }
+
+      public Item createTarget()
+      {
+        return new Item();
+      }
+    };
   }
 
 }

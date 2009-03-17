@@ -23,12 +23,13 @@ import java.io.InputStream;
 import com.ibm.jaql.io.converter.StreamToItem;
 import com.ibm.jaql.json.type.Item;
 
-/**
+/** Generates {@link Item}s from a binary input stream containing serialized items.
  * 
  */
 public class JSONInputStream implements StreamToItem
 {
-
+  private boolean   arrAcc = true;
+  private boolean   isDone = false;
   private DataInput input;
 
   /*
@@ -50,19 +51,35 @@ public class JSONInputStream implements StreamToItem
   {
     this.input = new DataInputStream(in);
   }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.converter.StreamToItem#setArrayAccessor(boolean)
+   */
+  public void setArrayAccessor(boolean a) {
+    arrAcc = a;
+  }
 
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.converter.StreamToItem#isArrayAccessor()
+   */
+  public boolean isArrayAccessor() {
+    return arrAcc;
+  }
+  
   /*
-   * (non-Javadoc)
-   * 
+   * (non-Javadoc) 
    * @see com.ibm.jaql.io.converter.StreamToItem#read(com.ibm.jaql.json.type.Item)
    */
   public boolean read(Item v) throws IOException
   {
+    if(isDone)
+      return false;
     try
     {
-
       v.readFields(input);
-
+      if(!arrAcc) {
+        isDone = true;
+      }
     }
     catch (java.io.EOFException eof)
     {

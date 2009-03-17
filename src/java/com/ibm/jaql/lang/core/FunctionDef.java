@@ -21,6 +21,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
@@ -36,9 +37,14 @@ import com.ibm.jaql.util.BaseUtil;
  */
 public class FunctionDef
 {
+  protected enum ParamUsage
+  {
+    EVAL(), STREAM(), UNUSED()
+  };
   protected Var    fnVar;
   protected Var[]  capturedVars = Var.NO_VARS;
   protected Var[]  params       = Var.NO_VARS;
+  protected ParamUsage[] usage;
   protected Expr   body;
   protected String bodyText;
 
@@ -65,6 +71,47 @@ public class FunctionDef
     }
     this.bodyText = outStream.toString();
     this.capturedVars = capturedVars.toArray(new Var[capturedVars.size()]);
+    annotate();
+  }
+  
+  protected void annotate()
+  {
+    if( params.length == 0 )
+    {
+      return;
+    }
+    if( usage == null || usage.length < params.length )
+    {
+      usage = new ParamUsage[params.length];
+    }
+    ArrayList<Expr> uses = new ArrayList<Expr>();
+    for(int i = 0 ; i < params.length ; i++)
+    {
+      usage[i] = ParamUsage.EVAL;
+      uses.clear();
+      body.getVarUses(params[i], uses);
+      int n = uses.size();
+      if( n == 0 )
+      {
+        usage[i] = ParamUsage.UNUSED;
+      }
+      else if( n == 1 )
+      {
+        Expr e = uses.get(0);
+        while( e != body )
+        {
+          if( e.isEvaluatedOnceByParent().maybeNot() )
+          {
+            break;
+          }
+          e = e.parent();
+        }
+        if( e == body )
+        {
+          usage[i] = ParamUsage.STREAM;
+        }
+      }
+    }
   }
 
   /**
@@ -123,6 +170,44 @@ public class FunctionDef
    * @param capturedValues
    * @param args
    * @return
+   * @throws Exception 
+   */
+  protected Context initEval(Context outerContext, Item[] capturedValues, Expr[] args)
+    throws Exception
+  {
+    Context context = new Context(); // TODO: memory
+    if (params.length != args.length)
+    {
+      throw new RuntimeException(
+          "wrong number of arguments to function.  Expected " + params.length
+              + " but given " + args.length);
+    }
+    // context.push();
+    for (int i = 0; i < capturedVars.length; i++)
+    {
+      context.setVar(capturedVars[i], capturedValues[i]);
+    }
+    for (int i = 0; i < params.length; i++)
+    {
+      if( usage[i] == ParamUsage.STREAM && args[i].isArray().always() )
+      {
+        // TODO: the array check could be deferred until runtime by just setting the variable
+        // to the expression (plus the context) to capture more cases, especially a VarExpr arg.
+        context.setVar(params[i], args[i].iter(outerContext));
+      }
+      else if( usage[i] != ParamUsage.UNUSED ) // EVAL or STREAM
+      {
+        context.setVar(params[i], args[i].eval(outerContext));
+      }
+    }
+    return context;
+  }
+
+  /**
+   * @param context
+   * @param capturedValues
+   * @param args
+   * @return
    */
   protected Context initEval(Context context, Item[] capturedValues, Item[] args)
   {
@@ -163,6 +248,23 @@ public class FunctionDef
   }
 
   /**
+   * 
+   * @param context
+   * @param capturedValues
+   * @param args
+   * @return
+   * @throws Exception
+   */
+  public Item eval(Context context, Item[] capturedValues, Expr[] args)
+      throws Exception
+  {
+    context = initEval(context, capturedValues, args);
+    Item item = body.eval(context);
+    //context.pop();
+    return item;
+  }
+
+  /**
    * @param context
    * @param capturedValues
    * @param args
@@ -178,6 +280,22 @@ public class FunctionDef
     return iter;
   }
 
+  /**
+   * 
+   * @param context
+   * @param capturedValues
+   * @param args
+   * @return
+   * @throws Exception
+   */
+  public Iter iter(Context context, Item[] capturedValues, Expr[] args)
+      throws Exception
+  {
+    context = initEval(context, capturedValues, args);
+    Iter iter = body.iter(context);
+    //context.pop();
+    return iter;
+  }
   /**
    * @param out
    * @param capturedValues
@@ -228,9 +346,10 @@ public class FunctionDef
     //    out.print(bodyText);
     //    out.println("\n}");
 
-    out.print("fn ");
+    out.print("fn");
     if (fnVar != null)
     {
+      out.print(' ');
       out.print(fnVar.name);
     }
     out.print("(");
@@ -325,10 +444,12 @@ public class FunctionDef
       params[i] = env.scope(name);
     }
 
-    body = parser.query();
+    body = parser.parse();
     // Sadly, we need to decompile the expression because variables (viz the parameters) get renamed during parsing.
     // TODO: revisit this.  Functions are pretty slow to move around.
 
+    annotate();
+    
     return capturedValues;
   }
 

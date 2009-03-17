@@ -29,7 +29,8 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 
-/**
+/** Like JsonRegistryFormat but is able to read JAQL scripts.
+ * 
  * @param <K>
  * @param <V>
  */
@@ -57,7 +58,7 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
       while (true)
       {
         parsing = true;
-        Expr expr = parser.query();
+        Expr expr = parser.parse();
         // FIXME: restrict exprs to be of type RegisterAdapterExpr
         parsing = false;
         if (parser.done) break;

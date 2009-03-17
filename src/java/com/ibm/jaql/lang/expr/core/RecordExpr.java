@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
@@ -49,6 +50,45 @@ public class RecordExpr extends Expr
   {
     this(NO_EXPRS);
   }
+  
+  /**
+   * 
+   * @param expr
+   */
+  public RecordExpr(Expr expr)
+  {
+    super(expr);
+  }
+
+  /**
+   * 
+   * @param expr0
+   * @param expr1
+   */
+  public RecordExpr(Expr expr0, Expr expr1)
+  {
+    super(expr0, expr1);
+  }
+
+  /**
+   * 
+   * @param expr0
+   * @param expr1
+   * @param expr2
+   */
+  public RecordExpr(Expr expr0, Expr expr1, Expr expr2)
+  {
+    super(expr0, expr1, expr2);
+  }
+
+  /**
+   * 
+   * @param fields
+   */
+  public RecordExpr(ArrayList<FieldExpr> fields)
+  {
+    super(fields);
+  }
 
   /*
    * (non-Javadoc)
@@ -70,6 +110,15 @@ public class RecordExpr extends Expr
   public Bool3 isNull()
   {
     return Bool3.FALSE;
+  }
+
+  /**
+   * 
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
   }
 
   /**

@@ -25,7 +25,7 @@ import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.IntArray;
 
-/**
+/** Iterator-like traversal over the serialized representation of a JSON value
  * 
  */
 public class ItemWalker
@@ -162,7 +162,9 @@ public class ItemWalker
     }
   }
 
-  /**
+  /** Returns type of next element: END_RECORD, END_ARRAY, EOF, NULL, ATOM, ARRAY, 
+   * RECORD, FIELD_NAME
+   * 
    * @return
    * @throws IOException
    */
@@ -212,7 +214,9 @@ public class ItemWalker
     }
   }
 
-  /**
+  /** Returns the class of the current atom. Use only when {@link #next()} returned 
+   * {@link #ATOM}.
+   * 
    * @return
    */
   public Class<? extends JValue> getClazz()
@@ -220,7 +224,8 @@ public class ItemWalker
     return atom.getClass();
   }
 
-  /**
+  /** Returns the field name of current field. Use only when {@link #next()} returned 
+   * {@link #FIELD_NAME}.
    * @return
    * @throws IOException
    */
@@ -229,7 +234,8 @@ public class ItemWalker
     return name;
   }
 
-  /**
+  /** Returns the value of the current atom. Use only when {@link #next()} returned 
+   * {@link #ATOM}. 
    * @return
    * @throws IOException
    */

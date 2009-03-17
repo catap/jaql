@@ -21,26 +21,24 @@ import java.util.HashSet;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
 public class AssignExpr extends TopExpr
 {
-  String varName;
+  public Var var;
 
   /**
    * @param varName
    * @param valExpr
    */
-  public AssignExpr(String varName, Expr valExpr)
+  public AssignExpr(Var var, Expr valExpr)
   {
     super(new Expr[]{valExpr});
-    this.varName = varName;
+    this.var = var;
   }
 
   /*
@@ -63,7 +61,7 @@ public class AssignExpr extends TopExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(varName);
+    exprText.print(var.name()); // TODO: expr -> $var when var is pipe var
     exprText.print(" = ");
     exprs[0].decompile(exprText, capturedVars);
   }
@@ -75,10 +73,13 @@ public class AssignExpr extends TopExpr
    */
   public Item eval(Context context) throws Exception
   {
-    Env env = JaqlUtil.getSessionEnv();
-    Var var = env.scopeGlobal(varName);
     var.expr = exprs[0];
     var.value = null;
-    return new Item(new JString(varName));
+    return new Item(new JString(var.name()));
+//    var.expr = exprs[0]; // TODO: hack: this is just signalling to use the value
+//    var.value = new Item(); // TODO: memory
+//    var.value.copy(exprs[0].eval(context)); // TODO: need deferred evaluation for top var defs; 
+//    // TODO: we can avoid copy when this is a top assignment and we own the entire expr tree (so nobody reevals) 
+//    return Item.nil;
   }
 }

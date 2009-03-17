@@ -51,14 +51,14 @@ public class HdfsWriteExpr extends MacroExpr
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
         new ConstExpr(new JString("hdfs")));
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
-        exprs[0]);
+        exprs[1]);
     RecordExpr rec = new RecordExpr(new Expr[]{tField, lField});
     if (exprs.length == 3)
     {
       NameValueBinding oField = new NameValueBinding(Adapter.OUTOPTIONS_NAME,
-          exprs[1]);
+          exprs[2]);
       rec.addChild(oField);
     }
-    return new StWriteExpr(rec, exprs[exprs.length - 1]);
+    return new WriteFn(exprs[0], rec);
   }
 }

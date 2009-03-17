@@ -20,7 +20,7 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
-import com.ibm.jaql.lang.expr.io.StWriteExpr;
+import com.ibm.jaql.lang.expr.io.WriteFn;
 
 // TODO: should this be done by LetInline?
 // TODO: I think this dead with the change to do global-to-let.
@@ -69,7 +69,7 @@ public class GlobalInline extends Rewrite
     }
 
     // Don't inline exprs with side-effects (we could if we can prove they will only be invoked the right number of times...)
-    if (var.expr instanceof StWriteExpr || // FIXME: need to detect write exprs generically - actually need to detect side-effecting fns
+    if (var.expr instanceof WriteFn || // FIXME: need to detect write exprs generically - actually need to detect side-effecting fns
         mightContainMapReduce(var.expr))
     {
       return false;

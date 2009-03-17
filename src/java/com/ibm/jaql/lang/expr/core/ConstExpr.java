@@ -20,7 +20,9 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
@@ -52,6 +54,20 @@ public final class ConstExpr extends Expr
     this(new Item(value));
   }
 
+  /**
+   * 
+   * @param value
+   */
+  public ConstExpr(String value)
+  {
+    this(new Item(new JString(value)));
+  }
+
+  public ConstExpr(long v)
+  {
+    this(new Item(new JLong(v)));
+  }
+  
   /*
    * (non-Javadoc)
    * 

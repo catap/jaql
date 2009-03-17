@@ -174,10 +174,9 @@ public class EveryType
         else if (v instanceof JFunction)
         {
           // TODO: Java functions need the context to be evaluated, and take Item arguments...
-          // There is not much we can do with functions right now, so just copy it.
           JFunction f = (JFunction) v;
           fn.copy(f);
-          current = fn;
+          current = f;
         }
         else
         {

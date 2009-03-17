@@ -7,10 +7,19 @@ import java.util.*;
 import com.ibm.jaql.lang.core.*;
 import com.ibm.jaql.lang.expr.core.*;
 import com.ibm.jaql.lang.expr.top.*;
+import com.ibm.jaql.lang.expr.path.*;
+
+import com.ibm.jaql.lang.expr.io.*;
+import com.ibm.jaql.lang.expr.udf.*;
+import com.ibm.jaql.lang.expr.record.IsdefinedExpr;
+import com.ibm.jaql.lang.expr.array.ExistsFn;
+import com.ibm.jaql.lang.expr.nil.IsnullExpr;
+import com.ibm.jaql.lang.expr.agg.Aggregate;
 
 import com.ibm.jaql.json.type.*;
 import com.ibm.jaql.json.schema.*;
 import com.ibm.jaql.json.util.*;
+import com.ibm.jaql.lang.registry.*;
 
 import com.ibm.jaql.util.*;
 
@@ -32,8 +41,14 @@ import antlr.collections.impl.BitSet;
 public class JaqlParser extends antlr.LLkParser       implements JaqlTokenTypes
  {
 
-  public Env env = new Env();
-  public boolean done;
+	public boolean done = false;
+	public Env env = new Env();
+    // static abstract class ExpandMapper { public abstract Expr remap(Expr ctx); } 
+
+    public void oops(String msg) throws RecognitionException, TokenStreamException
+    { 
+      throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
+    }
 
 protected JaqlParser(TokenBuffer tokenBuf, int k) {
   super(tokenBuf,k);
@@ -58,49 +73,109 @@ public JaqlParser(ParserSharedInputState state) {
   tokenNames = _tokenNames;
 }
 
-	public final Expr  query() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+	public final Expr  parse() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		done = false; DefineFunctionExpr f;
 		
 		switch ( LA(1)) {
-		case LITERAL_declare:
-		{
-			match(LITERAL_declare);
-			f=functionDef(true);
-			break;
-		}
+		case SEMI:
 		case LITERAL_explain:
 		case LITERAL_materialize:
 		case LITERAL_quit:
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
 		case LITERAL_fn:
-		case 11:
-		case 14:
-		case STR:
+		case LITERAL_script:
+		case LITERAL_import:
+		case LITERAL_for:
+		case 47:
 		case LITERAL_not:
-		case 34:
-		case 35:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
 		case INT:
 		case DEC:
 		case DOUBLE:
 		case HEXSTR:
 		case DATETIME:
-		case LITERAL_for:
-		case LITERAL_let:
-		case LITERAL_if:
-		case LITERAL_join:
-		case LITERAL_group:
-		case LITERAL_combine:
-		case LITERAL_reduce:
-		case LITERAL_sort:
-		case VAR:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
 		case AVAR:
+		case VAR:
 		case ID:
+		{
+			r=stmtOrFn();
+			break;
+		}
+		case EOF:
+		{
+			match(Token.EOF_TYPE);
+			done = true;
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  stmtOrFn() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		switch ( LA(1)) {
+		case LITERAL_explain:
+		case LITERAL_materialize:
+		case LITERAL_quit:
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
 		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case AVAR:
+		case VAR:
+		case ID:
 		{
 			r=stmt();
 			{
@@ -128,12 +203,10 @@ public JaqlParser(ParserSharedInputState state) {
 			match(SEMI);
 			break;
 		}
-		case EOF:
+		case LITERAL_script:
+		case LITERAL_import:
 		{
-			match(Token.EOF_TYPE);
-			if ( inputState.guessing==0 ) {
-				done=true;
-			}
+			r=functionDef();
 			break;
 		}
 		default:
@@ -144,120 +217,344 @@ public JaqlParser(ParserSharedInputState state) {
 		return r;
 	}
 	
-	public final DefineFunctionExpr  functionDef(
-		boolean declaring
-	) throws RecognitionException, TokenStreamException {
-		DefineFunctionExpr fn = null;
-		
-		String i = null; ArrayList<Var> p; Var fnVar = null; Expr body;
-		
-		match(LITERAL_fn);
-		{
-		switch ( LA(1)) {
-		case ID:
-		{
-			i=id();
-			if ( inputState.guessing==0 ) {
-				fnVar = env.scope(i);
-			}
-			break;
-		}
-		case 11:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		p=params();
-		body=expr();
-		if ( inputState.guessing==0 ) {
-			
-				  fn = new DefineFunctionExpr(fnVar, p, body);
-			if( fnVar != null && !declaring )
-			{
-			env.unscope(fnVar);
-			}
-			for( Var v: p )
-			{
-			env.unscope(v);
-			}
-			
-		}
-		return fn;
-	}
-	
 	public final Expr  stmt() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+		Expr r=null;
 		
 		String v;
 		
 		switch ( LA(1)) {
-		case AVAR:
-		{
-			r=assignment();
-			break;
-		}
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
 		case LITERAL_fn:
-		case 11:
-		case 14:
-		case STR:
+		case LITERAL_for:
+		case 47:
 		case LITERAL_not:
-		case 34:
-		case 35:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
 		case INT:
 		case DEC:
 		case DOUBLE:
 		case HEXSTR:
 		case DATETIME:
-		case LITERAL_for:
-		case LITERAL_let:
-		case LITERAL_if:
-		case LITERAL_join:
-		case LITERAL_group:
-		case LITERAL_combine:
-		case LITERAL_reduce:
-		case LITERAL_sort:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case AVAR:
 		case VAR:
 		case ID:
-		case LITERAL_type:
 		{
-			r=expr();
-			if ( inputState.guessing==0 ) {
-				r = new QueryExpr(env.importGlobals(r));
-			}
+			r=topAssign();
 			break;
 		}
 		case LITERAL_explain:
 		{
 			match(LITERAL_explain);
-			r=expr();
-			if ( inputState.guessing==0 ) {
-				r = new ExplainExpr(env.importGlobals(r));
-			}
+			r=topAssign();
+			r = new ExplainExpr(r);
 			break;
 		}
 		case LITERAL_materialize:
 		{
 			match(LITERAL_materialize);
 			v=var();
-			if ( inputState.guessing==0 ) {
-				r = new MaterializeExpr(env.sessionEnv().inscope(v));
-			}
+			r = new MaterializeExpr(env.inscope(v));
 			break;
 		}
 		case LITERAL_quit:
 		{
 			match(LITERAL_quit);
-			if ( inputState.guessing==0 ) {
-				done=true;
+			done = true;
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  functionDef() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String lang; String s; String body; Expr e;
+		
+		switch ( LA(1)) {
+		case LITERAL_script:
+		{
+			match(LITERAL_script);
+			lang=name();
+			body=str();
+			
+				  	r = new ScriptBlock(lang, body);
+				
+			break;
+		}
+		case LITERAL_import:
+		{
+			match(LITERAL_import);
+			lang=name();
+			s=name();
+			e=expr();
+			{
+			switch ( LA(1)) {
+			case SEMI:
+			{
+				match(SEMI);
+				break;
+			}
+			case EOF:
+			{
+				match(Token.EOF_TYPE);
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			
+				  	if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
+				  	r = new RegisterFunctionExpr(new ConstExpr(new JString(s)), e);
+				
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  topAssign() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String v;
+		
+		{
+		switch ( LA(1)) {
+		case AVAR:
+		{
+			v=avar();
+			match(18);
+			r=rvalue();
+			r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r);
+			break;
+		}
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			r=pipe();
+			{
+			switch ( LA(1)) {
+			case EOF:
+			case SEMI:
+			{
+				r = env.importGlobals(r);
+				break;
+			}
+			case 40:
+			{
+				match(40);
+				v=var();
+				r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r);
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		return r;
+	}
+	
+	public final String  var() throws RecognitionException, TokenStreamException {
+		String r=null;
+		
+		Token  n = null;
+		
+		n = LT(1);
+		match(VAR);
+		r = n.getText();
+		return r;
+	}
+	
+	public final Expr  block() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		ArrayList<Expr> es=null;
+		
+		r=optAssign();
+		{
+		switch ( LA(1)) {
+		case 8:
+		{
+			match(8);
+			es = new ArrayList<Expr>(); es.add(r);
+			r=optAssign();
+			es.add(r);
+			{
+			_loop8:
+			do {
+				if ((LA(1)==8)) {
+					match(8);
+					r=optAssign();
+					es.add(r);
+				}
+				else {
+					break _loop8;
+				}
+				
+			} while (true);
+			}
+			
+				for(Expr e: es)
+				{
+					if( e instanceof BindingExpr )
+					{
+						env.unscope(((BindingExpr)e).var);
+					}
+				}
+				r = new DoExpr(es);
+				// r = new ParallelDoExpr(es); // TODO: parallel
+			
+			break;
+		}
+		case 23:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  optAssign() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String v;
+		
+		switch ( LA(1)) {
+		case AVAR:
+		{
+			v=avar();
+			match(18);
+			r=rvalue();
+			r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, r);
+			break;
+		}
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			r=pipe();
+			{
+			switch ( LA(1)) {
+			case 40:
+			{
+				match(40);
+				v=var();
+				r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, r);
+				break;
+			}
+			case 8:
+			case 23:
+			{
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
 			}
 			break;
 		}
@@ -269,56 +566,137 @@ public JaqlParser(ParserSharedInputState state) {
 		return r;
 	}
 	
-	public final Expr  assignment() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+	public final Expr  pipe() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		String v;
-		
-		v=avar();
-		match(9);
-		r=expr();
-		if ( inputState.guessing==0 ) {
-			r = new AssignExpr(v, r);
-		}
-		return r;
-	}
-	
-	public final Expr  expr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
+		String n = "$";
 		
 		switch ( LA(1)) {
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
 		case LITERAL_fn:
 		case LITERAL_for:
-		case LITERAL_let:
-		case LITERAL_if:
-		case LITERAL_join:
-		case LITERAL_group:
-		case LITERAL_combine:
-		case LITERAL_reduce:
-		case LITERAL_sort:
-		{
-			r=kwExpr();
-			break;
-		}
-		case 11:
-		case 14:
-		case STR:
+		case 47:
 		case LITERAL_not:
-		case 34:
-		case 35:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
 		case INT:
 		case DEC:
 		case DOUBLE:
 		case HEXSTR:
 		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
 		case VAR:
 		case ID:
+		{
+			r=expr();
+			{
+			_loop11:
+			do {
+				if ((LA(1)==9)) {
+					match(9);
+					r=op(r);
+				}
+				else {
+					break _loop11;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		case 9:
+		{
+			r=pipeFn();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  expr() throws RecognitionException, TokenStreamException {
+		Expr r;
+		
+		
+		switch ( LA(1)) {
+		case LITERAL_group:
+		{
+			r=group();
+			break;
+		}
+		case LITERAL_join:
+		{
+			r=join();
+			break;
+		}
+		case LITERAL_equijoin:
+		{
+			r=equijoin();
+			break;
+		}
+		case LITERAL_for:
+		{
+			r=forExpr();
+			break;
+		}
+		case LITERAL_if:
+		{
+			r=ifExpr();
+			break;
+		}
+		case LITERAL_unroll:
+		{
+			r=unroll();
+			break;
+		}
+		case LITERAL_fn:
+		{
+			r=function();
+			break;
+		}
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
 		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
 		{
 			r=orExpr();
 			break;
@@ -331,645 +709,80 @@ public JaqlParser(ParserSharedInputState state) {
 		return r;
 	}
 	
-	public final String  var() throws RecognitionException, TokenStreamException {
-		String s = null;
+	public final Expr  op(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		Token  v = null;
-		
-		v = LT(1);
-		match(VAR);
-		if ( inputState.guessing==0 ) {
-			s = v.getText();
-		}
-		return s;
-	}
-	
-	public final String  avar() throws RecognitionException, TokenStreamException {
-		String s = null;
-		
-		Token  v = null;
-		
-		v = LT(1);
-		match(AVAR);
-		if ( inputState.guessing==0 ) {
-			s = v.getText();
-		}
-		return s;
-	}
-	
-	public final Expr  kwExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
+		BindingExpr b=null;
 		
 		switch ( LA(1)) {
-		case LITERAL_for:
+		case LITERAL_filter:
 		{
-			r=forExpr();
+			match(LITERAL_filter);
+			b=each(in);
+			r=expr();
+			r = new FilterExpr(b, r);    env.unscope(b.var);
 			break;
 		}
-		case LITERAL_let:
+		case LITERAL_transform:
 		{
-			r=letExpr();
+			match(LITERAL_transform);
+			b=each(in);
+			r=expr();
+			r = new TransformExpr(b, r); env.unscope(b.var);
 			break;
 		}
-		case LITERAL_if:
+		case LITERAL_expand:
 		{
-			r=ifExpr();
-			break;
-		}
-		case LITERAL_join:
-		{
-			r=joinExpr();
-			break;
-		}
-		case LITERAL_group:
-		{
-			r=groupExpr();
-			break;
-		}
-		case LITERAL_sort:
-		{
-			r=sortExpr();
-			break;
-		}
-		case LITERAL_combine:
-		{
-			r=combineExpr();
-			break;
-		}
-		case LITERAL_reduce:
-		{
-			r=reduceExpr();
-			break;
-		}
-		case LITERAL_fn:
-		{
-			r=functionDef(false);
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		return r;
-	}
-	
-	public final Expr  orExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		Expr s;
-		
-		r=andExpr();
-		{
-		_loop38:
-		do {
-			if ((LA(1)==LITERAL_or)) {
-				match(LITERAL_or);
-				s=andExpr();
-				if ( inputState.guessing==0 ) {
-					r = new OrExpr(r,s);
-				}
-			}
-			else {
-				break _loop38;
-			}
-			
-		} while (true);
-		}
-		return r;
-	}
-	
-	public final Expr  forExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		ArrayList<BindingExpr> b = new ArrayList<BindingExpr>();
-		
-		match(LITERAL_for);
-		match(11);
-		forDef(b);
-		{
-		_loop87:
-		do {
-			if ((LA(1)==12)) {
-				match(12);
-				forDef(b);
-			}
-			else {
-				break _loop87;
-			}
-			
-		} while (true);
-		}
-		match(13);
-		r=expr();
-		if ( inputState.guessing==0 ) {
-			
-			for(int i = 0 ; i < b.size() ; i++ )
-			{
-				BindingExpr e = b.get(i);
-				env.unscope(e.var);
-				  }
-			MultiForExpr f = new MultiForExpr(b, null, r); // TODO: eleminate WHERE
-			r = f.expand(env);
-			
-		}
-		return r;
-	}
-	
-	public final Expr  letExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		ArrayList<BindingExpr> b = new ArrayList<BindingExpr>();
-		
-		match(LITERAL_let);
-		match(11);
-		letDef(b);
-		{
-		_loop93:
-		do {
-			if ((LA(1)==12)) {
-				match(12);
-				letDef(b);
-			}
-			else {
-				break _loop93;
-			}
-			
-		} while (true);
-		}
-		match(13);
-		r=expr();
-		if ( inputState.guessing==0 ) {
-			
-			for(int i = 0 ; i < b.size() ; i++ )
-			{
-				BindingExpr e = b.get(i);
-				env.unscope(e.var);
-				  }
-			r = new LetExpr(b, r);
-			
-		}
-		return r;
-	}
-	
-	public final Expr  ifExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		Expr p; Expr t; Expr f = null;
-		
-		match(LITERAL_if);
-		match(11);
-		p=expr();
-		match(13);
-		t=expr();
-		{
-		if ((LA(1)==LITERAL_else)) {
-			match(LITERAL_else);
-			f=expr();
-		}
-		else if ((_tokenSet_0.member(LA(1)))) {
-		}
-		else {
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		
-		}
-		if ( inputState.guessing==0 ) {
-			r = new IfExpr(p,t,f);
-		}
-		return r;
-	}
-	
-	public final JoinExpr  joinExpr() throws RecognitionException, TokenStreamException {
-		JoinExpr r = null;
-		
-		Expr e; ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
-		
-		match(LITERAL_join);
-		match(11);
-		joinDef(bs);
-		match(12);
-		{
-		joinDef(bs);
-		}
-		{
-		_loop100:
-		do {
-			if ((LA(1)==12)) {
-				match(12);
-				joinDef(bs);
-			}
-			else {
-				break _loop100;
-			}
-			
-		} while (true);
-		}
-		match(13);
-		if ( inputState.guessing==0 ) {
-			
-				  	for(int i = 0 ; i < bs.size() ; i++ )
-				  	{
-				  	  BindingExpr b = bs.get(i);
-				  	  b.var.hidden = false;
-				  	}
-				
-		}
-		e=expr();
-		if ( inputState.guessing==0 ) {
-			
-				    for(int i = 0 ; i < bs.size() ; i++ )
-				    {
-				      BindingExpr b = bs.get(i);
-				  	  env.unscope(b.var);
-				    }
-			r = new JoinExpr(bs, e);
-				
-		}
-		return r;
-	}
-	
-	public final GroupByExpr  groupExpr() throws RecognitionException, TokenStreamException {
-		GroupByExpr r = null;
-		
-		Expr e; ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
-		
-		match(LITERAL_group);
-		match(11);
-		groupDef(bs);
-		{
-		_loop106:
-		do {
-			if ((LA(1)==12)) {
-				match(12);
-				{
-				switch ( LA(1)) {
-				case VAR:
-				{
-					groupDef(bs);
-					break;
-				}
-				case 12:
-				case 13:
-				{
-					break;
-				}
-				default:
-				{
-					throw new NoViableAltException(LT(1), getFilename());
-				}
-				}
-				}
-			}
-			else {
-				break _loop106;
-			}
-			
-		} while (true);
-		}
-		match(13);
-		if ( inputState.guessing==0 ) {
-			
-				  	bs.get(0).var.hidden = false;
-				  	for(int i = 1 ; i < bs.size() ; i++ )
-				  	{
-				  	  BindingExpr b = bs.get(i);
-				  	  b.var2.hidden = false;
-				  	}
-				
-		}
-		e=expr();
-		if ( inputState.guessing==0 ) {
-			
-			env.unscope(bs.get(0).var);
-				    for(int i = 1 ; i < bs.size() ; i++ )
-				    {
-			BindingExpr b = bs.get(i);
-				  	  env.unscope(b.var2);
-				    }
-			r = new GroupByExpr(bs, e);
-				
-		}
-		return r;
-	}
-	
-	public final SortExpr  sortExpr() throws RecognitionException, TokenStreamException {
-		SortExpr s = null;
-		
-		
-			  String v;
-			  Expr e;
-			  Var var = null;
-			  BindingExpr b = null;
-			  ArrayList<OrderExpr> by = new ArrayList<OrderExpr>();
-			
-		
-		match(LITERAL_sort);
-		match(11);
-		v=var();
-		match(LITERAL_in);
-		e=expr();
-		if ( inputState.guessing==0 ) {
-			
-				  	var = env.scope(v);
-				  	b = new BindingExpr(BindingExpr.Type.IN, var, null, e);
-				
-		}
-		match(LITERAL_by);
-		sortSpec(by);
-		{
-		_loop115:
-		do {
-			if ((LA(1)==12)) {
-				match(12);
-				sortSpec(by);
-			}
-			else {
-				break _loop115;
-			}
-			
-		} while (true);
-		}
-		match(13);
-		if ( inputState.guessing==0 ) {
-			
-				  	env.unscope(var);
-				  	s = new SortExpr(b, by);
-				
-		}
-		return s;
-	}
-	
-	public final Expr  combineExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		String v1, v2; Var var1 = null; Var var2 = null; Expr in; Expr use;
-		
-		match(LITERAL_combine);
-		match(11);
-		v1=var();
-		match(12);
-		v2=var();
-		match(LITERAL_in);
-		in=expr();
-		match(13);
-		if ( inputState.guessing==0 ) {
-			
-				       var1 = env.scope(v1);
-				       var2 = env.scope(v2);
-				
-		}
-		use=expr();
-		if ( inputState.guessing==0 ) {
-			
-				       env.unscope(var1);
-				       env.unscope(var2);
-				   r = new CombineExpr(var1, var2, in, use);
-				
-		}
-		return r;
-	}
-	
-	public final ReduceExpr  reduceExpr() throws RecognitionException, TokenStreamException {
-		ReduceExpr r = null;
-		
-		
-			  String v; Expr inExpr; Expr ret; Var inVar = null; int n = 0;
-			  BindingExpr a;
-			  ArrayList<BindingExpr> aggs = new ArrayList<BindingExpr>(); 
-			
-		
-		match(LITERAL_reduce);
-		match(11);
-		v=var();
-		match(LITERAL_in);
-		inExpr=expr();
-		if ( inputState.guessing==0 ) {
-			
-				     	inVar = env.scope(v);
-				
-		}
-		match(LITERAL_into);
-		a=agg();
-		if ( inputState.guessing==0 ) {
-			aggs.add(a);
-		}
-		{
-		_loop111:
-		do {
-			if ((LA(1)==12)) {
-				match(12);
-				a=agg();
-				if ( inputState.guessing==0 ) {
-					aggs.add(a);
-				}
-			}
-			else {
-				break _loop111;
-			}
-			
-		} while (true);
-		}
-		if ( inputState.guessing==0 ) {
-			
-				     	env.unscope(inVar);
-				     	n = aggs.size();
-				     	for(int i = 0 ; i < n ; i++)
-				     	{
-				     		aggs.get(i).var.hidden = false;
-				     	}
-				
-		}
-		match(13);
-		ret=expr();
-		if ( inputState.guessing==0 ) {
-			
-				     	for(int i = 0 ; i < n ; i++)
-				     	{
-				 	        env.unscope( aggs.get(i).var );
-				     	}
-				     	r = new ReduceExpr(inVar, inExpr, aggs, ret);
-				
-		}
-		return r;
-	}
-	
-	public final String  id() throws RecognitionException, TokenStreamException {
-		String s = null;
-		
-		Token  i = null;
-		
-		i = LT(1);
-		match(ID);
-		if ( inputState.guessing==0 ) {
-			s = i.getText();
-		}
-		return s;
-	}
-	
-	public final ArrayList<Var>  params() throws RecognitionException, TokenStreamException {
-		ArrayList<Var> p = new ArrayList<Var>();
-		
-		String v;
-		
-		match(11);
-		{
-		switch ( LA(1)) {
-		case VAR:
-		{
-			v=var();
-			if ( inputState.guessing==0 ) {
-				p.add(env.scope(v));
-			}
-			{
-			_loop12:
-			do {
-				if ((LA(1)==12)) {
-					match(12);
-					v=var();
-					if ( inputState.guessing==0 ) {
-						p.add(env.scope(v));
-					}
-				}
-				else {
-					break _loop12;
-				}
-				
-			} while (true);
-			}
-			break;
-		}
-		case 13:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		match(13);
-		return p;
-	}
-	
-	public final RecordExpr  recordExpr() throws RecognitionException, TokenStreamException {
-		RecordExpr r = null;
-		
-		ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
-			  FieldExpr f;
-		
-		match(14);
-		{
-		switch ( LA(1)) {
-		case 11:
-		case STR:
-		case INT:
-		case DEC:
-		case DOUBLE:
-		case HEXSTR:
-		case DATETIME:
-		case VAR:
-		case ID:
-		{
-			f=fieldExpr();
-			if ( inputState.guessing==0 ) {
-				args.add(f);
-			}
-			{
-			_loop17:
-			do {
-				if ((LA(1)==12)) {
-					match(12);
-					{
-					switch ( LA(1)) {
-					case 11:
-					case STR:
-					case INT:
-					case DEC:
-					case DOUBLE:
-					case HEXSTR:
-					case DATETIME:
-					case VAR:
-					case ID:
-					{
-						f=fieldExpr();
-						if ( inputState.guessing==0 ) {
-							args.add(f);
-						}
-						break;
-					}
-					case 12:
-					case 15:
-					{
-						break;
-					}
-					default:
-					{
-						throw new NoViableAltException(LT(1), getFilename());
-					}
-					}
-					}
-				}
-				else {
-					break _loop17;
-				}
-				
-			} while (true);
-			}
-			break;
-		}
-		case 15:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		match(15);
-		if ( inputState.guessing==0 ) {
-			r = new RecordExpr(args.toArray(new Expr[args.size()]));
-		}
-		return r;
-	}
-	
-	public final FieldExpr  fieldExpr() throws RecognitionException, TokenStreamException {
-		FieldExpr f;
-		
-		Expr n = null; String i; VarExpr v;
-		
-		switch ( LA(1)) {
-		case ID:
-		{
-			i=id();
-			f=fieldValue(new ConstExpr(new JString(i)));
-			break;
-		}
-		case 11:
-		case STR:
-		case INT:
-		case DEC:
-		case DOUBLE:
-		case HEXSTR:
-		case DATETIME:
-		{
-			n=literalExpr();
+			match(LITERAL_expand);
+			b=each(in);
 			{
 			switch ( LA(1)) {
-			case 16:
-			case 17:
+			case LITERAL_group:
+			case LITERAL_cmp:
+			case 22:
+			case 24:
+			case LITERAL_join:
+			case LITERAL_equijoin:
+			case LITERAL_if:
+			case LITERAL_unroll:
+			case LITERAL_fn:
+			case LITERAL_for:
+			case 47:
+			case LITERAL_not:
+			case LITERAL_isnull:
+			case LITERAL_exists:
+			case LITERAL_isdefined:
+			case 65:
+			case 66:
+			case LITERAL_type:
+			case INT:
+			case DEC:
+			case DOUBLE:
+			case HEXSTR:
+			case DATETIME:
+			case LITERAL_true:
+			case LITERAL_false:
+			case LITERAL_null:
+			case STR:
+			case HERE_STRING:
+			case BLOCK_STRING:
+			case VAR:
+			case ID:
 			{
-				f=fieldValue(n);
+				r=expr();
 				break;
 			}
-			case 19:
-			case DOT_ID:
+			case EOF:
+			case SEMI:
+			case 8:
+			case 9:
+			case 23:
+			case 25:
+			case 40:
 			{
-				f=projPattern(n);
+				r = new VarExpr(b.var);
 				break;
 			}
 			default:
@@ -978,154 +791,452 @@ public JaqlParser(ParserSharedInputState state) {
 			}
 			}
 			}
+			r = new ForExpr(b, r);       env.unscope(b.var);
+			break;
+		}
+		case LITERAL_group:
+		{
+			r=groupPipe(in);
+			break;
+		}
+		case LITERAL_sort:
+		{
+			r=sort(in);
+			break;
+		}
+		case LITERAL_top:
+		{
+			r=top(in);
+			break;
+		}
+		case LITERAL_split:
+		{
+			r=split(in);
+			break;
+		}
+		case LITERAL_aggregate:
+		case LITERAL_agg:
+		{
+			r=aggregate(in);
+			break;
+		}
+		case VAR:
+		case ID:
+		{
+			r=call(in);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  pipeFn() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		Var v = env.makeVar("$");
+		
+		
+		r=subpipe(v);
+		
+		ArrayList<Var> p = new ArrayList<Var>();
+		p.add(v);
+		r = new DefineFunctionExpr(null, p, r); // TODO: use a diff class
+		
+		return r;
+	}
+	
+	public final Expr  subpipe(
+		Var inVar
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+			inVar.hidden = true;
+		//        r=new PipeInput(new VarExpr(inVar));
+		r= new VarExpr(inVar);
+		
+		
+		{
+		int _cnt14=0;
+		_loop14:
+		do {
+			if ((LA(1)==9)) {
+				match(9);
+				r=op(r);
+			}
+			else {
+				if ( _cnt14>=1 ) { break _loop14; } else {throw new NoViableAltException(LT(1), getFilename());}
+			}
+			
+			_cnt14++;
+		} while (true);
+		}
+		return r;
+	}
+	
+	public final BindingExpr  vpipe() throws RecognitionException, TokenStreamException {
+		BindingExpr r=null;
+		
+		String v; Expr e=null;
+		
+		v=var();
+		{
+		switch ( LA(1)) {
+		case 8:
+		case LITERAL_where:
+		case LITERAL_on:
+		{
+			e = new VarExpr(env.inscope(v));
+			break;
+		}
+		case LITERAL_in:
+		{
+			match(LITERAL_in);
+			e=expr();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e);
+		return r;
+	}
+	
+	public final Expr  aggregate(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		BindingExpr b;
+		
+		{
+		switch ( LA(1)) {
+		case LITERAL_aggregate:
+		{
+			match(LITERAL_aggregate);
+			break;
+		}
+		case LITERAL_agg:
+		{
+			match(LITERAL_agg);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		b=each(in);
+		r=expr();
+		r = AggregateExpr.make(env, b.var, b.inExpr(), r);
+		return r;
+	}
+	
+	public final BindingExpr  each(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		BindingExpr b=null;
+		
+		String v = "$";
+		
+		{
+		switch ( LA(1)) {
+		case LITERAL_each:
+		{
+			match(LITERAL_each);
+			v=var();
+			break;
+		}
+		case EOF:
+		case SEMI:
+		case 8:
+		case 9:
+		case LITERAL_group:
+		case LITERAL_using:
+		case LITERAL_as:
+		case LITERAL_by:
+		case LITERAL_into:
+		case LITERAL_expand:
+		case LITERAL_cmp:
+		case 22:
+		case 23:
+		case 24:
+		case 25:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_else:
+		case LITERAL_unroll:
+		case 40:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in);
+		return b;
+	}
+	
+	public final Expr  group() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+			  BindingExpr in;
+			  BindingExpr by = null;
+			  Expr c=null;
+			  String v = "$";
+			  ArrayList<Var> as = new ArrayList<Var>();
+			
+		
+		match(LITERAL_group);
+		{
+		switch ( LA(1)) {
+		case LITERAL_each:
+		{
+			match(LITERAL_each);
+			v=var();
+			match(LITERAL_in);
+			break;
+		}
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+			      in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
+			
+		by=groupIn(in,by,as);
+		{
+		_loop23:
+		do {
+			if ((LA(1)==8)) {
+				match(8);
+				by=groupIn(in,by,as);
+			}
+			else {
+				break _loop23;
+			}
+			
+		} while (true);
+		}
+		if( by.var != Var.unused ) env.scope(by.var);
+		{
+		switch ( LA(1)) {
+		case LITERAL_using:
+		{
+			match(LITERAL_using);
+			c=comparator();
+			oops("comparators on group by NYI");
+			break;
+		}
+		case LITERAL_into:
+		case LITERAL_expand:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		for( Var av: as )
+		{
+		env.scope(av);
+		}
+			
+		r=groupReturn();
+		
+			      if( by.var != Var.unused ) env.unscope(by.var);
+			      for( Var av: as )
+		{
+		env.scope(av);
+		}
+		r = new GroupByExpr(in, by, as, c, r); // .expand(env);
+			
+		return r;
+	}
+	
+	public final BindingExpr  groupIn(
+		BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars
+	) throws RecognitionException, TokenStreamException {
+		BindingExpr by;
+		
+		Expr e; String v=null;
+		
+		e=expr();
+		env.scope(in.var);
+		by=groupBy(prevBy);
+		{
+		switch ( LA(1)) {
+		case LITERAL_as:
+		{
+			match(LITERAL_as);
+			v=var();
+			break;
+		}
+		case 8:
+		case LITERAL_using:
+		case LITERAL_into:
+		case LITERAL_expand:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		if( v == null )
+		{
+		if( e instanceof VarExpr )
+		{
+		v = ((VarExpr)e).var().name;
+		}
+		else
+		{
+		oops("\"as\" variable required when grouping expression is not a simple variable");
+		}
+		}
+		for( Var as: asVars ) 
+		{
+		if( as.name.equals(v) )
+		{
+		oops("duplicate group \"as\" variable: "+v);
+		}
+		}
+			      in.addChild(e); 
+		env.unscope(in.var); // TODO: unscope or hide?
+		asVars.add(env.makeVar(v));
+		
+		return by;
+	}
+	
+	public final Expr  comparator() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String s; Expr e;
+		
+		switch ( LA(1)) {
+		case 24:
+		{
+			r=cmpArrayFn("$");
+			break;
+		}
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case ID:
+		{
+			{
+			switch ( LA(1)) {
+			case ID:
+			{
+				s=name();
+				break;
+			}
+			case STR:
+			case HERE_STRING:
+			case BLOCK_STRING:
+			{
+				s=str();
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			oops("named comparators NYI: "+s);
+			break;
+		}
+		case LITERAL_cmp:
+		{
+			r=cmpFnExpr();
 			break;
 		}
 		case VAR:
 		{
-			v=varExpr();
-			{
-			boolean synPredMatched22 = false;
-			if (((LA(1)==16||LA(1)==17))) {
-				int _m22 = mark();
-				synPredMatched22 = true;
-				inputState.guessing++;
-				try {
-					{
-					match(16);
-					match(17);
-					}
-				}
-				catch (RecognitionException pe) {
-					synPredMatched22 = false;
-				}
-				rewind(_m22);
-inputState.guessing--;
-			}
-			if ( synPredMatched22 ) {
-				f=fieldValue(v);
-			}
-			else if ((LA(1)==19||LA(1)==DOT_ID)) {
-				f=projPattern(v);
-			}
-			else if ((LA(1)==12||LA(1)==15||LA(1)==16)) {
-				f=varField(v);
-			}
-			else {
-				throw new NoViableAltException(LT(1), getFilename());
-			}
-			
-			}
+			r=varExpr();
 			break;
 		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		return f;
-	}
-	
-	public final FieldExpr  fieldValue(
-		Expr name
-	) throws RecognitionException, TokenStreamException {
-		FieldExpr f = null;
-		
-		Expr v; boolean required = true;
-		
-		{
-		switch ( LA(1)) {
-		case 16:
-		{
-			match(16);
-			if ( inputState.guessing==0 ) {
-				required = false;
-			}
-			break;
-		}
-		case 17:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		match(17);
-		v=expr();
-		if ( inputState.guessing==0 ) {
-			f = new NameValueBinding(name, v, required);
-		}
-		return f;
-	}
-	
-	public final Expr  literalExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		Token  s = null;
-		Token  i = null;
-		Token  n = null;
-		Token  d = null;
-		Token  h = null;
-		Token  t = null;
-		
-		switch ( LA(1)) {
-		case STR:
-		{
-			s = LT(1);
-			match(STR);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JString(s.getText()));
-			}
-			break;
-		}
-		case INT:
-		{
-			i = LT(1);
-			match(INT);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JLong(i.getText()));
-			}
-			break;
-		}
-		case DEC:
-		{
-			n = LT(1);
-			match(DEC);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JDecimal(n.getText()));
-			}
-			break;
-		}
-		case DOUBLE:
-		{
-			d = LT(1);
-			match(DOUBLE);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JDouble(d.getText()));
-			}
-			break;
-		}
-		case HEXSTR:
-		{
-			h = LT(1);
-			match(HEXSTR);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JBinary(h.getText()));
-			}
-			break;
-		}
-		case DATETIME:
-		{
-			t = LT(1);
-			match(DATETIME);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JDate(t.getText()));
-			}
-			break;
-		}
-		case 11:
+		case 22:
 		{
 			r=parenExpr();
 			break;
@@ -1138,30 +1249,83 @@ inputState.guessing--;
 		return r;
 	}
 	
-	public final FieldExpr  projPattern(
-		Expr ctx
-	) throws RecognitionException, TokenStreamException {
-		FieldExpr f = null;
+	public final Expr  groupReturn() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		Expr n = null; boolean wild = false;
+		
+		switch ( LA(1)) {
+		case LITERAL_into:
+		{
+			match(LITERAL_into);
+			r=expr();
+			r = new ArrayExpr(r);
+			break;
+		}
+		case LITERAL_expand:
+		{
+			match(LITERAL_expand);
+			r=expr();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final BindingExpr  groupBy(
+		BindingExpr by
+	) throws RecognitionException, TokenStreamException {
+		BindingExpr b=null;
+		
+		String v = null; Expr e=null;
 		
 		{
 		switch ( LA(1)) {
-		case DOT_ID:
+		case LITERAL_by:
 		{
-			n=dotId();
+			match(LITERAL_by);
 			{
 			switch ( LA(1)) {
-			case 18:
+			case AVAR:
 			{
+				v=avar();
 				match(18);
-				if ( inputState.guessing==0 ) {
-					wild = true;
-				}
 				break;
 			}
-			case 12:
-			case 15:
+			case LITERAL_group:
+			case LITERAL_cmp:
+			case 22:
+			case 24:
+			case LITERAL_join:
+			case LITERAL_equijoin:
+			case LITERAL_if:
+			case LITERAL_unroll:
+			case LITERAL_fn:
+			case LITERAL_for:
+			case 47:
+			case LITERAL_not:
+			case LITERAL_isnull:
+			case LITERAL_exists:
+			case LITERAL_isdefined:
+			case 65:
+			case 66:
+			case LITERAL_type:
+			case INT:
+			case DEC:
+			case DOUBLE:
+			case HEXSTR:
+			case DATETIME:
+			case LITERAL_true:
+			case LITERAL_false:
+			case LITERAL_null:
+			case STR:
+			case HERE_STRING:
+			case BLOCK_STRING:
+			case VAR:
+			case ID:
 			{
 				break;
 			}
@@ -1171,35 +1335,1359 @@ inputState.guessing--;
 			}
 			}
 			}
+			e=expr();
 			break;
 		}
-		case 19:
+		case 8:
+		case LITERAL_using:
+		case LITERAL_as:
+		case LITERAL_into:
+		case LITERAL_expand:
 		{
-			match(19);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		if( e == null )
+		{
+		e = new ConstExpr(Item.nil);
+		}
+		if( by == null )
+		{
+		Var var;
+		if( v == null )
+		{
+		var = Var.unused;
+		}
+		else
+		{
+		var = env.makeVar(v);
+		}
+		b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
+		}
+		else if( v == null || (by.var != Var.unused && by.var.name.equals(v)) )
+		{
+		by.addChild(e);
+		b = by;
+		}
+		else
+		{
+		oops("all group by variables must have the same name:" +by.var.name+" != "+v);
+		}
+		
+		return b;
+	}
+	
+	public final String  avar() throws RecognitionException, TokenStreamException {
+		String r=null;
+		
+		Token  n = null;
+		
+		n = LT(1);
+		match(AVAR);
+		r = n.getText();
+		return r;
+	}
+	
+	public final Expr  groupPipe(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		BindingExpr b; BindingExpr by=null; Expr key=null;  Expr c; 
+		String v="$"; Var asVar; 
+		
+		
+		match(LITERAL_group);
+		b=each(in);
+		by=groupBy(null);
+		env.unscope(b.var); if( by.var != Var.unused ) env.scope(by.var);
+		{
+		switch ( LA(1)) {
+		case LITERAL_as:
+		{
+			match(LITERAL_as);
+			v=var();
+			break;
+		}
+		case LITERAL_using:
+		case LITERAL_into:
+		case LITERAL_expand:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		asVar=env.scope(v);
+		{
+		switch ( LA(1)) {
+		case LITERAL_using:
+		{
+			match(LITERAL_using);
+			c=comparator();
+			oops("comparators on group by NYI");
+			break;
+		}
+		case LITERAL_into:
+		case LITERAL_expand:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		r=groupReturn();
+		
+		if( by.var != Var.unused ) env.unscope(by.var);
+		env.unscope(asVar);
+		r = new GroupByExpr(b,by,asVar,null,r);
+		
+		return r;
+	}
+	
+	public final Expr  cmpArrayFn(
+		String vn
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		Var var=env.scope(vn);
+		
+		r=cmpArray();
+		
+		env.unscope(var);
+		r = new DefineFunctionExpr(null, new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
+		
+		return r;
+	}
+	
+	public final String  name() throws RecognitionException, TokenStreamException {
+		String r=null;
+		
+		Token  n = null;
+		
+		n = LT(1);
+		match(ID);
+		r = n.getText();
+		return r;
+	}
+	
+	public final String  str() throws RecognitionException, TokenStreamException {
+		String r=null;
+		
+		Token  s = null;
+		Token  h = null;
+		Token  b = null;
+		
+		switch ( LA(1)) {
+		case STR:
+		{
+			s = LT(1);
+			match(STR);
+			r = s.getText();
+			break;
+		}
+		case HERE_STRING:
+		{
+			h = LT(1);
+			match(HERE_STRING);
+			r = h.getText();
+			break;
+		}
+		case BLOCK_STRING:
+		{
+			b = LT(1);
+			match(BLOCK_STRING);
+			r = b.getText();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  cmpFnExpr() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String v; Var var;
+		
+		match(LITERAL_cmp);
+		match(22);
+		v=var();
+		match(23);
+		r=cmpArrayFn(v);
+		return r;
+	}
+	
+	public final Expr  varExpr() throws RecognitionException, TokenStreamException {
+		Expr r = null;
+		
+		String v;
+		
+		v=var();
+		r = new VarExpr( env.inscope(v) );
+		return r;
+	}
+	
+	public final Expr  parenExpr() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		match(22);
+		r=block();
+		match(23);
+		return r;
+	}
+	
+	public final Expr  cmpExpr() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String v; Var var;
+		
+		match(LITERAL_cmp);
+		{
+		switch ( LA(1)) {
+		case 22:
+		{
+			match(22);
+			v=var();
+			match(23);
+			r=cmpArrayFn(v);
+			break;
+		}
+		case 24:
+		{
+			r=cmpArray();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		return r;
+	}
+	
+	public final CmpArray  cmpArray() throws RecognitionException, TokenStreamException {
+		CmpArray r=null;
+		
+		Var var; ArrayList<CmpSpec> keys = new ArrayList<CmpSpec>();
+		
+		match(24);
+		{
+		switch ( LA(1)) {
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			cmpSpec(keys);
+			{
+			_loop44:
+			do {
+				if ((LA(1)==8)) {
+					match(8);
+					{
+					switch ( LA(1)) {
+					case LITERAL_group:
+					case LITERAL_cmp:
+					case 22:
+					case 24:
+					case LITERAL_join:
+					case LITERAL_equijoin:
+					case LITERAL_if:
+					case LITERAL_unroll:
+					case LITERAL_fn:
+					case LITERAL_for:
+					case 47:
+					case LITERAL_not:
+					case LITERAL_isnull:
+					case LITERAL_exists:
+					case LITERAL_isdefined:
+					case 65:
+					case 66:
+					case LITERAL_type:
+					case INT:
+					case DEC:
+					case DOUBLE:
+					case HEXSTR:
+					case DATETIME:
+					case LITERAL_true:
+					case LITERAL_false:
+					case LITERAL_null:
+					case STR:
+					case HERE_STRING:
+					case BLOCK_STRING:
+					case VAR:
+					case ID:
+					{
+						cmpSpec(keys);
+						break;
+					}
+					case 8:
+					case 25:
+					{
+						break;
+					}
+					default:
+					{
+						throw new NoViableAltException(LT(1), getFilename());
+					}
+					}
+					}
+				}
+				else {
+					break _loop44;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		case 25:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		match(25);
+		
+		r = new CmpArray(keys);
+		
+		return r;
+	}
+	
+	public final void cmpSpec(
+		ArrayList<CmpSpec> keys
+	) throws RecognitionException, TokenStreamException {
+		
+		Expr e; Expr c=null; CmpSpec.Order o = CmpSpec.Order.ASC;
+		
+		e=expr();
+		{
+		switch ( LA(1)) {
+		case LITERAL_using:
+		{
+			match(LITERAL_using);
+			c=comparator();
+			oops("nested comparators NYI");
+			break;
+		}
+		case 8:
+		case 25:
+		case LITERAL_asc:
+		case LITERAL_desc:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		{
+		switch ( LA(1)) {
+		case LITERAL_asc:
+		{
+			match(LITERAL_asc);
+			break;
+		}
+		case LITERAL_desc:
+		{
+			match(LITERAL_desc);
+			o = CmpSpec.Order.DESC;
+			break;
+		}
+		case 8:
+		case 25:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		keys.add( new CmpSpec(e, o) );
+		
+	}
+	
+	public final Expr  join() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();
+		HashMap<String,Var> keys = new HashMap<String,Var>();
+		Expr p; 
+		BindingExpr b;
+		
+		
+		match(LITERAL_join);
+		b=joinIn();
+		in.add(b); b.var.hidden=true;
+		{
+		int _cnt50=0;
+		_loop50:
+		do {
+			if ((LA(1)==8)) {
+				match(8);
+				b=joinIn();
+				in.add(b); b.var.hidden=true;
+			}
+			else {
+				if ( _cnt50>=1 ) { break _loop50; } else {throw new NoViableAltException(LT(1), getFilename());}
+			}
+			
+			_cnt50++;
+		} while (true);
+		}
+		
+		for( BindingExpr b2: in )
+		{
+		b2.var.hidden = false;
+		}
+		
+		match(LITERAL_where);
+		p=expr();
+		{
+		switch ( LA(1)) {
+		case LITERAL_into:
+		{
+			match(LITERAL_into);
+			r=expr();
+			r = new ArrayExpr(r);
+			break;
+		}
+		case LITERAL_expand:
+		{
+			match(LITERAL_expand);
+			r=expr();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		for( BindingExpr b2: in )
+		{
+		env.unscope(b2.var);
+		}
+		r = new MultiJoinExpr(in, p, r).expand(env);  
+		
+		return r;
+	}
+	
+	public final BindingExpr  joinIn() throws RecognitionException, TokenStreamException {
+		BindingExpr b=null;
+		
+		boolean p = false;
+		
+		{
+		switch ( LA(1)) {
+		case LITERAL_preserve:
+		{
+			match(LITERAL_preserve);
+			p = true;
+			break;
+		}
+		case VAR:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		b=vpipe();
+		
+		b.preserve = p;
+		
+		return b;
+	}
+	
+	public final Expr  equijoin() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		ArrayList<BindingExpr> in = new ArrayList<BindingExpr>(); 
+		ArrayList<Expr> on = new ArrayList<Expr>(); 
+		Expr c=null; 
+		
+		
+		match(LITERAL_equijoin);
+		ejoinIn(in,on);
+		{
+		int _cnt56=0;
+		_loop56:
+		do {
+			if ((LA(1)==8)) {
+				match(8);
+				ejoinIn(in,on);
+			}
+			else {
+				if ( _cnt56>=1 ) { break _loop56; } else {throw new NoViableAltException(LT(1), getFilename());}
+			}
+			
+			_cnt56++;
+		} while (true);
+		}
+		{
+		switch ( LA(1)) {
+		case LITERAL_using:
+		{
+			match(LITERAL_using);
+			c=comparator();
+			oops("comparators on joins are NYI");
+			break;
+		}
+		case LITERAL_into:
+		case LITERAL_expand:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+			for( BindingExpr b: in )
+		{
+		b.var.hidden = false;
+		}
+		
+		{
+		switch ( LA(1)) {
+		case LITERAL_into:
+		{
+			match(LITERAL_into);
+			r=expr();
+			r = new ArrayExpr(r);
+			break;
+		}
+		case LITERAL_expand:
+		{
+			match(LITERAL_expand);
+			r=expr();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		r = new JoinExpr(in,on,r); // TODO: add comparator
+		for( BindingExpr b: in )
+		{
+			env.unscope(b.var);
+		}
+		
+		return r;
+	}
+	
+	public final void ejoinIn(
+		ArrayList<BindingExpr> in, ArrayList<Expr> on
+	) throws RecognitionException, TokenStreamException {
+		
+		Expr e; BindingExpr b;
+		
+		b=joinIn();
+		in.add(b);
+		match(LITERAL_on);
+		e=expr();
+		on.add(e); b.var.hidden=true;
+	}
+	
+	public final Expr  split(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		ArrayList<Expr> es = new ArrayList<Expr>();
+		Var tmpVar = env.makeVar("$split");
+		Expr p; Expr e;
+		BindingExpr b;
+		
+		
+		match(LITERAL_split);
+		b=each(in);
+		es.add( b );
+		{
+		_loop62:
+		do {
+			if ((LA(1)==LITERAL_if)) {
+				match(LITERAL_if);
+				b.var.hidden=false;
+				match(22);
+				p=expr();
+				match(23);
+				b.var.hidden=true;
+				e=expr();
+				es.add(new IfExpr(p,e));
+			}
+			else {
+				break _loop62;
+			}
+			
+		} while (true);
+		}
+		{
+		switch ( LA(1)) {
+		case LITERAL_else:
+		{
+			match(LITERAL_else);
+			b.var.hidden=true;
+			e=expr();
+			es.add(new IfExpr(new ConstExpr(JBool.trueItem), e) );
+			break;
+		}
+		case EOF:
+		case SEMI:
+		case 8:
+		case 9:
+		case 23:
+		case 25:
+		case 40:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+		r = new SplitExpr(es);
+		env.unscope(b.var);
+		
+		return r;
+	}
+	
+	public final Expr  sort(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		match(LITERAL_sort);
+		r=sortCmp();
+		r = new SortExpr(in, r);
+		return r;
+	}
+	
+	public final Expr  top(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		Expr n; Expr by=null;
+		
+		match(LITERAL_top);
+		n=expr();
+		{
+		switch ( LA(1)) {
+		case LITERAL_each:
+		case LITERAL_using:
+		case LITERAL_by:
+		{
+			by=sortCmp();
+			break;
+		}
+		case EOF:
+		case SEMI:
+		case 8:
+		case 9:
+		case 23:
+		case 25:
+		case 40:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		
+			// TODO: add heap-based top operator
+			if( by != null )
+			{
+		in = new SortExpr(in, by);
+			}
+			r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JLong.ONE_ITEM))));
+		
+		return r;
+	}
+	
+	public final Expr  call(
+		Expr in
+	) throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String n; ArrayList<Expr> args;
+		
+		switch ( LA(1)) {
+		case VAR:
+		{
+			n=var();
+			{
+			args=fnArgs();
+			args.add(0, in); r = new FunctionCallExpr(new VarExpr(env.inscope(n)), args);
+			{
+			_loop71:
+			do {
+				if ((LA(1)==22)) {
+					args=fnArgs();
+					r = new FunctionCallExpr(r, args);
+				}
+				else {
+					break _loop71;
+				}
+				
+			} while (true);
+			}
+			}
+			break;
+		}
+		case ID:
+		{
+			n=name();
+			args=fnArgs();
+			args.add(0, in); r = FunctionLib.lookup(env, n, args);
+			{
+			_loop73:
+			do {
+				if ((LA(1)==22)) {
+					args=fnArgs();
+					r = new FunctionCallExpr(r, args);
+				}
+				else {
+					break _loop73;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final ArrayList<Expr>  fnArgs() throws RecognitionException, TokenStreamException {
+		ArrayList<Expr> r = new ArrayList<Expr>();
+		
+		
+		match(22);
+		r=exprList();
+		match(23);
+		
+			for(Expr e: r)
+			{
+				if( e instanceof AssignExpr )
+				{
+					oops("Call by name NYI");
+				}
+			}
+		
+		return r;
+	}
+	
+	public final Expr  sortCmp() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String v="$";
+		
+		switch ( LA(1)) {
+		case LITERAL_each:
+		case LITERAL_by:
+		{
 			{
 			switch ( LA(1)) {
-			case 11:
-			case STR:
-			case INT:
-			case DEC:
-			case DOUBLE:
-			case HEXSTR:
-			case DATETIME:
-			case VAR:
+			case LITERAL_each:
 			{
-				n=basic();
+				match(LITERAL_each);
+				v=var();
+				break;
+			}
+			case LITERAL_by:
+			{
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			match(LITERAL_by);
+			r=cmpArrayFn(v);
+			break;
+		}
+		case LITERAL_using:
+		{
+			match(LITERAL_using);
+			r=comparator();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  unroll() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		ArrayList<Expr> args = new ArrayList<Expr>();
+		
+		match(LITERAL_unroll);
+		r=fnCall();
+		args.add(r);
+		{
+		int _cnt78=0;
+		_loop78:
+		do {
+			if ((LA(1)==24||LA(1)==DOT||LA(1)==DOT_ID)) {
+				r=estep();
+				args.add(r);
+			}
+			else {
+				if ( _cnt78>=1 ) { break _loop78; } else {throw new NoViableAltException(LT(1), getFilename());}
+			}
+			
+			_cnt78++;
+		} while (true);
+		}
+		
+		r = new UnrollExpr(args);
+		
+		return r;
+	}
+	
+	public final Expr  fnCall() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String s; ArrayList<Expr> args;
+		
+		{
+		switch ( LA(1)) {
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		{
+			r=basic();
+			break;
+		}
+		case ID:
+		{
+			r=builtinCall();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		{
+		_loop177:
+		do {
+			if ((LA(1)==22)) {
+				args=fnArgs();
+				r = new FunctionCallExpr(r, args);
+			}
+			else {
+				break _loop177;
+			}
+			
+		} while (true);
+		}
+		return r;
+	}
+	
+	public final Expr  estep() throws RecognitionException, TokenStreamException {
+		Expr r = null;
+		
+		
+		switch ( LA(1)) {
+		case DOT:
+		case DOT_ID:
+		{
+			r=projName();
+			r = new UnrollField(r);
+			break;
+		}
+		case 24:
+		{
+			match(24);
+			r=expr();
+			match(25);
+			r = new UnrollIndex(r);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  projName() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		switch ( LA(1)) {
+		case DOT_ID:
+		{
+			r=dotName();
+			break;
+		}
+		case DOT:
+		{
+			match(DOT);
+			r=basic();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  assign() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		String v;
+		
+		switch ( LA(1)) {
+		case AVAR:
+		{
+			v=avar();
+			match(18);
+			r=rvalue();
+			r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r);
+			break;
+		}
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			r=pipe();
+			match(40);
+			v=var();
+			r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  rvalue() throws RecognitionException, TokenStreamException {
+		Expr r = null;
+		
+		
+		switch ( LA(1)) {
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			r=pipe();
+			break;
+		}
+		case LITERAL_extern:
+		{
+			r=extern();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  extern() throws RecognitionException, TokenStreamException {
+		Expr r = null;
+		
+		String lang;
+		
+		match(LITERAL_extern);
+		lang=name();
+		match(LITERAL_fn);
+		r=expr();
+		r = new ExternFunctionExpr(lang, r);
+		return r;
+	}
+	
+	public final Expr  function() throws RecognitionException, TokenStreamException {
+		Expr r = null;
+		
+		ArrayList<Var> p;
+		
+		match(LITERAL_fn);
+		p=params();
+		r=expr();
+		
+		r = new DefineFunctionExpr(null, p, r);
+		for( Var v: p )
+		{
+		env.unscope(v);
+		}
+		
+		return r;
+	}
+	
+	public final ArrayList<Var>  params() throws RecognitionException, TokenStreamException {
+		ArrayList<Var> p = new ArrayList<Var>();
+		
+		String v;
+		
+		match(22);
+		{
+		switch ( LA(1)) {
+		case VAR:
+		{
+			v=var();
+			p.add(env.scope(v));
+			{
+			_loop92:
+			do {
+				if ((LA(1)==8)) {
+					match(8);
+					v=var();
+					p.add(env.scope(v));
+				}
+				else {
+					break _loop92;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		case 23:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		match(23);
+		return p;
+	}
+	
+	public final Expr  forExpr() throws RecognitionException, TokenStreamException {
+		Expr r = null;
+		
+		
+			ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
+		
+		
+		match(LITERAL_for);
+		match(22);
+		forDef(bs);
+		{
+		_loop97:
+		do {
+			if ((LA(1)==8)) {
+				match(8);
+				forDef(bs);
+			}
+			else {
+				break _loop97;
+			}
+			
+		} while (true);
+		}
+		match(23);
+		r=expr();
+		
+		for(int i = 0 ; i < bs.size() ; i++ )
+		{
+		BindingExpr e = bs.get(i);
+		env.unscope(e.var);
+		}
+		MultiForExpr f = new MultiForExpr(bs, null, r /*new ArrayExpr(r)*/); // TODO: eleminate WHERE, array return, make native multifor
+		r = f.expand(env);
+		
+		return r;
+	}
+	
+	public final void forDef(
+		ArrayList<BindingExpr> bindings
+	) throws RecognitionException, TokenStreamException {
+		
+		String v; Expr e; String v2 = null; BindingExpr.Type t = null; BindingExpr b;
+		
+		v=var();
+		{
+		match(LITERAL_in);
+		e=pipe();
+		t = BindingExpr.Type.IN;
+		}
+		
+		Var var = env.scope(v);
+		//      Var var2 = null;
+		//      if( v2 != null )
+		//      {
+		//        var2 = env.scope(v2); 
+		//      }
+		bindings.add( new BindingExpr(t, var, null, e) );
+		
+	}
+	
+	public final Expr  ifExpr() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		Expr p=null; Expr s=null;
+		
+		match(LITERAL_if);
+		match(22);
+		p=expr();
+		match(23);
+		r=expr();
+		{
+		if ((LA(1)==LITERAL_else)) {
+			match(LITERAL_else);
+			s=expr();
+		}
+		else if ((_tokenSet_0.member(LA(1)))) {
+		}
+		else {
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		
+		}
+		
+				r = new IfExpr(p, r, s);
+			
+		return r;
+	}
+	
+	public final RecordExpr  record() throws RecognitionException, TokenStreamException {
+		RecordExpr r = null;
+		
+		ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
+			  FieldExpr f;
+		
+		match(47);
+		{
+		switch ( LA(1)) {
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		case FNAME:
+		{
+			f=field();
+			args.add(f);
+			break;
+		}
+		case 8:
+		case 48:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		{
+		_loop109:
+		do {
+			if ((LA(1)==8)) {
+				match(8);
 				{
 				switch ( LA(1)) {
-				case 18:
+				case LITERAL_cmp:
+				case 22:
+				case 24:
+				case 47:
+				case INT:
+				case DEC:
+				case DOUBLE:
+				case HEXSTR:
+				case DATETIME:
+				case LITERAL_true:
+				case LITERAL_false:
+				case LITERAL_null:
+				case STR:
+				case HERE_STRING:
+				case BLOCK_STRING:
+				case VAR:
+				case ID:
+				case FNAME:
 				{
-					match(18);
-					if ( inputState.guessing==0 ) {
-						wild = true;
-					}
+					f=field();
+					args.add(f);
 					break;
 				}
-				case 12:
-				case 15:
+				case 8:
+				case 48:
 				{
 					break;
 				}
@@ -1209,14 +2697,155 @@ inputState.guessing--;
 				}
 				}
 				}
+			}
+			else {
+				break _loop109;
+			}
+			
+		} while (true);
+		}
+		match(48);
+		r = new RecordExpr(args.toArray(new Expr[args.size()]));
+		return r;
+	}
+	
+	public final FieldExpr  field() throws RecognitionException, TokenStreamException {
+		FieldExpr f=null;
+		
+		Expr e = null; Expr v=null; boolean required = true;
+		
+		switch ( LA(1)) {
+		case FNAME:
+		{
+			e=fname();
+			{
+			switch ( LA(1)) {
+			case 49:
+			{
+				match(49);
+				required = false;
 				break;
 			}
-			case 18:
+			case 50:
 			{
-				match(18);
-				if ( inputState.guessing==0 ) {
-					wild = true;
+				break;
+			}
+			default:
+			{
+				throw new NoViableAltException(LT(1), getFilename());
+			}
+			}
+			}
+			match(50);
+			v=expr();
+			
+				f = new NameValueBinding(e, v, required); 
+			
+			break;
+		}
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			e=path();
+			{
+			switch ( LA(1)) {
+			case DOT_STAR:
+			{
+				match(DOT_STAR);
+				
+					           	 f = new CopyRecord(e);
+					
+				break;
+			}
+			case 8:
+			case 48:
+			case 49:
+			case 50:
+			{
+				{
+				switch ( LA(1)) {
+				case 49:
+				{
+					match(49);
+					required = false;
+					break;
 				}
+				case 8:
+				case 48:
+				case 50:
+				{
+					break;
+				}
+				default:
+				{
+					throw new NoViableAltException(LT(1), getFilename());
+				}
+				}
+				}
+				{
+				switch ( LA(1)) {
+				case 50:
+				{
+					match(50);
+					v=expr();
+					break;
+				}
+				case 8:
+				case 48:
+				{
+					break;
+				}
+				default:
+				{
+					throw new NoViableAltException(LT(1), getFilename());
+				}
+				}
+				}
+				
+					           	 if( v != null )
+					           	 {
+					           	    f = new NameValueBinding(e, v, required); 
+					           	 }
+				else if( e instanceof VarExpr )
+				{
+				f = new NameValueBinding( ((VarExpr)e).var(), required );
+				}
+				else if( e instanceof PathExpr )
+				{
+				// TODO: { $r.x } becomes { $r.{.x} }.  keep it that way or leave it as { $r.x }??
+				PathStep ret = ((PathExpr)e).getReturn();
+				Expr step = ret.parent();
+				if( step instanceof PathFieldValue )
+				{
+					 step.replaceInParent(ret);
+					 f = new CopyField(e, step.child(0), required ? CopyField.When.DEFINED : CopyField.When.NONNULL );
+				}
+				else
+				{
+				// ((PathExpr)e).forceRecord();
+				f = new CopyRecord(e);
+				}
+				}
+				else
+				{
+				oops("field name required, or use (expr).* to copy records");
+				}
+					
 				break;
 			}
 			default:
@@ -1232,211 +2861,138 @@ inputState.guessing--;
 			throw new NoViableAltException(LT(1), getFilename());
 		}
 		}
-		}
-		if ( inputState.guessing==0 ) {
-			f = new ProjPattern(ctx,n,wild);
-		}
 		return f;
 	}
 	
-	public final VarExpr  varExpr() throws RecognitionException, TokenStreamException {
-		VarExpr r = null;
-		
-		String v;
-		
-		v=var();
-		if ( inputState.guessing==0 ) {
-			
-			Var var = env.inscope(v);
-			r = new VarExpr(var);
-			
-		}
-		return r;
-	}
-	
-	public final FieldExpr  varField(
-		VarExpr ve
-	) throws RecognitionException, TokenStreamException {
-		FieldExpr f = null;
-		
-		boolean required = true;
-		
-		{
-		switch ( LA(1)) {
-		case 16:
-		{
-			match(16);
-			if ( inputState.guessing==0 ) {
-				required = false;
-			}
-			break;
-		}
-		case 12:
-		case 15:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		if ( inputState.guessing==0 ) {
-			
-					String name = ve.var().name().substring(1);
-			f = new NameValueBinding(name,ve,required);
-			
-		}
-		return f;
-	}
-	
-	public final Expr  dotId() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+	public final Expr  fname() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
 		Token  i = null;
 		
 		i = LT(1);
-		match(DOT_ID);
-		if ( inputState.guessing==0 ) {
-			r = new ConstExpr(new JString(i.getText()));
-		}
+		match(FNAME);
+		r = new ConstExpr(new JString(i.getText()));
 		return r;
 	}
 	
-	public final Expr  basic() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+	public final Expr  path() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
+		PathStep s=null; PathStep in=null;
 		
+		r=fnCall();
+		{
 		switch ( LA(1)) {
-		case VAR:
-		{
-			r=varExpr();
-			break;
-		}
-		case 11:
-		case STR:
-		case INT:
-		case DEC:
-		case DOUBLE:
-		case HEXSTR:
-		case DATETIME:
-		{
-			r=literalExpr();
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		return r;
-	}
-	
-	public final Expr  dotName() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		
-		switch ( LA(1)) {
+		case 24:
+		case 47:
+		case 70:
+		case DOT:
 		case DOT_ID:
 		{
-			r=dotId();
+			s=step(in = new PathExpr(r));
+			{
+			_loop150:
+			do {
+				if ((_tokenSet_1.member(LA(1)))) {
+					s=step(s);
+				}
+				else {
+					break _loop150;
+				}
+				
+			} while (true);
+			}
+			r = in;
 			break;
 		}
-		case 19:
+		case EOF:
+		case SEMI:
+		case 8:
+		case 9:
+		case LITERAL_in:
+		case LITERAL_each:
+		case LITERAL_using:
+		case LITERAL_as:
+		case LITERAL_by:
+		case LITERAL_into:
+		case LITERAL_expand:
+		case 23:
+		case 25:
+		case LITERAL_asc:
+		case LITERAL_desc:
+		case LITERAL_where:
+		case LITERAL_on:
+		case LITERAL_if:
+		case LITERAL_else:
+		case 40:
+		case 48:
+		case 49:
+		case 50:
+		case DOT_STAR:
+		case LITERAL_or:
+		case LITERAL_and:
+		case 58:
+		case 59:
+		case 60:
+		case 61:
+		case 62:
+		case 63:
+		case LITERAL_instanceof:
+		case 65:
+		case 66:
+		case 67:
+		case 68:
 		{
-			match(19);
-			r=basic();
 			break;
 		}
 		default:
 		{
 			throw new NoViableAltException(LT(1), getFilename());
+		}
 		}
 		}
 		return r;
 	}
 	
-	public final Expr  fieldName() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+	public final Expr  orExpr() throws RecognitionException, TokenStreamException {
+		Expr r;
 		
-		String i;
+		Expr s;
 		
-		switch ( LA(1)) {
-		case 11:
-		case STR:
-		case INT:
-		case DEC:
-		case DOUBLE:
-		case HEXSTR:
-		case DATETIME:
-		case VAR:
+		r=andExpr();
 		{
-			r=basic();
-			break;
-		}
-		case ID:
-		{
-			i=id();
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(new JString(i));
+		_loop118:
+		do {
+			if ((LA(1)==LITERAL_or)) {
+				match(LITERAL_or);
+				s=andExpr();
+				r = new OrExpr(r,s);
 			}
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
+			else {
+				break _loop118;
+			}
+			
+		} while (true);
 		}
 		return r;
-	}
-	
-	public final String  constFieldName() throws RecognitionException, TokenStreamException {
-		String name = null;
-		
-		Token  s = null;
-		
-		switch ( LA(1)) {
-		case ID:
-		{
-			name=id();
-			break;
-		}
-		case STR:
-		{
-			s = LT(1);
-			match(STR);
-			if ( inputState.guessing==0 ) {
-				name=s.getText();
-			}
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		return name;
 	}
 	
 	public final Expr  andExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+		Expr r;
 		
 		Expr s;
 		
 		r=notExpr();
 		{
-		_loop41:
+		_loop121:
 		do {
 			if ((LA(1)==LITERAL_and)) {
 				match(LITERAL_and);
 				s=notExpr();
-				if ( inputState.guessing==0 ) {
-					r = new AndExpr(r,s);
-				}
+				r = new AndExpr(r,s);
 			}
 			else {
-				break _loop41;
+				break _loop121;
 			}
 			
 		} while (true);
@@ -1445,7 +3001,7 @@ inputState.guessing--;
 	}
 	
 	public final Expr  notExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+		Expr r;
 		
 		
 		switch ( LA(1)) {
@@ -1453,30 +3009,86 @@ inputState.guessing--;
 		{
 			match(LITERAL_not);
 			r=notExpr();
-			if ( inputState.guessing==0 ) {
-				r = new NotExpr(r);
-			}
+			r = new NotExpr(r);
 			break;
 		}
-		case 11:
-		case 14:
-		case STR:
-		case 34:
-		case 35:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
 		case INT:
 		case DEC:
 		case DOUBLE:
 		case HEXSTR:
 		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
 		case VAR:
 		case ID:
+		{
+			r=kwTest();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  kwTest() throws RecognitionException, TokenStreamException {
+		Expr r;
+		
+		
+		switch ( LA(1)) {
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case 65:
+		case 66:
 		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
 		{
 			r=inExpr();
+			break;
+		}
+		case LITERAL_isnull:
+		{
+			r=isnullExpr();
+			break;
+		}
+		case LITERAL_isdefined:
+		{
+			r=isdefinedExpr();
+			break;
+		}
+		case LITERAL_exists:
+		{
+			r=existexpr();
 			break;
 		}
 		default:
@@ -1499,25 +3111,32 @@ inputState.guessing--;
 		{
 			match(LITERAL_in);
 			s=compare();
-			if ( inputState.guessing==0 ) {
-				r = new InExpr(r,s);
-			}
+			r = new InExpr(r,s);
 			break;
 		}
 		case EOF:
 		case SEMI:
-		case 12:
-		case 13:
-		case 15:
-		case LITERAL_or:
-		case LITERAL_and:
-		case 38:
-		case LITERAL_else:
-		case LITERAL_on:
+		case 8:
+		case 9:
+		case LITERAL_each:
+		case LITERAL_using:
+		case LITERAL_as:
 		case LITERAL_by:
 		case LITERAL_into:
+		case LITERAL_expand:
+		case 23:
+		case 25:
 		case LITERAL_asc:
 		case LITERAL_desc:
+		case LITERAL_where:
+		case LITERAL_on:
+		case LITERAL_if:
+		case LITERAL_else:
+		case 40:
+		case 48:
+		case 50:
+		case LITERAL_or:
+		case LITERAL_and:
 		{
 			break;
 		}
@@ -1530,43 +3149,97 @@ inputState.guessing--;
 		return r;
 	}
 	
+	public final Expr  isnullExpr() throws RecognitionException, TokenStreamException {
+		Expr r;
+		
+		
+		match(LITERAL_isnull);
+		r=inExpr();
+		r = new IsnullExpr(r);
+		return r;
+	}
+	
+	public final Expr  isdefinedExpr() throws RecognitionException, TokenStreamException {
+		Expr r;
+		
+		Expr n;
+		
+		match(LITERAL_isdefined);
+		r=fnCall();
+		n=projName();
+		r = new IsdefinedExpr(r,n);
+		return r;
+	}
+	
+	public final Expr  existexpr() throws RecognitionException, TokenStreamException {
+		Expr r;
+		
+		
+		match(LITERAL_exists);
+		r=inExpr();
+		r = new ExistsFn(r);
+		return r;
+	}
+	
 	public final Expr  compare() throws RecognitionException, TokenStreamException {
 		Expr r = null;
 		
-		int c; Expr r2;
+		int c; Expr s; Expr t;
 		
 		r=instanceOfExpr();
 		{
 		switch ( LA(1)) {
-		case 26:
-		case 27:
-		case 28:
-		case 29:
-		case 30:
-		case 31:
+		case 58:
+		case 59:
+		case 60:
+		case 61:
+		case 62:
+		case 63:
 		{
 			c=compareOp();
-			r2=instanceOfExpr();
-			if ( inputState.guessing==0 ) {
-				r = new CompareExpr(c,r,r2);
+			s=instanceOfExpr();
+			r = new CompareExpr(c,r,s);
+			{
+			_loop132:
+			do {
+				if (((LA(1) >= 58 && LA(1) <= 63))) {
+					c=compareOp();
+					s = s.clone(new VarMap(env));
+					t=instanceOfExpr();
+					r = new AndExpr( r, new CompareExpr(c,s,t) ); s=t;
+				}
+				else {
+					break _loop132;
+				}
+				
+			} while (true);
 			}
 			break;
 		}
 		case EOF:
 		case SEMI:
-		case 12:
-		case 13:
-		case 15:
-		case LITERAL_or:
-		case LITERAL_and:
+		case 8:
+		case 9:
 		case LITERAL_in:
-		case 38:
-		case LITERAL_else:
-		case LITERAL_on:
+		case LITERAL_each:
+		case LITERAL_using:
+		case LITERAL_as:
 		case LITERAL_by:
 		case LITERAL_into:
+		case LITERAL_expand:
+		case 23:
+		case 25:
 		case LITERAL_asc:
 		case LITERAL_desc:
+		case LITERAL_where:
+		case LITERAL_on:
+		case LITERAL_if:
+		case LITERAL_else:
+		case 40:
+		case 48:
+		case 50:
+		case LITERAL_or:
+		case LITERAL_and:
 		{
 			break;
 		}
@@ -1584,39 +3257,46 @@ inputState.guessing--;
 		
 		Expr s;
 		
-		r=toExpr();
+		r=addExpr();
 		{
 		switch ( LA(1)) {
 		case LITERAL_instanceof:
 		{
 			match(LITERAL_instanceof);
-			s=toExpr();
-			if ( inputState.guessing==0 ) {
-				r = new InstanceOfExpr(r,s);
-			}
+			s=addExpr();
+			r = new InstanceOfExpr(r,s);
 			break;
 		}
 		case EOF:
 		case SEMI:
-		case 12:
-		case 13:
-		case 15:
-		case LITERAL_or:
-		case LITERAL_and:
+		case 8:
+		case 9:
 		case LITERAL_in:
-		case 26:
-		case 27:
-		case 28:
-		case 29:
-		case 30:
-		case 31:
-		case 38:
-		case LITERAL_else:
-		case LITERAL_on:
+		case LITERAL_each:
+		case LITERAL_using:
+		case LITERAL_as:
 		case LITERAL_by:
 		case LITERAL_into:
+		case LITERAL_expand:
+		case 23:
+		case 25:
 		case LITERAL_asc:
 		case LITERAL_desc:
+		case LITERAL_where:
+		case LITERAL_on:
+		case LITERAL_if:
+		case LITERAL_else:
+		case 40:
+		case 48:
+		case 50:
+		case LITERAL_or:
+		case LITERAL_and:
+		case 58:
+		case 59:
+		case 60:
+		case 61:
+		case 62:
+		case 63:
 		{
 			break;
 		}
@@ -1634,108 +3314,45 @@ inputState.guessing--;
 		
 		
 		switch ( LA(1)) {
-		case 26:
+		case 58:
 		{
-			match(26);
-			if ( inputState.guessing==0 ) {
-				r = CompareExpr.EQ;
-			}
+			match(58);
+			r = CompareExpr.EQ;
 			break;
 		}
-		case 27:
+		case 59:
 		{
-			match(27);
-			if ( inputState.guessing==0 ) {
-				r = CompareExpr.LT;
-			}
+			match(59);
+			r = CompareExpr.LT;
 			break;
 		}
-		case 28:
+		case 60:
 		{
-			match(28);
-			if ( inputState.guessing==0 ) {
-				r = CompareExpr.GT;
-			}
+			match(60);
+			r = CompareExpr.GT;
 			break;
 		}
-		case 29:
+		case 61:
 		{
-			match(29);
-			if ( inputState.guessing==0 ) {
-				r = CompareExpr.NE;
-			}
+			match(61);
+			r = CompareExpr.NE;
 			break;
 		}
-		case 30:
+		case 62:
 		{
-			match(30);
-			if ( inputState.guessing==0 ) {
-				r = CompareExpr.LE;
-			}
+			match(62);
+			r = CompareExpr.LE;
 			break;
 		}
-		case 31:
+		case 63:
 		{
-			match(31);
-			if ( inputState.guessing==0 ) {
-				r = CompareExpr.GE;
-			}
+			match(63);
+			r = CompareExpr.GE;
 			break;
 		}
 		default:
 		{
 			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		return r;
-	}
-	
-	public final Expr  toExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		Expr s;
-		
-		r=addExpr();
-		{
-		switch ( LA(1)) {
-		case LITERAL_to:
-		{
-			match(LITERAL_to);
-			s=addExpr();
-			if ( inputState.guessing==0 ) {
-				r = new RangeExpr(r,s);
-			}
-			break;
-		}
-		case EOF:
-		case SEMI:
-		case 12:
-		case 13:
-		case 15:
-		case LITERAL_or:
-		case LITERAL_and:
-		case LITERAL_in:
-		case 26:
-		case 27:
-		case 28:
-		case 29:
-		case 30:
-		case 31:
-		case LITERAL_instanceof:
-		case 38:
-		case LITERAL_else:
-		case LITERAL_on:
-		case LITERAL_by:
-		case LITERAL_into:
-		case LITERAL_asc:
-		case LITERAL_desc:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
 		}
 		}
 		return r;
@@ -1748,17 +3365,15 @@ inputState.guessing--;
 		
 		r=multExpr();
 		{
-		_loop54:
+		_loop138:
 		do {
-			if ((LA(1)==34||LA(1)==35)) {
+			if ((LA(1)==65||LA(1)==66)) {
 				op=addOp();
 				s=multExpr();
-				if ( inputState.guessing==0 ) {
-					r = new MathExpr(op,r,s);
-				}
+				r = new MathExpr(op,r,s);
 			}
 			else {
-				break _loop54;
+				break _loop138;
 			}
 			
 		} while (true);
@@ -1773,17 +3388,15 @@ inputState.guessing--;
 		
 		r=unaryAdd();
 		{
-		_loop58:
+		_loop142:
 		do {
-			if ((LA(1)==18||LA(1)==36)) {
+			if ((LA(1)==67||LA(1)==68)) {
 				op=multOp();
 				s=unaryAdd();
-				if ( inputState.guessing==0 ) {
-					r = new MathExpr(op,r,s);
-				}
+				r = new MathExpr(op,r,s);
 			}
 			else {
-				break _loop58;
+				break _loop142;
 			}
 			
 		} while (true);
@@ -1796,20 +3409,16 @@ inputState.guessing--;
 		
 		
 		switch ( LA(1)) {
-		case 34:
+		case 65:
 		{
-			match(34);
-			if ( inputState.guessing==0 ) {
-				op=MathExpr.PLUS;
-			}
+			match(65);
+			op=MathExpr.PLUS;
 			break;
 		}
-		case 35:
+		case 66:
 		{
-			match(35);
-			if ( inputState.guessing==0 ) {
-				op=MathExpr.MINUS;
-			}
+			match(66);
+			op=MathExpr.MINUS;
 			break;
 		}
 		default:
@@ -1825,54 +3434,58 @@ inputState.guessing--;
 		
 		
 		switch ( LA(1)) {
-		case 35:
+		case 66:
 		{
-			match(35);
-			r=access();
-			if ( inputState.guessing==0 ) {
-				r = MathExpr.negate(r);
-			}
+			match(66);
+			r=typeExpr();
+			r = MathExpr.negate(r);
 			break;
 		}
-		case 11:
-		case 14:
-		case STR:
-		case 34:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
+		case 65:
+		case LITERAL_type:
 		case INT:
 		case DEC:
 		case DOUBLE:
 		case HEXSTR:
 		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
 		case VAR:
 		case ID:
-		case LITERAL_type:
 		{
 			{
 			switch ( LA(1)) {
-			case 34:
+			case 65:
 			{
-				match(34);
+				match(65);
 				break;
 			}
-			case 11:
-			case 14:
-			case STR:
-			case 37:
-			case LITERAL_true:
-			case LITERAL_false:
-			case LITERAL_null:
+			case LITERAL_cmp:
+			case 22:
+			case 24:
+			case 47:
+			case LITERAL_type:
 			case INT:
 			case DEC:
 			case DOUBLE:
 			case HEXSTR:
 			case DATETIME:
+			case LITERAL_true:
+			case LITERAL_false:
+			case LITERAL_null:
+			case STR:
+			case HERE_STRING:
+			case BLOCK_STRING:
 			case VAR:
 			case ID:
-			case LITERAL_type:
 			{
 				break;
 			}
@@ -1882,7 +3495,7 @@ inputState.guessing--;
 			}
 			}
 			}
-			r=access();
+			r=typeExpr();
 			break;
 		}
 		default:
@@ -1898,20 +3511,16 @@ inputState.guessing--;
 		
 		
 		switch ( LA(1)) {
-		case 18:
+		case 67:
 		{
-			match(18);
-			if ( inputState.guessing==0 ) {
-				op=MathExpr.MULTIPLY;
-			}
+			match(67);
+			op=MathExpr.MULTIPLY;
 			break;
 		}
-		case 36:
+		case 68:
 		{
-			match(36);
-			if ( inputState.guessing==0 ) {
-				op=MathExpr.DIVIDE;
-			}
+			match(68);
+			op=MathExpr.DIVIDE;
 			break;
 		}
 		default:
@@ -1922,106 +3531,38 @@ inputState.guessing--;
 		return op;
 	}
 	
-	public final Expr  access() throws RecognitionException, TokenStreamException {
+	public final Expr  typeExpr() throws RecognitionException, TokenStreamException {
 		Expr r = null;
 		
-		String i; ArrayList<Expr> args;
+		Schema s;
 		
-		{
 		switch ( LA(1)) {
-		case 11:
-		case 14:
-		case STR:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
+		case LITERAL_type:
+		{
+			match(LITERAL_type);
+			s=type();
+			r = new ConstExpr(new JSchema(s));
+			break;
+		}
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case 47:
 		case INT:
 		case DEC:
 		case DOUBLE:
 		case HEXSTR:
 		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
 		case VAR:
-		case LITERAL_type:
-		{
-			r=construct();
-			break;
-		}
 		case ID:
 		{
-			i=id();
-			match(11);
-			args=exprList();
-			match(13);
-			if ( inputState.guessing==0 ) {
-				r = FunctionLib.lookup(env, i, args);
-			}
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		r=step(r);
-		return r;
-	}
-	
-	public final Expr  construct() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		
-		switch ( LA(1)) {
-		case LITERAL_true:
-		{
-			match(LITERAL_true);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(JBool.trueItem);
-			}
-			break;
-		}
-		case LITERAL_false:
-		{
-			match(LITERAL_false);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(JBool.falseItem);
-			}
-			break;
-		}
-		case LITERAL_null:
-		{
-			match(LITERAL_null);
-			if ( inputState.guessing==0 ) {
-				r = new ConstExpr(Item.nil);
-			}
-			break;
-		}
-		case LITERAL_type:
-		{
-			r=typeExpr();
-			break;
-		}
-		case 37:
-		{
-			r=arrayExpr();
-			break;
-		}
-		case 14:
-		{
-			r=recordExpr();
-			break;
-		}
-		case 11:
-		case STR:
-		case INT:
-		case DEC:
-		case DOUBLE:
-		case HEXSTR:
-		case DATETIME:
-		case VAR:
-		{
-			r=basic();
+			r=path();
 			break;
 		}
 		default:
@@ -2032,104 +3573,153 @@ inputState.guessing--;
 		return r;
 	}
 	
-	public final ArrayList<Expr>  exprList() throws RecognitionException, TokenStreamException {
-		ArrayList<Expr> es = new ArrayList<Expr>();
+	public final Schema  type() throws RecognitionException, TokenStreamException {
+		Schema s = null;
 		
-		Expr e;
+		Schema s2 = null; SchemaOr os = null;
 		
+		s=typeTerm();
 		{
-		_loop79:
+		_loop206:
 		do {
-			if ((LA(1)==12)) {
-				match(12);
+			if ((LA(1)==88)) {
+				match(88);
+				s2 = s; s = os = new SchemaOr(); os.addSchema(s2);
+				s2=typeTerm();
+				os.addSchema(s2);
 			}
 			else {
-				break _loop79;
+				break _loop206;
 			}
 			
 		} while (true);
 		}
+		return s;
+	}
+	
+	public final PathStep  step(
+		PathStep ctx
+	) throws RecognitionException, TokenStreamException {
+		PathStep r = null;
+		
+		Expr e; Expr f; ArrayList<PathStep> pn;
+		
 		{
 		switch ( LA(1)) {
-		case LITERAL_fn:
-		case 11:
-		case 14:
-		case STR:
-		case LITERAL_not:
-		case 34:
-		case 35:
-		case 37:
-		case LITERAL_true:
-		case LITERAL_false:
-		case LITERAL_null:
-		case INT:
-		case DEC:
-		case DOUBLE:
-		case HEXSTR:
-		case DATETIME:
-		case LITERAL_for:
-		case LITERAL_let:
-		case LITERAL_if:
-		case LITERAL_join:
-		case LITERAL_group:
-		case LITERAL_combine:
-		case LITERAL_reduce:
-		case LITERAL_sort:
-		case VAR:
-		case ID:
-		case LITERAL_type:
+		case DOT:
+		case DOT_ID:
 		{
-			e=expr();
-			if ( inputState.guessing==0 ) {
-				es.add(e);
-			}
+			e=projName();
+			r = new PathFieldValue(e);
+			break;
+		}
+		case 47:
+		{
+			match(47);
+			pn=projNames();
+			match(48);
+			r = new PathRecord(pn);
+			break;
+		}
+		case 70:
+		{
+			match(70);
+			match(47);
+			pn=projNotNames();
+			match(48);
+			r = new PathNotRecord(pn);
+			break;
+		}
+		case 24:
+		{
+			match(24);
 			{
-			_loop84:
-			do {
-				if ((LA(1)==12)) {
-					{
-					match(12);
-					}
+			switch ( LA(1)) {
+			case LITERAL_group:
+			case LITERAL_cmp:
+			case 22:
+			case 24:
+			case LITERAL_join:
+			case LITERAL_equijoin:
+			case LITERAL_if:
+			case LITERAL_unroll:
+			case LITERAL_fn:
+			case LITERAL_for:
+			case 47:
+			case LITERAL_not:
+			case LITERAL_isnull:
+			case LITERAL_exists:
+			case LITERAL_isdefined:
+			case 65:
+			case 66:
+			case LITERAL_type:
+			case INT:
+			case DEC:
+			case DOUBLE:
+			case HEXSTR:
+			case DATETIME:
+			case LITERAL_true:
+			case LITERAL_false:
+			case LITERAL_null:
+			case STR:
+			case HERE_STRING:
+			case BLOCK_STRING:
+			case VAR:
+			case ID:
+			{
+				e=expr();
+				{
+				switch ( LA(1)) {
+				case 25:
+				{
+					r = new PathIndex(e);
+					break;
+				}
+				case 50:
+				{
+					match(50);
 					{
 					switch ( LA(1)) {
+					case LITERAL_group:
+					case LITERAL_cmp:
+					case 22:
+					case 24:
+					case LITERAL_join:
+					case LITERAL_equijoin:
+					case LITERAL_if:
+					case LITERAL_unroll:
 					case LITERAL_fn:
-					case 11:
-					case 14:
-					case STR:
+					case LITERAL_for:
+					case 47:
 					case LITERAL_not:
-					case 34:
-					case 35:
-					case 37:
-					case LITERAL_true:
-					case LITERAL_false:
-					case LITERAL_null:
+					case LITERAL_isnull:
+					case LITERAL_exists:
+					case LITERAL_isdefined:
+					case 65:
+					case 66:
+					case LITERAL_type:
 					case INT:
 					case DEC:
 					case DOUBLE:
 					case HEXSTR:
 					case DATETIME:
-					case LITERAL_for:
-					case LITERAL_let:
-					case LITERAL_if:
-					case LITERAL_join:
-					case LITERAL_group:
-					case LITERAL_combine:
-					case LITERAL_reduce:
-					case LITERAL_sort:
+					case LITERAL_true:
+					case LITERAL_false:
+					case LITERAL_null:
+					case STR:
+					case HERE_STRING:
+					case BLOCK_STRING:
 					case VAR:
 					case ID:
-					case LITERAL_type:
 					{
-						e=expr();
-						if ( inputState.guessing==0 ) {
-							es.add(e);
-						}
+						f=expr();
+						r = new PathArraySlice(e,f);
 						break;
 					}
-					case 12:
-					case 13:
-					case 38:
+					case 67:
 					{
+						match(67);
+						r = new PathArrayTail(e);
 						break;
 					}
 					default:
@@ -2137,153 +3727,72 @@ inputState.guessing--;
 						throw new NoViableAltException(LT(1), getFilename());
 					}
 					}
-					}
-				}
-				else {
-					break _loop84;
-				}
-				
-			} while (true);
-			}
-			break;
-		}
-		case 13:
-		case 38:
-		{
-			break;
-		}
-		default:
-		{
-			throw new NoViableAltException(LT(1), getFilename());
-		}
-		}
-		}
-		return es;
-	}
-	
-	public final Expr  step(
-		Expr ctx
-	) throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		Var var = null; ArrayList<Expr> args; boolean addArray = true;
-		
-		switch ( LA(1)) {
-		case EOF:
-		case SEMI:
-		case 12:
-		case 13:
-		case 15:
-		case 18:
-		case LITERAL_or:
-		case LITERAL_and:
-		case LITERAL_in:
-		case 26:
-		case 27:
-		case 28:
-		case 29:
-		case 30:
-		case 31:
-		case LITERAL_instanceof:
-		case LITERAL_to:
-		case 34:
-		case 35:
-		case 36:
-		case 38:
-		case LITERAL_else:
-		case LITERAL_on:
-		case LITERAL_by:
-		case LITERAL_into:
-		case LITERAL_asc:
-		case LITERAL_desc:
-		{
-			if ( inputState.guessing==0 ) {
-				r = ctx;
-			}
-			break;
-		}
-		case 11:
-		case 19:
-		case DOT_ID:
-		case 37:
-		{
-			{
-			{
-			switch ( LA(1)) {
-			case 19:
-			case DOT_ID:
-			{
-				r=dotName();
-				if ( inputState.guessing==0 ) {
-					r = new FieldValueExpr(ctx, r);
-				}
-				break;
-			}
-			case 11:
-			{
-				match(11);
-				args=exprList();
-				match(13);
-				if ( inputState.guessing==0 ) {
-					r = new FunctionCallExpr(ctx, args);
-				}
-				break;
-			}
-			case 37:
-			{
-				match(37);
-				{
-				switch ( LA(1)) {
-				case LITERAL_fn:
-				case 11:
-				case 14:
-				case STR:
-				case LITERAL_not:
-				case 34:
-				case 35:
-				case 37:
-				case LITERAL_true:
-				case LITERAL_false:
-				case LITERAL_null:
-				case INT:
-				case DEC:
-				case DOUBLE:
-				case HEXSTR:
-				case DATETIME:
-				case LITERAL_for:
-				case LITERAL_let:
-				case LITERAL_if:
-				case LITERAL_join:
-				case LITERAL_group:
-				case LITERAL_combine:
-				case LITERAL_reduce:
-				case LITERAL_sort:
-				case VAR:
-				case ID:
-				case LITERAL_type:
-				{
-					r=expr();
-					match(38);
-					if ( inputState.guessing==0 ) {
-						r = new IndexExpr(ctx, r);
 					}
 					break;
 				}
-				case 18:
+				default:
 				{
-					match(18);
+					throw new NoViableAltException(LT(1), getFilename());
+				}
+				}
+				}
+				break;
+			}
+			case 67:
+			{
+				match(67);
+				{
+				switch ( LA(1)) {
+				case 25:
+				{
+					r = new PathArrayAll();
+					break;
+				}
+				case 50:
+				{
+					match(50);
 					{
 					switch ( LA(1)) {
-					case 18:
+					case LITERAL_group:
+					case LITERAL_cmp:
+					case 22:
+					case 24:
+					case LITERAL_join:
+					case LITERAL_equijoin:
+					case LITERAL_if:
+					case LITERAL_unroll:
+					case LITERAL_fn:
+					case LITERAL_for:
+					case 47:
+					case LITERAL_not:
+					case LITERAL_isnull:
+					case LITERAL_exists:
+					case LITERAL_isdefined:
+					case 65:
+					case 66:
+					case LITERAL_type:
+					case INT:
+					case DEC:
+					case DOUBLE:
+					case HEXSTR:
+					case DATETIME:
+					case LITERAL_true:
+					case LITERAL_false:
+					case LITERAL_null:
+					case STR:
+					case HERE_STRING:
+					case BLOCK_STRING:
+					case VAR:
+					case ID:
 					{
-						match(18);
-						if ( inputState.guessing==0 ) {
-							addArray = false;
-						}
+						e=expr();
+						r = new PathArrayHead(e);
 						break;
 					}
-					case 38:
+					case 67:
 					{
+						match(67);
+						r = new PathArrayAll();
 						break;
 					}
 					default:
@@ -2291,10 +3800,6 @@ inputState.guessing--;
 						throw new NoViableAltException(LT(1), getFilename());
 					}
 					}
-					}
-					match(38);
-					if ( inputState.guessing==0 ) {
-						var = env.makeVar("$star"); r = new VarExpr(var);
 					}
 					break;
 				}
@@ -2312,20 +3817,7 @@ inputState.guessing--;
 			}
 			}
 			}
-			r=step(r);
-			}
-			if ( inputState.guessing==0 ) {
-				
-					if( var != null ) 
-					{
-					  if( addArray )
-					  {
-					  	r = new ArrayExpr(r); 
-					  }
-					  r = new ForExpr(var, ctx, r); 
-					}
-				
-			}
+			match(25);
 			break;
 		}
 		default:
@@ -2333,136 +3825,155 @@ inputState.guessing--;
 			throw new NoViableAltException(LT(1), getFilename());
 		}
 		}
-		return r;
-	}
-	
-	public final Expr  typeExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		Schema s;
-		
-		match(LITERAL_type);
-		s=type();
-		if ( inputState.guessing==0 ) {
-			r = new ConstExpr(new JSchema(s));
 		}
+		
+			ctx.setNext(r);
+		
 		return r;
 	}
 	
-	public final Expr  arrayExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
+	public final ArrayList<PathStep>  projNames() throws RecognitionException, TokenStreamException {
+		ArrayList<PathStep> names = new ArrayList<PathStep>();
 		
-		ArrayList<Expr> es;
 		
-		match(37);
-		es=exprList();
-		match(38);
-		if ( inputState.guessing==0 ) {
-			r = new ArrayExpr(es);
-		}
-		return r;
-	}
-	
-	public final Expr  parenExpr() throws RecognitionException, TokenStreamException {
-		Expr r = null;
-		
-		ArrayList<BindingExpr> b = new ArrayList<BindingExpr>();
-		
-		match(11);
 		{
-		_loop74:
+		switch ( LA(1)) {
+		case 67:
+		case DOT:
+		case DOT_ID:
+		{
+			wildProjName(names);
+			{
+			_loop161:
+			do {
+				if ((LA(1)==8)) {
+					match(8);
+					wildProjName(names);
+				}
+				else {
+					break _loop161;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		case 48:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		return names;
+	}
+	
+	public final ArrayList<PathStep>  projNotNames() throws RecognitionException, TokenStreamException {
+		ArrayList<PathStep> names = new ArrayList<PathStep>();
+		
+		
+		{
+		switch ( LA(1)) {
+		case 67:
+		case DOT:
+		case DOT_ID:
+		{
+			wildProjNotName(names);
+			{
+			_loop170:
+			do {
+				if ((LA(1)==8)) {
+					match(8);
+					wildProjNotName(names);
+				}
+				else {
+					break _loop170;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		case 48:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		return names;
+	}
+	
+	public final void wildProjName(
+		ArrayList<PathStep> names
+	) throws RecognitionException, TokenStreamException {
+		
+		Expr e; PathStep s=null;
+		
+		{
+		switch ( LA(1)) {
+		case DOT:
+		case DOT_ID:
+		{
+			e=projName();
+			{
+			s = new PathOneField(e);
+			}
+			break;
+		}
+		case 67:
+		{
+			match(67);
+			s = new PathAllFields();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		names.add(s);
+		{
+		_loop166:
 		do {
-			if ((LA(1)==AVAR)) {
-				letDef(b);
-				match(12);
+			if ((_tokenSet_1.member(LA(1)))) {
+				s=step(s);
 			}
 			else {
-				break _loop74;
+				break _loop166;
 			}
 			
 		} while (true);
 		}
-		r=expr();
-		match(13);
-		if ( inputState.guessing==0 ) {
-			
-					if( ! b.isEmpty() )
-					{
-				      for(int i = 0 ; i < b.size() ; i++ )
-				  {
-					BindingExpr e = b.get(i);
-					env.unscope(e.var);
-				  	  }
-				  r = new LetExpr(b, r);
-					}
-				
-		}
-		return r;
 	}
 	
-	public final void letDef(
-		ArrayList<BindingExpr> bindings
+	public final void wildProjNotName(
+		ArrayList<PathStep> names
 	) throws RecognitionException, TokenStreamException {
 		
-		String v; Expr e;
+		Expr e;
 		
-		v=avar();
-		match(9);
-		e=expr();
-		if ( inputState.guessing==0 ) {
-			
-				  Var var = env.scope(v);
-				  bindings.add( new BindingExpr(BindingExpr.Type.EQ, var, null, e) );
-				
-		}
-	}
-	
-	public final void forDef(
-		ArrayList<BindingExpr> bindings
-	) throws RecognitionException, TokenStreamException {
-		
-		String v; Expr e; String v2 = null; BindingExpr.Type t = null;
-		
-		v=var();
-		{
 		switch ( LA(1)) {
-		case LITERAL_in:
-		case LITERAL_at:
+		case DOT:
+		case DOT_ID:
 		{
+			e=projName();
 			{
-			switch ( LA(1)) {
-			case LITERAL_at:
-			{
-				match(LITERAL_at);
-				v2=var();
-				break;
-			}
-			case LITERAL_in:
-			{
-				break;
-			}
-			default:
-			{
-				throw new NoViableAltException(LT(1), getFilename());
-			}
-			}
-			}
-			match(LITERAL_in);
-			e=expr();
-			if ( inputState.guessing==0 ) {
-				t = BindingExpr.Type.IN;
+			names.add(new PathOneField(e));
 			}
 			break;
 		}
-		case 17:
+		case 67:
 		{
-			match(17);
-			v2=var();
-			match(LITERAL_in);
-			e=expr();
-			if ( inputState.guessing==0 ) {
-				t = BindingExpr.Type.INREC;
-			}
+			match(67);
+			names.add(new PathAllFields());
 			break;
 		}
 		default:
@@ -2470,39 +3981,62 @@ inputState.guessing--;
 			throw new NoViableAltException(LT(1), getFilename());
 		}
 		}
-		}
-		if ( inputState.guessing==0 ) {
-			
-				  Var var = env.scope(v);
-				  Var var2 = null;
-				  if( v2 != null )
-				  {
-				  	var2 = env.scope(v2); 
-				  }
-				  bindings.add( new BindingExpr(t, var, var2, e) );
-				
-		}
 	}
 	
-	public final void joinDef(
-		ArrayList<BindingExpr> bindings
-	) throws RecognitionException, TokenStreamException {
+	public final Expr  dotName() throws RecognitionException, TokenStreamException {
+		Expr r = null;
 		
-		String v1; Expr e1; Expr e2; Var var1 = null; 
-		boolean opt = false;
+		Token  i = null;
 		
-		{
+		i = LT(1);
+		match(DOT_ID);
+		r = new ConstExpr(new JString(i.getText()));
+		return r;
+	}
+	
+	public final Expr  basic() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
 		switch ( LA(1)) {
-		case LITERAL_optional:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
 		{
-			match(LITERAL_optional);
-			if ( inputState.guessing==0 ) {
-				opt = true;
-			}
+			r=constant();
+			break;
+		}
+		case 47:
+		{
+			r=record();
+			break;
+		}
+		case 24:
+		{
+			r=array();
 			break;
 		}
 		case VAR:
 		{
+			r=varExpr();
+			break;
+		}
+		case LITERAL_cmp:
+		{
+			r=cmpExpr();
+			break;
+		}
+		case 22:
+		{
+			r=parenExpr();
 			break;
 		}
 		default:
@@ -2510,111 +4044,153 @@ inputState.guessing--;
 			throw new NoViableAltException(LT(1), getFilename());
 		}
 		}
-		}
-		v1=var();
-		match(LITERAL_in);
-		e1=expr();
-		if ( inputState.guessing==0 ) {
-			var1 = env.scope(v1);
-		}
-		match(LITERAL_on);
-		e2=expr();
-		if ( inputState.guessing==0 ) {
-			
-				  var1.hidden = true;
-				  BindingExpr b = new BindingExpr(BindingExpr.Type.IN, var1, null, e1, e2);
-				  b.optional = opt;
-				  bindings.add( b );
-				
-		}
+		return r;
 	}
 	
-	public final void groupDef(
-		ArrayList<BindingExpr> bindings
-	) throws RecognitionException, TokenStreamException {
+	public final Expr  builtinCall() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		String v1, v2, v3; Expr e1, e2; Var inVar = null;
+		String s; ArrayList<Expr> args;
 		
-		v1=var();
-		match(LITERAL_in);
-		e1=expr();
-		if ( inputState.guessing==0 ) {
-			inVar = env.scope(v1);
-		}
-		match(LITERAL_by);
-		v2=avar();
-		match(9);
-		e2=expr();
-		match(LITERAL_into);
-		v3=var();
-		if ( inputState.guessing==0 ) {
-			
-			env.unscope(inVar);
-				  if( bindings.size() == 0 )
-				  {
-				    Var byVar = env.scope(v2);
-				    bindings.add( new BindingExpr(BindingExpr.Type.EQ, byVar, null, e2) );
-				    byVar.hidden = true;
-				  }
-				  else
-				  {
-				  	BindingExpr byBinding = bindings.get(0);
-				  	if( ! byBinding.var.name.equals(v2) )
-				  	{
-				  	  throw new RuntimeException("all by expressions must use the same variable: " +
-			v2 + " != " + byBinding.var.name );
-				  	}
-				    bindings.get(0).addChild( e2 );
-				  }
-				  Var intoVar = env.scope(v3);
-				  bindings.add( new BindingExpr(BindingExpr.Type.IN, inVar, intoVar, e1) );
-				  intoVar.hidden = true;
-				
-		}
+		s=name();
+		args=fnArgs();
+		
+		r = FunctionLib.lookup(env, s, args);
+		
+		return r;
 	}
 	
-	public final BindingExpr  agg() throws RecognitionException, TokenStreamException {
-		BindingExpr b=null;
+	public final Expr  constant() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		String v; Var var=null; String i; Expr e;
+		Token  i = null;
+		Token  n = null;
+		Token  d = null;
+		Token  h = null;
+		Token  t = null;
+		String s;
 		
-		v=avar();
-		match(9);
-		e=expr();
-		if ( inputState.guessing==0 ) {
-			
-					var = env.scope(v);
-					var.hidden = true;
-					b = new BindingExpr(BindingExpr.Type.AGGFN, var, null, e);
-				
+		switch ( LA(1)) {
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		{
+			s=str();
+			r = new ConstExpr(new JString(s));
+			break;
 		}
-		return b;
+		case INT:
+		{
+			i = LT(1);
+			match(INT);
+			r = new ConstExpr(new JLong(i.getText()));
+			break;
+		}
+		case DEC:
+		{
+			n = LT(1);
+			match(DEC);
+			r = new ConstExpr(new JDecimal(n.getText()));
+			break;
+		}
+		case DOUBLE:
+		{
+			d = LT(1);
+			match(DOUBLE);
+			r = new ConstExpr(new JDouble(d.getText()));
+			break;
+		}
+		case HEXSTR:
+		{
+			h = LT(1);
+			match(HEXSTR);
+			r = new ConstExpr(new JBinary(h.getText()));
+			break;
+		}
+		case DATETIME:
+		{
+			t = LT(1);
+			match(DATETIME);
+			r = new ConstExpr(new JDate(t.getText()));
+			break;
+		}
+		case LITERAL_true:
+		case LITERAL_false:
+		{
+			r=boolLit();
+			break;
+		}
+		case LITERAL_null:
+		{
+			r=nullExpr();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
 	}
 	
-	public final void sortSpec(
-		ArrayList<OrderExpr> by
-	) throws RecognitionException, TokenStreamException {
+	public final Expr  array() throws RecognitionException, TokenStreamException {
+		Expr r=null;
 		
-		Expr e; OrderExpr.Order order = OrderExpr.Order.ASC;
+		ArrayList<Expr> a;
 		
-		e=expr();
+		match(24);
+		a=exprList2();
+		match(25);
+		r = new ArrayExpr(a);
+		return r;
+	}
+	
+	public final ArrayList<Expr>  exprList2() throws RecognitionException, TokenStreamException {
+		ArrayList<Expr> r = new ArrayList<Expr>();
+		
+		Expr e;
+		
 		{
 		switch ( LA(1)) {
-		case LITERAL_asc:
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
 		{
-			match(LITERAL_asc);
+			e=pipe();
+			r.add(e);
 			break;
 		}
-		case LITERAL_desc:
-		{
-			match(LITERAL_desc);
-			if ( inputState.guessing==0 ) {
-				order = OrderExpr.Order.DESC;
-			}
-			break;
-		}
-		case 12:
-		case 13:
+		case 8:
+		case 25:
 		{
 			break;
 		}
@@ -2624,37 +4200,202 @@ inputState.guessing--;
 		}
 		}
 		}
-		if ( inputState.guessing==0 ) {
-			by.add( new OrderExpr(e, order) );
-		}
-	}
-	
-	public final Schema  type() throws RecognitionException, TokenStreamException {
-		Schema s = null;
-		
-		Schema s2 = null; SchemaOr os = null;
-		
-		s=typeTerm();
 		{
-		_loop124:
+		_loop192:
 		do {
-			if ((LA(1)==67)) {
-				match(67);
-				if ( inputState.guessing==0 ) {
-					s2 = s; s = os = new SchemaOr(); os.addSchema(s2);
+			if ((LA(1)==8)) {
+				match(8);
+				{
+				switch ( LA(1)) {
+				case 9:
+				case LITERAL_group:
+				case LITERAL_cmp:
+				case 22:
+				case 24:
+				case LITERAL_join:
+				case LITERAL_equijoin:
+				case LITERAL_if:
+				case LITERAL_unroll:
+				case LITERAL_fn:
+				case LITERAL_for:
+				case 47:
+				case LITERAL_not:
+				case LITERAL_isnull:
+				case LITERAL_exists:
+				case LITERAL_isdefined:
+				case 65:
+				case 66:
+				case LITERAL_type:
+				case INT:
+				case DEC:
+				case DOUBLE:
+				case HEXSTR:
+				case DATETIME:
+				case LITERAL_true:
+				case LITERAL_false:
+				case LITERAL_null:
+				case STR:
+				case HERE_STRING:
+				case BLOCK_STRING:
+				case VAR:
+				case ID:
+				{
+					e=pipe();
+					r.add(e);
+					break;
 				}
-				s2=typeTerm();
-				if ( inputState.guessing==0 ) {
-					os.addSchema(s2);
+				case 8:
+				case 25:
+				{
+					break;
+				}
+				default:
+				{
+					throw new NoViableAltException(LT(1), getFilename());
+				}
+				}
 				}
 			}
 			else {
-				break _loop124;
+				break _loop192;
 			}
 			
 		} while (true);
 		}
-		return s;
+		return r;
+	}
+	
+	public final ArrayList<Expr>  exprList() throws RecognitionException, TokenStreamException {
+		ArrayList<Expr> r = new ArrayList<Expr>();
+		
+		Expr e;
+		
+		{
+		switch ( LA(1)) {
+		case 9:
+		case LITERAL_group:
+		case LITERAL_cmp:
+		case 22:
+		case 24:
+		case LITERAL_join:
+		case LITERAL_equijoin:
+		case LITERAL_if:
+		case LITERAL_unroll:
+		case LITERAL_fn:
+		case LITERAL_for:
+		case 47:
+		case LITERAL_not:
+		case LITERAL_isnull:
+		case LITERAL_exists:
+		case LITERAL_isdefined:
+		case 65:
+		case 66:
+		case LITERAL_type:
+		case INT:
+		case DEC:
+		case DOUBLE:
+		case HEXSTR:
+		case DATETIME:
+		case LITERAL_true:
+		case LITERAL_false:
+		case LITERAL_null:
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case VAR:
+		case ID:
+		{
+			e=pipe();
+			r.add(e);
+			{
+			_loop187:
+			do {
+				if ((LA(1)==8)) {
+					match(8);
+					e=pipe();
+					r.add(e);
+				}
+				else {
+					break _loop187;
+				}
+				
+			} while (true);
+			}
+			break;
+		}
+		case 23:
+		{
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  boolLit() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		switch ( LA(1)) {
+		case LITERAL_true:
+		{
+			match(LITERAL_true);
+			r = new ConstExpr(JBool.trueItem);
+			break;
+		}
+		case LITERAL_false:
+		{
+			match(LITERAL_false);
+			r = new ConstExpr(JBool.falseItem);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return r;
+	}
+	
+	public final Expr  nullExpr() throws RecognitionException, TokenStreamException {
+		Expr r=null;
+		
+		
+		match(LITERAL_null);
+		r = new ConstExpr(Item.nil);
+		return r;
+	}
+	
+	public final Expr  simpleField() throws RecognitionException, TokenStreamException {
+		Expr f=null;
+		
+		
+		{
+		switch ( LA(1)) {
+		case FNAME:
+		{
+			f=fname();
+			break;
+		}
+		case 22:
+		{
+			match(22);
+			f=pipe();
+			match(23);
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		}
+		match(50);
+		return f;
 	}
 	
 	public final Schema  typeTerm() throws RecognitionException, TokenStreamException {
@@ -2662,63 +4403,63 @@ inputState.guessing--;
 		
 		
 		switch ( LA(1)) {
-		case 18:
+		case 67:
 		{
-			match(18);
-			if ( inputState.guessing==0 ) {
-				s = new SchemaAny();
-			}
+			match(67);
+			s = new SchemaAny();
 			break;
 		}
-		case 14:
-		case 37:
+		case 24:
+		case 47:
+		case LITERAL_type:
 		case LITERAL_null:
 		case ID:
-		case LITERAL_type:
 		{
 			s=oneType();
 			{
 			switch ( LA(1)) {
-			case 16:
+			case 49:
 			{
-				match(16);
-				if ( inputState.guessing==0 ) {
-					s = new SchemaOr(s, new SchemaAtom("null"));
-				}
+				match(49);
+				s = new SchemaOr(s, new SchemaAtom("null"));
 				break;
 			}
 			case EOF:
 			case SEMI:
-			case 11:
-			case 12:
-			case 13:
-			case 15:
-			case 18:
-			case 19:
-			case DOT_ID:
-			case LITERAL_or:
-			case LITERAL_and:
+			case 8:
+			case 9:
 			case LITERAL_in:
-			case 26:
-			case 27:
-			case 28:
-			case 29:
-			case 30:
-			case 31:
-			case LITERAL_instanceof:
-			case LITERAL_to:
-			case 34:
-			case 35:
-			case 36:
-			case 37:
-			case 38:
-			case LITERAL_else:
-			case LITERAL_on:
+			case LITERAL_each:
+			case LITERAL_using:
+			case LITERAL_as:
 			case LITERAL_by:
 			case LITERAL_into:
+			case LITERAL_expand:
+			case 23:
+			case 25:
 			case LITERAL_asc:
 			case LITERAL_desc:
+			case LITERAL_where:
+			case LITERAL_on:
+			case LITERAL_if:
+			case LITERAL_else:
+			case 40:
+			case 48:
+			case 50:
+			case LITERAL_or:
+			case LITERAL_and:
+			case 58:
+			case 59:
+			case 60:
+			case 61:
+			case 62:
+			case 63:
+			case LITERAL_instanceof:
+			case 65:
+			case 66:
 			case 67:
+			case 68:
+			case 88:
 			{
 				break;
 			}
@@ -2743,19 +4484,19 @@ inputState.guessing--;
 		
 		
 		switch ( LA(1)) {
+		case LITERAL_type:
 		case LITERAL_null:
 		case ID:
-		case LITERAL_type:
 		{
 			s=atomType();
 			break;
 		}
-		case 37:
+		case 24:
 		{
 			s=arrayType();
 			break;
 		}
-		case 14:
+		case 47:
 		{
 			s=recordType();
 			break;
@@ -2778,25 +4519,19 @@ inputState.guessing--;
 		{
 			i = LT(1);
 			match(ID);
-			if ( inputState.guessing==0 ) {
-				s = new SchemaAtom(i.getText());
-			}
+			s = new SchemaAtom(i.getText());
 			break;
 		}
 		case LITERAL_null:
 		{
 			match(LITERAL_null);
-			if ( inputState.guessing==0 ) {
-				s = new SchemaAtom("null");
-			}
+			s = new SchemaAtom("null");
 			break;
 		}
 		case LITERAL_type:
 		{
 			match(LITERAL_type);
-			if ( inputState.guessing==0 ) {
-				s = new SchemaAtom("type");
-			}
+			s = new SchemaAtom("type");
 			break;
 		}
 		default:
@@ -2812,32 +4547,28 @@ inputState.guessing--;
 		
 		Schema head = null; Schema p; Schema q;
 		
-		match(37);
+		match(24);
 		{
 		switch ( LA(1)) {
-		case 14:
-		case 18:
-		case 37:
+		case 24:
+		case 47:
+		case 67:
+		case LITERAL_type:
 		case LITERAL_null:
 		case ID:
-		case LITERAL_type:
 		{
 			p=type();
-			if ( inputState.guessing==0 ) {
-				head = p;
-			}
+			head = p;
 			{
-			_loop132:
+			_loop214:
 			do {
-				if ((LA(1)==12)) {
-					match(12);
+				if ((LA(1)==8)) {
+					match(8);
 					q=type();
-					if ( inputState.guessing==0 ) {
-						p = p.nextSchema = q;
-					}
+					p = p.nextSchema = q;
 				}
 				else {
-					break _loop132;
+					break _loop214;
 				}
 				
 			} while (true);
@@ -2845,7 +4576,7 @@ inputState.guessing--;
 			arrayRepeat(head,s);
 			break;
 		}
-		case 38:
+		case 25:
 		{
 			break;
 		}
@@ -2855,7 +4586,7 @@ inputState.guessing--;
 		}
 		}
 		}
-		match(38);
+		match(25);
 		return s;
 	}
 	
@@ -2864,36 +4595,34 @@ inputState.guessing--;
 		
 		SchemaField f;
 		
-		match(14);
+		match(47);
 		{
 		switch ( LA(1)) {
-		case 18:
+		case 67:
 		case STR:
-		case ID:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case FNAME:
 		{
 			f=fieldType();
-			if ( inputState.guessing==0 ) {
-				s.addField(f);
-			}
+			s.addField(f);
 			{
-			_loop140:
+			_loop223:
 			do {
-				if ((LA(1)==12)) {
-					match(12);
+				if ((LA(1)==8)) {
+					match(8);
 					f=fieldType();
-					if ( inputState.guessing==0 ) {
-						s.addField(f);
-					}
+					s.addField(f);
 				}
 				else {
-					break _loop140;
+					break _loop223;
 				}
 				
 			} while (true);
 			}
 			break;
 		}
-		case 15:
+		case 48:
 		{
 			break;
 		}
@@ -2903,7 +4632,7 @@ inputState.guessing--;
 		}
 		}
 		}
-		match(15);
+		match(48);
 		return s;
 	}
 	
@@ -2916,61 +4645,75 @@ inputState.guessing--;
 		long lo = 0; long hi = 0;
 		
 		switch ( LA(1)) {
-		case 38:
+		case 25:
 		{
-			if ( inputState.guessing==0 ) {
-				s.noRepeat(typeList);
-			}
+			s.noRepeat(typeList);
 			break;
 		}
-		case 27:
+		case 59:
+		case 65:
+		case 67:
 		{
-			match(27);
 			{
 			switch ( LA(1)) {
-			case 18:
+			case 67:
 			{
-				match(18);
-				if ( inputState.guessing==0 ) {
-					lo = 0; hi = SchemaArray.UNLIMITED;
-				}
+				match(67);
+				lo = 0; hi = SchemaArray.UNLIMITED;
 				break;
 			}
-			case INT:
+			case 65:
 			{
-				i1 = LT(1);
-				match(INT);
-				if ( inputState.guessing==0 ) {
-					lo = Long.parseLong(i1.getText());
-				}
+				match(65);
+				lo = 1; hi = SchemaArray.UNLIMITED;
+				break;
+			}
+			case 59:
+			{
+				match(59);
 				{
 				switch ( LA(1)) {
-				case 28:
+				case 67:
 				{
-					if ( inputState.guessing==0 ) {
-						hi = lo;
-					}
+					match(67);
+					lo = 0; hi = SchemaArray.UNLIMITED;
 					break;
 				}
-				case 12:
+				case INT:
 				{
-					match(12);
+					i1 = LT(1);
+					match(INT);
+					lo = Long.parseLong(i1.getText());
 					{
 					switch ( LA(1)) {
-					case 18:
+					case 60:
 					{
-						match(18);
-						if ( inputState.guessing==0 ) {
-							hi = SchemaArray.UNLIMITED;
-						}
+						hi = lo;
 						break;
 					}
-					case INT:
+					case 8:
 					{
-						i2 = LT(1);
-						match(INT);
-						if ( inputState.guessing==0 ) {
+						match(8);
+						{
+						switch ( LA(1)) {
+						case 67:
+						{
+							match(67);
+							hi = SchemaArray.UNLIMITED;
+							break;
+						}
+						case INT:
+						{
+							i2 = LT(1);
+							match(INT);
 							hi = Long.parseLong(i2.getText());
+							break;
+						}
+						default:
+						{
+							throw new NoViableAltException(LT(1), getFilename());
+						}
+						}
 						}
 						break;
 					}
@@ -2988,6 +4731,7 @@ inputState.guessing--;
 				}
 				}
 				}
+				match(60);
 				break;
 			}
 			default:
@@ -2996,10 +4740,7 @@ inputState.guessing--;
 			}
 			}
 			}
-			match(28);
-			if ( inputState.guessing==0 ) {
-				s.setRepeat(typeList, lo, hi);
-			}
+			s.setRepeat(typeList, lo, hi);
 			break;
 		}
 		default:
@@ -3017,31 +4758,27 @@ inputState.guessing--;
 		{
 		switch ( LA(1)) {
 		case STR:
-		case ID:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		case FNAME:
 		{
 			n=constFieldName();
-			if ( inputState.guessing==0 ) {
-				f.name = new JString(n);
-			}
+			f.name = new JString(n);
 			{
 			switch ( LA(1)) {
-			case 18:
+			case 67:
 			{
-				match(18);
-				if ( inputState.guessing==0 ) {
-					f.wildcard = true;
-				}
+				match(67);
+				f.wildcard = true;
 				break;
 			}
-			case 16:
+			case 49:
 			{
-				match(16);
-				if ( inputState.guessing==0 ) {
-					f.optional = true;
-				}
+				match(49);
+				f.optional = true;
 				break;
 			}
-			case 17:
+			case 50:
 			{
 				break;
 			}
@@ -3053,13 +4790,11 @@ inputState.guessing--;
 			}
 			break;
 		}
-		case 18:
+		case 67:
 		{
-			match(18);
-			if ( inputState.guessing==0 ) {
-				f.name = new JString(""); 
-					                        f.wildcard = true;
-			}
+			match(67);
+			f.name = new JString(""); 
+			f.wildcard = true;
 			break;
 		}
 		default:
@@ -3068,12 +4803,38 @@ inputState.guessing--;
 		}
 		}
 		}
-		match(17);
+		match(50);
 		t=type();
-		if ( inputState.guessing==0 ) {
-			f.schema = t;
-		}
+		f.schema = t;
 		return f;
+	}
+	
+	public final String  constFieldName() throws RecognitionException, TokenStreamException {
+		String s=null;
+		
+		Token  i = null;
+		
+		switch ( LA(1)) {
+		case FNAME:
+		{
+			i = LT(1);
+			match(FNAME);
+			s = i.getText();
+			break;
+		}
+		case STR:
+		case HERE_STRING:
+		case BLOCK_STRING:
+		{
+			s=str();
+			break;
+		}
+		default:
+		{
+			throw new NoViableAltException(LT(1), getFilename());
+		}
+		}
+		return s;
 	}
 	
 	
@@ -3082,28 +4843,60 @@ inputState.guessing--;
 		"EOF",
 		"<2>",
 		"NULL_TREE_LOOKAHEAD",
-		"\"declare\"",
 		"SEMI",
 		"\"explain\"",
 		"\"materialize\"",
 		"\"quit\"",
-		"\"=\"",
-		"\"fn\"",
-		"\"(\"",
 		"\",\"",
+		"\"->\"",
+		"\"in\"",
+		"\"aggregate\"",
+		"\"agg\"",
+		"\"group\"",
+		"\"each\"",
+		"\"using\"",
+		"\"as\"",
+		"\"by\"",
+		"\"=\"",
+		"\"into\"",
+		"\"expand\"",
+		"\"cmp\"",
+		"\"(\"",
 		"\")\"",
+		"\"[\"",
+		"\"]\"",
+		"\"asc\"",
+		"\"desc\"",
+		"\"join\"",
+		"\"where\"",
+		"\"preserve\"",
+		"\"equijoin\"",
+		"\"on\"",
+		"\"split\"",
+		"\"if\"",
+		"\"else\"",
+		"\"filter\"",
+		"\"transform\"",
+		"\"top\"",
+		"\"unroll\"",
+		"\"=>\"",
+		"\"extern\"",
+		"\"fn\"",
+		"\"script\"",
+		"\"import\"",
+		"\"for\"",
+		"\"sort\"",
 		"\"{\"",
 		"\"}\"",
 		"\"?\"",
 		"\":\"",
-		"\"*\"",
-		"\".\"",
-		"DOT_ID",
-		"STR",
+		"DOT_STAR",
 		"\"or\"",
 		"\"and\"",
 		"\"not\"",
-		"\"in\"",
+		"\"isnull\"",
+		"\"exists\"",
+		"\"isdefined\"",
 		"\"==\"",
 		"\"<\"",
 		"\">\"",
@@ -3111,47 +4904,41 @@ inputState.guessing--;
 		"\"<=\"",
 		"\">=\"",
 		"\"instanceof\"",
-		"\"to\"",
 		"\"+\"",
 		"\"-\"",
+		"\"*\"",
 		"\"/\"",
-		"\"[\"",
-		"\"]\"",
-		"\"true\"",
-		"\"false\"",
-		"\"null\"",
+		"\"type\"",
+		"\"!\"",
+		"DOT",
 		"INT",
 		"DEC",
 		"DOUBLE",
 		"HEXSTR",
 		"DATETIME",
-		"\"for\"",
-		"\"at\"",
-		"\"let\"",
-		"\"if\"",
-		"\"else\"",
-		"\"join\"",
-		"\"optional\"",
-		"\"on\"",
-		"\"group\"",
-		"\"by\"",
-		"\"into\"",
-		"\"combine\"",
-		"\"reduce\"",
-		"\"sort\"",
-		"\"asc\"",
-		"\"desc\"",
-		"VAR",
+		"\"true\"",
+		"\"false\"",
+		"\"null\"",
+		"STR",
+		"HERE_STRING",
+		"BLOCK_STRING",
 		"AVAR",
+		"VAR",
 		"ID",
-		"\"type\"",
+		"DOT_ID",
+		"FNAME",
 		"\"|\"",
 		"DIGIT",
 		"HEX",
 		"LETTER",
 		"WS",
 		"COMMENT",
+		"NL",
 		"ML_COMMENT",
+		"BLOCK_LINE1",
+		"HERE_TAG",
+		"HERE_LINE",
+		"HERE_END",
 		"VAR1",
 		"SYM",
 		"SYM2",
@@ -3161,9 +4948,14 @@ inputState.guessing--;
 	};
 	
 	private static final long[] mk_tokenSet_0() {
-		long[] data = { 7153968282955984930L, 0L};
+		long[] data = { 1408531011715858L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_0 = new BitSet(mk_tokenSet_0());
+	private static final long[] mk_tokenSet_1() {
+		long[] data = { 140737505132544L, 4194496L, 0L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_1 = new BitSet(mk_tokenSet_1());
 	
 	}

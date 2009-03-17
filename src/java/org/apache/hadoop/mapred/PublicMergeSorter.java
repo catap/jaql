@@ -15,7 +15,7 @@
  */
 package org.apache.hadoop.mapred; // Sneak into mapred project to make MergeSorter public
 
-import org.apache.hadoop.io.WritableComparator;
+import com.ibm.jaql.lang.core.JComparator;
 
 /**
  * 
@@ -25,7 +25,7 @@ public class PublicMergeSorter extends MergeSorter
   /**
    * @param comparator
    */
-  public void setComparator(WritableComparator comparator)
+  public void setComparator(JComparator comparator)
   {
     this.comparator = comparator;
   }

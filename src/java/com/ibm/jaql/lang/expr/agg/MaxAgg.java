@@ -16,7 +16,6 @@
 package com.ibm.jaql.lang.expr.agg;
 
 import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -25,8 +24,10 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * 
  */
 @JaqlFn(fnName = "max", minArgs = 1, maxArgs = 1)
-public class MaxAgg extends Expr
+public final class MaxAgg extends AlgebraicAggregate
 {
+  private Item max;
+  
   /**
    * @param exprs
    */
@@ -35,37 +36,49 @@ public class MaxAgg extends Expr
     super(exprs);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
+  /**
+   * @param expr
    */
-  public Item eval(final Context context) throws Exception
+  public MaxAgg(Expr expr)
   {
-    Iter iter = exprs[0].iter(context);
-    if (iter.isNull())
-    {
-      return Item.nil;
-    }
-    Item item;
-    do
-    {
-      item = iter.next();
-      if (item == null)
-      {
-        return Item.nil;
-      }
-    } while (item.isNull());
+    super(expr);
+  }
 
-    Item max = new Item(); // TODO: memory
-    max.copy(item);
-    while ((item = iter.next()) != null)
+  @Override
+  public void initInitial(Context context) throws Exception
+  {
+    max = null;
+  }
+
+  @Override
+  public void addInitial(Item item) throws Exception
+  {
+    if( max == null )
     {
-      if (!item.isNull() && item.compareTo(max) > 0)
-      {
-        max.copy(item);
-      }
+      max = new Item();
+      max.copy(item);
     }
+    else if( item.compareTo(max) > 0 )
+    {
+      max.copy(item);
+    }
+  }
+
+  @Override
+  public Item getPartial() throws Exception
+  {
+    return max;
+  }
+
+  @Override
+  public void addPartial(Item item) throws Exception
+  {
+    addInitial(item);
+  }
+
+  @Override
+  public Item getFinal() throws Exception
+  {
     return max;
   }
 }

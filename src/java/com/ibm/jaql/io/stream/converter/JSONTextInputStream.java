@@ -23,12 +23,13 @@ import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.Item;
 
-/**
+/** Parses a JSON file and returns its representation as {@link Item}s. 
  * 
  */
 public class JSONTextInputStream implements StreamToItem
 {
-
+  private boolean    arrAcc = true;
+  private boolean    firstPass = true;
   private JsonParser parser;
 
   /*
@@ -44,13 +45,51 @@ public class JSONTextInputStream implements StreamToItem
   /*
    * (non-Javadoc)
    * 
+   * @see com.ibm.jaql.io.converter.StreamToItem#setInputStream(java.io.InputStream)
+   */
+  public void setInputStream(InputStream in)
+  {
+    parser = new JsonParser(in);
+  }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.converter.StreamToItem#setArrayAccessor(boolean)
+   */
+  public void setArrayAccessor(boolean a) 
+  {
+    arrAcc = a;
+  }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.converter.StreamToItem#isArrayAccessor()
+   */
+  public boolean isArrayAccessor()
+  {
+    return arrAcc;
+  }
+  
+  /*
+   * (non-Javadoc)
+   * 
    * @see com.ibm.jaql.io.converter.StreamToItem#read(com.ibm.jaql.json.type.Item)
    */
   public boolean read(Item v) throws IOException
   {
     try
     {
-      Item i = parser.JsonVal();
+      Item i = null;
+      if(arrAcc) {
+        if(firstPass) {
+          i = parser.ArrayFirst();
+          firstPass = false;
+        } else {
+          i = parser.ArrayNext();
+        }
+      } else {
+        i = parser.JsonVal();
+      }
+      if(i == null) 
+        return false;
       v.set(i.get());
       return true;
     }
@@ -59,15 +98,4 @@ public class JSONTextInputStream implements StreamToItem
       return false;
     }
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.StreamToItem#setInputStream(java.io.InputStream)
-   */
-  public void setInputStream(InputStream in)
-  {
-    parser = new JsonParser(in);
-  }
-
 }

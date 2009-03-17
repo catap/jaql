@@ -21,6 +21,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.json.util.ScalarIter;
 import com.ibm.jaql.lang.core.Context;
@@ -30,25 +31,24 @@ import com.ibm.jaql.lang.util.ItemHashtable;
 /**
  * 
  */
-public class JoinExpr extends IterExpr
+public class JoinExpr extends IterExpr // TODO: rename to equijoin
 {
   /**
-   * @param bindings
+   * @param bindingOns: [BindingExpr, OnExpr, BindingExpr, OnExpr, ...]
    * @param collectExpr
    * @return
    */
-  private static Expr[] makeExprs(ArrayList<BindingExpr> bindings,
-      Expr collectExpr)
+  private static Expr[] makeExprs(ArrayList<BindingExpr> bindings, ArrayList<Expr> ons, Expr collectExpr)
   {
     int n = bindings.size();
-    Expr[] exprs = new Expr[n + 1];
+    assert n == ons.size();
+    Expr[] exprs = new Expr[2*n + 1];
     for (int i = 0; i < n; i++)
     {
-      BindingExpr b = bindings.get(i);
-      assert b.type == BindingExpr.Type.IN;
-      exprs[i] = b;
+      exprs[2*i]   = bindings.get(i);
+      exprs[2*i+1] = ons.get(i);
     }
-    exprs[n] = collectExpr;
+    exprs[exprs.length-1] = collectExpr;
     return exprs;
   }
 
@@ -66,9 +66,9 @@ public class JoinExpr extends IterExpr
    * @param bindings
    * @param returnExpr
    */
-  public JoinExpr(ArrayList<BindingExpr> bindings, Expr returnExpr)
+  public JoinExpr(ArrayList<BindingExpr> bindings, ArrayList<Expr> ons, Expr returnExpr)
   {
-    super(makeExprs(bindings, returnExpr));
+    super(makeExprs(bindings, ons, returnExpr));
   }
 
   /**
@@ -76,7 +76,7 @@ public class JoinExpr extends IterExpr
    */
   public int numBindings()
   {
-    return exprs.length - 1;
+    return (exprs.length - 1)/2;
   }
 
   /**
@@ -85,7 +85,19 @@ public class JoinExpr extends IterExpr
    */
   public BindingExpr binding(int i)
   {
-    return (BindingExpr) exprs[i];
+    assert i < numBindings();
+    return (BindingExpr) exprs[2*i];
+  }
+
+  /**
+   * 
+   * @param i
+   * @return
+   */
+  public Expr onExpr(int i)
+  {
+    assert i < numBindings();
+    return exprs[2*i+1];
   }
 
   /**
@@ -105,26 +117,28 @@ public class JoinExpr extends IterExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("\njoin( ");
-    int n = exprs.length - 1;
+    exprText.print("\nequijoin ");
+    int n = numBindings();
     String sep = "";
     for (int i = 0; i < n; i++)
     {
       exprText.print(sep);
       BindingExpr b = binding(i);
-      if (b.optional)
+      if( b.preserve )
       {
-        exprText.print("optional ");
+        exprText.print("preserve ");
       }
       exprText.print(b.var.name);
-      exprText.print(" in ");
+      exprText.print(" in (");
       b.inExpr().decompile(exprText, capturedVars);
-      exprText.print(" on ");
-      b.onExpr().decompile(exprText, capturedVars);
-      sep = ",     ";
+      exprText.print(") on (");
+      onExpr(i).decompile(exprText, capturedVars);
+      exprText.print(")");
+      sep = ",\n     ";
     }
-    exprText.println(")");
+    exprText.print("\nexpand (");
     collectExpr().decompile(exprText, capturedVars);
+    exprText.println(")");
 
     for (int i = 0; i < n; i++)
     {
@@ -133,6 +147,50 @@ public class JoinExpr extends IterExpr
     }
   }
 
+  /**
+   * Put the preserved inputs first.
+   * 
+   * @return The number of preserved inputs
+   */
+  public int putPreservedFirst()
+  {
+    final int n = numBindings(); 
+    
+    // Reorder inputs such that all preserved inputs are first
+    int i;
+    int numPreserved = 0;
+    for (i = 0; i < n; i++)
+    {
+      if( binding(i).preserve )
+      {
+        numPreserved++;
+      }
+    }
+    if( numPreserved < n )
+    {
+      int j = 1;
+      for( i = 0 ; i < numPreserved ; i++ )
+      {
+        if( ! binding(i).preserve )
+        {
+          if( j <= i ) j = i + 1;
+          for( ; ! binding(j).preserve ; j++ )
+          {
+          }
+          Expr t = exprs[2*i];
+          exprs[2*i] = exprs[2*j];
+          exprs[2*j] = t;
+          t = exprs[2*i+1];
+          exprs[2*i+1] = exprs[2*j+1];
+          exprs[2*j+1] = t;
+          j++;
+        }
+      }
+    }
+    return numPreserved;
+  }
+  
+  
   /*
    * (non-Javadoc)
    * 
@@ -141,25 +199,45 @@ public class JoinExpr extends IterExpr
   public Iter iter(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
-    final int n = exprs.length - 1;
+    final int n = numBindings();
+    final int lastPreserved = putPreservedFirst() - 1; // TODO: this should be compile time.
+    
     ItemHashtable temp = new ItemHashtable(n);
     final ScalarIter[] nilIters = new ScalarIter[n];
 
-    for (int i = 0; i < n; i++)
+    final SpillJArray nullKeyResults = new SpillJArray();
+
+    for (int i = 0; i < n; i++ )
+    {
+      context.setVar(binding(i).var, Item.nil);
+    }
+
+    for (int i = 0; i < n; i++ )
     {
       BindingExpr b = binding(i);
+      Expr on = onExpr(i);
       Item item;
       Iter iter = b.inExpr().iter(context);
       while ((item = iter.next()) != null)
       {
         context.setVar(b.var, item);
-        Item key = b.onExpr().eval(context);
-        if (!key.isNull())
+        Item key = on.eval(context);
+        if( ! key.isNull() )
         {
           temp.add(i, key, item);
         }
+        else if( i <= lastPreserved )
+        {
+          context.setVar(b.var, item);
+          nullKeyResults.addAll(collectExpr().iter(context));
+        }
       }
-      if (b.optional)
+      context.setVar(b.var, Item.nil);
+
+      // If more than one is preserved, we do the outer-cross product of matching items,
+      //   and filter the where at least one preserved input is non-null.
+      // If exactly one is preserved, we avoid the null case on the preserved one and the filter.
+      if( lastPreserved >= 0 ) 
       {
         nilIters[i] = new ScalarIter(Item.nil);
       }
@@ -170,41 +248,34 @@ public class JoinExpr extends IterExpr
 
     return new Iter() {
       int  i           = -1;
-      Iter collectIter = Iter.empty;
+      Iter collectIter = nullKeyResults.iter();
+      int firstNonEmpty = n;
 
       public Item next() throws Exception
       {
-        while (true)
+        while( true )
         {
           Item item = collectIter.next();
-          if (item != null)
+          if( item != null )
           {
             return item;
           }
 
           do
           {
-            if (i < 0)
+            if( i < 0 )
             {
-              if (!tempIter.next())
+              if( !tempIter.next() )
               {
                 return null;
               }
+              
+              // Item key = tempIter.key();
 
-              for (int i = 0; i < n; i++)
+              firstNonEmpty = n;
+              for( int j = 0; j < n; j++ )
               {
-                BindingExpr b = binding(i);
-                item = tempIter.values(i);
-                JArray arr = (JArray) item.get();
-                if (arr.isEmpty() && b.optional)
-                {
-                  nilIters[i].reset(Item.nil);
-                  groupIters[i] = nilIters[i];
-                }
-                else
-                {
-                  groupIters[i] = arr.iter(); // TODO: should be able to reuse array iterator
-                }
+                resetIter(j); 
               }
 
               i = 0;
@@ -219,23 +290,50 @@ public class JoinExpr extends IterExpr
             }
             else
             {
-              item = tempIter.values(i);
-              JArray arr = (JArray) item.get();
-              if (arr.isEmpty() && b.optional)
-              {
-                nilIters[i].reset(Item.nil);
-                groupIters[i] = nilIters[i];
-              }
-              else
-              {
-                groupIters[i] = arr.iter(); // TODO: should be able to reuse array iterator
-              }
+              resetIter(i); 
               i--;
             }
           } while (i < n);
 
           i = n - 1;
           collectIter = collectExpr().iter(context);
+        }
+      }
+
+      
+      /**
+       * 
+       * @param j
+       * @param firstNonEmpty
+       * @return True iff the input is non-empty
+       * @throws Exception 
+       */
+      private void resetIter(int j) throws Exception
+      {
+        Item item = tempIter.values(j);
+        
+        JArray arr = (JArray) item.get();
+        if( !arr.isEmpty() )
+        {
+          groupIters[j] = arr.iter(); // TODO: should be able to reuse array iterator
+          if( j < firstNonEmpty )
+          {
+            firstNonEmpty = j;
+          }
+        }
+        else // arr.isEmpty()
+        {
+          if( lastPreserved >= 0 &&              // Some input is preserved 
+              ( j != lastPreserved ||            // This input is not the last preserved input
+                firstNonEmpty < lastPreserved )) // Some earlier preserved input is non-empty
+          {
+            nilIters[j].reset(Item.nil);
+            groupIters[j] = nilIters[j];
+          }
+          else
+          {
+            groupIters[j] = Iter.empty;
+          }
         }
       }
     };

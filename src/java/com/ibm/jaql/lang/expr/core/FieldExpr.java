@@ -38,6 +38,25 @@ public abstract class FieldExpr extends Expr
     super(exprs);
   }
 
+  /**
+   * 
+   * @param expr
+   */
+  public FieldExpr(Expr expr)
+  {
+    super(expr);
+  }
+
+  /**
+   * 
+   * @param expr0
+   * @param expr1
+   */
+  public FieldExpr(Expr expr0, Expr expr1)
+  {
+    super(expr0, expr1);
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -46,6 +65,7 @@ public abstract class FieldExpr extends Expr
    */
   public abstract void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception;
+  
   /**
    * @param context
    * @param rec
@@ -53,6 +73,7 @@ public abstract class FieldExpr extends Expr
    */
   public abstract void eval(Context context, MemoryJRecord rec)
       throws Exception;
+  
   /**
    * @param name
    * @return

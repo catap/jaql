@@ -61,13 +61,15 @@ public class TrivialCombineElmination extends Rewrite
   {
     CombineExpr ce = (CombineExpr) expr;
 
+    if( true ) return false; // TODO: re-enable with function api?
+
     // We cannot simplify a CombineExpr as an aggregate in a ReduceExpr
     if (ce.parent().parent() instanceof ReduceExpr)
     {
       return false;
     }
 
-    BindingExpr bind = ce.binding();
+    BindingExpr bind = null;// ce.binding();
     Expr inExpr = bind.inExpr();
 
     // combine $a,$b in null ... => null

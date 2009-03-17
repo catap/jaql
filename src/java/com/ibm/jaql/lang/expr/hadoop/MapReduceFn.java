@@ -34,8 +34,11 @@ import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.expr.array.StashIterExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.IteratorIter;
 
 /**
  * 
@@ -74,7 +77,8 @@ public class MapReduceFn extends MapReduceBaseExpr
     Item combine = args.getValue("combine", null);
     Item reduce = args.getValue("reduce", null);
 
-    conf.setMapperClass(MapEval.class);
+    //conf.setMapperClass(MapEval.class);
+    conf.setMapRunnerClass(MapEval.class);
     // use default: conf.setNumMapTasks(10); // TODO: need a way to specify options
 
     if (combine != null)
@@ -198,8 +202,7 @@ public class MapReduceFn extends MapReduceBaseExpr
    * 
    */
   public static class CombineEval extends CombineReduceEval
-      implements
-        Reducer<Item, Item, Item, Item>
+      implements Reducer<Item, Item, Item, Item>
   {
     protected JFunction[] combineFns;
     protected Item[]      fnArgs = new Item[2];
@@ -246,13 +249,13 @@ public class MapReduceFn extends MapReduceBaseExpr
     {
       try
       {
-        splitValues(values);
-        fnArgs[0] = key;
         if (numInputs == 1)
         {
-          fnArgs[1] = valItems[0];
+          Expr[] fnExprArgs = new Expr[2];
+          fnExprArgs[0] = new ConstExpr(key);
+          fnExprArgs[1] = new StashIterExpr(new IteratorIter(values));
           Item item;
-          Iter iter = combineFns[0].iter(context, fnArgs);
+          Iter iter = combineFns[0].iter(context, fnExprArgs);
           while ((item = iter.next()) != null)
           {
             output.collect(key, item);
@@ -260,6 +263,8 @@ public class MapReduceFn extends MapReduceBaseExpr
         }
         else
         {
+          fnArgs[0] = key;
+          splitValues(values);
           for (int i = 0; i < numInputs; i++)
           {
             fnArgs[1] = valItems[i];
@@ -324,10 +329,21 @@ public class MapReduceFn extends MapReduceBaseExpr
     {
       try
       {
-        splitValues(values);
+        Iter iter;
+        if (numInputs == 1)
+        {
+          Expr[] fnExprArgs = new Expr[2];
+          fnExprArgs[0] = new ConstExpr(key);
+          fnExprArgs[1] = new StashIterExpr(new IteratorIter(values));
+          iter = reduceFn.iter(context, fnExprArgs);
+        }
+        else
+        {
+          splitValues(values);
+          fnArgs[0] = key;
+          iter = reduceFn.iter(context, fnArgs);
+        }
         Item item;
-        fnArgs[0] = key;
-        Iter iter = reduceFn.iter(context, fnArgs);
         while ((item = iter.next()) != null)
         {
           output.collect(key, item);

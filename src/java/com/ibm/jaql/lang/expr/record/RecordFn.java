@@ -28,7 +28,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * 
  */
 @JaqlFn(fnName = "record", minArgs = 1, maxArgs = 1)
-public class RecordFn extends Expr
+public class RecordFn extends Expr // TODO: make into an aggregate?
 {
   /**
    * @param exprs

@@ -19,13 +19,12 @@ import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.CopyField;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FieldExpr;
 import com.ibm.jaql.lang.expr.core.FieldValueExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
-import com.ibm.jaql.lang.expr.core.ProjPattern;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -81,18 +80,17 @@ public class ConstFieldAccess extends Rewrite
       c.value = item;
       replaceBy = c;
     }
-    else
-    // recExpr instanceof RecordExpr
+    else  // recExpr instanceof RecordExpr
     {
       RecordExpr re = (RecordExpr) recExpr;
       for (int i = 0; i < re.numFields(); i++)
       {
-        FieldExpr e = re.field(i);
-        if (e instanceof NameValueBinding)
+        FieldExpr f = re.field(i);
+        if (f instanceof NameValueBinding)
         {
           // TODO: we could do some analysis on ProjPatterns too.
-          NameValueBinding b = (NameValueBinding) e;
-          if (b.staticNameMatches(name) == Bool3.TRUE)
+          NameValueBinding b = (NameValueBinding) f;
+          if ( b.staticNameMatches(name).always() )
           {
             if (replaceBy != null)
             {
@@ -101,17 +99,20 @@ public class ConstFieldAccess extends Rewrite
             replaceBy = b.valueExpr();
           }
         }
-        else if (e instanceof ProjPattern)
+        else if (f instanceof CopyField)
         {
           // If a ProjPattern could match, then we won't do this rewrite (improve this?)
-          ProjPattern p = (ProjPattern) e;
-          if (p.staticNameMatches(name) != Bool3.FALSE)
+          CopyField p = (CopyField) f;
+          if (p.staticNameMatches(name).always())
           {
-            return false;
+            if (replaceBy != null)
+            {
+              throw new RuntimeException("duplicate field in record:" + name);
+            }
+            replaceBy = p.toPathExpr();
           }
         }
         else
-        // unknown FieldExpr type (shouldn't happen)
         {
           return false;
         }

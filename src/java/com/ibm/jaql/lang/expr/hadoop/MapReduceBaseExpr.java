@@ -23,8 +23,9 @@ import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Mapper;
+import org.apache.hadoop.mapred.MapRunnable;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
@@ -43,7 +44,9 @@ import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.expr.array.StashIterExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -133,6 +136,14 @@ public abstract class MapReduceBaseExpr extends Expr
     }
     conf.setJobName(jobName);
 
+    //
+    // Force local execution if requested.
+    //
+    if( "local".equals(System.getProperty("jaql.mapred.mode")) ) // TODO: pick this up from the context instead
+    {
+      conf.set("mapred.job.tracker", "local");
+    }
+    
     //
     // Setup the input
     //
@@ -257,7 +268,7 @@ public abstract class MapReduceBaseExpr extends Expr
         }
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
         JaqlParser parser = new JaqlParser(lexer);
-        Expr expr = parser.query();
+        Expr expr = parser.parse();
         JFunction fn = (JFunction) expr.eval(context).getNonNull();
         return fn;
       }
@@ -276,8 +287,7 @@ public abstract class MapReduceBaseExpr extends Expr
    * Used for both map and init functions
    */
   public static class MapEval extends RemoteEval
-      implements
-        Mapper<Item, Item, Item, Item>
+      implements MapRunnable<Item, Item, Item, Item>
   {
     Item[]      args        = new Item[1];
     int         inputId     = 0;
@@ -292,6 +302,7 @@ public abstract class MapReduceBaseExpr extends Expr
      * 
      * @see com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr.RemoteEval#configure(org.apache.hadoop.mapred.JobConf)
      */
+    @Override
     public void configure(JobConf job)
     {
       super.configure(job);
@@ -310,19 +321,26 @@ public abstract class MapReduceBaseExpr extends Expr
       mapFn = compile(job, "map", inputId);
     }
 
-    /*
-     * (non-Javadoc)
+    /**
      * 
-     * @see org.apache.hadoop.mapred.Mapper#map(java.lang.Object,
-     *      java.lang.Object, org.apache.hadoop.mapred.OutputCollector,
-     *      org.apache.hadoop.mapred.Reporter)
      */
-    public void map(Item key, Item value, OutputCollector<Item, Item> output,
-        Reporter reporter) throws IOException
+    // fails on java 1.5: @Override
+    public void run( RecordReader<Item, Item> input,
+                     OutputCollector<Item, Item> output, 
+                     Reporter reporter) 
+      throws IOException
     {
       try
       {
-        args[0] = value;
+//        Item key = input.createKey();
+//        Item value = input.createValue();
+//        while( input.next(key, value) )
+//        {
+//          args[0] = value;
+        Expr[] args = new Expr[] { 
+            new StashIterExpr(new RecordReaderValueIter(input))
+        };
+        
         Iter iter = mapFn.iter(context, args);
         Item item;
         while ((item = iter.next()) != null)
@@ -350,5 +368,46 @@ public abstract class MapReduceBaseExpr extends Expr
         throw new UndeclaredThrowableException(ex);
       }
     }
+
+//    /*
+//     * (non-Javadoc)
+//     * 
+//     * @see org.apache.hadoop.mapred.Mapper#map(java.lang.Object,
+//     *      java.lang.Object, org.apache.hadoop.mapred.OutputCollector,
+//     *      org.apache.hadoop.mapred.Reporter)
+//     */
+//    public void map(Item key, Item value, OutputCollector<Item, Item> output,
+//        Reporter reporter) throws IOException
+//    {
+//      try
+//      {
+//        args[0] = value;
+//        Iter iter = mapFn.iter(context, args);
+//        Item item;
+//        while ((item = iter.next()) != null)
+//        {
+//          JArray pair = (JArray) item.get();
+//          if (pair != null)
+//          {
+//            pair.getTuple(outKeyValue);
+//            Item val = outKeyValue[1];
+//            if (makePair)
+//            {
+//              outPair.set(1, val);
+//              val = pairItem;
+//            }
+//            output.collect(outKeyValue[0], val);
+//          }
+//        }
+//      }
+//      catch (IOException ex)
+//      {
+//        throw ex;
+//      }
+//      catch (Exception ex)
+//      {
+//        throw new UndeclaredThrowableException(ex);
+//      }
+//    }
   }
 }

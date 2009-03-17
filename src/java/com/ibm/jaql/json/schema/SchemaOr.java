@@ -21,7 +21,8 @@ import java.io.IOException;
 
 import com.ibm.jaql.json.type.Item;
 
-/**
+/** Schema that matches if at least one of the provided schematas match. The provided 
+ * schemata are not allowed to make use of their {@link Schema#nextSchema} field.
  * 
  */
 public class SchemaOr extends Schema

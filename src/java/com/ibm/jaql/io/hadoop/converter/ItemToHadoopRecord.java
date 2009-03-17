@@ -15,29 +15,34 @@
  */
 package com.ibm.jaql.io.hadoop.converter;
 
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
 
-/**
- * 
+/** 
+ * Base class for converters that convert an {@link Item} into a Hadoop record, i.e., 
+ * a (key, value)-pair where the key is of type {@link WritableComparable} and the 
+ * value is of type {@link Writable}. 
  */
-public abstract class ItemToHadoopRecord
+public abstract class ItemToHadoopRecord implements KeyValueExport<WritableComparable, Writable>
 {
 
-  protected ItemToWritableComparable keyConverter;
+  protected ToItem<WritableComparable> keyConverter;
 
-  protected ItemToWritable           valConverter;
+  protected ToItem<Writable>           valConverter;
 
   protected Converter                converter;
 
-  protected abstract ItemToWritableComparable createKeyConverter();
+  protected abstract ToItem<WritableComparable> createKeyConverter();
 
-  protected abstract ItemToWritable createValConverter();
+  protected abstract ToItem<Writable> createValConverter();
 
   /**
+   * If a key converter has been specified, use its target. Otherwise use null.
    * @return
    */
   public WritableComparable createKeyTarget()
@@ -47,6 +52,7 @@ public abstract class ItemToHadoopRecord
   }
 
   /**
+   * If a val converter has been specified, use its target. Otherwise use null.
    * @return
    */
   public Writable createValTarget()

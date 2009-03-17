@@ -15,10 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.numeric;
 
-import java.math.BigDecimal;
-
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JDouble;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumeric;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -44,12 +45,17 @@ public class AbsFn extends Expr
    */
   public Item eval(final Context context) throws Exception
   {
-    JDecimal n1 = (JDecimal) exprs[0].eval(context).get();
-    if (n1 != null)
-    {
-      BigDecimal x = n1.value.abs();
-      return new Item(new JDecimal(x)); // TODO: reuse
+  	JNumeric v = (JNumeric)exprs[0].eval(context).get();
+  	if (v == null) {
+  		return Item.nil;
+  	} else if (v instanceof JDouble) {
+    	return new Item(new JDouble(Math.abs(v.doubleValue()))); // TODO: reuse
+    } else if (v instanceof JLong && v.longValue() != Long.MIN_VALUE) {
+    	// -Long.MIN_VALUE does not fit into a long --> convert to JDecimal	
+    	return new Item(new JLong(Math.abs(v.longValue()))); // TODO: reuse
+    } else { 
+    	// input type is JDecimal or JLong (w/ minimum value)
+    	return new Item(new JDecimal(v.decimalValue().abs())); // TODO: reuse
     }
-    return Item.nil;
-  }
+  }  
 }

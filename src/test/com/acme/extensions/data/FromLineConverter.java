@@ -17,10 +17,10 @@ package com.acme.extensions.data;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
-import com.ibm.jaql.io.hadoop.converter.WritableComparableToItem;
-import com.ibm.jaql.io.hadoop.converter.WritableToItem;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 
@@ -36,7 +36,7 @@ public class FromLineConverter extends HadoopRecordToItem {
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected WritableComparableToItem createKeyConverter()
+  protected FromItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -47,9 +47,9 @@ public class FromLineConverter extends HadoopRecordToItem {
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected WritableToItem createValConverter()
+  protected FromItem<Writable> createValConverter()
   {
-    return new WritableToItem() {
+    return new FromItem<Writable>() {
       public void convert(Writable src, Item tgt)
       {
         if (src == null || tgt == null) return;
@@ -62,7 +62,7 @@ public class FromLineConverter extends HadoopRecordToItem {
         {
           throw new RuntimeException("tried to convert from: " + src);
         }
-        ((JString)tgt.getNonNull()).set(t.getBytes());
+        ((JString)tgt.getNonNull()).set(t.getBytes(), t.getLength());
       }
       
       public Item createTarget()
@@ -72,12 +72,4 @@ public class FromLineConverter extends HadoopRecordToItem {
 
     };
   }
-
-  @Override
-  public Item createTarget()
-  {
-    return new Item(new JString());
-  }
-  
-  
 }

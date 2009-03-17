@@ -15,19 +15,16 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
-import java.util.HashSet;
-
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
 
 /**
  * 
  */
+@JaqlFn(fnName="range", minArgs=2, maxArgs=2)
 public class RangeExpr extends IterExpr
 {
   /**
@@ -60,21 +57,21 @@ public class RangeExpr extends IterExpr
     return Bool3.FALSE;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-   *      java.util.HashSet)
-   */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
-  {
-    exprText.print(" (");
-    exprs[0].decompile(exprText, capturedVars);
-    exprText.print(") to (");
-    exprs[1].decompile(exprText, capturedVars);
-    exprText.print(") ");
-  }
+//  /*
+//   * (non-Javadoc)
+//   * 
+//   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
+//   *      java.util.HashSet)
+//   */
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+//      throws Exception
+//  {
+//    exprText.print(" (");
+//    exprs[0].decompile(exprText, capturedVars);
+//    exprText.print(") to (");
+//    exprs[1].decompile(exprText, capturedVars);
+//    exprText.print(") ");
+//  }
 
   /*
    * (non-Javadoc)

@@ -23,8 +23,9 @@ import java.lang.reflect.InvocationTargetException;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 
-/**
- * 
+/** Common API for accessing atomic values stored within a Java object. The API includes
+ * methods to read the value, write the value, copy the value, and convert the value to 
+ * an item. Subclasses implement the API for specific types of Java objects.  
  */
 public abstract class MetaAccessor
 {
