@@ -18,25 +18,33 @@ package com.ibm.jaql.io.hadoop.converter;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JRecord;
 
-/**
- * 
+/** 
+ * Concrete class for converters that convert a Hadoop record---i.e., 
+ * a (key, value)-pair where the key is of type {@link WritableComparable} and the 
+ * value is of type {@link Writable}---into an {@link Item}.
  */
-public abstract class HadoopRecordToItem
+public abstract class HadoopRecordToItem implements KeyValueImport<WritableComparable, Writable>
 {
+  /**
+   * 
+   */
+  protected FromItem<WritableComparable> keyConverter;
+  
+  /**
+   * 
+   */
+  protected FromItem<Writable>           valConverter;
 
-  protected WritableComparableToItem keyConverter;
-
-  protected WritableToItem           valConverter;
-
-  protected Converter                converter;
-
-  protected abstract WritableComparableToItem createKeyConverter();
-
-  protected abstract WritableToItem createValConverter();
+  /**
+   * 
+   */
+  protected Converter                    converter;
 
   /**
    * 
@@ -50,23 +58,32 @@ public abstract class HadoopRecordToItem
     else if (keyConverter == null && valConverter != null)
       converter = new ValConverter();
     else if (keyConverter != null && valConverter != null)
-      converter = new PairConverter();
+      converter = createPairConverter();
     else
       throw new RuntimeException("at least one converter must be specified");
   }
 
-  /**
-   * @return
+  /* 
+   * Default implementation is to do nothing.
+   * 
+   * (non-Javadoc)
+   * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#init(com.ibm.jaql.json.type.JRecord)
+   */
+  public void init(JRecord options)
+  {
+    // do nothing
+  }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#createTarget()
    */
   public Item createTarget()
   {
-    return new Item();
+    return converter.createTarget();
   }
 
-  /**
-   * @param key
-   * @param val
-   * @param tgt
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#convert(java.lang.Object, java.lang.Object, com.ibm.jaql.json.type.Item)
    */
   public final void convert(WritableComparable key, Writable val, Item tgt)
   {
@@ -74,57 +91,92 @@ public abstract class HadoopRecordToItem
   }
 
   /**
-   * 
-   * @param options
+   * @return
    */
-  public void init(JRecord options)
-  {
-    // do nothing
+  protected abstract FromItem<WritableComparable> createKeyConverter();
+
+  /**
+   * @return
+   */
+  protected abstract FromItem<Writable> createValConverter();
+  
+  /**
+   * @return
+   */
+  protected Converter createPairConverter() {
+    return new PairConverter();
   }
 
   /**
    * 
    */
-  protected abstract class Converter
+  public abstract class Converter
   {
     /**
      * @param key
      * @param val
      * @param tgt
      */
-    abstract void convert(WritableComparable key, Writable val, Item tgt);
+    public abstract void convert(WritableComparable key, Writable val, Item tgt);
+    
+    /**
+     * @return
+     */
+    public abstract Item createTarget();
   }
 
   /**
    * 
    */
-  protected final class KeyConverter extends Converter
+  public final class KeyConverter extends Converter
   {
-    void convert(WritableComparable key, Writable val, Item tgt)
+	/* (non-Javadoc)
+	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
+	 */
+	public void convert(WritableComparable key, Writable val, Item tgt)
     {
       keyConverter.convert(key, tgt);
     }
+	
+	/* (non-Javadoc)
+	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#createTarget()
+	 */
+	public Item createTarget() {
+	  return keyConverter.createTarget();
+	}
   }
 
   /**
    * 
    */
-  protected final class ValConverter extends Converter
+  public final class ValConverter extends Converter
   {
-    void convert(WritableComparable key, Writable val, Item tgt)
+	/* (non-Javadoc)
+	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
+	 */
+	public void convert(WritableComparable key, Writable val, Item tgt)
     {
       valConverter.convert(val, tgt);
     }
+	
+	/* (non-Javadoc)
+	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#createTarget()
+	 */
+	public Item createTarget() {
+	  return valConverter.createTarget();
+	}
   }
 
   /**
    * 
    */
-  protected final class PairConverter extends Converter
+  public class PairConverter extends Converter
   {
-    void convert(WritableComparable key, Writable val, Item tgt)
+	/* (non-Javadoc)
+	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
+	 */
+	public void convert(WritableComparable key, Writable val, Item tgt)
     {
-      // assume that tgt is a JArray of length 2
       JArray arr = (JArray) tgt.get();
       try
       {
@@ -136,5 +188,13 @@ public abstract class HadoopRecordToItem
         throw new RuntimeException(e);
       }
     }
+	
+	/* (non-Javadoc)
+	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#createTarget()
+	 */
+	public Item createTarget() {
+	  JArray arr = new FixedJArray(2);
+	  return new Item(arr);
+	}
   }
 }

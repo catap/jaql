@@ -30,24 +30,11 @@
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <property name="javadoc.link.java"
-              value="http://java.sun.com/j2se/1.5/docs/api/" />
-    <!-- <property name="build.test.src" value="${build.dir}/src/test"/> -->
-    <!-- change "current" to another supported version or change to your local hadoop home -->
-    <!-- hadoop version -->
-    <!-- <property name="hadoop.version" value="0.15.3"/> -->
-    <!-- <property name="hadoop.version" value="0.16.1"/> -->
-    <!-- <property name="hadoop.version" value="0.16.3" /> -->
-    <property name="hadoop.version" value="0.17.1" />
-    <!-- <property name="hadoop.version" value="0.18.1" /> -->
-    <!-- hbase version -->
-    <property name="hbase.version" value="0.1.3" />
-    <!-- <property name="hbase.version" value="0.18.1" /> -->
+    <!-- Default version is 0.18.1. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0 -->
+    <property name="hadoop.version" value="0.18.1" />
 
-    <property name="hadoop.dir"
-              value="${basedir}/vendor/hadoop/${hadoop.version}" />
-    <!-- use the following for hbase versions that were a contrib of the hadoop project (< hadoop 0.16.3) -->
-    <!-- <property name="hbase.dir" value="${hadoop.dir}/src/contrib/hbase"/> -->
+    <property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
+    <property file="${hadoop.dir}/build.properties" />
     <property name="hbase.dir"
               value="${basedir}/vendor/hbase/${hbase.version}" />
 
@@ -67,7 +54,9 @@
     <!-- Use the following property setting when testing on a distributed cluster -->
     <!-- <property name="test.deployment" value="cluster"/> -->
     <property name="test.deployment" value="mini" />
-
+    <!-- Use the following property to force map reduce in local mode -->
+    <!-- <property name="jaql.mapred.mode" value="cluster"/> -->
+    <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
     <property name="tmp.dir" value="${build.dir}/tmp" />
     <property name="year" value="2008" />
     <property name="version" value="0.3" />
@@ -157,6 +146,9 @@
         <copy todir="${test.cache.data}">
             <fileset dir="${test.src.dir}" includes="*.jql" />
         </copy>
+        <copy todir="${test.cache.data}">
+            <fileset dir="${test.src.dir}" includes="*.json" />
+        </copy>
         <mkdir dir="${test.classes.dir}" />
         <unjar src="${build.dir}/jaql.jar" dest="${build.dir}/classes" />
 
@@ -175,6 +167,7 @@
             <sysproperty key="hadoop.conf.override"
                          value="${test.conf.override.dir}" />
             <sysproperty key="test.deployment" value="${test.deployment}" />
+            <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
             <sysproperty key="test.cleanup" value="${test.cleanup}" />
             <sysproperty key="build" value="${build.dir}" />
             <classpath refid="${test.classpath.id}" />
@@ -207,6 +200,7 @@
     <property name="javac.optimize" value="on" />
     <property name="javac.deprecation" value="off" />
     <property name="javac.version" value="1.5" />
+    <property name="javadoc.link.java" value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
     <property name="javac.args" value="" />
 
     <!-- <path id="classpath">
@@ -241,6 +235,7 @@
                 <include name="**/*.txt" />
                 <include name="**/*.dat" />
                 <include name="**/*.jql" />
+                <include name="**/*.json" />
             </fileset>
         </copy>
     </target>
@@ -271,10 +266,10 @@
     </target>
 
     <!-- set javacc.home variable if need to compile .jj file -->
-    <!-- e.g., ant -Djavacc.home="c:\Jars\javacc-4.0" search-compile-test -->
+    <!-- e.g., ant javacc-JsonParser -Djavacc.home=c:/dev/javacc-4.1 -->
     <target name="javacc-JsonParser">
-        <javacc target="${search.src}/com/ibm/jaql/json/JsonParser.jj"
-                outputDirectory="${search.src}/com/ibm/jaql/json"
+        <javacc target="${src.dir}/com/ibm/jaql/json/parser/JsonParser.jj"
+                outputDirectory="${src.dir}/com/ibm/jaql/json/parser"
                 javacchome="${javacc.home}" />
     </target>
 
@@ -388,6 +383,7 @@
         </copy>
 
         <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
+	<unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
 
         <unjar dest="${tmp.dir}">
             <fileset dir="${hbase.dir}">

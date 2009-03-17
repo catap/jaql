@@ -26,18 +26,22 @@ import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ItemReader;
 import com.ibm.jaql.io.converter.StreamToItem;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.JValue;
 
-/**
- * Usage: stRead(location: 'uri', {adapter: 'StreamInputAdapter', format:
+/** Input adapter that reads from data from a URL (constructed using the provided location
+ * and all arguments) and converts the data to items using a {@link StreamToItem} converter.
+ * 
+ * <p> Usage: stRead(location: 'uri', {adapter: 'StreamInputAdapter', format:
  * 'ItemInputStream', args: { } });
  */
 public class StreamInputAdapter extends AbstractInputAdapter
 {
 
   public static String   ARGS_NAME = "args";
+  public static String   ARR_NAME  = "asArray"; // @see com.ibm.jaql.io.converter.StreamToItem
 
   protected StreamToItem formatter;
 
@@ -54,6 +58,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
     super.initializeFrom(args);
 
     JRecord inputArgs = AdapterStore.getStore().input.getOption(args);
+    
     // setup the formatter
     Class<?> fclass = AdapterStore.getStore().getClassFromRecord(inputArgs,
         FORMAT_NAME, null);
@@ -61,10 +66,14 @@ public class StreamInputAdapter extends AbstractInputAdapter
     if (!StreamToItem.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemInputStream");
     formatter = (StreamToItem) fclass.newInstance();
+    Item arrAcc = inputArgs.getValue(ARR_NAME);
+    if(!arrAcc.isNull()) {
+      formatter.setArrayAccessor( ((JBool)arrAcc.get()).value);
+    }
 
     // setup the args
     Item item = inputArgs.getValue(ARGS_NAME);
-    if (item != null) strArgs = (JRecord) item.get();
+    if (!item.isNull()) strArgs = (JRecord) item.get();
   }
 
   /*

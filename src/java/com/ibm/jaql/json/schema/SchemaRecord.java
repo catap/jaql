@@ -23,8 +23,9 @@ import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.type.JString;
 
-/**
+/** Schema that matches a record, i.e., an ordered list of fields.
  * 
+ *  @see SchemaField
  */
 public class SchemaRecord extends Schema
 {

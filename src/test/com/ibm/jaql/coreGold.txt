@@ -257,10 +257,10 @@ true
 // make sure array encodings hash and compare properly
 distinct( [
   [1,2], 
-  for( $i in 1 to 2 ) if( $i > 0 ) [ $i ],  // [1,2]
+  range(1,2) -> filter $ > 0,  // [1,2]
   [1,2,3], 
-  for( $i in 1 to 3 ) if( $i != 2 ) [ $i ], // [1,2]
-  for( $i in 1 to 3 ) if( $i > 0 ) [ $i ],  // [1,3]
+  range(1,3) -> filter $ != 2, // [1,3]
+  range(1,3) -> filter $ > 0,  // [1,2,3]
   [1,3]
 ] );##
 [
@@ -280,19 +280,19 @@ distinct( [
 ]
  // 3 items
 
-[1,2] == (for( $i in 1 to 2 ) if( $i > 0 ) [ $i ]);##
+[1,2] == ( range(1,2) -> filter $ > 0 );##
 true
  // true
 
-[1,2] == (for( $i in 1 to 3 ) if( $i != 2 ) [ $i ]);##
+[1,2] == ( range(1,3) -> filter $ != 2 );##
 false
  // false
 
-[1,3] == (for( $i in 1 to 3 ) if( $i != 2 ) [ $i ]);##
+[1,3] == ( range(1,3) -> filter $ != 2 );##
 true
  // true
 
-[1,2] != (for( $i in 1 to 3 ) if( $i > 0 ) [ $i ]);##
+[1,2] != ( range(1,3) -> filter $ > 0 );##
 true
  // true
 
@@ -317,10 +317,77 @@ null
 //-------------------------- ARRAY OPS ----------------------------
 
 // group by field a, returning all records in each group
-group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
-   by $a = $i.a
-   into $is )
- [ { a:$a, i:$is } ];##
+group [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+   by $a = ($.a) as $i
+ into { a:$a, i:$i };##
+[
+  {
+    "a": 1,
+    "i": [
+      {
+        "a": 1,
+        "b": "1x"
+      },
+      {
+        "a": 1,
+        "b": "1y"
+      }
+    ]
+  },
+  {
+    "a": 2,
+    "i": [
+      {
+        "a": 2,
+        "b": "2x"
+      },
+      {
+        "a": 2,
+        "b": "2y"
+      }
+    ]
+  }
+]
+
+
+// same as above - default 'as' is input expression
+$i = [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] ;##
+"$i"
+
+group $i by $a = ($.a) into { a:$a, i:$i };##
+[
+  {
+    "a": 1,
+    "i": [
+      {
+        "a": 1,
+        "b": "1x"
+      },
+      {
+        "a": 1,
+        "b": "1y"
+      }
+    ]
+  },
+  {
+    "a": 2,
+    "i": [
+      {
+        "a": 2,
+        "b": "2x"
+      },
+      {
+        "a": 2,
+        "b": "2y"
+      }
+    ]
+  }
+]
+
+
+// same as above - default 'as' is $
+[ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+-> group by $a = ($.a) into { a:$a, i:$ };##
 [
   {
     "a": 1,
@@ -352,10 +419,9 @@ group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ]
 
 
 // group by field a, returning b's from each group
-group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
-   by $a = $i.a
-   into $is )
- [ { a:$a, bs: $is[*].b } ];##
+group [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+   by $a = ($.a) as $i
+ into { a:$a, bs: $i[*].b };##
 [
   {
     "a": 1,
@@ -375,10 +441,9 @@ group( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ]
 
 
 // Count each distinct value
-group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
-   by $unique = $i
-   into $is )
- [ { val: $unique, n: count($is) } ];##
+group [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $unique = ($) as $i
+   into { val: $unique, n: count($i) };##
 [
   {
     "n": 3,
@@ -396,10 +461,9 @@ group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ]
 
 
 // List distinct values
-group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
-   by $unique = $i
-   into $is )
- [ $unique ];##
+group [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $unique = ($) as $i
+   into $unique;##
 [
   1,
   2,
@@ -407,11 +471,10 @@ group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ]
 ]
 
 
-// Count how many evens and odds
-group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
-   by $g = mod($i,2)
-   into $is )
- [ { val: $g, n: count($is) } ];##
+// Count how many evens and odds - use explicit input variable name
+group each $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ] 
+   by $g = (mod($i,2)) as $j
+   into { val: $g, n: count($j) };##
 [
   {
     "n": 2,
@@ -425,14 +488,12 @@ group( $i in [ 1, 1, 1, 2, 2, 3, 3, 3, 3 ]
 
 
 // cogroup (generalizes inner/outer join for equality predicates)
-group(
-  $i in [ {a:1, b:'b1x'}, {a:2, b:'b2x'}, {a:3, b:'b3x'}, {a:1, b:'b1y'}, {a:2, b:'b2y'} ] 
-     by $g = $i.a
-     into $is,
-  $j in [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ] 
-     by $g = $j.c
-     into $js )
- [ { g:$g, bs:$is[*].b, ds:$js[*].d } ];##
+group
+  [ {a:1, b:'b1x'}, {a:2, b:'b2x'}, {a:3, b:'b3x'}, {a:1, b:'b1y'}, {a:2, b:'b2y'} ] 
+     by $g = ($.a) as $i,
+  [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ]
+     by $g = ($.c) as $j
+  into { g:$g, bs:$i[*].b, ds:$j[*].d };##
 [
   {
     "bs": [
@@ -474,16 +535,16 @@ group(
 
 
 // This will generate a semantic error because the 'by' names must be unique.
-group(
-  $i in [] by $g = $i.a into $is,
-  $j in [] by $h = $j.c into $js
- [##
+group
+  [] by $g = ($.a) as $is,
+  [] by $h = ($.c) as $##
 FAILURE
- { g:$g, bs:$is[*].b, ds:$js[*].d } ];
+js,
+  into { g:$g, bs:$is[*].b, ds:$js[*].d };
 
 
-sort( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
-  by $i.a );##
+[ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ] 
+-> sort by [$.a];##
 [
   {
     "a": 1,
@@ -504,8 +565,8 @@ sort( $i in [ {a:1, b:'1x'}, {a:2, b:'2x'}, {a:1, b:'1y'}, {a:2, b:'2y'} ]
 ]
 
 
-sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
-  by $i.a, $i.b );##
+[ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+-> sort by [$.a, $.b];##
 [
   {
     "a": 1,
@@ -526,8 +587,8 @@ sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ]
 ]
 
 
-sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
-  by $i.b, $i.a );##
+[ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+-> sort by [$.b, $.a];##
 [
   {
     "a": 1,
@@ -548,8 +609,8 @@ sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ]
 ]
 
 
-sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
-  by $i );##
+[ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ] 
+-> sort by [ $ ];##
 [
   {
     "a": 1,
@@ -570,31 +631,38 @@ sort( $i in [ {a:2, b:1}, {a:1, b:2}, {a:2, b:2}, {a:1, b:1} ]
 ]
 
 
-(sort( $i in (for( $j in 1 to 10000 ) [ {x: [-$j,$j]} ]) by $i))[0];##
-{
-  "x": [
-    -10000,
-    10000
-  ]
-}
+range(1,10000) -> transform {x: [-$,$]} -> top 1 by [$];##
+[
+  {
+    "x": [
+      -10000,
+      10000
+    ]
+  }
+]
 
-(sort( $i in 1 to 1000 by {x:[-$i,$i],y:[$i,$i]})) [0];##
-1000
+range(1,1000) -> top 1 by [{x:[-$,$],y:[$,$]}];##
+[
+  1000
+]
 
-(sort( $i in 1 to 1000 by [-$i,$i])) [0];##
-1000
+range(1,1000) -> top 1 by [-$,$];##
+[
+  1000
+]
 
-(sort( $i in 1 to 100 by {x:[-$i,$i]})) [0];##
-100
+range(1,100) -> top 1 by [{x:[-$,$]}];##
+[
+  100
+]
 
 
 //-------------------------- RECORD OPS ---------------------------
 
-$pivot = fn($items) (
-   $srecs = for ($p in $items) [{ ($p.label):$p.value }],
-  
-   combine($a,$b in $srecs)
-     ( remap( $a, $b ) )
+$pivot = (
+   -> transform { $.label: $.value }
+   -> record()
+   // -> combine( fn($a,$b) remap( $a, $b ) )
 );##
 "$pivot"
 
@@ -605,7 +673,7 @@ $input = [ { label: "name", value: "joe" },
 "$input"
 
 
-$pivot( $input );##
+$input -> $pivot();##
 {
   "name": "joe",
   "office": "b1",
@@ -640,10 +708,33 @@ $pivot( $input );##
 ]
 
 
-//-------------------------- FOR ---------------------------------
+( $r = 1,
+  $r = ( $r = $r + 10, // 11
+         $r + 100 ) // 111
+       + $r, // 112
+  $r );##
+112
 
-for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ] )
- [ $r.x ];##
+
+//-------------------------- EXPAND ---------------------------------
+
+[ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ]
+-> expand $.x;##
+[
+  {
+    "a": 1
+  },
+  {
+    "a": 2
+  },
+  {
+    "a": 1
+  }
+]
+
+
+[ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ]
+-> expand [ $.x ];##
 [
   [
     {
@@ -662,9 +753,9 @@ for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ] )
 ]
 
 
-for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ],
-     $s in $r.x )
- [ $s.a ];##
+[ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ]
+-> expand $.x
+-> transform $.a;##
 [
   1,
   2,
@@ -674,9 +765,9 @@ for( $r in [ {x:[{a:1},{a:2}], y:2}, {y:3}, {x:[{a:1}]} ],
 
 //-------------------------- JOIN ---------------------------------
 
-join( $i in [ 1, 2, 3 ] on $i,
-      $j in [ 1, 2, 4 ] on $j )
- [ {i:$i, j:$j} ];##
+equijoin $i in [ 1, 2, 3 ] on ($i),
+         $j in [ 1, 2, 4 ] on ($j) 
+into {$i, $j};##
 [
   {
     "i": 1,
@@ -689,9 +780,9 @@ join( $i in [ 1, 2, 3 ] on $i,
 ]
 
 
-join( optional $i in [ 1, 2, 3 ] on $i,
-               $j in [ 1, 2, 4 ] on $j )
- [ {i:$i, j:$j} ];##
+equijoin          $i in [ 1, 2, 3 ] on $i,
+         preserve $j in [ 1, 2, 4 ] on $j
+into {$i, $j};##
 [
   {
     "i": 1,
@@ -708,9 +799,9 @@ join( optional $i in [ 1, 2, 3 ] on $i,
 ]
 
 
-join(          $i in [ 1, 2, 3 ] on $i,
-      optional $j in [ 1, 2, 4 ] on $j )
- [ {i:$i, j:$j} ];##
+equijoin preserve $i in [ 1, 2, 3 ] on $i,
+                  $j in [ 1, 2, 4 ] on $j
+into {$i, $j};##
 [
   {
     "i": 1,
@@ -727,9 +818,89 @@ join(          $i in [ 1, 2, 3 ] on $i,
 ]
 
 
-join( optional $i in [ 1, 2, 3 ] on $i,
-      optional $j in [ 1, 2, 4 ] on $j )
- [ {i:$i, j:$j} ];##
+equijoin preserve $i in [ 1, 2, 3 ] on $i,
+         preserve $j in [ 1, 2, 4 ] on $j
+into {$i, $j};##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": 3,
+    "j": null
+  },
+  {
+    "i": null,
+    "j": 4
+  }
+]
+
+
+join $i in [ 1, 2, 3 ],
+     $j in [ 1, 2, 4 ]
+where $i == $j
+into {$i, $j};##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  }
+]
+
+
+join          $i in [ 1, 2, 3 ],
+     preserve $j in [ 1, 2, 4 ]
+where $i == $j
+into {$i, $j};##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": null,
+    "j": 4
+  }
+]
+
+
+join preserve $i in [ 1, 2, 3 ],
+              $j in [ 1, 2, 4 ]
+where $i == $j
+into {$i, $j};##
+[
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": 3,
+    "j": null
+  }
+]
+
+
+join preserve $i in [ 1, 2, 3 ],
+     preserve $j in [ 1, 2, 4 ]
+where $i == $j
+into {$i, $j};##
 [
   {
     "i": 1,

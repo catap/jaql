@@ -22,9 +22,10 @@ import java.io.IOException;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 
-/**
+/** Schema that matches atomic values.
  * 
  */
+// can also be used to match a record or an array (intended?)
 public class SchemaAtom extends Schema // TODO: used classes for each type? eg, max string len
 {
   private static JString tempName = new JString();

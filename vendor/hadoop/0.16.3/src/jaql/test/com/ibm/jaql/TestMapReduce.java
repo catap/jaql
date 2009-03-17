@@ -69,6 +69,7 @@ public class TestMapReduce extends JaqlBaseTestCase
       }
       catch (IOException ie)
       {
+        ie.printStackTrace();
         fail("Could not setup dfs cluster");
       }
 
@@ -79,6 +80,7 @@ public class TestMapReduce extends JaqlBaseTestCase
       }
       catch (IOException ie)
       {
+        ie.printStackTrace();
         fail("Could not setup map/reduce cluster");
       }
 
@@ -88,6 +90,7 @@ public class TestMapReduce extends JaqlBaseTestCase
       }
       catch (IOException ie)
       {
+        ie.printStackTrace();
         fail("Could not setup override conf file");
       }
     }

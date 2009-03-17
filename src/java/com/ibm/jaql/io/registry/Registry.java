@@ -22,9 +22,9 @@ import java.util.Map;
 
 import com.ibm.jaql.json.type.JValue;
 
-/**
- * @param <K>
- * @param <V>
+/** provides a registry, i.e., a set of (key, value) pairs, and methods for its serialization. 
+ * @param <K> type of keys
+ * @param <V> types of values
  */
 public class Registry<K, V>
 {
@@ -71,6 +71,7 @@ public class Registry<K, V>
   /**
    * @param copy
    */
+  // Caution: does not perform a deep copy 
   public void save(HashMap<K, V> copy)
   {
     if (copy == null) return;

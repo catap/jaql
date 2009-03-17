@@ -42,8 +42,8 @@ public class JaqlUtil
 {
   public final static JString emptyString = new JString();
 
-  /**
-   * @param item
+  /** Returns true if the value embedded in the specified item is a JBool that equals true
+   * @param item an Item embedding a JBool
    * @return
    * @throws Exception
    */
@@ -190,7 +190,9 @@ public class JaqlUtil
     return queryPagedFile;
   }
 
-  /**
+  /** Returns the page file of the current session. The page file is used to spill large
+   * data structures to disk. 
+   *  
    * @return
    */
   public static PagedFile getSessionPageFile()

@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.rewrite;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.LetExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.pragma.InlinePragma;
 
@@ -59,7 +59,7 @@ public class DoInlinePragma extends Rewrite
       else if (def instanceof BindingExpr)
       {
         BindingExpr b = (BindingExpr) def;
-        if (b.parent() instanceof LetExpr && var == b.var)
+        if (b.parent() instanceof DoExpr && var == b.var)
         {
           expr.replaceInParent(cloneExpr(b.eqExpr()));
           return true;

@@ -22,9 +22,9 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
-import com.ibm.jaql.lang.expr.core.LetExpr;
 
 /**
  * Compose a function definition and a function call.
@@ -99,13 +99,14 @@ public class FunctionInline extends Rewrite
     }
 
     // For functions with args, create a let to evaluate the args. 
-    ArrayList<BindingExpr> bindings = new ArrayList<BindingExpr>();
+    ArrayList<Expr> bindings = new ArrayList<Expr>();
     for (int i = 0; i < numParams; i++)
     {
       bindings.add(new BindingExpr(BindingExpr.Type.EQ, params[i], null, call
           .arg(i)));
     }
-    LetExpr let = new LetExpr(bindings, fnBody);
+    bindings.add(fnBody);
+    DoExpr let = new DoExpr(bindings);
 
     call.replaceInParent(let);
     return true;

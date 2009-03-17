@@ -21,18 +21,23 @@ import java.util.Iterator;
 
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.MapRunnable;
 import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
+import com.ibm.jaql.lang.expr.array.StashIterExpr;
+import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
@@ -69,50 +74,128 @@ public class MRAggregate extends MapReduceBaseExpr
   public Item eval(final Context context) throws Exception
   {
     JRecord args = baseSetup(context);
-    Item init = args.getRequired("init");
-    Item combine = args.getRequired("combine");
+    Item map = args.getRequired("map");
+    Item agg = args.getRequired("aggregate");
     Item finl = args.getRequired("final");
 
     // use default: conf.setNumMapTasks(10); // TODO: need a way to specify options
     // use default: conf.setNumReduceTasks(2); // TODO: get from options
-    conf.setMapperClass(MapEval.class);
+    conf.setMapRunnerClass(MapEval.class);
     conf.setCombinerClass(AggCombineEval.class);
     conf.setReducerClass(AggFinalEval.class);
 
+    JFunction mapFn = (JFunction) map.getNonNull();
+    prepareFunction("map", 1, mapFn, 0);
+    JFunction aggFn = (JFunction) agg.getNonNull();
+    prepareFunction("aggregate", 2, aggFn, 0);
     JFunction finalFn = (JFunction) finl.getNonNull();
-    prepareFunction("final", numInputs + 1, finalFn, 0);
-
-    if (numInputs == 1)
-    {
-      JFunction initFn = (JFunction) init.getNonNull();
-      prepareFunction("map", 1, initFn, 0); // called map to share the same MapEval class
-      JFunction combineFn = (JFunction) combine.getNonNull();
-      prepareFunction("combine", 3, combineFn, 0);
-    }
-    else
-    {
-      JArray initArray = (JArray) init.getNonNull();
-      Iter iter = initArray.iter();
-      for (int i = 0; i < numInputs; i++)
-      {
-        JFunction initFn = (JFunction) iter.next().getNonNull();
-        prepareFunction("map", 1, initFn, i); // called map to share the same MapEval class
-      }
-      JArray combineArray = (JArray) combine.getNonNull();
-      iter = combineArray.iter();
-      for (int i = 0; i < numInputs; i++)
-      {
-        JFunction combineFn = (JFunction) iter.next().getNonNull();
-        prepareFunction("combine", 3, combineFn, i);
-      }
-    }
-
-    // Uncomment to run locally in a single process
-    // conf.set("mapred.job.tracker", (Object)"local");
+    prepareFunction("final", 2, finalFn, 0);
 
     JobClient.runJob(conf);
 
     return outArgs;
+  }
+
+  protected static AlgebraicAggregate[] makeAggs(JFunction aggFn)
+  {
+    Expr e = aggFn.getBody();
+    if( !(e instanceof ArrayExpr) )
+    {
+      throw new RuntimeException("aggregate function must start with an array expression");
+    }
+    int numAggs = e.numChildren();
+    AlgebraicAggregate[] aggs = new AlgebraicAggregate[numAggs];
+    for(int i = 0 ; i < numAggs ; i++)
+    {
+      Expr c = e.child(i);
+      if( !(c instanceof AlgebraicAggregate) )
+      {
+        throw new RuntimeException("aggregate function must be an array of AlgebraicAggregate functions");
+      }
+      aggs[i] = (AlgebraicAggregate)c;
+    }
+    return aggs;
+  }
+  
+  /**
+   * Used for both map and init functions
+   */
+  public static class MapEval extends RemoteEval
+      implements MapRunnable<Item, Item, Item, Item>
+  {
+    protected JFunction mapFn;
+    protected JFunction aggFn;
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr.RemoteEval#configure(org.apache.hadoop.mapred.JobConf)
+     */
+    @Override
+    public void configure(JobConf job)
+    {
+      super.configure(job);
+      mapFn = compile(job, "map", 0);
+      aggFn = compile(job, "aggregate", 0);
+    }
+
+    /**
+     * 
+     */
+    // fails on java 1.5: @Override
+    public void run( RecordReader<Item, Item> input,
+                     OutputCollector<Item, Item> output, 
+                     Reporter reporter) 
+      throws IOException
+    {
+      // TODO: If there was a way for combiners to:
+      //   1. be guaranteed to run at least once
+      //   2. know if it is the first invocation
+      // then we could avoid initializing aggregates for just one value.
+      try
+      {
+        AlgebraicAggregate[] aggs = makeAggs(aggFn);
+        Var keyVar = aggFn.param(0);
+        Var valVar = aggFn.param(1);
+        Item[] mappedKeyValue = new Item[2];
+        FixedJArray aggArray = new FixedJArray(aggs.length);
+        Item aggItem = new Item(aggArray);
+
+        Expr[] args = new Expr[] {
+          new StashIterExpr(new RecordReaderValueIter(input))
+        };
+        Iter iter = mapFn.iter(context, args);
+
+        Item item;
+        while ((item = iter.next()) != null)
+        {
+          JArray pair = (JArray) item.get();
+          if (pair != null)
+          {
+            pair.getTuple(mappedKeyValue);
+            context.setVar(keyVar, mappedKeyValue[0]);
+            context.setVar(valVar, mappedKeyValue[1]);
+            for( int i = 0 ; i < aggs.length ; i++ )
+            {
+              AlgebraicAggregate agg = aggs[i];
+              agg.initInitial(context);
+              aggs[i].evalInitial(context);
+              Item part = agg.getPartial();
+              aggArray.set(i, part);
+            }
+            output.collect(mappedKeyValue[0], aggItem);
+          }
+        }
+      }
+      catch (IOException ex)
+      {
+        throw ex;
+      }
+      catch (Exception ex)
+      {
+        throw new UndeclaredThrowableException(ex);
+      }
+    }
   }
 
   /**
@@ -122,14 +205,12 @@ public class MRAggregate extends MapReduceBaseExpr
       implements
         Reducer<Item, Item, Item, Item>
   {
-    protected int         inputId;
-    protected Item[]      combineArgs = new Item[3]; // key, val1, val2
-    protected JFunction[] usingFns;
-    protected Item[]      agg;
-    protected JLong       outId;
-    protected FixedJArray outPair;
-    protected Item        outItem;
-    private boolean[]     seen;
+    protected JFunction aggFn;
+    protected Var keyVar;
+    protected AlgebraicAggregate[] aggs;
+    protected FixedJArray aggArray;
+    protected Item aggItem;
+
 
     /*
      * (non-Javadoc)
@@ -139,22 +220,11 @@ public class MRAggregate extends MapReduceBaseExpr
     public void configure(JobConf job)
     {
       super.configure(job);
-      usingFns = new JFunction[numInputs];
-      agg = new Item[numInputs];
-      seen = new boolean[numInputs];
-      for (int i = 0; i < numInputs; i++)
-      {
-        agg[i] = new Item();
-        usingFns[i] = compile(job, "combine", inputId);
-        // FIXME: ideally we could know which input was used to when reading map/combine output files without encoding it on every record
-      }
-      if (numInputs > 1)
-      {
-        outId = new JLong();
-        outPair = new FixedJArray(2);
-        outPair.set(0, new Item(outId));
-        outItem = new Item(outPair);
-      }
+      aggFn = compile(job, "aggregate", 0);
+      keyVar = aggFn.param(0);
+      aggs = makeAggs(aggFn);
+      aggArray = new FixedJArray(aggs.length);
+      aggItem = new Item(aggArray);
     }
 
     /*
@@ -170,44 +240,20 @@ public class MRAggregate extends MapReduceBaseExpr
     {
       try
       {
-        combineArgs[0] = key;
-
-        for (int i = 0; i < numInputs; i++)
+        for(int i = 0 ; i < aggs.length ; i++)
         {
-          agg[i].set(null);
-          seen[i] = false;
+          aggs[i].initPartial(context);
         }
 
-        while (values.hasNext())
+        context.setVar(keyVar, key);
+        
+        while( values.hasNext() )
         {
-          Item inItem = values.next();
-          int i = 0;
-          if (numInputs > 1)
+          Item parts = values.next();
+          FixedJArray partArray = (FixedJArray)parts.get();
+          for(int i = 0 ; i < aggs.length ; i++)
           {
-            FixedJArray valPair = (FixedJArray) inItem.get();
-            JLong id = (JLong) valPair.get(0).getNonNull();
-            i = (int) id.value;
-            inItem = valPair.get(1);
-          }
-          seen[i] = true;
-          if (!inItem.isNull())
-          {
-            Item combined;
-            if (agg[i].isNull())
-            {
-              combined = inItem;
-            }
-            else
-            {
-              combineArgs[1] = agg[i];
-              combineArgs[2] = inItem;
-              combined = usingFns[i].eval(context, combineArgs);
-              if (combined.isNull())
-              {
-                throw new RuntimeException("combiners cannot return null");
-              }
-            }
-            agg[i].copy(combined);
+            aggs[i].addPartial(partArray.get(i));
           }
         }
         processAggs(key, output);
@@ -222,32 +268,17 @@ public class MRAggregate extends MapReduceBaseExpr
       }
     }
 
-    /**
-     * @param key
-     * @param output
-     * @throws Exception
-     */
     protected void processAggs(Item key, OutputCollector<Item, Item> output)
-        throws Exception
+       throws Exception
     {
-      if (numInputs == 1)
+      for(int i = 0 ; i < aggs.length ; i++)
       {
-        assert seen[0];
-        output.collect(key, agg[0]);
+        Item part = aggs[i].getPartial();
+        aggArray.set(i, part);
       }
-      else
-      {
-        for (int i = 0; i < numInputs; i++)
-        {
-          if (seen[i])
-          {
-            outId.value = i;
-            outPair.set(1, agg[i]);
-            output.collect(key, outItem);
-          }
-        }
-      }
-    }
+
+      output.collect(key, aggItem);
+    }  
   }
 
   /**
@@ -267,7 +298,7 @@ public class MRAggregate extends MapReduceBaseExpr
     {
       super.configure(job);
       finalFn = compile(job, "final", 0);
-      finalArgs = new Item[numInputs + 1];
+      finalArgs = new Item[2];
     }
 
     /*
@@ -278,16 +309,19 @@ public class MRAggregate extends MapReduceBaseExpr
      */
     @Override
     protected void processAggs(Item key, OutputCollector<Item, Item> output)
-        throws Exception
+       throws Exception
     {
-      finalArgs[0] = key;
-      for (int i = 0; i < numInputs; i++)
+      for(int i = 0 ; i < aggs.length ; i++)
       {
-        finalArgs[i + 1] = agg[i];
+        Item item = aggs[i].getFinal();
+        aggArray.set(i, item);
       }
-      Item item;
+
+      finalArgs[0] = key;
+      finalArgs[1] = aggItem;
       Iter iter = finalFn.iter(context, finalArgs);
-      while ((item = iter.next()) != null)
+      Item item;
+      while( (item = iter.next()) != null )
       {
         output.collect(key, item);
       }

@@ -21,9 +21,7 @@ import java.util.HashMap;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 
-/**
- * 
- */
+/** Common API to access records, i.e., (name, value)-pairs. */
 public abstract class MetaRecord extends MetaValue
 {
   protected Class<?> clazz;

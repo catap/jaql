@@ -30,7 +30,8 @@ import org.apache.hadoop.mapred.JobConf;
 public class RegistryUtil
 {
 
-  /**
+  /** Read a registry from a file.
+   * 
    * @param <K>
    * @param <V>
    * @param fileName
@@ -48,7 +49,7 @@ public class RegistryUtil
     input.close();
   }
 
-  /**
+  /** Read a registry from a Hadoop configuration file.
    * @param <K>
    * @param <V>
    * @param conf
@@ -68,7 +69,7 @@ public class RegistryUtil
     }
   }
 
-  /**
+  /** Write a registry to a file.
    * @param <K>
    * @param <V>
    * @param fileName
@@ -83,7 +84,8 @@ public class RegistryUtil
     ostr.close();
   }
 
-  /**
+  /** Write a registry to a Hadoop configuration file.
+   * 
    * @param <K>
    * @param <V>
    * @param conf
@@ -98,6 +100,6 @@ public class RegistryUtil
     registry.writeRegistry(ostr);
     ostr.flush();
     ostr.close();
-    conf.set(name, new String(ostr.toByteArray()));
+    conf.set(name, new String(ostr.toByteArray())); // fixme: String does character conversions!
   }
 }

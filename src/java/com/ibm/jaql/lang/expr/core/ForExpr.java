@@ -58,7 +58,7 @@ import com.ibm.jaql.util.Bool3;
  * $e
  * 
  */
-public final class ForExpr extends IterExpr
+public final class ForExpr extends IterExpr // TODO: rename
 {
   /**
    * BindingExpr inExpr, Expr collectExpr
@@ -126,6 +126,19 @@ public final class ForExpr extends IterExpr
     // return binding().inExpr().isNull().or(collectExpr().isNull());
   }
 
+  /**
+   * 
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    if( i == 0 )
+    {
+      return Bool3.TRUE;
+    }
+    return Bool3.FALSE;
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -135,13 +148,28 @@ public final class ForExpr extends IterExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
+    // TODO: decompile as "for" or "expand"?
     BindingExpr b = binding();
-    exprText.print("\nfor( ");
-    exprText.print(b.var.name);
-    exprText.print(" in ");
-    b.inExpr().decompile(exprText, capturedVars);
-    exprText.println(" )");
-    collectExpr().decompile(exprText, capturedVars);
+    if( false )
+    {
+      exprText.print("\nfor( ");
+      exprText.print(b.var.name);
+      exprText.print(" in ");
+      b.inExpr().decompile(exprText, capturedVars);
+      exprText.print(" ) ( ");
+      collectExpr().decompile(exprText, capturedVars);
+      exprText.println(" )");
+      capturedVars.remove(b.var);
+    }
+    else
+    {
+      b.inExpr().decompile(exprText, capturedVars);
+      exprText.print(" -> expand each ");
+      exprText.print(b.var.name);
+      exprText.print(" ( ");
+      collectExpr().decompile(exprText, capturedVars);
+      exprText.println(" )");
+    }
     capturedVars.remove(b.var);
   }
 

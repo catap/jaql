@@ -68,11 +68,13 @@ public class AsArrayElimination extends Rewrite
     // | group $i in asArray ...
     // =>
     // eliminate asArray
+    // TODO: should just ask expr.parent() if it consumes an array in this arg.
     if (expr.parent() instanceof BindingExpr)
     {
       Expr gp = expr.parent().parent();
-      if (gp instanceof ForExpr || gp instanceof CombineExpr
-          || gp instanceof GroupByExpr)
+      if (gp instanceof ForExpr 
+          || gp instanceof CombineExpr // TODO: still used?
+          || gp instanceof GroupByExpr) // TODO: there is a bug here; only applies to input
       {
         expr.replaceInParent(input);
         return true;

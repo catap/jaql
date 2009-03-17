@@ -22,7 +22,7 @@ import java.net.URI;
 
 import com.ibm.jaql.json.type.JRecord;
 
-/**
+/** Input adapter that reads from a file.
  * 
  */
 public class FileStreamInputAdapter extends StreamInputAdapter

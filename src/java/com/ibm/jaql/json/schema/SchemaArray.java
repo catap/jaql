@@ -24,7 +24,8 @@ import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.util.BaseUtil;
 
-/**
+/** Schema that matches arrays of element. Schematas for each of the elements are
+ * provided as input to this schema.
  * 
  */
 public class SchemaArray extends Schema

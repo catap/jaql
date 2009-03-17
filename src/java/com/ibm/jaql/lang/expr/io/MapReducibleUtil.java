@@ -45,11 +45,12 @@ public class MapReducibleUtil
     {
       return true;
     }
-    if (e instanceof StWriteExpr)
+    if (e instanceof WriteFn)
     {
-      return ((StWriteExpr) e).isMapReducible();
+      return ((WriteFn) e).isMapReducible();
     }
 
+    if (e instanceof AbstractHandleFn) return ((AbstractHandleFn) e).isMapReducible();
     if (e instanceof RecordExpr) return isMapReducible(input, (RecordExpr) e);
 
     return false;
@@ -72,7 +73,7 @@ public class MapReducibleUtil
     //    }
     //    return mapReducible;
   }
-
+  
   /**
    * @param input
    * @param recExpr
@@ -151,27 +152,5 @@ public class MapReducibleUtil
     {
     }
     return false;
-  }
-
-  /**
-   * Rewrite the parameters of PotentialMapReducible to a target parameter. It
-   * is assumed that a PotentialMapReducible's parameters is the same as the
-   * MapReduce expression's input or output parameter.
-   * 
-   * @param fromExpr
-   * @param toExpr
-   * @return
-   */
-  public static RecordExpr rewriteToMapReduce(RecordExpr fromExpr,
-      RecordExpr toExpr)
-  {
-    //  echo all fields
-    int numFields = fromExpr.numChildren();
-    for (int i = 0; i < numFields; i++)
-    {
-      toExpr.addChild(fromExpr.child(i));
-    }
-
-    return toExpr;
   }
 }

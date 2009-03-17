@@ -19,15 +19,18 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-/**
- * 
+/** 
+ * Methods to access a file consisting of a set of pages, including method to 
+ * allocate, read, write, and free a page. The physical order of pages on disk may not 
+ * correspond to the order of their allocation, as freed pages will be  reused to 
+ * satisfy subsequent allocations. 
  */
 public class PagedFile
 {
   public static final int allocSize = 10; // number of pages to allocate at a time
 
   protected FileChannel   file;
-  protected ByteBuffer    freeList;
+  protected ByteBuffer    freeList;	// list of free pages
   protected long          fileEnd;
 
   /**
@@ -77,7 +80,7 @@ public class PagedFile
     }
   }
 
-  /**
+  /** 
    * @return
    */
   public int pageSize()

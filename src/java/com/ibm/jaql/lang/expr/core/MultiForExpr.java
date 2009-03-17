@@ -155,13 +155,13 @@ public class MultiForExpr extends IterExpr // extends MacroExpr
           expr = new ForExpr(b.var, b.inExpr(), expr);
           break;
 
-        case INREC :
-          // expr = new WithInRecExpr(unnest, b, ifExpr, expr );
-          Var pairVar = env.makeVar("$kvpair");
-          expr = new LetExpr(b.var, new IndexExpr(new VarExpr(pairVar), 0),
-              b.var2, new IndexExpr(new VarExpr(pairVar), 1), expr);
-          expr = new ForExpr(pairVar, new FieldsFn(b.inExpr()), expr);
-          break;
+//        case INREC : // TODO: this is not used anymore, use: for $f in fields($rec)
+//          // expr = new WithInRecExpr(unnest, b, ifExpr, expr );
+//          Var pairVar = env.makeVar("$kvpair");
+//          expr = new LetExpr(b.var, new IndexExpr(new VarExpr(pairVar), 0),
+//              b.var2, new IndexExpr(new VarExpr(pairVar), 1), expr);
+//          expr = new ForExpr(pairVar, new FieldsFn(b.inExpr()), expr);
+//          break;
 
         default :
           throw new RuntimeException("bad binding type");

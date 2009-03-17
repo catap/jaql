@@ -28,13 +28,4 @@ public interface PotentialMapReducible
    * @return
    */
   boolean isMapReducible();
-
-  // FIXME: get rid of the input expr
-  /**
-   * Rewrite this expression's parameters to the given MapReduceExpr parameters.
-   * 
-   * @param expr
-   * @return
-   */
-  Expr rewriteToMapReduce(Expr expr);
 }

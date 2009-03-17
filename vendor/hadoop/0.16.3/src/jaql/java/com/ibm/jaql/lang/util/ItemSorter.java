@@ -19,13 +19,13 @@ import java.io.IOException;
 
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.SequenceFile.Sorter.RawKeyValueIterator;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.PublicMergeSorter;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.lang.core.JComparator;
 
 /**
  * 
@@ -48,7 +48,7 @@ public class ItemSorter
   /**
    * @param comparator
    */
-  public ItemSorter(WritableComparator comparator)
+  public ItemSorter(JComparator comparator)
   {
     // JobConf conf = new JobConf();
     // conf.setMapOutputKeyClass(Item.class);

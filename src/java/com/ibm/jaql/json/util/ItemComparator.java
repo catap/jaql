@@ -19,26 +19,25 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.io.WritableComparator;
+import org.apache.hadoop.io.DataInputBuffer;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.lang.core.JComparator;
 
-/**
- * 
+/** Hadoop-compatible comparator for two JSON values. The comparator makes use of 
+ * the total order of all types (to determine order of elements of different types). The
+ * general procedure is to create an {@link ItemWalker} for each input and 
+ * (1) compare the types of the next element as determined by {@link ItemWalker#next()},
+ * (2) compare the values of the these elements, if atomic, and (3) repeat until a difference 
+ * has been found (in either 1 or 2) or both inputs have been consumed (and thus are equal).
  */
-public class ItemComparator extends WritableComparator
+// TODO: creates instances; comparison is not performed on byte level
+public class ItemComparator implements JComparator
 {
-
-  /**
-   * 
-   */
-  public ItemComparator()
-  {
-    super(Item.class);
-  }
+  protected DataInputBuffer buffer = new DataInputBuffer();
+  protected Item key1 = new Item(); 
 
   /**
    * @param walker1
@@ -141,26 +140,19 @@ public class ItemComparator extends WritableComparator
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.apache.hadoop.io.WritableComparator#compare(org.apache.hadoop.io.WritableComparable,
-   *      org.apache.hadoop.io.WritableComparable)
-   */
-  public int compare(WritableComparable a, WritableComparable b)
+  @Override
+  public long longHash(byte[] bytes, int offset, int length) throws IOException
   {
-    return compare((Item) a, (Item) b);
+    buffer.reset(bytes, offset, length);
+    key1.readFields(buffer);
+    longHash(key1);
+    return 0;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.apache.hadoop.io.WritableComparator#compare(java.lang.Object,
-   *      java.lang.Object)
-   */
-  public int compare(Object a, Object b)
+  @Override
+  public long longHash(Item key)
   {
-    return compare((Item) a, (Item) b);
+    return key1.longHashCode();
   }
 
 }

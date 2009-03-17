@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
@@ -25,9 +26,10 @@ import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.util.Bool3;
 
-/**
+/** A variable.
  * 
  */
 public class VarExpr extends Expr
@@ -164,7 +166,27 @@ public class VarExpr extends Expr
     if (oldVar == var)
     {
       var = newVar;
+      subtreeModified();
     }
+  }
+  
+  /**
+   * Replace all uses of $oldVar with $recVar.fieldName
+   * 
+   * @param oldVar
+   * @param recVar
+   * @param fieldName
+   * @return
+   */
+  public Expr replaceVar(Var oldVar, Var recVar, String fieldName)
+  {
+    if (oldVar == var)
+    {
+      Expr proj = PathFieldValue.byName(recVar, fieldName);
+      this.replaceInParent(proj);
+      return proj;
+    }
+    return this;
   }
 
   /**
@@ -182,4 +204,14 @@ public class VarExpr extends Expr
   {
     this.var = var;
   }
+  
+  @Override
+  public void getVarUses(Var var, ArrayList<Expr> uses)
+  {
+    if( this.var == var )
+    {
+      uses.add(this);
+    }
+  }
+
 }
