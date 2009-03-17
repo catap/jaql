@@ -18,8 +18,7 @@ package com.ibm.jaql.json.util;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import org.apache.hadoop.io.WritableComparable;
-
+import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JValue;
 
@@ -135,28 +134,41 @@ public class AscDescItemComparator extends ItemComparator
    */
   public int compare(Item a, Item b)
   {
-    throw new RuntimeException("NYI");
+    // TODO: should this work with any JArray?
+    // TODO: should this eliminate Item and use FixedJArray directly?
+    // TODO: can this assume non-null?
+    FixedJArray x = (FixedJArray)a.get();
+    FixedJArray y = (FixedJArray)b.get();
+    if( x == null )
+    {
+      if( y == null )
+      {
+        return 0;
+      }
+      return -1;
+    }
+    else if( y == null )
+    {
+      return 1;
+    }
+    if( x.size() != asc.length ||
+        y.size() != asc.length )
+    {
+      throw new RuntimeException("array compared must be of length of asc/desc indicators");
+    }
+    for(int i = 0 ; i < asc.length ; i++)
+    {
+      int c = x.get(i).compareTo(y.get(i));
+      if( c != 0 )
+      {
+        if( asc[i] == false )
+        {
+          c = -c;
+        }
+        return c;
+      }
+    }
+    return 0;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.util.ItemComparator#compare(org.apache.hadoop.io.WritableComparable,
-   *      org.apache.hadoop.io.WritableComparable)
-   */
-  public int compare(WritableComparable a, WritableComparable b)
-  {
-    throw new RuntimeException("NYI");
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.util.ItemComparator#compare(java.lang.Object,
-   *      java.lang.Object)
-   */
-  public int compare(Object a, Object b)
-  {
-    throw new RuntimeException("NYI");
-  }
 }

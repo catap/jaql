@@ -19,9 +19,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord;
-import com.ibm.jaql.io.hadoop.converter.ItemToWritable;
-import com.ibm.jaql.io.hadoop.converter.ItemToWritableComparable;
 import com.ibm.jaql.json.type.Item;
 
 /**
@@ -29,35 +28,6 @@ import com.ibm.jaql.json.type.Item;
  */
 public class ToJSONSeqConverter extends ItemToHadoopRecord
 {
-
-  /**
-   * 
-   */
-  class FromItem implements ItemToWritable
-  {
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
-     *      java.lang.Object)
-     */
-    public void convert(Item src, Writable tgt)
-    {
-      convertItemToText(src, (Text) tgt);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see com.ibm.jaql.io.converter.ToItem#createTarget()
-     */
-    public Writable createTarget()
-    {
-      return new Text();
-    }
-  }
-
   /**
    * @param i
    * @param t
@@ -90,10 +60,19 @@ public class ToJSONSeqConverter extends ItemToHadoopRecord
   /*
    * (non-Javadoc)
    * 
+   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
+   */
+  @Override
+  protected ToItem<WritableComparable> createKeyConverter()
+  {
+    return null;//new FromItemComp();
+  }
+  
+  /* (non-Javadoc)
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyTarget()
    */
   @Override
-  public WritableComparable createKeyTarget()
+  public WritableComparable createKeyTarget() 
   {
     return new Text();
   };
@@ -101,22 +80,34 @@ public class ToJSONSeqConverter extends ItemToHadoopRecord
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
-   */
-  @Override
-  protected ItemToWritableComparable createKeyConverter()
-  {
-    return null;//new FromItemComp();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createValConverter()
    */
   @Override
-  protected ItemToWritable createValConverter()
+  protected ToItem<Writable> createValConverter()
   {
-    return new FromItem();
+    return new ToItem<Writable>()
+    {
+
+      /*
+       * (non-Javadoc)
+       * 
+       * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
+       *      java.lang.Object)
+       */
+      public void convert(Item src, Writable tgt)
+      {
+        convertItemToText(src, (Text) tgt);
+      }
+
+      /*
+       * (non-Javadoc)
+       * 
+       * @see com.ibm.jaql.io.converter.ToItem#createTarget()
+       */
+      public Writable createTarget()
+      {
+        return new Text();
+      }
+    };
   }
 }

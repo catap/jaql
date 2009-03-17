@@ -32,9 +32,8 @@ import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.util.BaseUtil;
 
-/**
- * 
- */
+/** Input format that reads an {@link JArray} from Hadoop's job configuration and creates
+ * a single split for each element of that array. */
 public class ArrayInputFormat implements InputFormat<Item, Item>
 {
 

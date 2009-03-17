@@ -57,6 +57,6 @@ public class ArrayReadExpr extends MacroExpr
     RecordExpr oRec = new RecordExpr(new Expr[]{aField});
     NameValueBinding oField = new NameValueBinding(Adapter.INOPTIONS_NAME, oRec);
     RecordExpr rec = new RecordExpr(new Expr[]{tField, lField, oField});
-    return new StReadExpr(rec);
+    return new ReadFn(rec);
   }
 }

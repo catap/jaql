@@ -146,9 +146,10 @@ public class DefineFunctionExpr extends Expr
     //      capturedVars.add(c);
     //    }
     //    fn.print(exprText);
-    exprText.print("fn ");
+    exprText.print("fn");
     if (fnVar != null)
     {
+      exprText.print(' ');
       exprText.print(fnVar.name);
     }
     exprText.print("(");
@@ -159,9 +160,9 @@ public class DefineFunctionExpr extends Expr
       exprText.print(v.name);
       sep = ", ";
     }
-    exprText.print(") ");
+    exprText.print(") ( ");
     exprs[0].decompile(exprText, capturedVars);
-    exprText.println();
+    exprText.println(" )");
 
     if (fnVar != null)
     {

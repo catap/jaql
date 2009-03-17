@@ -20,8 +20,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.PrintStream;
 
+
 // import org.apache.hadoop.io.WritableComparable;
 
+/** Superclass for all JSON values. Provides abstract methods for serialization, conversion 
+ * to JSON language, deep copying, and hashing. */
 public abstract class JValue implements Comparable<Object> //extends WritableComparable
 {
 

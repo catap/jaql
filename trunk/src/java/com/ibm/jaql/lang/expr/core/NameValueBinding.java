@@ -71,9 +71,28 @@ public class NameValueBinding extends FieldExpr
    * @param name
    * @param value
    */
+  public NameValueBinding(Expr name, Expr value)
+  {
+    this(name, value, true);
+  }
+
+  /**
+   * @param name
+   * @param value
+   */
   public NameValueBinding(String name, Expr value)
   {
     this(name, value, true);
+  }
+
+  /**
+   * 
+   * @param var var name is name, var value is value
+   * @param required
+   */
+  public NameValueBinding(Var var, boolean required)
+  {
+    this(var.nameAsField(), new VarExpr(var), required);
   }
 
   /*
@@ -123,6 +142,15 @@ public class NameValueBinding extends FieldExpr
     return exprs[1];
   }
 
+  /**
+   * 
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -164,5 +192,4 @@ public class NameValueBinding extends FieldExpr
       rec.add(name, value);
     }
   }
-
 }

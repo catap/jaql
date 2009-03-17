@@ -320,7 +320,12 @@ public class AdapterStore
     public JRecord getOverride(JRecord args)
     {
       Item i = args.getValue(Adapter.INOPTIONS_NAME);
-      if (i == null) return null;
+      if (i == Item.nil) {
+        // handle the case where OPTIONS_NAME is used instead
+        i = args.getValue(Adapter.OPTIONS_NAME);
+        if (i == Item.nil) 
+          return null;
+      }
       return (JRecord) i.get();
     }
 
@@ -336,7 +341,6 @@ public class AdapterStore
       {
         tmp = new Item(options);
         args.add(Adapter.INOPTIONS_NAME, tmp);
-
       }
     }
 
@@ -371,7 +375,12 @@ public class AdapterStore
     public JRecord getOverride(JRecord args)
     {
       Item i = args.getValue(Adapter.OUTOPTIONS_NAME);
-      if (i == null) return null;
+      if (i == Item.nil) {
+        // handle the case where OPTIONS_NAME is used instead
+        i = args.getValue(Adapter.OPTIONS_NAME);
+        if (i == Item.nil) 
+          return null;
+      }
       return (JRecord) i.get();
     }
 

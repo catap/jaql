@@ -128,7 +128,7 @@ private int jjMoveStringLiteralDfa1_1(long active0)
 private int jjMoveStringLiteralDfa2_1(long old0, long active0)
 {
    if (((active0 &= old0)) == 0L)
-      return jjStartNfa_1(0, old0);
+      return jjStartNfa_1(0, old0); 
    try { curChar = input_stream.readChar(); }
    catch(java.io.IOException e) {
       jjStopStringLiteralDfa_1(1, active0);
@@ -738,7 +738,7 @@ private int jjMoveStringLiteralDfa1_2(long active0)
 private int jjMoveStringLiteralDfa2_2(long old0, long active0)
 {
    if (((active0 &= old0)) == 0L)
-      return jjStartNfa_2(0, old0);
+      return jjStartNfa_2(0, old0); 
    try { curChar = input_stream.readChar(); }
    catch(java.io.IOException e) {
       jjStopStringLiteralDfa_2(1, active0);
@@ -913,7 +913,7 @@ private static final boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, lo
    {
       case 0:
          return ((jjbitVec2[i2] & l2) != 0L);
-      default :
+      default : 
          if ((jjbitVec0[i1] & l1) != 0L)
             return true;
          return false;
@@ -929,10 +929,10 @@ null, null, null, null, null, null, null, null, null, null, };
 
 /** Lexer state names. */
 public static final String[] lexStateNames = {
-   "DEFAULT",
-   "IN_STRING1",
-   "IN_STRING2",
-   "WithinComment",
+   "DEFAULT", 
+   "IN_STRING1", 
+   "IN_STRING2", 
+   "WithinComment", 
 };
 
 /** Lex State array. */
@@ -1041,13 +1041,13 @@ public Token getNextToken()
 
   EOFLoop :
   for (;;)
-  {
-   try
-   {
+  {   
+   try   
+   {     
       curChar = input_stream.BeginToken();
-   }
+   }     
    catch(java.io.IOException e)
-   {
+   {        
       jjmatchedKind = 0;
       matchedToken = jjFillToken();
       return matchedToken;
@@ -1259,7 +1259,7 @@ void MoreLexicalActions()
       image.setLength(l-5);
       image.setCharAt(l-6, c);
          break;
-      default :
+      default : 
          break;
    }
 }
@@ -1275,7 +1275,7 @@ void TokenLexicalActions(Token matchedToken)
         image.append(input_stream.GetSuffix(jjimageLen + (lengthOfMatch = jjmatchedPos + 1)));
                                          image.setLength(image.length()-1); matchedToken.image = image.toString();
          break;
-      default :
+      default : 
          break;
    }
 }

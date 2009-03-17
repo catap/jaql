@@ -23,13 +23,15 @@ import java.io.UTFDataFormatException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 
-/**
- * 
+/** 
+ * Write-once DataOutput backed by a {@link PagedFile}. A single page file can serve multiple 
+ * spill files. Spill files are intended to be used as temporary files; reading the spill 
+ * file requires the SpillFile instance that created it. 
  */
 public class SpillFile implements DataOutput
 {
   protected final static int headerSize  = 16;
-  protected ByteBuffer       buffer;
+  protected ByteBuffer       buffer; // contains the current page
   protected boolean          frozen;
   protected int              version     = 0;
   protected long             firstPage   = -1;
@@ -38,9 +40,7 @@ public class SpillFile implements DataOutput
   protected PagedFile        file;
   private byte[]             byteBuf     = new byte[8];
 
-  /**
-   * @param file
-   */
+  /** Creates a new, empty spill file backed by the given PagedFile. */
   public SpillFile(PagedFile file)
   {
     this.file = file;
@@ -56,9 +56,7 @@ public class SpillFile implements DataOutput
     }
   }
 
-  /**
-   * @param nextPage
-   */
+  /** Write the header to the beginning of the page. */
   private void putHeader(long nextPage)
   {
     buffer.putLong(0, nextPage);
@@ -66,9 +64,7 @@ public class SpillFile implements DataOutput
     buffer.putInt(12, 0); // unused
   }
 
-  /**
-   * @param nextPage
-   */
+  /** Initialize the buffered page.  */
   private void initPage(long nextPage)
   {
     buffer.clear();
@@ -76,9 +72,7 @@ public class SpillFile implements DataOutput
     putHeader(-1);
   }
 
-  /**
-   * @return
-   */
+  /** Returns the file offset of the next page. */
   protected final long getNextPage()
   {
     return buffer.getLong(0);
@@ -92,9 +86,8 @@ public class SpillFile implements DataOutput
     return buffer.getInt(8);
   }
 
-  /**
-   * @throws IOException
-   */
+  /** Clears this file. Implemented by reading and then freeing all used pages, which might 
+   * be expensive. */
   public void clear() throws IOException
   {
     for (long page = firstPage; page >= 0; page = getNextPage())
@@ -108,10 +101,19 @@ public class SpillFile implements DataOutput
     fileSize = 0;
     version++;
   }
+  
+  public void setFile(PagedFile file) throws IOException
+  {
+    clear();
+    if( this.file.pageSize() != file.pageSize() )
+    {
+      buffer = ByteBuffer.allocate(file.pageSize()); 
+    }
+    this.file = file;
+  }
 
-  /**
-   * @throws IOException
-   */
+  /** Write the buffered page to disk and finalize the file. After freezing, no further 
+   * modifications with the exception of {@link #clear()} should be performed on this file. */
   public void freeze() throws IOException
   {
     assert !frozen;
@@ -125,9 +127,8 @@ public class SpillFile implements DataOutput
     frozen = true;
   }
 
-  /**
-   * @throws IOException
-   */
+  /** Write the buffered page to disk, allocate a new page, and set the current page to 
+   * the newly allocated page */
   private void writeBuffer() throws IOException
   {
     assert !frozen;
@@ -157,6 +158,7 @@ public class SpillFile implements DataOutput
   /**
    * 
    */
+  // makes use of the same buffer as the writer
   public class SFDataInput implements DataInput
   {
     protected long rpage;
@@ -172,7 +174,7 @@ public class SpillFile implements DataOutput
       rewind();
     }
 
-    /**
+    /** Reset the input to the beginning of the file.
      * @throws IOException
      */
     public void rewind() throws IOException
@@ -441,7 +443,7 @@ public class SpillFile implements DataOutput
     return fileSize;
   }
 
-  /**
+  /** Writes the content of this (frozen!) spill file to the provided DataOutput. 
    * @param out
    * @throws IOException
    */
@@ -464,10 +466,8 @@ public class SpillFile implements DataOutput
     }
   }
 
-  /**
-   * @param spill
-   * @throws IOException
-   */
+  /** Clear this spill file, copy the content of the provided spill file into this spill
+   * file, and then freeze it. */
   public void copy(SpillFile spill) throws IOException
   {
     clear();
@@ -475,7 +475,7 @@ public class SpillFile implements DataOutput
     freeze();
   }
 
-  /**
+  /** Appends len bytes from in to this (non-frozen!) spill file.
    * @param in
    * @param len
    * @throws IOException
@@ -504,7 +504,7 @@ public class SpillFile implements DataOutput
   // DataOutput methods
   //---------------------
 
-  /*
+  /* 
    * (non-Javadoc)
    * 
    * @see java.io.DataOutput#write(byte[], int, int)
@@ -512,9 +512,10 @@ public class SpillFile implements DataOutput
   public void write(byte[] bytes, int off, int len) throws IOException
   {
     assert !frozen;
+ 
     while (len > 0)
     {
-      int n = buffer.remaining();
+      int n = buffer.remaining();    
       if (n >= len)
       {
         buffer.put(bytes, off, len);

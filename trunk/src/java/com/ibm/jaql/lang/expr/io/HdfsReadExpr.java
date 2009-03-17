@@ -67,6 +67,6 @@ public class HdfsReadExpr extends MacroExpr
           exprs[1]);
       rec.addChild(oField);
     }
-    return new StReadExpr(rec);
+    return new ReadFn(rec);
   }
 }

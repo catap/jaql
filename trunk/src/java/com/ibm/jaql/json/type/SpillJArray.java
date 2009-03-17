@@ -27,6 +27,7 @@ import com.ibm.jaql.json.util.JIterator;
 import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.BaseUtil;
+import com.ibm.jaql.util.PagedFile;
 import com.ibm.jaql.util.SpillFile;
 
 /**
@@ -39,11 +40,20 @@ public class SpillJArray extends JArray
   protected Item      tempItem = new Item();
 
   /**
+   * @param file TODO
+   * 
+   */
+  public SpillJArray(PagedFile file)
+  {
+    spill = new SpillFile(file);
+  }
+
+  /**
    * 
    */
   public SpillJArray()
   {
-    spill = new SpillFile(JaqlUtil.getQueryPageFile());
+    this(JaqlUtil.getQueryPageFile());
   }
 
   /*
@@ -338,10 +348,6 @@ public class SpillJArray extends JArray
   @Override
   public void copy(JValue value) throws Exception
   {
-    if (!spill.isFrozen())
-    {
-      freeze();
-    }
     SpillJArray arr = (SpillJArray) value;
     this.count = arr.count;
     this.spill.copy(arr.spill);
@@ -353,5 +359,14 @@ public class SpillJArray extends JArray
   public SpillFile getSpillFile()
   {
     return spill;
+  }
+
+  public void addAll(Iter iter) throws Exception
+  {
+    Item item;
+    while( (item = iter.next()) != null )
+    {
+      add(item);
+    }
   }
 }

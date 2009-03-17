@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.io.stream;
 
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
@@ -26,9 +26,11 @@ import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ItemWriter;
 import com.ibm.jaql.io.converter.ItemToStream;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.json.type.JRecord;
 
-/**
+/** Output adapter that writes {@link Item}s to a URL, using a {@link ItemToStream} 
+ * converter in the process.
  * 
  */
 public class StreamOutputAdapter extends AbstractOutputAdapter
@@ -56,6 +58,10 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
     if (!ItemToStream.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemOutputStream");
     formatter = (ItemToStream) fclass.newInstance();
+    Item arrAcc = outputArgs.getValue(StreamInputAdapter.ARR_NAME);
+    if(!arrAcc.isNull()) {
+      formatter.setArrayAccessor( ((JBool)arrAcc.get()).value);
+    }
   }
 
   /*

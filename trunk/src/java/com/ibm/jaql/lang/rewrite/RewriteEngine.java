@@ -21,6 +21,7 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
+import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.OneExprWalker;
@@ -71,6 +72,8 @@ public class RewriteEngine
     // new DechainFor(phase);
     new FunctionInline(phase);
     new TrivialForElimination(phase);
+    new TrivialTransformElimination(phase);
+    new TransformMerge(phase);
     new ForToLet(phase);
     new AsArrayElimination(phase);
     new GlobalInline(phase);
@@ -113,18 +116,20 @@ public class RewriteEngine
    * @param query
    * @throws Exception
    */
-  public void run(Env env, Expr query) throws Exception
+  public Expr run(Env env, Expr query) throws Exception
   {
     // We don't rewrite def expressions until they are actually evaluated.
     if (query instanceof AssignExpr)
     {
-      return;
+      return query;
     }
+    Expr dummy = new QueryExpr(query);
     this.env = env;
     this.varMap.reset(env);
     for (RewritePhase phase : phases)
     {
-      phase.run(query);
+      phase.run(dummy);
     }
+    return dummy.child(0);
   }
 }

@@ -15,24 +15,22 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.expr.core.MathExpr;
-import com.ibm.jaql.lang.expr.core.VarExpr;
-import com.ibm.jaql.lang.expr.nil.FirstNonNullFn;
 
 /**
  * 
  */
-@JaqlFn(fnName = "count", minArgs = 1, maxArgs = 1)
-public class CountAgg extends AlgebraicAggregate
+@JaqlFn(fnName = "count", minArgs = 0, maxArgs = 1)
+public final class CountAgg extends AlgebraicAggregate
 {
+  private long count;
+  
   /**
-   * count(array)
-   * 
    * @param exprs
    */
   public CountAgg(Expr[] exprs)
@@ -41,66 +39,62 @@ public class CountAgg extends AlgebraicAggregate
   }
 
   /**
-   * @param exprs
+   * @param expr
    */
-  public CountAgg(Expr exprs)
+  public CountAgg(Expr expr)
   {
-    super(new Expr[]{exprs});
+    super(expr);
   }
 
-  //@Override
-  //protected DistributiveAggregate aggExpr(Expr initLoop) throws Exception
-  //{
-  //  return new SumExpr(initLoop);
-  //}
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.agg.AlgebraicAggregate#initExpr(com.ibm.jaql.lang.core.Var)
-   */
   @Override
-  protected Expr initExpr(Var var) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    return new ConstExpr(JLong.ONE_ITEM);
+    Iter iter = exprs.length == 0 ? Iter.empty : exprs[0].iter(context);
+    count = 0;
+
+    while( iter.next() != null )
+    {
+      count++;
+    }
+
+    return new Item(new JLong(count));
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.agg.AlgebraicAggregate#combineExpr(com.ibm.jaql.lang.core.Var,
-   *      com.ibm.jaql.lang.core.Var)
-   */
+  public void evalInitial(Context context) throws Exception
+  {
+    // Item arg = exprs[0].eval(context);
+    // addInitial(arg);
+    count++;
+  }
+
   @Override
-  protected Expr combineExpr(Var var1, Var var2) throws Exception
+  public void initInitial(Context context) throws Exception
   {
-    return new MathExpr(MathExpr.PLUS, new VarExpr(var1), new VarExpr(var2));
+    count = 0;
   }
 
-  //  @Override
-  //  protected Expr emptyExpr() throws Exception
-  //  {
-  //    return new ConstExpr(JLong.ZERO_ITEM);
-  //  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.agg.AlgebraicAggregate#finalExpr(com.ibm.jaql.lang.expr.core.Expr)
-   */
   @Override
-  protected Expr finalExpr(Expr agg) throws Exception
+  public void addInitial(Item item) throws Exception
   {
-    return new FirstNonNullFn(agg, new ConstExpr(JLong.ZERO_ITEM));
-    // return agg;
+    count++;
   }
 
-  /*
-   * public Item eval(final Context context) throws Exception { long n = 0; if(
-   * exprs[0] instanceof IterExpr ) { Iter iter = exprs[0].iter(context); if(
-   * iter.isNull() ) { return Item.nil; } while( iter.next() != null ) { n++; } }
-   * else { JArray arr = (JArray)exprs[0].eval(context).get(); if( arr == null ) {
-   * return Item.nil; } n = arr.count(); } return new Item(new LongItem(n)); //
-   * TODO: cache }
-   */
+  @Override
+  public Item getPartial() throws Exception
+  {
+    return new Item(new JLong(count));
+  }
+
+  @Override
+  public void addPartial(Item item) throws Exception
+  {
+    JLong n = (JLong)item.get();
+    count += n.value;
+  }
+
+  @Override
+  public Item getFinal() throws Exception
+  {
+    return new Item(new JLong(count));
+  }
 }

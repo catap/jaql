@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.rewrite;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
-import com.ibm.jaql.lang.expr.core.LetExpr;
 
 /**
  * for $i in [e1] collect e2 ==> let $i = e1 return asArray(e2)
@@ -58,9 +58,10 @@ public class ForToLet extends Rewrite
     {
       ret = new AsArrayFn(ret);
     }
-    Expr letExpr = new LetExpr(bind.var, elem, ret);
-
-    fe.replaceInParent(letExpr);
+    bind.type = BindingExpr.Type.EQ;
+    bind.setChild(0, elem);
+    Expr doExpr = new DoExpr(bind, ret);
+    fe.replaceInParent(doExpr);
     return true;
   }
 }

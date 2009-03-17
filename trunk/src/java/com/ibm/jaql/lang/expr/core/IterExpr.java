@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import java.util.ArrayList;
+
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.json.util.Iter;
@@ -29,9 +31,45 @@ public abstract class IterExpr extends Expr
   /**
    * @param inputs
    */
-  public IterExpr(Expr[] inputs)
+  public IterExpr(Expr[] exprs)
   {
-    super(inputs);
+    super(exprs);
+  }
+
+  /**
+   * @param expr0
+   */
+  public IterExpr(Expr expr0)
+  {
+    super(expr0);
+  }
+
+  /**
+   * @param expr0
+   * @param expr1
+   */
+  public IterExpr(Expr expr0, Expr expr1)
+  {
+    super(expr0, expr1);
+  }
+
+  /**
+   * @param expr0
+   * @param expr1
+   * @param expr2
+   */
+  public IterExpr(Expr expr0, Expr expr1, Expr expr2)
+  {
+    super(expr0, expr1, expr2);
+  }
+
+  /**
+   * 
+   * @param exprs
+   */
+  public IterExpr(ArrayList<? extends Expr> exprs)
+  {
+    super(exprs);
   }
 
   /*

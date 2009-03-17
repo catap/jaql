@@ -126,7 +126,7 @@ public class ParseException extends Exception {
       retval += " \"";
       retval += add_escapes(tok.image);
       retval += " \"";
-      tok = tok.next;
+      tok = tok.next; 
     }
     retval += "\" at line " + currentToken.next.beginLine + ", column " + currentToken.next.beginColumn;
     retval += "." + eol;
@@ -143,7 +143,7 @@ public class ParseException extends Exception {
    * The end of line string for this machine.
    */
   protected String eol = System.getProperty("line.separator", "\n");
-
+ 
   /**
    * Used to convert raw characters to their escaped version
    * when these raw version cannot be used as part of an ASCII
@@ -195,4 +195,4 @@ public class ParseException extends Exception {
    }
 
 }
-/* JavaCC - OriginalChecksum=0b1e13edff1713356b94763819dcc28f (do not edit this line) */
+/* JavaCC - OriginalChecksum=12ab3a9ed3c878b5ba743e8dc658b2ba (do not edit this line) */

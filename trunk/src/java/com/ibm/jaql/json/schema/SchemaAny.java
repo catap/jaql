@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import com.ibm.jaql.json.type.Item;
 
-/**
+/** Schema that matches everything.
  * 
  */
 public class SchemaAny extends Schema

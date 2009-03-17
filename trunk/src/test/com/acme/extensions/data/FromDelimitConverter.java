@@ -19,11 +19,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.JaqlBaseTestCase;
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
-import com.ibm.jaql.io.hadoop.converter.WritableComparableToItem;
-import com.ibm.jaql.io.hadoop.converter.WritableToItem;
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
@@ -71,32 +71,13 @@ public class FromDelimitConverter extends HadoopRecordToItem {
     }
   }
 
-  @Override
-  public Item createTarget()
-  {
-    if(header == null)
-      return new Item(new FixedJArray());
-    else {
-      int n = (int)header.count();
-      MemoryJRecord r = new MemoryJRecord(n);
-      try {
-        for(int i = 0; i < n; i++) {
-          r.add( (JString)header.nth(i).getNonNull(), new JString());
-        }
-      } catch(Exception e) { throw new RuntimeException(e);}
-
-      return new Item(r);
-    }
-  }
-
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected WritableComparableToItem createKeyConverter()
+  protected FromItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -107,9 +88,9 @@ public class FromDelimitConverter extends HadoopRecordToItem {
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected WritableToItem createValConverter()
+  protected FromItem<Writable> createValConverter()
   {
-    return new WritableToItem() {
+    return new FromItem<Writable>() {
       public void convert(Writable src, Item tgt)
       {
         if (src == null || tgt == null) return;

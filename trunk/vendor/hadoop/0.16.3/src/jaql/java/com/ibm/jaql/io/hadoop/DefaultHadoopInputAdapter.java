@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ItemReader;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
+import com.ibm.jaql.io.hadoop.converter.KeyValueImport;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.type.MemoryJRecord;
@@ -45,7 +46,7 @@ public class DefaultHadoopInputAdapter implements HadoopInputAdapter<Item>
 
   protected JSONConfSetter     configurator;
 
-  protected HadoopRecordToItem converter;
+  protected KeyValueImport<WritableComparable, Writable> converter;
 
   protected JobConf            conf;
 
@@ -109,7 +110,7 @@ public class DefaultHadoopInputAdapter implements HadoopInputAdapter<Item>
         CONVERTER_NAME, null);
     if (converterClass != null)
     {
-      this.converter = (HadoopRecordToItem) converterClass.newInstance();
+      this.converter = (KeyValueImport) converterClass.newInstance();
       this.converter.init(options);
     }
   }

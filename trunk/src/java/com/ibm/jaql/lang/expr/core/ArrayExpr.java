@@ -84,6 +84,15 @@ public class ArrayExpr extends IterExpr
     return Bool3.FALSE;
   }
 
+  /**
+   * 
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   /*
    * (non-Javadoc)
    * 

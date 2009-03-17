@@ -22,12 +22,52 @@ import java.io.OutputStream;
 import com.ibm.jaql.io.converter.ItemToStream;
 import com.ibm.jaql.json.type.Item;
 
-/**
+/** Writes serialized {@link Item}s to a binary output stream.
  * 
  */
 public class JSONOutputStream implements ItemToStream
 {
   private DataOutputStream output;
+  private boolean          arrAcc = true;
+  private boolean          seenFirst = false;
+  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.io.converter.ItemToStream#setOutputStream(java.io.OutputStream)
+   */
+  public void setOutputStream(OutputStream out)
+  {
+    output = new DataOutputStream(out);
+  }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.converter.ItemToStream#setArrayAccessor(boolean)
+   */
+  public void setArrayAccessor(boolean a) {
+    arrAcc = a;
+  }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.converter.ItemToStream#isArrayAccessor()
+   */
+  public boolean isArrayAccessor() {
+    return arrAcc;
+  }
+  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.io.converter.ItemToStream#write(com.ibm.jaql.json.type.Item)
+   */
+  public void write(Item i) throws IOException
+  {
+    if(!arrAcc && seenFirst)
+      throw new RuntimeException("Expected only one value when not in array mode");
+    if(!seenFirst)
+      seenFirst = true;
+    i.write(output);
+  }
 
   /*
    * (non-Javadoc)
@@ -42,25 +82,4 @@ public class JSONOutputStream implements ItemToStream
       output.close();
     }
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.ItemToStream#setOutputStream(java.io.OutputStream)
-   */
-  public void setOutputStream(OutputStream out)
-  {
-    output = new DataOutputStream(out);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.ItemToStream#write(com.ibm.jaql.json.type.Item)
-   */
-  public void write(Item i) throws IOException
-  {
-    i.write(output);
-  }
-
 }

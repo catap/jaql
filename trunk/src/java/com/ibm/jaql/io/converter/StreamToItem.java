@@ -20,23 +20,45 @@ import java.io.InputStream;
 
 import com.ibm.jaql.json.type.Item;
 
-/**
- * 
+/** 
+ * Interface for reading {@link Item}s from an {@link InputStream}.
  */
 public interface StreamToItem
 {
 
   /**
+   * Create an Item into which JSON values are read into.
+   * 
    * @return
    */
   Item createTarget();
 
   /**
+   * Set the input stream.
+   * 
    * @param in
    */
   void setInputStream(InputStream in);
+  
+  /**
+   * If the converter is for array access, then it assumes the stream encodes a JSON array.
+   * In this case, one JSON value at-a-time is read. Otherwise, the entire stream is read
+   * to produce a single JSON value.
+   *  
+   * @param a
+   */
+  void setArrayAccessor(boolean a);
+  
+  /**
+   * Is the converter an array accessor?
+   * 
+   * @return
+   */
+  boolean isArrayAccessor();
 
   /**
+   * Read from the stream into the Item.
+   * 
    * @param v
    * @return
    * @throws IOException

@@ -22,6 +22,9 @@ import java.io.IOException;
 import com.ibm.jaql.json.type.Item;
 
 /*******************************************************************************
+ * At the moment, a scheme provides methods that concern schema matching and 
+ * serialization of schema descriptions.
+ * 
  * 
  * Data model: ----------- value ::= record | array | atom record ::= { (string:
  * value)* } array ::= [ (value)* ] atom ::= null | string | number | boolean |

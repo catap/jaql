@@ -19,12 +19,15 @@ import java.io.PrintStream;
 
 import com.ibm.jaql.json.type.Item;
 
-/**
+/** Iterator over a list of {@link Item}s. 
  * 
- */
+ * */
 public abstract class Iter
 {
-  public static final Iter empty = new EmptyIter();
+  /** Non-null iterator that does not produce elements */
+  public static final Iter empty = new EmptyIter(); 
+  
+  /** Null iterator */
   public static final Iter nil   = new NullIter();
 
   /**
@@ -35,13 +38,17 @@ public abstract class Iter
     return false;
   }
 
-  /**
+  /** Returns the next item or <tt>null</tt> if no next item exits.
+   * 
    * @return
    * @throws Exception
    */
   public abstract Item next() throws Exception;
 
-  /**
+  /** Skips n-1 items, and returns the n-th ones. Standard implementation performs
+   * n calls to {@link Exception#next()}. Returns {@link Item#nil} if n<0 or the if
+   * the iterator does not provide n more items.   * 
+   * 
    * @param n
    * @return
    * @throws Exception
@@ -102,7 +109,9 @@ public abstract class Iter
       {
         out.println(sep);
         for (int s = 0; s < indent; s++)
+        {
           out.print(' ');
+        }
         item.print(out, indent);
         sep = ",";
       }

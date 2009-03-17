@@ -17,15 +17,15 @@ package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.LetExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
-import com.ibm.jaql.lang.expr.io.HBaseWriteExpr;
-import com.ibm.jaql.lang.expr.io.HdfsWriteExpr;
-import com.ibm.jaql.lang.expr.io.StReadExpr;
-import com.ibm.jaql.lang.expr.io.WriteExpr;
+import com.ibm.jaql.lang.expr.io.LocalWriteFn;
+import com.ibm.jaql.lang.expr.io.ReadFn;
+import com.ibm.jaql.lang.expr.io.WriteFn;
 
 /**
  * let ... $i = e1 ... $j = e2($i) ... return e3($i) => let ... $j = e2[$i ->
@@ -33,14 +33,14 @@ import com.ibm.jaql.lang.expr.io.WriteExpr;
  * 
  * where e1 is not writing a temp
  */
-public class LetInline extends Rewrite
+public class LetInline extends Rewrite // TODO: rename to Var inline
 {
   /**
    * @param phase
    */
   public LetInline(RewritePhase phase)
   {
-    super(phase, LetExpr.class);
+    super(phase, DoExpr.class);
   }
 
   /*
@@ -51,33 +51,45 @@ public class LetInline extends Rewrite
   @Override
   public boolean rewrite(Expr expr)
   {
-    LetExpr letExpr = (LetExpr) expr;
-    int numLetVars = letExpr.numBindings();
-    Expr retExpr = letExpr.returnExpr();
+    DoExpr doExpr = (DoExpr) expr;
+    int n = doExpr.numChildren() - 1;
     boolean replaced = false;
+    Expr e;
 
-    for (int i = 0; i < numLetVars; i++)
+    assert n >= 0;
+    if( n == 0 )  // do(e) == e
     {
-      BindingExpr b = (BindingExpr) letExpr.binding(i);
+      e = doExpr.child(0);
+      doExpr.replaceInParent(e);
+      return true;
+    }
+    
+    for (int i = 0 ; i < n ; i++)
+    {
+      e = doExpr.child(i);
+      if( ! (e instanceof BindingExpr) )
+      {
+        continue;
+      }
+      BindingExpr b = (BindingExpr) e;
       Expr valExpr = b.eqExpr();
 
       // NOW: cannot inline if a side-affecting fn is anywhere in the ENTIRE subtree...
-      if (valExpr instanceof WriteExpr
-          || // FIXME: need to detect write exprs generically - actually need to detect side-effecting fns
-          valExpr instanceof HdfsWriteExpr || valExpr instanceof HBaseWriteExpr
+      if (valExpr instanceof WriteFn // FIXME: need to detect write exprs generically - actually need to detect side-effecting fns
+          || valExpr instanceof LocalWriteFn
           || valExpr instanceof MapReduceFn || valExpr instanceof MRAggregate)
       {
         continue;
       }
 
-      int numUses = countVarUse(letExpr, b.var);
+      int numUses = countVarUse(doExpr, b.var);
       if (numUses == 0)
       {
         replaced = true;
       }
       else if (numUses == 1)
       {
-        VarExpr use = findFirstVarUse(letExpr, b.var);
+        VarExpr use = findFirstVarUse(doExpr, b.var);
         use.replaceInParent(valExpr);
         replaced = true;
       }
@@ -86,20 +98,22 @@ public class LetInline extends Rewrite
       {
         // TODO: else consider inlining cheap valExprs into multiple uses.
         if (valExpr instanceof ConstExpr || valExpr instanceof VarExpr
-            || valExpr instanceof StReadExpr || valExpr.isConst())
+            // || valExpr.isConst() // const expressions should be handled by compile-time eval to const
+            || valExpr instanceof DefineFunctionExpr
+            || valExpr instanceof ReadFn ) 
         {
-          replaceVarUses(b.var, letExpr, valExpr);
+          replaceVarUses(b.var, doExpr, valExpr);
           replaced = true;
         }
       }
 
       if (replaced)
       {
-        if (numLetVars == 1)
+        if (n == 1)
         {
-          // Eliminate the LetExpr altogether.
-          retExpr = letExpr.returnExpr(); // re-acquire the return expr, in case we modified it.
-          letExpr.replaceInParent(retExpr);
+          // Eliminate the DoExpr altogether.
+          e = doExpr.child(1);
+          doExpr.replaceInParent(e);
         }
         else
         {

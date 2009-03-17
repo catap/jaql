@@ -38,6 +38,11 @@ public class ReplaceElementFn extends IterExpr
   {
     super(exprs);
   }
+  
+  public ReplaceElementFn(Expr array, Expr index, Expr value)
+  {
+    super(new Expr[]{array, index, value});
+  }
 
   /*
    * (non-Javadoc)

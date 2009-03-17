@@ -194,7 +194,6 @@ public class JFunction extends JAtom
     def.write(out, capturedValues);
   }
 
-  // TODO: need compile-time detection of streaming functions too...
   /**
    * @param context
    * @param args
@@ -212,7 +211,29 @@ public class JFunction extends JAtom
    * @return
    * @throws Exception
    */
+  public Item eval(Context context, Expr[] args) throws Exception
+  {
+    return def.eval(context, capturedValues, args);
+  }
+
+  /**
+   * @param context
+   * @param args
+   * @return
+   * @throws Exception
+   */
   public Iter iter(Context context, Item[] args) throws Exception
+  {
+    return def.iter(context, capturedValues, args);
+  }
+
+  /**
+   * @param context
+   * @param args
+   * @return
+   * @throws Exception
+   */
+  public Iter iter(Context context, Expr[] args) throws Exception
   {
     return def.iter(context, capturedValues, args);
   }

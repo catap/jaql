@@ -25,13 +25,11 @@ import java.util.HashMap;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
-import com.ibm.jaql.json.util.ItemComparator;
+import com.ibm.jaql.json.util.ItemWritableComparator;
 import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.util.BaseUtil;
 
-/**
- * 
- */
+/** Encapsulates an arbitrary, single JSON value (instance of {@link JValue}). */
 public final class Item implements WritableComparable // , Cloneable
 {
   // The order listed here is the order that types compare
@@ -72,12 +70,15 @@ public final class Item implements WritableComparable // , Cloneable
     public final Class<? extends JValue>        clazz;
     public final String                         name;
     public final JString                        nameValue;
+    //public final Item                           nameItem;
 
     Type(Class<? extends JValue> clazz, String name)
     {
       this.clazz = clazz;
       this.name = name;
       this.nameValue = new JString(name);
+      // BUG: this is a circular dependency, i.e., Item -> Encoding -> Type -> Item
+      //this.nameItem = new Item(nameValue);
     }
 
     public static Type getType(String name)
@@ -168,7 +169,7 @@ public final class Item implements WritableComparable // , Cloneable
   static
   {
     // register my comparator
-    WritableComparator.define(Item.class, new ItemComparator());
+    WritableComparator.define(Item.class, new ItemWritableComparator());
   }
 
   private Encoding           encoding;
@@ -237,7 +238,7 @@ public final class Item implements WritableComparable // , Cloneable
     return value;
   }
 
-  /**
+  /** Returns the JValue represented by this item
    * @return
    */
   public JValue get() // TODO: delete me
@@ -450,9 +451,9 @@ public final class Item implements WritableComparable // , Cloneable
    */
   public void copy(Item item) throws Exception
   {
-    if (item.value == null)
+    if (item == null || item.value == null)
     {
-      assert item.encoding == Encoding.NULL;
+      assert item == null || item.encoding == Encoding.NULL;
       encoding = Encoding.NULL;
       value = null;
     }

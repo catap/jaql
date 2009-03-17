@@ -43,6 +43,16 @@ public class ExistsFn extends Expr
     super(exprs);
   }
 
+  /**
+   * exists(array)
+   * 
+   * @param expr
+   */
+  public ExistsFn(Expr expr)
+  {
+    super(expr);
+  }
+
   /*
    * (non-Javadoc)
    * 

@@ -35,7 +35,7 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
 
-/**
+/** Wrapper for functions implemented in Java.
  * 
  */
 public class JavaFnExpr extends Expr
@@ -66,7 +66,9 @@ public class JavaFnExpr extends Expr
     setup(fnName, cls, method);
   }
 
-  /**
+  /** Uses the eval(...) method with exprList.size() arguments, if existant and unique. 
+   * Otherwise, throws RuntimeException
+   *  
    * @param fnName
    * @param cls
    * @param exprList

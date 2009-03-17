@@ -47,7 +47,18 @@ public class FieldValueExpr extends Expr
    */
   public FieldValueExpr(Expr rec, Expr name)
   {
-    super(new Expr[]{rec, name});
+    super(rec, name);
+  }
+
+  /**
+   * $rec.name
+   * 
+   * @param rec
+   * @param name
+   */
+  public FieldValueExpr(Var recVar, String name)
+  {
+    super(new VarExpr(recVar), new ConstExpr(new JString(name)));
   }
 
   //// TODO: optimize constant name case

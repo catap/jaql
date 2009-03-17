@@ -18,21 +18,47 @@ package com.ibm.jaql.lang.core;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
  * 
  */
-public class Var
+public class Var extends Object
 {
+//  public static enum Type
+//  {
+//    VALUE,
+//    PIPE,
+//    // AGG,
+//    FILE,
+//    FUNCTION,
+//  };
+  
+  
   public static final Var[] NO_VARS = new Var[0];
+  public static final Var unused = new Var("$__unused__", -1);
 
   public String             name;
+//  public Type               type;
   public boolean            hidden  = false;
-  public Var                varStack;            // Used during parsing for vars of the same name
+  public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
   public int                index;               // -1 for global variables; stack index for local variables 
   public Expr               expr;                // only for global variables
   public Item               value;               // only for global variables
+  public Iter               iter;                // only for one-pass, one-reference values
+
+//  /**
+//   * @param name
+//   * @param type
+//   * @param index
+//   */
+//  public Var(String name, Type type, int index)
+//  {
+//    this.name = name;
+//    this.type = type;
+//    this.index = index;
+//  }
 
   /**
    * @param name
@@ -58,6 +84,14 @@ public class Var
   public String name()
   {
     return name;
+  }
+
+  /*** Returns the name of this variable without the trailing character, which is
+   * assumed to equal $.
+   */
+  public String nameAsField() // TODO: Store var name without $?
+  {
+    return name.substring(1);
   }
 
   /**
