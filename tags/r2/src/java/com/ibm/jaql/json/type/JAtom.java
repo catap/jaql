@@ -17,9 +17,7 @@ package com.ibm.jaql.json.type;
 
 import java.io.PrintStream;
 
-/**
- * 
- */
+/** Superclass for all atomic JSON values. */
 public abstract class JAtom extends JValue
 {
   /*

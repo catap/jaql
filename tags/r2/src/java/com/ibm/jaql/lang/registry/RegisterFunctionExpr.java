@@ -36,6 +36,11 @@ public class RegisterFunctionExpr extends Expr
     super(exprs);
   }
 
+  public RegisterFunctionExpr(Expr jaqlName, Expr javaName)
+  {
+    super(jaqlName, javaName);
+  }
+
   /*
    * (non-Javadoc)
    * 

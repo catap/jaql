@@ -22,6 +22,7 @@ import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.DeleteFileTask;
 
 /**
  * 
@@ -63,16 +64,11 @@ public class HadoopTempExpr extends Expr
    */
   public Item eval(Context context) throws Exception
   {
-    // FIXME: figure out where this should go
-    //String filename = "temp/jaql_temp_" + System.nanoTime(); // FIXME: this works for me in standalone mode.
-    //String filename = "jaql_temp_" + System.nanoTime(); // FIXME: this works in the cluster...
-    // FIXME: need to delete temps!!
-    String filename = "jaql_temp_" + System.nanoTime();
-    // String filename = "c:/temp/jaql_temp_" + System.nanoTime();
-    // String filename = "/temp/jaql_temp_" + System.nanoTime();
+    String filename = "jaql_temp_" + System.nanoTime();     // FIXME: figure out where this should go
     MemoryJRecord r = new MemoryJRecord();
     r.add(Adapter.TYPE_NAME, new Item(new JString("hdfs")));
     r.add(Adapter.LOCATION_NAME, new Item(new JString(filename)));
+    context.doAtQueryEnd(new DeleteFileTask(filename));
     return new Item(r); // TODO: memory
   }
 }

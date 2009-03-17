@@ -20,17 +20,31 @@ import java.io.OutputStream;
 
 import com.ibm.jaql.json.type.Item;
 
-/**
- * 
+/** 
+ * Interface for writing {@link Item}s to an {@link OutputStream}.
  */
 public interface ItemToStream
 {
-
   /**
    * @param out
    */
   void setOutputStream(OutputStream out);
 
+  /**
+   * If the converter is for array access, then it assumes the item is not part of a JSON array.
+   * In this case, only one value is expected to be written out.
+   *  
+   * @param a
+   */
+  void setArrayAccessor(boolean a);
+  
+  /**
+   * Is the converter an array accessor?
+   * 
+   * @return
+   */
+  boolean isArrayAccessor();
+  
   /**
    * @param i
    * @throws IOException

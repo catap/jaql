@@ -27,7 +27,8 @@ import org.apache.hadoop.dfs.MiniDFSCluster;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
@@ -62,7 +63,7 @@ public class JaqlShell
     m_conf = new HBaseConfiguration();
 
     // setup conf according to the Hadoop version
-    if (vInfo.indexOf("0.16") >= 0 || vInfo.indexOf("0.17") >= 0)
+    if (vInfo.indexOf("0.16") >= 0 || vInfo.indexOf("0.17") >= 0 || vInfo.indexOf("0.18") >= 0)
     {
       m_conf.set(HConstants.MASTER_ADDRESS, "local");
     }
@@ -79,16 +80,24 @@ public class JaqlShell
     m_conf.set("hbase.regionserver.info.port", "-1");
     //setupOverride();
 
+    m_fs = new MiniDFSCluster(m_conf, numNodes, true, (String[])null);
+    FileSystem filesystem = m_fs.getFileSystem();
+    m_conf.set("fs.default.name", filesystem.getUri().toString());
+    Path parentdir = filesystem.getHomeDirectory();
+    m_conf.set(HConstants.HBASE_DIR, parentdir.toString());
+    filesystem.mkdirs(parentdir);
+    FSUtils.setVersion(filesystem, parentdir);
+    
     try
     {
       // hbase 0.1.3 is compatible w/ 0.16
       String hbvInfo = org.apache.hadoop.hbase.util.VersionInfo.getVersion();
-      if (hbvInfo.indexOf("0.1.3") >= 0 && vInfo.indexOf("0.16") >= 0)
+      if (hbvInfo.indexOf("0.2.0") >= 0 && vInfo.indexOf("0.17") >= 0)
       {
-        m_base = new MiniHBaseCluster((HBaseConfiguration) m_conf, numNodes,
-            true, true, true);
+        m_base = new MiniHBaseCluster((HBaseConfiguration) m_conf, numNodes);
         setupOverride();
-        m_fs = m_base.getDFSCluster();
+      } else {
+        LOG.warn("Could not start-up HBase, expected versions 0.2.0 and 0.17, received: " + hbvInfo + "," + vInfo);
       }
     }
     catch (Exception e)
@@ -102,20 +111,19 @@ public class JaqlShell
     //m_base = new MiniHBaseCluster((HBaseConfiguration)m_conf, numNodes, true, format, false);
     //setupOverride();
 
-    if (m_base != null)
-    {
-      m_mr = startMRCluster(numNodes, m_base.getDFSCluster().getFileSystem()
-          .getUri().getAuthority(), m_conf);
-    }
-    else
-    {
-      m_fs = new MiniDFSCluster(m_conf, numNodes, true, null);
-      m_mr = startMRCluster(numNodes, m_fs.getFileSystem().getUri()
-          .getAuthority(), m_conf);
-      //m_mr = new MiniMRCluster(numNodes, m_fs.getFileSystem().getUri().getAuthority(), 1);
-    }
+//    if (m_base != null)
+//    {
+//      m_mr = startMRCluster(numNodes, m_fs.getFileSystem().getUri().getAuthority(), m_conf);
+//    }
+//    else
+//    {
+//      //m_fs = new MiniDFSCluster(m_conf, numNodes, true, null);
+//      m_mr = startMRCluster(numNodes, m_fs.getFileSystem().getUri()
+//          .getAuthority(), m_conf);
+//      //m_mr = new MiniMRCluster(numNodes, m_fs.getFileSystem().getUri().getAuthority(), 1);
+//    }
 
-    //m_mr = startMRCluster(numNodes, m_base.getDFSCluster().getFileSystem().getUri().getAuthority(), m_conf);
+    m_mr = startMRCluster(numNodes, m_fs.getFileSystem().getUri().getAuthority(), m_conf);
 
     Configuration conf = new Configuration();
     FileSystem fs = FileSystem.get(conf);
@@ -123,6 +131,10 @@ public class JaqlShell
     // make the home directory if it does not exist
     Path hd = fs.getWorkingDirectory();
     if (!fs.exists(hd)) fs.mkdirs(hd);
+    
+    // make the $USER/_temporary directory if it does not exist
+    Path tmpPath = new Path(hd, "_temporary");
+    if (!fs.exists(tmpPath)) fs.mkdirs(tmpPath);
 
     if (m_base != null)
     {

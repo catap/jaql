@@ -44,8 +44,9 @@ public class CombineInputSimplification extends Rewrite
   @Override
   public boolean rewrite(Expr expr)
   {
+    if(true) return false; // TODO: reenable with function api?
     CombineExpr ce = (CombineExpr) expr;
-    BindingExpr bind = ce.binding();
+    BindingExpr bind = null; // ce.binding();
     expr = bind.inExpr();
     while (expr instanceof EmptyOnNullFn || expr instanceof NullOnEmptyFn
         || expr instanceof AsArrayFn)

@@ -19,62 +19,78 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.jaql.lang.expr.agg.ArrayAgg;
 import com.ibm.jaql.lang.expr.agg.AvgAgg;
 import com.ibm.jaql.lang.expr.agg.CountAgg;
 import com.ibm.jaql.lang.expr.agg.MaxAgg;
 import com.ibm.jaql.lang.expr.agg.MinAgg;
 import com.ibm.jaql.lang.expr.agg.MultiAgg;
+import com.ibm.jaql.lang.expr.agg.PickAnyAgg;
+import com.ibm.jaql.lang.expr.agg.PickNAgg;
+import com.ibm.jaql.lang.expr.agg.SingletonAgg;
 import com.ibm.jaql.lang.expr.agg.SumAgg;
 import com.ibm.jaql.lang.expr.agg.SumPA;
 import com.ibm.jaql.lang.expr.array.AppendFn;
+import com.ibm.jaql.lang.expr.array.ArrayToRecordFn;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
+import com.ibm.jaql.lang.expr.array.ColumnwiseFn;
 import com.ibm.jaql.lang.expr.array.DeemptyFn;
 import com.ibm.jaql.lang.expr.array.DistinctFn;
 import com.ibm.jaql.lang.expr.array.EnumerateExpr;
 import com.ibm.jaql.lang.expr.array.ExistsFn;
+import com.ibm.jaql.lang.expr.array.MergeFn;
 import com.ibm.jaql.lang.expr.array.PairFn;
 import com.ibm.jaql.lang.expr.array.PairwiseFn;
 import com.ibm.jaql.lang.expr.array.RemoveElementFn;
 import com.ibm.jaql.lang.expr.array.ReplaceElementFn;
+import com.ibm.jaql.lang.expr.array.ReverseFn;
+import com.ibm.jaql.lang.expr.array.RowwiseFn;
+import com.ibm.jaql.lang.expr.array.ShiftFn;
+import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
+import com.ibm.jaql.lang.expr.core.MergeContainersFn;
+import com.ibm.jaql.lang.expr.core.RangeExpr;
+import com.ibm.jaql.lang.expr.core.TeeExpr;
 import com.ibm.jaql.lang.expr.core.TypeofExpr;
+import com.ibm.jaql.lang.expr.date.DateFn;
+import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.NowFn;
 import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
 import com.ibm.jaql.lang.expr.io.ArrayReadExpr;
+import com.ibm.jaql.lang.expr.io.FileFn;
 import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
 import com.ibm.jaql.lang.expr.io.HBaseFetchExpr;
 import com.ibm.jaql.lang.expr.io.HBaseReadExpr;
 import com.ibm.jaql.lang.expr.io.HBaseShellExpr;
 import com.ibm.jaql.lang.expr.io.HBaseWriteExpr;
 import com.ibm.jaql.lang.expr.io.HadoopTempExpr;
-import com.ibm.jaql.lang.expr.io.HdfsReadExpr;
+import com.ibm.jaql.lang.expr.io.HdfsFn;
 import com.ibm.jaql.lang.expr.io.HdfsShellExpr;
-import com.ibm.jaql.lang.expr.io.HdfsWriteExpr;
+import com.ibm.jaql.lang.expr.io.HttpFn;
 import com.ibm.jaql.lang.expr.io.HttpGetExpr;
-import com.ibm.jaql.lang.expr.io.LocalReadExpr;
-import com.ibm.jaql.lang.expr.io.LocalWriteExpr;
+import com.ibm.jaql.lang.expr.io.LocalReadFn;
+import com.ibm.jaql.lang.expr.io.LocalWriteFn;
 import com.ibm.jaql.lang.expr.io.ReadAdapterRegistryExpr;
-import com.ibm.jaql.lang.expr.io.ReadExpr;
+import com.ibm.jaql.lang.expr.io.ReadFn;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
-import com.ibm.jaql.lang.expr.io.StReadExpr;
-import com.ibm.jaql.lang.expr.io.StWriteExpr;
 import com.ibm.jaql.lang.expr.io.UnregisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.WriteAdapterRegistryExpr;
-import com.ibm.jaql.lang.expr.io.WriteExpr;
+import com.ibm.jaql.lang.expr.io.WriteFn;
 import com.ibm.jaql.lang.expr.net.JaqlGetFn;
 import com.ibm.jaql.lang.expr.nil.DenullFn;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
 import com.ibm.jaql.lang.expr.nil.FirstNonNullFn;
-import com.ibm.jaql.lang.expr.nil.IsnullFn;
 import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 import com.ibm.jaql.lang.expr.nil.NullOnEmptyFn;
+import com.ibm.jaql.lang.expr.nil.OnEmptyFn;
 import com.ibm.jaql.lang.expr.numeric.AbsFn;
+import com.ibm.jaql.lang.expr.numeric.DivFn;
 import com.ibm.jaql.lang.expr.numeric.DoubleFn;
 import com.ibm.jaql.lang.expr.numeric.ExpFn;
 import com.ibm.jaql.lang.expr.numeric.IntFn;
@@ -89,13 +105,14 @@ import com.ibm.jaql.lang.expr.random.RegisterRNGExpr;
 import com.ibm.jaql.lang.expr.random.SampleRNGExpr;
 import com.ibm.jaql.lang.expr.record.ArityFn;
 import com.ibm.jaql.lang.expr.record.FieldsFn;
-import com.ibm.jaql.lang.expr.record.HasFieldFn;
 import com.ibm.jaql.lang.expr.record.NamesFn;
 import com.ibm.jaql.lang.expr.record.RecordFn;
 import com.ibm.jaql.lang.expr.record.RemapFn;
 import com.ibm.jaql.lang.expr.record.RemoveFieldsFn;
 import com.ibm.jaql.lang.expr.record.RenameFieldsFn;
+import com.ibm.jaql.lang.expr.record.ReplaceFieldsFn;
 import com.ibm.jaql.lang.expr.record.ValuesFn;
+import com.ibm.jaql.lang.expr.regex.RegexExtractFn;
 import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
 import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
@@ -107,12 +124,13 @@ import com.ibm.jaql.lang.expr.span.TokenizeFn;
 import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
+import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.udf.JavaFnExpr;
 import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
 import com.ibm.jaql.lang.registry.RegisterFunctionExpr;
 import com.ibm.jaql.lang.registry.WriteFunctionRegistryExpr;
 
-/**
+/** Global libary of JAQL functions. Maps function names to implementing classes. 
  * 
  */
 public class FunctionLib
@@ -120,6 +138,10 @@ public class FunctionLib
   // private static HashMap<String, FnDecl> lib = new HashMap<String, FnDecl>();
   private static HashMap<String, Class<?>> lib = new HashMap<String, Class<?>>();
 
+  /** Adds a built-in function to the library. The argument is required to carry the 
+   * {@link JaqlFn} annotation. The name of the function is extracted from this annotation. 
+   * @param cls
+   */
   static void add(Class<? extends Expr> cls)
   {
     JaqlFn fn = cls.getAnnotation(JaqlFn.class);
@@ -134,13 +156,14 @@ public class FunctionLib
     }
   }
 
-  /**
+  /** Adds a user-defined function to the library using the specified function name.
+   * 
    * @param fnName
    * @param cls
    */
   public static void add(String fnName, Class<?> cls)
   {
-    assert cls.getAnnotation(JaqlFn.class) == null; // builtins should use single arg add() method
+    // assert cls.getAnnotation(JaqlFn.class) == null; // builtins should use single arg add() method
     lib.put(fnName, cls);
   }
 
@@ -153,14 +176,24 @@ public class FunctionLib
     //lib.put("loadXml", LoadXmlExpr.class);
     //lib.put("deepCompare", DeepCompareExpr.class);
     add(NowFn.class);
+    add(DateFn.class);
+    add(DateMillisFn.class);
     add(CountAgg.class);
     add(SumAgg.class);
     add(MinAgg.class);
     add(MaxAgg.class);
     add(AvgAgg.class);
-    add(SumPA.class);
-    add(MultiAgg.class);
+    add(ArrayAgg.class);
+    add(SingletonAgg.class);
+    add(PickAnyAgg.class);
+    add(PickNAgg.class);
+    add(CombineExpr.class);
+    add(TeeExpr.class);
+    add(SumPA.class); // TODO: delete
+    add(MultiAgg.class); // TODO: delete
+    add(ShiftFn.class);
     add(ModFn.class);
+    add(DivFn.class);
     add(AbsFn.class);
     add(IntFn.class);
     add(NumberFn.class);
@@ -169,6 +202,7 @@ public class FunctionLib
     add(MapReduceFn.class);
     add(MRAggregate.class);
     //    add(MRCogroup.class);
+    // add(DefaultExpr.class);
     add(JdbcExpr.class);
     add(SpanFn.class);
     add(SpanOverlapsFn.class);
@@ -177,8 +211,9 @@ public class FunctionLib
     add(RegexTestFn.class);
     add(RegexMatchFn.class);
     add(RegexSpansFn.class);
+    add(RegexExtractFn.class);
     add(TokenizeFn.class);
-    add(IsnullFn.class);
+    //add(IsnullExpr.class);
     add(DenullFn.class);
     add(DeemptyFn.class);
     add(StartsWithFn.class);
@@ -192,21 +227,29 @@ public class FunctionLib
     add(JaqlGetFn.class);
     add(RemoveFieldsFn.class);
     add(FieldsFn.class);
-    add(HasFieldFn.class);
+    // add(IsdefinedExpr.class);
     add(NamesFn.class);
     add(ValuesFn.class);
+    add(ArrayToRecordFn.class);
     add(RemapFn.class);
+    add(ReplaceFieldsFn.class);
     add(RenameFieldsFn.class);
     add(AppendFn.class);
+    add(ColumnwiseFn.class);
+    add(RowwiseFn.class);
+    add(ExecFn.class);
     add(ReplaceElementFn.class);
     add(RemoveElementFn.class);
-    add(StReadExpr.class);
-    add(StWriteExpr.class);
     add(InlinePragma.class);
     add(ConstPragma.class);
     add(AsArrayFn.class);
     add(EnumerateExpr.class);
+    add(RangeExpr.class);
     // add(CombinerExpr.class);
+    add(MergeFn.class);
+    add(MergeContainersFn.class);
+    add(ReverseFn.class);
+    add(OnEmptyFn.class);
     add(FirstNonNullFn.class);
     add(EmptyOnNullFn.class);
     add(PairFn.class);
@@ -215,12 +258,17 @@ public class FunctionLib
     add(RandomLongFn.class);
     add(DistinctFn.class);
     // data access expressions
-    add(ReadExpr.class);
-    add(WriteExpr.class);
-    add(LocalWriteExpr.class);
-    add(LocalReadExpr.class);
-    add(HdfsWriteExpr.class);
-    add(HdfsReadExpr.class);
+    add(ReadFn.class);
+    add(WriteFn.class);
+    add(LocalWriteFn.class);
+    add(LocalReadFn.class);
+    add(HdfsFn.class);
+    add(FileFn.class);
+    add(HttpFn.class);
+ // TODO: delete: add(DeadReadExpr.class);
+ // TODO: delete: add(DeadWriteExpr.class);
+ // TODO: delete: add(HdfsWriteExpr.class);
+ // TODO: delete: add(HdfsReadExpr.class);
     add(HadoopTempExpr.class);
     add(HBaseWriteExpr.class);
     add(HBaseFetchExpr.class);
@@ -246,7 +294,9 @@ public class FunctionLib
     add(HBaseShellExpr.class);
   }
 
-  /**
+  /** Creates an instance of the function represented by the given class, passing the 
+   * specified arguments.
+   *  
    * @param cls
    * @param env
    * @param args
@@ -298,7 +348,7 @@ public class FunctionLib
     }
   }
 
-  /**
+  /** Converts the specified class, if possible, otherwise returns null. 
    * @param cls
    * @return
    */
@@ -312,7 +362,9 @@ public class FunctionLib
     return null;
   }
 
-  /**
+  /** Performs a lookup for the function represented by the given name and arguments in 
+   * the global library, and, if found, creates an instance passing the specified arguments.
+   * 
    * @param env
    * @param name
    * @param args
@@ -323,20 +375,24 @@ public class FunctionLib
     Class<?> cls = lib.get(name);
     if (cls == null)
     {
-      throw new RuntimeException("function not found: " + name);
+      throw new RuntimeException("function not found: "+name);
+      // return new FunctionCallExpr(new ConstExpr(new JString(name)), args);  // TODO: make python function item or at least verify fn exists.
     }
+
     Class<? extends Expr> exprCls = asExprClass(cls);
     if (exprCls != null)
     {
-      return lookupExpr(exprCls, env, args);
+      return lookupExpr(exprCls, env, args); // use built-in function
     }
     else
     {
-      return new JavaFnExpr(name, cls, args);
+      return new JavaFnExpr(name, cls, args); // use reflection to find method
     }
   }
 
-  /**
+  /** Performs a lookup for the function represented by the given name and argument in 
+   * the global library, and, if found, creates an instance passing the specified argument.
+   * 
    * @param env
    * @param name
    * @param arg

@@ -138,7 +138,7 @@ public abstract class Rewrite
       else
       {
         int i = prev.getChildSlot();
-        // look for bindings as direct children after us
+        // look for bindings as direct children before us
         for (i = i - 1; i >= 0; i--)
         {
           Expr c = e.child(i);

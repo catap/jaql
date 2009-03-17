@@ -26,9 +26,8 @@ import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JRecord;
 
-/**
- * 
- */
+/** Provides static methods that serializes and deserializes {@link JRecord}s and 
+ * {@link JArray}s to and from the Hadoop configuration file */
 public class ConfUtil
 {
   /**

@@ -82,7 +82,7 @@ public class MRStreamAggregate extends MapReduceBaseExpr
 
     // use default: conf.setNumMapTasks(10); // TODO: need a way to specify options
     // use default: conf.setNumReduceTasks(2); // TODO: get from options
-    conf.setMapperClass(MapEval.class);
+    conf.setMapRunnerClass(MapEval.class);
     conf.setCombinerClass(AggCombineEval.class);
     conf.setReducerClass(AggFinalEval.class);
 

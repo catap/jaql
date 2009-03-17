@@ -21,7 +21,8 @@ import java.io.IOException;
 
 import com.ibm.jaql.json.type.JString;
 
-/**
+/** Schema that matches a field ((name, value)-pair) where the value matches its 
+ * specified schema.   
  * 
  */
 public class SchemaField

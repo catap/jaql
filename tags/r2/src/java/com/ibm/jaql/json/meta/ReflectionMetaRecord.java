@@ -28,9 +28,9 @@ import java.util.TreeMap;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 
-/**
- * 
- */
+/** MetaRecord in which the (name, value)-pairs correspond to the public variables and 
+ * public getter/setter methods (of form T getX() and setX(T), where X is the name and T
+ * the type of the value) defined in a Java class. */
 public class ReflectionMetaRecord extends MetaRecord
 {
   protected MetaAccessor[] accessors;

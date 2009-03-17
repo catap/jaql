@@ -143,7 +143,7 @@ public abstract class JaqlBaseTestCase extends TestCase
             + lexer.getLine());
         parser.env.reset();
         parsing = true;
-        Expr expr = parser.query();
+        Expr expr = parser.parse();
         parsing = false;
         System.err.println("\n\nParsed query at " + inputFileName + ":"
             + lexer.getLine());
@@ -263,11 +263,12 @@ public abstract class JaqlBaseTestCase extends TestCase
       {
         expr.decompile(tmpStr, new HashSet<Var>());
         tmpStr.close();
+        //System.err.println("REAL DECOMP:"+buf);
         // parse it and eval
         JaqlLexer lexer = new JaqlLexer(new ByteArrayInputStream(buf
             .toByteArray()));
         JaqlParser parser = new JaqlParser(lexer);
-        dexpr = parser.query();
+        dexpr = parser.parse();
       }
       formatResult(-1, dexpr, context, str);
     }
@@ -291,7 +292,7 @@ public abstract class JaqlBaseTestCase extends TestCase
   {
     // rewrite expr
     RewriteEngine rewriter = new RewriteEngine();
-    rewriter.run(parser.env, expr);
+    expr = rewriter.run(parser.env, expr);
     captures.clear();
     System.err.println("\nRewritten query:");
     expr.decompile(System.err, captures);

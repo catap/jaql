@@ -115,6 +115,7 @@ public class IndexExpr extends Expr
     else
     {
       item = arrayExpr.eval(context);
+      // BUG: before was getNonNull, which is inconsistent with check.
       JArray array = (JArray) item.get();
       if (array == null)
       {

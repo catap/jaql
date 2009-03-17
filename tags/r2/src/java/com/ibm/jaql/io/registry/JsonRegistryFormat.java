@@ -29,7 +29,10 @@ import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.json.type.SpillJArray;
 
-/**
+/** Super class for registry formats that serialize the (key, value)-pairs in the registry
+ * to {@link JRecord}s. Subclasses provide methods that convert keys/values to {@link Items}s
+ * and vice versa.
+ * 
  * @param <K>
  * @param <V>
  */

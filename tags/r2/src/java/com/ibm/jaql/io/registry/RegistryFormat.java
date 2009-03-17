@@ -22,10 +22,11 @@ import java.util.Map;
 
 import com.ibm.jaql.json.type.JValue;
 
-/**
- * @param <K>
- * @param <V>
- * @param <E>
+/** Interface for serialization of a registry.
+ * 
+ * @param <K> keys in the registry
+ * @param <V> values in the registry
+ * @param <E> type external representation of a registry entry
  */
 public interface RegistryFormat<K, V, E extends JValue>
 {
