@@ -284,7 +284,7 @@ public class MemoryJRecord extends JRecord {
     set(i, new Item(value)); // TODO: memory
   }
 
-  /**
+  /** Adds or sets
    * @param name
    * @param value
    */
