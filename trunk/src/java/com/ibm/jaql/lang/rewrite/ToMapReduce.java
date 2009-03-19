@@ -956,7 +956,7 @@ public class ToMapReduce extends Rewrite
     Expr root = seg.root;
     Expr parent = root.parent();
     int slot = root.getChildSlot();
-    Expr tmp = new WriteFn(new HadoopTempExpr(), root);
+    Expr tmp = new WriteFn(root, new HadoopTempExpr());
     Expr read = new ReadFn(tmp);
     parent.setChild(slot, read);
     if (seg.type == Segment.Type.GROUP || seg.type == Segment.Type.COMBINE)
