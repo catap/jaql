@@ -150,7 +150,11 @@ public class ExecFn extends IterExpr
         while( (item = iter.next()) != null )
         {
           // TODO:  force jstrings here? add i/o layer here? add serialize function that has i/o layer?
-          out.print(item.toString());
+          JString s = (JString)item.get();
+          if( s != null )
+          {
+            out.println(s.toString());
+          }
         }
         out.close();
       }
