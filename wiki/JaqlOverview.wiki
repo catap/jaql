@@ -128,11 +128,11 @@ Our first two queries illustrate selection, projection, and filtering.
 
 {{{
   // Write the books collection from data above.
-  // hdfsWrite('books', [ {publisher... ] )
+  // $books -> write(hdfs('books'));
   
   // Query 1. Return the publisher and title of each book.
-  for( $b in hdfsRead('books') )
-    [{ $b.publisher, $b.title }];
+  read(hdfs('books'))
+  -> transform {$.publisher, $.title};
 	
   // result...
   [  
@@ -145,9 +145,9 @@ Our first two queries illustrate selection, projection, and filtering.
   
   // Query 2. Find the authors and titles of books that have received
   // a review.
-  for( $b in hdfsRead('books') )
-   if( exists($b.reviews) )
-    [{ $b.author, $b.title }];
+  read(hdfs('books'))
+  -> filter exists($.reviews)
+  -> transform {$.author, $.title};
     
   // result...
   [  
@@ -167,20 +167,20 @@ expression causes only books with reviews to be output.
 {{{
   // Query 3a. Project the title from each book using the short-hand
   // projection notation. 
-  hdfsRead('books')[*].title;
+  read(hdfs('books'))[*].title;
   
   // Query 3a-alt. Or using equivalent the long-hand notation.
-  for( $b in hdfsRead('books') )
-    [ $b.title ];
+  read(hdfs('books'))
+  -> transform $.title;
 
   // Query 3b. Project the user from each review of each book using the short-hand
   // projection notation.  The double-stars flattens the contained arrays.
-  hdfsRead('books')[**].reviews[*].user;
+  read(hdfs('books'))[*].reviews[*].user -> expand;
 
   // Query 3b-alt. Or using equivalent the long-hand notation.
-  for( $b in hdfsRead('books') )
-    for( $r in $b.reviews )
-      [ $r.user ];
+  read(hdfs('books'))
+  -> expand $.reviews
+  -> transform $.user;
 
   // result...
   [ "Deathly Hallows",
@@ -191,9 +191,9 @@ expression causes only books with reviews to be output.
 
   // Query 4. Find authors, titles, and reviews of books where a review
   // prompted a discussion by the user 'ben'.
-  for( $b in hdfsRead('books') )
-   if( 'ben' in $b.reviews[**].discussion[*].user )
-    [{ $b.author, $b.title, $b.reviews }];
+  read(hdfs('books'))
+  -> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
+  -> transform { $.author, $.title, $.reviews };
 	
   // result...
   [  
@@ -219,9 +219,9 @@ discussed any book review.
 {{{
   // Query 5. Find the authors and titles of books that had an
   // average review rating over 5.
-  for( $b in hdfsRead('books') )
-   if( avg($b.reviews[*].rating) > 5 )
-    [{ $b.author, $b.title }];
+  read(hdfs('books'))
+  -> filter avg($.reviews[*].rating) > 5
+  -> transform {$.author, $.title};
 		 	
   // result...
   [  
@@ -235,8 +235,9 @@ ratings for each book {{{$b}}}. The average rating for book {{{$b}}} is then com
 
 {{{
   // Query 6. Show how many books each publisher has published.
-  group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
-      [{ publisher: $p, num: count($pubs) }];
+  read(hdfs('books'))
+  -> group by $p = ($.publisher)
+       into {publisher: $p, num: count($)};
 	
   // result...
   [  
@@ -256,17 +257,15 @@ group and used to count how many books each publisher has published.
   // Query 7. Find the publisher who published the most books.
 
   // group books by publisher and compute their book count
-  $g = group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
-           [{ publisher: $p, num: count($pubs) }];
+  read(hdfs('books'))
+  -> group by $p = ($.publisher)
+       into {publisher: $p, num: count($)}
     
-  // sort publishers by descending book count
-  $sorted = sort( $i in $g by $i.num desc );
-
   // return the top publisher
-  $sorted[0];
+  -> top 1 by [$.num desc];
 	 
   // result...
-  {publisher: 'Scholastic', num: 4};
+  {publisher: 'Scholastic', num: 4}
 }}}
 
 Query 7 illustrates grouping and sorting.  It shows how
@@ -277,21 +276,21 @@ group multiple collections.  To illustrate group, we define the
 collections X and Y:
 
 {{{
-  hdfsWrite('X',
-    [
-      {a:1, b:1}, 
-      {a:1, b:2}, 
-      {a:2, b:3}, 
-      {a:2, b:4}
-    ] );
+  [
+    {a:1, b:1}, 
+    {a:1, b:2}, 
+    {a:2, b:3}, 
+    {a:2, b:4}
+  ]
+  -> write(hdfs('X'));
 
-  hdfsWrite('Y',
-    [
-      {c:2, d:1}, 
-      {c:2, d:2}, 
-      {c:3, d:3}, 
-      {c:3, d:4}
-    ] );
+  [
+    {c:2, d:1}, 
+    {c:2, d:2}, 
+    {c:3, d:3}, 
+    {c:3, d:4}
+  ]
+  -> write(hdfs('Y'));
 }}}
 
 Query 8 groups both X and Y, which is similar to a group over the
@@ -300,9 +299,11 @@ for each group, one for each input collection.
 
 {{{
   // Query 8. Co-group X and Y.
-  group( $x in hdfsRead('X') by $g = $x.a into $xgroup,
-         $y in hdfsRead('Y') by $g = $y.c into $ygroup )
-      [{ g: $g, b: $xgroup[*].b, d: $ygroup[*].d }];
+  $x = read(hdfs('X'));
+  $y = read(hdfs('Y'));
+  group $x by $g = ($.a),
+        $y by $g = ($.c)
+    into {g: $g, b: $x[*].b, d: $y[*].d};
 
   // result...
   [ 
@@ -322,9 +323,9 @@ Since joins are common, special syntax has been introduced for them:
 
 {{{
   // Query 9. Join X and Y.
-  join( $x in hdfsRead('X') on $x.a,
-        $y in hdfsRead('Y') on $y.c )
-     [{ $x.a, $x.b, $y.c, $y.d }];
+  join $x, $y
+    where $x.a == $y.c
+    into {$x.a, $x.b, $y.c, $y.d}
   
   // result...
   [ 
@@ -350,7 +351,7 @@ job in Hadoop.
 
 {{{
 // Write to an HDFS file called 'sample'.
-  hdfsWrite('sample.dat', [
+  [
     {x: 0, text: 'zero'},
     {x: 1, text: 'one'},
     {x: 0, text: 'two'},
@@ -360,19 +361,20 @@ job in Hadoop.
     {x: 0, text: 'six'},
     {x: 1, text: 'seven'},
     {x: 0, text: 'eight'}
-  ]);
+  ]
+  -> write(hdfs('sample.dat'));
 	
   // Run a map/reduce job that counts the number objects
   // for each 'x' value.
   mapReduce( 
     { input:  {type: 'hdfs', location: 'sample.dat'}, 
       output: {type: 'hdfs', location: 'results.dat'}, 
-      map:    fn($i) [ [$i.x, 1] ], 
-      reduce: fn($x, $v) [ {x: $x, num: count($v)} ]
+      map:    fn($v) ( $v -> transform [$.x, 1] ),
+      reduce: fn($x, $v) ( $v -> aggregate {x: $x, num: count($)} )
     });
 	
   // Read the results...
-  hdfsRead('results.dat');
+  read(hdfs('results.dat'));
 	
   // result...
   [
@@ -404,8 +406,8 @@ from all the little details required to actually set up and run a map/reduce job
 
 {{{
   // Query 1. Return the publisher and title of each book.
-  for( $b in hdfsRead('books') )
-    [{ $b.publisher, $b.title }];
+  read(hdfs('books'))
+  -> transform {$.publisher, $.title};
 
 
   // Explain Query 1: Jaql automatically rewrites the query into a map-only job
@@ -441,9 +443,9 @@ can be extended with user-defined functions; more examples are provided in [Func
 To read {{{test}}} into Jaql, use the expression below:
 
 {{{
-$lineRdr = hdfsRead("test", 
-                    {format: "org.apache.hadoop.mapred.TextInputFormat",  
-                     converter: "com.acme.extensions.data.FromLineConverter"});
+read({type: "hdfs", location: "test", 
+      inoptions: {format: "org.apache.hadoop.mapred.TextInputFormat",  
+                  converter: "com.acme.extensions.data.FromLineConverter"}});
 }}}
 
 This expression assigns the result of {{{hdfsRead}}} to the variable {{{$lineRdr}}}.
@@ -464,14 +466,12 @@ When the Jaql interpreter encounters a {{{splitArr}}} invocation, it uses {{{spl
 
 === Word-count (a) ===
 {{{
-1. $tokens = for($line in $lineRdr) (
-2.             $tokens = splitArr($line, " "),
-3.             for($t in $tokens)
-4.               [ [$t, 1] ]
-             );
-
-5. group($p in $tokens by $w = $p[0] into $words)
-6.   [ [$w, sum($words[*][1])] ]);
+    $lineRdr
+1.  -> expand splitArr($, " ")
+2.  -> transform [$,1]
+3.  -> group by $w = ($[0])
+         into [$w, sum($[*][1])]
+4.  -> count();
 }}}
 
 These Jaql queries directly correspond to the map-reduce word-count example.
@@ -481,14 +481,11 @@ then grouped on word ({{{$w = $p[0]}}}) in line (5). Each distinct word ({{{$w}}
 
 === Word-count (b) ===
 {{{
-1. $tokens = for($line in $lineRdr) (
-2.             $tokens = splitArr($line, " "),
-3.             for($t in $tokens)
-4.               [ $t ]
-             );
-
-5. group($p in $tokens by $w = $p into $words)
-6.   [ [$w, count($words)] ];
+    $lineRdr
+1.  -> expand splitArr($, " ")
+2.  -> group by $w = ($)
+         into [$w, count($)]
+3.  -> count();
 }}}
 
 As in the previous example, each line is read (1) and tokenized (2). Instead of returning an array of {{{<word, count>}}} pairs, an array of words is returned in lines (3-4). 
