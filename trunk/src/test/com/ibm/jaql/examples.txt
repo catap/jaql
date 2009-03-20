@@ -1,4 +1,4 @@
-// the data
+// From JaqlOverview
 
 $books = [
     {publisher: 'Scholastic',
@@ -36,8 +36,254 @@ $books = [
      year: 1930}
   ];
   
+// Write the books collection from data above.
+$books -> write(hdfs('books'));
+  
+// Query 1. Return the publisher and title of each book.
+read(hdfs('books'))
+-> transform {$.publisher, $.title};
+  
+// Query 2. Find the authors and titles of books that have received 
+// a review. 
+read(hdfs('books'))
+-> filter exists($.reviews)
+-> transform {$.author, $.title};
+
+// Query 3a. Project the title from each book using the short-hand
+// projection notation. 
+read(hdfs('books'))[*].title;
+
+// Query 3a-alt. Or using equivalent the long-hand notation. 
+read(hdfs('books'))
+-> transform $.title;
+  
+// Query 3b. Project the user from each review of each book using the short-hand
+// projection notation.  The double-stars flattens the contained arrays.
+read(hdfs('books'))[*].reviews[*].user -> expand;
+
+// Query 3b-alt. Or using equivalent the long-hand notation.
+read(hdfs('books'))
+-> expand $.reviews
+-> transform $.user;
+
+// Query 4. Find authors, titles, and reviews of books where a review
+// prompted a discussion by the user 'ben'. 
+read(hdfs('books'))
+-> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
+-> transform { $.author, $.title, $.reviews };
+
+// Query 5. Find the authors and titles of books that had an
+// average review rating over 5. 
+read(hdfs('books'))
+-> filter avg($.reviews[*].rating) > 5
+-> transform {$.author, $.title};
+
+// Query 6. Show how many books each publisher has published. 
+read(hdfs('books'))
+-> group by $p = ($.publisher)
+    into {publisher: $p, num: count($)}
+-> sort by [$.publisher];
+  
+// Query 7. Find the publisher who published the most books. 
+read(hdfs('books'))
+-> group by $p = ($.publisher)
+    into {publisher: $p, num: count($)}
+-> top 1 by [$.num desc];
+
+// Setup for co-group example 
+[
+  {a:1, b:1}, 
+  {a:1, b:2}, 
+  {a:2, b:3}, 
+  {a:2, b:4}
+]
+-> write(hdfs('X'));
+
+[
+  {c:2, d:1}, 
+  {c:2, d:2}, 
+  {c:3, d:3}, 
+  {c:3, d:4}
+]
+-> write(hdfs('Y'));
+
+// Query 8. Co-group X and Y. 
+$x = read(hdfs('X'));
+$y = read(hdfs('Y'));
+group $x by $g = ($.a),
+      $y by $g = ($.c)
+ into {g: $g, b: $x[*].b, d: $y[*].d}
+-> sort by [$];
+
+// Query 9. Join X and Y. : sort to ensure order
+join $x, $y
+where $x.a == $y.c
+into {$x.a, $x.b, $y.c, $y.d}
+-> sort by [$];
+
+// Write to an HDFS file called 'sample'.
+[
+    {x: 0, text: 'zero'},
+    {x: 1, text: 'one'},
+    {x: 0, text: 'two'},
+    {x: 1, text: 'three'},
+    {x: 0, text: 'four'},
+    {x: 1, text: 'five'},
+    {x: 0, text: 'six'},
+    {x: 1, text: 'seven'},
+    {x: 0, text: 'eight'}
+]
+-> write(hdfs('sample.dat'));
+
+mapReduce( 
+    { input:  {type: 'hdfs', location: 'sample.dat'}, 
+      output: {type: 'hdfs', location: 'results.dat'}, 
+      map:    fn($v) ( $v -> transform [$.x, 1] ),
+      reduce: fn($x, $v) ( $v -> aggregate {x: $x, num: count($)} )
+    });
+    
+read(hdfs('results.dat'));
+
+hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;
+
+$lineRdr = read({type: "hdfs", location: "test", inoptions: {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.acme.extensions.data.FromLineConverter"}});
+
+registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
+
+$lineRdr
+-> expand splitArr($, " ")
+-> transform [$,1]
+-> group by $w = ($[0])
+    into [$w, sum($[*][1])]
+-> count();
+
+$lineRdr
+-> expand splitArr($, " ")
+-> group by $w = ($)
+    into [$w, count($)]
+-> count();
+
+registerFunction("split1", "com.acme.extensions.fn.Split1");
+$path = '/home/mystuff/stuff';
+
+split1($path, "/");
+
+count(split1($path, "/"));
+
+split1($path, "/")[1]; 
+
+$median = fn($items) (
+$sorted = $items -> sort by [$],
+
+$sorted[int(count($sorted)/2)]);
+
+$median( [ 1, 4, 5, 3, 2 ] );
+
+$var = fn($items) (
+  $init = 
+     $items
+     -> filter not isnull($)
+     -> transform { n: 1, s1: $, s2: $*$ },
+
+  $combined =
+     $init 
+     -> combine( fn($a,$b)
+            { n:  $a.n  + $b.n,
+             s1: $a.s1 + $b.s1,
+             s2: $a.s2 + $b.s2 }),
+
+  $E_X  = $combined.s1 / $combined.n,
+  $E_X2 = $combined.s2 / $combined.n,
+
+  $E_X2 - $E_X * $E_X
+);
+
+$var( [ 1, 4, 5, 3, 2 ] );
+
+registerFunction("gcd1", "com.acme.extensions.fn.GCD1");
+gcd1(null); // null
+gcd1([]); // null
+gcd1(3); // correctly produces cast error: array expected
+gcd1([3]); // 3
+gcd1([0,0]); // 0
+gcd1([3,0]); // 3
+gcd1([0,3]); // 3
+gcd1([17,13]); // 1
+gcd1([12,18]); // 6
+gcd1([36,18]); // 18
+gcd1([36,18,12]); // 6
+gcd1(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31); // 31*3 = 93
+
+
+registerFunction("gcd2", "com.acme.extensions.fn.GCD2");
+
+gcd2("x","y"); // correctly produces error: numbers expected
+gcd2(17,13); // 1
+gcd2(12,18); // 6
+
+
+$gcd = fn($nums) combine($nums, fn($a,$b) gcd2($a,$b));
+
+$gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31); // 31*3 = 93
+
+
+$gcd = fn($nums) ($nums -> combine( fn($a,$b) gcd1( [$a,$b] ) ));
+
+$gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31); // 31*3 = 93
+
+
+range(1,100)
+-> expand each $i (
+     range(1,100)
+     -> transform each $j { a: $i, b: $i * $j }
+   )
+-> write(hdfs('/temp/nums'));
+
+registerFunction("gcd1", "com.acme.extensions.fn.GCD1");
+$gcd = fn($nums) gcd1( $nums );
+    
+read(hdfs('/temp/nums'))
+-> group by $a = ($.a)
+    into { a: $a, g: $gcd($[*].b) }
+-> sort by [$.a];
+
+registerFunction("gcd2", "com.acme.extensions.fn.GCD2");
+$gcd = fn($nums) ( $nums -> combine( fn($a,$b) gcd2( $a,$b ) ) );
+    
+read(hdfs('/temp/nums'))
+-> group by $a = ($.a)
+    into { a: $a, g: $gcd($[*].b) }
+-> sort by [$.a];
+
+mrAggregate( {
+     input: { type: "hdfs", location: "/temp/nums" }, 
+     output: HadoopTemp(),
+     map: fn ($) ( $ -> transform [ $.a, $ ] ),
+     aggregate: fn ($k, $) [ combine($.b, fn($a,$b) gcd2( $a,$b ) ) ],
+     final: fn ($k, $aggs) [{ a:$k, g: $aggs[0] }]
+ } )
+ -> read()
+ -> sort by [$.a];
+ 
+  registerFunction("grep", "com.acme.extensions.fn.Grep");
+$data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];
+
+grep("a\\d*b", $data);
+// [ "a1b", "a3b", "a5b", "a7b" ]
+
+grep("a\\d*b", null, $data );
+// [ "a1b", "a3b", "a5b", "a7b" ]
+
+grep("a\\d*b", "g", $data );
+    
+// Example 1. Write to a file named 'hey.dat'. 
+[{text: 'Hello World'}] -> localWrite(file('hey.dat'));
+	
+// Read it back... 
+read(file('hey.dat'));
+
 // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
-hdfsWrite('orders.dat', [
+[
     {order: 1, cust: 'c1', items: [ 
       {item: 1, qty: 2},
       {item: 3, qty: 6},
@@ -50,351 +296,18 @@ hdfsWrite('orders.dat', [
       {item: 1, qty: 2},
       {item: 7, qty: 14},
       {item: 5, qty: 10}]} 
-  ]);
-  
-// Read it back...
-hdfsRead('orders.dat');
+] 
+-> write(hdfs('orders.dat'));
 
-// Example 3. Write to an HBase table named 'webcrawl'.
-hbaseWrite('webcrawl', [
+// Read it back...
+read(hdfs('orders.dat'));
+
+// Example 3. Write to an HBase table named 'webcrawl'. (from exampleQueries)
+[
     {key: "www.cnn.com", page:'...', rank: 0.9,
      inlinks:[
        {link: 'www.news.com', anchor: 'newsite'},
        {link: 'www.jscript.com', anchor: 'look here'}]},
     {key: "www.json.org", page:'...', rank: 0.8}
-  ]);
-  
-// Read it back...
-hbaseRead('webcrawl');
-
-// Write the books collection from data above. DIFF
-hdfsWrite('books', $books);
-  
-// Query 1. Return the publisher and title of each book. DIFF
-for( $b in hdfsRead('books') )
-  [ {$b.publisher, $b.title} ];
-    
-// Query 2. Find the authors and titles of books that have received 
-// a review. DIFF
-for( $b in hdfsRead('books') )
- if( exists($b.reviews) )
-  [ {$b.author, $b.title} ];
-
-// Query 3a. Project the title from each book using the short-hand
-// projection notation. DIFF
-hdfsRead('books')[*].title;
-
-// Query 3a-alt. Or using equivalent the long-hand notation. DIFF
-for( $b in hdfsRead('books') )
-  [ $b.title ];
-
-// Query 3b. Project the user from each review of each book using the short-hand
-// projection notation.  The double-stars flattens the contained arrays.
-hdfsRead('books')[**].reviews[*].user;
-
-// Query 3b-alt. Or using equivalent the long-hand notation.
-for( $b in hdfsRead('books') )
-  for( $r in $b.reviews )
-    [ $r.user ];
-
-// Query 4. Find authors, titles, and reviews of books where a review
-// prompted a discussion by the user 'ben'. DIFF
-for( $b in hdfsRead('books') )
- if( 'ben' in $b.reviews[**].discussion[*].user )
-  [{ $b.author, $b.title, $b.reviews }];
-
-// Query 5. Find the authors and titles of books that had an
-// average review rating over 5. DIFF
-for( $b in hdfsRead('books') )
- if( avg($b.reviews[*].rating) > 5 )
-  [ {$b.author, $b.title} ];
-
-// Query 6. Show how many books each publisher has published. DIFF
-$q = group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
-         [ {publisher: $p, num: count($pubs)} ];
-sort( $s in $q by $s.publisher );
-  
-// Query 7. Find the publisher who published the most books. DIFF
-(
-    // group books by publisher and compute their book count
-    $g = group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
-             [ {publisher: $p, num: count($pubs)} ],
-
-    // sort publishers by descending book count
-    $sorted = sort( $i in $g by $i.num desc ),
-
-    // return the top publisher
-    $sorted[0]
- );
-
-// Setup for co-group example DIFF
-hdfsWrite('X',
-    [
-      {a:1, b:1}, 
-      {a:1, b:2}, 
-      {a:2, b:3}, 
-      {a:2, b:4}
-    ] );
-
-hdfsWrite('Y',
-    [
-      {c:2, d:1}, 
-      {c:2, d:2}, 
-      {c:3, d:3}, 
-      {c:3, d:4}
-    ] );
-
-// Query 8. Group X and Y. DIFF    
-group( $x in hdfsRead('X') by $g = $x.a into $xgroup,
-       $y in hdfsRead('Y') by $g = $y.c into $ygroup )
-    [ {g: $g, b: $xgroup[*].b, d: $ygroup[*].d} ];
-
-// Query 9. Join X and Y. DIFF: rely on count, since order differs from run to run
-count(join( $x in hdfsRead('X') on $x.a,
-            $y in hdfsRead('Y') on $y.c )
-         [ {$x.a, $x.b, $y.c, $y.d} ] );
-
-// Write to an HDFS file called 'sample'.
-hdfsWrite('sample.dat', [
-    {x: 0, text: 'zero'},
-    {x: 1, text: 'one'},
-    {x: 0, text: 'two'},
-    {x: 1, text: 'three'},
-    {x: 0, text: 'four'},
-    {x: 1, text: 'five'},
-    {x: 0, text: 'six'},
-    {x: 1, text: 'seven'},
-    {x: 0, text: 'eight'}
-  ]);
-
-  $median = fn($items) (
-    $sorted = sort( $i in $items by $i ),
-
-    $sorted[int(count($sorted)/2)]
-  );
-
-  $median( [ 1, 4, 5, 3, 2 ] ); // 3
-
-  $var = fn($items) (
-    $init = 
-       for( $i in $items )
-        if( not isnull($i) )
-         [ { n: 1, s1: $i, s2: $i*$i } ],
-
-    $combined =
-       combine( $a, $b in $init )
-              { n:  $a.n  + $b.n,
-               s1: $a.s1 + $b.s1,
-               s2: $a.s2 + $b.s2 },
-
-    $E_X  = $combined.s1 / $combined.n,
-    $E_X2 = $combined.s2 / $combined.n,
-
-    $E_X2 - $E_X * $E_X
-  );
-
-  $var( [ 1, 4, 5, 3, 2 ] ); // 2
-
-// Run a map/reduce job that counts the number objects
-// for each 'x' value. DIFF
-mapReduce( 
-    { input:  {type: 'hdfs', location: 'sample.dat'}, 
-      output: {type: 'hdfs', location: 'results.dat'}, 
-      map:    fn($i) [ [$i.x, 1] ],
-      reduce: fn($x, $v) [ {x: $x, num: count($v)} ]
-    });
-    
-hdfsRead('results.dat');
-
-// Define a function that returns the most recent book
-// written by a given author. DIFF
-$mostRecent = 
-    fn($author) (
-        $authorsBooks =
-           for( $b in hdfsRead('books') )
-            if( $b.author == $author )
-             [ {title: $b.title, year: $b.year} ],
-
-         $sorted = sort( $b in $authorsBooks by $b.year desc ),
-        
-      $sorted[0].title
-    );
-		// Invoke the function.
-  
-  $mostRecent('J. K. Rowling');
-  
-// ====== SPLIT1 ======
-
-    registerFunction("split1", "com.acme.extensions.fn.Split1");
-    $path = '/home/mystuff/stuff';
-
-    split1($path, "/");
-    // [ "", "home", "mystuff", "stuff" ]
-
-    count(split1($path, "/"));
-    // 4
-
-    split1($path, "/")[1]; 
-    // "home"
-
-// ====== SPLIT2 ======
-
-    registerFunction("split2", "com.acme.extensions.fn.Split2");
-    $path = '/home/mystuff/stuff';
-
-    split2($path, "/");
-    // [ "", "home", "mystuff", "stuff"]
-
-    count(split2($path, "/"));
-    // 4
-
-    split2($path, "/")[1];
-    // "home"
-
-// ====== GREP ======
-
-    registerFunction("grep", "com.acme.extensions.fn.Grep");
-    $data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];
-
-    grep("a\\d*b", $data);
-    // [ "a1b", "a3b", "a5b", "a7b" ]
-
-    grep("a\\d*b", null, $data );
-    // [ "a1b", "a3b", "a5b", "a7b" ]
-
-    grep("a\\d*b", "g", $data );
-    // [ "a1b", "a2b", "a3b", "a4b", "a5b", "a6b", "a7b", "a8b" ]
-
-// ====== GCD ======
-
-    registerFunction("gcd1", "com.acme.extensions.fn.GCD1");
-    gcd1(null); // null
-    gcd1([]); // null
-    gcd1([3]); // 3
-    gcd1([0,0]); // 0
-    gcd1([3,0]); // 3
-    gcd1([0,3]); // 3
-    gcd1([17,13]); // 1
-    gcd1([12,18]); // 6
-    gcd1([36,18]); // 18
-    gcd1([36,18,12]); // 6
-    gcd1(for( $i in 1000 to 2000 ) if( mod($i,3) == 0 ) [$i * 31]); // 31*3 = 93
-
-
-    registerFunction("gcd2", "com.acme.extensions.fn.GCD2");
-
-    gcd2(17,13); // 1
-    gcd2(12,18); // 6
-
-
-    $gcd = fn($nums) combine ($a,$b in $nums) gcd2($a,$b);
-
-    $gcd(for($i in 1000 to 2000) if( mod($i,3) == 0 ) [$i * 31]); // 31*3 = 93
-
-
-    $gcd = fn($nums) combine( $a,$b in $nums) gcd1( [$a,$b] );
-
-    $gcd(for($i in 1000 to 2000) if( mod($i,3) == 0 ) [$i * 31]); // 31*3 = 93
-
-
-    hdfsWrite('nums', 
-      for( $i in 1 to 100, 
-           $j in 1 to 100 )
-        [ { a: $i, b: $i * $j } ]
-    );
-
-
-    registerFunction("gcd1", "com.acme.extensions.fn.GCD1");
-    $gcd = fn($nums) gcd1( $nums );
-
-// DIFF: sort added for stabilty
-sort( $x in
-    group( $i in hdfsRead('nums') by $a = $i.a into $is )
-        [ { a: $a, g: $gcd($is[*].b) } ]
-  by $x.a );
-    // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
-
-
-    registerFunction("gcd2", "com.acme.extensions.fn.GCD2");
-    $gcd = fn($nums) combine( $a,$b in $nums) gcd2( $a,$b );
-
-// DIFF: sort added for stabilty
-sort( $x in
-    group( $i in hdfsRead('nums') by $a = $i.a into $is )
-        [ { a: $a, g: $gcd($is[*].b) } ]
-  by $x.a );
-    // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
-
-// DIFF: this is unstable during testing (because of different options):
-//  explain 
-//  group $i in hdfsRead('nums') by $a = $i.a into $is
-//  return { a: $a, g: $gcd($is[*].b) };
-
-    stRead(
-      mrAggregate( {
-         input: { type: "hdfs", location: "nums" }, 
-         output: HadoopTemp(),
-         init: fn ($x) [[ $x.a, [$x.b] ]],
-         combine: fn ($x, $y, $z) [ gcd2( $y[0], $z[0] ) ],
-         final: fn ($a, $is) [{ a:$a, g: $is[0] }]
-     } ));
-
-// ======== EveryType ==========
-
-    registerFunction("everyType", "com.acme.extensions.fn.EveryType");
-
-    $data = [
-      null, 
-      [0,1,2,3,4], 
-      { x:1, y:[2,"two"], z: { a:3, b:"four" } },
-      true,
-      "world",
-      23,
-      38.9,
-      x'ADEADFAD',
-      d'2008-03-14T12:15:00Z',
-      fn($x) $x + 1
-    ];
-
-    everyType( null );
-
-    pairwise(everyType( $data ), $data);
-
-// =============================================================================
-
-// DIFF: not in docs
-hdfsWrite('books.jqlb', $books);
-
-// DIFF
-read('hdfs', 'books.jqlb');
-
-// DIFF: not in docs
-write('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                              converter : 'com.acme.extensions.data.ToJSONTxtConverter'}, $books);
-
-// DIFF
-read('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.acme.extensions.data.FromJSONTxtConverter'});
-
-$myRead = fn($path) read('hdfs', $path, 
-                              {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
-                                converter : 'com.acme.extensions.data.FromJSONTxtConverter'});
-                                
-$myRead('example.jql');
-
-// DIFF
-registerAdapter({type     :	'myHDFSFile',
-                 inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
-                             format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.acme.extensions.data.FromJSONTxtConverter',
-                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
-
-read('myHDFSFile', 'example.jql');
-
-// variant of Query 1 in overview
-$q = for( $i in read('myHDFSFile', 'example.jql') )
-       [ {key: $i.publisher, ($i.title): $i.year} ];
-
-hbaseWrite('example', []);
-
-hbaseWrite('example', $q);
+]
+-> hbaseWrite('webcrawl');
