@@ -126,6 +126,7 @@ import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.udf.JavaFnExpr;
+import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
 import com.ibm.jaql.lang.registry.RegisterFunctionExpr;
 import com.ibm.jaql.lang.registry.WriteFunctionRegistryExpr;
@@ -213,6 +214,7 @@ public class FunctionLib
     add(RegexSpansFn.class);
     add(RegexExtractFn.class);
     add(TokenizeFn.class);
+    add(XmlToJsonFn.class);
     //add(IsnullExpr.class);
     add(DenullFn.class);
     add(DeemptyFn.class);
