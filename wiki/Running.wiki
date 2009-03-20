@@ -27,7 +27,7 @@ To get up and running, you can either download a binary or build from source.
 
 == Using the source ==
 
-Follow the [Building instructions] to build Jaql.
+Follow these [Building instructions] to build Jaql.
 
 == Running ==
 
