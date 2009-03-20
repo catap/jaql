@@ -3,23 +3,37 @@
 = Introduction =
 
 We've provided several tools to help you try out Jaql. 
-Below, we show how to run the Jaql shell, run the examples from the documentatation,
+Below, we list the software requirements, describe how to get the Jaql,
+show how to run the Jaql shell, evaluate examples from the documentatation,
 and run unit tests.
 
-== Jaql Shell ==
+= Requirements =
+  
+  * Java 1.5 or greater
+  * [http://www.cygwin.com/ Cygwin] if using MS Windows
+  * If running your own, distributed cluster,  [http://archive.apache.org/dist/hadoop/core/hadoop-0.17.1/ Hadoop 0.17.1],
+[http://archive.apache.org/dist/hadoop/core/hadoop-0.18.1/ Hadoop 0.18.1],
+[http://archive.apache.org/dist/hadoop/core/hadoop-0.18.3/ Hadoop 0.18.3], and
+[http://archive.apache.org/dist/hadoop/core/hadoop-0.19.0/ Hadoop 0.19.0]
+
+= Jaql Shell =
 
 The Jaql shell is a very simple way to run Jaql queries.
 Currently, it can run with a Hadoop !MiniCluster or your own cluster.
-Its pre-requisites are as follows:
 
-  * Java 1.5 or greater
-  * [http://www.cygwin.com/ Cygwin] if using MS Windows
-  * If running your own, distributed cluster, [http://archive.apache.org/dist/hadoop/core/hadoop-0.15.3/ Hadoop 0.15.3], [http://archive.apache.org/dist/hadoop/core/hadoop-0.16.4/ Hadoop 0.16.4], and [http://archive.apache.org/dist/hadoop/core/hadoop-0.17.1/ Hadoop 0.17.1]
+To get up and running, you can either download a binary or build from source.
 
-To get up and running, follow these steps:
+== Using a binary ==
 
   # [http://jaql.org/release/0.3/jaql-0.3.tgz Download] the tar (for Hadoop 0.16.?clusters). For other versions of Hadoop, download: [http://www.jaql.org/release/0.3/hadoop-0.15.3/jaql-0.3.tgz Jaql + Hadoop 0.15.3] or [http://www.jaql.org/release/0.3/hadoop-0.17.1/jaql-0.3.tgz Jaql + Hadoop 0.17.1]
   # *untar* jaql-0.3.tgz into DIR
+
+== Using the source ==
+
+Follow the [Building instructions] to build Jaql.
+
+== Running ==
+
   # *setup the environment:* export JAQL_HOME=[DIR]/jaql-0.3
   # *run it:* from DIR/jaql-0.3, run {{{./bin/jaql JaqlShell}}}. You should see the {{{jaql>}}} prompt if successful.
 
@@ -41,7 +55,7 @@ pass in the {{{-cluster}}} flag as follows: {{{./jaql JaqlShell -cluster}}}.
 -n       [MiniCluster options: how many nodes to use]
 }}}
 
-== Examples ==
+= Examples =
 
 All examples from the documentation can be found in DIR/jaql/docs/examples.txt.
 !JaqlShell can be used to evaluate the examples either interactively or as a script.
@@ -53,7 +67,7 @@ _Note:_ Queries from the documentation that intentionally produce exceptions wer
 
 When extending Jaql, be sure to specify the jar file that includes your extensions to the shell. For example, if your extension code is in {{{myextensions.jar}}}, specify the jar file to the shell as follows: {{{./jaql JaqlShell -jars myextensions.jar}}}.
 
-== Unit Tests ==
+= Unit Tests =
 
 The "tests" directory includes other tests that can be used as additional examples.
 The tests are included under DIR/jaql/tests. Each test includes a _Queries_
