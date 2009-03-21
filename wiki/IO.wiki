@@ -27,10 +27,10 @@ is as follows:
 
 {{{
   // Example 1. Write to a file named 'hey.dat'.
-  localWrite('hey.dat', [{text: 'Hello World'}]);
+  [{text: 'Hello World'}] -> write(file('hey.dat'));
 	
   // Read it back...
-  localRead('hey.dat');
+  read(file('hey.dat'));
 }}}
 
 Here, a single object with the 'Hello World' string is 
@@ -53,7 +53,7 @@ can be an expression that is the result of a Jaql query.
 
 {{{
   // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
-  hdfsWrite('orders.dat', [
+  [
     {order: 1, cust: 'c1', items: [ 
       {item: 1, qty: 2},
       {item: 3, qty: 6},
@@ -66,10 +66,10 @@ can be an expression that is the result of a Jaql query.
       {item: 1, qty: 2},
       {item: 7, qty: 14},
       {item: 5, qty: 10}]} 
-  ]);
+  ] -> write(hdfs('orders.dat'));
 	
   // Read it back...
-  hdfsRead('orders.dat');
+  read(hdfs('orders.dat'));
 }}}
 
 Our third example writes to an HBase table.
@@ -86,13 +86,14 @@ following example.
 
 {{{
   // Example 3. Write to an HBase table named 'webcrawl'.
-  hbaseWrite('webcrawl', [
+  [
     {key: "www.cnn.com", page:'...', rank: 0.9,
      inlinks:[
        {link: 'www.news.com', anchor: 'newsite'},
        {link: 'www.jscript.com', anchor: 'look here'}]},
     {key: "www.json.org", page:'...', rank: 0.8}
-  ]);
+  ]
+  -> hbaseWrite('webcrawl');
 	
   // Read it back...
   hbaseRead('webcrawl');
@@ -112,7 +113,7 @@ Each record is used to store the content, rank, and in-links (if any) of a web p
 
 = Hadoop IO =
 
-In Hadoop's [http://hadoop.apache.org/core/docs/r0.15.3/mapred_tutorial.html map-reduce], data is accessed using [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] and [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/OutputFormat.html OutputFormat]. Classes that implement these interfaces provide enough information to map-reduce so that the data can be partitioned and processed in parallel.
+In Hadoop's [http://hadoop.apache.org/core/docs/r0.18.3/mapred_tutorial.html map-reduce], data is accessed using [http://hadoop.apache.org/core/docs/r0.18.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] and [http://hadoop.apache.org/core/docs/r0.18.3/api/org/apache/hadoop/mapred/OutputFormat.html OutputFormat]. Classes that implement these interfaces provide enough information to map-reduce so that the data can be partitioned and processed in parallel.
 
 
 Jaql's I/O framework supports any Input(Output)Format to be plugged-in. 
@@ -122,14 +123,13 @@ Thus, the framework makes it easy to convert {{{Writables}}} to and from {{{Item
 == Default Input/Output Format ==
 
 In order to make the discussion more concrete, lets look under the hood of the 
-{{{hdfsRead('books.jqlb')}}} expression.
-First, {{{hdfsRead}}} is a {{{macro}}} expression that 
-makes use of a more generic expression called {{{read}}}. 
-The following is the actual {{{read}}} expression that is invoked 
-when using {{{hdfsRead}}}:
+{{{read(hdfs('books.jqlb'))}}} expression.
+First, {{{hdfs}}} is an expression that constructs a file-handle that is
+input to {{{read}}}. The {{{hdfs}}} expression will evaluate to produce the
+following expression:
 
 {{{
-  read('hdfs', 'books.jqlb');
+  read({type: 'hdfs', location: 'books.jqlb'});
 }}}
 
 The first argument to the {{{read}}} expression is the name
@@ -143,34 +143,68 @@ The defaults for Jaql are {{{SequenceFileInputFormat}}} and {{{SequenceFileOutpu
 
 == Text-based Input/Output Format ==
 
-Suppose that the HDFS file is a text file (i.e, new-line delimitted records). The [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] to use in this case is {{{TextInputFormat}}}. For this case, Jaql's default can be overriden as follows:
+Suppose that the HDFS file is a text file (i.e, new-line delimitted records). The [http://hadoop.apache.org/core/docs/r0.18.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] to use in this case is {{{TextInputFormat}}}. For this case, Jaql's default can be overriden as follows:
 
 {{{
   read('hdfs', 'books.jql', {format: 'org.apache.hadoop.mapred.TextInputFormat'});
 }}}
 
 The additional argument to {{{read}}} is a record that specifies which class
-will implement the [http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat]. More generally, this record can specify any options that 
+will implement the [http://hadoop.apache.org/core/docs/r0.18.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat]. More generally, this record can specify any options that 
 are specific to a give data store type. In the example above, a {{{TextFile}}}'s
 records are {{{Text}}}, not Jaql {{{Items}}} (i.e., binary JSON) so are converted
 by implementing a converter and specifying the converter as an option {{{read}}}.
 An example converter is implemented as follows:
 
 {{{  
-  public class FromJSONTxtConverter extends HadoopRecordToItem { 
-  ...
+  public class FromJSONTxtConverter extends HadoopRecordToItem
+  {
+
   @Override
-  protected WritableToItem createValConverter() {
-    return new WritableToItem() {
-      public void convert(Writable src, Item tgt) {
-        // expect src is of type Text
-        // use a JSON parser to parse it
-        // set tgt
-      }
-      ...
-    };
-    ...
+  protected FromItem<WritableComparable> createKeyConverter()
+  {
+    return null;
   }
+
+  @Override
+  protected FromItem<Writable> createValConverter()
+  {
+    return new FromItem<Writable>() {
+      JsonParser parser = new JsonParser();
+      
+      public void convert(Writable src, Item tgt)
+      {
+        if (src == null || tgt == null) return;
+        Text t = null;
+        if (src instanceof Text)
+        {
+          t = (Text) src;
+        }
+        else
+        {
+          throw new RuntimeException("tried to convert from: " + src);
+        }
+        
+        try
+        {
+          parser.ReInit(new StringReader(t.toString()));
+          Item data = parser.JsonVal();
+          tgt.set(data.get());
+        }
+        catch (ParseException pe)
+        {
+          throw new RuntimeException(pe);
+        }
+      }
+
+      public Item createTarget()
+      {
+        return new Item();
+      }
+
+    };
+  }
+}
 }}}
 
 The {{{FromJSONTxtConverter}}} takes as input a {{{Writable}}} value and sets the 
@@ -178,7 +212,7 @@ The {{{FromJSONTxtConverter}}} takes as input a {{{Writable}}} value and sets th
 
 {{{
   read('hdfs', 'books.jql', {format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.acme.extensions.data.FromJSONTxtConverter'});
+                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter'});
 }}}
 
 The {{{read}}} expression uses {{{TextInputFormat}}} to read the file
@@ -191,9 +225,9 @@ While extensible, the {{{read}}} expression is cumbersome to specify in this man
 There are several options to hide the details. The simplest is to define a function:
 
 {{{
-$myRead = fn($path) read('hdfs', $path, 
-                            {format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.acme.extensions.data.FromJSONTxtConverter'});
+$myRead = fn($path) read({type:'hdfs', location:$path, 
+                          inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
+                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter'}});
   
   $myRead('books.jql');
 }}}
@@ -235,23 +269,23 @@ Returning to the example, the new data store type is registered as follows:
 
 {{{
   registerAdapter({type     :	'myHDFSFile',
-                   inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
-                                 format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                                 converter    : 'com.acme.extensions.data.FromJSONTxtConverter',
-                                 configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
+                 inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                             format       : 'org.apache.hadoop.mapred.TextInputFormat', 
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter',
+                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
 }}}
 
 The Hadoop adapter and configurator are specified, along with the {{{TextInputFormat}}} and custom converter. The newly registered data store is used as follows:
 
 {{{
-  read('myHDFSFile', 'books.jql');
+  read({type:'myHDFSFile', location:'example.jql'});
 }}}
 
 If a new data store type is very common, it may be convenient to
 define a Jaql function that hides some of the details:
 
 {{{
-  $readMyFile = fn($name) read('myHDFSFile', $name);
+  $readMyFile = fn($name) read({type: 'myHDFSFile', location: $name});
 
   $readMyFile('books.jql');
 }}}
@@ -265,10 +299,9 @@ consider a query that will be rewritten to
 map-reduce. The simplest example is a for-loop over a {{{read}}} expression. Jaql translates such a query into the following map-reduce expression:
 
 {{{
-  $q = for( $i in read('myHDFSFile', 'example.jql') )
-         [ {key: $i.publisher, ($i.title): $i.year} ];
-  
-  hbaseWrite('mytable', $q);
+  read({type:'myHDFSFile', location:'example.jql'})
+    -> transform {key: $.publisher, ($.title): $.year}
+    -> hbaseWrite('example');
   
   // translates to:
   mapReduce({
@@ -300,9 +333,13 @@ hdfsShell("-copyFromLocal src/test/com/ibm/jaql/delimited.dat delimited.dat");
 Next, an appropriate reader is defined by parameterizing {{{hdfsRead}}}:
 
 {{{
-$dRead = fn($data) 
-           hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat", 
-                            converter: "com.acme.extensions.data.FromDelimitConverter"});
+$dhRead = fn($data,$header) 
+           read({type:"hdfs", location:$data,
+                 inoptions:{format: "org.apache.hadoop.mapred.TextInputFormat", 
+                            converter: "com.acme.extensions.data.FromDelimitConverter",
+                            header?: $header}});
+
+$dRead = fn($data) $dhRead($data, null);
 }}}
 
 The format is a {{{TextInputFormat}}}, as we've seen before and its converter is
@@ -501,7 +538,7 @@ class to implement is a converter that can borrow from the previous example:
 The new data source is registered and tested as follows:
 
 {{{
-  localRead('books.jql', {format: 'com.acme.extensions.data.FromJSONTxtConverter'});
+  read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JSONTextInputStream'}});
 }}}
 
 Finally, to work with external data sources, we recently added a
@@ -513,23 +550,12 @@ latter requires you to supply an
 [http://developer.yahoo.com/faq/#appid application id]).
 
 {{{
-// Get albums recorded by "The Police" using Freebase.
+  // Get albums recorded by "The Police" using Freebase.
   $artist = "The Police";
-  $freebase = 
-      httpGet('http://www.freebase.com/api/service/mqlread', 
-        { queries: 
-            serialize(
-              { myquery: 
-                { query:
-                  [{ type: "/music/artist",
-                     name: $artist,
-                     album: []
-                   }] 
-                }
-              }
-            ) })[0];
-  
-  $freebase.myquery.result[**].album;
+  $url = "http://api.freebase.com/api/service/mqlread";
+  $query = 
+   {query: {album: [], name: $artist, type: "/music/artist"}};
+  read(http($url, {query: serialize($query)}))[0].result.album;
       
   // result...
   [ "Outlandos d\'Amour",
@@ -553,16 +579,16 @@ latter requires you to supply an
   
   // Get traffic incidents from Yahoo!.
   $appid = "YahooDemo"; // Set to your yahoo application ID
-  $trafficData = 
+   $trafficData = 
       httpGet('http://local.yahooapis.com/MapsService/V1/trafficData',
-        { appid:  $appid,
+        { appid:  "YahooDemo",
           street: "701 First Street",
           city:   "Sunnyvale",
           state:  "CA",
           output: "json"
-        })[0];
-
-  $trafficData.ResultSet.Result[*].Title;
+        })[0],
+  
+  $trafficData.ResultSet.Result[*].title
   
   // result...
   [ "Road construction, on US-101 NB at FAIROAKS AVE TONBTO NB MATHILDA",
