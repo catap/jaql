@@ -22,7 +22,7 @@ as well as [IO] can be extended so as to facilitate
 plugging in your computation for your data. While
 only a high-level description of Jaql is presented here,
 all examples can be run by 
-[http://www.jaql.org/release/0.4/jaql-0.4_hadoop-0.18.3.tgz downloading] the
+[http://jaql.googlecode.com/files/jaql-0.4_hadoop-0.18.3.tgz downloading] the
 most recent release of Jaql and following the [Running instructions].
 
 _Note:_ Jaql is still in early development, 
