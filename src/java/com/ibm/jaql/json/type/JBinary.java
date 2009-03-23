@@ -322,6 +322,20 @@ public class JBinary extends JAtom
     }
     System.arraycopy(bi.value, 0, value, 0, length);
   }
+  
+  /** Copies data from a byte array into this JBinary. 
+   * 
+   * @param buf a byte array
+   * @param pos position in byte array
+   * @param length number of bytes to copy
+   */ 
+  public void copy(byte[] buf, int pos, int length) {
+  	if (this.length < length) {
+  		value = new byte[length];
+  	}
+  	this.length = length;
+  	System.arraycopy(buf, pos, value, 0, length);
+  }
 
   /*
    * (non-Javadoc)
