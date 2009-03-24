@@ -233,7 +233,20 @@ public class JString extends JAtom
     int c = this.len - s.len;
     return c;
   }
-
+  
+  public int hashCode() {
+  	try {
+  		return toString().hashCode(); // this way, hash code is cached in stringCache
+  	}	catch (UndeclaredThrowableException e) {
+  		// standard hash code
+  		int result = 1;
+  		for (byte element : bytes) {
+  			result = 31 * result + element;
+  		}
+  		return result;
+  	}
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -242,7 +255,8 @@ public class JString extends JAtom
   @Override
   public long longHashCode()
   {
-    byte[] bs = bytes;
+    // TODO: inefficient; use caching similar to java.lang.String
+  	byte[] bs = bytes;
     int n = len;
     long h = BaseUtil.GOLDEN_RATIO_64;
     for (int i = 0; i < n; i++)
@@ -459,4 +473,5 @@ public class JString extends JAtom
     return -1;
   }
 
+  
 }

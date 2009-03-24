@@ -236,9 +236,9 @@ public class MemoryJRecord extends JRecord {
   		}
   		names[index] = name;
   		set(index, item);
+  		reorg();
   	}
   }
-  
   
   /**
    * @param name
@@ -346,6 +346,7 @@ public class MemoryJRecord extends JRecord {
         names[i] = new JString();
         values[i] = new Item();
       }
+      // no reorg needed because all fields have the same positions
     }
   }
 
@@ -356,7 +357,7 @@ public class MemoryJRecord extends JRecord {
    */
   public int hashCode()
   {
-    long h = BaseUtil.GOLDEN_RATIO_64;
+  	long h = BaseUtil.GOLDEN_RATIO_64;
     for (int i = 0; i < arity; i++)
     {
       h |= names[i].hashCode();
@@ -388,39 +389,11 @@ public class MemoryJRecord extends JRecord {
       names[i].copy(r.getName(i));
       values[i].copy(r.getValue(i));
     }
-//    reorg(); 		// not needed because source record is already sorted
+    reorg(); 		
 	} 
 
-  
-
-  // -- currently unused methods (might be useful later) ------------------------------------------
-  
-  protected void remove(int index) {
-  	System.arraycopy(names, index+1, names, index, arity-(index+1));
-  	System.arraycopy(values, index+1, values, index, arity-(index+1));
-  	setArity(arity-1);
+  /** Called whenever names have changed positions. Used by subclasses. */
+  protected void reorg() {
+  	// all methods maintain sorted order --> no actions required
   }
-  
-	protected void reorg() {
-		// bubble sort (usually already sorted when reorg() is called)
-		boolean changed = false;
-		for (int i=0; i<arity-1 && !changed; i++) {
-			changed = false;
-			for (int j=i+1; j<arity; j++) {
-				int c = names[i].compareTo(names[j]);
-				if (c > 0) {
-					JString temp = names[i];
-					names[i] = names[j];
-					names[j] = temp;
-					
-					Item temp1 = values[i];
-					values[i] = values[j];
-					values[j] = temp1;
-					
-					changed = true;
-				}
-			}
-		}
-	}
-
 }
