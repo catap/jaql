@@ -250,15 +250,6 @@ fi
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   HADOOP_OPTS="$HADOOP_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
-# 
+
 # run it
-
-# save, then modify terminal settings 
-STTY_STATE=`stty -g 2>/dev/null` 
-"stty -icanon min 1 -echo;" 2>/dev/null
-
-#exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
 "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
-
-# restore terminal settings (will not be executed if exec "$JAVA" ... is used)
-stty $STTY_STATE 2>/dev/null

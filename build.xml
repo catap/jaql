@@ -341,8 +341,9 @@
         <mkdir dir="${tmp.dir}" />
 
         <!-- copy over files to tmp to jar -->
-        <copy todir="${tmp.dir}"
-              file="${build.dir}/test/classes/JaqlShell.class" />
+        <copy todir="${tmp.dir}">
+          <fileset dir="${build.dir}/test/classes/" includes="JaqlShell*.class" />
+        </copy>
 
         <copy todir="${tmp.dir}/org/apache/hadoop/mapred"
               file="${build.dir}/classes/org/apache/hadoop/mapred/PublicMergeSorter.class" />
@@ -425,6 +426,15 @@
         </javadoc>
     </target>
 
+
+    <!-- ================================================================== -->
+    <!-- Filesets                                                           -->
+    <!-- ================================================================== -->
+    <fileset dir="${bin.dir}" id="bin.files">
+      <include name="jaql" />
+      <include name="jaqlshell" />
+    </fileset>
+
     <!-- ================================================================== -->
     <!-- Jaql Binary Distribution                                           -->
     <!-- ================================================================== -->
@@ -450,7 +460,9 @@
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin" file="${bin.dir}/jaql" />
+        <copy todir="${build.dir}/jaql-${version}/bin">
+          <fileset refid="bin.files" />
+        </copy>
 
         <copy todir="${build.dir}/jaql-${version}"
               file="${build.dir}/jaql.jar" />
@@ -490,7 +502,9 @@
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin" file="${bin.dir}/jaql" />
+        <copy todir="${build.dir}/jaql-${version}/bin">
+          <fileset refid="bin.files" />
+        </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/lib" />
         <copy todir="${build.dir}/jaql-${version}/lib">
@@ -525,7 +539,9 @@
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin" file="${bin.dir}/jaql" />
+        <copy todir="${build.dir}/jaql-${version}/bin">
+          <fileset refid="bin.files" />
+        </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/lib" />
         <copy todir="${build.dir}/jaql-${version}/lib">
