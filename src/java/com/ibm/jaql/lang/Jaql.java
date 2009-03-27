@@ -83,19 +83,23 @@ public class Jaql
 //    }
 //  }
 
-  public static void main1(String av[]) throws Exception
+  public static void main1(String[] args) throws Exception
   {
-    InputStream input;
-	if (av.length > 0) {
-	  input = new FileInputStream(av[0]);
-	} else {
-	  try {
-	    input = new ConsoleReaderInputStream(new ConsoleReader());
-	  } catch (IOException e) {
-	    input = System.in;
-	  }
-	}
-    JaqlLexer lexer = new JaqlLexer(input);
+    InputStream in;
+    if (args.length > 0) {
+    	in = new FileInputStream(args[0]);
+    } else {
+    	try {
+    		in = new ConsoleReaderInputStream(new ConsoleReader());
+    	} catch (IOException e) {
+    		in = System.in;
+    	}
+    }
+    main(in);
+  }
+  
+  public static void main(InputStream in) throws Exception {
+    JaqlLexer lexer = new JaqlLexer(in);
     JaqlParser parser = new JaqlParser(lexer);
     Context context = new Context();
     RewriteEngine rewriter = new RewriteEngine();
