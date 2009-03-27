@@ -342,7 +342,7 @@
 
         <!-- copy over files to tmp to jar -->
         <copy todir="${tmp.dir}">
-          <fileset dir="${build.dir}/test/classes/" includes="JaqlShell*.class" />
+          <fileset dir="${build.dir}/test/classes/" includes="JaqlShell.class" />
         </copy>
 
         <copy todir="${tmp.dir}/org/apache/hadoop/mapred"
