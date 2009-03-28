@@ -30,7 +30,7 @@
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <!-- Default version is 0.18.3. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0 -->
+    <!-- Default version is 0.18.3. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0, 0.19.1 -->
     <property name="hadoop.version" value="0.18.3" />
 
     <property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
@@ -58,7 +58,7 @@
     <!-- <property name="jaql.mapred.mode" value="cluster"/> -->
     <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
     <property name="tmp.dir" value="${build.dir}/tmp" />
-    <property name="year" value="2008" />
+    <property name="year" value="2009" />
     <property name="version" value="0.4" />
     <property name="Name" value="jaql" />
     <property name="name" value="jaql" />
