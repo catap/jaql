@@ -484,8 +484,8 @@
         <tar compression="gzip"
              longfile="gnu"
              destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
-            <tarfileset dir="${build.dir}/jaql-${version}"
-                        prefix="jaql-${version}" />
+            <tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
+            <tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
         </tar>
     </target>
 
