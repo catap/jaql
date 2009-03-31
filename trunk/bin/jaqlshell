@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -i
 # 
 # Run the jaql shell
 
@@ -6,12 +6,13 @@ if [ "$JAQL_HOME" = "" ]; then
 	echo "Error, JAQL_HOME must be set"
 	exit 1
 fi
+export PATH=${JAQL_HOME}/bin:$PATH
 
 # save, then modify terminal settings 
 STTY_STATE=`stty -g 2>/dev/null` 
 "stty -icanon min 1 -echo;" 2>/dev/null
 
-$JAQL_HOME/bin/jaql JaqlShell $*
+jaql JaqlShell $*
 
 # restore terminal settings
 stty $STTY_STATE 2>/dev/null
