@@ -183,41 +183,18 @@ public final class ForExpr extends IterExpr // TODO: rename
     final BindingExpr inBinding = binding();
     final Expr collectExpr = collectExpr();
 
-    final Iter inIter = inBinding.inExpr().iter(context);
+    final Iter inIter = inBinding.iter(context);
 
-    //    // If the input is null, return null
-    //    if( inIter.isNull() )
-    //    {
-    //      return Iter.nil;
-    //    }
-    //
-    //    // If every iteration returns null, return null
-    //    Iter iter;
-    //    do
-    //    {
-    //      Item item = inIter.next();
-    //      if( item == null )
-    //      {
-    //        return Iter.nil;
-    //      }
-    //      context.setVar(inBinding.var, item);
-    //      iter = collectExpr.iter(context);
-    //    }
-    //    while( iter.isNull() );
-    //    
-    //    // Return a non-null result
-    //    final Iter tmpIter = iter;
-
-    return new Iter() {
-      //      Iter collectIter = tmpIter;
-      Iter collectIter = Iter.empty;
+    return new Iter() 
+    {
+      Iter inner = Iter.empty;
 
       public Item next() throws Exception
       {
         while (true)
         {
           Item item;
-          while ((item = collectIter.next()) != null)
+          while ((item = inner.next()) != null)
           {
             return item;
           }
@@ -227,9 +204,8 @@ public final class ForExpr extends IterExpr // TODO: rename
           {
             return null;
           }
-          context.setVar(inBinding.var, item);
 
-          collectIter = collectExpr.iter(context);
+          inner = collectExpr.iter(context);
         }
       }
     };

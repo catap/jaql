@@ -73,7 +73,7 @@ public class PathArrayHead extends PathArray
   @Override
   public Iter iter(final Context context) throws Exception
   {
-    JArray arr = (JArray)context.pathInput.get();
+    JArray arr = (JArray)input.get();
     if( arr == null )
     {
       return Iter.empty;

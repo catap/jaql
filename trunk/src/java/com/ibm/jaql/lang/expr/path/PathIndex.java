@@ -71,7 +71,7 @@ public class PathIndex extends PathStep
   @Override
   public Item eval(Context context) throws Exception
   {
-    JArray arr = (JArray)context.pathInput.get();
+    JArray arr = (JArray)input.get();
     if( arr == null )
     {
       return Item.nil;

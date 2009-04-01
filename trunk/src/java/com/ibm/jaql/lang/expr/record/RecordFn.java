@@ -30,6 +30,9 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "record", minArgs = 1, maxArgs = 1)
 public class RecordFn extends Expr // TODO: make into an aggregate?
 {
+  protected MemoryJRecord rec;
+  protected Item resultRec;
+
   /**
    * @param exprs
    */
@@ -45,12 +48,10 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
    */
   public Item eval(final Context context) throws Exception
   {
-    Item resultRec = context.getTemp(this);
-    MemoryJRecord rec = (MemoryJRecord) resultRec.get();
     if (rec == null)
     {
       rec = new MemoryJRecord();
-      resultRec.set(rec);
+      resultRec = new Item(rec);
     }
     else
     {

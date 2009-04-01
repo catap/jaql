@@ -77,7 +77,7 @@ public class PathFieldValue extends PathStep
   @Override
   public Item eval(Context context) throws Exception
   {
-    JRecord rec = (JRecord)context.pathInput.get();
+    JRecord rec = (JRecord)input.get();
     if( rec == null )
     {
       return Item.nil;

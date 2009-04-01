@@ -225,6 +225,8 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
     final int n = numAggs();
     
     Aggregate[] aggs = new Aggregate[n]; // TODO: memory
+    FixedJArray tmpArray = new FixedJArray(1);
+    Item tmpItem = new Item(tmpArray);
     for(int i = 0 ; i < n ; i++)
     {
       aggs[i] = agg(i);
@@ -235,10 +237,12 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
     Iter iter = in.inExpr().iter(context);
     Item item;
 
+    in.var.set(tmpItem);
     while( (item = iter.next()) != null )
     {
       hadInput = true;
-      context.setVar(in.var, item);
+      // context.setVar(in.var, item);
+      tmpArray.set(0,item);
       for(int i = 0 ; i < n ; i++)
       {
         aggs[i].evalInitial(context);

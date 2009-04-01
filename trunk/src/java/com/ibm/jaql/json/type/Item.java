@@ -37,14 +37,19 @@ public final class Item implements WritableComparable // , Cloneable
   {
     UNKNOWN(null, ""), // bogus item type used as an indicator
     // UNDEFINED(null, null), // reserved for possible inclusion of the undefined value
-    NULL(null, "null"), ARRAY(JArray.class, "array"), RECORD(JRecord.class,
-        "record"), BOOLEAN(JBool.class, "boolean"), STRING(JString.class,
-        "string"), NUMBER(JNumber.class, "number"),
+    NULL(null, "null"), 
+    ARRAY(JArray.class, "array"), 
+    RECORD(JRecord.class, "record"),
+    BOOLEAN(JBool.class, "boolean"),
+    STRING(JString.class, "string"),
+    NUMBER(JNumber.class, "number"),
 
     // JSON extensions
 
-    BINARY(JBinary.class, "binary"), DATE(JDate.class, "date"), SCHEMA(
-        JSchema.class, "type"), FUNCTION(JFunction.class, "function"),
+    BINARY(JBinary.class, "binary"),
+    DATE(JDate.class, "date"),
+    SCHEMA(JSchema.class, "type"),
+    FUNCTION(JFunction.class, "function"),
 
     // Extensiblity for writable java objects, but the class name is written on every instance!
 
@@ -98,17 +103,24 @@ public final class Item implements WritableComparable // , Cloneable
   {
     UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
     // UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
-    NULL(2, null, Type.NULL), ARRAY_SPILLING(3, SpillJArray.class, Type.ARRAY), ARRAY_FIXED(
-        4, FixedJArray.class, Type.ARRAY), MEMORY_RECORD(5,
-        MemoryJRecord.class, Type.RECORD), BOOLEAN(6, JBool.class, Type.BOOLEAN), STRING(
-        7, JString.class, Type.STRING), BINARY(8, JBinary.class, Type.BINARY), LONG(
-        9, JLong.class, Type.NUMBER), DECIMAL(10, JDecimal.class, Type.NUMBER), DATE_MSEC(
-        11, JDate.class, Type.DATE), FUNCTION(12, JFunction.class,
-        Type.FUNCTION), SCHEMA(13, JSchema.class, Type.SCHEMA), JAVAOBJECT_CLASSNAME(
-        14, JJavaObject.class, Type.JAVAOBJECT), // extension type that lists class name next
-    REGEX(15, JRegex.class, Type.REGEX), SPAN(16, JSpan.class, Type.SPAN), DOUBLE(
-        17, JDouble.class, Type.DOUBLE), JAVA_RECORD(18, JavaJRecord.class,
-        Type.RECORD), JAVA_ARRAY(19, JavaJRecord.class, Type.ARRAY);
+    NULL(2, null, Type.NULL),
+    ARRAY_SPILLING(3, SpillJArray.class, Type.ARRAY),
+    ARRAY_FIXED(4, FixedJArray.class, Type.ARRAY),
+    MEMORY_RECORD(5, MemoryJRecord.class, Type.RECORD),
+    BOOLEAN(6, JBool.class, Type.BOOLEAN),
+    STRING(7, JString.class, Type.STRING),
+    BINARY(8, JBinary.class, Type.BINARY),
+    LONG(9, JLong.class, Type.NUMBER),
+    DECIMAL(10, JDecimal.class, Type.NUMBER),
+    DATE_MSEC(11, JDate.class, Type.DATE),
+    FUNCTION(12, JFunction.class, Type.FUNCTION),
+    SCHEMA(13, JSchema.class, Type.SCHEMA),
+    JAVAOBJECT_CLASSNAME(14, JJavaObject.class, Type.JAVAOBJECT), // extension type that lists class name next
+    REGEX(15, JRegex.class, Type.REGEX),
+    SPAN(16, JSpan.class, Type.SPAN),
+    DOUBLE(17, JDouble.class, Type.DOUBLE),
+    JAVA_RECORD(18, JavaJRecord.class, Type.RECORD), 
+    JAVA_ARRAY(19, JavaJRecord.class, Type.ARRAY);
 
     public final static int                                        LIMIT        = 20;                                             // keep at max id + 1
     private static final Encoding[]                                idToEncoding = new Encoding[LIMIT];

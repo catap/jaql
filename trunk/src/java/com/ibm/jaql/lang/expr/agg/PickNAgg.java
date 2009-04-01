@@ -61,6 +61,10 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
   @Override
   public void addInitial(Item item) throws Exception
   {
+    if( item.isNull() )
+    {
+      return;
+    }
     if( array.count() < limit )
     {
       array.add(item);

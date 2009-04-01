@@ -86,27 +86,14 @@ public abstract class Rewrite
     }
     for (Expr e = varExpr.parent(); e != null; e = e.parent())
     {
-      if (e instanceof DefineFunctionExpr)
+      for (Expr c : e.children())
       {
-        for (Var p : ((DefineFunctionExpr) e).params())
+        if (c instanceof BindingExpr)
         {
-          if (p == var)
+          BindingExpr b = (BindingExpr) c;
+          if (b.var == var || b.var2 == var)
           {
-            return e;
-          }
-        }
-      }
-      else
-      {
-        for (Expr c : e.children())
-        {
-          if (c instanceof BindingExpr)
-          {
-            BindingExpr b = (BindingExpr) c;
-            if (b.var == var || b.var2 == var)
-            {
-              return b;
-            }
+            return b;
           }
         }
       }
@@ -125,31 +112,18 @@ public abstract class Rewrite
     Expr prev = atExpr;
     for (Expr e = atExpr.parent(); e != null; e = e.parent())
     {
-      if (e instanceof DefineFunctionExpr)
+      int i = prev.getChildSlot();
+      // look for bindings as direct children before us
+      for (i = i - 1; i >= 0; i--)
       {
-        for (Var p : ((DefineFunctionExpr) e).params())
+        Expr c = e.child(i);
+        if (c instanceof BindingExpr)
         {
-          if (p.name.equals(varName))
+          BindingExpr b = (BindingExpr) c;
+          if (varName.equals(b.var.name)
+              || (b.var2 != null && varName.equals(b.var2.name)))
           {
-            return e;
-          }
-        }
-      }
-      else
-      {
-        int i = prev.getChildSlot();
-        // look for bindings as direct children before us
-        for (i = i - 1; i >= 0; i--)
-        {
-          Expr c = e.child(i);
-          if (c instanceof BindingExpr)
-          {
-            BindingExpr b = (BindingExpr) c;
-            if (varName.equals(b.var.name)
-                || (b.var2 != null && varName.equals(b.var2.name)))
-            {
-              return b;
-            }
+            return b;
           }
         }
       }

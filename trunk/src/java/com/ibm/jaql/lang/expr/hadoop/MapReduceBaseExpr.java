@@ -44,9 +44,7 @@ import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
-import com.ibm.jaql.lang.expr.array.StashIterExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -280,6 +278,8 @@ public abstract class MapReduceBaseExpr extends Expr
 
     public void close() throws IOException
     {
+      // TODO: might want sub-query indicator
+      context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     }
   }
 
@@ -289,7 +289,6 @@ public abstract class MapReduceBaseExpr extends Expr
   public static class MapEval extends RemoteEval
       implements MapRunnable<Item, Item, Item, Item>
   {
-    Item[]      args        = new Item[1];
     int         inputId     = 0;
     JFunction   mapFn;
     Item[]      outKeyValue = new Item[2];
@@ -332,16 +331,8 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       try
       {
-//        Item key = input.createKey();
-//        Item value = input.createValue();
-//        while( input.next(key, value) )
-//        {
-//          args[0] = value;
-        Expr[] args = new Expr[] { 
-            new StashIterExpr(new RecordReaderValueIter(input))
-        };
-        
-        Iter iter = mapFn.iter(context, args);
+        mapFn.param(0).set(new RecordReaderValueIter(input));
+        Iter iter = mapFn.iter(context);
         Item item;
         while ((item = iter.next()) != null)
         {

@@ -28,6 +28,10 @@ import com.ibm.jaql.util.Bool3;
  */
 public abstract class IterExpr extends Expr
 {
+  // Runtime state:
+  protected SpillJArray tempArray;
+  protected Item tempItem;
+
   /**
    * @param inputs
    */
@@ -102,14 +106,12 @@ public abstract class IterExpr extends Expr
     {
       return Item.nil;
     }
-    Item item = context.getTemp(this);
-    SpillJArray table = (SpillJArray) item.get();
-    if (table == null)
+    if( tempItem == null )
     {
-      table = new SpillJArray();
-      item.set(table);
+      tempArray = new SpillJArray();
+      tempItem = new Item(tempArray);
     }
-    table.set(iter);
-    return item;
+    tempArray.set(iter);
+    return tempItem;
   }
 }

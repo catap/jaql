@@ -23,7 +23,11 @@ import com.ibm.jaql.lang.expr.core.Expr;
 
 public abstract class PathStep extends Expr
 {
-
+  /**
+   * This value is set by the parent PathStep/PathExpr before eval()/iter() is called.
+   */
+  protected Item input;
+  
   /**
    * @param exprs
    */
@@ -117,7 +121,8 @@ public abstract class PathStep extends Expr
    */
   protected Item nextStep(Context context, Item input) throws Exception
   {
-    context.pathInput = input;
-    return nextStep().eval(context);
+    PathStep s = nextStep();
+    s.input = input;
+    return s.eval(context);
   }
 }

@@ -36,7 +36,6 @@ public class Env
   private Env                  globalEnv;
   private HashMap<String, Var> nameMap = new HashMap<String, Var>();
   //  private HashMap<Var, Var> globalVars = new HashMap<Var, Var>(); // global vars imported into this local scope as this local var
-  private int                  index   = 0;
   private int                  varId   = 0;
 
   /** Initializes an local environment. The global environment corresponding to this
@@ -55,7 +54,6 @@ public class Env
   {
     nameMap.clear();
     //    globalVars.clear();
-    index = 0;
     varId = 0;
   }
 
@@ -96,8 +94,7 @@ public class Env
    */
   public Var scope(String varName)
   {
-    Var var = new Var(varName, index);
-    index++;
+    Var var = new Var(varName);
     scope(var);
     return var;
   }

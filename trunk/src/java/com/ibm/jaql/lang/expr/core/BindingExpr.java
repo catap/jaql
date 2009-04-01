@@ -173,7 +173,7 @@ public class BindingExpr extends Expr
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
     Item item = exprs[0].eval(context);
-    context.setVar(var, item);
+    var.set(item);
     return item;
   }
 
@@ -181,7 +181,7 @@ public class BindingExpr extends Expr
   public Iter iter(final Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    context.setVar(var, Item.nil);
+    var.set(Item.nil);
     final Iter iter = exprs[0].iter(context);
     return new Iter()
     {
@@ -191,11 +191,11 @@ public class BindingExpr extends Expr
         Item item = iter.next();
         if( item != null )
         {
-          context.setVar(var, item);
+          var.set(item);
         }
         else
         {
-          context.setVar(var, Item.nil);
+          var.set(Item.nil);
         }
         return item;
       }

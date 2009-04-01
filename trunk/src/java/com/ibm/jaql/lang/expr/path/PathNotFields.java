@@ -16,39 +16,41 @@
 package com.ibm.jaql.lang.expr.path;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 
-public class PathArrayAll extends PathArray
+/**
+ * @author kbeyer
+ *
+ */
+public class PathNotFields extends PathFields
 {
+  private static Expr[] makeArgs(ArrayList<PathStep> fields)
+  {
+    Expr[] es = fields.toArray(new Expr[fields.size()+1]);
+    es[fields.size()] = new PathReturn();
+    return es;
+  }
+
   /**
    * @param exprs
    */
-  public PathArrayAll(Expr[] exprs)
+  public PathNotFields(Expr[] exprs)
   {
     super(exprs);
   }
 
   /**
    */
-  public PathArrayAll()
+  public PathNotFields(ArrayList<PathStep> fields)
   {
-    super(new PathReturn());
-  }
-
-  /**
-   * @param next
-   */
-  public PathArrayAll(Expr next)
-  {
-    super(next);
+    super(makeArgs(fields));
   }
 
   /**
@@ -57,36 +59,29 @@ public class PathArrayAll extends PathArray
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
   {
-    exprText.print("[*]");
-    exprs[0].decompile(exprText, capturedVars);
+    exprText.print("* -");
+    for(int i = 0 ; i < exprs.length ; i++)
+    {
+      exprText.print(' ');
+      exprs[i].decompile(exprText, capturedVars);
+    }
   }
 
-
   /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
+   * @see com.ibm.jaql.lang.expr.core.PathFields#matches(com.ibm.jaql.lang.core.Context, com.ibm.jaql.json.type.JString)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public boolean matches(Context context, JString name) throws Exception
   {
-    final JArray arr = (JArray)input.get();
-    if( arr == null )
+    int n = exprs.length - 1;
+    for(int i = 0 ; i < n ; i++)
     {
-      return Iter.empty;
-    }
-    return new Iter()
-    {
-      final Iter iter = arr.iter();
-      
-      @Override
-      public Item next() throws Exception
+      PathOneField f = (PathOneField)exprs[i];
+      if( f.matches(context, name) )
       {
-        Item item = iter.next();
-        if( item != null )
-        {
-          return nextStep(context, item);
-        }
-        return null;
+        return false;
       }
-    };
+    }
+    return true;
   }
 }
