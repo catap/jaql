@@ -47,13 +47,17 @@ public final class MaxAgg extends AlgebraicAggregate
   @Override
   public void initInitial(Context context) throws Exception
   {
-    max = null;
+    max = Item.nil;
   }
 
   @Override
   public void addInitial(Item item) throws Exception
   {
-    if( max == null )
+    if( item.isNull() )
+    {
+      return;
+    }
+    if( max == Item.nil )
     {
       max = new Item();
       max.copy(item);

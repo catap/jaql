@@ -173,7 +173,7 @@ public final class ReduceExpr extends Expr
     Item item;
     while ((item = iter.next()) != null)
     {
-      context.setVar(b.var, item);
+      b.var.set(item);
       for (int i = 0; i < n; i++)
       {
         aggs[i].addMore();
@@ -183,7 +183,7 @@ public final class ReduceExpr extends Expr
     for (int i = 0; i < n; i++)
     {
       item = aggs[i].eval();
-      context.setVar(aggBinding(i).var, item);
+      aggBinding(i).var.set(item);
     }
 
     item = returnExpr().eval(context);

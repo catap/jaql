@@ -54,13 +54,30 @@ public class ItemComparator implements JComparator
         int code1 = walker1.next();
         int code2 = walker2.next();
 
+        if( code1 < 0 ) // end array/record/file
+        {
+          if( code2 < 0 )
+          {
+            assert code1 == code2;
+            return 0;
+          }
+          else
+          {
+            return -1;
+          }
+        }
+        else if( code2 < 0 )
+        {
+          return +1;
+        }
+
         c = walker1.type.compareTo(walker2.type);
-        if (c != 0)
+        if( c != 0 )
         {
           return c;
         }
         assert code1 == code2;
-
+        
         if (code1 == ItemWalker.ATOM || code1 == ItemWalker.FIELD_NAME)
         {
           JValue v1 = walker1.getAtom();
@@ -70,10 +87,6 @@ public class ItemComparator implements JComparator
           {
             return c;
           }
-        }
-        else if (code1 == ItemWalker.EOF)
-        {
-          return 0;
         }
       }
     }

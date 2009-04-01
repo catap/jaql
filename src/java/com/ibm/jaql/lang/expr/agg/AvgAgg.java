@@ -57,6 +57,10 @@ public class AvgAgg extends AlgebraicAggregate
   @Override
   public void addInitial(Item item) throws Exception
   {
+    if( item.isNull() )
+    {
+      return;
+    }
     summer.add(item);
     count++;
   }

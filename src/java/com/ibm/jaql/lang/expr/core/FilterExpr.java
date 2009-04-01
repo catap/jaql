@@ -133,7 +133,7 @@ public final class FilterExpr extends IterExpr
   {
     final BindingExpr inBinding = binding();
     final Expr pred = predicate();
-    final Iter inIter = inBinding.inExpr().iter(context);
+    final Iter inIter = inBinding.iter(context);
 
     return new Iter() {
       public Item next() throws Exception
@@ -145,7 +145,6 @@ public final class FilterExpr extends IterExpr
           {
             return null;
           }
-          context.setVar(inBinding.var, item);
           if( JaqlUtil.ebv(pred.eval(context)) )
           {
             return item;

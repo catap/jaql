@@ -19,11 +19,12 @@ import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-public class PathExpr extends PathStep
+public final class PathExpr extends Expr
 {
   /**
    * @param exprs
@@ -53,6 +54,22 @@ public class PathExpr extends PathStep
   }
 
   /**
+   * Return the first step of the path expression.
+   */
+  public PathStep firstStep()
+  {
+    return (PathStep)exprs[1];
+  }
+
+  /**
+   * Return the last step of the path expression.
+   */
+  public PathStep getReturn() // TODO: Should this be a PathReturn?
+  {
+    return firstStep().getReturn();
+  }
+
+  /**
    * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
@@ -70,7 +87,19 @@ public class PathExpr extends PathStep
   @Override
   public Item eval(Context context) throws Exception
   {
-    Item input = exprs[0].eval(context);
-    return nextStep(context, input);
+    PathStep s = firstStep();
+    s.input = exprs[0].eval(context);
+    return s.eval(context);
+  }
+
+  /**
+   * 
+   */
+  @Override
+  public Iter iter(Context context) throws Exception
+  {
+    PathStep s = firstStep();
+    s.input = exprs[0].eval(context);
+    return s.iter(context);
   }
 }

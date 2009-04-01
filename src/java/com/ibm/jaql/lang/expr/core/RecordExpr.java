@@ -33,6 +33,9 @@ import com.ibm.jaql.util.Bool3;
  */
 public class RecordExpr extends Expr
 {
+  protected MemoryJRecord rec;
+  protected Item result;
+
   /**
    * every exprs[i] is a FieldExpr
    * 
@@ -213,12 +216,10 @@ public class RecordExpr extends Expr
    */
   public Item eval(Context context) throws Exception
   {
-    Item result = context.getTemp(this);
-    MemoryJRecord rec = (MemoryJRecord) result.get();
     if (rec == null)
     {
       rec = new MemoryJRecord();
-      result.set(rec);
+      result = new Item(rec);
     }
     else
     {

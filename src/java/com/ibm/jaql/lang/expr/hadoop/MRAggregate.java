@@ -36,7 +36,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
-import com.ibm.jaql.lang.expr.array.StashIterExpr;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -161,10 +160,11 @@ public class MRAggregate extends MapReduceBaseExpr
         FixedJArray aggArray = new FixedJArray(aggs.length);
         Item aggItem = new Item(aggArray);
 
-        Expr[] args = new Expr[] {
-          new StashIterExpr(new RecordReaderValueIter(input))
-        };
-        Iter iter = mapFn.iter(context, args);
+        mapFn.param(0).set(new RecordReaderValueIter(input));
+        Iter iter = mapFn.iter(context);
+
+        FixedJArray tmpArray = new FixedJArray(1);
+        Item tmpItem = new Item(tmpArray);
 
         Item item;
         while ((item = iter.next()) != null)
@@ -173,8 +173,9 @@ public class MRAggregate extends MapReduceBaseExpr
           if (pair != null)
           {
             pair.getTuple(mappedKeyValue);
-            context.setVar(keyVar, mappedKeyValue[0]);
-            context.setVar(valVar, mappedKeyValue[1]);
+            keyVar.set(mappedKeyValue[0]);
+            tmpArray.set(0, mappedKeyValue[1]);
+            valVar.set(tmpItem);
             for( int i = 0 ; i < aggs.length ; i++ )
             {
               AlgebraicAggregate agg = aggs[i];
@@ -245,7 +246,7 @@ public class MRAggregate extends MapReduceBaseExpr
           aggs[i].initPartial(context);
         }
 
-        context.setVar(keyVar, key);
+        keyVar.set(key);
         
         while( values.hasNext() )
         {

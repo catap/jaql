@@ -128,6 +128,10 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   @Override
   public void addInitial(Item item) throws Exception
   {
+    if( item.isNull() )
+    {
+      return;
+    }
     // BindingExpr b = binding();
     Item combined;
     if (agg[bufIdx].isNull())

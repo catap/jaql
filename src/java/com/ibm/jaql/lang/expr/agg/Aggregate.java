@@ -107,10 +107,11 @@ public abstract class Aggregate extends Expr
    */
   public void evalInitial(Context context) throws Exception
   {
-    Item arg = exprs[0].eval(context);
-    if( ! arg.isNull() )
+    Iter iter = exprs[0].iter(context);
+    Item item;
+    while( (item = iter.next()) != null )
     {
-      addInitial(arg);
+      addInitial(item);
     }
   }
 

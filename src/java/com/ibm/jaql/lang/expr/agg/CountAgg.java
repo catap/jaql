@@ -60,13 +60,6 @@ public final class CountAgg extends AlgebraicAggregate
     return new Item(new JLong(count));
   }
 
-  public void evalInitial(Context context) throws Exception
-  {
-    // Item arg = exprs[0].eval(context);
-    // addInitial(arg);
-    count++;
-  }
-
   @Override
   public void initInitial(Context context) throws Exception
   {

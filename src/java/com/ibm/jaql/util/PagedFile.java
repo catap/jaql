@@ -18,6 +18,7 @@ package com.ibm.jaql.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ConcurrentModificationException;
 
 /** 
  * Methods to access a file consisting of a set of pages, including method to 
@@ -25,13 +26,14 @@ import java.nio.channels.FileChannel;
  * correspond to the order of their allocation, as freed pages will be  reused to 
  * satisfy subsequent allocations. 
  */
-public class PagedFile
+public final class PagedFile
 {
   public static final int allocSize = 10; // number of pages to allocate at a time
 
   protected FileChannel   file;
   protected ByteBuffer    freeList;	// list of free pages
   protected long          fileEnd;
+  protected int           version;
 
   /**
    * pageSize must be a multiple of 8, >= 256, and acceptable to ByteBuffer
@@ -80,6 +82,15 @@ public class PagedFile
     }
   }
 
+  /**
+   * 
+   * @return
+   */
+  public int getVersion()
+  {
+    return this.version;
+  }
+
   /** 
    * @return
    */
@@ -94,6 +105,7 @@ public class PagedFile
   public synchronized void clear()
   {
     // init the freeList
+    version++;
     fileEnd = pageSize(); // the first page is the file header
     freeList.clear();
     freeList.putLong(-1);
@@ -134,29 +146,55 @@ public class PagedFile
    * @param offset
    * @throws IOException
    */
-  public synchronized void freePage(long offset) throws IOException
+  public synchronized int freePage(int expectedVersion, long offset) throws IOException
   {
-    if (freeList.hasRemaining())
+    if( expectedVersion == version )
     {
-      // If there is room in the in-memory free list, add this page there 
-      freeList.putLong(offset);
+      if (freeList.hasRemaining())
+      {
+        // If there is room in the in-memory free list, add this page there 
+        freeList.putLong(offset);
+      }
+      else
+      {
+        // If there is NO room in the in-memory free list, write the current free list to this page 
+        freeList.clear();
+        file.write(freeList, offset);
+        freeList.clear();
+        freeList.putLong(offset); // next page of free page pointers is this page
+      }
     }
-    else
+    return version;
+  }
+
+  /** Clears this file. Implemented by reading and then freeing all used pages, which might 
+   * be expensive. 
+   * @throws IOException */
+  // TODO: free page directory could be head of linked list of pages, or SpillFile can use page directories 
+  public int freePageList(int expectedVersion, long firstPage, ByteBuffer buffer)
+    throws IOException
+  {
+    if( expectedVersion == version )
     {
-      // If there is NO room in the in-memory free list, write the current free list to this page 
-      freeList.clear();
-      file.write(freeList, offset);
-      freeList.clear();
-      freeList.putLong(offset); // next page of free page pointers is this page
+      for (long page = firstPage; page >= 0; page = buffer.getLong(0))
+      {
+        read(version, buffer, page);
+        freePage(version, page);
+      }
     }
+    return version;
   }
 
   /**
    * @return
    * @throws IOException
    */
-  public synchronized long allocatePage() throws IOException
+  public synchronized long allocatePage(int expectedVersion) throws IOException
   {
+    if( expectedVersion != version )
+    {
+      throw new ConcurrentModificationException();
+    }
     int n = freeList.position() - 8;
     assert n >= 0;
     if (n == 0)
@@ -178,7 +216,7 @@ public class PagedFile
         for (int i = 0; i < allocSize; i++)
         {
           page -= pageSize;
-          freePage(page);
+          freePage(expectedVersion, page);
         }
       }
       n = freeList.position() - 8;
@@ -197,8 +235,12 @@ public class PagedFile
    * @param offset
    * @throws IOException
    */
-  public void write(ByteBuffer buffer, long offset) throws IOException
+  public void write(int expectedVersion, ByteBuffer buffer, long offset) throws IOException
   {
+    if( expectedVersion != version )
+    {
+      throw new ConcurrentModificationException();
+    }
     buffer.clear(); // write the whole page
     file.write(buffer, offset);
   }
@@ -208,9 +250,9 @@ public class PagedFile
    * @return
    * @throws IOException
    */
-  public long write(ByteBuffer buffer) throws IOException
+  public long write(int expectedVersion, ByteBuffer buffer) throws IOException
   {
-    long offset = allocatePage();
+    long offset = allocatePage(expectedVersion);
     buffer.clear();
     file.write(buffer, offset);
     return offset;
@@ -221,8 +263,12 @@ public class PagedFile
    * @param offset
    * @throws IOException
    */
-  public void read(ByteBuffer buffer, long offset) throws IOException
+  public void read(int expectedVersion, ByteBuffer buffer, long offset) throws IOException
   {
+    if( expectedVersion != version )
+    {
+      throw new ConcurrentModificationException();
+    }
     buffer.clear();
     file.read(buffer, offset);
     buffer.position(0);

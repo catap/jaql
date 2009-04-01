@@ -47,13 +47,17 @@ public final class MinAgg extends AlgebraicAggregate
   @Override
   public void initInitial(Context context) throws Exception
   {
-    min = null;
+    min = Item.nil;
   }
 
   @Override
   public void addInitial(Item item) throws Exception
   {
-    if( min == null )
+    if( item.isNull() )
+    {
+      return;
+    }
+    if( min == Item.nil )
     {
       min = new Item();
       min.copy(item);

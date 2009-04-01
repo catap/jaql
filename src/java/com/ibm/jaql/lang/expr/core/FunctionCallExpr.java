@@ -21,6 +21,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
@@ -139,12 +140,7 @@ public class FunctionCallExpr extends Expr
       {
         return Item.nil;
       }
-      for (int i = 1; i < exprs.length; i++)
-      {
-        //args[i - 1] = exprs[i].eval(context);
-        args[i - 1] = exprs[i];
-      }
-      return fn.eval(context, args);
+      return fn.eval(context, exprs, 1, exprs.length - 1);
     }
 //    else if( fnVal instanceof JString )
 //    {
@@ -225,4 +221,15 @@ public class FunctionCallExpr extends Expr
 //    }
   }
 
+  @Override
+  public Iter iter(Context context) throws Exception
+  {
+    JValue fnVal = exprs[0].eval(context).get();
+    JFunction fn = (JFunction)fnVal;
+    if (fn == null)
+    {
+      return Iter.nil;
+    }
+    return fn.iter(context, exprs, 1, exprs.length - 1);
+  }
 }

@@ -43,7 +43,7 @@ public class SelectExpr extends IterExpr
   {
     BindingExpr b = (BindingExpr)exprs[0];
     JArray arr = (JArray)b.inExpr().eval(context).get();
-    context.setVar(b.var, arr.iter());
+    b.var.set(arr.iter());
 
     int n = exprs.length - 1;
     for(int i = 1 ; i < n ; i++)

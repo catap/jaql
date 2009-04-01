@@ -46,6 +46,7 @@ public class DoConstPragma extends Rewrite
     Item item = expr.eval(context);
     ConstExpr c = new ConstExpr(item);
     expr.replaceInParent(c);
+    context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     return true;
   }
 }

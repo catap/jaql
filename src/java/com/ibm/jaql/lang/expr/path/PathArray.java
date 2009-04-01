@@ -25,6 +25,8 @@ import com.ibm.jaql.lang.expr.core.Expr;
 
 public abstract class PathArray extends PathStep
 {
+  protected SpillJArray tempArray;
+  protected Item tempItem;
 
   /**
    * @param exprs
@@ -85,15 +87,13 @@ public abstract class PathArray extends PathStep
     {
       return Item.nil;
     }
-    Item item = context.getTemp(this);
-    SpillJArray table = (SpillJArray) item.get();
-    if (table == null)
+    if (tempArray == null)
     {
-      table = new SpillJArray();
-      item.set(table);
+      tempArray = new SpillJArray();
+      tempItem = new Item(tempArray);
     }
-    table.set(iter);
-    return item;
+    tempArray.set(iter);
+    return tempItem;
   }
 }
 
