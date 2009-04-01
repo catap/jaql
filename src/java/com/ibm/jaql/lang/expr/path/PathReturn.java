@@ -75,6 +75,6 @@ public class PathReturn extends PathStep
   @Override
   public Item eval(Context context) throws Exception
   {
-    return context.pathInput;
+    return input;
   }
 }

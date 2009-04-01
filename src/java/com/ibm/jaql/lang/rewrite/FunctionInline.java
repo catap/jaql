@@ -15,11 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import java.util.ArrayList;
-
 import com.ibm.jaql.lang.core.JFunction;
-import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -53,61 +49,48 @@ public class FunctionInline extends Rewrite
   {
     FunctionCallExpr call = (FunctionCallExpr) expr;
     Expr callFn = call.fnExpr();
-    Expr fnBody;
-    Var[] params;
+    DefineFunctionExpr f;
     if (callFn instanceof DefineFunctionExpr)
     {
-      DefineFunctionExpr fn = (DefineFunctionExpr) callFn;
-      fnBody = fn.body();
-      params = fn.params();
+      f = (DefineFunctionExpr)callFn;
     }
     else if (callFn instanceof ConstExpr)
     {
       ConstExpr c = (ConstExpr) callFn;
-      if (!(c.value.get() instanceof JFunction))
+      if( !(c.value.get() instanceof JFunction) )
       {
         // TODO: throw compile-time type-check error
         return false;
       }
-      JFunction fn = (JFunction) c.value.get();
-      fnBody = cloneExpr(fn.getBody());
-      params = new Var[fn.getNumParameters()];
-      for (int i = 0; i < params.length; i++)
-      {
-        Var v = fn.param(i);
-        params[i] = engine.varMap.get(v);
-      }
+      JFunction jf = (JFunction) c.value.get();
+      f =(DefineFunctionExpr)cloneExpr(jf.getFunction());
     }
     else
     {
       return false;
     }
 
-    int numParams = call.numArgs();
-    if (numParams != params.length)
+    int numParams = f.numParams();
+    if (numParams != call.numArgs())
     {
       throw new RuntimeException(
-          "invalid number of arguments to function. expected:" + params.length
-              + " got:" + numParams);
+          "invalid number of arguments to function. expected:" + numParams
+              + " got:" + call.numArgs());
     }
 
     // Inline zero-arg function by just its function body. 
     if (numParams == 0)
     {
-      call.replaceInParent(fnBody);
+      call.replaceInParent(f.body());
       return true;
     }
 
     // For functions with args, create a let to evaluate the args. 
-    ArrayList<Expr> bindings = new ArrayList<Expr>();
     for (int i = 0; i < numParams; i++)
     {
-      bindings.add(new BindingExpr(BindingExpr.Type.EQ, params[i], null, call
-          .arg(i)));
+      f.param(i).addChild(call.arg(i));
     }
-    bindings.add(fnBody);
-    DoExpr let = new DoExpr(bindings);
-
+    DoExpr let = new DoExpr(f.children());
     call.replaceInParent(let);
     return true;
   }

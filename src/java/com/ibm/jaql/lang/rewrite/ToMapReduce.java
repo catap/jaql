@@ -434,7 +434,7 @@ public class ToMapReduce extends Rewrite
     ReadFn reader = (ReadFn) mapSeg.primaryExpr;
     Expr input = reader.descriptor(); //reader.rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS));
     reader.replaceInParent(new VarExpr(valVar));
-    Expr mapFn = new DefineFunctionExpr(null, new Var[]{valVar}, expr);    
+    Expr mapFn = new DefineFunctionExpr(new Var[]{valVar}, expr);    
 
     keyVar = env.makeVar(group.byVar().name());
     expr = new ArrayExpr(aggs);
@@ -448,7 +448,7 @@ public class ToMapReduce extends Rewrite
     {
       valVar = env.makeVar("$unused");
     }
-    Expr aggFn = new DefineFunctionExpr(null, new Var[]{keyVar,valVar}, expr);
+    Expr aggFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, expr);
     
     keyVar = env.makeVar(group.byVar().name());
     valVar = env.makeVar("$vals");
@@ -467,7 +467,7 @@ public class ToMapReduce extends Rewrite
     }
     expr.replaceVar(group.byVar(), keyVar);
     expr.replaceVar(group.inBinding().var, valVar);
-    Expr finalFn = new DefineFunctionExpr(null, new Var[]{keyVar,valVar}, expr);
+    Expr finalFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, expr);
 
     Expr output;
     Expr lastExpr = groupSeg.root;
@@ -585,7 +585,7 @@ public class ToMapReduce extends Rewrite
       byExpr.replaceVar(b.var, v);
       Expr keyValPair = new ArrayExpr(byExpr, new VarExpr(v));
       Expr forExpr = new ForExpr(v, inExpr, new ArrayExpr(keyValPair));
-      mapFns[i] = new DefineFunctionExpr(null, new Var[]{inputState.mapIn}, forExpr);
+      mapFns[i] = new DefineFunctionExpr(new Var[]{inputState.mapIn}, forExpr);
     }
 
     // Make the output
@@ -611,7 +611,7 @@ public class ToMapReduce extends Rewrite
       group.replaceInParent(reduce);
       reduce = lastExpr;
     }
-    reduce = new DefineFunctionExpr(null, reduceParams, reduce);
+    reduce = new DefineFunctionExpr(reduceParams, reduce);
 
     Expr[] fnArgs = new Expr[5];
     Expr input;
@@ -729,7 +729,7 @@ public class ToMapReduce extends Rewrite
     expr = new ArrayExpr(new ConstExpr(Item.nil), new VarExpr(forVar));
     expr = new ForExpr(forVar, lastExpr, new ArrayExpr(expr));
 
-    Expr mapFn = new DefineFunctionExpr(null, new Var[]{mapIn}, expr);
+    Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);
 
     expr = new MapReduceFn(new RecordExpr(new Expr[]{
         new NameValueBinding("input", input),

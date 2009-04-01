@@ -151,7 +151,7 @@ public class SortExpr extends IterExpr
     }
     while ((item = iter.next()) != null)
     {
-      context.setVar(cmpVar, item);
+      cmpVar.set(item);
       Item byItem = cmp.eval(context);
 //      if (nby == 1)
 //      {

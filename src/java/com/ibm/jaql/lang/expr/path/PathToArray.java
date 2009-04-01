@@ -18,58 +18,81 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.ScalarIter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 
-/**
- * @author kbeyer
- *
- */
-public class PathPrefixFields extends PathFields
+public class PathToArray extends PathArray
 {
-
   /**
    * @param exprs
    */
-  public PathPrefixFields(Expr[] exprs)
+  public PathToArray(Expr[] exprs)
   {
     super(exprs);
   }
 
   /**
-   * @param name
    */
-  public PathPrefixFields(Expr name)
+  public PathToArray()
   {
-    super(name,new PathReturn());
+    super(new PathReturn());
   }
-  
+
+  /**
+   * @param next
+   */
+  public PathToArray(Expr next)
+  {
+    super(next);
+  }
+
   /**
    * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
   {
-    exprText.print(".(");
+    exprText.print("[?]");
     exprs[0].decompile(exprText, capturedVars);
-    exprText.print(")*");
-    exprs[1].decompile(exprText, capturedVars);
+  }
+  
+  @Override
+  public Iter iter(final Context context) throws Exception
+  {
+    JValue val = input.get();
+    if( val == null )
+    {
+      return Iter.nil; // TODO: empty or nil?
+    }
+    final Iter iter;
+    if( val instanceof JArray )
+    {
+      iter = ((JArray)val).iter();
+    }
+    else
+    {
+      iter = new ScalarIter(input);
+    }
+    return new Iter()
+    {
+      @Override
+      public Item next() throws Exception
+      {
+        Item item = iter.next();
+        if( item != null )
+        {
+          return nextStep(context, item);
+        }
+        return null;
+      }
+    };
   }
 
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.core.PathFields#matches(com.ibm.jaql.lang.core.Context, com.ibm.jaql.json.type.JString)
-   */
-  @Override
-  public boolean matches(Context context, JString name) throws Exception
-  {
-    JString prefix = (JString)exprs[0].eval(context).get();
-    if( prefix == null )
-    {
-      return false;
-    }
-    return name.startsWith(prefix);
-  }
 }

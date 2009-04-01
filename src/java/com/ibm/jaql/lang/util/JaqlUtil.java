@@ -113,7 +113,7 @@ public class JaqlUtil
   private static PagedFile       queryPagedFile;
   private static PagedFile       sessionPagedFile;
   private static Env             sessionEnv             = new Env();
-  private static Context         sessionContext         = new Context();
+  private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
   private static FunctionStore   functionStore;
   private static RNGStore        rngStore;
 

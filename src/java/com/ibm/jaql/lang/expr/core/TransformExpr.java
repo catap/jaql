@@ -133,7 +133,7 @@ public final class TransformExpr extends IterExpr
   {
     final BindingExpr inBinding = binding();
     final Expr proj = projection();
-    final Iter inIter = inBinding.inExpr().iter(context);
+    final Iter inIter = inBinding.iter(context);
 
     return new Iter() {
       public Item next() throws Exception
@@ -143,7 +143,6 @@ public final class TransformExpr extends IterExpr
         {
           return null;
         }
-        context.setVar(inBinding.var, item);
         item = proj.eval(context);
         return item;
       }

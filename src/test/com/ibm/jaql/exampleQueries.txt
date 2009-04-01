@@ -373,7 +373,7 @@ read(hdfs('/temp/nums'))
          input: { type: "hdfs", location: "/temp/nums" }, 
          output: HadoopTemp(),
          map: fn ($) ( $ -> transform [ $.a, $ ] ),
-         aggregate: fn ($k, $) [ combine($.b, fn($a,$b) gcd2( $a,$b ) ) ],
+         aggregate: fn ($k, $) [ combine($[*].b, fn($a,$b) gcd2( $a,$b ) ) ],
          final: fn ($k, $aggs) [{ a:$k, g: $aggs[0] }]
      } )
      -> read()

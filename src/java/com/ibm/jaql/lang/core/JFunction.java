@@ -20,23 +20,28 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JAtom;
 import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
 
 /**
  * 
  */
 public class JFunction extends JAtom
 {
-  protected FunctionDef def            = new FunctionDef();
-  protected Item[]      capturedValues = Item.NO_ITEMS;
+  protected DefineFunctionExpr fn; // cannot have any captured variables
+  protected boolean ownFn; // true if we own the fn, and therefore must init/close it.
+  protected String fnText;
 
-  // call readFields()
   /**
    * 
    */
@@ -45,26 +50,31 @@ public class JFunction extends JAtom
   }
 
   /**
-   * @param fnVar
    * @param params
    * @param body
    * @throws Exception
    */
-  public JFunction(Var fnVar, Var[] params, Expr body) throws Exception
+  public JFunction(DefineFunctionExpr fn, boolean ownFn) throws Exception
   {
-    set(fnVar, params, body);
+    set(fn, ownFn);
   }
 
   /**
-   * @param fnVar
    * @param params
    * @param body
    * @throws Exception
    */
-  public void set(Var fnVar, Var[] params, Expr body) throws Exception
+  public void set(DefineFunctionExpr fn, boolean ownFn) throws Exception
   {
-    def.set(fnVar, params, body);
-    capturedValues = new Item[def.getNumCaptures()];
+    this.fn = fn;
+    this.ownFn = ownFn;
+
+    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+    PrintStream ps = new PrintStream(outStream);
+    HashSet<Var> capturedVars = new HashSet<Var>();
+    fn.decompile(ps, capturedVars);
+    assert capturedVars.size() == 0;
+    this.fnText = outStream.toString();
   }
 
   /**
@@ -72,16 +82,32 @@ public class JFunction extends JAtom
    */
   public int getNumParameters()
   {
-    return def.getNumParameters();
+    return fn.numParams();
   }
 
+  /**
+   * @return
+   */
+  public DefineFunctionExpr getFunction()
+  {
+    return fn;
+  }
+
+  /**
+   * @return
+   */
+  public Expr getBody()
+  {
+    return fn.body();
+  }
+  
   /**
    * @param i
    * @return
    */
   public Var param(int i)
   {
-    return def.param(i);
+    return fn.param(i).var;
   }
 
   /*
@@ -118,30 +144,6 @@ public class JFunction extends JAtom
     throw new RuntimeException("functions cannot be hashed");
   }
 
-  //  public void setBody(Expr body)
-  //  {
-  //    def.body = body;
-  //    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-  //    PrintStream ps = new PrintStream(outStream);
-  //    HashSet<Var> capturedVars = new HashSet<Var>();
-  //    try
-  //    {
-  //      body.decompile(ps, capturedVars);
-  //    }
-  //    catch( Exception e )
-  //    {
-  //      throw new UndeclaredThrowableException(e);
-  //    }
-  //    capturedVars.remove(def.fnVar);
-  //    for (Var p : def.params)
-  //    {
-  //      capturedVars.remove(p);
-  //    }
-  //    def.bodyText = outStream.toString();
-  //    def.capturedVars = capturedVars.toArray(new Var[capturedVars.size()]);
-  //    capturedValues = new Item[capturedVars.size()];
-  //  }
-
   /*
    * (non-Javadoc)
    * 
@@ -150,14 +152,7 @@ public class JFunction extends JAtom
   @Override
   public void print(PrintStream out)
   {
-    try
-    {
-      def.print(out, capturedValues);
-    }
-    catch (Exception e)
-    {
-      throw new UndeclaredThrowableException(e);
-    }
+    out.print(fnText);
   }
 
   /*
@@ -168,19 +163,23 @@ public class JFunction extends JAtom
   @Override
   public void readFields(DataInput in) throws IOException
   {
+    fnText = in.readUTF();
+
+    JaqlLexer lexer = new JaqlLexer(new StringReader(fnText)); // TODO: memory
+    JaqlParser parser = new JaqlParser(lexer); // TODO: memory
+
     try
     {
-      def = new FunctionDef(); // TODO: reuse if not shared
-      capturedValues = def.read(in, capturedValues);
+      fn = (DefineFunctionExpr)parser.parse();
     }
-    catch (IOException ex)
+    catch(Exception e)
     {
-      throw ex;
+      fn = null;
+      fnText = null;
+      throw new UndeclaredThrowableException(e);
     }
-    catch (Exception ex)
-    {
-      throw new UndeclaredThrowableException(ex);
-    }
+    fn.annotate();
+    ownFn = true;
   }
 
   /*
@@ -191,7 +190,35 @@ public class JFunction extends JAtom
   @Override
   public void write(DataOutput out) throws IOException
   {
-    def.write(out, capturedValues);
+    out.writeUTF(fnText);
+  }
+  
+  protected void setParams(Item[] args)
+  {
+    int p = fn.numParams();
+    if (p != args.length)
+    {
+      throw new RuntimeException(
+          "wrong number of arguments to function.  Expected " + p + " but given " + args.length);
+    }
+    for(int i = 0 ; i < p ; i++)
+    {
+      fn.param(i).var.set(args[i]);
+    }
+  }
+
+  public void setParams(Context context, Expr[] args, int start, int length) throws Exception
+  {
+    int p = fn.numParams();
+    if (p != length)
+    {
+      throw new RuntimeException(
+          "wrong number of arguments to function.  Expected " + p + " but given " + length);
+    }
+    for(int i = 0 ; i < p ; i++)
+    {
+      fn.param(i).var.set(args[start + i], context);
+    }
   }
 
   /**
@@ -202,18 +229,34 @@ public class JFunction extends JAtom
    */
   public Item eval(Context context, Item[] args) throws Exception
   {
-    return def.eval(context, capturedValues, args);
+    setParams(args);
+    return fn.body().eval(context);
   }
 
   /**
    * @param context
    * @param args
+   * @param start index of first args to use
+   * @param length number of args to use
    * @return
    * @throws Exception
    */
-  public Item eval(Context context, Expr[] args) throws Exception
+  public Item eval(Context context, Expr[] args, int start, int length) throws Exception
   {
-    return def.eval(context, capturedValues, args);
+    setParams(context, args, start, length);
+    return fn.body().eval(context);
+  }
+
+  /**
+   * Assumes all parameters have been set.
+   * 
+   * @param context
+   * @return
+   * @throws Exception
+   */
+  public Item eval(Context context) throws Exception
+  {
+    return fn.body().eval(context);
   }
 
   /**
@@ -224,7 +267,8 @@ public class JFunction extends JAtom
    */
   public Iter iter(Context context, Item[] args) throws Exception
   {
-    return def.iter(context, capturedValues, args);
+    setParams(args);
+    return fn.body().iter(context);
   }
 
   /**
@@ -233,41 +277,36 @@ public class JFunction extends JAtom
    * @return
    * @throws Exception
    */
-  public Iter iter(Context context, Expr[] args) throws Exception
+  public Iter iter(Context context, Expr[] args, int start, int length) throws Exception
   {
-    return def.iter(context, capturedValues, args);
+    setParams(context, args, start, length);
+    return fn.body().iter(context);
   }
 
   /**
+   * 
    * @param context
+   * @param args
+   * @return
    * @throws Exception
    */
-  public void capture(Context context) throws Exception
+  public Iter iter(Context context, Expr[] args, int x) throws Exception
   {
-    def.capture(context, capturedValues);
+    return iter(context, args, 0, args.length);
   }
 
   /**
+   * Assumes all parameters have been set.
+   * 
+   * @param context
    * @return
+   * @throws Exception 
    */
-  public Expr getBody()
+  public Iter iter(Context context) throws Exception
   {
-    return def.getBody();
+    return fn.body().iter(context);
   }
 
-  //  public JFunction clone()
-  //  {
-  //    try
-  //    {
-  //      JFunction fn = new JFunction();
-  //      fn.copy(this);
-  //      return fn;
-  //    }
-  //    catch(Exception e)
-  //    {
-  //      throw new UndeclaredThrowableException(e);
-  //    }
-  //  }
 
   /*
    * (non-Javadoc)
@@ -277,25 +316,10 @@ public class JFunction extends JAtom
   @Override
   public void copy(JValue jvalue) throws Exception
   {
-    JFunction fn = (JFunction) jvalue;
-    def = fn.def;
-    int n = fn.capturedValues.length;
-    if (capturedValues.length != n)
-    {
-      if (fn.capturedValues.length == 0)
-      {
-        capturedValues = Item.NO_ITEMS;
-      }
-      else
-      {
-        capturedValues = new Item[n];
-      }
-    }
-    for (int i = 0; i < n; i++)
-    {
-      capturedValues[i] = new Item();
-      capturedValues[i].copy(fn.capturedValues[i]);
-    }
+    JFunction f = (JFunction) jvalue;
+    this.fn = (DefineFunctionExpr)f.fn.clone(new VarMap(null));
+    this.ownFn = true;
+    this.fnText = f.fnText;
   }
 
   /*
@@ -306,17 +330,7 @@ public class JFunction extends JAtom
   @Override
   public String toJSON()
   {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
-    try
-    {
-      print(out);
-    }
-    catch (Exception e)
-    {
-      throw new UndeclaredThrowableException(e);
-    }
-    out.flush();
-    return baos.toString();
+    return fnText; // TODO: wrap in constructor?
   }
+
 }

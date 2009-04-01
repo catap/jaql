@@ -88,6 +88,10 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
         parser.consumeUntil(bs);
       }
     }
+    finally
+    {
+      ctx.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+    }
   }
 
 }

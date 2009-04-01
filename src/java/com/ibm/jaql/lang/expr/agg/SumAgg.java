@@ -52,6 +52,10 @@ public final class SumAgg extends AlgebraicAggregate
     
     public void add(Item item)
     {
+      if( item.isNull() )
+      {
+        return;
+      }
       JValue w = item.get();
       if( w instanceof JLong )
       {

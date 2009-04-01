@@ -185,6 +185,7 @@ public class ItemWalker
         n = stack.pop();
         if (n == 0)
         {
+          type = Item.Type.RECORD;
           return END_RECORD;
         }
         stack.add(n - 1);
@@ -199,6 +200,7 @@ public class ItemWalker
         n = stack.pop();
         if (n == 0)
         {
+          type = Item.Type.ARRAY;
           return END_ARRAY;
         }
         stack.add(n - 1);
@@ -207,6 +209,7 @@ public class ItemWalker
 
       case S_TOP :
         stack.add(S_TOP);
+        type = Item.Type.UNKNOWN;
         return EOF;
 
       default :

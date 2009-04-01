@@ -209,7 +209,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
 
     for (int i = 0; i < n; i++ )
     {
-      context.setVar(binding(i).var, Item.nil);
+      binding(i).var.set(Item.nil);
     }
 
     for (int i = 0; i < n; i++ )
@@ -220,7 +220,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       Iter iter = b.inExpr().iter(context);
       while ((item = iter.next()) != null)
       {
-        context.setVar(b.var, item);
+        b.var.set(item);
         Item key = on.eval(context);
         if( ! key.isNull() )
         {
@@ -228,11 +228,11 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
         }
         else if( i <= lastPreserved )
         {
-          context.setVar(b.var, item);
+          b.var.set(item);
           nullKeyResults.addAll(collectExpr().iter(context));
         }
       }
-      context.setVar(b.var, Item.nil);
+      b.var.set(Item.nil);
 
       // If more than one is preserved, we do the outer-cross product of matching items,
       //   and filter the where at least one preserved input is non-null.
@@ -285,7 +285,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
             item = groupIters[i].next();
             if (item != null)
             {
-              context.setVar(b.var, item);
+              b.var.set(item);
               i++;
             }
             else

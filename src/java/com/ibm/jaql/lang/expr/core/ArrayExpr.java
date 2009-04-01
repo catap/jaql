@@ -32,6 +32,11 @@ import com.ibm.jaql.util.Bool3;
  */
 public class ArrayExpr extends IterExpr
 {
+  // Runtime state:
+  protected FixedJArray tuple;
+  protected Item result;
+  
+  
   /**
    * @param exprs
    */
@@ -136,18 +141,15 @@ public class ArrayExpr extends IterExpr
     {
       return JArray.emptyItem;
     }
-    Item result = context.getTemp(this);
-    FixedJArray table = (FixedJArray) result.get();
-    if (table == null)
+    if( result == null )
     {
-      table = new FixedJArray(exprs.length);
-      result.set(table);
+      tuple = new FixedJArray(exprs.length);
+      result = new Item(tuple);
     }
-
     for (int i = 0; i < exprs.length; i++)
     {
       Item item = exprs[i].eval(context);
-      table.set(i, item);
+      tuple.set(i, item);
     }
     return result;
   }

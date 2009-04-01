@@ -139,7 +139,6 @@ pipe returns [Expr r=null]
 subpipe[Var inVar] returns [Expr r=null]
     {
     	inVar.hidden = true;
-//        r=new PipeInput(new VarExpr(inVar));
         r= new VarExpr(inVar);
     }
     : ( "->" r=op[r] )+
@@ -153,7 +152,7 @@ pipeFn returns [Expr r=null]
     {
         ArrayList<Var> p = new ArrayList<Var>();
         p.add(v);
-        r = new DefineFunctionExpr(null, p, r); // TODO: use a diff class
+        r = new DefineFunctionExpr(p, r); // TODO: use a diff class
     }
     ;
 
@@ -431,7 +430,7 @@ cmpArrayFn[String vn] returns [Expr r=null]
     : r=cmpArray
     {
       env.unscope(var);
-      r = new DefineFunctionExpr(null, new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
+      r = new DefineFunctionExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
     }
     ;
 
@@ -988,7 +987,7 @@ function returns [Expr r = null]
     { ArrayList<Var> p; }
     : "fn" p=params r=expr
     { 
-      r = new DefineFunctionExpr(null, p, r);
+      r = new DefineFunctionExpr(p, r);
       for( Var v: p )
       {
         env.unscope(v);
@@ -1289,19 +1288,23 @@ typeExpr returns [Expr r = null]
     ;	
 
 path returns [Expr r=null]
-    { PathStep s=null; PathStep in=null; }
+    { PathStep s=null; }
     : r=fnCall 
-       ( s=step[in = new PathExpr(r)] 
-           ( s=step[s] )*
-         { r = in; }
+       ( s=step             { r = new PathExpr(r,s); }
+         steps[s]
        )?
     ;
 
-step[PathStep ctx] returns [PathStep r = null]
+steps[PathStep p]
+    { PathStep s; }
+    : ( s=step  { p.setNext(s); p = s; }
+      )*
+    ;
+
+step returns [PathStep r = null]
     { Expr e; Expr f; ArrayList<PathStep> pn; }
     : ( e=projName                   { r = new PathFieldValue(e); }
-      | "{" pn=projNames "}"         { r = new PathRecord(pn); } // TODO: all steps after names: {.x.y, .z[2]}
-      | "!" "{" pn=projNotNames "}"  { r = new PathNotRecord(pn); }
+      | "{" pn=projFields "}"        { r = new PathRecord(pn); } // TODO: all steps after names: {.x.y, .z[2]}
       | "[" ( e=expr
                 ( /*empty*/       { r = new PathIndex(e); }
                 | ":" ( f=expr    { r = new PathArraySlice(e,f); }
@@ -1311,47 +1314,49 @@ step[PathStep ctx] returns [PathStep r = null]
                   | ":" ( e=expr  { r = new PathArrayHead(e); }
                         | "*"     { r = new PathArrayAll(); }
                 ))
+            | "?"                 { r = new PathMaybeArray(); }
+            | /*empty*/           { r = new PathExpand(); }
           ) // ( "*" { ((PathArray)r).setExpand(true); } )? // TODO: add shorthand to expand?
         "]"
       )
-      {
-      	ctx.setNext(r);
-      }
     ;
 
-projNames returns [ArrayList<PathStep> names = new ArrayList<PathStep>()]
-    : ( wildProjName[names] ("," wildProjName[names])* )?
+projFields returns [ArrayList<PathStep> names = new ArrayList<PathStep>()]
+    { PathStep s; }
+    : s=projField steps[s]           { names.add(s); } // TODO: ? indicator to eliminate nulls
+      ( projFieldsMore[names] )?
+    | s=projNotFields steps[s]     { names.add(s); }
     ;
 
-wildProjName[ArrayList<PathStep> names] // TODO: eliminte .prefix* code
-    { Expr e; PathStep s=null; }
-    : ( e=projName 
-        ( /*empty*/   { s = new PathOneField(e); } // TODO: ? indicator to eliminate nulls
-        // | "*"         { s = new PathPrefixFields(e); }
-        )
-      | "*"           { s = new PathAllFields(); }
-      )               {  names.add(s);  }
-      ( s=step[s] )*
-    ;
-
-
-projNotNames returns [ArrayList<PathStep> names = new ArrayList<PathStep>()]
-    : ( wildProjNotName[names] ("," wildProjNotName[names])* )?
-    ;
-
-wildProjNotName[ArrayList<PathStep> names]
-    { Expr e; }
-    : e=projName 
-        ( /*empty*/ { names.add(new PathOneField(e)); }
-        // | "*"       { names.add(new PathPrefixFields(e)); }
-        )
-    | "*"           { names.add(new PathAllFields()); }
+projFieldsMore[ArrayList<PathStep> names]
+    { PathStep s; }
+    : "," ( s=projField steps[s]     { names.add(s); } // TODO: ? indicator to eliminate nulls
+            ( projFieldsMore[names] )?
+          | s=projNotFields steps[s] { names.add(s); }
+          )
     ;
     
+projNotFields returns [PathStep s=null]
+    { ArrayList<PathStep> names = null; }
+    : "*"
+      ( /* empty */       { s = new PathAllFields(); }
+      | "-" s=projField   { names = new ArrayList<PathStep>(); names.add(s); }
+        ( "," s=projField { names.add(s); }
+        )*
+                          { s = new PathNotFields(names); } 
+      )
+    ;
+
+projField returns [PathOneField r=null]
+    { Expr e; }
+    : e=projName  { r = new PathOneField(e); } 
+    ;
+
 projName returns [Expr r=null]
     : r=dotName
     | DOT r=basic
     ;
+
 
 fnCall returns [Expr r=null]
     { String s; ArrayList<Expr> args; }

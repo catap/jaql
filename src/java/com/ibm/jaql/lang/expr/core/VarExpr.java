@@ -142,7 +142,7 @@ public class VarExpr extends Expr
    */
   public Item eval(Context context) throws Exception
   {
-    return context.getValue(var);
+    return var.getValue();
   }
 
   /*
@@ -152,7 +152,7 @@ public class VarExpr extends Expr
    */
   public Iter iter(Context context) throws Exception
   {
-    return context.getIter(var);
+    return var.getIter();
   }
 
   /*

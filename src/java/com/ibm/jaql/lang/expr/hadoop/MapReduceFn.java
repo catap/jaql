@@ -34,8 +34,6 @@ import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
-import com.ibm.jaql.lang.expr.array.StashIterExpr;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.util.IteratorIter;
@@ -251,11 +249,10 @@ public class MapReduceFn extends MapReduceBaseExpr
       {
         if (numInputs == 1)
         {
-          Expr[] fnExprArgs = new Expr[2];
-          fnExprArgs[0] = new ConstExpr(key);
-          fnExprArgs[1] = new StashIterExpr(new IteratorIter(values));
+          combineFns[0].param(0).set(key);
+          combineFns[0].param(1).set(new IteratorIter(values));
+          Iter iter = combineFns[0].iter(context);
           Item item;
-          Iter iter = combineFns[0].iter(context, fnExprArgs);
           while ((item = iter.next()) != null)
           {
             output.collect(key, item);
@@ -332,10 +329,9 @@ public class MapReduceFn extends MapReduceBaseExpr
         Iter iter;
         if (numInputs == 1)
         {
-          Expr[] fnExprArgs = new Expr[2];
-          fnExprArgs[0] = new ConstExpr(key);
-          fnExprArgs[1] = new StashIterExpr(new IteratorIter(values));
-          iter = reduceFn.iter(context, fnExprArgs);
+          reduceFn.param(0).set(key);
+          reduceFn.param(1).set(new IteratorIter(values));
+          iter = reduceFn.iter(context);
         }
         else
         {
