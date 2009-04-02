@@ -1314,7 +1314,7 @@ step returns [PathStep r = null]
                   | ":" ( e=expr  { r = new PathArrayHead(e); }
                         | "*"     { r = new PathArrayAll(); }
                 ))
-            | "?"                 { r = new PathMaybeArray(); }
+            | "?"                 { r = new PathToArray(); }
             | /*empty*/           { r = new PathExpand(); }
           ) // ( "*" { ((PathArray)r).setExpand(true); } )? // TODO: add shorthand to expand?
         "]"
