@@ -18,16 +18,20 @@ package com.ibm.jaql.lang.rewrite;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.IfExpr;
+import com.ibm.jaql.lang.expr.core.TransformExpr;
+import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
 
 // TODO: This rewrite possibly go away with the change in FOR definition to preserve input.
 
 /**
- * asArray(IterExpr) ==> IterExpr
+ * asArray(null) ==> []
+ * asArray(nonnull array e) ==> e
+ * asArray(nullable array e) ==> emptyOnNull(e)
+ * expr(asArray(e)) ==> expr(e) for expr that has asArray built-in.
  */
 public class AsArrayElimination extends Rewrite
 {
@@ -62,9 +66,9 @@ public class AsArrayElimination extends Rewrite
       expr.replaceInParent(input);
       return true;
     }
-
-    //   for $i in asArray ...
-    // | combine $a,$b in asArray ...
+    
+    //   for ($i in asArray(e)) ...
+    // | asArray(e) -> transform ...
     // | group $i in asArray ...
     // =>
     // eliminate asArray
@@ -73,12 +77,33 @@ public class AsArrayElimination extends Rewrite
     {
       Expr gp = expr.parent().parent();
       if (gp instanceof ForExpr 
-          || gp instanceof CombineExpr // TODO: still used?
-          || gp instanceof GroupByExpr) // TODO: there is a bug here; only applies to input
+          || gp instanceof TransformExpr
+          || ( gp instanceof GroupByExpr 
+              && expr.parent() == ((GroupByExpr)gp).inBinding() ) )
       {
         expr.replaceInParent(input);
         return true;
       }
+    }
+    
+    // for($i in e1) asArray(e2) ==>  for($i in e1) e2
+    if( expr.parent() instanceof ForExpr )
+    {
+      expr.replaceInParent(input);
+      return true;
+    }
+
+    if (input.isArray().always() )
+    {
+      if( input.isNull().never() )  // asArray( nonnull array expr ) -> expr   
+      {
+        expr.replaceInParent(input);
+      }
+      else  // asArray( nullable array expr ) -> emptyOnNull(expr)
+      {
+        expr.replaceInParent(new EmptyOnNullFn(input));
+      }
+      return true;
     }
 
     // asArray( if t then e1 else e2 ) -> if t then asArray(e1) else asArray(e2)
