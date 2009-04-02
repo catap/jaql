@@ -33,7 +33,8 @@
     <!-- Default version is 0.18.3. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0, 0.19.1 -->
     <property name="hadoop.version" value="0.18.3" />
 
-    <property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
+    <property name="hadoop.dir"
+              value="${basedir}/vendor/hadoop/${hadoop.version}" />
     <property file="${hadoop.dir}/build.properties" />
     <property name="hbase.dir"
               value="${basedir}/vendor/hbase/${hbase.version}" />
@@ -89,7 +90,6 @@
         <pathelement location="${conf.dir}" />
         <pathelement location="${test.cache.data}" />
         <pathelement location="${build.dir}/jaql.jar" />
-        <pathelement location="${build.dir}/extension.jar" />
         <fileset dir="${basedir}/lib">
             <include name="**/*.jar" />
             <exclude name="**/excluded" />
@@ -167,7 +167,8 @@
             <sysproperty key="hadoop.conf.override"
                          value="${test.conf.override.dir}" />
             <sysproperty key="test.deployment" value="${test.deployment}" />
-            <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
+            <sysproperty key="jaql.mapred.mode"
+                         value="${test.jaql.mapred.mode}" />
             <sysproperty key="test.cleanup" value="${test.cleanup}" />
             <sysproperty key="build" value="${build.dir}" />
             <classpath refid="${test.classpath.id}" />
@@ -200,7 +201,8 @@
     <property name="javac.optimize" value="on" />
     <property name="javac.deprecation" value="off" />
     <property name="javac.version" value="1.5" />
-    <property name="javadoc.link.java" value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
+    <property name="javadoc.link.java"
+              value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
     <property name="javac.args" value="" />
 
     <!-- <path id="classpath">
@@ -342,7 +344,8 @@
 
         <!-- copy over files to tmp to jar -->
         <copy todir="${tmp.dir}">
-          <fileset dir="${build.dir}/test/classes/" includes="JaqlShell.class" />
+            <fileset dir="${build.dir}/test/classes/"
+                     includes="JaqlShell.class" />
         </copy>
 
         <copy todir="${tmp.dir}/org/apache/hadoop/mapred"
@@ -384,7 +387,7 @@
         </copy>
 
         <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
-	<unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
+        <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
 
         <unjar dest="${tmp.dir}">
             <fileset dir="${hbase.dir}">
@@ -431,8 +434,8 @@
     <!-- Filesets                                                           -->
     <!-- ================================================================== -->
     <fileset dir="${bin.dir}" id="bin.files">
-      <include name="jaql" />
-      <include name="jaqlshell" />
+        <include name="jaql" />
+        <include name="jaqlshell" />
     </fileset>
 
     <!-- ================================================================== -->
@@ -461,7 +464,7 @@
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
         <copy todir="${build.dir}/jaql-${version}/bin">
-          <fileset refid="bin.files" />
+            <fileset refid="bin.files" />
         </copy>
 
         <copy todir="${build.dir}/jaql-${version}"
@@ -484,8 +487,12 @@
         <tar compression="gzip"
              longfile="gnu"
              destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
-            <tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
-            <tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
+            <tarfileset dir="${build.dir}/jaql-${version}"
+                        prefix="jaql-${version}"
+                        excludes="bin/*" />
+            <tarfileset dir="${build.dir}/jaql-${version}/bin"
+                        prefix="jaql-${version}/bin"
+                        filemode="755" />
         </tar>
     </target>
 
@@ -503,7 +510,7 @@
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
         <copy todir="${build.dir}/jaql-${version}/bin">
-          <fileset refid="bin.files" />
+            <fileset refid="bin.files" />
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/lib" />
@@ -540,7 +547,7 @@
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
         <copy todir="${build.dir}/jaql-${version}/bin">
-          <fileset refid="bin.files" />
+            <fileset refid="bin.files" />
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/lib" />
