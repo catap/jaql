@@ -21,9 +21,10 @@ import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
+import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
 
 /**
- * for $i in [e1] collect e2 ==> let $i = e1 return asArray(e2)
+ * for( $i in [e1] ) e2 ==> ( $i = e1, asArray(e2) )
  */
 public class ForToLet extends Rewrite
 {
@@ -54,9 +55,13 @@ public class ForToLet extends Rewrite
 
     Expr elem = inExpr.child(0);
     Expr ret = fe.collectExpr();
-    if (ret.isArray().maybeNot() || ret.isNull().maybe())
+    if (ret.isArray().maybeNot())
     {
       ret = new AsArrayFn(ret);
+    }
+    else if (ret.isNull().maybe())
+    {
+      ret = new EmptyOnNullFn(ret);
     }
     bind.type = BindingExpr.Type.EQ;
     bind.setChild(0, elem);

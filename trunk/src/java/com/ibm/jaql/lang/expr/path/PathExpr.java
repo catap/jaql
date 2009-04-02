@@ -54,6 +54,14 @@ public final class PathExpr extends Expr
   }
 
   /**
+   * Return the input to the path expression.
+   */
+  public Expr input()
+  {
+    return exprs[0];
+  }
+
+  /**
    * Return the first step of the path expression.
    */
   public PathStep firstStep()
@@ -88,7 +96,7 @@ public final class PathExpr extends Expr
   public Item eval(Context context) throws Exception
   {
     PathStep s = firstStep();
-    s.input = exprs[0].eval(context);
+    s.input = input().eval(context);
     return s.eval(context);
   }
 
@@ -99,7 +107,8 @@ public final class PathExpr extends Expr
   public Iter iter(Context context) throws Exception
   {
     PathStep s = firstStep();
-    s.input = exprs[0].eval(context);
+    s.input = input().eval(context);
     return s.iter(context);
   }
+
 }
