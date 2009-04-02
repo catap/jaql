@@ -85,6 +85,9 @@ public class RewriteEngine
     new TrivialCombineElmination(phase);
     new CombineInputSimplification(phase);
     new DoConstPragma(phase);
+    new PathArrayToFor(phase);
+    new ToArrayElimination(phase);
+    new EmptyOnNullElimination(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
 

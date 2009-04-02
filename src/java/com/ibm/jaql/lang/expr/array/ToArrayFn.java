@@ -27,9 +27,9 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.util.Bool3;
 
 /**
- * If the input is an array, return it; else wrap in an array.
+ * If the input is an array or null, return it; else wrap in an array.
  * 
- * if( $x instanceof type [*<*>] ) $x else [$x]
+ * if( $x instanceof type [*<*>]? ) $x else [$x]
  */
 @JaqlFn(fnName = "toArray", minArgs = 1, maxArgs = 1)
 public class ToArrayFn extends IterExpr

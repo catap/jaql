@@ -70,11 +70,11 @@ public class TrivialForElimination extends Rewrite
     }    
     c = c.child(0);
     
-    // for $i in e1 collect [$i] => asArray(e1) => e1 (when non-null array)
+    // for( $i in e1 ) [$i] => asArray(e1) => e1 (when non-null array)
     if (c instanceof VarExpr)
     {
       VarExpr ve = (VarExpr) c;
-      if (ve.var() != fe.var())
+      if (ve.var() == fe.var())
       {
         if (inExpr.isArray().maybeNot() || inExpr.isNull().maybe())
         {

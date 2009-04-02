@@ -21,6 +21,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * emptyOnNull(e) == firstNonNull(e, [])
@@ -44,6 +45,18 @@ public class EmptyOnNullFn extends IterExpr
   public EmptyOnNullFn(Expr expr0)
   {
     super(new Expr[]{expr0});
+  }
+
+  @Override
+  public Bool3 isEmpty()
+  {
+    return exprs[0].isEmpty();
+  }
+
+  @Override
+  public Bool3 isNull()
+  {
+    return Bool3.FALSE;
   }
 
   /*
