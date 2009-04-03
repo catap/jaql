@@ -88,6 +88,8 @@ public class RewriteEngine
     new PathArrayToFor(phase);
     new ToArrayElimination(phase);
     new EmptyOnNullElimination(phase);
+    new InjectAggregate(phase);
+    new UnnestFor(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
 

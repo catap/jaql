@@ -119,8 +119,9 @@ public final class TransformExpr extends IterExpr
     b.inExpr().decompile(exprText, capturedVars);
     exprText.print("\n-> transform each ");
     exprText.print(b.var.name);
-    exprText.print(" ");
+    exprText.print(" (");
     projection().decompile(exprText, capturedVars);
+    exprText.print(")");
     capturedVars.remove(b.var);
   }
 

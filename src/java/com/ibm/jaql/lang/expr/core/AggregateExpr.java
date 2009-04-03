@@ -87,9 +87,10 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
    * @param aggVar
    * @param input
    * @param expr
+   * @param expand True if expanding expr.
    * @return
    */
-  public static Expr make(Env env, Var aggVar, Expr input, Expr expr)
+  public static Expr make(Env env, Var aggVar, Expr input, Expr expr, boolean expand)
   {
     if( expr instanceof ArrayExpr )
     {
@@ -116,7 +117,14 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
     ArrayList<Aggregate> aggs = new ArrayList<Aggregate>();
     expr = splitExpr(aggVar, outVar, expr, aggs);
     Expr e = new AggregateExpr(aggVar, input, aggs);
-    e = new TransformExpr(outVar, e, expr);
+    if( expand )
+    {
+      e = new ForExpr(outVar, e, expr);
+    }
+    else
+    {
+      e = new TransformExpr(outVar, e, expr);
+    }
     return e;
   }
 

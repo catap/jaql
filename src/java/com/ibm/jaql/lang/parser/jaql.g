@@ -209,7 +209,7 @@ vpipe returns [BindingExpr r=null]
 aggregate[Expr in] returns [Expr r=null]
     { BindingExpr b; }
     : ("aggregate" | "agg") b=each[in] r=expr
-       { r = AggregateExpr.make(env, b.var, b.inExpr(), r); } // TODO: take binding!
+       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
     ;
 
 group returns [Expr r=null]
