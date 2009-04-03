@@ -92,7 +92,7 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
    */
   public static Expr make(Env env, Var aggVar, Expr input, Expr expr, boolean expand)
   {
-    if( expr instanceof ArrayExpr )
+    if( !expand && expr instanceof ArrayExpr )
     {
       // Don't add map if we are already canonical: aggregate [ agg1(..), ..., aggN(...) ]
       boolean allAggs = true;
