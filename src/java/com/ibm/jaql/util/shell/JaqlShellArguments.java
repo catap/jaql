@@ -157,7 +157,7 @@ public class JaqlShellArguments {
     }
     if (cl.hasOption(optHelp)) {
       printHelp(null, options);
-      System.exit(0);
+      System.exit(1);
     }
 
     // validate arguments
