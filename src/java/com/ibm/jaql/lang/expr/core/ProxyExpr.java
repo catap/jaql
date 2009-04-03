@@ -22,24 +22,26 @@ import com.ibm.jaql.lang.core.Var;
 
 
 /**
- * A PseudoExpr that is used to easily inject an expression above
- * another expression.  For example:
+ * A PseudoExpr that is used as a short-duration place-holder during rewrites.
  * 
- * inTreeExpr = some node that might be in an expression tree
- * newExpr = new FooExpr(new BarExpr(), inTreeExpr.injectAbove(), new BazExpr())
- * Now newExpr.parent() is what inTreeExpr.parent() used to be and that parent
- * points back to newExpr in the same slot that inTreeExpr was.  
+ * For example:
+ * 
+ * Expr e = ...;
+ * Expr proxy = new ProxyExpr();
+ * e.replaceInParent(p);
+ * Expr e2 = makeTreeSomeTree(e) // put e somewhere else
+ * proxy.replaceInParent(e2);
  * 
  * @author kbeyer
  *
  */
-public class InjectAboveExpr extends PseudoExpr
+public class ProxyExpr extends PseudoExpr
 {
 
   /**
    * @param exprs
    */
-  public InjectAboveExpr(Expr[] exprs)
+  public ProxyExpr(Expr[] exprs)
   {
     super(exprs);
   }
@@ -47,29 +49,16 @@ public class InjectAboveExpr extends PseudoExpr
   /**
    * 
    */
-  public InjectAboveExpr()
+  public ProxyExpr()
   {
     super(NO_EXPRS);
-  }
-
-  /**
-   * @param expr
-   */
-  public InjectAboveExpr(Expr expr)
-  {
-    super(expr);
   }
 
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("@injectAbove(");
-    if( exprs.length > 0 )
-    {
-      exprs[0].decompile(exprText, capturedVars);
-    }
-    exprText.print(")");
+    exprText.print("@proxy()");
   }
   
 }

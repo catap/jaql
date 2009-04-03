@@ -15,9 +15,14 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
+import com.ibm.jaql.lang.expr.core.AggregateExpr;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
+import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.GroupByExpr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -44,6 +49,37 @@ public class ToArrayElimination extends Rewrite
   {
     assert expr instanceof ToArrayFn;
     Expr input = expr.child(0);
+    
+    if( input instanceof VarExpr )  
+    {
+      // TODO: A Var should know it's schema properties instead of looking for certain definitions. 
+      VarExpr ve = (VarExpr)input;
+      Var v = ve.var();
+      Expr def = findVarDef(ve);
+      if( def instanceof BindingExpr )
+      {
+        Expr p = def.parent();
+        if( p instanceof GroupByExpr )
+        {
+          GroupByExpr g = (GroupByExpr)p;
+          for(int i = 0 ; i < g.numInputs() ; i++)
+          {
+            if( g.getAsVar(i) == v )
+            {
+              expr.replaceInParent(input);
+              return true;
+            }
+          }
+        }
+        else if( p instanceof AggregateExpr )
+        {
+          assert def == p.child(0); // must be the input
+          expr.replaceInParent(input);
+          return true;
+        }
+      }
+    }
+    
     Bool3 isArray = input.isArray();
     if( isArray.always() )
     {
@@ -55,9 +91,7 @@ public class ToArrayElimination extends Rewrite
       expr.replaceInParent(new ArrayExpr(input));
       return true;
     }
-    else
-    {
-      return false;
-    }
+    
+    return false;
   }
 }
