@@ -17,6 +17,11 @@
 #
 #   HADOOP_ROOT_LOGGER The root appender. Default is INFO,console
 #
+#
+#
+# IF SUCCESSFUL, THIS SCRIPT MUST NOT OUTPUT ANYTHING TO STDOUT EXCEPT WHAT
+# IS OUTPUTTED BY THE CALL TO JAVA AT THE VERY BOTTOM.
+
 
 if [ "$DFLT_HADOOP_VERSION" = "" ]; then
 	DFLT_HADOOP_VERSION=0.18.3
@@ -256,8 +261,8 @@ if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   HADOOP_OPTS="$HADOOP_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
 
-# debugging (leave commented in SVN)
-# echo $CLASSPATH
+# for debugging (leave commented in SVN)
+# echo $CLASSPATH 1>&2
 
 # run it
 "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
