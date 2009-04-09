@@ -16,13 +16,9 @@
 package com.ibm.jaql.io.hadoop;
 
 import java.io.IOException;
-import java.net.URI;
 
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -32,8 +28,6 @@ import org.apache.hadoop.mapred.OutputCommitter;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.TaskAttemptContext;
-import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.Counters.Counter;
 import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
@@ -48,7 +42,7 @@ import com.ibm.jaql.json.type.MemoryJRecord;
 /**
  * The default class for writing Items from jaql to Hadoop
  */
-public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
+public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item>
 {
   static final Logger                LOG    = Logger.getLogger(DefaultHadoopOutputAdapter.class.getName());
 
@@ -56,7 +50,7 @@ public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
 
   protected JSONConfSetter           configurator;
 
-  protected KeyValueExport<WritableComparable, Writable>       converter;
+  protected KeyValueExport<K, V>       converter;
 
   protected JobConf                  conf;
 
@@ -258,11 +252,11 @@ public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
     }
     else
     {
-      final RecordWriter<WritableComparable, Writable> baseWriter = ((OutputFormat<WritableComparable, Writable>) oFormat)
+      final RecordWriter<K, V> baseWriter = ((OutputFormat<K, V>) oFormat)
           .getRecordWriter(ignored, job, name, progress);
 
-      final WritableComparable baseKey = converter.createKeyTarget();
-      final Writable baseValue = converter.createValTarget();
+      final K baseKey = converter.createKeyTarget();
+      final V baseValue = converter.createValTarget();
 
       writer = new RecordWriter<Item, Item>() {
 

@@ -28,24 +28,24 @@ import com.ibm.jaql.json.type.JRecord;
  * a (key, value)-pair where the key is of type {@link WritableComparable} and the 
  * value is of type {@link Writable}. 
  */
-public abstract class ItemToHadoopRecord implements KeyValueExport<WritableComparable, Writable>
+public abstract class ItemToHadoopRecord<K,V> implements KeyValueExport<K, V>
 {
 
-  protected ToItem<WritableComparable> keyConverter;
+  protected ToItem<K> keyConverter;
 
-  protected ToItem<Writable>           valConverter;
+  protected ToItem<V>           valConverter;
 
   protected Converter                converter;
 
-  protected abstract ToItem<WritableComparable> createKeyConverter();
+  protected abstract ToItem<K> createKeyConverter();
 
-  protected abstract ToItem<Writable> createValConverter();
+  protected abstract ToItem<V> createValConverter();
 
   /**
    * If a key converter has been specified, use its target. Otherwise use null.
    * @return
    */
-  public WritableComparable createKeyTarget()
+  public K createKeyTarget()
   {
     if (keyConverter == null) return null;
     return keyConverter.createTarget();
@@ -55,7 +55,7 @@ public abstract class ItemToHadoopRecord implements KeyValueExport<WritableCompa
    * If a val converter has been specified, use its target. Otherwise use null.
    * @return
    */
-  public Writable createValTarget()
+  public V createValTarget()
   {
     if (valConverter == null) return null;
     return valConverter.createTarget();
@@ -83,7 +83,7 @@ public abstract class ItemToHadoopRecord implements KeyValueExport<WritableCompa
    * @param key
    * @param val
    */
-  public void convert(Item src, WritableComparable key, Writable val)
+  public void convert(Item src, K key, V val)
   {
     converter.convert(src, key, val);
   }
@@ -102,7 +102,7 @@ public abstract class ItemToHadoopRecord implements KeyValueExport<WritableCompa
    */
   protected abstract class Converter
   {
-    abstract void convert(Item src, WritableComparable key, Writable val);
+    abstract void convert(Item src, K key, V val);
   }
 
   /**
@@ -110,7 +110,7 @@ public abstract class ItemToHadoopRecord implements KeyValueExport<WritableCompa
    */
   protected final class KeyConverter extends Converter
   {
-    void convert(Item src, WritableComparable key, Writable val)
+    void convert(Item src, K key, V val)
     {
       keyConverter.convert(src, key);
     }
@@ -121,7 +121,7 @@ public abstract class ItemToHadoopRecord implements KeyValueExport<WritableCompa
    */
   protected final class ValConverter extends Converter
   {
-    void convert(Item src, WritableComparable key, Writable val)
+    void convert(Item src, K key, V val)
     {
       valConverter.convert(src, val);
     }
@@ -132,7 +132,7 @@ public abstract class ItemToHadoopRecord implements KeyValueExport<WritableCompa
    */
   protected final class PairConverter extends Converter
   {
-    void convert(Item src, WritableComparable key, Writable val)
+    void convert(Item src, K key, V val)
     {
       keyConverter.convert(src, key);
       valConverter.convert(src, val);
