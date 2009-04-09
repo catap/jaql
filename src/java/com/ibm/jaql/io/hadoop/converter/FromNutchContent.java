@@ -18,6 +18,7 @@ package com.ibm.jaql.io.hadoop.converter;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.nutch.metadata.Metadata;
+import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.Content;
 
 import com.ibm.jaql.io.converter.FromItem;
@@ -25,7 +26,7 @@ import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.MemoryJRecord;
 
-public class FromNutchContent extends HadoopRecordToItem {
+public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Writable> {
 
   public static enum Field {
     URL("url"),
@@ -59,11 +60,16 @@ public class FromNutchContent extends HadoopRecordToItem {
         // expect tgt's value to be MemoryJRecord 
         MemoryJRecord r = (MemoryJRecord)tgt.get();
         
+        // the metadata
+        Metadata meta = c.getMetadata();
+        
         // set the fixed fields
         ((JString)r.getValue(Field.URL.name).get()).copy(c.getUrl().getBytes());
         ((JString)r.getValue(Field.BASEURL.name).get()).copy(c.getBaseUrl().getBytes());
         ((JString)r.getValue(Field.TYPE.name).get()).copy(c.getContentType().getBytes());
-        if(c.getContentType().indexOf("text") >= 0)
+        
+        String cType = meta.get(Response.CONTENT_TYPE);
+        if(cType != null && cType.indexOf("text") >= 0)
           ((JString)r.getValue(Field.CONTENT.name).get()).copy(c.getContent());
         else
           ((JString)r.getValue(Field.CONTENT.name).get()).set("binary");
@@ -71,7 +77,6 @@ public class FromNutchContent extends HadoopRecordToItem {
         // set the dynamic metadata
         MemoryJRecord mr = (MemoryJRecord)r.getValue(Field.META.name).get();
         mr.clear();
-        Metadata meta = c.getMetadata();
         String[] names = meta.names();
         for(int i = 0; i < names.length; i++) {
           mr.add(names[i], new JString(meta.get(names[i])));

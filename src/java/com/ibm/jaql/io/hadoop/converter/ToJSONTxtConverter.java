@@ -29,7 +29,7 @@ import com.ibm.jaql.json.util.JsonUtil;
 /**
  * 
  */
-public class ToJSONTxtConverter extends ItemToHadoopRecord
+public class ToJSONTxtConverter extends ItemToHadoopRecord<WritableComparable, Text>
 {
   /*
    * (non-Javadoc)
@@ -48,9 +48,9 @@ public class ToJSONTxtConverter extends ItemToHadoopRecord
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createValConverter()
    */
   @Override
-  protected ToItem<Writable> createValConverter()
+  protected ToItem<Text> createValConverter()
   {
-    return new ToItem<Writable>()
+    return new ToItem<Text>()
     {
 
       /*
@@ -59,7 +59,7 @@ public class ToJSONTxtConverter extends ItemToHadoopRecord
        * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
        *      java.lang.Object)
        */
-      public void convert(Item src, Writable tgt)
+      public void convert(Item src, Text tgt)
       {
         ByteArrayOutputStream bstr = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(bstr);
@@ -78,7 +78,7 @@ public class ToJSONTxtConverter extends ItemToHadoopRecord
         String s = new String(bstr.toByteArray());
         s = s.replace("\r", "");
         s = s.replace("\n", "");
-        ((Text) tgt).set(s);
+        tgt.set(s);
       }
 
       /*
@@ -86,7 +86,7 @@ public class ToJSONTxtConverter extends ItemToHadoopRecord
        * 
        * @see com.ibm.jaql.io.converter.ToItem#createTarget()
        */
-      public Writable createTarget()
+      public Text createTarget()
       {
         return new Text();
       }

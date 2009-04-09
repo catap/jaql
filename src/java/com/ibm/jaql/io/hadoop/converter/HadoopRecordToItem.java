@@ -29,17 +29,17 @@ import com.ibm.jaql.json.type.JRecord;
  * a (key, value)-pair where the key is of type {@link WritableComparable} and the 
  * value is of type {@link Writable}---into an {@link Item}.
  */
-public abstract class HadoopRecordToItem implements KeyValueImport<WritableComparable, Writable>
+public abstract class HadoopRecordToItem<K, V> implements KeyValueImport<K, V>//<WritableComparable, Writable>
 {
   /**
    * 
    */
-  protected FromItem<WritableComparable> keyConverter;
+  protected FromItem<K> keyConverter;
   
   /**
    * 
    */
-  protected FromItem<Writable>           valConverter;
+  protected FromItem<V>           valConverter;
 
   /**
    * 
@@ -85,7 +85,7 @@ public abstract class HadoopRecordToItem implements KeyValueImport<WritableCompa
   /* (non-Javadoc)
    * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#convert(java.lang.Object, java.lang.Object, com.ibm.jaql.json.type.Item)
    */
-  public final void convert(WritableComparable key, Writable val, Item tgt)
+  public final void convert(K key, V val, Item tgt)
   {
     converter.convert(key, val, tgt);
   }
@@ -93,12 +93,12 @@ public abstract class HadoopRecordToItem implements KeyValueImport<WritableCompa
   /**
    * @return
    */
-  protected abstract FromItem<WritableComparable> createKeyConverter();
+  protected abstract FromItem<K> createKeyConverter();
 
   /**
    * @return
    */
-  protected abstract FromItem<Writable> createValConverter();
+  protected abstract FromItem<V> createValConverter();
   
   /**
    * @return
@@ -117,7 +117,7 @@ public abstract class HadoopRecordToItem implements KeyValueImport<WritableCompa
      * @param val
      * @param tgt
      */
-    public abstract void convert(WritableComparable key, Writable val, Item tgt);
+    public abstract void convert(K key, V val, Item tgt);
     
     /**
      * @return
@@ -133,7 +133,7 @@ public abstract class HadoopRecordToItem implements KeyValueImport<WritableCompa
 	/* (non-Javadoc)
 	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
 	 */
-	public void convert(WritableComparable key, Writable val, Item tgt)
+	public void convert(K key, V val, Item tgt)
     {
       keyConverter.convert(key, tgt);
     }
@@ -154,7 +154,7 @@ public abstract class HadoopRecordToItem implements KeyValueImport<WritableCompa
 	/* (non-Javadoc)
 	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
 	 */
-	public void convert(WritableComparable key, Writable val, Item tgt)
+	public void convert(K key, V val, Item tgt)
     {
       valConverter.convert(val, tgt);
     }
@@ -175,7 +175,7 @@ public abstract class HadoopRecordToItem implements KeyValueImport<WritableCompa
 	/* (non-Javadoc)
 	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
 	 */
-	public void convert(WritableComparable key, Writable val, Item tgt)
+	public void convert(K key, V val, Item tgt)
     {
       JArray arr = (JArray) tgt.get();
       try
