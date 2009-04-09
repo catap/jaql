@@ -29,7 +29,7 @@ import com.ibm.jaql.json.type.Item;
 /**
  * 
  */
-public class FromJSONTxtConverter extends HadoopRecordToItem
+public class FromJSONTxtConverter extends HadoopRecordToItem<WritableComparable, Text>
 {
 
   /*
@@ -49,27 +49,18 @@ public class FromJSONTxtConverter extends HadoopRecordToItem
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected FromItem<Writable> createValConverter()
+  protected FromItem<Text> createValConverter()
   {
-    return new FromItem<Writable>() {
+    return new FromItem<Text>() {
       JsonParser parser = new JsonParser();
       
-      public void convert(Writable src, Item tgt)
+      public void convert(Text src, Item tgt)
       {
         if (src == null || tgt == null) return;
-        Text t = null;
-        if (src instanceof Text)
-        {
-          t = (Text) src;
-        }
-        else
-        {
-          throw new RuntimeException("tried to convert from: " + src);
-        }
         
         try
         {
-          parser.ReInit(new StringReader(t.toString()));
+          parser.ReInit(new StringReader(src.toString()));
           Item data = parser.JsonVal();
           tgt.set(data.get());
         }

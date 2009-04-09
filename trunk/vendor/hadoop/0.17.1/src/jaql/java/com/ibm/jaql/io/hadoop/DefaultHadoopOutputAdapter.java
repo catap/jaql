@@ -41,7 +41,7 @@ import com.ibm.jaql.json.type.MemoryJRecord;
 /**
  * The default class for writing Items from jaql to Hadoop
  */
-public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
+public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item>
 {
   static final Logger                LOG    = Logger.getLogger(DefaultHadoopOutputAdapter.class.getName());
 
@@ -49,7 +49,7 @@ public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
 
   protected JSONConfSetter           configurator;
 
-  protected KeyValueExport<WritableComparable, Writable>       converter;
+  protected KeyValueExport<K, V>       converter;
 
   protected JobConf                  conf;
 
@@ -208,11 +208,11 @@ public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
     }
     else
     {
-      final RecordWriter<WritableComparable, Writable> baseWriter = ((OutputFormat<WritableComparable, Writable>) oFormat)
+      final RecordWriter<K, V> baseWriter = ((OutputFormat<K, V>) oFormat)
           .getRecordWriter(ignored, job, name, progress);
 
-      final WritableComparable baseKey = converter.createKeyTarget();
-      final Writable baseValue = converter.createValTarget();
+      final K baseKey = converter.createKeyTarget();
+      final V baseValue = converter.createValTarget();
 
       writer = new RecordWriter<Item, Item>() {
 

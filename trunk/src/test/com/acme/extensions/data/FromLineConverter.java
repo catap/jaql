@@ -28,7 +28,7 @@ import com.ibm.jaql.json.type.JString;
  * Assumes that the "value" of a [key, value] pair is of type
  * o.a.h.io.Text. For each such value, this converter returns a JString.
  */
-public class FromLineConverter extends HadoopRecordToItem {
+public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Writable> {
   
   /*
    * (non-Javadoc)

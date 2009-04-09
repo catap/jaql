@@ -38,7 +38,7 @@ import com.ibm.jaql.json.type.MemoryJRecord;
 /**
  * The default class for reading Items from Hadoop into jaql
  */
-public class DefaultHadoopInputAdapter implements HadoopInputAdapter<Item>
+public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
 {
   static final Logger          LOG = Logger.getLogger(DefaultHadoopInputAdapter.class.getName());
 
@@ -46,7 +46,7 @@ public class DefaultHadoopInputAdapter implements HadoopInputAdapter<Item>
 
   protected JSONConfSetter     configurator;
 
-  protected KeyValueImport<WritableComparable, Writable> converter;
+  protected KeyValueImport<K, V> converter;
 
   protected JobConf            conf;
 
@@ -274,10 +274,10 @@ public class DefaultHadoopInputAdapter implements HadoopInputAdapter<Item>
     if (converter == null)
       return ((InputFormat<Item, Item>) iFormat).getRecordReader(split, job,
           reporter);
-    final RecordReader<WritableComparable, Writable> baseReader = ((InputFormat<WritableComparable, Writable>) iFormat)
+    final RecordReader<K, V> baseReader = ((InputFormat<K, V>) iFormat)
         .getRecordReader(split, job, reporter);
-    final WritableComparable baseKey = baseReader.createKey();
-    final Writable baseValue = baseReader.createValue();
+    final K baseKey = baseReader.createKey();
+    final V baseValue = baseReader.createValue();
 
     return new RecordReader<Item, Item>() {
 
