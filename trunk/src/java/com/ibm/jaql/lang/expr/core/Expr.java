@@ -95,6 +95,17 @@ public abstract class Expr
   }
 
   /**
+   * @param expr0
+   * @param expr1
+   * @param expr2
+   * @param expr3
+   */
+  public Expr(Expr expr0, Expr expr1, Expr expr2, Expr expr3)
+  {
+    this(new Expr[]{expr0, expr1, expr2, expr3});
+  }
+
+  /**
    * @param exprs
    */
   public Expr(ArrayList<? extends Expr> exprs)

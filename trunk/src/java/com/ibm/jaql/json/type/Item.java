@@ -30,7 +30,7 @@ import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Encapsulates an arbitrary, single JSON value (instance of {@link JValue}). */
-public final class Item implements WritableComparable // , Cloneable
+public final class Item implements WritableComparable<Item> // , Cloneable
 {
   // The order listed here is the order that types compare
   public static enum Type
@@ -335,7 +335,7 @@ public final class Item implements WritableComparable // , Cloneable
    */
   public boolean equals(Object x)
   {
-    return this.compareTo(x) == 0;
+    return this.compareTo((Item)x) == 0;
   }
 
   /*
@@ -343,10 +343,9 @@ public final class Item implements WritableComparable // , Cloneable
    * 
    * @see java.lang.Comparable#compareTo(java.lang.Object)
    */
-  public int compareTo(Object x)
+  public int compareTo(Item x)
   {
-    Item y = (Item) x;
-    int cmp = typeCompare(this, y);
+    int cmp = typeCompare(this, x);
     if (cmp != 0)
     {
       return cmp;
@@ -356,7 +355,7 @@ public final class Item implements WritableComparable // , Cloneable
       assert encoding == Encoding.NULL;
       return 0;
     }
-    return value.compareTo(y.value);
+    return value.compareTo(x.value);
   }
 
   /*
