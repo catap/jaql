@@ -64,6 +64,10 @@ import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
+import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
+import com.ibm.jaql.lang.expr.index.BuildLuceneFn;
+import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
+import com.ibm.jaql.lang.expr.index.ProbeLuceneFn;
 import com.ibm.jaql.lang.expr.io.ArrayReadExpr;
 import com.ibm.jaql.lang.expr.io.FileFn;
 import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
@@ -126,8 +130,8 @@ import com.ibm.jaql.lang.expr.span.TokenizeFn;
 import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
-import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
+import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.udf.JavaFnExpr;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
@@ -300,6 +304,10 @@ public class FunctionLib
     // lower level shell access
     add(HdfsShellExpr.class);
     add(HBaseShellExpr.class);
+    add(BuildLuceneFn.class); // TODO: TEMPORARY
+    add(ProbeLuceneFn.class); // TODO: TEMPORARY
+    add(BuildJIndexFn.class);
+    add(ProbeJIndexFn.class);
   }
 
   /** Creates an instance of the function represented by the given class, passing the 
