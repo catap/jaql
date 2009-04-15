@@ -32,20 +32,20 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
     throws IOException
   {
     super(name, mode);
-    init(bufsize);
+    init(mode, bufsize);
   }
 
   public BufferedRandomAccessFile(File file, String mode, int bufsize)
     throws IOException
   {
     super(file, mode);
-    init(bufsize);
+    init(mode, bufsize);
   }
   
-  protected void init(int bufsize) throws IOException
+  protected void init(String mode, int bufsize) throws IOException
   {
-    //buffer = ByteBuffer.allocateDirect(bufsize); // TODO: use direct?
-    buffer = ByteBuffer.allocate(bufsize);
+    buffer = ByteBuffer.allocateDirect(bufsize); // TODO: use direct?
+    // buffer = ByteBuffer.allocate(bufsize);
     buffer.limit(0);
     fileLength = super.length();
     fileOffset = 0;
@@ -159,6 +159,35 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
   public void write(byte[] b, int off, int len) throws IOException
   {
     throw new NotImplementedException();
+//    final FileChannel channel = getChannel();
+//    int p = buffer.position();
+//    int n = buffer.limit();
+//    final int c = buffer.capacity();
+//    buffer.limit(c);
+//    int k = c - n;
+//    if( len > k )
+//    {
+//      long p = fileOffset - n;
+//      channel.position(p);
+//      fileOffset = p;
+//      do
+//      {
+//        buffer.put(b, off, k);
+//        getChannel().write(buffer);
+//        len -= k;
+//        off += k;
+//        fileOffset += k;
+//        k = c;
+//        buffer.position(0);
+//      }
+//      while( len > k );
+//    }
+//    if( len > 0 )
+//    {
+//      buffer.put(b, off, len);
+//    }
+//    buffer.limit(buffer.position());
+//    buffer.position()
   }
 
   @Override
