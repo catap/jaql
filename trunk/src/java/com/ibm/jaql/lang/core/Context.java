@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.core;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -90,11 +93,29 @@ public class Context
       {
         task.run();
       }
-      catch(Exception e)
+      catch(Throwable e)
       {
         e.printStackTrace(); // TODO: log
       }
     }
     atQueryEnd.clear();
+  }
+
+  public void closeAtQueryEnd(final Closeable resource)
+  {
+    doAtQueryEnd(new Runnable() {
+      @Override
+      public void run()
+      {
+        try
+        {
+          resource.close();
+        }
+        catch (IOException e)
+        {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
+    });
   }
 }
