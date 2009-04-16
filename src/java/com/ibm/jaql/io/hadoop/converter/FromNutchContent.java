@@ -23,6 +23,7 @@ import org.apache.nutch.protocol.Content;
 
 import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBinary;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.MemoryJRecord;
 
@@ -52,6 +53,10 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
   @Override
   protected FromItem<Writable> createValConverter() {
     return new FromItem<Writable> () {
+      
+      private JString sVal = new JString();
+      private JBinary bVal = new JBinary();
+      
       public void convert(Writable src, Item tgt)
       {
         // expect src to be Content
@@ -69,10 +74,16 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
         ((JString)r.getValue(Field.TYPE.name).get()).copy(c.getContentType().getBytes());
         
         String cType = meta.get(Response.CONTENT_TYPE);
-        if(cType != null && cType.indexOf("text") >= 0)
-          ((JString)r.getValue(Field.CONTENT.name).get()).copy(c.getContent());
-        else
-          ((JString)r.getValue(Field.CONTENT.name).get()).set("binary");
+        Item cItem = r.getValue(Field.CONTENT.name);
+        if(cType != null && cType.indexOf("text") >= 0) {
+          sVal.copy(c.getContent());
+          if(cItem.getType() == Item.Type.STRING) 
+            cItem.set(sVal);
+        } else {
+          bVal.setBytes(c.getContent());
+          if(cItem.getType() == Item.Type.BINARY)
+            cItem.set(bVal);
+        }
         
         // set the dynamic metadata
         MemoryJRecord mr = (MemoryJRecord)r.getValue(Field.META.name).get();
@@ -90,7 +101,7 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
         r.add(Field.URL.name, new JString());
         r.add(Field.BASEURL.name, new JString());
         r.add(Field.TYPE.name, new JString());
-        r.add(Field.CONTENT.name, new JString());
+        r.add(Field.CONTENT.name, sVal);
         r.add(Field.META.name, new MemoryJRecord());
         
         return new Item(r);
