@@ -55,6 +55,15 @@ public class PathIndex extends PathStep
 
   /**
    * 
+   * @return
+   */
+  public final Expr indexExpr()
+  {
+    return exprs[0];
+  }
+  
+  /**
+   * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
@@ -76,7 +85,7 @@ public class PathIndex extends PathStep
     {
       return Item.nil;
     }
-    JNumber index = (JNumber)exprs[0].eval(context).get();
+    JNumber index = (JNumber)indexExpr().eval(context).get();
     if( index == null )
     {
       return Item.nil;

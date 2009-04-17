@@ -46,13 +46,17 @@ import com.ibm.jaql.lang.expr.array.ReplaceElementFn;
 import com.ibm.jaql.lang.expr.array.ReverseFn;
 import com.ibm.jaql.lang.expr.array.RowwiseFn;
 import com.ibm.jaql.lang.expr.array.ShiftFn;
+import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.IndexExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.MergeContainersFn;
+import com.ibm.jaql.lang.expr.core.PerPartitionFn;
+import com.ibm.jaql.lang.expr.core.PerfFn;
 import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
 import com.ibm.jaql.lang.expr.core.TypeofExpr;
@@ -198,6 +202,8 @@ public class FunctionLib
     add(PickNAgg.class);
     add(CombineExpr.class);
     add(TeeExpr.class);
+    add(PerPartitionFn.class);
+    add(PerfFn.class);
     add(SumPA.class); // TODO: delete
     add(MultiAgg.class); // TODO: delete
     add(ShiftFn.class);
@@ -247,6 +253,8 @@ public class FunctionLib
     add(AppendFn.class);
     add(ColumnwiseFn.class);
     add(RowwiseFn.class);
+    add(SliceFn.class);
+    add(IndexExpr.class);
     add(ExecFn.class);
     add(RFn.class);
     add(ReplaceElementFn.class);

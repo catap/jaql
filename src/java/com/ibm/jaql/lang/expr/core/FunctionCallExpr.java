@@ -73,6 +73,27 @@ public class FunctionCallExpr extends Expr
   }
 
   /**
+   * 
+   * @param fn
+   * @param arg0
+   */
+  public FunctionCallExpr(Expr fn, Expr arg1)
+  {
+    super(fn,arg1);
+  }
+
+  /**
+   * 
+   * @param fn
+   * @param arg1
+   * @param arg2
+   */
+  public FunctionCallExpr(Expr fn, Expr arg1, Expr arg2)
+  {
+    super(fn,arg1,arg2);
+  }
+
+  /**
    * @return
    */
   public final Expr fnExpr()

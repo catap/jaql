@@ -56,6 +56,24 @@ public class PathArraySlice extends PathArray
 
   /**
    * 
+   * @return
+   */
+  public Expr firstIndex()
+  {
+    return exprs[0];
+  }
+
+  /**
+   * 
+   * @return
+   */
+  public Expr lastIndex()
+  {
+    return exprs[1];
+  }
+
+  /**
+   * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
@@ -127,4 +145,5 @@ public class PathArraySlice extends PathArray
       }
     };
   }
+
 }
