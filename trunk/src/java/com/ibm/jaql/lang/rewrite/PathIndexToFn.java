@@ -15,12 +15,8 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
-import com.ibm.jaql.lang.expr.core.TransformExpr;
-import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathIndex;
 import com.ibm.jaql.lang.expr.path.PathReturn;
@@ -61,10 +57,7 @@ public class PathIndexToFn extends Rewrite
     
     if( !(nextStep instanceof PathReturn) )
     {
-      Var var = engine.env.makeVar("$");
-      e = new TransformExpr(
-          new BindingExpr(BindingExpr.Type.IN, var, null, e),
-          new PathExpr(new VarExpr(var), nextStep));
+      e = new PathExpr(e, nextStep);
     }
     pe.replaceInParent(e);
     return true;
