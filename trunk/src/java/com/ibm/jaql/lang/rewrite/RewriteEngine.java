@@ -33,7 +33,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[6];
+  protected RewritePhase[] phases      = new RewritePhase[7];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter 
 
@@ -86,6 +86,7 @@ public class RewriteEngine
     new CombineInputSimplification(phase);
     new DoConstPragma(phase);
     new PathArrayToFor(phase);
+    new PathIndexToFn(phase);
     new ToArrayElimination(phase);
     new EmptyOnNullElimination(phase);
     new InjectAggregate(phase);
@@ -106,6 +107,10 @@ public class RewriteEngine
     phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
     new ToMapReduce(phase);
 
+    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
+    new GroupElimination(phase);
+    new PerPartitionElimination(phase);
+    
     phases[++phaseId] = basicPhase; // run basic rewrites once more to clean things up
 
     // This phase is REQUIRED to run to completion if the expr has been

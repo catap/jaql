@@ -15,14 +15,20 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.path.PathArray;
 import com.ibm.jaql.lang.expr.path.PathArrayAll;
+import com.ibm.jaql.lang.expr.path.PathArrayHead;
+import com.ibm.jaql.lang.expr.path.PathArraySlice;
+import com.ibm.jaql.lang.expr.path.PathArrayTail;
 import com.ibm.jaql.lang.expr.path.PathExpand;
 import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathReturn;
@@ -56,41 +62,71 @@ public class PathArrayToFor extends Rewrite
     {
       return false;
     }
-    
-    if( !( expr instanceof PathArrayAll ||
-           expr instanceof PathToArray ||
-           expr instanceof PathExpand ) )
-    {
-      return false;
-    }
-    
+
     PathExpr pe = (PathExpr)expr.parent();
-
-    Expr outer = pe.input();
-    if( ! outer.isArray().always() &&
-        ( expr instanceof PathToArray ||
-          expr instanceof PathExpand ) )
-    {
-      outer = new ToArrayFn(outer);
-    }
-
-    Var v = engine.env.makeVar("$");
     PathStep nextStep = ((PathArray)expr).nextStep();
+    Expr outer = pe.input();
+    Var v = engine.env.makeVar("$");
     Expr inner = new VarExpr(v);
-    if( !( nextStep instanceof PathReturn ) )
-    {
-      inner =  new PathExpr( inner, nextStep );
-    }
-
+    
     if( expr instanceof PathArrayAll ||
-        expr instanceof PathToArray )
+        expr instanceof PathToArray ||
+        expr instanceof PathExpand )
     {
-      inner = new ArrayExpr(inner);
+      if( ! outer.isArray().always() &&
+          ( expr instanceof PathToArray ||
+            expr instanceof PathExpand ) )
+      {
+        outer = new ToArrayFn(outer);
+      }
+
+      if( !( nextStep instanceof PathReturn ) )
+      {
+        inner =  new PathExpr( inner, nextStep );
+      }
+
+      if( expr instanceof PathArrayAll ||
+          expr instanceof PathToArray )
+      {
+        inner = new ArrayExpr(inner);
+      }
+      else if( ! nextStep.isArray().always() )
+      {
+        assert expr instanceof PathExpand;
+        inner = new ToArrayFn(inner);
+      }
+
     }
-    else if( ! nextStep.isArray().always() )
+    else 
     {
-      assert expr instanceof PathExpand;
-      inner = new ToArrayFn(inner);
+      Expr low;
+      Expr high;
+      if( expr instanceof PathArrayHead )
+      {
+        low  = new ConstExpr(Item.nil);
+        high = ((PathArrayHead)expr).lastIndex();
+      }
+      else if( expr instanceof PathArraySlice )
+      {
+        low  = ((PathArraySlice)expr).firstIndex();
+        high = ((PathArraySlice)expr).lastIndex();
+      }
+      else if( expr instanceof PathArrayTail )
+      {
+        low  = ((PathArrayTail)expr).firstIndex();
+        high  = new ConstExpr(Item.nil);
+      }
+      else
+      {
+        return false; // We shouldn't get here unless someone adds a new PathArray subclass
+      }
+      outer = new SliceFn(outer, low, high);
+      if( nextStep instanceof PathReturn )
+      {
+        pe.replaceInParent(outer);
+        return true;
+      }
+      inner = new PathExpr(inner, nextStep);
     }
     
     ForExpr fe = new ForExpr(v, outer, inner);
