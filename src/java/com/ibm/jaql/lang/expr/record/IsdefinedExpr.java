@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import java.io.PrintStream;
+import java.util.HashSet;
+
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.json.type.JRecord;
@@ -65,6 +68,17 @@ public final class IsdefinedExpr extends Expr
   public Bool3 isNull()
   {
     return exprs[0].isNull().or(exprs[1].isNull());
+  }
+
+  @Override
+  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+      throws Exception
+  {
+    exprText.print("isdefined (");
+    exprs[0].decompile(exprText, capturedVars);
+    exprText.print(").(");
+    exprs[1].decompile(exprText, capturedVars);
+    exprText.print(")");
   }
 
   /*

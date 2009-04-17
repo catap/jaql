@@ -46,6 +46,13 @@ public class ConstArrayAccess extends Rewrite
     IndexExpr ie = (IndexExpr) expr;
 
     Expr array = ie.arrayExpr();
+    
+    if( array.isNull().always() )
+    {
+      ie.replaceInParent(new ConstExpr(Item.nil));
+      return true;
+    }
+    
     if (!(array instanceof ArrayExpr))
     {
       return false;

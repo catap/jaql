@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
-import java.util.HashSet;
-
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JLong;
@@ -25,12 +22,14 @@ import com.ibm.jaql.json.type.JNumber;
 import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Var;
 
 /**
- * 
+ * element(array, index) is the same as array[index], but it captures a simpler 
+ * case that doesn't use path expressions. array[index] is transformed to use the
+ * element function for better performance.
  */
-public class IndexExpr extends Expr
+@JaqlFn(fnName="index", minArgs=2, maxArgs=2)
+public class IndexExpr extends Expr // TODO: rename to IndexFn
 {
   public IndexExpr(Expr[] exprs)
   {
@@ -73,22 +72,22 @@ public class IndexExpr extends Expr
     return exprs[1];
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-   *      java.util.HashSet)
-   */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
-  {
-    // TODO: use proper function?
-    exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
-    exprText.print(")[");
-    exprs[1].decompile(exprText, capturedVars);
-    exprText.print("]");
-  }
+//  /*
+//   * (non-Javadoc)
+//   * 
+//   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
+//   *      java.util.HashSet)
+//   */
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+//      throws Exception
+//  {
+//    // TODO: use proper function?
+//    exprText.print("(");
+//    exprs[0].decompile(exprText, capturedVars);
+//    exprText.print(")[");
+//    exprs[1].decompile(exprText, capturedVars);
+//    exprText.print("]");
+//  }
 
   /*
    * (non-Javadoc)
@@ -110,12 +109,15 @@ public class IndexExpr extends Expr
     if (arrayExpr.isArray().always())
     {
       Iter iter = arrayExpr.iter(context);
+      if( iter.isNull() )
+      {
+        return Item.nil;
+      }
       item = iter.nth(i);
     }
     else
     {
       item = arrayExpr.eval(context);
-      // BUG: before was getNonNull, which is inconsistent with check.
       JArray array = (JArray) item.get();
       if (array == null)
       {

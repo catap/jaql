@@ -19,12 +19,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public final class BufferedRandomAccessFile extends RandomAccessFile
 {
   protected ByteBuffer buffer;
+  protected FileChannel channel;
   protected long fileLength;
   protected long fileOffset;
 
@@ -47,7 +48,8 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
     buffer = ByteBuffer.allocateDirect(bufsize); // TODO: use direct?
     // buffer = ByteBuffer.allocate(bufsize);
     buffer.limit(0);
-    fileLength = super.length();
+    channel = getChannel();
+    fileLength = channel.size(); // super.length();
     fileOffset = 0;
   }
 
@@ -76,7 +78,7 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
     }
     else
     {
-      super.seek(pos);
+      channel.position(pos);  // super.seek(pos);
       fileOffset = pos;
       buffer.limit(0);
     }
@@ -86,7 +88,7 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
   protected void fillBuffer() throws IOException
   {
     buffer.clear();
-    int n = getChannel().read(buffer);
+    int n = channel.read(buffer);
     buffer.position(0);
     if( n < 0 )
     {
@@ -158,7 +160,7 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
   @Override
   public void write(byte[] b, int off, int len) throws IOException
   {
-    throw new NotImplementedException();
+    throw new RuntimeException("writing not yet implemented");
 //    final FileChannel channel = getChannel();
 //    int p = buffer.position();
 //    int n = buffer.limit();
@@ -193,12 +195,12 @@ public final class BufferedRandomAccessFile extends RandomAccessFile
   @Override
   public void write(byte[] b) throws IOException
   {
-    throw new NotImplementedException();
+    throw new RuntimeException("writing not yet implemented");
   }
 
   @Override
   public void write(int b) throws IOException
   {
-    throw new NotImplementedException();
+    throw new RuntimeException("writing not yet implemented");
   }
 }

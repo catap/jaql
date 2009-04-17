@@ -56,6 +56,15 @@ public class PathArrayHead extends PathArray
 
   /**
    * 
+   * @return
+   */
+  public Expr lastIndex()
+  {
+    return exprs[0];
+  }
+
+  /**
+   * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
@@ -109,4 +118,5 @@ public class PathArrayHead extends PathArray
       }
     };
   }
+
 }

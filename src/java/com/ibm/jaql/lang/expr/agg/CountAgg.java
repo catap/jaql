@@ -25,7 +25,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "count", minArgs = 0, maxArgs = 1)
+@JaqlFn(fnName = "count", minArgs = 1, maxArgs = 1)
 public final class CountAgg extends AlgebraicAggregate
 {
   private long count;
