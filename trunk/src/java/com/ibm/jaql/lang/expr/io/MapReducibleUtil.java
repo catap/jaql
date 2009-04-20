@@ -15,9 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import java.lang.reflect.UndeclaredThrowableException;
+
 import com.ibm.jaql.io.Adapter;
+import com.ibm.jaql.io.InputAdapter;
+import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
@@ -52,6 +57,7 @@ public class MapReducibleUtil
 
     if (e instanceof AbstractHandleFn) return ((AbstractHandleFn) e).isMapReducible();
     if (e instanceof RecordExpr) return isMapReducible(input, (RecordExpr) e);
+    if (e instanceof ConstExpr) return isMapReducible(input, ((ConstExpr) e).value);
 
     return false;
 
@@ -152,5 +158,26 @@ public class MapReducibleUtil
     {
     }
     return false;
+  }
+
+  public static boolean isMapReducible(boolean input, Item descriptor) // TODO: throws Exception
+  {
+    try
+    {
+      if(input)
+      {
+        InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(descriptor);
+        return adapter instanceof HadoopInputAdapter<?>;
+      }
+      else
+      {
+        OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(descriptor);
+        return adapter instanceof HadoopOutputAdapter<?>;
+      }
+    }
+    catch(Exception e)
+    {
+      throw new UndeclaredThrowableException(e); // TODO: shouldn't need wrapper here
+    }
   }
 }
