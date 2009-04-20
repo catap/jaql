@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.expr.core.RecordExpr;
 
 /**
  * An expression used for reading data into jaql. It is called as follows:

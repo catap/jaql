@@ -15,12 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.ItemReader;
 import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
