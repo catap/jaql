@@ -355,6 +355,9 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
    */
   public void configure(JobConf conf)
   {
+    // setup the global conf if needed
+    if(Globals.getJobConf() == null)
+      Globals.setJobConf(conf);
     try
     {
       RegistryUtil.readConf(conf, HadoopAdapter.storeRegistryVarName,
