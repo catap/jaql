@@ -155,6 +155,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
 
     // write state to conf, pass in top-level args
     configurator.setSequential(conf);
+    Globals.setJobConf(conf);
     // initialize the format from conf
     if (iFormat instanceof JobConfigurable)
       ((JobConfigurable) iFormat).configure(conf);
@@ -342,6 +343,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
    */
   public void configure(JobConf conf)
   {
+    Globals.setJobConf(conf);
     // TODO: factor this configuration code so that it can be shared with the
     // composite input format...
     // setup the internal input format
@@ -404,5 +406,6 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
     // write the optional args for the configurator
     configurator.setParallel(conf); // TODO: double-check what options the
     // configurator has at this point
+    Globals.setJobConf(conf);
   }
 }
