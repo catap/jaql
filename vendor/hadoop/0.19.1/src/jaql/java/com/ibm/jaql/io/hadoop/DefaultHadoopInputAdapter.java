@@ -121,7 +121,7 @@ public class DefaultHadoopInputAdapter<K, V> implements HadoopInputAdapter<Item>
   public void open() throws Exception
   {
     this.conf = new JobConf();
-    Globals.setJobConf(conf);
+
     this.reporter = new Reporter() {
       
       public Counter getCounter(String arg0, String arg1)
@@ -153,6 +153,7 @@ public class DefaultHadoopInputAdapter<K, V> implements HadoopInputAdapter<Item>
 
     // write state to conf, pass in top-level args
     configurator.setSequential(conf);
+    Globals.setJobConf(conf);
     // initialize the format from conf
     if (iFormat instanceof JobConfigurable)
       ((JobConfigurable) iFormat).configure(conf);
@@ -343,12 +344,16 @@ public class DefaultHadoopInputAdapter<K, V> implements HadoopInputAdapter<Item>
     // TODO: factor this configuration code so that it can be shared with the
     // composite input format...
     // setup the internal input format
+    
+    // setup the global conf if needed
+    if(Globals.getJobConf() == null)
+      Globals.setJobConf(conf);
+    
     if (iFormat == null)
     {
       try
       {
-        JRecord options = ConfUtil
-            .readConf(conf, ConfSetter.CONFINOPTIONS_NAME);
+        JRecord options = ConfUtil.readConf(conf, ConfSetter.CONFINOPTIONS_NAME);
         initializeFrom(options);
       }
       catch (Exception e)
@@ -400,7 +405,9 @@ public class DefaultHadoopInputAdapter<K, V> implements HadoopInputAdapter<Item>
     ConfUtil.writeConf(conf, ConfSetter.CONFINOPTIONS_NAME, args);
 
     // write the optional args for the configurator
-    configurator.setParallel(conf); // TODO: double-check what options the
-    // configurator has at this point
+    configurator.setParallel(conf); 
+    
+    // set the global state
+    Globals.setJobConf(conf);
   }
 }

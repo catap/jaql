@@ -162,6 +162,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item
     };
 
     configurator.setSequential(conf);
+    Globals.setJobConf(conf);
     if (oFormat instanceof JobConfigurable)
       ((JobConfigurable) oFormat).configure(conf);
   }
@@ -295,6 +296,10 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item
    */
   public void configure(JobConf conf)
   {
+    // setup the global conf if needed
+    if(Globals.getJobConf() == null)
+      Globals.setJobConf(conf);
+    
     if (oFormat == null)
     {
       try
@@ -345,5 +350,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item
     // write out args and options to the conf
     ConfUtil.writeConf(conf, ConfSetter.CONFOUTOPTIONS_NAME, args);
     configurator.setParallel(conf);
+    // set the global state
+    Globals.setJobConf(conf);
   }
 }
