@@ -22,11 +22,21 @@ if [ $? -eq 0 ]; then
 fi
 export JAQLSHELL_CLASSPATH
 
-# save, then modify terminal settings 
-STTY_STATE=`stty -g 2>/dev/null` 
-"stty -icanon min 1 -echo;" 2>/dev/null
+# check for cygwin
+cygwin=false
+case "`uname`" in
+    CYGWIN*) cygwin=true;;
+esac
+
+# CYGWIN ONLY: save, then modify terminal settings 
+if $cygwin; then
+    STTY_STATE=`stty -g 2>/dev/null` 
+    "stty -icanon min 1 -echo;" 2>/dev/null
+fi
 
 jaql JaqlShell $*
 
-# restore terminal settings
-stty $STTY_STATE 2>/dev/null
+# CYGWIN ONLY: restore terminal settings
+if $cygwin; then
+    stty $STTY_STATE 2>/dev/null
+fi
