@@ -379,14 +379,14 @@ public class MemoryJRecord extends JRecord {
   }
 
   @Override
-	public void copy(JValue value) throws Exception {
+	public void setCopy(JValue value) throws Exception {
 		JRecord r = (JRecord) value;
     int n = r.arity();
     ensureCapacity(n);
     arity = n;
     for (int i = 0; i < n; i++)
     {
-      names[i].copy(r.getName(i));
+      names[i].setCopy(r.getName(i));
       values[i].copy(r.getValue(i));
     }
     reorg(); 		

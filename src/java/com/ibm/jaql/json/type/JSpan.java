@@ -149,7 +149,7 @@ public class JSpan extends JAtom
    */
   public void getText(JString inText, JString outText)
   {
-    outText.copy(inText.getBytes(), (int) begin, (int) (end - begin));
+    outText.setCopy(inText.getBytes(), (int) begin, (int) (end - begin));
   }
 
   /*
@@ -158,7 +158,7 @@ public class JSpan extends JAtom
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue)
+  public void setCopy(JValue jvalue)
   {
     JSpan s = (JSpan) jvalue;
     this.begin = s.begin;

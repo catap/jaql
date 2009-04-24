@@ -249,7 +249,7 @@ public class HBaseStore
       JString name = rec.getName(i);
       Item item = rec.getValue(i);
       i++;
-      name.copy(J_KEY);
+      name.setCopy(J_KEY);
       item.set(new JString(key.getBytes(), key.getLength())); // TODO: memory
       rec.add(name, item);
       for (Map.Entry<byte[], Cell> e : row.entrySet())
@@ -260,7 +260,7 @@ public class HBaseStore
           name = rec.getName(i);
           item = rec.getValue(i);
           i++;
-          name.copy(n.getBytes(), n.length());
+          name.setCopy(n.getBytes(), n.length());
           convertFromBytes(name, e.getValue().getValue(), item, rec);
         }
       }

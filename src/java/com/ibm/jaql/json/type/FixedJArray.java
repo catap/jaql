@@ -245,7 +245,7 @@ public final class FixedJArray extends JArray
    * @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue value) throws Exception
+  public void setCopy(JValue value) throws Exception
   {
     FixedJArray arr = (FixedJArray) value;
     int n = arr.count;

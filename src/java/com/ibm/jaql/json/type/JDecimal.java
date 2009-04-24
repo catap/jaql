@@ -253,7 +253,7 @@ public class JDecimal extends JNumber
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue)
+  public void setCopy(JValue jvalue)
   {
     JDecimal d = (JDecimal) jvalue;
     value = d.value; // shared because it is immutable

@@ -314,10 +314,10 @@ public class JRegex extends JAtom
    * 
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
-  public void copy(JValue jvalue) throws Exception
+  public void setCopy(JValue jvalue) throws Exception
   {
     JRegex r = (JRegex) jvalue;
-    this.regex.copy(r.regex);
+    this.regex.setCopy(r.regex);
     this.flags = r.flags;
     this.matcher = null;
   }

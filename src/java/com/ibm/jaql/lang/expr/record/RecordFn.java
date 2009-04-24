@@ -70,7 +70,7 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
         {
           JString name = rec.getName(rec.arity());
           Item value = rec.getValue(rec.arity());
-          name.copy(inrec.getName(i));
+          name.setCopy(inrec.getName(i));
           value.copy(inrec.getValue(i));
           rec.add(name, value);
         }

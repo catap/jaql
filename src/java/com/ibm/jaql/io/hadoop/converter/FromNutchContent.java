@@ -69,16 +69,16 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
         Metadata meta = c.getMetadata();
         
         // set the fixed fields
-        ((JString)r.getValue(Field.URL.name).get()).copy(c.getUrl().getBytes());
-        ((JString)r.getValue(Field.BASEURL.name).get()).copy(c.getBaseUrl().getBytes());
-        ((JString)r.getValue(Field.TYPE.name).get()).copy(c.getContentType().getBytes());
+        ((JString)r.getValue(Field.URL.name).get()).setCopy(c.getUrl().getBytes());
+        ((JString)r.getValue(Field.BASEURL.name).get()).setCopy(c.getBaseUrl().getBytes());
+        ((JString)r.getValue(Field.TYPE.name).get()).setCopy(c.getContentType().getBytes());
         
         String cTypeFromMeta = meta.get(Response.CONTENT_TYPE);
         String cTypeFromTop  = c.getContentType();
         Item cItem = r.getValue(Field.CONTENT.name);
         if( (cTypeFromMeta != null && cTypeFromMeta.indexOf("text") >= 0 ) ||
             (cTypeFromTop  != null && cTypeFromTop.indexOf("text") >= 0 ) ){
-          sVal.copy(c.getContent());
+          sVal.setCopy(c.getContent());
           if(cItem.getType() != Item.Type.STRING) 
             cItem.set(sVal);
         } else {
