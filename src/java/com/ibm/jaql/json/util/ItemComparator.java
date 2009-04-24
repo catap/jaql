@@ -32,12 +32,18 @@ import com.ibm.jaql.lang.core.JComparator;
  * (1) compare the types of the next element as determined by {@link ItemWalker#next()},
  * (2) compare the values of the these elements, if atomic, and (3) repeat until a difference 
  * has been found (in either 1 or 2) or both inputs have been consumed (and thus are equal).
+ * 
+ * This class is not threadsafe. It can be used only with Hadoop version 0.18.0 and above because
+ * earlier versions shared comparators between threads.
  */
-// TODO: creates instances; comparison is not performed on byte level
+// TODO: comparison is not performed on byte level
 public class ItemComparator implements JComparator
 {
   protected DataInputBuffer buffer = new DataInputBuffer();
   protected Item key1 = new Item(); 
+  
+  protected ItemWalker walker1 = new ItemWalker();
+  protected ItemWalker walker2 = new ItemWalker();
 
   /**
    * @param walker1
@@ -104,8 +110,6 @@ public class ItemComparator implements JComparator
    */
   public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2)
   {
-    ItemWalker walker1 = new ItemWalker();
-    ItemWalker walker2 = new ItemWalker();
     walker1.reset(b1, s1, l1);
     walker2.reset(b2, s2, l2);
     return compareWalkers(walker1, walker2);
@@ -118,9 +122,6 @@ public class ItemComparator implements JComparator
    */
   public int compareSpillArrays(DataInput in1, DataInput in2)
   {
-    // FIXME: don't allocate each time, use a pool
-    ItemWalker walker1 = new ItemWalker();
-    ItemWalker walker2 = new ItemWalker();
     walker1.resetSpillArray(in1);
     walker2.resetSpillArray(in2);
     return compareWalkers(walker1, walker2);

@@ -23,12 +23,15 @@ import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JValue;
 
 /**
- * This compares two JArrays of fixed length equal to asc.length
+ * This compares two JArrays of fixed length equal to asc.length.
+ * 
+ * This class is not threadsafe. It can be used only with Hadoop version 0.18.0 and above because
+ * earlier versions shared comparators between threads.
  */
 public class AscDescItemComparator extends ItemComparator
 {
   boolean[] asc;
-
+  
   /**
    * asc[i] = true if ascending, false if descending
    * 
@@ -53,8 +56,6 @@ public class AscDescItemComparator extends ItemComparator
 
     try
     {
-      ItemWalker walker1 = new ItemWalker();
-      ItemWalker walker2 = new ItemWalker();
       walker1.reset(b1, s1, l1);
       walker2.reset(b2, s2, l2);
       int code1 = walker1.next();

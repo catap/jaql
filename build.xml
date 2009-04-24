@@ -30,7 +30,7 @@
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <!-- Default version is 0.18.3. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0, 0.19.1 -->
+    <!-- Default version is 0.18.3. Other supported versions include: 0.18.1, 0.19.0, 0.19.1 -->
     <property name="hadoop.version" value="0.18.3" />
 
     <property name="hadoop.dir"
