@@ -58,7 +58,7 @@ public class JString extends JAtom
    */
   public JString(JString string)
   {
-    copy(string);
+    setCopy(string);
   }
 
   /**
@@ -147,7 +147,7 @@ public class JString extends JAtom
   /**
    * @param string
    */
-  public void copy(JString string)
+  public void setCopy(JString string)
   {
     if (bytes.length < string.len)
     {
@@ -164,9 +164,9 @@ public class JString extends JAtom
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue value) throws Exception
+  public void setCopy(JValue value) throws Exception
   {
-    copy((JString) value);
+    setCopy((JString) value);
   }
 
   /**
@@ -176,7 +176,7 @@ public class JString extends JAtom
    * @param offset
    * @param len
    */
-  public void copy(byte[] utf8, int offset, int len)
+  public void setCopy(byte[] utf8, int offset, int len)
   {
     if (bytes.length < len)
     {
@@ -193,9 +193,9 @@ public class JString extends JAtom
    * @param utf8
    * @param len
    */
-  public void copy(byte[] utf8, int len)
+  public void setCopy(byte[] utf8, int len)
   {
-    copy(utf8, 0, len);
+    setCopy(utf8, 0, len);
   }
 
   /**
@@ -203,9 +203,9 @@ public class JString extends JAtom
    * 
    * @param utf8
    */
-  public void copy(byte[] utf8)
+  public void setCopy(byte[] utf8)
   {
-    copy(utf8, 0, utf8.length);
+    setCopy(utf8, 0, utf8.length);
   }
 
   /*

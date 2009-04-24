@@ -29,7 +29,7 @@ public class BaseUtil
   public static final Log     LOG             = LogFactory
                                                   .getLog(BaseUtil.class
                                                       .getName());
-  public static final char    hexNibble[]     = {'0', '1', '2', '3', '4', '5',
+  public static final char    HEX_NIBBLE[]     = {'0', '1', '2', '3', '4', '5',
       '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
   public static final int     GOLDEN_RATIO_32 = 0x09e3779b9;
   public static final long    GOLDEN_RATIO_64 = 0x9e3779b97f4a7c13L;

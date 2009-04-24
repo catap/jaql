@@ -59,7 +59,7 @@ public class JJavaObject extends JAtom
     try
     {
       JJavaObject ji = new JJavaObject();
-      ji.copy(this);
+      ji.setCopy(this);
       return ji;
     }
     catch (Exception e)
@@ -149,7 +149,7 @@ public class JJavaObject extends JAtom
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue) throws Exception
+  public void setCopy(JValue jvalue) throws Exception
   {
     JJavaObject ji = (JJavaObject) jvalue;
     if (value == null || value.getClass() != ji.value.getClass())

@@ -163,7 +163,7 @@ public class JavaJArray extends JArray
    * @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue) throws Exception
+  public void setCopy(JValue jvalue) throws Exception
   {
     JavaJRecord that = (JavaJRecord) jvalue;
     this.value = meta.copy(this.value, that.value);

@@ -92,7 +92,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item
   private void initializeFrom(JRecord args) throws Exception
   {
     this.args = new MemoryJRecord(args.arity());
-    this.args.copy(args);
+    this.args.setCopy(args);
 
     // set the location
     this.location = AdapterStore.getStore().getLocation(args);

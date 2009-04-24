@@ -20,16 +20,16 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import org.apache.hadoop.io.WritableComparator;
+
 import com.ibm.jaql.util.BaseUtil;
 
-/**
- * 
- */
+/** An atomic JSON value representing a byte array. */
 public class JBinary extends JAtom
 {
-  private static byte[] emptyBuffer = new byte[0];
+  private static final byte[] EMPTY_BUFFER = new byte[0];
 
-  byte[]                value       = emptyBuffer;
+  byte[]                value       = EMPTY_BUFFER;
   int                   length;
 
   /**
@@ -37,32 +37,40 @@ public class JBinary extends JAtom
    */
   public JBinary()
   {
+    this(EMPTY_BUFFER);
   }
 
-  /**
-   * @param value
+  /** Construct a new JBinary using the given byte array as its value. The array is not copied but
+   * directly used as internal buffer. 
+   * 
+   * @param value a byte array to be used as internal buffer 
    */
   public JBinary(byte[] value)
   {
-    this.value = value;
-    this.length = value.length;
+    this(value, value.length);
   }
 
-  /**
-   * @param value
-   * @param length
+  /** Construct a new JBinary using the first <code>length</code> bytes of the given byte array 
+   * as its value. The array is not copied but directly used as internal buffer. 
+   * 
+   * @param value a byte array to be used as internal buffer
+   * @param length number of bytes that are valid
    */
   public JBinary(byte[] value, int length)
   {
     this.value = value;
-    this.length = length;
+    this.length = length;        
   }
 
-  /**
-   * @param hexString
+  /** Construct a new JBinary from a hexstring, ignoring whitespace. 
+   *
+   * @throws IllegalArgumentException when the hexstring is not valid
    */
   public JBinary(String hexString)
   {
+    // TODO: two passes seem to be inefficient
+    // TODO: first pass can be made more readable using regular expressions
+    // TODO: conversion code should be factored to a static utility method
     int n = 0;
     int len = hexString.length();
     for (int i = 0; i < len; i++)
@@ -75,12 +83,12 @@ public class JBinary extends JAtom
       }
       else
       {
-        throw new RuntimeException("bad hex character: " + c);
+        throw new IllegalArgumentException("bad hex character: " + c);
       }
     }
     if ((n & 0x01) != 0)
     {
-      throw new RuntimeException("hex string must be a multiple of two");
+      throw new IllegalArgumentException("hex string must be a multiple of two");
     }
     length = n / 2;
     n = 0;
@@ -120,31 +128,23 @@ public class JBinary extends JAtom
     }
   }
 
-  /**
-   * 
-   * @return The current byte[] buffer. It still belongs to this class.
-   */
+  /** Returns the internal byte[] buffer. It still belongs to this class. */
   public byte[] getBytes()
   {
     return value;
   }
 
-  /**
-   * 
-   * @return The number of bytes in getBytes() that are valid.
-   */
+  /** Returns the number of bytes in getBytes() that are valid. */
   public int getLength()
   {
     return length;
   }
 
-  /**
+  /** Sets the value of this JBinary to the first <code>length</code> bytes of the given byte 
+   * array. The array is not copied but directly used as internal buffer. 
    * 
-   * @param buffer
-   *            The buffer now belongs to this class
-   * @param length
-   *            The number of bytes in the buffer that are part of the current
-   *            value.
+   * @param buffer a byte buffer
+   * @param length number of bytes that are valid
    */
   public void setBytes(byte[] bytes, int length)
   {
@@ -152,26 +152,27 @@ public class JBinary extends JAtom
     this.length = length;
   }
 
-  /**
+  /** Sets the value of this JBinary to the given byte array. The array is not copied but 
+   * directly used as internal buffer. 
    * 
-   * @param bytes
-   *            The buffer now belongs to this class. All the bytes are part of
-   *            the current value.
+   * @param buffer a byte buffer
    */
   public void setBytes(byte[] bytes)
   {
     setBytes(bytes, bytes.length);
   }
 
-  /**
-   * @param len
+  /** Ensures that the internal buffer has at least the provided capacity. The (valid) content of 
+   * the byte buffer is retained. 
+   * 
+   * @param capacity
    */
-  public void ensureCapacity(int len)
+  public void ensureCapacity(int capacity)
   {
-    if (len > value.length)
+    if (capacity > value.length)
     {
-      byte[] newval = new byte[len];
-      System.arraycopy(newval, 0, value, 0, length);
+      byte[] newval = new byte[capacity];
+      System.arraycopy(value, 0, newval, 0, length); // non-valid bytes are not copied
       value = newval;
     }
   }
@@ -184,40 +185,19 @@ public class JBinary extends JAtom
   @Override
   public int compareTo(Object x)
   {
-    //    int c = Item.typeCompare(this, (Writable)x);
-    //    if( c != 0 )
-    //    {
-    //      return c;
-    //    }
-    byte[] value1 = value;
     JBinary bi = (JBinary) x;
-    byte[] value2 = bi.value;
-    int len = (length <= bi.length) ? length : bi.length;
-    for (int i = 0; i < len; i++)
+    return WritableComparator.compareBytes(value, 0, length, bi.value, 0, bi.length);
+  }
+
+  
+  @Override
+  public int hashCode() {
+    int h = BaseUtil.GOLDEN_RATIO_32;
+    for (int i = 0; i < length; i++)
     {
-      int b1 = value1[i] & 0xFF;
-      int b2 = value2[i] & 0xFF;
-      if (b1 < b2)
-      {
-        return -1;
-      }
-      else if (b1 > b2)
-      {
-        return +1;
-      }
+      h = (h ^ value[i]) * BaseUtil.GOLDEN_RATIO_32;
     }
-    if (length == bi.length)
-    {
-      return 0;
-    }
-    else if (length < bi.length)
-    {
-      return -1;
-    }
-    else
-    {
-      return +1;
-    }
+    return h;
   }
 
   /*
@@ -228,13 +208,10 @@ public class JBinary extends JAtom
   @Override
   public long longHashCode()
   {
-    byte[] bs = value;
-    int n = length;
     long h = BaseUtil.GOLDEN_RATIO_64;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < length; i++)
     {
-      h |= bs[i];
-      h *= BaseUtil.GOLDEN_RATIO_64;
+      h = (h ^ value[i]) * BaseUtil.GOLDEN_RATIO_64;
     }
     return h;
   }
@@ -247,12 +224,9 @@ public class JBinary extends JAtom
   @Override
   public void readFields(DataInput in) throws IOException
   {
-    // todo: need to leave long binaries on disk?
+    // TODO: need to leave long binaries on disk?
     length = BaseUtil.readVUInt(in);
-    if (value.length < length)
-    {
-      value = new byte[length];
-    }
+    value = value.length >= length ? value : new byte[length];
     in.readFully(value, 0, length);
   }
 
@@ -280,8 +254,8 @@ public class JBinary extends JAtom
     for (int i = 0; i < length; i++)
     {
       byte b = value[i];
-      out.print(BaseUtil.hexNibble[(b >> 4) & 0x0f]);
-      out.print(BaseUtil.hexNibble[b & 0x0f]);
+      out.print(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
+      out.print(BaseUtil.HEX_NIBBLE[b & 0x0f]);
     }
     out.print('\'');
   }
@@ -299,8 +273,8 @@ public class JBinary extends JAtom
     for (int i = 0; i < length; i++)
     {
       byte b = value[i];
-      buf.append(BaseUtil.hexNibble[(b >> 4) & 0x0f]);
-      buf.append(BaseUtil.hexNibble[b & 0x0f]);
+      buf.append(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
+      buf.append(BaseUtil.HEX_NIBBLE[b & 0x0f]);
     }
     buf.append('\'');
     return buf.toString();
@@ -312,15 +286,10 @@ public class JBinary extends JAtom
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue) throws Exception
+  public void setCopy(JValue jvalue) throws Exception
   {
     JBinary bi = (JBinary) jvalue;
-    length = bi.length;
-    if (value.length < length)
-    {
-      value = new byte[length];
-    }
-    System.arraycopy(bi.value, 0, value, 0, length);
+    setCopy(bi.value, 0, bi.length);
   }
   
   /** Copies data from a byte array into this JBinary. 
@@ -329,11 +298,9 @@ public class JBinary extends JAtom
    * @param pos position in byte array
    * @param length number of bytes to copy
    */ 
-  public void copy(byte[] buf, int pos, int length) {
-  	if (this.length < length) {
-  		value = new byte[length];
-  	}
-  	this.length = length;
+  public void setCopy(byte[] buf, int pos, int length) {
+    this.length = length;
+    value = value.length >= length ? value : new byte[length];
   	System.arraycopy(buf, pos, value, 0, length);
   }
 

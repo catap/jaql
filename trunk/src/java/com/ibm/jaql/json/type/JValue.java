@@ -28,50 +28,37 @@ import java.io.PrintStream;
 public abstract class JValue implements Comparable<Object> //extends WritableComparable
 {
 
-  /**
-   * @return
+  /** Returns the encoding of this object.
+   * 
+   * @return the encoding of this object
    */
   public abstract Item.Encoding getEncoding();
 
-  /**
-   * copy a value. value must have the same encoding as this object.
+  /** Copy the content of <code>jvalue</code> into this object. The provided value must have the 
+   * same encoding as this object.
    * 
-   * @param jvalue
+   * @param jvalue a value
    * @throws Exception
    */
-  public abstract void copy(JValue jvalue) throws Exception;
+  public abstract void setCopy(JValue jvalue) throws Exception;
 
-  /*
-   * (non-Javadoc)
+
+  /** Set the content of this value by reading from the provided input.
    * 
-   * @see java.lang.Comparable#compareTo(java.lang.Object)
-   */
-  public abstract int compareTo(Object obj);
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.lang.Object#equals(java.lang.Object)
-   */
-  @Override
-  public boolean equals(Object x)
-  {
-    return this.compareTo(x) == 0;
-  }
-
-  /**
-   * @param in
+   * @param in an input stream
    * @throws IOException
    */
   public abstract void readFields(DataInput in) throws IOException;
-  /**
-   * @param out
+
+  /** Write this value to the provided output.
+   * 
+   * @param out an output stream
    * @throws IOException
    */
   public abstract void write(DataOutput out) throws IOException;
 
   /**
-   * Print the value on the stream in (extended) JSON text format.
+   * Print this value on the stream in (extended) JSON text format.
    * 
    * @param out
    * @throws Exception
@@ -79,7 +66,7 @@ public abstract class JValue implements Comparable<Object> //extends WritableCom
   public abstract void print(PrintStream out) throws Exception;
 
   /**
-   * Print the value on the stream in (extended) JSON text format. Nested items
+   * Print this value on the stream in (extended) JSON text format. Nested items
    * are indented by the indent value.
    * 
    * @param out
@@ -92,17 +79,12 @@ public abstract class JValue implements Comparable<Object> //extends WritableCom
   }
 
   /**
-   * Convert the value to a string in (extended) JSON text format.
+   * Convert this value to a string in (extended) JSON text format.
    */
   public abstract String toJSON();
 
   /**
-   * @return
-   */
-  public abstract long longHashCode();
-
-  /**
-   * Convert the value to a Java String. The default is the JSON string, but
+   * Convert this value to a Java String. The default is the JSON string, but
    * some classes will override to return other strings.
    */
   @Override
@@ -111,14 +93,26 @@ public abstract class JValue implements Comparable<Object> //extends WritableCom
     return toJSON();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.lang.Object#hashCode()
-   */
+  /* @see java.lang.Object#equals(java.lang.Object) */
+  @Override
+  public boolean equals(Object x)
+  {
+    return this.compareTo(x) == 0;
+  }
+
+  /* @see java.lang.Comparable#compareTo(java.lang.Object) */
+  public abstract int compareTo(Object obj);
+
+  /* @see java.lang.Object#hashCode() */
   @Override
   public int hashCode()
   {
     return (int) (longHashCode() >>> 32);
   }
+  
+  /** Returns a long hash code for this value.
+   * 
+   * @return a long hash code
+   */
+  public abstract long longHashCode();
 }
