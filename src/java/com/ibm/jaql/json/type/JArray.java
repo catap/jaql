@@ -193,5 +193,5 @@ public abstract class JArray extends JValue
    * 
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
-  public abstract void copy(JValue value) throws Exception;
+  public abstract void setCopy(JValue value) throws Exception;
 }

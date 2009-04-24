@@ -30,9 +30,7 @@ import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.PagedFile;
 import com.ibm.jaql.util.SpillFile;
 
-/**
- * 
- */
+/** A JSON array that stores its data in a {@link SpillFile}. */
 public class SpillJArray extends JArray
 {
   protected long      count;
@@ -346,7 +344,7 @@ public class SpillJArray extends JArray
    * @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue value) throws Exception
+  public void setCopy(JValue value) throws Exception
   {
     SpillJArray arr = (SpillJArray) value;
     this.count = arr.count;

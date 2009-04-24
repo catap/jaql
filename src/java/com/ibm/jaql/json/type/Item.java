@@ -475,7 +475,7 @@ public final class Item implements WritableComparable<Item> // , Cloneable
         encoding = item.encoding;
         cache = value = encoding.newInstance();
       }
-      value.copy(item.value);
+      value.setCopy(item.value);
     }
   }
 

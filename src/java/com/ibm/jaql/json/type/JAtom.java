@@ -20,30 +20,15 @@ import java.io.PrintStream;
 /** Superclass for all atomic JSON values. */
 public abstract class JAtom extends JValue
 {
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object)
-   */
-  public boolean equals(Object x)
-  {
-    return this.compareTo(x) == 0;
-  }
-
-  /**
-   * @return
+  /** Returns <code>true</code>.
+   * @return<code>true</code>
    */
   public final boolean isAtom()
   {
     return true;
   }
 
-  /**
-   * Print the atom on the stream in (extended) JSON text format.
-   * 
-   * @param out
-   * @throws Exception
-   */
+  /* @see JValue#print(PrintStream) */
   @Override
   public void print(PrintStream out) throws Exception
   {

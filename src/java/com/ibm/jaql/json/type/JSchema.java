@@ -114,7 +114,7 @@ public class JSchema extends JAtom
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue) throws Exception
+  public void setCopy(JValue jvalue) throws Exception
   {
     JSchema s = (JSchema) jvalue;
     schema = s.schema;

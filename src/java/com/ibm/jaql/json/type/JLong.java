@@ -272,7 +272,7 @@ public class JLong extends JNumber
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
-  public void copy(JValue jvalue) throws Exception
+  public void setCopy(JValue jvalue) throws Exception
   {
     JLong num = (JLong) jvalue;
     value = num.value;

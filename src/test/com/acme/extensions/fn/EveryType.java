@@ -175,7 +175,7 @@ public class EveryType
         {
           // TODO: Java functions need the context to be evaluated, and take Item arguments...
           JFunction f = (JFunction) v;
-          fn.copy(f);
+          fn.setCopy(f);
           current = f;
         }
         else
