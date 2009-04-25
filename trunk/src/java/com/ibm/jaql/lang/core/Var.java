@@ -164,7 +164,7 @@ public class Var extends Object
     else if( iter != null )
     {
       SpillJArray arr = new SpillJArray();
-      arr.set(iter);
+      arr.setCopy(iter);
       value = new Item(arr);
       iter = null;
       return value;
@@ -209,7 +209,7 @@ public class Var extends Object
       else
       {
         SpillJArray arr = new SpillJArray();
-        arr.set(iter);
+        arr.setCopy(iter);
         value = new Item(arr);
         return arr.iter();
       }

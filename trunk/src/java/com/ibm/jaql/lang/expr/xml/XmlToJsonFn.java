@@ -140,7 +140,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
           r.add(xmlnsName, new JString(uri));
         }
         r.add(name, new JString(v));
-        ca.add(r);
+        ca.addCopy(r);
       }
       stack.push(ca);
     }
@@ -165,7 +165,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
       }
       r.add(localName, ca);
       SpillJArray pa = (SpillJArray)stack.peek();
-      pa.add(r);
+      pa.addCopy(r);
     }
     catch(IOException e)
     {
@@ -186,7 +186,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
       MemoryJRecord r = new MemoryJRecord();
       r.add(textName, new JString(text.toString()));
       SpillJArray pa = (SpillJArray)stack.peek();
-      pa.add(r);
+      pa.addCopy(r);
       text.setLength(0);
     }
   }  
@@ -345,10 +345,10 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
         else
         {
           a = new SpillJArray();
-          a.add(item);
+          a.addCopy(item);
           parent.set(localName, a);
         }
-        a.add(me);
+        a.addCopy(me);
       }
     }
     catch(IOException e)

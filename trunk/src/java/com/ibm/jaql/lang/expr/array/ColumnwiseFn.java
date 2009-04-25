@@ -90,10 +90,10 @@ public class ColumnwiseFn extends Expr
           // pad the array with initial nulls
           for(int j = 0 ; j < count ; j++)
           {
-            arr.add(Item.nil);
+            arr.addCopy(Item.nil);
           }
         }
-        arr.add(val);
+        arr.addCopy(val);
       }
       count++;
       // add null for any column that wasn't in this record
@@ -103,7 +103,7 @@ public class ColumnwiseFn extends Expr
         SpillJArray arr = arrays.get(i);
         if( arr.count() != count )
         {
-          arr.add(Item.nil);
+          arr.addCopy(Item.nil);
         }
       }
     }

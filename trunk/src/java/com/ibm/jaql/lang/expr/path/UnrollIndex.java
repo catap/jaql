@@ -106,7 +106,7 @@ public class UnrollIndex extends UnrollStep
         {
           item = hole = new Item(item.get()); // TODO: memory
         }
-        spill.add(item);
+        spill.addCopy(item);
         i++;
       }
     }

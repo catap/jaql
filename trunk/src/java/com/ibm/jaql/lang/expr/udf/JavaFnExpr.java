@@ -316,7 +316,7 @@ public class JavaFnExpr extends Expr
         resultArray = new SpillJArray();
       }
       JIterator iter = (JIterator) result;
-      resultArray.set(iter);
+      resultArray.setCopy(iter);
       resultItem.set(resultArray);
       return resultItem;
     }
@@ -332,7 +332,7 @@ public class JavaFnExpr extends Expr
         resultArray = new SpillJArray();
         resultItem.set(resultArray);
       }
-      resultArray.set(iter);
+      resultArray.setCopy(iter);
       return resultItem;
     }
     else

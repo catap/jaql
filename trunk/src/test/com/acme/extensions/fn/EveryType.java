@@ -81,13 +81,13 @@ public class EveryType
           // Keep every other entry of the array
           SpillJArray a = (SpillJArray) v;
           arrs.clear();
-          JIterator iter = a.jiterator();
+          JIterator iter = a.jIterator();
           boolean addit = true;
           while (iter.moveNext())
           {
             if (addit)
             {
-              arrs.add(iter.current());
+              arrs.addCopy(iter.current());
             }
             addit = !addit;
           }

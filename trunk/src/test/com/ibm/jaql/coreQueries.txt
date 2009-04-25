@@ -90,7 +90,7 @@ false or not null;
 [1,2,3,{a:'foo', b:['bar']}] == [1,2,3,{a:'foo', b:['bar']}];
 
 // make sure numeric encodings hash and compare properly
-distinct( [1, 1.0, 1.1, 1.10] ); // 2 items
+distinct( [1, 1.0, 1.1, 1.10] ) -> sort by [$]; // 2 items
 
 1 == 1.0; // true
 
@@ -108,7 +108,7 @@ distinct( [
   range(1,3) -> filter $ != 2, // [1,3]
   range(1,3) -> filter $ > 0,  // [1,2,3]
   [1,3]
-] ); // 3 items
+] ) -> sort by [$]; // 3 items
 
 [1,2] == ( range(1,2) -> filter $ > 0 ); // true
 

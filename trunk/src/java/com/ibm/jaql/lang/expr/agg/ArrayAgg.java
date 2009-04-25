@@ -80,7 +80,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   @Override
   public void addInitial(Item item) throws Exception
   {
-    array.add(item);
+    array.addCopy(item);
   }
 
   @Override
@@ -93,7 +93,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   public void addPartial(Item item) throws Exception
   {
     JArray array2 = (JArray)item.get();
-    array.addAll(array2.iter());
+    array.addAllCopies(array2.iter());
   }
 
   @Override

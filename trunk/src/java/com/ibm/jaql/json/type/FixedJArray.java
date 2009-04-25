@@ -40,9 +40,9 @@ public final class FixedJArray extends JArray
    */
   public static FixedJArray getEmpty()
   {
-    if (empty != null)
+    if (EMPTY != null)
     {
-      return empty;
+      return EMPTY;
     }
     return new FixedJArray(new Item[0]);
   }
@@ -268,6 +268,7 @@ public final class FixedJArray extends JArray
   @Override
   public void getTuple(Item[] tuple) throws Exception
   {
+    assert tuple.length == count;
     System.arraycopy(items, 0, tuple, 0, count);
   }
 
@@ -279,12 +280,12 @@ public final class FixedJArray extends JArray
   @Override
   public long longHashCode()
   {
-    long h = initHash();
+    long h = initLongHash();
     Item[] items = this.items;
     int n = this.count;
     for (int i = 0; i < n; i++)
     {
-      h = hashItem(h, items[i]);
+      h = longHashItem(h, items[i]);
     }
     return h;
   }

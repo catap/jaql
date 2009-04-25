@@ -139,7 +139,7 @@ public class ArrayExpr extends IterExpr
   {
     if (exprs.length == 0)
     {
-      return JArray.emptyItem;
+      return JArray.EMPTY_ITEM;
     }
     if( result == null )
     {

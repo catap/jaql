@@ -48,7 +48,7 @@ public class Split1
     for (String s : splits)
     {
       resultStr.set(s);
-      result.add(resultStr);
+      result.addCopy(resultStr);
     }
 
     return result;
