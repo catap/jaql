@@ -165,7 +165,7 @@ public class ItemHashtable
           inbuf.reset(outbuf.getData(), (int) voffsets.get(j), outbuf
               .getLength());
           vitem.readFields(inbuf);
-          va.add(vitem);
+          va.addCopy(vitem);
         }
         va.freeze();
       }

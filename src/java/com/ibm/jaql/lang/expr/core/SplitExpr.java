@@ -108,7 +108,7 @@ public class SplitExpr extends Expr
       {
         if( JaqlUtil.ebv(ifs[i].testExpr().eval(context)) )
         {
-          temps[i].add(item);
+          temps[i].addCopy(item);
           break;
         }
       }

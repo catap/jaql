@@ -727,7 +727,7 @@ public class HBaseStore
 
           for (int j = 0; j < value.length; j++)
           {
-            tArr.addSerialized(value[j].getValue(), 0, value[j].getValue().length);
+            tArr.addCopySerialized(value[j].getValue(), 0, value[j].getValue().length);
           }
           tArr.freeze();
 

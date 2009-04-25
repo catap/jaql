@@ -120,7 +120,7 @@ public class MergeContainersFn extends Expr
         if( val != null )
         {
           JArray arr = (JArray)val;
-          resultArr.addAll(arr.iter());
+          resultArr.addAllCopies(arr.iter());
         }
         i++;
         if( i >= exprs.length )

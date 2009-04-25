@@ -229,7 +229,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
         else if( i <= lastPreserved )
         {
           b.var.set(item);
-          nullKeyResults.addAll(collectExpr().iter(context));
+          nullKeyResults.addAllCopies(collectExpr().iter(context));
         }
       }
       b.var.set(Item.nil);

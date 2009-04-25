@@ -67,7 +67,7 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
     }
     if( array.count() < limit )
     {
-      array.add(item);
+      array.addCopy(item);
     }
   }
 
@@ -86,13 +86,13 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
     Iter iter = array2.iter();
     if( m + n < limit )
     {
-      array.addAll(iter);
+      array.addAllCopies(iter);
     }
     else
     {
       for( ; m < limit ; m++ )  
       {
-        array.add(iter.next()); // TODO: we will find all of them
+        array.addCopy(iter.next()); // TODO: we will find all of them
       }
     }
   }

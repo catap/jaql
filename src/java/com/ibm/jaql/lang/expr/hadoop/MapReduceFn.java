@@ -187,7 +187,7 @@ public class MapReduceFn extends MapReduceBaseExpr
           i = (int) id.value;
           itemVal = valRec.get(1);
         }
-        valArrays[i].add(itemVal);
+        valArrays[i].addCopy(itemVal);
       }
       for (int i = 0; i < numInputs; i++)
       {

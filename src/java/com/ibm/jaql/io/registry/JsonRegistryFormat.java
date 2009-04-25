@@ -165,7 +165,7 @@ public abstract class JsonRegistryFormat<K, V>
     {
       Map.Entry<K, V> entry = iter.next();
       JRecord r = convert(entry.getKey(), entry.getValue());
-      arr.add(r);
+      arr.addCopy(r);
     }
     arr.print(pout);
     pout.flush();

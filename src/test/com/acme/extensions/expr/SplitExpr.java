@@ -73,7 +73,7 @@ public class SplitExpr extends Expr
     int numSplits = splits.length;
     SpillJArray rArr = new SpillJArray();
     for (int i = 0; i < numSplits; i++)
-      rArr.add(new Item(new JString(splits[i])));
+      rArr.addCopy(new Item(new JString(splits[i])));
     // tell the array no more items will be added (this API will change...)
     rArr.freeze();
 

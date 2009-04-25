@@ -111,7 +111,7 @@ public abstract class IterExpr extends Expr
       tempArray = new SpillJArray();
       tempItem = new Item(tempArray);
     }
-    tempArray.set(iter);
+    tempArray.setCopy(iter);
     return tempItem;
   }
 }
