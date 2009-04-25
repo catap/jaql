@@ -66,7 +66,7 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
 
         // expect a JArray of JRecord
         JArray arr = (JArray) expr.eval(ctx).get();
-        for (JIterator iter = arr.jiterator(); iter.moveNext();)
+        for (JIterator iter = arr.jIterator(); iter.moveNext();)
         {
           JRecord r = (JRecord) iter.current();
           K kVal = convertKey(r);

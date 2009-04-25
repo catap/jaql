@@ -231,10 +231,10 @@ true
 
 
 // make sure numeric encodings hash and compare properly
-distinct( [1, 1.0, 1.1, 1.10] );##
+distinct( [1, 1.0, 1.1, 1.10] ) -> sort by [$];##
 [
-  1.1,
-  1
+  1,
+  1.1
 ]
  // 2 items
 
@@ -262,11 +262,11 @@ distinct( [
   range(1,3) -> filter $ != 2, // [1,3]
   range(1,3) -> filter $ > 0,  // [1,2,3]
   [1,3]
-] );##
+] ) -> sort by [$];##
 [
   [
     1,
-    3
+    2
   ],
   [
     1,
@@ -275,7 +275,7 @@ distinct( [
   ],
   [
     1,
-    2
+    3
   ]
 ]
  // 3 items

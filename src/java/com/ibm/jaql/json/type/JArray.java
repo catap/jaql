@@ -25,84 +25,84 @@ import com.ibm.jaql.json.util.JIterator;
 import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.util.BaseUtil;
 
-/**
+/** A JSON array.
  * 
  */
 public abstract class JArray extends JValue
 {
-  public final static FixedJArray empty     = FixedJArray.getEmpty();
-  public final static Item        emptyItem = new Item(empty);
+  public final static FixedJArray EMPTY      = FixedJArray.getEmpty();
+  public final static Item        EMPTY_ITEM = new Item(EMPTY);
 
-  /**
-   * @return
+  
+  // -- abstract methods --------------------------------------------------------------------------
+  
+  /** Returns the number of elements stored in this array.
+   * 
+   * @return the number of elements stored in this array
    */
+  public abstract long count();
+
+  /** Returns an <code>Iter</code> over the elements in this array.
+   *   
+   * @return an <code>Iter</code> over the elements in this array
+   * @throws Exception
+   */
+  public abstract Iter iter() throws Exception;
+
+  /** Returns the item at position <code>n</code> or nil if there is no such element.
+   * 
+   * @param n a position (0-based)
+   * @return the item at position <code>n</code> or {@link Item#nil}
+   * @throws Exception
+   */
+  public abstract Item nth(long n) throws Exception;
+
+  /** Copies the elements of this array into <code>items</code>. The length of <code>items</code>
+   * has to be identical to the length of this array as produced by {@link #count()}.
+   * 
+   * @param items an array
+   * @throws Exception
+   */
+  public abstract void getTuple(Item[] items) throws Exception;
+
+  /* @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue) */
+  @Override
+  public abstract void setCopy(JValue value) throws Exception;
+
+
+  // -- business methods --------------------------------------------------------------------------
+  
+  /** Checks whether this array contains any elements. */
   public boolean isEmpty()
   {
     return count() == 0;
   }
 
-  /**
-   * @return
-   */
-  protected final static long initHash()
-  {
-    return BaseUtil.GOLDEN_RATIO_64;
-  }
-
-  /**
-   * @param h
-   * @param item
-   * @return
-   */
-  protected final static long hashItem(long h, Item item)
-  {
-    h |= item.hashCode();
-    h *= BaseUtil.GOLDEN_RATIO_64;
-    return h;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object)
-   */
-  public final boolean equals(Object x)
-  {
-    return this.compareTo(x) == 0;
-  }
-
-  /**
-   * @return
+  /** Returns a <code>JIterator</code> over the items stored in this array.
+   * @return a <code>JIterator</code> over the items stored in this array
    * @throws Exception
    */
-  public final JIterator jiterator() throws Exception
+  public final JIterator jIterator() throws Exception
   {
     return new IterJIterator(iter());
   }
 
-  /**
-   * Print the atom on the stream in (extended) JSON text format.
-   * 
-   * @param out
-   */
+  
+  /* @see JValue#print(PrintStream) */
+  @Override
   public void print(PrintStream out) throws Exception
   {
     iter().print(out);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#print(java.io.PrintStream, int)
-   */
+  /* @see com.ibm.jaql.json.type.JValue#print(java.io.PrintStream, int) */
+  @Override
   public void print(PrintStream out, int indent) throws Exception
   {
     iter().print(out, indent);
   }
 
-  /**
-   * Convert the value to a string in (extended) JSON text format.
-   */
+  /* @see JValue#toJSON() */
   @Override
   public String toJSON()
   {
@@ -120,11 +120,15 @@ public abstract class JArray extends JValue
     return baos.toString();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+  
+  /* @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object) */
+  @Override
+  public final boolean equals(Object x)
+  {
+    return this.compareTo(x) == 0;
+  }
+
+  /* @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object) */
   @Override
   public int compareTo(Object x)
   {
@@ -139,22 +143,21 @@ public abstract class JArray extends JValue
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  
+  // -- hashing -----------------------------------------------------------------------------------
+
+  /* @see java.lang.Object#hashCode() */
   @Override
-  public long longHashCode()
+  public int hashCode()
   {
     try
     {
       Item item;
       Iter iter = this.iter();
-      long h = initHash();
+      int h = initHash();
       while ((item = iter.next()) != null)
       {
-        hashItem(h, item);
+        h = hashItem(h, item);
       }
       return h;
     }
@@ -164,34 +167,44 @@ public abstract class JArray extends JValue
     }
   }
 
-  /**
-   * @return
-   */
-  public abstract long count();
-  /**
-   * @return
-   * @throws Exception
-   */
-  /**
-   * @return
-   * @throws Exception
-   */
-  public abstract Iter iter() throws Exception;
-  /**
-   * @param n
-   * @return
-   * @throws Exception
-   */
-  public abstract Item nth(long n) throws Exception;
-  /**
-   * @param items
-   * @throws Exception
-   */
-  public abstract void getTuple(Item[] items) throws Exception;
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
-  public abstract void setCopy(JValue value) throws Exception;
+  protected final static int initHash()
+  {
+    return BaseUtil.GOLDEN_RATIO_32;
+  }
+
+  protected final static int hashItem(int h, Item item)
+  {
+    return (h ^ item.hashCode()) * BaseUtil.GOLDEN_RATIO_32;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JValue#longHashCode() */
+  @Override
+  public long longHashCode()
+  {
+    try
+    {
+      Item item;
+      Iter iter = this.iter();
+      long h = initLongHash();
+      while ((item = iter.next()) != null)
+      {
+        h = longHashItem(h, item);
+      }
+      return h;
+    }
+    catch (Exception e)
+    {
+      throw new UndeclaredThrowableException(e);
+    }
+  }
+
+  protected final static long initLongHash()
+  {
+    return BaseUtil.GOLDEN_RATIO_64;
+  }
+
+  protected final static long longHashItem(long h, Item item)
+  {
+    return (h ^ item.hashCode()) * BaseUtil.GOLDEN_RATIO_64;
+  }
 }

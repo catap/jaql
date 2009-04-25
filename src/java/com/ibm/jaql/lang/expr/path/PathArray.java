@@ -99,7 +99,7 @@ public abstract class PathArray extends PathStep
       tempArray = new SpillJArray();
       tempItem = new Item(tempArray);
     }
-    tempArray.set(iter);
+    tempArray.setCopy(iter);
     return tempItem;
   }
 }
