@@ -387,7 +387,7 @@ public class MemoryJRecord extends JRecord {
     for (int i = 0; i < n; i++)
     {
       names[i].setCopy(r.getName(i));
-      values[i].copy(r.getValue(i));
+      values[i].setCopy(r.getValue(i));
     }
     reorg(); 		
 	} 

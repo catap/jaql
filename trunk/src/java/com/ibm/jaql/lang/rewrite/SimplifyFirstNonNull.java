@@ -64,7 +64,7 @@ public class SimplifyFirstNonNull extends Rewrite
     // If we have no arguments, replace firstNonNull with null
     if (last < 0)
     {
-      fnn.replaceInParent(new ConstExpr(Item.nil));
+      fnn.replaceInParent(new ConstExpr(Item.NIL));
       return true;
     }
 

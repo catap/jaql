@@ -49,7 +49,7 @@ public class ConstArrayAccess extends Rewrite
     
     if( array.isNull().always() )
     {
-      ie.replaceInParent(new ConstExpr(Item.nil));
+      ie.replaceInParent(new ConstExpr(Item.NIL));
       return true;
     }
     
@@ -76,7 +76,7 @@ public class ConstArrayAccess extends Rewrite
       long i = li.value;
       if (i < 0 || i >= array.numChildren())
       {
-        replaceBy = new ConstExpr(Item.nil);
+        replaceBy = new ConstExpr(Item.NIL);
       }
       else
       {

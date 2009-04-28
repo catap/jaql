@@ -52,7 +52,7 @@ public class RemoveFieldsFn extends Expr
     JRecord rec = (JRecord) exprs[0].eval(context).get();
     if (rec == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     Iter iter = exprs[1].iter(context);

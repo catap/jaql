@@ -46,12 +46,12 @@ public class StartsWithFn extends Expr
     JString text = (JString) exprs[0].eval(context).get();
     if (text == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString prefix = (JString) exprs[1].eval(context).get();
     if (prefix == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     boolean rc = text.startsWith(prefix);
     return JBool.make(rc);

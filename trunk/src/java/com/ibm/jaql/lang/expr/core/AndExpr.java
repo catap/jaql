@@ -78,7 +78,7 @@ public class AndExpr extends Expr
     b = (JBool) exprs[1].eval(context).get();
     if (b == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     if (b.getValue() == false)
     {

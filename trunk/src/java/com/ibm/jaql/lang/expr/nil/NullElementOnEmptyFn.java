@@ -66,7 +66,7 @@ public class NullElementOnEmptyFn extends IterExpr
         if (!didIt)
         {
           didIt = true;
-          return Item.nil;
+          return Item.NIL;
         }
         return null;
       }

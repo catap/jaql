@@ -92,7 +92,7 @@ public abstract class PathArray extends PathStep
     Iter iter = this.iter(context);
     if (iter.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
     if (tempArray == null)
     {

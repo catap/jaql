@@ -51,13 +51,13 @@ public class SplitExpr extends Expr
     // if there is nothing to split, return nil
     if (sItem == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     // if there is no delimter, return nil
     if (dItem == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     // get the input string  

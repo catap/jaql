@@ -125,7 +125,7 @@ public class ShiftFn extends IterExpr
     final FixedJArray arr = new FixedJArray(size);
     final Item result = new Item(arr);
     
-    Item item = Item.nil;
+    Item item = Item.NIL;
     for( long i = 0 ; i < after ; i++ )
     {
       if( item != null ) // Don't call next() once we hit eof
@@ -190,7 +190,7 @@ public class ShiftFn extends IterExpr
     
     public void add(Item item) throws Exception
     {
-      buffer[end].copy(item);
+      buffer[end].setCopy(item);
       end++;
       if( end == buffer.length )
       {

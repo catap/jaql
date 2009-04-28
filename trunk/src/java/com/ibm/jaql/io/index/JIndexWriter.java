@@ -103,7 +103,7 @@ public final class JIndexWriter implements Closeable
         baseItems = 0;
       }
     }
-    prevKey.copy(key);
+    prevKey.setCopy(key);
     key.write(base);
     value.write(base);
     totalItems++;

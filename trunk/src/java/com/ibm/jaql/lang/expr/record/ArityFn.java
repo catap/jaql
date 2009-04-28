@@ -46,7 +46,7 @@ public class ArityFn extends Expr
     JRecord rec = (JRecord) exprs[0].eval(context).get();
     if (rec == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     return new Item(new JLong(rec.arity())); // TODO: memory
   }

@@ -41,12 +41,12 @@ public class BuildJIndexFn extends Expr
     JRecord fd = (JRecord)fdItem.get();
     if( fd == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString jloc = (JString)fd.getRequired("location").get();
     if( jloc == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     JIndexWriter index = new JIndexWriter(jloc.toString());

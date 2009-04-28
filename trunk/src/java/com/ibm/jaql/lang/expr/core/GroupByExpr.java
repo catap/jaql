@@ -96,7 +96,7 @@ public class GroupByExpr extends IterExpr
     exprs[1] = by;
     if( using == null )
     {
-      using = new ConstExpr(Item.nil);
+      using = new ConstExpr(Item.NIL);
     }
     exprs[n+2] = using;
     exprs[n+3] = expand;
@@ -114,7 +114,7 @@ public class GroupByExpr extends IterExpr
     assert 1 == by.numChildren();
     if( using == null )
     {
-      using = new ConstExpr(Item.nil);
+      using = new ConstExpr(Item.NIL);
     }
     return new Expr[]{ in, by, as, using, expand };
   }
@@ -476,7 +476,7 @@ public class GroupByExpr extends IterExpr
             JArray arr = (JArray)group.get();
             if( arr.isEmpty() )
             {
-              group = Item.nil;
+              group = Item.NIL;
             }
             getAsVar(i).set(group);
           }

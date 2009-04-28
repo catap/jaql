@@ -86,7 +86,7 @@ public class PathRecord extends PathStep
     JRecord oldRec = (JRecord)input.get();
     if( oldRec == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     // TODO: this can be made much faster when "*" is not used.
     // TODO: this can be made much faster when only "*" is used, without inclusion/exclusion

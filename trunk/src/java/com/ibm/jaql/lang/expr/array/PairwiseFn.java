@@ -67,7 +67,7 @@ public class PairwiseFn extends IterExpr
           }
           else
           {
-            tuple.set(i, Item.nil);
+            tuple.set(i, Item.NIL);
           }
         }
         if (foundOne)

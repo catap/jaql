@@ -110,7 +110,7 @@ public class MergeContainersFn extends Expr
     Item result;
     if( val == null )
     {
-      result = Item.nil;
+      result = Item.NIL;
     }
     else if( val instanceof JArray )
     {
@@ -120,7 +120,7 @@ public class MergeContainersFn extends Expr
         if( val != null )
         {
           JArray arr = (JArray)val;
-          resultArr.addAllCopies(arr.iter());
+          resultArr.addCopyAll(arr.iter());
         }
         i++;
         if( i >= exprs.length )

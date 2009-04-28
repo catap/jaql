@@ -20,7 +20,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.json.util.DataInputTableIter;
 import com.ibm.jaql.json.util.ItemComparator;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.json.util.JIterator;
@@ -31,37 +30,148 @@ import com.ibm.jaql.util.PagedFile;
 import com.ibm.jaql.util.SpillFile;
 
 // TODO: Encoding.UNKOWN is currently used as a terminator for an array. This is not really
-//       needed because the array length is stored up front
+//       needed because the array length is stored up front (RG: is this true? see freeze!)
 
-/** A JSON array that stores its data in a {@link SpillFile}. */
+/** A JSON array that stores its data in serialized form in a {@link SpillFile}. The array 
+ * is append-only initially and read-only after it has been frozen; see {@link #freeze()}. 
+ * 
+ * The first elements of the array are cached in deserialized form in memory to improve 
+ * efficiency. The cache is filled when elements are appended to the array in deserialized
+ * or on demand when elements are read. Thus, cache maintenance has neglibible overhead.
+ */
 public class SpillJArray extends JArray
 {
-  protected long      count;
-  protected SpillFile spill;
-  protected Item      tempItem = new Item();
+  /** default cache size */
+  public static final int DEFAULT_CACHE_SIZE = 256;
 
-  private static ItemComparator ITEM_COMPARATOR = new ItemComparator();
+  /** number of elements stored in this array */
+  protected long count;
   
+  /** file used to store the content of the array in serialized form */
+  protected SpillFile spillFile;
+
+  /** number of elements to cache */
+  protected int cacheSize;
+  
+  /** Cached version of the first <code>cacheSize</code> elements. The ith element of 
+   * <code>cache</code> is the deserialized value of the ith element of this array
+   * or <code>null</code> when the deserialized value is not known. */
+  protected JValue[] cache;
+
+  /** Input used to populating cache on demand and to avoid scanning cached items. */
+  private SpillFile.SFDataInput cacheInput = null; // TODO: never closed 
+  
+  /** index of the element to which <code>cacheInput</code> is pointing */ 
+  private int cacheInputPosition = -1;
+  
+  // utility variables
+  private final Item internalTempItem = new Item(); // do not make visible
+  private final Item externalTempItem = new Item(); // returned by some methods
+
+  // static variables 
+  private static final ItemComparator ITEM_COMPARATOR = new ItemComparator();
+  private static final JValue[] EMPTY_CACHE = new JValue[0];
+
   // -- constructors -----------------------------------------------------------------------------
   
   /** Creates a new <code>SpillJArray</code> that stores its data in the provided 
-   * <code>file</code>.
+   * <code>file</code>. The first <code>cacheSize</code> elements are also cached in 
+   * memory.
    * 
-   * @param file a page file 
+   * @param pagedFile a page file 
+   * @param cacheSize number of elements to cache in memory
    */
-  public SpillJArray(PagedFile file)
+  public SpillJArray(PagedFile pagedFile, int cacheSize)
   {
-    spill = new SpillFile(file);
+    this.spillFile = new SpillFile(pagedFile);
+    this.cacheSize = cacheSize;
+    this.cache = cacheSize>0 ? new JValue[cacheSize] : EMPTY_CACHE; // TODO: grow incrementally?
+  }
+  
+  /** Creates a new <code>SpillJArray</code> that stores its data in the provided 
+   * <code>file</code>. The first {@link #DEFAULT_CACHE_SIZE} elements are
+   * also cached in memory. 
+   * 
+   * @param pagedFile a page file 
+   */
+  public SpillJArray(PagedFile pagedFile)
+  {
+    this(pagedFile, DEFAULT_CACHE_SIZE);
   }
 
   /** Creates an new <code>SpillJArray</code> using the default page file as determined by
-   * {@link JaqlUtil#getQueryPageFile()}. 
+   * {@link JaqlUtil#getQueryPageFile()}. The first <code>cacheSize</code> elements are 
+   * also cached in memory.
+   * 
+   * @param cacheSize number of elements to cache in memory
+   */
+  public SpillJArray(int cacheSize)
+  {
+    this(JaqlUtil.getQueryPageFile(), cacheSize);
+  }
+
+  /** Creates an new <code>SpillJArray</code> using the default page file as determined by
+   * {@link JaqlUtil#getQueryPageFile()}. The first {@link #DEFAULT_CACHE_SIZE} elements are
+   * also cached in memory. 
    */
   public SpillJArray()
   {
-    this(JaqlUtil.getQueryPageFile());
+    this(JaqlUtil.getQueryPageFile(), DEFAULT_CACHE_SIZE);
   }
 
+  // -- caching ----------------------------------------------------------------------------------
+
+  /** Sets the cache at index i to value without copying. */
+  private void setCache(int i, JValue value) throws IOException {
+    assert i<cacheSize && i<count();
+    cache[i] = value;
+  }
+
+  /** Retrieves the ith values from the cache, if present. Otherwise, reads the value from
+   * disk and caches it. 
+   * 
+   * @throws IOException */
+  private JValue getCache(int i) throws IOException {
+    assert i<cacheSize && i<count();
+    
+    if (cache[i] == null) { // not yet cached
+      forwardCacheInputTo(i+1);
+    }
+    return cache[i]; // already cached
+  }
+
+  /** Forwards <code>cacheInput</code> to the specified position and caches all items read in
+   * between (if not yet cached). The next item read from <code>cacheInput</code> will produce 
+   * the array element at index <code>index</code>. The contract is that <code>cacheInput</code> 
+   * is never reset and <code>index</code> is at most <code>cacheSize</code>.
+   */
+  private void forwardCacheInputTo(int index) throws IOException {
+    assert cacheInputPosition <= index && index <= cacheSize && index <= count;
+
+    // already there?
+    if (cacheInputPosition == index) {
+      return;
+    }
+
+    // initialize cache
+    if (cacheInput == null) {
+      cacheInput = spillFile.getInput();
+      cacheInputPosition = 0;
+    }    
+
+    // move forward
+    while (cacheInputPosition < index) {
+      internalTempItem.readFields(cacheInput);
+      assert internalTempItem.getEncoding() != Item.Encoding.UNKNOWN;
+      
+      if (cache[cacheInputPosition] == null) {
+        cache[cacheInputPosition] = internalTempItem.get();
+        internalTempItem.reset(); // don't keep reference to value
+      }
+      
+      cacheInputPosition++;
+    }
+  }
   
   // -- business methods -------------------------------------------------------------------------
   
@@ -92,31 +202,76 @@ public class SpillJArray extends JArray
   @Override
   public Iter iter() throws Exception
   {
-    if (count == 0)
-    {
+    if (count == 0) {
       return Iter.empty;
     }
-    if (!spill.isFrozen())
+    if (!spillFile.isFrozen())
     {
       freeze();
     }
-    SpillFile.SFDataInput input = spill.getInput(); // TODO: cache
-    return new DataInputTableIter(input); // TODO: cache
+    
+    return new Iter() {
+      int       i     = 0;
+      DataInput input = null;
+      Item      item  = new Item(); // TODO: memory
+      boolean   eof   = false;
+
+      public Item next() throws IOException {
+        if (eof) {
+          return null;
+        }
+        
+        if (i<cacheSize) { // cache hit
+          item.set(getCache(i));
+          i++;
+          eof = i>=count();
+          return item;
+        } else { // cache miss
+          // i not needed anymore
+          i++;
+
+          // get a copy of the input pointing to first non-cached item
+          if (input == null) {
+            item.reset(); // important to not overwrite internal cache with readFields()
+            forwardCacheInputTo(cacheSize); // we known that cacheSize>=count()
+            assert cacheInputPosition == i && i==cacheSize;            
+            input = cacheInput.getCopy(); // points to first non-cached item
+          }
+       
+          // read from input 
+          item.readFields(input);
+          if (item.getEncoding() != Item.Encoding.UNKNOWN)
+          {
+            return item;
+          }
+          assert i==count();
+          eof = true;
+          return null;
+        }
+      }
+    };
   }
 
   /** Returns the item at position <code>n</code> or nil if there is no such element. This method
    * will freeze the array if necessary.
    * 
    * @param n a position (0-based)
-   * @return the item at position <code>n</code> or {@link Item#nil}
+   * @return the item at position <code>n</code> or {@link Item#NIL}
    * @throws Exception
    */
   @Override
   public Item nth(long n) throws Exception 
   {
-    // TODO: optimize
-    Iter iter = this.iter();
-    return iter.nth(n);
+    if (n>=count()) {
+      throw new ArrayIndexOutOfBoundsException();
+    }
+    if (n < cacheSize) {     // read from cache
+      int i = (int)n;
+      externalTempItem.set(getCache(i));
+      return externalTempItem;
+    } else {                  // read from file
+      return iter().nth(n);
+    }
   }
 
   /** Copies the elements of this array into <code>items</code>. The length of <code>items</code>
@@ -129,23 +284,28 @@ public class SpillJArray extends JArray
   @Override
   public void getTuple(Item[] tuple) throws Exception // TODO: optimize
   {
-    if (!spill.isFrozen())
+    assert tuple.length == count();
+    
+    // init
+    if (!spillFile.isFrozen())
     {
       freeze();
     }
-    DataInput input = spill.getInput();
-    for (int i = 0; i < tuple.length; i++)
-    {
-      if (tuple[i] == null)
-      {
-        tuple[i] = new Item();
-      }
-      tuple[i].readFields(input);
-    }
-    if (BaseUtil.readVUInt(input) != Item.Encoding.UNKNOWN.id)
-    {
-      throw new RuntimeException("expected exactly " + tuple.length
-          + " but found more");
+    
+    // fill up array
+    Iter iter = iter();
+    Item item = iter.next();
+    int i = 0;
+    while (item != null) {
+      assert i<count();
+      
+      // copy item
+      if (tuple[i] == null) tuple[i] = new Item();
+      tuple[i].set(item.get());
+      
+      // next
+      i++;
+      item = iter.next();
     }
   }
 
@@ -163,8 +323,7 @@ public class SpillJArray extends JArray
     Item item;
     while ((item = iter.next()) != null)
     {
-      item.write(spill);
-      count++;
+      addCopy(item);
     }
     freeze();
   }
@@ -181,9 +340,7 @@ public class SpillJArray extends JArray
     while (iter.moveNext())
     {
       JValue value = iter.current();
-      tempItem.set(value); // FIXME: tempItem doesn't own this value!! (bug when we start Item's caching)
-      tempItem.write(spill);
-      count++;
+      addCopy(value);
     }
     freeze();
   }
@@ -192,9 +349,11 @@ public class SpillJArray extends JArray
   @Override
   public void setCopy(JValue value) throws Exception
   {
-    SpillJArray arr = (SpillJArray) value;
+    clear();
+    SpillJArray arr = (SpillJArray) value; 
     this.count = arr.count;
-    this.spill.copy(arr.spill);
+    this.spillFile.copy(arr.spillFile);
+    // TODO: copy cache? 
   }
   
   /** Clears this array. New elements can be added using {@link #addCopy(Item)} or 
@@ -205,7 +364,10 @@ public class SpillJArray extends JArray
    */
   public void clear() throws IOException
   {
-    spill.clear();
+    spillFile.clear();
+    cache = new JValue[cacheSize];
+    cacheInput = null;
+    cacheInputPosition = -1;
     count = 0;
   }
 
@@ -216,7 +378,23 @@ public class SpillJArray extends JArray
    */
   public void addCopy(Item item) throws IOException
   {
-    item.write(spill);
+    item.write(spillFile);
+   
+    // cache item
+    if (count < cacheSize) {
+      assert item != internalTempItem;
+      
+      try
+      {
+        internalTempItem.setCopy(item);
+      } catch (Exception e)
+      {
+        throw new UnsupportedOperationException(e);
+      }
+      setCache((int)count, internalTempItem.get());
+      internalTempItem.reset(); // don't keep reference to value
+    }
+
     count++;
   }
 
@@ -227,8 +405,24 @@ public class SpillJArray extends JArray
    */
   public void addCopy(JValue value) throws IOException
   {
-    tempItem.set(value);
-    addCopy(tempItem);
+    if (count < cacheSize) {
+      // obtain a copy
+      try {
+        internalTempItem.setCopy(value);
+      } catch (Exception e)
+      {
+        throw new UnsupportedOperationException(e);
+      }
+      
+      // and cache it
+      setCache((int)count, internalTempItem.get());
+    } else { // do not cache
+      internalTempItem.set(value);
+    }
+
+    count++;
+    internalTempItem.write(spillFile);
+    internalTempItem.reset(); // don't keep reference to value
   }
 
   /** Appends a copy of an item given in its serialized form to this array.
@@ -240,8 +434,8 @@ public class SpillJArray extends JArray
    */
   public void addCopySerialized(byte[] val, int off, int len) throws IOException
   {
-    // copy directly to buffer
-    spill.write(val, off, len);
+    // copy directly to spill file; do not deserialize
+    spillFile.write(val, off, len);
     count++;
   }
   
@@ -249,7 +443,7 @@ public class SpillJArray extends JArray
    * 
    * @param iter an iterator  
    */
-  public void addAllCopies(Iter iter) throws Exception
+  public void addCopyAll(Iter iter) throws Exception
   {
     Item item;
     while( (item = iter.next()) != null )
@@ -260,7 +454,7 @@ public class SpillJArray extends JArray
 
 
   /** Freezes this array. This function should be called after the array has been constructed and
-   * before it is used. After calling this function, no further adds but can be performed. However,
+   * before it is read. After calling this function, no further adds but can be performed. However,
    * it is OK to {@link #clear()} the array or call any of the modification methods that clear 
    * the array before performing the modification (such as the <code>setCopy</code> methods or 
    * {@link #readFields(DataInput)}. 
@@ -269,8 +463,8 @@ public class SpillJArray extends JArray
    */
   public void freeze() throws IOException
   {
-    BaseUtil.writeVUInt(spill, Item.Encoding.UNKNOWN.id); // marks eof
-    spill.freeze();
+    BaseUtil.writeVUInt(spillFile, Item.Encoding.UNKNOWN.id); // marks eof
+    spillFile.freeze();
   }
 
   
@@ -284,12 +478,12 @@ public class SpillJArray extends JArray
   @Override
   public void readFields(DataInput in) throws IOException
   {
-    spill.clear();
+    clear();
     count = BaseUtil.readVULong(in);
     long len = BaseUtil.readVULong(in);
-    spill.writeFromInput(in, len);
+    spillFile.writeFromInput(in, len);
     // terminator is copied from input
-    spill.freeze();
+    spillFile.freeze();
   }
 
   /** Freezes the array and writes it to the provided output. 
@@ -301,14 +495,14 @@ public class SpillJArray extends JArray
   @Override
   public void write(DataOutput out) throws IOException
   {
-    if (!spill.isFrozen())
+    if (!spillFile.isFrozen())
     {
       freeze();
     }
     // Be sure to update ItemWalker whenever changing this.
     BaseUtil.writeVULong(out, count);
-    BaseUtil.writeVULong(out, spill.size()); // TODO: make blocked?
-    spill.writeToOutput(out);
+    BaseUtil.writeVULong(out, spillFile.size()); // TODO: make blocked?
+    spillFile.writeToOutput(out);
   }
 
 
@@ -317,74 +511,12 @@ public class SpillJArray extends JArray
    */
   public SpillFile getSpillFile()
   {
-    return spill;
+    return spillFile;
   }
 
   
   // -- comparison & hashing ----------------------------------------------------------------------
   
-  /* @see com.ibm.jaql.json.type.JArray#hashCode() */
-  @Override
-  public int hashCode()
-  {
-    // TODO: store hash code while creating the array?
-    try
-    {
-      if (!spill.isFrozen())
-      {
-        freeze();
-      }
-      DataInput input = spill.getInput();
-      Item item = new Item(); // TODO: memory
-
-      int h = initHash();
-      while (true)
-      {
-        item.readFields(input);
-        if (item.getEncoding() == Item.Encoding.UNKNOWN)
-        {
-          return h;
-        }
-        h = hashItem(h, item);
-      }
-    }
-    catch (IOException ex)
-    {
-      throw new UndeclaredThrowableException(ex);
-    }
-  }
-
-  /* @see com.ibm.jaql.json.type.JArray#longHashCode() */
-  @Override
-  public long longHashCode()
-  {
-    // TODO: store hash code while creating the array?
-    try
-    {
-      if (!spill.isFrozen())
-      {
-        freeze();
-      }
-      DataInput input = spill.getInput();
-      Item item = new Item(); // TODO: memory
-
-      long h = initLongHash();
-      while (true)
-      {
-        item.readFields(input);
-        if (item.getEncoding() == Item.Encoding.UNKNOWN)
-        {
-          return h;
-        }
-        h = longHashItem(h, item);
-      }
-    }
-    catch (IOException ex)
-    {
-      throw new UndeclaredThrowableException(ex);
-    }
-  }
-
   /* @see com.ibm.jaql.json.type.JArray#compareTo(java.lang.Object) */
   @Override
   public int compareTo(Object x)
@@ -395,17 +527,18 @@ public class SpillJArray extends JArray
       if (t instanceof SpillJArray)
       {
         SpillJArray st = (SpillJArray) t;
-        if (!spill.isFrozen())
+        if (!spillFile.isFrozen())
         {
           freeze();
         }
-        if (!st.spill.isFrozen())
+        if (!st.spillFile.isFrozen())
         {
           st.freeze();
         }
         synchronized (ITEM_COMPARATOR) // TODO: SMP problem here eventually...
         {
-          return ITEM_COMPARATOR.compareSpillArrays(spill.getInput(), st.spill
+          // TODO: does not exploit cache
+          return ITEM_COMPARATOR.compareSpillArrays(spillFile.getInput(), st.spillFile
               .getInput());
         }
       }

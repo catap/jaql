@@ -103,7 +103,7 @@ public class PathArrayToFor extends Rewrite
       Expr high;
       if( expr instanceof PathArrayHead )
       {
-        low  = new ConstExpr(Item.nil);
+        low  = new ConstExpr(Item.NIL);
         high = ((PathArrayHead)expr).lastIndex();
       }
       else if( expr instanceof PathArraySlice )
@@ -114,7 +114,7 @@ public class PathArrayToFor extends Rewrite
       else if( expr instanceof PathArrayTail )
       {
         low  = ((PathArrayTail)expr).firstIndex();
-        high  = new ConstExpr(Item.nil);
+        high  = new ConstExpr(Item.NIL);
       }
       else
       {

@@ -160,7 +160,7 @@ public final class ReduceExpr extends Expr
     Iter iter = b.inExpr().iter(context);
     if (iter.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     final int n = numAggs();

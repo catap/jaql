@@ -91,12 +91,12 @@ public final class IsdefinedExpr extends Expr
     JRecord rec = (JRecord) exprs[0].eval(context).get();
     if (rec == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString name = (JString) exprs[1].eval(context).get();
     if (name == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     return JBool.make(rec.findName(name) >= 0);
   }

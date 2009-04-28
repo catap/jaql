@@ -108,7 +108,7 @@ public class JoinToCogroup extends Rewrite
     if( numPreserved > 0 )
     {
       Expr[] toMerge = new Expr[numPreserved];
-      Expr nilExpr = new ConstExpr(Item.nil);
+      Expr nilExpr = new ConstExpr(Item.NIL);
       int k = 0;
       for (int i = 0; i < n; i++)
       {

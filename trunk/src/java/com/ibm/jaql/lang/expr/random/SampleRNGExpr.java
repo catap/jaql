@@ -57,7 +57,7 @@ public class SampleRNGExpr extends Expr
     RNGStore.RNGEntry entry = JaqlUtil.getRNGStore().get(key);
     if (entry == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     Item val = new Item();

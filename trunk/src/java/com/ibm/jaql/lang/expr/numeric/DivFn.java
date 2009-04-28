@@ -50,12 +50,12 @@ public class DivFn extends Expr
     JValue w1 = exprs[0].eval(context).get();
     if (w1 == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JValue w2 = exprs[1].eval(context).get();
     if (w2 == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     boolean long1 = w1 instanceof JLong;

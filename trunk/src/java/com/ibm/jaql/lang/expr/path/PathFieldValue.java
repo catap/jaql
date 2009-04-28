@@ -80,12 +80,12 @@ public class PathFieldValue extends PathStep
     JRecord rec = (JRecord)input.get();
     if( rec == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString name = (JString)exprs[0].eval(context).get();
     if( name == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Item value = rec.getValue(name);
     return nextStep(context, value);
