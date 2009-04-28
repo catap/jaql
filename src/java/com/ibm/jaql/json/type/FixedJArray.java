@@ -256,7 +256,7 @@ public final class FixedJArray extends JArray
       {
         items[i] = new Item();
       }
-      items[i].copy(arr.items[i]);
+      items[i].setCopy(arr.items[i]);
     }
   }
 
@@ -282,8 +282,7 @@ public final class FixedJArray extends JArray
   {
     long h = initLongHash();
     Item[] items = this.items;
-    int n = this.count;
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < count; i++)
     {
       h = longHashItem(h, items[i]);
     }
@@ -331,7 +330,7 @@ public final class FixedJArray extends JArray
     {
       return items[(int) n];
     }
-    return Item.nil;
+    return Item.NIL;
   }
 
   /*

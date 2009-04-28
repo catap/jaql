@@ -126,7 +126,7 @@ public class SplitExpr extends Expr
       }
     }
 
-    return Item.nil;
+    return Item.NIL;
   }
 
 }

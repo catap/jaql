@@ -58,19 +58,19 @@ public class RegexExtractFn extends Expr
     final JRegex regex = (JRegex) exprs[0].eval(context).get();
     if (regex == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString text = (JString) exprs[1].eval(context).get();
     if (text == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());
     if (!matcher.find())
     {
       regex.returnMatcher(matcher);
-      return Item.nil;
+      return Item.NIL;
     }
     int n = matcher.groupCount();    
     FixedJArray arr = new FixedJArray(n); // TODO: memory

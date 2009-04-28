@@ -47,7 +47,7 @@ public class RegexFn extends Expr
     JString regex = (JString) exprs[0].eval(context).get();
     if (regex == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString flags = JaqlUtil.emptyString;
     if (exprs.length == 2)

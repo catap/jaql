@@ -119,7 +119,7 @@ public class ConstFieldAccess extends Rewrite
       }
       if (replaceBy == null)
       {
-        replaceBy = new ConstExpr(Item.nil);
+        replaceBy = new ConstExpr(Item.NIL);
       }
     }
     expr.replaceInParent(replaceBy);

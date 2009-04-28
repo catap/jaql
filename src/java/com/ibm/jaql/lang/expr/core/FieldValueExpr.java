@@ -110,13 +110,13 @@ public class FieldValueExpr extends Expr
     JRecord rec = (JRecord) item.get();
     if (rec == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Item nameItem = exprs[1].eval(context);
     JString nm = (JString) nameItem.get(); // possible cast error
     if (nm == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Item value = rec.getValue(nm);
     return value;

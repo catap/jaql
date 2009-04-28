@@ -152,7 +152,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
     // We need to use two buffers because we might copy part 
     // of the previous result into the new result.
     bufIdx = 1 - bufIdx; 
-    agg[bufIdx].copy(combined);
+    agg[bufIdx].setCopy(combined);
     args[0] = agg[bufIdx];
     // context.setVar(b.var2, agg[bufIdx]);
   }

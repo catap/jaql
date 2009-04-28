@@ -98,17 +98,17 @@ public class CompareExpr extends Expr
     Item item1 = exprs[0].eval(context);
     if (item1.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Item item2 = exprs[1].eval(context);
     if (item2.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
     int c = Item.typeCompare(item1, item2);
     if (c != 0)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     // FIXME: arrays are reporting true/false when the should return null, eg: ['5'] < [5];
@@ -132,7 +132,7 @@ public class CompareExpr extends Expr
           // not( null or a = b ) => a=b ? false : null;
           if (!b)
           {
-            return Item.nil;
+            return Item.NIL;
           }
           b = false;
           break;
@@ -141,7 +141,7 @@ public class CompareExpr extends Expr
           // (null or a = b) => a=b ? true : null;
           if (!b)
           {
-            return Item.nil;
+            return Item.NIL;
           }
           break;
         default :

@@ -93,7 +93,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   public void addPartial(Item item) throws Exception
   {
     JArray array2 = (JArray)item.get();
-    array.addAllCopies(array2.iter());
+    array.addCopyAll(array2.iter());
   }
 
   @Override
@@ -101,7 +101,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   {
     if( array.isEmpty() )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     return getPartial();
   }

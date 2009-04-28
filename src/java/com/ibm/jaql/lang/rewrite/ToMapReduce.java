@@ -499,7 +499,7 @@ public class ToMapReduce extends Rewrite
     // build key value pair:
     //   for $fv in <lastExpr> collect [[null, $fv]]
     Var forVar = engine.env.makeVar("$fv");
-    expr = new ArrayExpr(new ConstExpr(Item.nil), new VarExpr(forVar));
+    expr = new ArrayExpr(new ConstExpr(Item.NIL), new VarExpr(forVar));
     expr = new ForExpr(forVar, lastExpr, new ArrayExpr(expr));
 
     Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);

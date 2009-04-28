@@ -100,7 +100,7 @@ public class SumPA extends PushAggExpr
           {
             return new Item(new JLong(lsum)); // TODO: memory
           }
-          return Item.nil;
+          return Item.NIL;
         }
         else
         {

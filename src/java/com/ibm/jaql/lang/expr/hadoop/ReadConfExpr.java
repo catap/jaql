@@ -47,7 +47,7 @@ public class ReadConfExpr extends Expr
   public Item eval(Context context) throws Exception
   {
     JobConf conf = Globals.getJobConf();
-    Item dflt = Item.nil;
+    Item dflt = Item.NIL;
     if (conf == null)
     {
       if (exprs.length == 2)

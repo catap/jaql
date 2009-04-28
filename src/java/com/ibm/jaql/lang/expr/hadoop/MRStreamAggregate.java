@@ -214,7 +214,7 @@ public class MRStreamAggregate extends MapReduceBaseExpr
                 throw new RuntimeException("combiners cannot return null");
               }
             }
-            agg[i].copy(combined);
+            agg[i].setCopy(combined);
           }
         }
         processAggs(key, output);

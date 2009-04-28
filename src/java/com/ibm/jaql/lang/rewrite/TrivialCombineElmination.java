@@ -88,7 +88,7 @@ public class TrivialCombineElmination extends Rewrite
     if (inExpr.numChildren() == 0)
     {
       // combine $a,$b in [] ... => null
-      replaceBy = new ConstExpr(Item.nil);
+      replaceBy = new ConstExpr(Item.NIL);
       //      replaceBy = ce.emptyExpr();
     }
     else

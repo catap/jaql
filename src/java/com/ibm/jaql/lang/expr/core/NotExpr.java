@@ -68,7 +68,7 @@ public class NotExpr extends Expr
     JBool b = (JBool) exprs[0].eval(context).get();
     if (b == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     return JBool.make(!b.getValue());
   }

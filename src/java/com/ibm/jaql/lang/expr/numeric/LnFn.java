@@ -58,7 +58,7 @@ public class LnFn extends Expr
     JValue item1 = exprs[0].eval(context).get();
     if (item1 == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     BigDecimal n1, n2;
     if (item1 instanceof JLong)

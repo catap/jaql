@@ -150,14 +150,14 @@ public class CopyField extends FieldExpr
       {
         if( value == null )
         {
-          value = Item.nil;
+          value = Item.NIL;
         }
         outrec.add(name, value);
       }
     }
     else if( when == When.ALWAYS )
     {
-      outrec.add(name, Item.nil);   // TODO: should this create the field?
+      outrec.add(name, Item.NIL);   // TODO: should this create the field?
     }
   }
 

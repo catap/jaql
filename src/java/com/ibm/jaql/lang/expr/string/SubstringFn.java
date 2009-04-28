@@ -46,12 +46,12 @@ public class SubstringFn extends Expr
     JString text = (JString) exprs[0].eval(context).get();
     if (text == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JNumber n = (JNumber) exprs[1].eval(context).get();
     if (n == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     String s = text.toString(); // TODO: add JString.substring() methods with target buffer
     long start = n.longValueExact();
@@ -61,7 +61,7 @@ public class SubstringFn extends Expr
       n = (JNumber) exprs[2].eval(context).get();
       if (n == null)
       {
-        return Item.nil;
+        return Item.NIL;
       }
       long end = n.longValueExact();
       s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?

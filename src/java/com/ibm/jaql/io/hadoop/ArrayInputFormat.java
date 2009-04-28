@@ -184,7 +184,7 @@ class ArrayRecordReader implements RecordReader<Item, Item>
     {
       try
       {
-        value.copy(splitValue);
+        value.setCopy(splitValue);
         seen = true;
         return true;
       }

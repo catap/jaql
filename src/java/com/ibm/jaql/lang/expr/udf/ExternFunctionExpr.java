@@ -54,6 +54,6 @@ public class ExternFunctionExpr extends Expr
     JString className = (JString) exprs[1].eval(context).getNonNull();
     Class<?> cls = ClassLoaderMgr.resolveClass(className.toString());
     // JaqlUtil.getFunctionStore().register(fnName, className);
-    return Item.nil; // TODO: do something here!!
+    return Item.NIL; // TODO: do something here!!
   }
 }

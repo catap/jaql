@@ -37,7 +37,7 @@ public class DateMillisFn extends Expr
     JDate d = (JDate)item.get();
     if( d == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JLong m = new JLong(d.millis); // TODO: memory
     item = new Item(m); // TODO: memory

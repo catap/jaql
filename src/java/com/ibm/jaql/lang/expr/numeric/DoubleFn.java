@@ -59,7 +59,7 @@ public class DoubleFn extends Expr
     JValue val = item.get();
     if (val == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     else if (val instanceof JDouble)
     {

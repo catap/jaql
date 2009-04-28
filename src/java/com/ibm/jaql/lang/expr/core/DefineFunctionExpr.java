@@ -194,7 +194,7 @@ public final class DefineFunctionExpr extends Expr
       for( Var v: capturedVars )
       {
         Item val = new Item();
-        val.copy(v.getValue());
+        val.setCopy(v.getValue());
         es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
       }
       es[n] = f.body().injectAbove();

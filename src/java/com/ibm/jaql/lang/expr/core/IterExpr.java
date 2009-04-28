@@ -104,7 +104,7 @@ public abstract class IterExpr extends Expr
     Iter iter = this.iter(context);
     if (iter.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
     if( tempItem == null )
     {

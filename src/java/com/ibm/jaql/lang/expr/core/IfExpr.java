@@ -40,7 +40,7 @@ public final class IfExpr extends Expr
   {
     if (falseExpr == null)
     {
-      falseExpr = new ConstExpr(Item.nil);
+      falseExpr = new ConstExpr(Item.NIL);
     }
     return new Expr[]{testExpr, trueExpr, falseExpr};
   }
