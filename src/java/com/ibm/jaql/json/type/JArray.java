@@ -52,7 +52,7 @@ public abstract class JArray extends JValue
   /** Returns the item at position <code>n</code> or nil if there is no such element.
    * 
    * @param n a position (0-based)
-   * @return the item at position <code>n</code> or {@link Item#nil}
+   * @return the item at position <code>n</code> or {@link Item#NIL}
    * @throws Exception
    */
   public abstract Item nth(long n) throws Exception;

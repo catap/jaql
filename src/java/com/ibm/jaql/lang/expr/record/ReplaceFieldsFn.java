@@ -62,7 +62,7 @@ public class ReplaceFieldsFn extends Expr
     JRecord newRec = (JRecord) newItem.get();
     if (oldRec == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     if (newRec == null)
     {

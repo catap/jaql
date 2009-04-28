@@ -287,7 +287,7 @@ public class DefaultHadoopInputAdapter<K, V> implements HadoopInputAdapter<Item>
 
       public Item createKey()
       {
-        return Item.nil;
+        return Item.NIL;
       }
 
       public Item createValue()

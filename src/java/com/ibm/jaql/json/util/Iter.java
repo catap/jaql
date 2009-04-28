@@ -46,7 +46,7 @@ public abstract class Iter
   public abstract Item next() throws Exception;
 
   /** Skips n-1 items, and returns the n-th ones. Standard implementation performs
-   * n calls to {@link Exception#next()}. Returns {@link Item#nil} if n<0 or the if
+   * n calls to {@link Exception#next()}. Returns {@link Item#NIL} if n<0 or the if
    * the iterator does not provide n more items.   * 
    * 
    * @param n
@@ -57,7 +57,7 @@ public abstract class Iter
   {
     if (n < 0)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     long i = 0;
     Item item;
@@ -69,7 +69,7 @@ public abstract class Iter
       }
       i++;
     }
-    return Item.nil;
+    return Item.NIL;
   }
 
   /**

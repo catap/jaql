@@ -59,7 +59,7 @@ public class ColumnwiseFn extends Expr
     Iter iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     MemoryJRecord rec = new MemoryJRecord();
     Item result = new Item(rec);
@@ -90,7 +90,7 @@ public class ColumnwiseFn extends Expr
           // pad the array with initial nulls
           for(int j = 0 ; j < count ; j++)
           {
-            arr.addCopy(Item.nil);
+            arr.addCopy(Item.NIL);
           }
         }
         arr.addCopy(val);
@@ -103,7 +103,7 @@ public class ColumnwiseFn extends Expr
         SpillJArray arr = arrays.get(i);
         if( arr.count() != count )
         {
-          arr.addCopy(Item.nil);
+          arr.addCopy(Item.NIL);
         }
       }
     }

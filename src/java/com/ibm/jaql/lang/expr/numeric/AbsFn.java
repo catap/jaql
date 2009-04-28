@@ -47,7 +47,7 @@ public class AbsFn extends Expr
   {
   	JNumeric v = (JNumeric)exprs[0].eval(context).get();
   	if (v == null) {
-  		return Item.nil;
+  		return Item.NIL;
   	} else if (v instanceof JDouble) {
     	return new Item(new JDouble(Math.abs(v.doubleValue()))); // TODO: reuse
     } else if (v instanceof JLong && v.longValue() != Long.MIN_VALUE) {

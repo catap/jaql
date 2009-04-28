@@ -86,7 +86,7 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
     Iter iter = array2.iter();
     if( m + n < limit )
     {
-      array.addAllCopies(iter);
+      array.addCopyAll(iter);
     }
     else
     {

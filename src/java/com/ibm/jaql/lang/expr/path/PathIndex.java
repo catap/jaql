@@ -83,12 +83,12 @@ public class PathIndex extends PathStep
     JArray arr = (JArray)input.get();
     if( arr == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JNumber index = (JNumber)indexExpr().eval(context).get();
     if( index == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Item value = arr.nth(index.longValueExact());
     return nextStep(context, value);

@@ -56,7 +56,7 @@ public final class PickAnyAgg extends AlgebraicAggregate // todo: rename class o
   {
     if( result.isNull() )
     {
-      result.copy(item);
+      result.setCopy(item);
     }
   }
 
@@ -71,7 +71,7 @@ public final class PickAnyAgg extends AlgebraicAggregate // todo: rename class o
   {
     if( result.isNull() )
     {
-      result.copy(item);
+      result.setCopy(item);
     }
   }
 

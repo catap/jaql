@@ -102,7 +102,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
     JValue w = item.get();
     if (w == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     long i = ((JNumber) w).longValueExact();
     Expr arrayExpr = exprs[0];
@@ -111,7 +111,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
       Iter iter = arrayExpr.iter(context);
       if( iter.isNull() )
       {
-        return Item.nil;
+        return Item.NIL;
       }
       item = iter.nth(i);
     }
@@ -121,7 +121,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
       JArray array = (JArray) item.get();
       if (array == null)
       {
-        return Item.nil;
+        return Item.NIL;
       }
       item = array.nth(i);
     }

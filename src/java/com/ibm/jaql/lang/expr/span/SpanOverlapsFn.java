@@ -46,12 +46,12 @@ public class SpanOverlapsFn extends Expr
     JSpan x = (JSpan) exprs[0].eval(context).get();
     if (x == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JSpan y = (JSpan) exprs[1].eval(context).get();
     if (y == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     return JBool.make(JSpan.overlaps(x, y));
   }

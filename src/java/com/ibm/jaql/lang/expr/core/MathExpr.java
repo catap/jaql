@@ -113,12 +113,12 @@ public class MathExpr extends Expr
     JValue item1 = exprs[0].eval(context).get();
     if (item1 == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JValue item2 = exprs[1].eval(context).get();
     if (item2 == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     if (item1 instanceof JLong && item2 instanceof JLong)
     {
@@ -180,7 +180,7 @@ public class MathExpr extends Expr
           catch (ArithmeticException e)
           {
             // TODO: need +INF, -INF, and NaN
-            return Item.nil;
+            return Item.NIL;
           }
           break;
         }
@@ -225,7 +225,7 @@ public class MathExpr extends Expr
         catch (ArithmeticException e)
         {
           // TODO: need +INF, -INF, and NaN
-          return Item.nil;
+          return Item.NIL;
         }
       }
       default :

@@ -190,7 +190,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Item
 
       public void write(Item value) throws IOException
       {
-        writer.write(Item.nil, value);
+        writer.write(Item.NIL, value);
       }
     };
   }

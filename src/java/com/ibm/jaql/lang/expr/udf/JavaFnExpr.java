@@ -298,7 +298,7 @@ public class JavaFnExpr extends Expr
     Object result = makeCall(context);
     if (result == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     else if (result instanceof JValue)
     {
@@ -325,7 +325,7 @@ public class JavaFnExpr extends Expr
       Iter iter = (Iter) result;
       if (iter.isNull())
       {
-        return Item.nil;
+        return Item.NIL;
       }
       if (resultArray == null)
       {

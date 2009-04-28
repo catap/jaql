@@ -175,7 +175,7 @@ public final class Item implements WritableComparable<Item> // , Cloneable
     }
   }
 
-  public static final Item   nil      = new Item();
+  public static final Item   NIL      = new Item();
   public static final Item[] NO_ITEMS = new Item[0];
 
   static
@@ -206,7 +206,7 @@ public final class Item implements WritableComparable<Item> // , Cloneable
     this.encoding = Encoding.NULL;
   }
 
-  /**
+  /** Does not copy.
    * @param v
    */
   public Item(JValue v)
@@ -268,9 +268,11 @@ public final class Item implements WritableComparable<Item> // , Cloneable
   }
 
   /**
-   * w now belongs to this item // TODO: should it copy?
+   * Set the value of this item to <code>v</code>. The default implementation of this method 
+   * does not create a copy of <code>v</code>, but subclasses may decide to do so. If copying
+   * is needed, the {@link #setCopy(JValue)} method should be used.
    * 
-   * @param v
+   * @param v a value
    */
   public void set(JValue v)
   {
@@ -285,6 +287,41 @@ public final class Item implements WritableComparable<Item> // , Cloneable
       encoding = v.getEncoding();
       cache = value = v;
     }
+  }
+
+  /** Set the value of this item to a copy of <code>v</code>. 
+   * 
+   * @param v a value
+   * @throws Exception
+   */
+  public void setCopy(JValue v) throws Exception 
+  {
+    if (v == null) {
+      encoding = Encoding.NULL;
+      value = null;
+    } else {
+      if (encoding != v.getEncoding() || value==v)
+      {
+        encoding = v.getEncoding();
+        cache = value = encoding.newInstance();
+      }
+      value.setCopy(v);
+    }
+  }
+
+  /** Copy the content of <code>item</code> into this object. 
+   * 
+   * @param item an item
+   * @throws Exception
+   */
+  public void setCopy(Item item) throws Exception
+  {
+    if (item == null) {
+      encoding = Encoding.NULL;
+      value = null;
+      return;
+    }
+    setCopy(item.get());
   }
 
   /*
@@ -457,33 +494,20 @@ public final class Item implements WritableComparable<Item> // , Cloneable
   }
 
   /**
-   * @param item
-   * @throws Exception
-   */
-  public void copy(Item item) throws Exception
-  {
-    if (item == null || item.value == null)
-    {
-      assert item == null || item.encoding == Encoding.NULL;
-      encoding = Encoding.NULL;
-      value = null;
-    }
-    else
-    {
-      if (encoding != item.encoding)
-      {
-        encoding = item.encoding;
-        cache = value = encoding.newInstance();
-      }
-      value.setCopy(item.value);
-    }
-  }
-
-  /**
    * @return
    */
   final public boolean isAtom()
   {
     return !(value instanceof JRecord || value instanceof JArray);
+  }
+  
+  /** Reset the content of this item. After resetting, the state of this item is identical 
+   * to the state of a newly created item. All internal values and cache elements referenced by 
+   * this item are not touched; but the reseted item does not reference them anymore.
+   */
+  public void reset() {
+    encoding = Encoding.NULL;
+    value = null;
+    cache = null;
   }
 }

@@ -159,7 +159,7 @@ public class FunctionCallExpr extends Expr
       // JFunction fn = (JFunction)fnVal;
       if (fn == null)
       {
-        return Item.nil;
+        return Item.NIL;
       }
       return fn.eval(context, exprs, 1, exprs.length - 1);
     }

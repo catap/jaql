@@ -45,7 +45,7 @@ public class DatePartsFn extends Expr
     JDate d = (JDate)item.get();
     if( d == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     MemoryJRecord rec = new MemoryJRecord(); // TODO: mucho memory
     cal.setTimeInMillis(d.millis);

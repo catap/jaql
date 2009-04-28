@@ -209,7 +209,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
 
     for (int i = 0; i < n; i++ )
     {
-      binding(i).var.set(Item.nil);
+      binding(i).var.set(Item.NIL);
     }
 
     for (int i = 0; i < n; i++ )
@@ -229,17 +229,17 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
         else if( i <= lastPreserved )
         {
           b.var.set(item);
-          nullKeyResults.addAllCopies(collectExpr().iter(context));
+          nullKeyResults.addCopyAll(collectExpr().iter(context));
         }
       }
-      b.var.set(Item.nil);
+      b.var.set(Item.NIL);
 
       // If more than one is preserved, we do the outer-cross product of matching items,
       //   and filter the where at least one preserved input is non-null.
       // If exactly one is preserved, we avoid the null case on the preserved one and the filter.
       if( lastPreserved >= 0 ) 
       {
-        nilIters[i] = new ScalarIter(Item.nil);
+        nilIters[i] = new ScalarIter(Item.NIL);
       }
     }
 
@@ -327,7 +327,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
               ( j != lastPreserved ||            // This input is not the last preserved input
                 firstNonEmpty < lastPreserved )) // Some earlier preserved input is non-empty
           {
-            nilIters[j].reset(Item.nil);
+            nilIters[j].reset(Item.NIL);
             groupIters[j] = nilIters[j];
           }
           else

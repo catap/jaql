@@ -109,7 +109,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
         {
           try
           {
-            tgt.copy(src);
+            tgt.setCopy(src);
           }
           catch (Exception e)
           {
@@ -179,7 +179,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
         {
           try
           {
-            tgt.copy(src);
+            tgt.setCopy(src);
           }
           catch (Exception e)
           {
@@ -240,7 +240,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
     Item nkey = new Item();
     try
     {
-      nkey.copy(key);
+      nkey.setCopy(key);
     }
     catch (Exception e)
     {

@@ -60,7 +60,7 @@ public class IntFn extends Expr
     JValue val = item.get();
     if (val == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     else if (val instanceof JLong)
     {

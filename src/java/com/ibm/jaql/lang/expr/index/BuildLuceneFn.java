@@ -56,17 +56,17 @@ public class BuildLuceneFn extends Expr
     JRecord fd = (JRecord)fdItem.get();
     if( fd == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JString loc = (JString)fd.getValue("location").get();
     if( loc == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JFunction keyFn = (JFunction)exprs[2].eval(context).get();
     if( keyFn == null )
     {
-      return Item.nil;
+      return Item.NIL;
     }
     JFunction valFn = (JFunction)exprs[3].eval(context).get();
     Iter iter = exprs[0].iter(context);

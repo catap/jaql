@@ -47,7 +47,7 @@ public class SpanFn extends Expr
     JLong end = (JLong) exprs[1].eval(context).get();
     if (begin == null || end == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     return new Item(new JSpan(begin.value, end.value)); // TODO: reuse
   }

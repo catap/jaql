@@ -61,7 +61,7 @@ public class FirstNonNullFn extends Expr
         return item;
       }
     }
-    return Item.nil;
+    return Item.NIL;
   }
 
   /*

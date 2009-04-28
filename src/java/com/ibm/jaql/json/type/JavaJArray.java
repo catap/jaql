@@ -95,7 +95,7 @@ public class JavaJArray extends JArray
       {
         items[i] = new Item();
       }
-      items[i].copy(item);
+      items[i].setCopy(item);
     }
     if (iter.next() != null)
     {

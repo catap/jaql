@@ -81,7 +81,7 @@ public class ReplaceElementFn extends IterExpr
           return null;
         }
         iter = Iter.empty;
-        return Item.nil;
+        return Item.NIL;
       }
     };
   }

@@ -101,7 +101,7 @@ public abstract class JRecord extends JValue
    */
   public final Item getValue(JString name)
   {
-    return getValue(name, Item.nil);
+    return getValue(name, Item.NIL);
   }
 
   /**
@@ -110,7 +110,7 @@ public abstract class JRecord extends JValue
    */
   public final Item getValue(String name)
   {
-    return getValue(name, Item.nil);
+    return getValue(name, Item.NIL);
   }
 
   /**

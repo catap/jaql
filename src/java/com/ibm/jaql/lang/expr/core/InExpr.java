@@ -80,12 +80,12 @@ public class InExpr extends Expr
     Item item1 = exprs[0].eval(context);
     if (item1.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Iter iter = exprs[1].iter(context);
     if (iter.isNull())
     {
-      return Item.nil;
+      return Item.NIL;
     }
     Item item2;
     Item result = JBool.falseItem;
@@ -93,7 +93,7 @@ public class InExpr extends Expr
     {
       if (item2.isNull())
       {
-        result = Item.nil;
+        result = Item.NIL;
       }
       else if (item1.equals(item2))
       {

@@ -270,7 +270,7 @@ public class JsonParser implements JsonParserConstants {
       break;
     case NULL:
       atom = jj_consume_token(NULL);
-                             item = Item.nil;
+                             item = Item.NIL;
       break;
     case ID:
       item = Construct();

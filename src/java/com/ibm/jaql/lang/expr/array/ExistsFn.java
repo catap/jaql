@@ -67,7 +67,7 @@ public class ExistsFn extends Expr
       iter = expr.iter(context);
       if (iter.isNull())
       {
-        return Item.nil;
+        return Item.NIL;
       }
     }
     else
@@ -76,7 +76,7 @@ public class ExistsFn extends Expr
       JValue w = item.get();
       if (w == null)
       {
-        return Item.nil;
+        return Item.NIL;
       }
       else if (w instanceof JArray)
       {

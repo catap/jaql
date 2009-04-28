@@ -50,7 +50,7 @@ public class RenameFieldsFn extends Expr
     JRecord oldRec = (JRecord) oldItem.get();
     if (oldRec == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
 
     JRecord map = (JRecord) exprs[1].eval(context).get();

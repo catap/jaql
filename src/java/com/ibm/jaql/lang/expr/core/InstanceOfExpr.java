@@ -84,7 +84,7 @@ public class InstanceOfExpr extends Expr
     JSchema schema = (JSchema) exprs[1].eval(context).get();
     if (schema == null)
     {
-      return Item.nil;
+      return Item.NIL;
     }
     boolean b = schema.getSchema().matches(item);
     return JBool.make(b);
