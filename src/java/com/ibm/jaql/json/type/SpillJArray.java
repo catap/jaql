@@ -123,7 +123,7 @@ public class SpillJArray extends JArray
 
   /** Sets the cache at index i to value without copying. */
   private void setCache(int i, JValue value) throws IOException {
-    assert i<cacheSize && i<count();
+    assert i<cacheSize && i<=count;
     cache[i] = value;
   }
 
