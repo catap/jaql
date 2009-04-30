@@ -21,7 +21,6 @@ import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ReduceExpr;
 
 /**
  * combine $a, $b in [e1] using e2($a,$b) ==> e1
@@ -62,12 +61,6 @@ public class TrivialCombineElmination extends Rewrite
     CombineExpr ce = (CombineExpr) expr;
 
     if( true ) return false; // TODO: re-enable with function api?
-
-    // We cannot simplify a CombineExpr as an aggregate in a ReduceExpr
-    if (ce.parent().parent() instanceof ReduceExpr)
-    {
-      return false;
-    }
 
     BindingExpr bind = null;// ce.binding();
     Expr inExpr = bind.inExpr();

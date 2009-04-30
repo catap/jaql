@@ -28,11 +28,9 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.FilterExpr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
-import com.ibm.jaql.lang.expr.core.PerPartitionFn;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -547,17 +545,14 @@ public class ToMapReduce extends Rewrite
 
     // FIXME: IfExpr, UnnestExpr
 
-    if( expr instanceof TransformExpr ||
-        expr instanceof FilterExpr ||
-        expr instanceof ForExpr ||
-        expr instanceof PerPartitionFn )
+    if( expr.isMappable(0) )
     {
       Expr input = expr.child(0);
-      if( !(expr instanceof PerPartitionFn) )
+      if( input instanceof BindingExpr )
       {
         input = input.child(0);
       }
-      seg = segment(input); // binding input
+      seg = segment(input);
       switch (seg.type)
       {
         case SEQUENTIAL :
@@ -779,15 +774,12 @@ public class ToMapReduce extends Rewrite
         seg = new Segment(Segment.Type.SEQUENTIAL_GROUP);
       }
     }
-    else if (expr instanceof ForExpr ||
-             expr instanceof TransformExpr ||
-             expr instanceof FilterExpr ||
-             expr instanceof PerPartitionFn )
+    else if( expr.isMappable(0) )
     {
       if (segmentReduceIsLocal(group, expr.child(1)))
       {
         Expr c = expr.child(0);
-        if( !(expr instanceof PerPartitionFn ) )
+        if( c instanceof BindingExpr )
         {
           c = c.child(0);
         }

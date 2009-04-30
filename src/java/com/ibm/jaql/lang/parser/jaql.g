@@ -30,6 +30,7 @@ import com.ibm.jaql.lang.expr.record.IsdefinedExpr;
 import com.ibm.jaql.lang.expr.array.ExistsFn;
 import com.ibm.jaql.lang.expr.nil.IsnullExpr;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
+import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 import com.ibm.jaql.json.type.*;
 import com.ibm.jaql.json.schema.*;
@@ -207,9 +208,54 @@ vpipe returns [BindingExpr r=null]
 //    ;
 
 aggregate[Expr in] returns [Expr r=null]
-    { BindingExpr b; }
-    : ("aggregate" | "agg") b=each[in] r=expr
-       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
+    { String v="$"; BindingExpr b; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
+//    : ("aggregate" | "agg") b=each[in] r=expr
+//       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
+    : ("aggregate" | "agg") ("as" v=var)?
+         {
+           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in); 
+         }
+      ( "into" r=expr { r = AggregateFullExpr.make(env, b, r, false); }
+      | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
+      | "initial" aa=algAggList { r = new AggregateInitialExpr(b, aa); }
+      | "partial" aa=algAggList { r = new AggregatePartialExpr(b, aa); }
+      | "final"   aa=algAggList { r = new AggregateFinalExpr(b, aa); }
+      )
+      { env.unscope(b.var); }
+    ;
+
+aggList returns [ArrayList<Aggregate> r = new ArrayList<Aggregate>()]
+    { Aggregate a; }
+    : "[" ( a=aggFn { r.add(a); } ("," a=aggFn { r.add(a); } )* )? "]"
+    ;
+
+aggFn returns [Aggregate agg]
+    { Expr e; }
+    : e = expr
+      {
+      	if( !( e instanceof Aggregate ) )
+      	{
+          oops("Aggregate required");
+      	}
+        agg = (Aggregate)e;
+      }
+    ;
+
+algAggList returns [ArrayList<AlgebraicAggregate> r = new ArrayList<AlgebraicAggregate>()]
+    { AlgebraicAggregate a; }
+    : "[" ( a=algAggFn { r.add(a); } ("," a=algAggFn { r.add(a); } )* )? "]"
+    ;
+
+algAggFn returns [AlgebraicAggregate agg]
+    { Expr e; }
+    : e = expr
+      {
+        if( !( e instanceof AlgebraicAggregate ) )
+        {
+          oops("Aggregate required");
+        }
+        agg = (AlgebraicAggregate)e;
+      }
     ;
 
 group returns [Expr r=null]
@@ -278,7 +324,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
     {
       if( e == null )
       {
-        e = new ConstExpr(Item.nil);
+        e = new ConstExpr(Item.NIL);
       }
       if( by == null )
       {
@@ -1126,7 +1172,7 @@ record returns [RecordExpr r = null]
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	{ Expr e = null; Expr v=null; boolean required = true; }
-    : e=fname ( "?" { required = false; } )?  ":" v=expr  
+    : e=fname ( "?" { required = false; } )?  ":" v=pipe  
       { 
       	f = new NameValueBinding(e, v, required); 
       }
@@ -1483,7 +1529,7 @@ boolLit returns [Expr r=null]
     ;
     
 nullExpr returns [Expr r=null]
-    : "null"     { r = new ConstExpr(Item.nil); }
+    : "null"     { r = new ConstExpr(Item.NIL); }
     ;
     
 str returns [String r=null]

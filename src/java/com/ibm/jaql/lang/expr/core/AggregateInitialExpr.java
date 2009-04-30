@@ -14,41 +14,42 @@
  * the License.
  */
 package com.ibm.jaql.lang.expr.core;
+
+import java.util.ArrayList;
+
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
-@JaqlFn(fnName="perPartition", minArgs=2, maxArgs=2)
-public class PerPartitionFn extends IterExpr
+
+public class AggregateInitialExpr extends AggregateAlgebraicExpr
 {
-
-  public PerPartitionFn(Expr[] inputs)
+  // Binding input, AlgebraicAggregate[] aggregates 
+  public AggregateInitialExpr(Expr[] inputs)
   {
     super(inputs);
   }
   
-  /**
-   * 
-   * @param inputs [BindingExpr, Expr+]
-   */
-  public PerPartitionFn(Expr input, Expr fn)
+  public AggregateInitialExpr(BindingExpr input, ArrayList<AlgebraicAggregate> aggs)
   {
-    super(input, fn);
+    super(makeArgs(input, aggs));
   }
   
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  @Override
-  public boolean isMappable(int i)
+  public AggType getAggType()
   {
-    return i == 0;
+    return AggType.INITIAL;
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
+   */
   @Override
   public Iter iter(final Context context) throws Exception
   {
-    JFunction fn = (JFunction)exprs[1].eval(context).get();
-    return fn.iter(context, new Expr[] {exprs[0]}, 0, 1);
+    makeWorkingArea();
+    boolean hadInput = evalInitial(context, aggs);
+    return partialResult(hadInput);
   }
 }

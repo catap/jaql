@@ -19,7 +19,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
-import com.ibm.jaql.lang.expr.core.AggregateExpr;
+import com.ibm.jaql.lang.expr.core.AggregateFullExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
@@ -118,7 +118,8 @@ public class InjectAggregate extends Rewrite
     // Inject the aggregate expr
     Expr proxy = new ProxyExpr();
     collect.replaceInParent(proxy);
-    Expr agg = AggregateExpr.make(engine.env, aggVar, new VarExpr(groupVar), collect, true);
+    BindingExpr b = new BindingExpr(BindingExpr.Type.EQ, aggVar, null, new VarExpr(groupVar));
+    Expr agg = AggregateFullExpr.make(engine.env, b, collect, true);
     proxy.replaceInParent(agg);
 
     return true;

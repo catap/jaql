@@ -20,8 +20,10 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JDate;
 import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JRegex;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
@@ -101,8 +103,12 @@ public final class ConstExpr extends Expr
       throws Exception
   {
     JValue w = value.get();
-    boolean annotate = w instanceof JArray || w instanceof JRecord
-        || w instanceof JFunction;
+    boolean annotate = 
+      w instanceof JArray    || 
+      w instanceof JRecord   || 
+      w instanceof JFunction || // TODO: JValue.getType().isExtendedJson()
+      w instanceof JDate     || // TODO: parser should recognize constructors and eval during parse
+      w instanceof JRegex;
     if (annotate) exprText.print("const("); // FIXME: remove
     value.print(exprText, 2);
     if (annotate) exprText.print(")");// FIXME: remove

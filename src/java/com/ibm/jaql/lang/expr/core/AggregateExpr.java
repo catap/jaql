@@ -16,7 +16,6 @@
 package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.FixedJArray;
@@ -24,121 +23,38 @@ import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.json.util.ScalarIter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 import com.ibm.jaql.util.Bool3;
 
 
-public final class AggregateExpr extends IterExpr // TODO: add init/combine/final flags
+public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/final flags
 {
-  protected static Expr[] makeArgs(Var aggVar, Expr input, ArrayList<Aggregate> aggs)
+  protected Item[] tempAggs;
+  protected FixedJArray tmpArray;
+  protected Item tmpItem;
+
+  public static enum AggType
   {
-    int n = aggs.size();
-    Expr[] args = new Expr[n+1];
-    args[0] = new BindingExpr(BindingExpr.Type.IN, aggVar, null, input);
-    for(int i = 0 ; i < n ; i++)
-    {
-      args[i+1] = aggs.get(i);
-    }
-    return args;
+    INITIAL("initial"),
+    PARITIAL("partial"),
+    FINAL("final"),
+    FULL("full");
+
+    private final String name;
+    private AggType(String name) { this.name = name; }
+    public String toString() { return name; };
   }
   
-  private static Expr splitExpr(Var aggVar, Var outVar, Expr expr, ArrayList<Aggregate> aggs)
-  {
-    if( expr instanceof VarExpr )
-    {
-      VarExpr ve = (VarExpr)expr;
-      if( ve.var == aggVar )
-      {
-        throw new RuntimeException("the aggregation variable must be inside an aggregate");
-      }
-    }
-    else if( expr instanceof Aggregate )
-    {
-      Aggregate agg = (Aggregate)expr;
-      int i = aggs.size();
-      aggs.add(agg);
-      Expr e = new IndexExpr(new VarExpr(outVar), i);
-      if( agg.parent() == null )
-      {
-        return e;
-      }
-      else
-      {
-        agg.replaceInParent(e);
-      }
-    }
-    else
-    {
-      for( Expr e: expr.exprs )
-      {
-        splitExpr(aggVar, outVar, e, aggs);
-      }
-    }
-    return expr;
-  }
-
-  /**
-   * Return a new canonical aggregate expression, which might have an MapExpr on top of it.
-   * 
-   * @param env
-   * @param aggVar
-   * @param input
-   * @param expr
-   * @param expand True if expanding expr.
-   * @return
-   */
-  public static Expr make(Env env, Var aggVar, Expr input, Expr expr, boolean expand)
-  {
-    if( !expand && expr instanceof ArrayExpr )
-    {
-      // Don't add map if we are already canonical: aggregate [ agg1(..), ..., aggN(...) ]
-      boolean allAggs = true;
-      for( Expr e: expr.exprs )
-      {
-        if( ! (e instanceof Aggregate) )
-        {
-          allAggs = false;
-          break;
-        }
-      }
-      if( allAggs )
-      {
-        int n = expr.numChildren();
-        Expr[] exprs = new Expr[n + 1];
-        exprs[0] = new BindingExpr(BindingExpr.Type.IN, aggVar, null, input);
-        System.arraycopy(expr.exprs, 0, exprs, 1, n);
-        return new AggregateExpr(exprs);
-      }
-    }
-    Var outVar = env.makeVar("$");
-    ArrayList<Aggregate> aggs = new ArrayList<Aggregate>();
-    expr = splitExpr(aggVar, outVar, expr, aggs);
-    Expr e = new AggregateExpr(aggVar, input, aggs);
-    if( expand )
-    {
-      e = new ForExpr(outVar, e, expr);
-    }
-    else
-    {
-      e = new TransformExpr(outVar, e, expr);
-    }
-    return e;
-  }
-
   // Binding input, Aggregate[] aggregates 
   public AggregateExpr(Expr[] inputs)
   {
     super(inputs);
   }
   
-  public AggregateExpr(Var aggVar, Expr input, ArrayList<Aggregate> aggs)
-  {
-    super(makeArgs(aggVar, input, aggs));
-  }
-  
+  public abstract AggType getAggType();
+
   public final BindingExpr binding()
   {
     return (BindingExpr)exprs[0];
@@ -153,7 +69,7 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
   {
     return (Aggregate)exprs[i+1];
   }
-
+  
   /*
    * (non-Javadoc)
    * 
@@ -193,6 +109,22 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
     return true;
   }
 
+  protected void onlyTrivialInput()
+  {
+    int n = numAggs();
+    for(int i = 0 ; i < n ; i++)
+    {
+      Aggregate a = (Aggregate)agg(i);
+      Var asVar = binding().var;
+      Expr c = a.child(0);
+      if( !(c instanceof VarExpr) || ((VarExpr)c).var() != asVar )
+      {
+        throw new RuntimeException("only 'as' variable is allowed inside aggFn($as) of aggregate "+getAggType());
+      }
+    }
+
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -205,10 +137,12 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
     // input -> aggregate (each var)? expr
     final BindingExpr in = binding();
     in.inExpr().decompile(exprText, capturedVars);
-    exprText.print("\n-> aggregate each ");
+    exprText.print("\n-> aggregate as ");
     exprText.print(in.var.name());
-    exprText.print(" [ ");
-    String sep = "";
+    exprText.print(" ");
+    exprText.print(getAggType());
+    exprText.print(" [");
+    String sep = " ";
     int n = numAggs();
     for(int i = 0 ; i < n ; i++)
     {
@@ -217,58 +151,64 @@ public final class AggregateExpr extends IterExpr // TODO: add init/combine/fina
       agg.decompile(exprText, capturedVars);
       sep = ", ";
     }
-    exprText.print(" ]");
+    exprText.print("]");
     capturedVars.remove(in.var);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
-   */
-  @Override
-  public Iter iter(final Context context) throws Exception
+  protected void makeWorkingArea()
   {
-    BindingExpr in = binding();
-    final int n = numAggs();
-    
-    Aggregate[] aggs = new Aggregate[n]; // TODO: memory
-    FixedJArray tmpArray = new FixedJArray(1);
-    Item tmpItem = new Item(tmpArray);
-    for(int i = 0 ; i < n ; i++)
+    tempAggs = new Item[numAggs()];
+    tmpArray = new FixedJArray(1);
+    tmpItem = new Item(tmpArray);
+  }
+  
+  /**
+   * 
+   * @param context
+   * @param aggs
+   * @param iter
+   * @return true if we had at least one input row
+   * @throws Exception
+   */
+  public boolean evalInitial(Context context, Aggregate[] aggs)
+    throws Exception
+  {
+    for(int i = 0 ; i < aggs.length ; i++)
     {
-      aggs[i] = agg(i);
       aggs[i].initInitial(context);
     }
 
     boolean hadInput = false;
-    Iter iter = in.inExpr().iter(context);
-    Item item;
-
+    BindingExpr in = binding();    
     in.var.set(tmpItem);
+    Item item;
+    Iter iter = in.inExpr().iter(context);
     while( (item = iter.next()) != null )
     {
       hadInput = true;
-      // context.setVar(in.var, item);
       tmpArray.set(0,item);
-      for(int i = 0 ; i < n ; i++)
+      for(int i = 0 ; i < aggs.length ; i++)
       {
         aggs[i].evalInitial(context);
       }
     }
-    
-    if( hadInput == false )
+
+    return hadInput;
+  }
+
+  
+  protected Iter finalResult(boolean hadInput, Aggregate[] aggs) throws Exception
+  {
+    if( ! hadInput )
     {
-      return Iter.empty; // TODO: Iter.nil?  preserve nil input?
+      return Iter.empty;
     }
-    
-    FixedJArray tuple = new FixedJArray(n); // TODO: memory
-    for(int i = 0 ; i < n ; i++)
+    for(int i = 0 ; i < aggs.length ; i++)
     {
-      item = aggs[i].getFinal();
-      tuple.set(i, item);
+      tempAggs[i] = aggs[i].getFinal();
     }
-    item = new Item(tuple); // TODO: memory
+    FixedJArray tuple = new FixedJArray(tempAggs); // TODO: memory
+    Item item = new Item(tuple); // TODO: memory
     return new ScalarIter(item); // TODO: memory
   }
 
