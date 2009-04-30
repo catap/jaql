@@ -80,6 +80,7 @@ public class RegexExtractFn extends Expr
       String s = matcher.group(i+1);
       arr.set(i, new JString(s)); // TODO: memory
     }
+    regex.returnMatcher(matcher);
     return result;
   }
 }

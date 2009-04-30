@@ -294,6 +294,14 @@ public abstract class Expr
   }
 
   /**
+   * This expression can be applied in parallel per partition of child i.
+   */
+  public boolean isMappable(int i)
+  {
+    return false;
+  }
+  
+  /**
    * @return
    */
   public final Expr parent()

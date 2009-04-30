@@ -93,8 +93,7 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         use.replaceInParent(valExpr);
         replaced = true;
       }
-      else
-      // multiple uses of var
+      else // multiple uses of var
       {
         // TODO: else consider inlining cheap valExprs into multiple uses.
         if (valExpr instanceof ConstExpr || valExpr instanceof VarExpr

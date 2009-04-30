@@ -139,12 +139,22 @@ public final class ForExpr extends IterExpr // TODO: rename
     return Bool3.FALSE;
   }
 
+  /**
+   * This expression can be applied in parallel per partition of child i.
+   */
+  @Override
+  public boolean isMappable(int i)
+  {
+    return i == 0;
+  }
+
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
+  @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {

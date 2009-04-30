@@ -26,6 +26,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JNumeric;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -86,7 +87,16 @@ public class RFn extends Expr
         Item item = exprs[i].eval(context);
         stdin.print(sep);
         stdin.print("fromJSON('"); // TODO: we should do the conversion in jaql
-        item.print(stdin);
+        if( item.get() instanceof JNumeric ) // hack around fromJSON('number') doesn't work, but fromJSON('[number]') gives number
+        {
+          stdin.print('[');
+          item.print(stdin);
+          stdin.print(']');
+        }
+        else
+        {
+          item.print(stdin);
+        }
         stdin.print("')");
         sep = ",";
       }

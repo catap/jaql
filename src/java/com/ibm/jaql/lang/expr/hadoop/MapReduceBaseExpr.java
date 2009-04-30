@@ -359,46 +359,5 @@ public abstract class MapReduceBaseExpr extends Expr
         throw new UndeclaredThrowableException(ex);
       }
     }
-
-//    /*
-//     * (non-Javadoc)
-//     * 
-//     * @see org.apache.hadoop.mapred.Mapper#map(java.lang.Object,
-//     *      java.lang.Object, org.apache.hadoop.mapred.OutputCollector,
-//     *      org.apache.hadoop.mapred.Reporter)
-//     */
-//    public void map(Item key, Item value, OutputCollector<Item, Item> output,
-//        Reporter reporter) throws IOException
-//    {
-//      try
-//      {
-//        args[0] = value;
-//        Iter iter = mapFn.iter(context, args);
-//        Item item;
-//        while ((item = iter.next()) != null)
-//        {
-//          JArray pair = (JArray) item.get();
-//          if (pair != null)
-//          {
-//            pair.getTuple(outKeyValue);
-//            Item val = outKeyValue[1];
-//            if (makePair)
-//            {
-//              outPair.set(1, val);
-//              val = pairItem;
-//            }
-//            output.collect(outKeyValue[0], val);
-//          }
-//        }
-//      }
-//      catch (IOException ex)
-//      {
-//        throw ex;
-//      }
-//      catch (Exception ex)
-//      {
-//        throw new UndeclaredThrowableException(ex);
-//      }
-//    }
   }
 }

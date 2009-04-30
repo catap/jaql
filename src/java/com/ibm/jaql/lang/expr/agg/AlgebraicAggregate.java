@@ -16,9 +16,10 @@
 package com.ibm.jaql.lang.expr.agg;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-public abstract class AlgebraicAggregate extends PartitionedAggregate
+public abstract class AlgebraicAggregate extends Aggregate
 {
   /** Most aggregates have a single argument.
    * 
@@ -34,6 +35,13 @@ public abstract class AlgebraicAggregate extends PartitionedAggregate
     super(arg);
   }
 
+  public void initPartial(Context context) throws Exception
+  {
+    initInitial(context);
+  }
+  
+  public abstract void addPartial(Item item) throws Exception;
+  
   public abstract Item getPartial() throws Exception;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) IBM Corp. 2008.
+ * Copyright (C) IBM Corp. 2009.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,38 +13,33 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.pragma;
+package com.ibm.jaql.lang.expr.string;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
- * This is a pragma function to force const evaluation.
+ * 
  */
-@JaqlFn(fnName = "const", minArgs = 1, maxArgs = 1)
-public class ConstPragma extends Pragma
+@JaqlFn(fnName = "strcat", minArgs = 0, maxArgs = Expr.UNLIMITED_EXPRS)
+public class StrcatFn extends Expr
 {
-  protected Item value = null;
-
+  protected StringBuilder builder;
+  protected JString text;
+  protected Item result;
+  
   /**
+   * string strcat(...)
+   * 
    * @param exprs
    */
-  public ConstPragma(Expr[] exprs)
+  public StrcatFn(Expr[] exprs)
   {
     super(exprs);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
-  @Override
-  public boolean isConst()
-  {
-    return true;
   }
 
   /*
@@ -54,10 +49,28 @@ public class ConstPragma extends Pragma
    */
   public Item eval(Context context) throws Exception
   {
-    if( value == null )
+    if( result == null )
     {
-      value = exprs[0].eval(context);
+      builder = new StringBuilder();
+      text = new JString();
+      result = new Item(text);
     }
-    return value;
+    else
+    {
+      builder.setLength(0);
+    }
+    for(Expr e: exprs)
+    {
+      Item item = e.eval(context);
+      JValue v = item.get();
+      // TODO: should arrays and records get special handling here?
+      if( v != null )
+      {
+        String s = v.toString(); // TODO: add toJString() ?
+        builder.append(s);
+      }
+    }
+    text.set(builder.toString());
+    return result;
   }
 }
