@@ -227,8 +227,6 @@ public class SpillJArray extends JArray
           eof = i>=count();
           return item;
         } else { // cache miss
-          // i not needed anymore
-          i++;
 
           // get a copy of the input pointing to first non-cached item
           if (input == null) {
@@ -242,6 +240,7 @@ public class SpillJArray extends JArray
           item.readFields(input);
           if (item.getEncoding() != Item.Encoding.UNKNOWN)
           {
+            i++;
             return item;
           }
           assert i==count();

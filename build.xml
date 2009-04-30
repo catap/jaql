@@ -159,6 +159,7 @@
                maxmemory="256m"
                errorProperty="tests.failed"
                failureProperty="tests.failed">
+        	<assertions><enable/></assertions>
             <sysproperty key="test.build.data" value="${test.build.data}" />
             <sysproperty key="test.cache.data" value="${test.cache.data}" />
             <sysproperty key="hadoop.log.dir" value="${test.log.dir}" />
