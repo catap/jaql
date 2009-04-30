@@ -51,21 +51,27 @@ public class DoInlinePragma extends Rewrite
       VarExpr varExpr = (VarExpr) c;
       Var var = varExpr.var();
       Expr def = findVarDef(varExpr);
-      if (def == null)
+//    // TODO: I think this case is gone now; function parameters are in bindings that are found.
+//      if (def == null)
+//      {
+//        // must be a function parameter // TODO: findVarDef SHOULD find it, and params should use Bindings
+//        return false;
+//      }
+      if (def instanceof BindingExpr)
       {
-        // must be a function parameter // TODO: findVarDef SHOULD find it, and params should use Bindings
-        return false;
-      }
-      else if (def instanceof BindingExpr)
-      {
-        BindingExpr b = (BindingExpr) def;
-        if (b.parent() instanceof DoExpr && var == b.var)
+        BindingExpr b = (BindingExpr)def;
+        assert var == b.var; // or else findDef is broken
+        Expr p = def.parent();
+        if( p instanceof DoExpr )
         {
           expr.replaceInParent(cloneExpr(b.eqExpr()));
           return true;
         }
+        //else if( p instanceof DefineFunctionExpr )
+        // We couldn't inline, yet...
+        return false;
       }
-      else
+      else // TODO: I don't think this case arises anymore...
       {
         assert var.isGlobal();
         Expr replaceBy;
@@ -83,8 +89,7 @@ public class DoInlinePragma extends Rewrite
         return true;
       }
     }
-
-    // If this inline request is not over a VarExpr for a let variable or global variable, just remove it.
+    // If this inline request is not over a VarExpr, just remove it.
     expr.replaceInParent(c);
     return true;
   }

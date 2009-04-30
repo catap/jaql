@@ -105,6 +105,14 @@ public final class TransformExpr extends IterExpr
     return Bool3.FALSE;
   }
 
+  /**
+   * This expression can be applied in parallel per partition of child i.
+   */
+  @Override
+  public boolean isMappable(int i)
+  {
+    return i == 0;
+  }
 
   /*
    * (non-Javadoc)

@@ -21,6 +21,8 @@ import java.math.MathContext;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
@@ -33,6 +35,10 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "number", minArgs = 1, maxArgs = 1)
 public class ToNumberFn extends Expr
 {
+  protected JLong jlong = new JLong();
+  protected JDecimal jdec = new JDecimal();
+  protected Item result = new Item();
+  
   /**
    * @param exprs
    */
@@ -50,26 +56,38 @@ public class ToNumberFn extends Expr
   {
     Item item = exprs[0].eval(context);
     JValue w = item.get();
-    if (w == null || w instanceof JDecimal)
+    if (w == null || w instanceof JNumber)
     {
       return item;
     }
 
-    BigDecimal x;
+    JNumber num;
     if (w instanceof JString)
     {
       // TODO: long vs decimal...
-      x = new BigDecimal(((JString) w).toString(), MathContext.DECIMAL128);
+      String s = ((JString) w).toString();
+      try
+      {
+        long x = Long.parseLong(s);
+        jlong.setValue(x);
+        num = jlong;
+      }
+      catch(Exception e)
+      {
+        BigDecimal x = new BigDecimal(s, MathContext.DECIMAL128);
+        jdec.setValue(x);
+        num = jdec;
+      }
     }
     else if (w instanceof JBool)
     {
       if (((JBool) w).getValue())
       {
-        x = BigDecimal.ONE;
+        return JLong.ONE_ITEM;
       }
       else
       {
-        x = BigDecimal.ZERO;
+        return JLong.ZERO_ITEM;
       }
     }
     else
@@ -77,6 +95,7 @@ public class ToNumberFn extends Expr
       throw new RuntimeException("cannot cast " + w.getClass().getName()
           + " to number");
     }
-    return new Item(new JDecimal(x)); // TODO: reuse
+    result.set(num);
+    return result;
   }
 }

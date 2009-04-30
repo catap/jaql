@@ -70,6 +70,7 @@ public class XmlToJsonFn extends Expr
       factory.setNamespaceAware(true);
       parser = factory.newSAXParser().getXMLReader();
       handler = new XmlToJsonHandler2();
+//      handler = new XmlToJsonHandler1();
       parser.setContentHandler( handler );
     }
 

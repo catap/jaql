@@ -90,10 +90,10 @@ TOKEN:
 |   <LPAREN:      "(" >
 |   <RPAREN:      ")" >
 |   <PLUS:        "+" >
-|   <LONG:        ("-")? (<DIGIT>)+ >
-|   <REAL:        ("-")? (<DIGIT>)+ "." (<DIGIT>)+ >
-|   <DECIMAL:     ("-")? (<DIGIT>)+ "." (<DIGIT>)+ "m" >
-|   <DOUBLE:      ("-")? (<DIGIT>)+ ("." (<DIGIT>)+)? "d" >
+|   <LONG:        ("-"|"+")? (<DIGIT>)+ >
+|   <REAL:        ("-"|"+")? (<DIGIT>)+ ("." (<DIGIT>)+)? (("e"|"E") ("-"|"+")? (<DIGIT>)+)? >
+|   <DECIMAL:     <REAL> "m" >
+|   <DOUBLE:      <REAL> "d" >
 |   <TRUE:        ["t","T"]["r","R"]["u","U"]["e","E"] >
 |   <FALSE:       ["f","F"]["a","A"]["l","L"]["s","S"]["e","E"] >
 |   <NULL:        ["n","N"]["u","U"]["l","L"]["l","L"] >

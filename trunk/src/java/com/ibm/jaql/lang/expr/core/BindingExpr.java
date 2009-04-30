@@ -23,7 +23,6 @@ import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
-import com.ibm.jaql.lang.expr.agg.PushAggExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -270,12 +269,4 @@ public class BindingExpr extends Expr
     return exprs[i];
   }
 
-  /**
-   * @return
-   */
-  public PushAggExpr aggExpr()
-  {
-    assert type == Type.AGGFN;
-    return (PushAggExpr) exprs[0];
-  }
 }

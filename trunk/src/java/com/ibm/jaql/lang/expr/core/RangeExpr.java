@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumeric;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.util.Bool3;
@@ -102,18 +103,18 @@ public class RangeExpr extends IterExpr
    */
   public Iter iter(final Context context) throws Exception
   {
-    JLong v1 = (JLong) exprs[0].eval(context).get();
+    JNumeric v1 = (JNumeric) exprs[0].eval(context).get();
     if (v1 == null)
     {
       return Iter.nil;
     }
-    JLong v2 = (JLong) exprs[1].eval(context).get();
+    JNumeric v2 = (JNumeric) exprs[1].eval(context).get();
     if (v2 == null)
     {
       return Iter.nil;
     }
-    final long start = v1.value;
-    final long end = v2.value;
+    final long start = v1.longValueExact();
+    final long end = v2.longValueExact();
 
     return new Iter() {
       final JLong num  = new JLong(start - 1);
