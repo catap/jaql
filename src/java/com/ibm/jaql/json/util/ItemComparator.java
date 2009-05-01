@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.json.util;
 
-import java.io.DataInput;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
@@ -23,7 +22,6 @@ import org.apache.hadoop.io.DataInputBuffer;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.lang.core.JComparator;
 
 /** Hadoop-compatible comparator for two JSON values. The comparator makes use of 
@@ -116,42 +114,13 @@ public class ItemComparator implements JComparator
   }
 
   /**
-   * @param in1
-   * @param in2
-   * @return
-   */
-  public int compareSpillArrays(DataInput in1, DataInput in2)
-  {
-    walker1.resetSpillArray(in1);
-    walker2.resetSpillArray(in2);
-    return compareWalkers(walker1, walker2);
-  }
-
-  /**
    * @param a
    * @param b
    * @return
    */
   public int compare(Item a, Item b)
   {
-    try
-    {
-      JValue wa = a.get();
-      JValue wb = b.get();
-      if (wa instanceof SpillJArray && wb instanceof SpillJArray)
-      {
-        SpillJArray ba = (SpillJArray) wa;
-        SpillJArray bb = (SpillJArray) wb;
-        return compareSpillArrays(ba.getSpillFile().getInput(), bb
-            .getSpillFile().getInput());
-      }
-      // TODO:? if( c == JMap.class )
-      return a.compareTo(b);
-    }
-    catch (IOException ex)
-    {
-      throw new UndeclaredThrowableException(ex);
-    }
+    return a.compareTo(b);
   }
 
   @Override

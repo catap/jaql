@@ -404,7 +404,7 @@ groupReturn returns [Expr r=null]
 //       env.unscope(v);
 //       if( key == null )
 //       {
-//         key = new ConstExpr(Item.nil);
+//         key = new ConstExpr(Item.NIL);
 //       }
 //       if( r == null )
 //       {
@@ -520,7 +520,7 @@ cmpSpec[ArrayList<CmpSpec> keys]
 //    {
 //      if( b == null )
 //      {
-//        b = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, new ConstExpr(Item.nil));
+//        b = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, new ConstExpr(Item.NIL));
 //      }
 //      if( by == null )
 //      {
@@ -536,7 +536,7 @@ cmpSpec[ArrayList<CmpSpec> keys]
 //      }
 ////      if( e == null )
 ////      {
-////          e = new ConstExpr(Item.nil);
+////          e = new ConstExpr(Item.NIL);
 ////      }
 //      b.type = BindingExpr.Type.EQ;
 //      by.addChild(b);
