@@ -265,21 +265,10 @@ public class JsonUtil
   //    }
   //  }
 
-  private static ItemComparator itemComparator = new ItemComparator();
-
-  /**
-   * @param x
-   * @param y
-   * @return
-   * @throws Exception
-   */
+  // TODO: not needed anymore, kept because it is still used
   public static int deepCompare(SpillJArray x, SpillJArray y) throws Exception
   {
-    synchronized (itemComparator)
-    {
-      return itemComparator.compareSpillArrays(x.getSpillFile().getInput(), y
-          .getSpillFile().getInput());
-    }
+    return x.compareTo(y);
   }
 
   /**

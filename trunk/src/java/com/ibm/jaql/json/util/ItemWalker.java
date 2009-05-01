@@ -120,7 +120,7 @@ public class ItemWalker
 
       case ARRAY_SPILLING :
         BaseUtil.readVULong(input); // read the array count (not used here)
-        BaseUtil.readVULong(input); // read the array byte length
+//        BaseUtil.readVULong(input); // read the array byte length (not used here)
         stack.add(S_NT_ARRAY);
         atom = null;
         type = Item.Type.ARRAY;

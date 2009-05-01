@@ -21,9 +21,9 @@ import java.nio.channels.FileChannel;
 import java.util.ConcurrentModificationException;
 
 /** 
- * Methods to access a file consisting of a set of pages, including method to 
+ * Methods to access a file consisting of a set of pages, including methods to 
  * allocate, read, write, and free a page. The physical order of pages on disk may not 
- * correspond to the order of their allocation, as freed pages will be  reused to 
+ * correspond to the order of their allocation, as freed pages will be reused to 
  * satisfy subsequent allocations. 
  */
 public final class PagedFile
@@ -142,7 +142,7 @@ public final class PagedFile
     file.write(freeList, 0);
   }
 
-  /**
+  /** Adds a page to the list of free pages.
    * @param offset
    * @throws IOException
    */
@@ -171,7 +171,7 @@ public final class PagedFile
    * be expensive. 
    * @throws IOException */
   // TODO: free page directory could be head of linked list of pages, or SpillFile can use page directories 
-  public int freePageList(int expectedVersion, long firstPage, ByteBuffer buffer)
+  public int freePages(int expectedVersion, long firstPage, ByteBuffer buffer)
     throws IOException
   {
     if( expectedVersion == version )

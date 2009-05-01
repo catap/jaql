@@ -107,7 +107,7 @@ public class JaqlUtil
                                                           }
                                                         };
 
-  private static final int       tempPageSize           = 64 * 1024;    // TODO: this is tuneable
+  private static final int       TEMP_PAGE_SIZE           = 64 * 1024;    // TODO: this is tuneable
   // TODO: This stuff has to be wrapped up into a Session object, and 
   // we need a way to find it from the current Thread.
   private static PagedFile       queryPagedFile;
@@ -169,7 +169,7 @@ public class JaqlUtil
       f.deleteOnExit();
       RandomAccessFile file = new RandomAccessFile(f, "rw");
       file.setLength(0);
-      PagedFile pf = new PagedFile(file.getChannel(), tempPageSize);
+      PagedFile pf = new PagedFile(file.getChannel(), TEMP_PAGE_SIZE);
       return pf;
     }
     catch (IOException ex)

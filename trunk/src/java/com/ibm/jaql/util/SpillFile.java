@@ -91,7 +91,7 @@ public class SpillFile implements DataOutput
 
   public void clear() throws IOException
   {
-    fileVersion = file.freePageList(fileVersion, firstPage, buffer);
+    fileVersion = file.freePages(fileVersion, firstPage, buffer);
     frozen = false;
     firstPage = currentPage = -1;
     initPage(-1);
