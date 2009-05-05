@@ -339,14 +339,18 @@ public abstract class MapReduceBaseExpr extends Expr
           JArray pair = (JArray) item.get();
           if (pair != null)
           {
-            pair.getTuple(outKeyValue);
-            Item val = outKeyValue[1];
+            assert pair.count() == 2;
+            Item val;
             if (makePair)
             {
-              outPair.set(1, val);
+              outPair.set(1, pair.nth(1));
               val = pairItem;
             }
-            output.collect(outKeyValue[0], val);
+            else 
+            {
+              val = pair.nth(1);
+            }
+            output.collect(pair.nth(0), val);
           }
         }
       }
