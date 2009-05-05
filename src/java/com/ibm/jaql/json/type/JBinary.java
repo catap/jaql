@@ -22,6 +22,7 @@ import java.io.PrintStream;
 
 import org.apache.hadoop.io.WritableComparator;
 
+import com.ibm.jaql.json.util.ItemComparator;
 import com.ibm.jaql.util.BaseUtil;
 
 /** An atomic JSON value representing a byte array. */
@@ -313,5 +314,30 @@ public class JBinary extends JAtom
   public Item.Encoding getEncoding()
   {
     return Item.Encoding.BINARY;
+  }
+  
+  
+  static {
+    ItemComparator.define(Item.Encoding.BINARY, new Cmp());
+  }
+  
+  public static class Cmp implements ItemComparator.JRawComparator {
+    @Override
+    public int compareValues(DataInput input1, DataInput input2) throws IOException
+    {
+      int l1 = BaseUtil.readVUInt(input1);
+      int l2 = BaseUtil.readVUInt(input2);
+
+      int m = Math.min(l1, l2);
+      for (int i=0; i<m; i++) {
+        int b1 = input1.readByte();
+        int b2 = input2.readByte();
+        if (b1 != b2) {
+          return (b1 & 0xff) - (b2 & 0xff);
+        }
+      }
+      
+      return l1 - l2;
+    }
   }
 }

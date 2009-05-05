@@ -355,22 +355,39 @@ public class SpillJArray extends JArray
     }    
   }
 
-  public void add(Item item) throws IOException
+  /** Appends either <code>item</code>'s value or a copy thereof to this array. 
+   * 
+   * @param item an item
+   * @return <code>true</code> if copied
+   * @throws IOException
+   */
+  public boolean add(Item item) throws IOException
   {
+    boolean copied;
     if (count < cacheSize) {       // cache item
       setCache((int)count, item.get());
+      copied = false;
     } else {       // spill item
       ensureSpillFile();
       item.write(spillFile);
+      copied = true;
     }
     
     count++;
+    return copied;
   }
   
-  public void add(JValue v) throws IOException {
+  /** Appends either <code>v</code> or a copy thereof to this array. 
+   * 
+   * @param v a value
+   * @return <code>true</code> if copied
+   * @throws IOException
+   */
+  public boolean add(JValue v) throws IOException {
     internalTempItem.set(v);
-    add(internalTempItem);
+    boolean copied = add(internalTempItem);
     internalTempItem.reset();
+    return copied;
   }
   
   /** Appends a copy of the <code>item</code>'s value to this array.

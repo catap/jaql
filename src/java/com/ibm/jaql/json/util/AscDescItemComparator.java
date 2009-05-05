@@ -15,19 +15,22 @@
  */
 package com.ibm.jaql.json.util;
 
+import java.io.DataInput;
 import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.Item.Encoding;
+import com.ibm.jaql.util.BaseUtil;
 
 /**
- * This compares two JArrays of fixed length equal to asc.length.
+ * Compares two JArrays of fixed length using a list of ascending/descending indicators
+ * of the same length.
  * 
  * This class is not threadsafe. It can be used only with Hadoop version 0.18.0 and above because
  * earlier versions shared comparators between threads.
  */
+
 public class AscDescItemComparator extends ItemComparator
 {
   boolean[] asc;
@@ -42,97 +45,90 @@ public class AscDescItemComparator extends ItemComparator
     this.asc = asc;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.util.ItemComparator#compare(byte[], int, int,
-   *      byte[], int, int)
+  /** Ascending/descending indicator-aware item comparison. This methods works like 
+   * {@link ItemComparator#compare(Item, Item)} but enforces that its inputs corresponds
+   * to arrays of length <code>asc.length</code> and uses 
+   * {@link #compareArraysAscDesc(DataInput, int, DataInput, int)} to perform the array comparison.
    */
+  protected int compareItemsAscDesc(DataInput input1, DataInput input2) throws IOException {
+    // read and compare encodings / types
+    int code1 = BaseUtil.readVUInt(input1);
+    int code2 = BaseUtil.readVUInt(input2);
+    assert code1>0 && code2>0;
+    Item.Encoding encoding1 = Item.Encoding.valueOf(code1);
+    Item.Encoding encoding2 = Item.Encoding.valueOf(code2);
+
+    // check that we have arrays and read their length
+    long l1 = 0;
+    if (encoding1.equals(Encoding.ARRAY_FIXED)) {
+      l1 = BaseUtil.readVUInt(input1);
+    } else if (encoding1.equals(Encoding.ARRAY_SPILLING)) {
+      l1 = BaseUtil.readVUInt(input1);
+    } else {
+      throw new RuntimeException("Input types must be arrays");
+    }
+    
+    long l2 = 0;
+    if (encoding2.equals(Encoding.ARRAY_FIXED)) {
+      l2 = BaseUtil.readVUInt(input2);
+    } else if (encoding2.equals(Encoding.ARRAY_SPILLING)) {
+      l2 = BaseUtil.readVUInt(input2);
+    } else {
+      throw new RuntimeException("Input types must be arrays");
+    }
+    
+    // check length
+    if (l1 != asc.length || l2 != asc.length) {
+      throw new RuntimeException("Arrays must have same lengths as asc/desc indicators");
+    }
+    
+    // compare values
+    int cmp = compareArraysAscDesc(input1, input2);
+
+    // read spill array sentinels in case of equality
+    if (cmp == 0) { 
+      if (encoding1.equals(Encoding.ARRAY_SPILLING)) {
+        int term = BaseUtil.readVUInt(input1);
+        assert term == Encoding.UNKNOWN.id;
+      }
+      if (encoding2.equals(Encoding.ARRAY_SPILLING)) {
+        int term = BaseUtil.readVUInt(input2);
+        assert term == Encoding.UNKNOWN.id;
+      }
+    }
+    
+    return cmp;
+  }
+
+  /** Ascending/descending indicator-aware array comparison. Assumes that its inputs point
+   * to the first items of two arrays of length <code>asc.length</code> */
+  protected int compareArraysAscDesc(DataInput input1, DataInput input2) 
+  throws IOException {
+    for (int i=0; i<asc.length; i++) {
+      int cmp = compareItems(input1, input2); // normal comparison
+      if (cmp != 0) {
+        return asc[i] ? cmp : -cmp;
+      }
+    }
+    return 0;
+  }
+  
+  /* @see com.ibm.jaql.json.util.ItemComparator#compare(byte[], int, int, byte[], int, int) */
   public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2)
   {
-    int c = 0;
-    int depth = 0;
-    int slot = -1;
-
     try
     {
-      walker1.reset(b1, s1, l1);
-      walker2.reset(b2, s2, l2);
-      int code1 = walker1.next();
-      int code2 = walker2.next();
-      if (code1 != ItemWalker.ARRAY || code2 != ItemWalker.ARRAY)
-      {
-        throw new RuntimeException("arrays are required for this comparator");
-      }
-
-      do
-      {
-        if (depth == 0)
-        {
-          slot++;
-        }
-        code1 = walker1.next();
-        code2 = walker2.next();
-
-        c = walker1.type.compareTo(walker2.type);
-        if (c == 0)
-        {
-          assert code1 == code2;
-          switch (code1)
-          {
-            case ItemWalker.EOF :
-              assert slot == asc.length;
-              assert code2 == ItemWalker.EOF;
-              assert depth == -1;
-              return 0;
-
-            case ItemWalker.RECORD :
-            case ItemWalker.ARRAY :
-              depth++;
-              break;
-
-            case ItemWalker.END_RECORD :
-            case ItemWalker.END_ARRAY :
-              depth--;
-              break;
-
-            case ItemWalker.NULL :
-              break;
-
-            case ItemWalker.ATOM :
-            case ItemWalker.FIELD_NAME :
-              JValue v1 = walker1.getAtom();
-              JValue v2 = walker2.getAtom();
-              c = v1.compareTo(v2);
-              break;
-
-            default :
-              assert (false);
-              break;
-          }
-        } // if same type
-
-      } while (c == 0);
-
-      if (asc[slot] == false)
-      {
-        c = -c;
-      }
-
-      return c;
-    }
-    catch (IOException e)
+      input1.reset(b1, s1, l1);
+      input2.reset(b2, s2, l2);
+      return compareItemsAscDesc(input1, input2);
+    } catch (IOException e)
     {
-      throw new UndeclaredThrowableException(e);
+      throw new RuntimeException(e);
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.util.ItemComparator#compare(com.ibm.jaql.json.type.Item,
-   *      com.ibm.jaql.json.type.Item)
-   */
+  /* @see com.ibm.jaql.json.util.ItemComparator#compare(com.ibm.jaql.json.type.Item,
+   *                                                    com.ibm.jaql.json.type.Item)  */
   public int compare(Item a, Item b)
   {
     // TODO: should this work with any JArray?
@@ -155,18 +151,14 @@ public class AscDescItemComparator extends ItemComparator
     if( x.size() != asc.length ||
         y.size() != asc.length )
     {
-      throw new RuntimeException("array compared must be of length of asc/desc indicators");
+      throw new RuntimeException("Arrays must have same lengths as asc/desc indicators");
     }
     for(int i = 0 ; i < asc.length ; i++)
     {
       int c = x.get(i).compareTo(y.get(i));
       if( c != 0 )
       {
-        if( asc[i] == false )
-        {
-          c = -c;
-        }
-        return c;
+        return asc[i] ? c : -c;
       }
     }
     return 0;

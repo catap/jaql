@@ -43,6 +43,7 @@ public class ItemWritableComparator extends WritableComparator
     return cmp.compare(b1, s1, l1, b2, s2, l2);
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public int compare(WritableComparable a, WritableComparable b)
   {
