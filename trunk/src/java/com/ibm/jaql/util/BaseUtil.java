@@ -232,7 +232,7 @@ public class BaseUtil
       {
         throw new IOException("positive value expected: " + v);
       }
-      out.writeByte((byte) v);
+      out.writeByte((int)v);
       return;
     }
 
@@ -246,12 +246,12 @@ public class BaseUtil
       len++;
     }
 
-    out.writeByte((byte) (0xf7 + len));
+    out.writeByte(0xf7 + len);
 
     do
     {
       len--;
-      out.writeByte((byte) (v >> (len << 3)));
+      out.writeByte((int) (v >> (len << 3)));
     } while (len > 0);
   }
 
@@ -282,13 +282,39 @@ public class BaseUtil
   }
 
   /**
-   * @param out
-   * @param v
-   * @throws IOException
+   * 
+   * 0x00, 0 0x01, 1 ... 0xfB 251 0xfC 1 byte pos ... 0xfe 3 byte pos 0xff 4
+   * byte pos
    */
-  public static void writeVUInt(DataOutput out, int v) throws IOException
+public static void writeVUInt(DataOutput out, int v) throws IOException
   {
-    writeVULong(out, v);
+    if (v <= 0xfB) // v <= 251
+    {
+      if (v < 0)
+      {
+        throw new IOException("positive value expected: " + v);
+      }
+      out.writeByte(v);
+      return;
+    }
+
+    // 252 <= v <= maxInt
+    v -= 0xfC;
+    int len = 1;
+    long t = v >> 8;
+    while (t > 0)
+    {
+      t >>= 8;
+      len++;
+    }
+
+    out.writeByte(0xfB + len);
+
+    do
+    {
+      len--;
+      out.writeByte(v >> (len << 3));
+    } while (len > 0);
   }
 
   /**
@@ -298,7 +324,23 @@ public class BaseUtil
    */
   public static int readVUInt(DataInput in) throws IOException
   {
-    return (int) readVULong(in);
+    int b = in.readUnsignedByte();
+    if (b <= 0xfB)
+    {
+      return b;
+    }
+    // 252 <= v <= maxLong
+
+    b -= 0xfB;
+    int v = 0;
+    do
+    {
+      v = (v << 8) | in.readUnsignedByte();
+      b--;
+    } while (b > 0);
+
+    v += 0xFC;
+    return v;
   }
 
   /**
@@ -390,7 +432,7 @@ public class BaseUtil
    */
   public static void writeVSInt(DataOutput out, int v) throws IOException
   {
-    writeVSLong(out, v);
+    writeVSLong(out, v); // TODO: own method for efficiency
   }
 
   /**
@@ -400,7 +442,7 @@ public class BaseUtil
    */
   public static int readVSInt(DataInput in) throws IOException
   {
-    return (int) readVSLong(in);
+    return (int) readVSLong(in); // TODO: own method for efficiency
   }
   //  public static void writeVSLong(DataOutput out, long v) throws IOException
   //  {
