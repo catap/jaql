@@ -126,18 +126,16 @@ public class ItemComparator implements JComparator
       Item.Type type2 = encoding2.getType();
       int cmp = type1.compareTo(type2);
       if (cmp != 0) return cmp;
-    }
-    
-    // if same type but different encodings, deserialize
-    // TODO: a better way / treat some cases special?
-    if (code1 != code2) {
+
+      // if same type but different encodings, deserialize
+      // TODO: a better way / treat some cases special?
       return compareValuesDeserialized(input1, encoding1, input2, encoding2);
     }
     
     // compare values
     switch (encoding1)
     {
-      case MEMORY_RECORD :  // JMemoryRecord
+    case MEMORY_RECORD :  // JMemoryRecord
         int arity1 = BaseUtil.readVUInt(input1);
         int arity2 = BaseUtil.readVUInt(input2);
         return compareRecords(input1, arity1, input2, arity2);
