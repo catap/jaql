@@ -268,22 +268,17 @@ public final class Item implements WritableComparable<Item> // , Cloneable
   }
 
   /**
-   * Set the value of this item to <code>v</code>. The default implementation of this method 
-   * does not create a copy of <code>v</code>, but subclasses may decide to do so. If copying
-   * is needed, the {@link #setCopy(JValue)} method should be used.
+   * Set the value of this item to <code>v</code> without copying.
    * 
    * @param v a value
    */
   public void set(JValue v)
   {
     // TODO: cache old value.  save value when type is null?
-    if (v == null)
-    {
+    if (v == null) {
       encoding = Encoding.NULL;
-      value = null;
-    }
-    else
-    {
+      value = null;      
+    } else {
       encoding = v.getEncoding();
       cache = value = v;
     }

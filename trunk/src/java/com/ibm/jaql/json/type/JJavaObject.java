@@ -132,6 +132,7 @@ public class JJavaObject extends JAtom
    * 
    * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
    */
+  @SuppressWarnings("unchecked")
   @Override
   public int compareTo(Object x)
   {

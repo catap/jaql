@@ -37,5 +37,4 @@ public abstract class JAtom extends JValue
 
   // TODO: eliminate clone() from JAtoms; can use JaqlType.copy() or Item.copy() instead.
   // public abstract JAtom clone();
-
 }
