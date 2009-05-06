@@ -42,6 +42,7 @@ public class Var extends Object
   public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
   public Item               value;               // The variable's full value
   public Iter               iter;                // The variable's lazy value; only one of value or iter is non-null
+  public SpillJArray        tempArray;           // array used to temp evaluation of iter
   public Expr               expr;                // only for global variables
   public Usage              usage = Usage.EVAL;
 
@@ -163,9 +164,11 @@ public class Var extends Object
     }
     else if( iter != null )
     {
-      SpillJArray arr = new SpillJArray();
-      arr.setCopy(iter);
-      value = new Item(arr);
+      if (tempArray == null) {
+        tempArray = new SpillJArray();
+      }
+      tempArray.setCopy(iter);
+      value = new Item(tempArray);
       iter = null;
       return value;
     }
@@ -208,10 +211,12 @@ public class Var extends Object
       }
       else
       {
-        SpillJArray arr = new SpillJArray();
-        arr.setCopy(iter);
-        value = new Item(arr);
-        return arr.iter();
+        if (tempArray == null) {
+          tempArray = new SpillJArray();
+        }
+        tempArray.setCopy(iter);
+        value = new Item(tempArray);
+        return tempArray.iter();
       }
     }
     else if (expr != null) // global var
