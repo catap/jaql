@@ -15,10 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.ibm.jaql.json.meta.MetaRecord;
 import com.ibm.jaql.json.type.Item.Encoding;
 
@@ -122,36 +118,6 @@ public class JavaJRecord extends JRecord
     Item item = fieldBuffers[i];
     meta.getValue(value, i, item);
     return item;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    String className = in.readUTF(); // TODO: would like to compress out the class name...
-    if (meta == null || !meta.getClazz().getName().equals(className))
-    {
-      meta = MetaRecord.getMetaRecord(className);
-      value = meta.newInstance();
-      fieldBuffers = meta.makeItems();
-    }
-    value = meta.read(in, value);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    out.writeUTF(meta.getClazz().getName()); // TODO: would like to compress out the class name...
-    meta.write(out, value);
   }
 
   /*

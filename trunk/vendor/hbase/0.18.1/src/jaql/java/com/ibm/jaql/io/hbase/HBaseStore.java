@@ -22,20 +22,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.client.Scanner;
-import org.apache.hadoop.hbase.HStoreKey;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.BatchUpdate;
 import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 
+import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JLong;
@@ -51,7 +50,8 @@ import com.ibm.jaql.json.util.Iter;
  */
 public class HBaseStore
 {
-
+  public static final FullSerializer SERIALIZER = DefaultFullSerializer.getDefault();
+  
   /**
    * 
    */
@@ -88,7 +88,7 @@ public class HBaseStore
     public static Text makeText(JString s)
     {
       Text t = new Text();
-      t.set(s.getBytes(), 0, s.getLength());
+      t.set(s.getInternalBytes(), 0, s.getLength());
       return t;
     }
 
@@ -250,7 +250,7 @@ public class HBaseStore
       Item item = rec.getValue(i);
       i++;
       name.setCopy(J_KEY);
-      item.set(new JString(key.getBytes(), key.getLength())); // TODO: memory
+      item.set(new JString(key.getInternalBytes(), key.getLength())); // TODO: memory
       rec.add(name, item);
       for (Map.Entry<byte[], Cell> e : row.entrySet())
       {
@@ -354,7 +354,7 @@ public class HBaseStore
         for (JString col : columns)
         {
           // int start = col.find(HBASE_CF_SEPARATOR_CHAR) + 1;
-          xact.delete(col.getBytes());
+          xact.delete(col.getInternalBytes());
         }
         // end the transaction
         table.commit(xact);
@@ -653,7 +653,7 @@ public class HBaseStore
       boolean hasValue = false;
       for (int i = 0; i < jcols.length; i++)
       {
-        Cell cell = table.get(key.getBytes(), tcols[i].getBytes());
+        Cell cell = table.get(key.getInternalBytes(), tcols[i].getBytes());
 
         if (cell != null)
         {
@@ -715,9 +715,9 @@ public class HBaseStore
       {
         Cell[] value = null;
         if (timestamp < 0)
-          value = table.get(key.getBytes(), tcols[i].getBytes(), numVersions);
+          value = table.get(key.getInternalBytes(), tcols[i].getBytes(), numVersions);
         else
-          value = table.get(key.getBytes(), tcols[i].getBytes(), timestamp, numVersions);
+          value = table.get(key.getInternalBytes(), tcols[i].getBytes(), timestamp, numVersions);
 
         if (value != null && value.length > 0)
         {
@@ -727,7 +727,7 @@ public class HBaseStore
 
           for (int j = 0; j < value.length; j++)
           {
-            tArr.addCopySerialized(value[j].getValue(), 0, value[j].getValue().length);
+            tArr.addCopySerialized(value[j].getValue(), 0, value[j].getValue().length, SERIALIZER);
           }
           tArr.freeze();
 

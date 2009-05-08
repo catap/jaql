@@ -60,7 +60,7 @@ public class SchemaAtom extends Schema // TODO: used classes for each type? eg, 
   {
     synchronized (tempName)
     {
-      tempName.readFields(in);
+      tempName = (JString)serializer.read(in, tempName);
       type = Item.Type.getType(tempName);
       if (type == null || type == Item.Type.UNKNOWN)
       {
@@ -78,7 +78,7 @@ public class SchemaAtom extends Schema // TODO: used classes for each type? eg, 
   public void write(DataOutput out) throws IOException
   {
     out.writeByte(ATOM_TYPE);
-    type.nameValue.write(out);
+    serializer.write(out, type.nameValue);
   }
 
   /*

@@ -18,6 +18,7 @@ package com.ibm.jaql.json.util;
 import java.io.DataInput;
 import java.io.IOException;
 
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.Item.Encoding;
@@ -51,6 +52,9 @@ public class AscDescItemComparator extends ItemComparator
    * {@link #compareArraysAscDesc(DataInput, int, DataInput, int)} to perform the array comparison.
    */
   protected int compareItemsAscDesc(DataInput input1, DataInput input2) throws IOException {
+    // TODO: this code breaks with other serializers or when serialization is changed
+    assert serializer instanceof DefaultFullSerializer;
+    
     // read and compare encodings / types
     int code1 = BaseUtil.readVUInt(input1);
     int code2 = BaseUtil.readVUInt(input2);
@@ -63,7 +67,7 @@ public class AscDescItemComparator extends ItemComparator
     if (encoding1.equals(Encoding.ARRAY_FIXED)) {
       l1 = BaseUtil.readVUInt(input1);
     } else if (encoding1.equals(Encoding.ARRAY_SPILLING)) {
-      l1 = BaseUtil.readVUInt(input1);
+      l1 = BaseUtil.readVULong(input1);
     } else {
       throw new RuntimeException("Input types must be arrays");
     }
@@ -72,7 +76,7 @@ public class AscDescItemComparator extends ItemComparator
     if (encoding2.equals(Encoding.ARRAY_FIXED)) {
       l2 = BaseUtil.readVUInt(input2);
     } else if (encoding2.equals(Encoding.ARRAY_SPILLING)) {
-      l2 = BaseUtil.readVUInt(input2);
+      l2 = BaseUtil.readVULong(input2);
     } else {
       throw new RuntimeException("Input types must be arrays");
     }
@@ -85,18 +89,6 @@ public class AscDescItemComparator extends ItemComparator
     // compare values
     int cmp = compareArraysAscDesc(input1, input2);
 
-    // read spill array sentinels in case of equality
-    if (cmp == 0) { 
-      if (encoding1.equals(Encoding.ARRAY_SPILLING)) {
-        int term = BaseUtil.readVUInt(input1);
-        assert term == Encoding.UNKNOWN.id;
-      }
-      if (encoding2.equals(Encoding.ARRAY_SPILLING)) {
-        int term = BaseUtil.readVUInt(input2);
-        assert term == Encoding.UNKNOWN.id;
-      }
-    }
-    
     return cmp;
   }
 
@@ -105,7 +97,7 @@ public class AscDescItemComparator extends ItemComparator
   protected int compareArraysAscDesc(DataInput input1, DataInput input2) 
   throws IOException {
     for (int i=0; i<asc.length; i++) {
-      int cmp = compareItems(input1, input2); // normal comparison
+      int cmp = serializer.compare(input1, input2); // normal comparison
       if (cmp != 0) {
         return asc[i] ? cmp : -cmp;
       }

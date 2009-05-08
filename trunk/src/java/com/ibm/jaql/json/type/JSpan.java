@@ -15,10 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -111,30 +107,6 @@ public class JSpan extends JAtom
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    begin = BaseUtil.readVULong(in);
-    end = begin + BaseUtil.readVULong(in);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    BaseUtil.writeVULong(out, begin);
-    BaseUtil.writeVULong(out, end - begin);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.json.type.JValue#toJSON()
    */
   @Override
@@ -149,7 +121,7 @@ public class JSpan extends JAtom
    */
   public void getText(JString inText, JString outText)
   {
-    outText.setCopy(inText.getBytes(), (int) begin, (int) (end - begin));
+    outText.setCopy(inText.getInternalBytes(), (int) begin, (int) (end - begin));
   }
 
   /*

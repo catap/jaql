@@ -15,11 +15,7 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import com.ibm.jaql.json.util.Iter;
-import com.ibm.jaql.util.BaseUtil;
 
 /*
  * This is a fixed-sized array (i.e., a tuple). It is used when the length of
@@ -342,38 +338,4 @@ public final class FixedJArray extends JArray
   {
     return Item.Encoding.ARRAY_FIXED;
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  public void readFields(DataInput in) throws IOException
-  {
-    int n = BaseUtil.readVUInt(in);
-    resize(n);
-    for (int i = 0; i < n; i++)
-    {
-      if (items[i] == null)
-      {
-        items[i] = new Item();
-      }
-      items[i].readFields(in);
-    }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  public void write(DataOutput out) throws IOException
-  {
-    BaseUtil.writeVUInt(out, count);
-    for (int i = 0; i < count; i++)
-    {
-      items[i].write(out);
-    }
-  }
-
 }

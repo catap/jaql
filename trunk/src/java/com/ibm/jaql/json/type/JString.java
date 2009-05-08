@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -313,33 +310,6 @@ public class JString extends JAtom
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  public void readFields(DataInput in) throws IOException
-  {
-    stringCache = null;
-    len = BaseUtil.readVUInt(in);
-    if (bytes.length < len)
-    {
-      bytes = new byte[len];
-    }
-    in.readFully(bytes, 0, len);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    BaseUtil.writeVUInt(out, len);
-    out.write(bytes, 0, len);
-  }
 
   /**
    * 
@@ -379,33 +349,9 @@ public class JString extends JAtom
    * 
    * @return
    */
-  public byte[] getBytes()
+  public byte[] getInternalBytes()
   {
     return bytes;
-  }
-
-  /**
-   * @param in
-   * @return
-   * @throws IOException
-   */
-  public static String readString(DataInput in) throws IOException
-  {
-    JString js = new JString(); // TODO: memory
-    js.readFields(in);
-    return js.toString();
-  }
-
-  /**
-   * @param out
-   * @param string
-   * @throws IOException
-   */
-  public static void writeString(DataOutput out, String string)
-      throws IOException
-  {
-    JString js = new JString(string); // TODO: memory
-    js.write(out);
   }
 
   /**

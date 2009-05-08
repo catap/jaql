@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 
 
@@ -113,28 +110,6 @@ public class JDate extends JAtom
   public long longHashCode()
   {
     return JLong.longHashCode(millis);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    millis = in.readLong();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    out.writeLong(millis);
   }
 
   /*

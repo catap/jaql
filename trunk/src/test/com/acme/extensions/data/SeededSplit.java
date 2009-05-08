@@ -22,8 +22,6 @@ import java.io.IOException;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.util.ReflectionUtils;
 
-import com.ibm.jaql.json.type.JString;
-
 /**
  * 
  */
@@ -94,7 +92,7 @@ public class SeededSplit implements InputSplit
   public void readFields(DataInput arg0) throws IOException
   {
     seed = arg0.readLong();
-    String cName = JString.readString(arg0);
+    String cName = arg0.readUTF();
     try
     {
       Class<?> c = Class.forName(cName).asSubclass(InputSplit.class);;
@@ -115,7 +113,7 @@ public class SeededSplit implements InputSplit
   public void write(DataOutput arg0) throws IOException
   {
     arg0.writeLong(seed);
-    JString.writeString(arg0, child.getClass().getCanonicalName());
+    arg0.writeUTF(child.getClass().getCanonicalName());
     child.write(arg0);
   }
 
