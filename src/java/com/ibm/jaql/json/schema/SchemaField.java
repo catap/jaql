@@ -19,14 +19,22 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
 import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.Item.Encoding;
 
 /** Schema that matches a field ((name, value)-pair) where the value matches its 
  * specified schema.   
  * 
  */
+@SuppressWarnings("unchecked")
 public class SchemaField
 {
+
+  protected final static BasicSerializer<JString> serializer 
+  = (BasicSerializer<JString>)DefaultFullSerializer.getDefaultInstance().getSerializer(Encoding.STRING);
+
   public SchemaField nextField;
   public JString     name;
   public boolean     wildcard;
@@ -46,7 +54,7 @@ public class SchemaField
    */
   public SchemaField(DataInput in) throws IOException
   {
-    name.readFields(in);
+    name = serializer.read(in, name);
     wildcard = in.readBoolean();
     optional = in.readBoolean();
     schema = Schema.read(in);
@@ -58,7 +66,7 @@ public class SchemaField
    */
   public void write(DataOutput out) throws IOException
   {
-    name.write(out);
+    serializer.write(out, name);
     out.writeBoolean(wildcard);
     out.writeBoolean(optional);
     schema.write(out);

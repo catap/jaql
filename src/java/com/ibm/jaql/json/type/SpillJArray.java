@@ -23,16 +23,14 @@ import java.util.Arrays;
 
 import org.apache.hadoop.io.DataInputBuffer;
 
+import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.json.util.JIterator;
 import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.PagedFile;
 import com.ibm.jaql.util.SpillFile;
-
-// TODO: Encoding.UNKOWN is currently used as a terminator for an array. This is not really
-//       needed because the array length is stored up front.
 
 /** A JSON array that stores its data in serialized form in a {@link SpillFile}. The array 
  * is append-only initially and read-only after it has been frozen; see {@link #freeze()}. 
@@ -57,6 +55,12 @@ public class SpillJArray extends JArray
   /** file used to store the content of the array in serialized form */
   protected SpillFile spillFile = null;
 
+  /** Serializer used for writing to the spill file. At the moment, this *has* to be 
+   * {@link DefaultFullSerializer}; that's why its static and final. Be careful when
+   * changing this. */
+  protected final static FullSerializer spillSerializer 
+    = DefaultFullSerializer.getDefaultInstance(); // TODO: make dynamic
+  
   /** number of elements to cache */
   protected int cacheSize;
   
@@ -75,13 +79,14 @@ public class SpillJArray extends JArray
   private static final JValue[] EMPTY_CACHE = new JValue[0];
 
   // -- constructors -----------------------------------------------------------------------------
-  
+
   /** Creates a new <code>SpillJArray</code> that stores its data in the provided 
    * <code>file</code>. The first <code>cacheSize</code> elements are also cached in 
    * memory.
    * 
    * @param pagedFile a page file 
    * @param cacheSize number of elements to cache in memory
+   * @param spillSerializer used to write values to the spill file
    */
   public SpillJArray(PagedFile pagedFile, int cacheSize)
   {
@@ -89,8 +94,9 @@ public class SpillJArray extends JArray
     this.cacheSize = cacheSize;
     this.cache = cacheSize>0 ? new JValue[cacheSize] : EMPTY_CACHE; // TODO: grow incrementally?
     cacheIsMine = true;
+    
   }
-  
+
   /** Creates a new <code>SpillJArray</code> that stores its data in the provided 
    * <code>file</code>. The first {@link #DEFAULT_CACHE_SIZE} elements are
    * also cached in memory. 
@@ -146,6 +152,23 @@ public class SpillJArray extends JArray
   
   public boolean hasSpillFile() {
     return spillFile != null;
+  }
+  
+  public int getCacheSize()
+  {
+    return cacheSize;
+  }
+  
+  public JValue[] getInternalCache() {
+    return cache;
+  }
+  
+  public FullSerializer getSpillSerializer() {
+    return spillSerializer;
+  }
+  
+  public void copySpillFile(DataOutput out) throws IOException {
+    spillFile.writeToOutput(out); 
   }
   
   // -- business methods -------------------------------------------------------------------------
@@ -208,16 +231,11 @@ public class SpillJArray extends JArray
           }
        
           // read from input 
-          item.readFields(input);
-          if (item.getEncoding() != Item.Encoding.UNKNOWN)
-          {
-            // i not really needed anymore
-            i++;
-            return item;
-          }
-          assert i==count();
-          eof = true;
-          return null;
+          JValue v = spillSerializer.read(input, item.get());
+          item.set(v);
+          i++;
+          eof = i>=count();
+          return item;
         }
       }
     };
@@ -314,6 +332,7 @@ public class SpillJArray extends JArray
   }
 
   /* @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue) */
+  @SuppressWarnings("static-access")
   @Override
   public void setCopy(JValue value) throws Exception
   {
@@ -335,6 +354,7 @@ public class SpillJArray extends JArray
     assert count == m;
     
     // copy spill file
+    assert spillSerializer.equals(other.spillSerializer); // trivally true at the moment
     if (other.spillFile != null) {
       ensureSpillFile();
       spillFile.copy(other.spillFile);
@@ -377,7 +397,7 @@ public class SpillJArray extends JArray
       copied = false;
     } else {       // spill item
       ensureSpillFile();
-      item.write(spillFile);
+      spillSerializer.write(spillFile, item.get());
       copied = true;
     }
     
@@ -423,7 +443,7 @@ public class SpillJArray extends JArray
       internalTempItem.reset(); // don't keep reference to value
     } else {    // spill item
       ensureSpillFile();
-      item.write(spillFile);
+      spillSerializer.write(spillFile, item.get());
     }
 
     count++;
@@ -452,35 +472,40 @@ public class SpillJArray extends JArray
       
       // and cache it
       setCache((int)count, internalTempItem.get());
+      internalTempItem.reset(); // don't keep reference to value
     } else { // spill item
       ensureSpillFile();
-      internalTempItem.set(value);
-      internalTempItem.write(spillFile);      
+      spillSerializer.write(spillFile, value);
     }
 
     count++;
-    internalTempItem.reset(); // don't keep reference to value
   }
 
   /** Appends a copy of an item given in its serialized form to this array.
    * 
    * @param input a n input stream
+   * @param serializer serializer for input
    * @throws IOException 
    */
-  public void addCopySerialized(DataInput input) throws IOException {
+  public void addCopySerialized(DataInput input, FullSerializer serializer) throws IOException {
     if (count < cacheSize) {
       int i = (int)count;
+      JValue value = null;
       if (cacheIsMine && cache[i] != null) {
-        internalTempItem.set(cache[i]);
+        value = cache[i];
       }
-      internalTempItem.readFields(input);
-      setCache(i, internalTempItem.get());
-      internalTempItem.reset();
+      value = serializer.read(input, value);
+      setCache(i, value);
     } else {
-      internalTempItem.readFields(input);
-      ensureSpillFile();
-      internalTempItem.write(spillFile);
-      // no reset() necessary; value in internalTempItem is free to use    
+      if (serializer.equals(spillSerializer)) {
+        spillSerializer.copy(input, spillFile); 
+      } else {
+        JValue value = internalTempItem.get(); // reuse if there is one
+        value = serializer.read(input, value);
+        ensureSpillFile();
+        spillSerializer.write(spillFile, value);
+        // no reset() necessary; value in internalTempItem is free to use
+      }
     }
 
     count++;
@@ -490,16 +515,20 @@ public class SpillJArray extends JArray
    * 
    * @param input a buffer
    * @param start offset at which the serialized item starts
-   * @param length length of the serialized item 
+   * @param length length of the serialized item
+   * @param serializer serializer for input 
    * @throws IOException
    */
-  public void addCopySerialized(byte[] input, int start, int length) throws IOException
+  public void addCopySerialized(byte[] input, int start, int length, FullSerializer serializer) 
+  throws IOException
   {
-    if (count < cacheSize) {
+    if (count < cacheSize || !serializer.equals(spillSerializer)) 
+    {
+      // deserialization required
       tempInputBuffer.reset(input, start, length);
-      addCopySerialized(tempInputBuffer);
+      addCopySerialized(tempInputBuffer, serializer);
     } else {
-      // copy directly, do not deserialize
+      // copy directly, no need to deserialize
       ensureSpillFile();
       spillFile.write(input, start, length);
       count++;
@@ -531,64 +560,7 @@ public class SpillJArray extends JArray
   public void freeze() throws IOException
   {
     if (hasSpillFile() && !spillFile.isFrozen()) {
-      BaseUtil.writeVUInt(spillFile, Item.Encoding.UNKNOWN.id); // marks eof
       spillFile.freeze();
-    }
-  }
-
-  
-  /** Read a serialized array from the provided input. Clears this array before doing so.
-   * 
-   * @param in an input stream
-   * @throws IOException
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataOutput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    clear();
-    count = 0;
-    long newCount = BaseUtil.readVULong(in);
-    for (long i=0; i<newCount; i++) {
-      addCopySerialized(in);
-    }
-    assert count==newCount;
-    
-    // terminator
-    int terminator = BaseUtil.readVUInt(in);
-    assert terminator == Item.Encoding.UNKNOWN.id;
-    freeze();
-  }
-
-  
-  /** Freezes the array and writes it to the provided output. 
-   * 
-   * @param out an output stream
-   * @throws IOException
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    freeze();
-    // Be sure to update ItemWalker whenever changing this.
-    BaseUtil.writeVULong(out, count);
-    
-    // write cached items
-    int m = count < cacheSize ? (int)count : cacheSize;
-    for (int i=0; i<m; i++) {
-      internalTempItem.set(getCache(i));
-      internalTempItem.write(out);
-    }
-    internalTempItem.reset();
-    
-    // write spilled items
-    if (hasSpillFile()) {
-      spillFile.writeToOutput(out); // copies terminator
-    } else {
-      // write terminator
-      BaseUtil.writeVUInt(out, Item.Encoding.UNKNOWN.id);
     }
   }
 

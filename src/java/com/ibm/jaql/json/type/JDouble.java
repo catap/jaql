@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.math.BigDecimal;
 
 
@@ -170,28 +167,6 @@ public class JDouble extends JNumeric
   public Item.Encoding getEncoding()
   {
     return Item.Encoding.DOUBLE;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    value = in.readDouble();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    out.writeDouble(value);
   }
 
   /*

@@ -142,8 +142,8 @@ public class MathExpr extends Expr
       JString text1 = (JString) item1;
       JString text2 = (JString) item2;
       byte[] buf = new byte[text1.getLength() + text2.getLength()];
-      System.arraycopy(text1.getBytes(), 0, buf, 0, text1.getLength());
-      System.arraycopy(text2.getBytes(), 0, buf, text1.getLength(), text2
+      System.arraycopy(text1.getInternalBytes(), 0, buf, 0, text1.getLength());
+      System.arraycopy(text2.getInternalBytes(), 0, buf, text1.getLength(), text2
           .getLength());
       return new Item(new JString(buf));
     }

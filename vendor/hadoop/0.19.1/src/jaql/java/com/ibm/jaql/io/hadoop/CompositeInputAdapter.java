@@ -470,7 +470,7 @@ class CompositeSplit implements InputSplit
   public void readFields(DataInput in) throws IOException
   {
     this.adapterIdx = in.readInt();
-    String cName = JString.readString(in);
+    String cName = in.readUTF();
     try
     {
       Class c = Class.forName(cName).asSubclass(InputSplit.class);;
@@ -492,7 +492,7 @@ class CompositeSplit implements InputSplit
   {
     out.writeInt(adapterIdx);
     // WARNING: getCanonicalName may not work for inner classes.
-    JString.writeString(out, baseSplit.getClass().getCanonicalName());
+    out.writeUTF(baseSplit.getClass().getCanonicalName());
     baseSplit.write(out);
   }
 

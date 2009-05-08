@@ -15,10 +15,7 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import org.apache.hadoop.io.DataInputBuffer;
@@ -90,42 +87,7 @@ public class JJavaObject extends JAtom
     return value.toString();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-
-    String name = in.readUTF();
-    if (value == null || !value.getClass().getName().equals(name))
-    {
-      try
-      {
-        Class<?> clazz = Class.forName(name);
-        value = (Writable) clazz.newInstance();
-      }
-      catch (Exception e)
-      {
-        throw new UndeclaredThrowableException(e);
-      }
-    }
-    value.readFields(in);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    out.writeUTF(value.getClass().getName());
-    value.write(out);
-  }
+ 
 
   /*
    * (non-Javadoc)
@@ -144,6 +106,10 @@ public class JJavaObject extends JAtom
     return value.getClass().getName().compareTo(ji.getClass().getName());
   }
 
+  public void set(Writable o) {
+    this.value = o;
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -190,5 +156,9 @@ public class JJavaObject extends JAtom
     long h = value.getClass().getName().hashCode();
     h = (h << 32) | value.hashCode();
     return h;
+  }
+  
+  public Writable getInternalValue() {
+    return value;
   }
 }

@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.PrintStream;
 
 
@@ -42,20 +39,6 @@ public abstract class JValue implements Comparable<Object> //extends WritableCom
    */
   public abstract void setCopy(JValue jvalue) throws Exception;
 
-
-  /** Set the content of this value by reading from the provided input.
-   * 
-   * @param in an input stream
-   * @throws IOException
-   */
-  public abstract void readFields(DataInput in) throws IOException;
-
-  /** Write this value to the provided output.
-   * 
-   * @param out an output stream
-   * @throws IOException
-   */
-  public abstract void write(DataOutput out) throws IOException;
 
   /**
    * Print this value on the stream in (extended) JSON text format.

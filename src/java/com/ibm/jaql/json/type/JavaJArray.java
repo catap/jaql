@@ -132,7 +132,7 @@ public class JavaJArray extends JArray
    * 
    * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
    */
-  @Override
+  @Deprecated
   public void readFields(DataInput in) throws IOException
   {
     String className = in.readUTF(); // TODO: would like to compress out the class name...
@@ -150,7 +150,7 @@ public class JavaJArray extends JArray
    * 
    * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
    */
-  @Override
+  @Deprecated
   public void write(DataOutput out) throws IOException
   {
     out.writeUTF(meta.getClazz().getName()); // TODO: would like to compress out the class name...

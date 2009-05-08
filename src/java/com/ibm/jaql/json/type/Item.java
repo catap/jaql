@@ -25,9 +25,9 @@ import java.util.HashMap;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
 
+import com.ibm.jaql.io.serialization.FullSerializer;
 import com.ibm.jaql.json.util.ItemWritableComparator;
 import com.ibm.jaql.lang.core.JFunction;
-import com.ibm.jaql.util.BaseUtil;
 
 /** Encapsulates an arbitrary, single JSON value (instance of {@link JValue}). */
 public final class Item implements WritableComparable<Item> // , Cloneable
@@ -326,39 +326,106 @@ public final class Item implements WritableComparable<Item> // , Cloneable
    */
   public void readFields(DataInput in) throws IOException
   {
-    int encId = BaseUtil.readVUInt(in);
-    encoding = Encoding.valueOf(encId);
-    if (encoding == Encoding.NULL || encoding == Encoding.UNKNOWN)
+    cache = value = FullSerializer.getDefault().read(in, value);
+    if (value != null)
     {
-      value = null; // TODO: cache old value
-    }
-    else
-    {
-      if (value == null || value.getClass() != encoding.clazz)
-      {
-        cache = value = encoding.newInstance();
-      }
-      value.readFields(in);
+      encoding = value.getEncoding();
+    } else {
+      encoding = Encoding.NULL;
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.apache.hadoop.io.Writable#write(java.io.DataOutput)
-   */
   public void write(DataOutput out) throws IOException
   {
-    BaseUtil.writeVUInt(out, encoding.id);
-    if (value != null)
-    {
-      value.write(out);
-    }
-    else
-    {
-      assert encoding == Encoding.NULL;
-    }
+    FullSerializer.getDefault().write(out, value);
   }
+  
+  
+//  private static class BufferedOutputStream extends OutputStream {
+//    static final int BUF_SIZE = 1024;
+//    byte[] buf = new byte[BUF_SIZE];
+//    int count = 0;
+//    DataOutput out;
+//    
+//    public void setOut(DataOutput out) {
+//      assert count==0;
+//      this.out = out;
+//    }
+//    
+//    @Override
+//    public void write(int b) throws IOException
+//    {
+//      if (count==buf.length) {
+//        flush();
+//      }
+//      buf[count] = (byte)b;
+//      count++;      
+//    }
+//    
+//    public void write(byte b[], int off, int len)  throws IOException {
+//      // does not fit
+//      if (count+len>buf.length) {
+//        flush(); // TODO: could be optimized
+//        if (len>=buf.length) {
+//          out.write(b, off, len);
+//          return;
+//        }
+//      }
+//      
+//      // fits
+//      System.arraycopy(b, off, buf, count, len);
+//      count += len;
+//    }
+//    
+//    public void flush() throws IOException {
+//      if (count > 0) {
+//        try
+//        {
+//          out.write(buf, 0, count);
+//        } catch (IOException e)
+//        {
+//          throw new RuntimeException(e);
+//        }
+//        count=0;
+//      }
+//    }
+//  }
+//  
+//  private static final BufferedOutputStream OUTPUT_STREAM = new BufferedOutputStream();
+//  private static final DataOutputStream DATA_OUTPUT = new DataOutputStream(OUTPUT_STREAM);
+//
+//  
+//  /*
+//   * (non-Javadoc)
+//   * 
+//   * @see org.apache.hadoop.io.Writable#write(java.io.DataOutput)
+//   */
+//  public void write(DataOutput out) throws IOException
+//  {
+//    if (out != DATA_OUTPUT) { // make sure branch is executed only once
+//      OUTPUT_STREAM.setOut(out);
+//      BaseUtil.writeVUInt(DATA_OUTPUT, encoding.id);
+//      if (value != null)
+//      {
+//        value.write(DATA_OUTPUT);
+//      }
+//      else
+//      {
+//        assert encoding == Encoding.NULL;
+//      }
+//      OUTPUT_STREAM.flush();
+//    } else {
+//      BaseUtil.writeVUInt(out, encoding.id);
+//      if (value != null)
+//      {
+//        value.write(out);
+//      }
+//      else
+//      {
+//        assert encoding == Encoding.NULL;
+//      }      
+//    }
+//  }
 
   /*
    * (non-Javadoc)

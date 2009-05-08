@@ -16,9 +16,6 @@
 package com.ibm.jaql.lang.core;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -74,9 +71,28 @@ public class JFunction extends JAtom
     HashSet<Var> capturedVars = new HashSet<Var>();
     fn.decompile(ps, capturedVars);
     assert capturedVars.size() == 0;
-    this.fnText = outStream.toString();
+    this.fnText = outStream.toString();  
   }
 
+  public void set(String fnText) throws Exception
+  {
+    JaqlLexer lexer = new JaqlLexer(new StringReader(fnText)); // TODO: memory
+    JaqlParser parser = new JaqlParser(lexer); // TODO: memory
+
+    try
+    {
+      fn = (DefineFunctionExpr)parser.parse();
+    }
+    catch(Exception e)
+    {
+      fn = null;
+      fnText = null;
+      throw new UndeclaredThrowableException(e);
+    }
+    fn.annotate();
+    ownFn = true;
+  }
+  
   /**
    * @return
    */
@@ -155,44 +171,6 @@ public class JFunction extends JAtom
     out.print(fnText);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    fnText = in.readUTF();
-
-    JaqlLexer lexer = new JaqlLexer(new StringReader(fnText)); // TODO: memory
-    JaqlParser parser = new JaqlParser(lexer); // TODO: memory
-
-    try
-    {
-      fn = (DefineFunctionExpr)parser.parse();
-    }
-    catch(Exception e)
-    {
-      fn = null;
-      fnText = null;
-      throw new UndeclaredThrowableException(e);
-    }
-    fn.annotate();
-    ownFn = true;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    out.writeUTF(fnText);
-  }
-  
   protected void setParams(Item[] args)
   {
     int p = fn.numParams();
