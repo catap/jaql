@@ -16,9 +16,6 @@
 
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.util.Arrays;
 
 import com.ibm.jaql.util.BaseUtil;
@@ -149,38 +146,6 @@ public class MemoryJRecord extends JRecord {
   {
   	int index = findName(name);
   	return index >= 0 ? values[index] : dfault;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#readFields(java.io.DataInput)
-   */
-  public void readFields(DataInput in) throws IOException
-  {
-    int arity = BaseUtil.readVUInt(in);
-    setArity(arity);
-    for (int i = 0; i < arity; i++)
-    {
-      names[i].readFields(in);
-      values[i].readFields(in);
-    }
-//    reorg();		// not needed because input records are already sorted
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#write(java.io.DataOutput)
-   */
-  public void write(DataOutput out) throws IOException
-  {
-    BaseUtil.writeVUInt(out, arity);
-    for (int i = 0; i < arity; i++)
-    {
-      names[i].write(out);
-      values[i].write(out);
-    }
   }
 
   /**
@@ -395,5 +360,27 @@ public class MemoryJRecord extends JRecord {
   /** Called whenever names have changed positions. Used by subclasses. */
   protected void reorg() {
   	// all methods maintain sorted order --> no actions required
+    // TODO: it might be more efficient to start unsorted and to sort only on demand
+    //       (an isSorted flag might be kept)
+  }
+  
+  /** Returns the internal array used to store field names */ 
+  public JString[] getInternalNamesArray() {
+    return names;
+  }
+  
+  /** Returns the internal array used to store values */
+  public Item[] getInternalValueArray() {
+    return values;
+  }
+  
+  /** Sets the internal arrays to new values. The names have to be sorted; no consistency
+   * checks are performed. The arguments are not copied. */
+  public void set(JString[] names, Item[] values, int arity) {
+    assert names.length >= arity;
+    assert values.length >= arity;
+    this.names = names;
+    this.values = values;
+    this.arity = arity;
   }
 }

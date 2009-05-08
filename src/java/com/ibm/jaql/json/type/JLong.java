@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.math.BigDecimal;
 
 import com.ibm.jaql.util.BaseUtil;
@@ -231,28 +228,6 @@ public class JLong extends JNumber
   public long longHashCode()
   {
     return longHashCode(this.value);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    value = BaseUtil.readVSLong(in);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    BaseUtil.writeVSLong(out, value);
   }
 
   /*

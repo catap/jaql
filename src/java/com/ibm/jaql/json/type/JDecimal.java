@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.math.BigDecimal;
 
 
@@ -208,32 +205,6 @@ public class JDecimal extends JNumber
       BigDecimal canonical = value.stripTrailingZeros();
       return canonical.hashCode();
     }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    // todo: need to read and write binary or at least avoid alloc string
-    // todo: need to cache bigdecimal
-    String str = in.readUTF();
-    value = new BigDecimal(str);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    String str = value.toString();
-    out.writeUTF(str);
   }
 
   /*

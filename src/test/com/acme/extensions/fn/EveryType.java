@@ -152,10 +152,10 @@ public class EveryType
         {
           // Add 0xABADDEED before JBinary
           JBinary b = (JBinary) v;
-          byte[] bytes1 = b.getBytes(); // Don't modify this!  v, b, bytes1 are not ours!
+          byte[] bytes1 = b.getInternalBytes(); // Don't modify this!  v, b, bytes1 are not ours!
           int n = b.getLength();
           bin.ensureCapacity(n + 4);
-          byte[] bytes2 = bin.getBytes(); // This can be modifed because bin is ours.
+          byte[] bytes2 = bin.getInternalBytes(); // This can be modifed because bin is ours.
           bytes2[0] = (byte) 0xAB;
           bytes2[1] = (byte) 0xAD;
           bytes2[2] = (byte) 0xDE;

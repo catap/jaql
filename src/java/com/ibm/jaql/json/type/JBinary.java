@@ -15,14 +15,10 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.PrintStream;
 
 import org.apache.hadoop.io.WritableComparator;
 
-import com.ibm.jaql.json.util.ItemComparator;
 import com.ibm.jaql.util.BaseUtil;
 
 /** An atomic JSON value representing a byte array. */
@@ -40,7 +36,7 @@ public class JBinary extends JAtom
   {
     this(EMPTY_BUFFER);
   }
-
+  
   /** Construct a new JBinary using the given byte array as its value. The array is not copied but
    * directly used as internal buffer. 
    * 
@@ -130,7 +126,7 @@ public class JBinary extends JAtom
   }
 
   /** Returns the internal byte[] buffer. It still belongs to this class. */
-  public byte[] getBytes()
+  public byte[] getInternalBytes()
   {
     return value;
   }
@@ -217,32 +213,7 @@ public class JBinary extends JAtom
     return h;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    // TODO: need to leave long binaries on disk?
-    length = BaseUtil.readVUInt(in);
-    value = value.length >= length ? value : new byte[length];
-    in.readFully(value, 0, length);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    BaseUtil.writeVUInt(out, length);
-    out.write(value, 0, length);
-  }
-
+  
   /*
    * (non-Javadoc)
    * 
@@ -317,27 +288,5 @@ public class JBinary extends JAtom
   }
   
   
-  static {
-    ItemComparator.define(Item.Encoding.BINARY, new Cmp());
-  }
   
-  public static class Cmp implements ItemComparator.JRawComparator {
-    @Override
-    public int compareValues(DataInput input1, DataInput input2) throws IOException
-    {
-      int l1 = BaseUtil.readVUInt(input1);
-      int l2 = BaseUtil.readVUInt(input2);
-
-      int m = Math.min(l1, l2);
-      for (int i=0; i<m; i++) {
-        int b1 = input1.readByte();
-        int b2 = input2.readByte();
-        if (b1 != b2) {
-          return (b1 & 0xff) - (b2 & 0xff);
-        }
-      }
-      
-      return l1 - l2;
-    }
-  }
 }

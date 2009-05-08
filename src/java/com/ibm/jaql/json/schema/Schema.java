@@ -19,7 +19,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.Item.Encoding;
 
 /*******************************************************************************
  * At the moment, a scheme provides methods that concern schema matching and 
@@ -41,6 +45,7 @@ import com.ibm.jaql.json.type.Item;
  * 
  * 
  ******************************************************************************/
+@SuppressWarnings("unchecked")
 public abstract class Schema
 {
   protected final static byte UNKNOWN_TYPE = 0;
@@ -52,6 +57,9 @@ public abstract class Schema
 
   public Schema               nextSchema;      // used by Array and Or Schemas
 
+  protected final static BasicSerializer<JString> serializer 
+    = (BasicSerializer<JString>)DefaultFullSerializer.getDefaultInstance().getSerializer(Encoding.STRING);
+  
   /**
    * @param item
    * @return

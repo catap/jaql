@@ -15,10 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import com.ibm.jaql.json.schema.Schema;
 
 /**
@@ -73,28 +69,6 @@ public class JSchema extends JAtom
   public long longHashCode()
   {
     throw new RuntimeException("schema are not hashable");
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#readFields(java.io.DataInput)
-   */
-  @Override
-  public void readFields(DataInput in) throws IOException
-  {
-    schema = Schema.read(in);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    schema.write(out);
   }
 
   /*

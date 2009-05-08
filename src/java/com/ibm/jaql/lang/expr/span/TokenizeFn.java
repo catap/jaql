@@ -57,7 +57,7 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
       JString               tokText   = new JString();
       Item                  item      = new Item(tokText);
 
-      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getBytes(), 0,
+      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getInternalBytes(), 0,
                                           text.getLength()); // TODO: reuse
       public Item next() throws Exception
       {
