@@ -21,7 +21,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.Text;
 
-import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.Item;
@@ -38,7 +38,7 @@ public class FromJSONTxtConverter extends HadoopRecordToItem<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected FromItem<WritableComparable> createKeyConverter()
+  protected ToItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -49,9 +49,9 @@ public class FromJSONTxtConverter extends HadoopRecordToItem<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected FromItem<Text> createValConverter()
+  protected ToItem<Text> createValConverter()
   {
-    return new FromItem<Text>() {
+    return new ToItem<Text>() {
       JsonParser parser = new JsonParser();
       
       public void convert(Text src, Item tgt)

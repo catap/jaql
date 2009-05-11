@@ -22,7 +22,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.JaqlBaseTestCase;
-import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
@@ -77,7 +77,7 @@ public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected FromItem<WritableComparable> createKeyConverter()
+  protected ToItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -88,9 +88,9 @@ public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected FromItem<Writable> createValConverter()
+  protected ToItem<Writable> createValConverter()
   {
-    return new FromItem<Writable>() {
+    return new ToItem<Writable>() {
       public void convert(Writable src, Item tgt)
       {
         if (src == null || tgt == null) return;

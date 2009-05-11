@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
  * Used to tag an Expr if it may potentially be rewritten to a MapReduceExpr.

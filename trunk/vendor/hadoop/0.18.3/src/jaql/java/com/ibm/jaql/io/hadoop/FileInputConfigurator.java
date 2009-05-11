@@ -21,7 +21,6 @@ import org.apache.hadoop.mapred.JobConf;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.MemoryJRecord;
 
 /**
  * A configurator that specifically writes the JobConf for a given
@@ -48,7 +47,7 @@ public class FileInputConfigurator implements JSONConfSetter
    */
   public void setSequential(JobConf conf) throws Exception
   {
-    set(conf);
+    set(conf);    
   }
 
   /*
@@ -58,7 +57,7 @@ public class FileInputConfigurator implements JSONConfSetter
    */
   public void setParallel(JobConf conf) throws Exception
   {
-    set(conf);
+    set(conf);    
   }
 
   /**
@@ -68,5 +67,6 @@ public class FileInputConfigurator implements JSONConfSetter
   protected void set(JobConf conf) throws Exception
   {
     conf.setInputPath(new Path(location));
+    HadoopSerialization.register(conf);
   }
 }

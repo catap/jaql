@@ -18,7 +18,7 @@ package com.ibm.jaql.io.hadoop.converter;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
@@ -34,12 +34,12 @@ public abstract class HadoopRecordToItem<K, V> implements KeyValueImport<K, V>//
   /**
    * 
    */
-  protected FromItem<K> keyConverter;
+  protected ToItem<K> keyConverter;
   
   /**
    * 
    */
-  protected FromItem<V>           valConverter;
+  protected ToItem<V>           valConverter;
 
   /**
    * 
@@ -93,12 +93,12 @@ public abstract class HadoopRecordToItem<K, V> implements KeyValueImport<K, V>//
   /**
    * @return
    */
-  protected abstract FromItem<K> createKeyConverter();
+  protected abstract ToItem<K> createKeyConverter();
 
   /**
    * @return
    */
-  protected abstract FromItem<V> createValConverter();
+  protected abstract ToItem<V> createValConverter();
   
   /**
    * @return

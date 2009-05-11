@@ -126,11 +126,11 @@ public class HBaseStore
      * @return
      * @throws IOException
      */
-    public static byte[] convertToBytes(Writable w) throws IOException
+    public static byte[] convertToBytes(Item item) throws IOException
     {
       ByteArrayOutputStream bstr = new ByteArrayOutputStream();
       DataOutputStream str = new DataOutputStream(bstr);
-      w.write(str);
+      item.write(str);
       str.close();
       return bstr.toByteArray();
     }
