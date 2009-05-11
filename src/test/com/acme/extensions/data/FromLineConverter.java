@@ -19,7 +19,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
@@ -36,7 +36,7 @@ public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Wr
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected FromItem<WritableComparable> createKeyConverter()
+  protected ToItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -47,9 +47,9 @@ public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Wr
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected FromItem<Writable> createValConverter()
+  protected ToItem<Writable> createValConverter()
   {
-    return new FromItem<Writable>() {
+    return new ToItem<Writable>() {
       public void convert(Writable src, Item tgt)
       {
         if (src == null || tgt == null) return;

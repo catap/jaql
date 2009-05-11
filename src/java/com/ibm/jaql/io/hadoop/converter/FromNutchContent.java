@@ -21,7 +21,7 @@ import org.apache.nutch.metadata.Metadata;
 import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.Content;
 
-import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JBinary;
 import com.ibm.jaql.json.type.JString;
@@ -44,15 +44,15 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
   };
   
   @Override
-  protected FromItem<WritableComparable> createKeyConverter() {
+  protected ToItem<WritableComparable> createKeyConverter() {
     // TODO Auto-generated method stub
     return null;
   }
 
   // TODO: the generic should be any subclass of Writable
   @Override
-  protected FromItem<Writable> createValConverter() {
-    return new FromItem<Writable> () {
+  protected ToItem<Writable> createValConverter() {
+    return new ToItem<Writable> () {
       
       private JString sVal = new JString();
       private JBinary bVal = new JBinary();

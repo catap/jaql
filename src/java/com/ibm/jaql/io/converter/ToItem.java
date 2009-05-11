@@ -17,7 +17,7 @@ package com.ibm.jaql.io.converter;
 
 import com.ibm.jaql.json.type.Item;
 
-/** Interface for converters from {@link Item} to T.
+/** Interface for converters from T to {@link Item}.
  * @param <T>
  */
 public interface ToItem<T>
@@ -26,11 +26,11 @@ public interface ToItem<T>
   /**
    * @return
    */
-  T createTarget();
+  Item createTarget();
 
   /**
    * @param src
    * @param tgt
    */
-  void convert(Item src, T tgt);
+  void convert(T src, Item tgt);
 }

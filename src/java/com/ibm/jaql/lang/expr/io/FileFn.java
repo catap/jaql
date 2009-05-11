@@ -17,8 +17,6 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 

@@ -26,6 +26,7 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.PublicMergeSorter;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.ItemComparator;
 import com.ibm.jaql.lang.core.JComparator;
 
 /**
@@ -51,6 +52,7 @@ public class ItemSorter
   static
   {
     conf.setMapOutputKeyClass(Item.class);
+    conf.setOutputKeyComparatorClass(ItemComparator.class);
   }
 
   /**

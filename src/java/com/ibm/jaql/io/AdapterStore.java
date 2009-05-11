@@ -17,8 +17,8 @@ package com.ibm.jaql.io;
 
 import org.apache.log4j.Logger;
 
-import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.converter.ToItem;
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.hadoop.CompositeInputAdapter;
 import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
@@ -103,9 +103,9 @@ public class AdapterStore
     }
 
     @Override
-    protected ToItem<JString> createFromKeyConverter()
+    protected FromItem<JString> createFromKeyConverter()
     {
-      return new ToItem<JString>() {
+      return new FromItem<JString>() {
 
         public void convert(Item src, JString tgt)
         {
@@ -121,9 +121,9 @@ public class AdapterStore
     }
 
     @Override
-    protected ToItem<AdapterRegistry> createFromValConverter()
+    protected FromItem<AdapterRegistry> createFromValConverter()
     {
-      return new ToItem<AdapterRegistry>() {
+      return new FromItem<AdapterRegistry>() {
 
         public void convert(Item src, AdapterRegistry tgt)
         {
@@ -154,9 +154,9 @@ public class AdapterStore
     }
 
     @Override
-    protected FromItem<JString> createToKeyConverter()
+    protected ToItem<JString> createToKeyConverter()
     {
-      return new FromItem<JString>() {
+      return new ToItem<JString>() {
 
         public void convert(JString src, Item tgt)
         {
@@ -174,9 +174,9 @@ public class AdapterStore
     }
 
     @Override
-    protected FromItem<AdapterRegistry> createToValConverter()
+    protected ToItem<AdapterRegistry> createToValConverter()
     {
-      return new FromItem<AdapterRegistry>() {
+      return new ToItem<AdapterRegistry>() {
 
         public void convert(AdapterRegistry src, Item tgt)
         {

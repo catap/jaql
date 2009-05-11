@@ -19,7 +19,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.ToItem;
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JRecord;
 
@@ -31,15 +31,15 @@ import com.ibm.jaql.json.type.JRecord;
 public abstract class ItemToHadoopRecord<K,V> implements KeyValueExport<K, V>
 {
 
-  protected ToItem<K> keyConverter;
+  protected FromItem<K> keyConverter;
 
-  protected ToItem<V>           valConverter;
+  protected FromItem<V>           valConverter;
 
   protected Converter                converter;
 
-  protected abstract ToItem<K> createKeyConverter();
+  protected abstract FromItem<K> createKeyConverter();
 
-  protected abstract ToItem<V> createValConverter();
+  protected abstract FromItem<V> createValConverter();
 
   /**
    * If a key converter has been specified, use its target. Otherwise use null.

@@ -44,13 +44,13 @@ public abstract class JsonRegistryFormat<K, V>
 
   public static final String VAL_NAME = "val";
 
-  private FromItem<K>        toKeyConverter;
+  private ToItem<K>        toKeyConverter;
 
-  private FromItem<V>        toValConverter;
+  private ToItem<V>        toValConverter;
 
-  private ToItem<K>          fromKeyConverter;
+  private FromItem<K>          fromKeyConverter;
 
-  private ToItem<V>          fromValConverter;
+  private FromItem<V>          fromValConverter;
 
   /**
    * 
@@ -66,22 +66,22 @@ public abstract class JsonRegistryFormat<K, V>
   /**
    * @return
    */
-  protected abstract FromItem<K> createToKeyConverter();
+  protected abstract ToItem<K> createToKeyConverter();
 
   /**
    * @return
    */
-  protected abstract FromItem<V> createToValConverter();
+  protected abstract ToItem<V> createToValConverter();
 
   /**
    * @return
    */
-  protected abstract ToItem<K> createFromKeyConverter();
+  protected abstract FromItem<K> createFromKeyConverter();
 
   /**
    * @return
    */
-  protected abstract ToItem<V> createFromValConverter();
+  protected abstract FromItem<V> createFromValConverter();
 
   /*
    * (non-Javadoc)

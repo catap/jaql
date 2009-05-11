@@ -22,7 +22,7 @@ import java.io.PrintStream;
 
 /** Superclass for all JSON values. Provides abstract methods for serialization, conversion 
  * to JSON language, deep copying, and hashing. */
-public abstract class JValue implements Comparable<Object> //extends WritableComparable
+public abstract class JValue implements Comparable<Object>
 {
 
   /** Returns the encoding of this object.

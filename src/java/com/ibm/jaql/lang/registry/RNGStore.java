@@ -17,8 +17,8 @@ package com.ibm.jaql.lang.registry;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.converter.ToItem;
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
 import com.ibm.jaql.json.type.Item;
@@ -101,9 +101,9 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromKeyConverter()
      */
     @Override
-    protected ToItem<Item> createFromKeyConverter()
+    protected FromItem<Item> createFromKeyConverter()
     {
-      return new ToItem<Item>() {
+      return new FromItem<Item>() {
 
         public void convert(Item src, Item tgt)
         {
@@ -139,9 +139,9 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromValConverter()
      */
     @Override
-    protected ToItem<RNGEntry> createFromValConverter()
+    protected FromItem<RNGEntry> createFromValConverter()
     {
-      return new ToItem<RNGEntry>() {
+      return new FromItem<RNGEntry>() {
 
         public void convert(Item src, RNGEntry tgt)
         {
@@ -171,9 +171,9 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToKeyConverter()
      */
     @Override
-    protected FromItem<Item> createToKeyConverter()
+    protected ToItem<Item> createToKeyConverter()
     {
-      return new FromItem<Item>() {
+      return new ToItem<Item>() {
 
         public void convert(Item src, Item tgt)
         {
@@ -201,9 +201,9 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToValConverter()
      */
     @Override
-    protected FromItem<RNGEntry> createToValConverter()
+    protected ToItem<RNGEntry> createToValConverter()
     {
-      return new FromItem<RNGEntry>() {
+      return new ToItem<RNGEntry>() {
 
         public void convert(RNGEntry src, Item tgt)
         {

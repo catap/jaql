@@ -22,7 +22,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.ToItem;
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.util.JsonUtil;
 
@@ -37,7 +37,7 @@ public class ToJSONTxtConverter extends ItemToHadoopRecord<WritableComparable, T
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
    */
   @Override
-  protected ToItem<WritableComparable> createKeyConverter()
+  protected FromItem<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -48,9 +48,9 @@ public class ToJSONTxtConverter extends ItemToHadoopRecord<WritableComparable, T
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createValConverter()
    */
   @Override
-  protected ToItem<Text> createValConverter()
+  protected FromItem<Text> createValConverter()
   {
-    return new ToItem<Text>()
+    return new FromItem<Text>()
     {
 
       /*
