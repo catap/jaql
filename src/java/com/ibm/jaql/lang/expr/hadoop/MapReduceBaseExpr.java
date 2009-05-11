@@ -34,13 +34,14 @@ import com.ibm.jaql.io.hadoop.Globals;
 import com.ibm.jaql.io.hadoop.HadoopAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
+import com.ibm.jaql.io.hadoop.HadoopSerialization;
 import com.ibm.jaql.io.registry.RegistryUtil;
 import com.ibm.jaql.json.type.FixedJArray;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.ItemComparator;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
@@ -159,19 +160,26 @@ public abstract class MapReduceBaseExpr extends Expr
       numInputs = 1;
     }
     conf.setInt(numInputsName, numInputs);
-    HadoopInputAdapter inAdapter = (HadoopInputAdapter) JaqlUtil
+    HadoopInputAdapter<?> inAdapter = (HadoopInputAdapter<?>) JaqlUtil
         .getAdapterStore().input.getAdapter(inArgs);
     inAdapter.setParallel(conf);
     //ConfiguratorUtil.writeToConf(inAdapter, conf, inArgs);
 
     //
+    // Setup serialization
+    
+    // TODO: currently assumes usage of  FullSerializer#getDefault()
+    HadoopSerialization.register(conf);
+    conf.setOutputKeyComparatorClass(ItemComparator.class);
+    
+    //
     // Setup the output
     //
-    MemoryJRecord outArgRec = (MemoryJRecord) outArgs.getNonNull();
-    HadoopOutputAdapter outAdapter = (HadoopOutputAdapter) JaqlUtil
+//    MemoryJRecord outArgRec = (MemoryJRecord) outArgs.getNonNull();
+    HadoopOutputAdapter<?> outAdapter = (HadoopOutputAdapter<?>) JaqlUtil
         .getAdapterStore().output.getAdapter(outArgs);
     outAdapter.setParallel(conf);
-    //ConfiguratorUtil.writeToConf(outAdapter, conf, outArgRec);
+//    ConfiguratorUtil.writeToConf(outAdapter, conf, outArgRec);
 
     // write out various static registries
     RegistryUtil.writeConf(conf, HadoopAdapter.storeRegistryVarName, JaqlUtil

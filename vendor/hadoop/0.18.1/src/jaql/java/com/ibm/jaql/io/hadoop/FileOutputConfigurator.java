@@ -51,7 +51,8 @@ public class FileOutputConfigurator implements JSONConfSetter
   {
     conf.setOutputKeyClass(Item.class);
     conf.setOutputValueClass(Item.class);
-
+    HadoopSerialization.register(conf);
+    
     // For an expression, the location is the final file name, so its directory
     // must be the location's parent.
     Path outPath = new Path(location);
@@ -83,6 +84,7 @@ public class FileOutputConfigurator implements JSONConfSetter
   {
     conf.setOutputKeyClass(Item.class);
     conf.setOutputValueClass(Item.class);
+    HadoopSerialization.register(conf);
 
     // For map-reduce, multiple files can be produced, so the location is their
     // parent directory.

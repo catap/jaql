@@ -27,7 +27,6 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
 
-
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ItemReader;
@@ -35,7 +34,6 @@ import com.ibm.jaql.io.registry.RegistryUtil;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.JValue;
 
 // TODO: look into factoring some of this code with DefaultHadoopInputAdapter

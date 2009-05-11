@@ -69,5 +69,6 @@ public class FileInputConfigurator implements JSONConfSetter
   protected void set(JobConf conf) throws Exception
   {
     FileInputFormat.setInputPaths(conf, new Path(location));
+    HadoopSerialization.register(conf);
   }
 }

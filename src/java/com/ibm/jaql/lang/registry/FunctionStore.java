@@ -17,8 +17,8 @@ package com.ibm.jaql.lang.registry;
 
 import org.apache.log4j.Logger;
 
-import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.converter.ToItem;
+import com.ibm.jaql.io.converter.FromItem;
 import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
@@ -43,7 +43,7 @@ public class FunctionStore extends Registry<JString, JString>
         JsonRegistryFormat<JString, JString>
   {
 
-    final static ToItem<JString>   tic = new ToItem<JString>() {
+    final static FromItem<JString>   tic = new FromItem<JString>() {
 
                                          public void convert(Item src,
                                              JString tgt)
@@ -57,7 +57,7 @@ public class FunctionStore extends Registry<JString, JString>
                                          }
 
                                        };
-    final static FromItem<JString> fic = new FromItem<JString>() {
+    final static ToItem<JString> fic = new ToItem<JString>() {
 
                                          public void convert(JString src,
                                              Item tgt)
@@ -87,7 +87,7 @@ public class FunctionStore extends Registry<JString, JString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromKeyConverter()
      */
     @Override
-    protected ToItem<JString> createFromKeyConverter()
+    protected FromItem<JString> createFromKeyConverter()
     {
       return tic;
     }
@@ -98,7 +98,7 @@ public class FunctionStore extends Registry<JString, JString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromValConverter()
      */
     @Override
-    protected ToItem<JString> createFromValConverter()
+    protected FromItem<JString> createFromValConverter()
     {
       return tic;
     }
@@ -109,7 +109,7 @@ public class FunctionStore extends Registry<JString, JString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToKeyConverter()
      */
     @Override
-    protected FromItem<JString> createToKeyConverter()
+    protected ToItem<JString> createToKeyConverter()
     {
       return fic;
     }
@@ -120,7 +120,7 @@ public class FunctionStore extends Registry<JString, JString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToValConverter()
      */
     @Override
-    protected FromItem<JString> createToValConverter()
+    protected ToItem<JString> createToValConverter()
     {
       return fic;
     }
