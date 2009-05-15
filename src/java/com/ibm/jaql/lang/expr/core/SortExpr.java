@@ -113,33 +113,6 @@ public class SortExpr extends IterExpr
     Var cmpVar = cmpFn.param(0);
     CmpExpr cmp = (CmpExpr)cmpFn.getBody();
     JComparator comparator = cmp.getComparator(context);
-//    FixedJArray byArray = null;
-//    Item byItem = null;
-//    final int nby = exprs.length - 1;
-//    if (nby == 1)
-//    {
-//      CmpSpec o = (CmpSpec) exprs[1];
-//      if (o.order == CmpSpec.Order.ASC)
-//      {
-//        comparator = new ItemComparator();
-//      }
-//      else
-//      {
-//        comparator = new ReverseItemComparator();
-//      }
-//    }
-//    else  // if( nby > 1 )
-//    {
-//      boolean[] order = new boolean[nby];
-//      for (int i = 1; i < exprs.length; i++)
-//      {
-//        CmpSpec o = (CmpSpec) exprs[i];
-//        order[i - 1] = (o.order == CmpSpec.Order.ASC);
-//      }
-//      byArray = new FixedJArray(exprs.length - 1); // TODO: memory
-//      byItem = new Item(byArray); // TODO: memory 
-//      comparator = new AscDescItemComparator(order);
-//    }
 
     final ItemSorter temp = new ItemSorter(comparator);
 
@@ -151,22 +124,8 @@ public class SortExpr extends IterExpr
     }
     while ((item = iter.next()) != null)
     {
-      cmpVar.set(item);
+      cmpVar.setValue(item);
       Item byItem = cmp.eval(context);
-//      if (nby == 1)
-//      {
-//        CmpSpec o = (CmpSpec) exprs[1];
-//        byItem = o.orderExpr().eval(context);
-//      }
-//      else
-//      {
-//        for (int i = 1; i < exprs.length; i++)
-//        {
-//          CmpSpec o = (CmpSpec) exprs[i];
-//          Item col = o.orderExpr().eval(context);
-//          byArray.set(i - 1, col);
-//        }
-//      }
       temp.add(byItem, item);
     }
 

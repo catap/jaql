@@ -25,6 +25,7 @@ import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.Bool3;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -118,6 +119,34 @@ public class FunctionCallExpr extends Expr
     return exprs[i + 1];
   }
 
+  @Override
+  public Bool3 isArray()
+  {
+    Expr fn = fnExpr();
+    DefineFunctionExpr def = null;
+    if( fn instanceof DoExpr )
+    {
+      fn = ((DoExpr)fn).returnExpr();
+    }
+    if( fn instanceof DefineFunctionExpr )
+    {
+      def = (DefineFunctionExpr)fn;
+    }
+    else if( fn instanceof ConstExpr )
+    {
+      JFunction jf = (JFunction)((ConstExpr)fn).value.get();
+      if( fn != null )
+      {
+        def = jf.getFunction();
+      }
+    }
+    if( def != null )
+    {
+      return def.body().isArray();
+    }
+    return Bool3.UNKNOWN;
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -153,14 +182,13 @@ public class FunctionCallExpr extends Expr
   public Item eval(Context context) throws Exception
   {
     JValue fnVal = exprs[0].eval(context).get();
-    JFunction fn = (JFunction)fnVal;
+    if( fnVal == null )
+    {
+      return Item.NIL;
+    }
     // if( fnVal instanceof JFunction )
     {
-      // JFunction fn = (JFunction)fnVal;
-      if (fn == null)
-      {
-        return Item.NIL;
-      }
+      JFunction fn = context.getCallable(this, (JFunction)fnVal);
       return fn.eval(context, exprs, 1, exprs.length - 1);
     }
 //    else if( fnVal instanceof JString )
@@ -246,11 +274,11 @@ public class FunctionCallExpr extends Expr
   public Iter iter(Context context) throws Exception
   {
     JValue fnVal = exprs[0].eval(context).get();
-    JFunction fn = (JFunction)fnVal;
-    if (fn == null)
+    if (fnVal == null)
     {
       return Iter.nil;
     }
+    JFunction fn = context.getCallable(this, (JFunction)fnVal);
     return fn.iter(context, exprs, 1, exprs.length - 1);
   }
 }

@@ -249,9 +249,7 @@ public class MapReduceFn extends MapReduceBaseExpr
       {
         if (numInputs == 1)
         {
-          combineFns[0].param(0).set(key);
-          combineFns[0].param(1).set(new IteratorIter(values));
-          Iter iter = combineFns[0].iter(context);
+          Iter iter = combineFns[0].iter(context, key, new IteratorIter(values));
           Item item;
           while ((item = iter.next()) != null)
           {
@@ -329,9 +327,7 @@ public class MapReduceFn extends MapReduceBaseExpr
         Iter iter;
         if (numInputs == 1)
         {
-          reduceFn.param(0).set(key);
-          reduceFn.param(1).set(new IteratorIter(values));
-          iter = reduceFn.iter(context);
+          iter = reduceFn.iter(context, key, new IteratorIter(values));
         }
         else
         {

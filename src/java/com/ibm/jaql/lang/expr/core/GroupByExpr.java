@@ -440,7 +440,7 @@ public class GroupByExpr extends IterExpr
       Iter iter = in.child(i).iter(context);
       while ((item = iter.next()) != null)
       {
-        in.var.set(item);
+        in.var.setValue(item);
         Item byItem = by.child(i).eval(context);
         temp.add(i, byItem, item);
       }
@@ -466,7 +466,7 @@ public class GroupByExpr extends IterExpr
             return null;
           }
 
-          by.var.set(tempIter.key());
+          by.var.setValue(tempIter.key());
 
           for (int i = 0; i < n; i++)
           {
@@ -478,7 +478,7 @@ public class GroupByExpr extends IterExpr
             {
               group = Item.NIL;
             }
-            getAsVar(i).set(group);
+            getAsVar(i).setValue(group);
           }
 
           collectIter = collectExpr().iter(context);

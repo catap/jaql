@@ -16,78 +16,65 @@
 package com.ibm.jaql.lang.core;
 
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
+import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Pair;
 
 /** Run-time context, i.e., values for the variables in the environment.
  * 
  */
 public class Context
 {
+  // protected HashMap<Var,Object> varValues = new HashMap<Var,Object>();
+  // protected HashMap<Expr,Item>  tempArrays = new HashMap<Expr,Item>(); // TODO: we could use one hashmap
+  protected HashMap<Pair<Expr,JFunction>,JFunction> fnMap = new HashMap<Pair<Expr,JFunction>,JFunction>(); // TODO: this will be a compiled expr soon 
+  protected Pair<Expr,JFunction> exprFnPair = new Pair<Expr, JFunction>();
+  protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
+  
   // PyModule pyModule;
 
   /**
-   * 
+   * Create a new root context.
    */
   public Context()
   {
-    if( JaqlUtil.getSessionContext() == null )
-    {
-//      PySystemState systemState = Py.getSystemState();
-//      if (systemState == null)
-//      {
-//        systemState = new PySystemState();
-//      }
-//      Py.setSystemState(systemState);
-//      pyModule = new PyModule("jaqlMain", new PyStringMap());
-    }
+    // TODO: come up with a really reliable way to cleanup temp files, etc.
+    
+    //    final Context me = this;
+    //    Runtime.getRuntime().addShutdownHook(new Thread() {
+    //      @Override public void run() { me.reset(); };
+    //    });
+//  if( JaqlUtil.getSessionContext() == null )
+//  {
+//    PySystemState systemState = Py.getSystemState();
+//    if (systemState == null)
+//    {
+//      systemState = new PySystemState();
+//    }
+//    Py.setSystemState(systemState);
+//    pyModule = new PyModule("jaqlMain", new PyStringMap());
+//  }
   }
-
+  
   // public PyModule getPyModule() { return JaqlUtil.getSessionContext().pyModule; }
   
-  /** Clears the context.
-   * 
+  /** 
+   * Clears the context.
    */
   public void reset()
   {
-    JaqlUtil.getQueryPageFile().clear();
-  }
-
-//  /** UNUSED 
-//   * @param item
-//   * @return
-//   * @throws Exception
-//   */
-//  public Item makeSessionGlobal(Item item) throws Exception
-//  {
-//    Item global = new Item();
-//    if (item.isAtom())
-//    {
-//      global.copy(item); // TODO: copy should take a pagefile
-//    }
-//    else // FIXME: this is not doing what it is supposed to do 
-//    {
-//      PagedFile pf = JaqlUtil.getSessionPageFile(); // TODO: this is BROKEN!
-//      SpillFile sf = new SpillFile(pf);
-//      item.write(sf);
-//      global.readFields(sf.getInput());      
-//    }
-//    return global;
-//  }
-
-  protected ArrayList<Runnable> atQueryEnd = new ArrayList<Runnable>();
-  public void doAtQueryEnd(Runnable task)
-  {
-    atQueryEnd.add(task);
-  }
-  
-  public void endQuery()
-  {
-    reset();
-    for(Runnable task: atQueryEnd)
+    // varValues.clear();
+    // tempArrays.clear();
+    fnMap.clear(); 
+    exprFnPair.a = null;
+    exprFnPair.b = null;
+    for(Runnable task: resetTasks)
     {
       try
       {
@@ -98,12 +85,36 @@ public class Context
         e.printStackTrace(); // TODO: log
       }
     }
-    atQueryEnd.clear();
+    resetTasks.clear();
+    JaqlUtil.getQueryPageFile().clear();
+  }
+
+
+  public void doAtReset(Runnable task)
+  {
+    resetTasks.add(task);
+  }
+  
+  /**
+   * In case a context gets lost, we will close it when garbage collected.
+   * This can happen when exceptions occur or because functions that return an Iter
+   * might not be run until completion (which is when they close their context).
+   */
+  protected void finalize() throws Throwable 
+  {
+    try
+    {
+      reset();
+    }
+    finally
+    {
+      super.finalize();
+    }
   }
 
   public void closeAtQueryEnd(final Closeable resource)
   {
-    doAtQueryEnd(new Runnable() {
+    doAtReset(new Runnable() {
       @Override
       public void run()
       {
@@ -118,4 +129,34 @@ public class Context
       }
     });
   }
+
+  public JFunction getCallable(Expr callSite, JFunction fn) throws Exception
+  {
+    exprFnPair.a = callSite;
+    exprFnPair.b = fn;
+    JFunction fn2 = fnMap.get(exprFnPair);
+    if( fn2 == null )
+    {
+      fn2 = new JFunction();
+      fn2.setCopy(fn);
+      Pair<Expr,JFunction> p = new Pair<Expr, JFunction>(callSite, fn);
+      fnMap.put(p, fn2);
+    }
+    return fn2;
+  }
+
+  public File createTempFile(String prefix, String suffix) throws IOException
+  {
+    final File f = File.createTempFile(prefix, suffix);
+    f.deleteOnExit();
+    doAtReset( new Runnable() {
+      @Override 
+      public void run()
+      {
+        f.delete();
+      }
+    });
+    return f;
+  }
+
 }

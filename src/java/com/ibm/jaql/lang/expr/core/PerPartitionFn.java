@@ -49,6 +49,6 @@ public class PerPartitionFn extends IterExpr
   public Iter iter(final Context context) throws Exception
   {
     JFunction fn = (JFunction)exprs[1].eval(context).get();
-    return fn.iter(context, new Expr[] {exprs[0]}, 0, 1);
+    return fn.iter(context, new Expr[] {exprs[0]});
   }
 }

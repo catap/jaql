@@ -20,7 +20,6 @@ import com.ibm.jaql.json.type.JArray;
 import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -40,11 +39,10 @@ public class Var extends Object
   public String             name;
   public boolean            hidden  = false;     // variable not accessible in current parse context (this could reuse Usage)
   public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
-  public Item               value;               // The variable's full value
-  public Iter               iter;                // The variable's lazy value; only one of value or iter is non-null
-  public SpillJArray        tempArray;           // array used to temp evaluation of iter
   public Expr               expr;                // only for global variables
   public Usage              usage = Usage.EVAL;
+  
+  public Object             value;               // Runtime value: Item or Iter
 
   /**
    * @param name
@@ -85,13 +83,9 @@ public class Var extends Object
   public Var clone(VarMap varMap)
   {
     Var v = new Var(name);
-    v.value = value; // TODO: is it safe to share the value?
     v.usage = usage;
+    // Cloning a Var does NOT clone its value!
     // It is NOT safe to share an iter unless one var is never evaluated.
-    if( iter != null )
-    {
-      throw new RuntimeException("cannot clone variable with Iter");
-    }
     if (expr != null)
     {
       // TODO: do we need to clone a Var with an expr? Do we need to clone the Expr?
@@ -101,84 +95,124 @@ public class Var extends Object
     return v;
   }
 
-  /**
-   * 
-   * @param value
-   */
-  public void set(Item value)
+  @Override
+  public String toString()
   {
-    assert value != null;
-    this.value = value;
-    iter = null;
+    return name + " @" + System.identityHashCode(this);
   }
 
   /**
-   * 
-   * @param iter
+   * Unset the runtime value
    */
-  public void set(Iter iter)
+  public void undefine()
   {
-    assert iter != null;
-    this.iter = iter;
-    value = null;
+    this.value = null;
   }
   
   /**
+   * Set the runtime value.
+   * 
+   * @param value
+   */
+  public void setValue(Item value)
+  {
+    assert value != null;
+    this.value = value;
+  }
+
+  /**
+   * Set the runtime value.
+   * 
+   * @param var
+   * @param value
+   */
+  public void setIter(Iter iter)
+  {
+    assert iter != null;
+    value = iter;
+  }
+
+  /**
    * Set the variable's value to the result of the expression.
    * If the variable is unused, the expression is not evaluated.
-   * If the variable is streamable and the expression is known to produce an array. 
+   * If the variable is streamable and the expression is known to produce an array,
+   *   the expr is evaluated lazily using an Iter. 
    * 
    * @param expr
    * @param context
    * @throws Exception
    */
-  public void set(Expr expr, Context context) throws Exception
+  public void setEval(Expr expr, Context context) throws Exception
   {
-    // TODO: should the usage be STREAM only if it is used in an array context?
     if( usage == Usage.STREAM && expr.isArray().always() ) 
     {
-      set(expr.iter(context));
+      setIter(expr.iter(context));
     }
     else if( usage != Usage.UNUSED )
     {
-      set(expr.eval(context));
+      setValue(expr.eval(context));
+    }
+  }
+  
+  /**
+   * 
+   * @param var
+   * @param value
+   * @throws Exception
+   */
+  public void setGeneral(Object value, Context context) throws Exception
+  {
+    if( value instanceof Item )
+    {
+      setValue((Item)value);
+    }
+    else if( value instanceof Iter )
+    {
+      setIter((Iter)value);
+    }
+    else if( value instanceof Expr )
+    {
+      setEval((Expr)value, context);
+    }
+    else
+    {
+      throw new InternalError("invalid variable value: "+value);
     }
   }
 
+  
   /**
-   * Return the value of a variable.  
-   * It is safe to request the value multiple times.
-   * 
-   * At the time of this writing, global variables are never evaluated; they are first made into
-   * query-local variables.
+   * Get the runtime value of the variable.
    * 
    * @return
    * @throws Exception
    */
-  public Item getValue() throws Exception
+  public Item getValue(Context context) throws Exception
   {
-    if( value != null )
+    if( value instanceof Item )
     {
-      assert iter == null;
-      return value;
+      return (Item)value;
     }
-    else if( iter != null )
+    else if( value instanceof Iter )
     {
-      if (tempArray == null) {
-        tempArray = new SpillJArray();
-      }
-      tempArray.setCopy(iter);
-      value = new Item(tempArray);
-      iter = null;
-      return value;
+      SpillJArray arr = new SpillJArray();
+      arr.setCopy((Iter)value);
+      Item v = new Item(arr);
+      value = v;
+      return v;
     }
-    else if (expr != null) // global var
+    else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
     {
-      Context gctx = JaqlUtil.getSessionContext();
-      value = expr.eval(gctx);       // TODO: init/close calls.
-      return value;
+      Item v = expr.eval(context);
+      expr = null;
+      value = v;
+      return v;
     }
-    throw new NullPointerException("undefined variable: "+name);
+    else if( value == null )
+    {
+      throw new NullPointerException("undefined variable: "+name());
+    }
+    throw new InternalError("bad variable value: "+name()+"="+value);
   }
   
   /**
@@ -189,60 +223,21 @@ public class Var extends Object
    * @return
    * @throws Exception
    */
-  public Iter getIter() throws Exception
+  public Iter getIter(Context context) throws Exception
   {
-    if( value != null )
+    if( usage == Usage.STREAM && value instanceof Iter )
     {
-      assert iter == null;
-      JArray arr = (JArray)value.get(); // cast error intentionally possible
-      if( arr == null )
-      {
-        return Iter.nil;
-      }
-      return arr.iter();
+      Iter iter = (Iter)value;
+      value = null; // set undefined
+      return iter;
     }
-    else if( iter != null )
+    Item v = getValue(context);
+    JArray arr = (JArray)v.get(); // cast error intentionally possible
+    if( arr == null )
     {
-      Iter iter = this.iter;
-      this.iter = null;
-      if( usage == Usage.STREAM )
-      {
-        return iter;
-      }
-      else
-      {
-        if (tempArray == null) {
-          tempArray = new SpillJArray();
-        }
-        tempArray.setCopy(iter);
-        value = new Item(tempArray);
-        return tempArray.iter();
-      }
+      return Iter.nil;
     }
-    else if (expr != null) // global var
-    {
-      Context gctx = JaqlUtil.getSessionContext();
-      if( usage == Usage.STREAM )
-      {
-        return expr.iter(gctx);
-      }
-      else
-      {
-        value = expr.eval(gctx);
-        JArray arr = (JArray)value.get(); // cast error intentionally possible
-        if( arr == null )
-        {
-          return Iter.nil;
-        }
-        return arr.iter();
-      }
-    }
-    throw new NullPointerException("undefined variable: "+name);
+    return arr.iter();
   }
 
-  @Override
-  public String toString()
-  {
-    return name + " @" + System.identityHashCode(this);
-  }
 }

@@ -160,8 +160,7 @@ public class MRAggregate extends MapReduceBaseExpr
         FixedJArray aggArray = new FixedJArray(aggs.length);
         Item aggItem = new Item(aggArray);
 
-        mapFn.param(0).set(new RecordReaderValueIter(input));
-        Iter iter = mapFn.iter(context);
+        Iter iter = mapFn.iter(context, new RecordReaderValueIter(input));
 
         FixedJArray tmpArray = new FixedJArray(1);
         Item tmpItem = new Item(tmpArray);
@@ -173,9 +172,9 @@ public class MRAggregate extends MapReduceBaseExpr
           if (pair != null)
           {
             pair.getTuple(mappedKeyValue);
-            keyVar.set(mappedKeyValue[0]);
+            keyVar.setValue(mappedKeyValue[0]);
             tmpArray.set(0, mappedKeyValue[1]);
-            valVar.set(tmpItem);
+            valVar.setValue(tmpItem);
             for( int i = 0 ; i < aggs.length ; i++ )
             {
               AlgebraicAggregate agg = aggs[i];
@@ -222,6 +221,10 @@ public class MRAggregate extends MapReduceBaseExpr
     {
       super.configure(job);
       aggFn = compile(job, "aggregate", 0);
+      if( aggFn.getNumParameters() != 2 )
+      {
+        throw new RuntimeException("aggregate function must have exactly two parameters");
+      }
       keyVar = aggFn.param(0);
       aggs = makeAggs(aggFn);
       aggArray = new FixedJArray(aggs.length);
@@ -246,7 +249,7 @@ public class MRAggregate extends MapReduceBaseExpr
           aggs[i].initPartial(context);
         }
 
-        keyVar.set(key);
+        keyVar.setValue(key);
         
         while( values.hasNext() )
         {
