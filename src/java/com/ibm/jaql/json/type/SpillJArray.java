@@ -251,7 +251,7 @@ public class SpillJArray extends JArray
   @Override
   public Item nth(long n) throws Exception 
   {
-    if (n<0 || n>=count()) {
+    if (n < 0 || n>=count()) {
       return Item.NIL;
     }
     if (n < cacheSize) {     // read from cache
@@ -528,7 +528,7 @@ public class SpillJArray extends JArray
       tempInputBuffer.reset(input, start, length);
       addCopySerialized(tempInputBuffer, serializer);
     } else {
-      // copy directly, no need to deserialize
+      // copy directly to spill file; do not deserialize
       ensureSpillFile();
       spillFile.write(input, start, length);
       count++;

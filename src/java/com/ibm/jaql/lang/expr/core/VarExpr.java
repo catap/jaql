@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -73,14 +71,7 @@ public class VarExpr extends Expr
     {
       return Bool3.UNKNOWN;
     }
-    if (var.value != null)
-    {
-      return Bool3.valueOf(var.value.isNull());
-    }
-    else
-    {
-      return var.expr.isNull();
-    }
+    return var.expr.isNull();
   }
 
   /*
@@ -95,15 +86,7 @@ public class VarExpr extends Expr
     {
       return Bool3.UNKNOWN;
     }
-    if (var.value != null)
-    {
-      JValue v = var.value.get();
-      return Bool3.valueOf(v == null || v instanceof JArray);
-    }
-    else
-    {
-      return var.expr.isArray();
-    }
+    return var.expr.isArray();
   }
 
   //  public VarExpr(Env env, String varName)
@@ -142,7 +125,7 @@ public class VarExpr extends Expr
    */
   public Item eval(Context context) throws Exception
   {
-    return var.getValue();
+    return var.getValue(context);
   }
 
   /*
@@ -152,7 +135,7 @@ public class VarExpr extends Expr
    */
   public Iter iter(Context context) throws Exception
   {
-    return var.getIter();
+    return var.getIter(context);
   }
 
   /*

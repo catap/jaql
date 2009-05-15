@@ -103,7 +103,7 @@ public class SplitExpr extends Expr
     Item item;
     while( (item = iter.next()) != null )
     {
-      b.var.set(item);
+      b.var.setValue(item);
       for( i = 0 ; i < n ; i++ )
       {
         if( JaqlUtil.ebv(ifs[i].testExpr().eval(context)) )

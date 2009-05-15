@@ -68,7 +68,7 @@ public class HadoopTempExpr extends Expr
     MemoryJRecord r = new MemoryJRecord();
     r.add(Adapter.TYPE_NAME, new Item(new JString("hdfs")));
     r.add(Adapter.LOCATION_NAME, new Item(new JString(filename)));
-    context.doAtQueryEnd(new DeleteFileTask(filename));
+    context.doAtReset(new DeleteFileTask(filename));
     return new Item(r); // TODO: memory
   }
 }

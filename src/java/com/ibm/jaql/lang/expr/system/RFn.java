@@ -174,7 +174,7 @@ public class RFn extends Expr
     stdin.flush();
     
     // TODO: contexts are not getting closed properly; mapreduce creates contexts, fncall creates contexts, but not cleaned up!
-    context.doAtQueryEnd(
+    context.doAtReset(
         new Runnable()
         {
           @Override

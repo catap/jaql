@@ -180,7 +180,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
 
     boolean hadInput = false;
     BindingExpr in = binding();    
-    in.var.set(tmpItem);
+    in.var.setValue(tmpItem);
     Item item;
     Iter iter = in.inExpr().iter(context);
     while( (item = iter.next()) != null )

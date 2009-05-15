@@ -287,7 +287,7 @@ public abstract class MapReduceBaseExpr extends Expr
     public void close() throws IOException
     {
       // TODO: might want sub-query indicator
-      context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+      context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     }
   }
 
@@ -339,8 +339,7 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       try
       {
-        mapFn.param(0).set(new RecordReaderValueIter(input));
-        Iter iter = mapFn.iter(context);
+        Iter iter = mapFn.iter(context,new RecordReaderValueIter(input));
         Item item;
         while ((item = iter.next()) != null)
         {

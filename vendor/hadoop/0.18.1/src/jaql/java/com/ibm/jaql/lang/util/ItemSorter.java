@@ -38,7 +38,7 @@ public class ItemSorter
 
   DataOutputBuffer       keyValBuffer = new DataOutputBuffer();
 
-  PublicMergeSorter          sorter       = new PublicMergeSorter();
+  PublicMergeSorter      sorter       = new PublicMergeSorter(); // TODO: replace with QuickSort or HeapSort
 
   RawKeyValueIterator    iter;
 
@@ -46,7 +46,11 @@ public class ItemSorter
 
   DataOutputBuffer       valOut       = new DataOutputBuffer();
 
+  Item                   key          = new Item();
+  
   Item                   value        = new Item();
+  
+  Item[]                 keyValue     = new Item[]{ key, value };
 
   private static JobConf conf         = new JobConf();
   static
@@ -77,6 +81,12 @@ public class ItemSorter
   public ItemSorter()
   {
     this(null);
+  }
+
+  public long getMemoryUtilized()
+  {
+    // we ignore any extra fixed overhead we have in this class.
+    return sorter.getMemoryUtilized();
   }
 
   /**
@@ -124,5 +134,27 @@ public class ItemSorter
     value.readFields(valIn);
 
     return value;
+  }
+
+  /**
+   * @return
+   * @throws IOException
+   */
+  public Item[] nextKeyValue() throws IOException
+  {
+    if (iter == null || !iter.next())
+    {
+      return null;
+    }
+
+    DataOutputBuffer b = iter.getKey();
+    valIn.reset(b.getData(), b.getLength());
+    key.readFields(valIn);
+
+    valOut.reset();
+    iter.getValue().writeUncompressedBytes(valOut);
+    valIn.reset(valOut.getData(), valOut.getLength());
+    
+    return keyValue;
   }
 }

@@ -41,7 +41,7 @@ public class RewriteEngine
   public Env               env;
   public ExprWalker        walker      = new PostOrderExprWalker();
   public ExprFlow          flow        = new ExprFlow();
-  public VarMap            varMap      = new VarMap(null);
+  public VarMap            varMap      = new VarMap();
   public ArrayList<Expr>   exprList    = new ArrayList<Expr>();
 
   /**
@@ -76,7 +76,7 @@ public class RewriteEngine
     new TransformMerge(phase);
     new ForToLet(phase);
     new AsArrayElimination(phase);
-    new GlobalInline(phase);
+    // new GlobalInline(phase);
     new DoInlinePragma(phase);
     new ConstArrayAccess(phase);
     new ConstFieldAccess(phase);
@@ -135,7 +135,6 @@ public class RewriteEngine
     }
     Expr dummy = new QueryExpr(query);
     this.env = env;
-    this.varMap.reset(env);
     for (RewritePhase phase : phases)
     {
       phase.run(dummy);

@@ -58,6 +58,14 @@ public class DoExpr extends Expr
   {
     super(exprs);
   }
+  
+  /**
+   * @return The Expr that returns a value to the caller.
+   */
+  public Expr returnExpr()
+  {
+    return exprs[exprs.length-1];
+  }
 
   @Override
   public Bool3 isArray()

@@ -171,16 +171,19 @@ public class BindingExpr extends Expr
   public Item eval(Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    Item item = exprs[0].eval(context);
-    var.set(item);
-    return item;
+    var.setEval(exprs[0], context); // TODO: set var.usage
+    return Item.NIL;
   }
 
+  /**
+   * Returns iter that returns the input plus a side-effect of setting the variable
+   * to each element. 
+   */
   @Override
   public Iter iter(final Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.set(Item.NIL);
+    var.undefine();
     final Iter iter = exprs[0].iter(context);
     return new Iter()
     {
@@ -188,13 +191,13 @@ public class BindingExpr extends Expr
       public Item next() throws Exception
       {
         Item item = iter.next();
-        if( item != null )
+        if( item == null )
         {
-          var.set(item);
+          var.undefine();
         }
         else
         {
-          var.set(Item.NIL);
+          var.setValue(item);
         }
         return item;
       }

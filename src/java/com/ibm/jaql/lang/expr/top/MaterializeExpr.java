@@ -69,11 +69,12 @@ public class MaterializeExpr extends TopExpr
   public Item eval(Context context) throws Exception
   {
     Item result = JBool.falseItem;
-    if (var.expr != null /* && var.value == null */)
+    if (var.expr != null && var.value == null )
     {
       result = JBool.trueItem;
       Context gctx = JaqlUtil.getSessionContext();
-      var.value = var.expr.eval(gctx);
+      Item value = var.expr.eval(gctx);
+      var.setValue(value);
     }
     return result;
   }
