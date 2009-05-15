@@ -18,8 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -93,29 +94,29 @@ public class CompareExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
-    Item item1 = exprs[0].eval(context);
-    if (item1.isNull())
+    JsonValue value1 = exprs[0].eval(context);
+    if (value1 == null)
     {
-      return Item.NIL;
+      return null;
     }
-    Item item2 = exprs[1].eval(context);
-    if (item2.isNull())
+    JsonValue value2 = exprs[1].eval(context);
+    if (value2 == null)
     {
-      return Item.NIL;
+      return null;
     }
-    int c = Item.typeCompare(item1, item2);
+    int c = JsonType.typeCompare(value1, value2);
     if (c != 0)
     {
-      return Item.NIL;
+      return null;
     }
 
     // FIXME: arrays are reporting true/false when the should return null, eg: ['5'] < [5];
     boolean b;
-    c = item1.compareTo(item2);
+    c = value1.compareTo(value2);
 
-    if (item1.getType() == Item.Type.RECORD)
+    if (value1.getEncoding().getType() == JsonType.RECORD)
     {
       // FIXME: record inside arrays are still compared, also need to fix sort
       b = (c == 0);
@@ -132,7 +133,7 @@ public class CompareExpr extends Expr
           // not( null or a = b ) => a=b ? false : null;
           if (!b)
           {
-            return Item.NIL;
+            return null;
           }
           b = false;
           break;
@@ -141,7 +142,7 @@ public class CompareExpr extends Expr
           // (null or a = b) => a=b ? true : null;
           if (!b)
           {
-            return Item.NIL;
+            return null;
           }
           break;
         default :
@@ -174,6 +175,6 @@ public class CompareExpr extends Expr
           throw new RuntimeException("should not get here!");
       }
     }
-    return JBool.make(b);
+    return JsonBool.make(b);
   }
 }

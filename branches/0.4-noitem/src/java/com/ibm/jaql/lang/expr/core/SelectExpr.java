@@ -16,8 +16,8 @@
 package com.ibm.jaql.lang.expr.core;
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -39,10 +39,10 @@ public class SelectExpr extends IterExpr
   }
 
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     BindingExpr b = (BindingExpr)exprs[0];
-    JArray arr = (JArray)b.inExpr().eval(context).get();
+    JsonArray arr = (JsonArray)b.inExpr().eval(context);
     b.var.set(arr.iter());
 
     int n = exprs.length - 1;

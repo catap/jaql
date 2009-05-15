@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
@@ -66,7 +65,7 @@ public class TrivialCombineElmination extends Rewrite
     Expr inExpr = bind.inExpr();
 
     // combine $a,$b in null ... => null
-    if (inExpr instanceof ConstExpr && ((ConstExpr) inExpr).value.get() == null)
+    if (inExpr instanceof ConstExpr && ((ConstExpr) inExpr).value == null)
     {
       ce.replaceInParent(inExpr);
       return true;
@@ -81,7 +80,7 @@ public class TrivialCombineElmination extends Rewrite
     if (inExpr.numChildren() == 0)
     {
       // combine $a,$b in [] ... => null
-      replaceBy = new ConstExpr(Item.NIL);
+      replaceBy = new ConstExpr(null);
       //      replaceBy = ce.emptyExpr();
     }
     else

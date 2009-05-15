@@ -19,8 +19,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Schema that matches atomic values.
  * 
@@ -28,14 +29,14 @@ import com.ibm.jaql.json.type.JString;
 // can also be used to match a record or an array (intended?)
 public class SchemaAtom extends Schema // TODO: used classes for each type? eg, max string len
 {
-  private static JString tempName = new JString();
+  private static JsonString tempName = new JsonString();
 
-  public Item.Type       type;
+  public JsonType       type;
 
   /**
    * @param type
    */
-  public SchemaAtom(Item.Type type)
+  public SchemaAtom(JsonType type)
   {
     this.type = type;
   }
@@ -45,8 +46,8 @@ public class SchemaAtom extends Schema // TODO: used classes for each type? eg, 
    */
   public SchemaAtom(String typeName)
   {
-    type = Item.Type.getType(typeName);
-    if (type == null || type == Item.Type.UNKNOWN)
+    type = JsonType.getType(typeName);
+    if (type == null || type == JsonType.UNKNOWN)
     {
       throw new RuntimeException("unknown atom type: " + typeName);
     }
@@ -60,9 +61,9 @@ public class SchemaAtom extends Schema // TODO: used classes for each type? eg, 
   {
     synchronized (tempName)
     {
-      tempName = (JString)serializer.read(in, tempName);
-      type = Item.Type.getType(tempName);
-      if (type == null || type == Item.Type.UNKNOWN)
+      tempName = (JsonString)serializer.read(in, tempName);
+      type = JsonType.getType(tempName);
+      if (type == null || type == JsonType.UNKNOWN)
       {
         throw new IOException("unknown atom type: " + tempName);
       }
@@ -87,9 +88,9 @@ public class SchemaAtom extends Schema // TODO: used classes for each type? eg, 
    * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public boolean matches(Item item)
+  public boolean matches(JsonValue value)
   {
-    return item.getEncoding().type == type;
+    return value.getEncoding().type == type;
   }
 
   /*

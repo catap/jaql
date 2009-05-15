@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -168,35 +168,32 @@ public class BindingExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    Item item = exprs[0].eval(context);
-    var.set(item);
-    return item;
+    JsonValue value = exprs[0].eval(context);
+    var.set(value);
+    return value;
   }
 
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.set(Item.NIL);
-    final Iter iter = exprs[0].iter(context);
-    return new Iter()
+    var.set((JsonValue)null);
+    final JsonIterator iter = exprs[0].iter(context);
+    return new JsonIterator()
     {
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        Item item = iter.next();
-        if( item != null )
-        {
-          var.set(item);
-        }
-        else
-        {
-          var.set(Item.NIL);
-        }
-        return item;
+        if (iter.moveNext()) {
+          currentValue = iter.current();
+          var.set(currentValue);
+          return true;
+        } 
+        var.set((JsonValue)null);
+        return false;
       }
     };
   }

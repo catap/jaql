@@ -15,8 +15,8 @@
  */
 package com.acme.extensions.fn;
 
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.JIterator;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.util.JsonIterator;
 
 /**
  * 
@@ -29,7 +29,7 @@ public class Split2
    * @return
    * @throws Exception
    */
-  public JIterator eval(JString jstr, JString jdelim) throws Exception
+  public JsonIterator eval(JsonString jstr, JsonString jdelim) throws Exception
   {
     if (jstr == null || jdelim == null)
     {
@@ -40,20 +40,19 @@ public class Split2
 
     final String[] splits = str.split(delim);
 
-    return new JIterator() {
+    final JsonString resultStr = new JsonString();
+    return new JsonIterator(resultStr) {
       int             i         = 0;
-      private JString resultStr = new JString();
-
+      
       public boolean moveNext()
       {
         if (i >= splits.length)
         {
           return false;
         }
-        current = resultStr;
         resultStr.set(splits[i]);
         i++;
-        return true;
+        return true; // currentValue == resultStr
       }
     };
   }

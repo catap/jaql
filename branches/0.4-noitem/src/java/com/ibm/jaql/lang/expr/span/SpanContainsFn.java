@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.span;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JSpan;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -41,18 +40,18 @@ public class SpanContainsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonBool eval(final Context context) throws Exception
   {
-    JSpan x = (JSpan) exprs[0].eval(context).get();
+    JsonSpan x = (JsonSpan) exprs[0].eval(context);
     if (x == null)
     {
-      return Item.NIL;
+      return null;
     }
-    JSpan y = (JSpan) exprs[1].eval(context).get();
+    JsonSpan y = (JsonSpan) exprs[1].eval(context);
     if (y == null)
     {
-      return Item.NIL;
+      return null;
     }
-    return JBool.make(JSpan.contains(x, y));
+    return JsonBool.make(JsonSpan.contains(x, y));
   }
 }

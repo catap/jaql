@@ -21,9 +21,11 @@ import java.io.IOException;
 
 import com.ibm.jaql.io.serialization.BasicSerializer;
 import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.Item.Encoding;
+import com.ibm.jaql.json.type.JsonEncoding;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+
+// TODO: handling of null values
 
 /*******************************************************************************
  * At the moment, a scheme provides methods that concern schema matching and 
@@ -57,15 +59,15 @@ public abstract class Schema
 
   public Schema               nextSchema;      // used by Array and Or Schemas
 
-  protected final static BasicSerializer<JString> serializer 
-    = (BasicSerializer<JString>)DefaultFullSerializer.getDefaultInstance().getSerializer(Encoding.STRING);
+  protected final static BasicSerializer<JsonString> serializer 
+    = (BasicSerializer<JsonString>)DefaultFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
   
   /**
    * @param item
    * @return
    * @throws Exception
    */
-  public abstract boolean matches(Item item) throws Exception;
+  public abstract boolean matches(JsonValue value) throws Exception;
 
   /*
    * (non-Javadoc)

@@ -11,31 +11,31 @@ import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.serialization.FullSerializer;
 import com.ibm.jaql.io.serialization.Serializer;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JValue;
 
 /** Wrapper class to make our serializers available to Hadoop. Currently the {@link Serializer}
  * is hard-coded; future versions will read it from the job configuration. */
-public class HadoopSerialization implements org.apache.hadoop.io.serializer.Serialization<Item> {
+public class HadoopSerialization implements org.apache.hadoop.io.serializer.Serialization<JsonHolder> {
   
   // -- org.apache.hadoop.io.serializer.Serialization interface -----------------------------------
   
   @Override
   public boolean accept(Class<?> c)
   {
-    return c.equals(Item.class);
+    return c.equals(JsonHolder.class);
   }
 
   @Override
-  public org.apache.hadoop.io.serializer.Deserializer<Item> getDeserializer(Class<Item> c)
+  public org.apache.hadoop.io.serializer.Deserializer<JsonHolder> 
+      getDeserializer(Class<JsonHolder> c)
   {
     // TODO: make parametrizable
     return new HadoopDeserializer(FullSerializer.getDefault());
   }
 
   @Override
-  public org.apache.hadoop.io.serializer.Serializer<Item> getSerializer(
-      Class<Item> c)
+  public org.apache.hadoop.io.serializer.Serializer<JsonHolder> 
+      getSerializer(
+      Class<JsonHolder> c)
   {
     // TODO: make parametrizable
     return new HadoopSerializer(FullSerializer.getDefault());
@@ -61,7 +61,7 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
   /** Wrapper for writing. Makes use of an internal buffer because the <code>OutputStream</code> 
    * provided by Hadoop performs poorly when a large number of small elements are written to it.
    * (In our case, these small elements are encoding ids and field lengths, for example.) */
-  public static class HadoopSerializer implements org.apache.hadoop.io.serializer.Serializer<Item> {
+  public static class HadoopSerializer implements org.apache.hadoop.io.serializer.Serializer<JsonHolder> {
     FullSerializer serializer;
     // BufferedOutputStream out;    // would work as well but is synchronized
     UnsynchronizedBufferedOutputStream out;   
@@ -79,9 +79,9 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
     }
 
     @Override
-    public void serialize(Item t) throws IOException
+    public void serialize(JsonHolder t) throws IOException
     {
-      serializer.write(dataOut, t.get());
+      serializer.write(dataOut, t.value);
       out.flushBuf(); // necessary; otherwise Hadoop crashes
     }
     
@@ -93,7 +93,7 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
   }
   
   /** Wrapper for reading. */
-  public static class HadoopDeserializer implements org.apache.hadoop.io.serializer.Deserializer<Item> {
+  public static class HadoopDeserializer implements org.apache.hadoop.io.serializer.Deserializer<JsonHolder> {
     FullSerializer serializer;
     DataInputStream in;
     
@@ -108,14 +108,12 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
     }
 
     @Override
-    public Item deserialize(Item t) throws IOException
+    public JsonHolder deserialize(JsonHolder t) throws IOException
     {
       if (t==null) {
-        t = new Item();
+        t = new JsonHolder();
       }
-      JValue v = t.get();
-      v = serializer.read(in, v);
-      t.set(v);
+      t.value = serializer.read(in, t.value);
       return t;
     }
 

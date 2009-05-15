@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JSchema;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonSchema;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -78,15 +78,15 @@ public class InstanceOfExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonBool eval(final Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    JSchema schema = (JSchema) exprs[1].eval(context).get();
+    JsonValue value = exprs[0].eval(context);
+    JsonSchema schema = (JsonSchema) exprs[1].eval(context);
     if (schema == null)
     {
-      return Item.NIL;
+      return null;
     }
-    boolean b = schema.getSchema().matches(item);
-    return JBool.make(b);
+    boolean b = schema.getSchema().matches(value);
+    return JsonBool.make(b);
   }
 }

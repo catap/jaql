@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -57,7 +57,7 @@ public class HdfsReadExpr extends MacroExpr
   public Expr expand(Env env) throws Exception
   {
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
-        new ConstExpr(new JString("hdfs")));
+        new ConstExpr(new JsonString("hdfs")));
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
         exprs[0]);
     Expr rec = new RecordExpr(new Expr[]{tField, lField});

@@ -19,9 +19,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Schema that matches a record, i.e., an ordered list of fields.
  * 
@@ -120,20 +120,20 @@ public class SchemaRecord extends Schema
    * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public boolean matches(Item item) throws Exception
+  public boolean matches(JsonValue value) throws Exception
   {
-    if (!(item.get() instanceof JRecord))
+    if (!(value instanceof JsonRecord))
     {
       return false;
     }
-    JRecord rec = (JRecord) item.get();
+    JsonRecord rec = (JsonRecord) value;
 
     SchemaField fs = fullName;
     int n = rec.arity();
     for (int i = 0; i < n; i++)
     {
-      JString recName = rec.getName(i);
-      Item recValue = rec.getValue(i);
+      JsonString recName = rec.getName(i);
+      JsonValue recValue = rec.getValue(i);
 
       int c = 1;
       while (fs != null && (c = fs.name.compareTo(recName)) < 0)

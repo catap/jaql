@@ -19,14 +19,15 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.FromItem;
-import com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord;
+import com.ibm.jaql.io.converter.FromJson;
+import com.ibm.jaql.io.hadoop.converter.JsonToHadoopRecord;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
  */
-public class ToJSONSeqConverter extends ItemToHadoopRecord
+public class ToJSONSeqConverter extends JsonToHadoopRecord
 {
   /**
    * @param i
@@ -63,7 +64,7 @@ public class ToJSONSeqConverter extends ItemToHadoopRecord
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
    */
   @Override
-  protected FromItem<WritableComparable> createKeyConverter()
+  protected FromJson<WritableComparable> createKeyConverter()
   {
     return null;//new FromItemComp();
   }
@@ -83,10 +84,11 @@ public class ToJSONSeqConverter extends ItemToHadoopRecord
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createValConverter()
    */
   @Override
-  protected FromItem<Writable> createValConverter()
+  protected FromJson<Writable> createValueConverter()
   {
-    return new FromItem<Writable>()
+    return new FromJson<Writable>()
     {
+      Item item = new Item();
 
       /*
        * (non-Javadoc)
@@ -94,9 +96,11 @@ public class ToJSONSeqConverter extends ItemToHadoopRecord
        * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
        *      java.lang.Object)
        */
-      public void convert(Item src, Writable tgt)
+      public Writable convert(JsonValue src, Writable tgt)
       {
-        convertItemToText(src, (Text) tgt);
+        item.set(src);
+        convertItemToText(item, (Text) tgt);
+        return tgt;
       }
 
       /*
@@ -104,7 +108,7 @@ public class ToJSONSeqConverter extends ItemToHadoopRecord
        * 
        * @see com.ibm.jaql.io.converter.ToItem#createTarget()
        */
-      public Writable createTarget()
+      public Writable createInitialTarget()
       {
         return new Text();
       }

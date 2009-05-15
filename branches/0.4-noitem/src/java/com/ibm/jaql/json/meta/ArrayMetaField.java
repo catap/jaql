@@ -19,8 +19,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JavaJArray;
+import com.ibm.jaql.json.type.JavaJsonArray;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
@@ -45,9 +45,9 @@ public class ArrayMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JavaJsonArray makeValue()
   {
-    return new Item(new JavaJArray());
+    return new JavaJsonArray();
   }
 
   /*
@@ -57,17 +57,18 @@ public class ArrayMetaField extends MetaField
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void get(Object obj, Item target) throws IllegalArgumentException,
+  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
       IllegalAccessException
   {
     Object x = field.get(obj);
     if (x == null)
     {
-      target.set(null);
+      return null;
     }
     else
     {
-      ((JavaJArray) target.restoreCache()).setObject(x);
+      ((JavaJsonArray) target).setObject(x);
+      return target;
     }
   }
 

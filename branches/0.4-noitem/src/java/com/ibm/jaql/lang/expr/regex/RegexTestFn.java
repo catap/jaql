@@ -17,10 +17,9 @@ package com.ibm.jaql.lang.expr.regex;
 
 import java.util.regex.Matcher;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JRegex;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonRegex;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -44,20 +43,20 @@ public class RegexTestFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonBool eval(final Context context) throws Exception
   {
-    final JRegex regex = (JRegex) exprs[0].eval(context).get();
+    final JsonRegex regex = (JsonRegex) exprs[0].eval(context);
     if (regex == null)
     {
-      return Item.NIL;
+      return null;
     }
-    JString text = (JString) exprs[1].eval(context).get();
+    JsonString text = (JsonString) exprs[1].eval(context);
     if (text == null)
     {
-      return Item.NIL;
+      return null;
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());
-    return JBool.make(matcher.find());
+    return JsonBool.make(matcher.find());
   }
 }

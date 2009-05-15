@@ -19,7 +19,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Schema that matches if at least one of the provided schematas match. The provided 
  * schemata are not allowed to make use of their {@link Schema#nextSchema} field.
@@ -90,11 +90,11 @@ public class SchemaOr extends Schema
    * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public boolean matches(Item item) throws Exception
+  public boolean matches(JsonValue value) throws Exception
   {
     for (Schema s = schemaList; s != null; s = s.nextSchema)
     {
-      if (s.matches(item))
+      if (s.matches(value))
       {
         return true;
       }

@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 
 
@@ -50,7 +50,7 @@ public class PseudoExpr extends Expr
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     throw new RuntimeException("PseudoExpr "+this.getClass().getName()+" cannot be evaluated!");
   }

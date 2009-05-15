@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.core;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -34,24 +34,31 @@ public class Var extends Object
     UNUSED()   // Variable is never referenced
   };
   
+  private enum Type 
+  {
+    NONE, VALUE, ITER
+  }
+  
   public static final Var[] NO_VARS = new Var[0];
   public static final Var unused = new Var("$__unused__");
 
   public String             name;
   public boolean            hidden  = false;     // variable not accessible in current parse context (this could reuse Usage)
   public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
-  public Item               value;               // The variable's full value
-  public Iter               iter;                // The variable's lazy value; only one of value or iter is non-null
-  public SpillJArray        tempArray;           // array used to temp evaluation of iter
+  public JsonValue             value;               // The variable's full value
+  public JsonIterator               iter;                // The variable's lazy value; only one of value or iter is non-null
+  public SpilledJsonArray        tempArray;           // array used to temp evaluation of iter
   public Expr               expr;                // only for global variables
   public Usage              usage = Usage.EVAL;
-
+  public Type type; // temporary quickfix
+  
   /**
    * @param name
    */
   public Var(String name)
   {
     this.name = name;
+    this.type = Type.NONE;
   }
 
   /**
@@ -85,6 +92,7 @@ public class Var extends Object
   public Var clone(VarMap varMap)
   {
     Var v = new Var(name);
+    v.type = type;
     v.value = value; // TODO: is it safe to share the value?
     v.usage = usage;
     // It is NOT safe to share an iter unless one var is never evaluated.
@@ -105,22 +113,22 @@ public class Var extends Object
    * 
    * @param value
    */
-  public void set(Item value)
+  public void set(JsonValue value)
   {
-    assert value != null;
     this.value = value;
-    iter = null;
+    this.iter = null;
+    this.type = Type.VALUE;
   }
 
   /**
    * 
    * @param iter
    */
-  public void set(Iter iter)
+  public void set(JsonIterator iter)
   {
-    assert iter != null;
+    this.value = null;
     this.iter = iter;
-    value = null;
+    this.type = Type.ITER;
   }
   
   /**
@@ -155,27 +163,27 @@ public class Var extends Object
    * @return
    * @throws Exception
    */
-  public Item getValue() throws Exception
+  public JsonValue getValue() throws Exception
   {
-    if( value != null )
-    {
+    if (type.equals(Type.VALUE)) {
       assert iter == null;
       return value;
     }
-    else if( iter != null )
-    {
+    if (type.equals(Type.ITER)) {
       if (tempArray == null) {
-        tempArray = new SpillJArray();
+        tempArray = new SpilledJsonArray();
       }
       tempArray.setCopy(iter);
-      value = new Item(tempArray);
+      value = tempArray;
+      type = Type.VALUE;
       iter = null;
       return value;
     }
-    else if (expr != null) // global var
+    if (expr != null) // global var
     {
       Context gctx = JaqlUtil.getSessionContext();
       value = expr.eval(gctx);       // TODO: init/close calls.
+      type = Type.VALUE;
       return value;
     }
     throw new NullPointerException("undefined variable: "+name);
@@ -189,21 +197,22 @@ public class Var extends Object
    * @return
    * @throws Exception
    */
-  public Iter getIter() throws Exception
+  public JsonIterator getIter() throws Exception
   {
-    if( value != null )
+    if( type.equals(Type.VALUE) )
     {
       assert iter == null;
-      JArray arr = (JArray)value.get(); // cast error intentionally possible
+      JsonArray arr = (JsonArray)value; // cast error intentionally possible
       if( arr == null )
       {
-        return Iter.nil;
+//        return new SingleJsonValueIterator(null);
+        return JsonIterator.NIL;
       }
       return arr.iter();
     }
-    else if( iter != null )
+    else if( type.equals(Type.ITER) )
     {
-      Iter iter = this.iter;
+      JsonIterator iter = this.iter;
       this.iter = null;
       if( usage == Usage.STREAM )
       {
@@ -212,10 +221,12 @@ public class Var extends Object
       else
       {
         if (tempArray == null) {
-          tempArray = new SpillJArray();
+          tempArray = new SpilledJsonArray();
         }
         tempArray.setCopy(iter);
-        value = new Item(tempArray);
+        value = tempArray;
+        iter = null;
+        type = Type.VALUE;
         return tempArray.iter();
       }
     }
@@ -229,10 +240,11 @@ public class Var extends Object
       else
       {
         value = expr.eval(gctx);
-        JArray arr = (JArray)value.get(); // cast error intentionally possible
+        type = Type.VALUE;
+        JsonArray arr = (JsonArray)value; // cast error intentionally possible
         if( arr == null )
         {
-          return Iter.nil;
+          return JsonIterator.NIL;
         }
         return arr.iter();
       }

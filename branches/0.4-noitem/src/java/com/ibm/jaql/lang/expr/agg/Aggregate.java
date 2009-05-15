@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
@@ -70,22 +70,19 @@ public abstract class Aggregate extends Expr
    * If you override this function, you need to override processInitial as well.
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    Iter iter = exprs[0].iter(context);
+    JsonIterator iter = exprs[0].iter(context);
     initInitial(context);
 
-    Item item;
-    while( (item = iter.next()) != null )
-    {
-      if( ! item.isNull() )
+    for (JsonValue value : iter) {
+      if( value != null )
       {
-        addInitial(item);
+        addInitial(value);
       }
     }
 
-    item = getFinal();
-    return item;
+    return getFinal();
   }
 
   
@@ -102,20 +99,18 @@ public abstract class Aggregate extends Expr
    * If you override this, you need to override eval() as well.
    *          
    * @param context
-   * @param item
+   * @param scaler
    * @throws Exception
    */
   public void evalInitial(Context context) throws Exception
   {
-    Iter iter = exprs[0].iter(context);
-    Item item;
-    while( (item = iter.next()) != null )
-    {
-      addInitial(item);
+    JsonIterator iter = exprs[0].iter(context);
+    for (JsonValue value : iter) {
+      addInitial(value);
     }
   }
 
   public abstract void initInitial(Context context) throws Exception;
-  public abstract void addInitial(Item item) throws Exception;
-  public abstract Item getFinal() throws Exception;
+  public abstract void addInitial(JsonValue value) throws Exception;
+  public abstract JsonValue getFinal() throws Exception;
 }

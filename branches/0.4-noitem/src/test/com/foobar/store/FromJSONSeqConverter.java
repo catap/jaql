@@ -21,15 +21,16 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.ToItem;
-import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
+import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
  */
-public class FromJSONSeqConverter extends HadoopRecordToItem
+public class FromJSONSeqConverter extends HadoopRecordToJson
 {
 
   /**
@@ -54,8 +55,8 @@ public class FromJSONSeqConverter extends HadoopRecordToItem
 
     try
     {
-      Item data = parser.JsonVal();
-      i.set(data.get());
+      JsonValue data = parser.JsonVal();
+      i.set(data);
     }
     catch (Exception e)
     {
@@ -69,7 +70,7 @@ public class FromJSONSeqConverter extends HadoopRecordToItem
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToItem<WritableComparable> createKeyConverter()
+  protected ToJson<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -80,19 +81,22 @@ public class FromJSONSeqConverter extends HadoopRecordToItem
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected ToItem<Writable> createValConverter()
+  protected ToJson<Writable> createValueConverter()
   {
-    return new ToItem<Writable>()
+    return new ToJson<Writable>()
     {
+      Item item = new Item();
 
-      public void convert(Writable src, Item tgt)
+      public JsonValue convert(Writable src, JsonValue tgt)
       {
-        convertWritableToItem(src, tgt);
+        item.set(tgt);
+        convertWritableToItem(src, item);
+        return item.get();
       }
 
-      public Item createTarget()
+      public JsonValue createInitialTarget()
       {
-        return new Item();
+        return null;
       }
     };
   }

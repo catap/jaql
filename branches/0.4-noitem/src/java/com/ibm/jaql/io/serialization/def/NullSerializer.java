@@ -5,14 +5,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import com.ibm.jaql.io.serialization.BasicSerializer;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonValue;
 
 
 @SuppressWarnings("unchecked")
 public class NullSerializer extends BasicSerializer
 {
   @Override
-  public JValue newInstance()
+  public JsonValue newInstance()
   {
     return null;
   }
@@ -29,7 +29,7 @@ public class NullSerializer extends BasicSerializer
   }
 
   @Override
-  public JValue read(DataInput in, JValue target) throws IOException
+  public JsonValue read(DataInput in, JsonValue target) throws IOException
   {
     return null;
   }
@@ -40,7 +40,7 @@ public class NullSerializer extends BasicSerializer
   }
 
   @Override
-  public void write(DataOutput out, JValue target) throws IOException
+  public void write(DataOutput out, JsonValue target) throws IOException
   {
   }
 }

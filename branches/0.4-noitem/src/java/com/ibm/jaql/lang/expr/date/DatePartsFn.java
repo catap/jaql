@@ -19,11 +19,11 @@ import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JDate;
-import com.ibm.jaql.json.type.JDecimal;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -39,31 +39,29 @@ public class DatePartsFn extends Expr
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonRecord eval(Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    JDate d = (JDate)item.get();
+    JsonDate d = (JsonDate)exprs[0].eval(context);
     if( d == null )
     {
-      return Item.NIL;
+      return null;
     }
-    MemoryJRecord rec = new MemoryJRecord(); // TODO: mucho memory
+    BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: mucho memory
     cal.setTimeInMillis(d.millis);
-    rec.add("millis", new JLong(d.millis));
-    rec.add("year", new JLong(cal.get(Calendar.YEAR)));
-    rec.add("month", new JLong(cal.get(Calendar.MONTH)+1));
-    rec.add("day", new JLong(cal.get(Calendar.DAY_OF_MONTH)));
-    rec.add("hour", new JLong(cal.get(Calendar.HOUR_OF_DAY)));
-    rec.add("minute", new JLong(cal.get(Calendar.MINUTE)));
+    rec.add("millis", new JsonLong(d.millis));
+    rec.add("year", new JsonLong(cal.get(Calendar.YEAR)));
+    rec.add("month", new JsonLong(cal.get(Calendar.MONTH)+1));
+    rec.add("day", new JsonLong(cal.get(Calendar.DAY_OF_MONTH)));
+    rec.add("hour", new JsonLong(cal.get(Calendar.HOUR_OF_DAY)));
+    rec.add("minute", new JsonLong(cal.get(Calendar.MINUTE)));
     BigDecimal dec = 
       new BigDecimal( cal.get(Calendar.SECOND) * 1000 + cal.get(Calendar.MILLISECOND))
        .divide(new BigDecimal(1000));
-    rec.add("second", new JDecimal(dec));
-    rec.add("offset", new JLong(cal.get(Calendar.ZONE_OFFSET) / 1000));
+    rec.add("second", new JsonDecimal(dec));
+    rec.add("offset", new JsonLong(cal.get(Calendar.ZONE_OFFSET) / 1000));
     // TODO: add timezone to JDate
     
-    item = new Item(rec);
-    return item;
+    return rec;
   }
 
 }

@@ -17,17 +17,16 @@ package com.ibm.jaql.lang.expr.path;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
 
 public abstract class PathArray extends PathStep
 {
-  protected SpillJArray tempArray;
-  protected Item tempItem;
+  protected SpilledJsonArray tempArray;
 
   /**
    * @param exprs
@@ -80,27 +79,26 @@ public abstract class PathArray extends PathStep
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public abstract Iter iter(Context context) throws Exception;
+  public abstract JsonIterator iter(Context context) throws Exception;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    Iter iter = this.iter(context);
+    JsonIterator iter = this.iter(context);
     if (iter.isNull())
     {
-      return Item.NIL;
+      return null;
     }
     if (tempArray == null)
     {
-      tempArray = new SpillJArray();
-      tempItem = new Item(tempArray);
+      tempArray = new SpilledJsonArray();
     }
     tempArray.setCopy(iter);
-    return tempItem;
+    return tempArray;
   }
 }
 

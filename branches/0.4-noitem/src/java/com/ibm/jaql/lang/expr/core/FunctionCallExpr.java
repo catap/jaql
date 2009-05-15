@@ -19,11 +19,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
@@ -150,16 +149,15 @@ public class FunctionCallExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    JValue fnVal = exprs[0].eval(context).get();
-    JFunction fn = (JFunction)fnVal;
+    JaqlFunction fn = (JaqlFunction)exprs[0].eval(context);
     // if( fnVal instanceof JFunction )
     {
       // JFunction fn = (JFunction)fnVal;
       if (fn == null)
       {
-        return Item.NIL;
+        return null;
       }
       return fn.eval(context, exprs, 1, exprs.length - 1);
     }
@@ -243,13 +241,12 @@ public class FunctionCallExpr extends Expr
   }
 
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
-    JValue fnVal = exprs[0].eval(context).get();
-    JFunction fn = (JFunction)fnVal;
+    JaqlFunction fn = (JaqlFunction)exprs[0].eval(context);
     if (fn == null)
     {
-      return Iter.nil;
+      return JsonIterator.NIL;
     }
     return fn.iter(context, exprs, 1, exprs.length - 1);
   }

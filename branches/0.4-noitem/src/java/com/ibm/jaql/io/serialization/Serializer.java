@@ -4,10 +4,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Main interface for operations on serialized data. */
-public interface Serializer<T extends JValue>
+public interface Serializer<T extends JsonValue>
 {
   /** Reads a value from <code>in</code>.The specified target value is reused, if possible. 
    * 
@@ -16,7 +16,7 @@ public interface Serializer<T extends JValue>
    * @return the read value. May or may not be equal to <code>target</code>.
    * @throws IOException
    */
-  public T read(DataInput in, JValue target) throws IOException;
+  public T read(DataInput in, JsonValue target) throws IOException;
   
   /** Writes a value to <code>out</code>.
    * 

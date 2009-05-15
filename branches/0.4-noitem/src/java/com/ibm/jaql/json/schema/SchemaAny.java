@@ -18,7 +18,7 @@ package com.ibm.jaql.json.schema;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Schema that matches everything.
  * 
@@ -31,7 +31,7 @@ public class SchemaAny extends Schema
    * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public boolean matches(Item item)
+  public boolean matches(JsonValue value)
   {
     return true;
   }

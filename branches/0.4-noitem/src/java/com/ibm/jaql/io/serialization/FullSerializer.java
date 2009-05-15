@@ -4,18 +4,18 @@ import java.io.DataInput;
 import java.io.IOException;
 
 import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Superclass for serializers of <code>JValue</code>s of unknown type. 
  * <code>FullSerializer</code>s embed type information into their output. They make use of
  * {@link BasicSerializer}s to serialize the actual values. A particular 
  * <code>FullSerializer</code> can only read values that have been written by itself. 
  */
-public abstract class FullSerializer extends AbstractSerializer<JValue>
+public abstract class FullSerializer extends AbstractSerializer<JsonValue>
 {
   // -- default serializer  ----------------------------------------------------------------------
   
-  private static FullSerializer defaultSerializer = DefaultFullSerializer.getDefaultInstance();
+  private static FullSerializer defaultSerializer = DefaultFullSerializer.getInstance();
   
   public static void setDefault(FullSerializer serializer) {
     defaultSerializer = serializer;

@@ -19,9 +19,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Schema that matches arrays of element. Schematas for each of the elements are
@@ -154,25 +154,24 @@ public class SchemaArray extends Schema
    * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public boolean matches(Item item) throws Exception
+  public boolean matches(JsonValue value) throws Exception
   {
-    if (!(item.get() instanceof JArray))
+    if (!(value instanceof JsonArray))
     {
       return false;
     }
-    JArray arr = (JArray) item.get();
-    Iter iter = arr.iter();
+    JsonArray arr = (JsonArray) value;
+    JsonIterator iter = arr.iter();
     for (Schema s = head; s != null; s = s.nextSchema)
     {
-      item = iter.next();
-      if (item == null || !s.matches(item))
+      if (!iter.moveNext() || !s.matches(iter.current()))
       {
         return false;
       }
     }
     if (rest == null)
     {
-      if (iter.next() != null)
+      if (iter.moveNext())
       {
         return false;
       }
@@ -180,10 +179,11 @@ public class SchemaArray extends Schema
     }
     // rest != null
     long n = 0;
-    while ((item = iter.next()) != null)
+    while (iter.moveNext())
     {
+      value = iter.current();
       n++;
-      if (n > maxCount || !rest.matches(item))
+      if (n > maxCount || !rest.matches(value))
       {
         return false;
       }

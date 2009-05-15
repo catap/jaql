@@ -32,17 +32,19 @@ import org.apache.hadoop.hbase.io.Cell;
 import org.apache.hadoop.hbase.io.RowResult;
 import org.apache.hadoop.io.Text;
 
+import com.ibm.jaql.io.ClosableJsonIterator;
+import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.serialization.FullSerializer;
 import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.ClosableIter;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -68,23 +70,23 @@ public class HBaseStore
     public final static HColumnDescriptor     DEFAULT_COLUMN_FAMILY              = new HColumnDescriptor(
                                                                                      DEFAULT_HBASE_COLUMN_FAMILY_NAME);
 
-    public final static JString               J_DEFAULT_HBASE_COLUMN_FAMILY_NAME = new JString(
+    public final static JsonString               J_DEFAULT_HBASE_COLUMN_FAMILY_NAME = new JsonString(
                                                                                      DEFAULT_HBASE_COLUMN_FAMILY_NAME);
 
     public final static String                KEY_NAME                           = "key";
 
-    public final static JString               J_KEY                              = new JString(
+    public final static JsonString               J_KEY                              = new JsonString(
                                                                                      KEY_NAME);
 
     public final static HBaseConfiguration    hbaseConf                          = new HBaseConfiguration();
 
-    protected static HashMap<JString, HTable> htableMap                          = new HashMap<JString, HTable>();
+    protected static HashMap<JsonString, HTable> htableMap                          = new HashMap<JsonString, HTable>();
 
     /**
      * @param s
      * @return
      */
-    public static Text makeText(JString s)
+    public static Text makeText(JsonString s)
     {
       Text t = new Text();
       t.set(s.getInternalBytes(), 0, s.getLength());
@@ -96,7 +98,7 @@ public class HBaseStore
      * @return
      * @throws IOException
      */
-    public static HTable openHTable(JString tableName) throws IOException
+    public static HTable openHTable(JsonString tableName) throws IOException
     {
       HTable htable = htableMap.get(tableName);
       if (htable == null)
@@ -121,11 +123,11 @@ public class HBaseStore
      * @return
      * @throws IOException
      */
-    public static byte[] convertToBytes(Item item) throws IOException
+    public static byte[] convertToBytes(JsonValue value) throws IOException
     {
       ByteArrayOutputStream bstr = new ByteArrayOutputStream();
       DataOutputStream str = new DataOutputStream(bstr);
-      item.write(str);
+      SERIALIZER.write(str, value);
       str.close();
       return bstr.toByteArray();
     }
@@ -135,22 +137,20 @@ public class HBaseStore
      * @return
      * @throws IOException
      */
-    public static Item convertFromBytes(byte[] val) throws IOException
+    public static JsonValue convertFromBytes(byte[] val) throws IOException
     {
       // TODO: memory
       DataInputStream str = new DataInputStream(new ByteArrayInputStream(val));
-      Item i = new Item();
-      i.readFields(str);
-      return i;
+      return SERIALIZER.read(str, null);
     }
 
     /**
      * @param colName
-     * @param item
+     * @param value
      * @param rec
      * @throws IOException
      */
-    public static void setMap(JString colName, Item item, MemoryJRecord rec)
+    public static void setMap(JsonString colName, JsonValue value, BufferedJsonRecord rec)
         throws IOException
     {
       // unpeel the column family only if its the default column family
@@ -164,9 +164,9 @@ public class HBaseStore
       }
       int idx = rec.findName(colName);
       if (idx < 0)
-        rec.add(colName, item);
+        rec.add(colName, value);
       else
-        rec.set(idx, item);
+        rec.set(idx, value);
     }
 
     /**
@@ -176,14 +176,13 @@ public class HBaseStore
      * @param rec
      * @throws IOException
      */
-    public static void convertFromBytes(JString colName, byte[] colVal,
-        Item item, MemoryJRecord rec) throws IOException
+    public static void convertFromBytes(JsonString colName, byte[] colVal,
+        JsonHolder valueHolder, BufferedJsonRecord rec) throws IOException
     {
       DataInputStream str = new DataInputStream(
           new ByteArrayInputStream(colVal)); // TODO: memory
-      item.readFields(str);
-
-      setMap(colName, item, rec);
+      valueHolder.value = SERIALIZER.read(str, valueHolder.value);
+      setMap(colName, valueHolder.value, rec);
     }
 
     /**
@@ -193,20 +192,20 @@ public class HBaseStore
      * @return
      * @throws Exception
      */
-    public static JString convertColumn(JString col) throws Exception
+    public static JsonString convertColumn(JsonString col) throws Exception
     {
-      JString ncol = null;
+      JsonString ncol = null;
       // add the default column family if one is not specified
       if (col.indexOf(HBASE_CF_SEPARATOR_CHAR) < 0)
       {
-        ncol = new JString(DEFAULT_HBASE_COLUMN_FAMILY_NAME + col);
+        ncol = new JsonString(DEFAULT_HBASE_COLUMN_FAMILY_NAME + col);
       }
       else
       {
         // TODO: memory
         String o = col.toString();
         String n = o.replace(JAQL_CF_SEPARATOR_CHAR, HBASE_CF_SEPARATOR_CHAR);
-        ncol = new JString(n);
+        ncol = new JsonString(n);
       }
       return ncol;
     }
@@ -216,17 +215,21 @@ public class HBaseStore
      * @return
      * @throws Exception
      */
-    public static JString[] convertColumns(JArray columns) throws Exception
+    public static JsonString[] convertColumns(JsonArray columns) throws Exception
     {
-      JString[] cols = null;
+      JsonString[] cols = null;
       if (columns != null)
       {
         int ncols = (int) columns.count();
-        cols = new JString[ncols];
-        Iter colIter = columns.iter();
+        cols = new JsonString[ncols];
+        JsonIterator colIter = columns.iter();
         for (int i = 0; i < ncols; i++)
         {
-          JString col = (JString) colIter.next().getNonNull();
+          if (!colIter.moveNext()) 
+          {
+            throw new IllegalStateException();
+          }
+          JsonString col = JaqlUtil.enforceNonNull((JsonString) colIter.current());
           cols[i] = convertColumn(col);
         }
       }
@@ -239,28 +242,35 @@ public class HBaseStore
      * @param rec
      * @throws IOException
      */
-    public static void convertMap(JString key, RowResult row,
-        MemoryJRecord rec) throws IOException
+    public static void convertMap(JsonString key, RowResult row,
+        BufferedJsonRecord rec) throws IOException
     {
       rec.clear();
       rec.ensureCapacity(row.size() + 1);
       int i = 0;
-      JString name = rec.getName(i);
-      Item item = rec.getValue(i);
-      i++;
-      name.setCopy(J_KEY);
-      item.set(new JString(key.getInternalBytes(), key.getLength())); // TODO: memory
-      rec.add(name, item);
+//      JsonString name = rec.getName(i);
+//      Item item = rec.getValue(i);
+//      i++;
+//      name.setCopy(J_KEY); ILLEGAL
+//      item.set(new JsonString(key.getInternalBytes(), key.getLength())); // TODO: memory
+//      rec.add(name, item);
+      // TODO: correct port?
+      JsonString name = new JsonString(J_KEY);
+      JsonString value = new JsonString(key.getInternalBytes(), key.getLength());
+      rec.add(name, value);
+      JsonHolder valueHolder = new JsonHolder();
       for (Map.Entry<byte[], Cell> e : row.entrySet())
       {
         String n = new String(e.getKey());
         if (!n.equals(KEY_NAME))
         {
           name = rec.getName(i);
-          item = rec.getValue(i);
+          valueHolder.value = (JsonString)rec.getValue(i);
           i++;
-          name.setCopy(n.getBytes(), n.length());
-          convertFromBytes(name, e.getValue().getValue(), item, rec);
+//          name.setCopy(n.getBytes(), n.length()); TODO ILLEGAL
+          convertFromBytes(name, e.getValue().getValue(), valueHolder, rec);
+          JsonString newName = new JsonString(n.getBytes(), n.length());
+          rec.add(newName, valueHolder.value);
         }
       }
     }
@@ -280,7 +290,7 @@ public class HBaseStore
      *            extract the key from the museValue
      * @throws IOException
      */
-    public static void writeJMapToHBase(Item key, JRecord rec, HTable table,
+    public static void writeJMapToHBase(JsonValue key, JsonRecord rec, HTable table,
         boolean extractKey) throws IOException
     {
       if (key == null && !extractKey)
@@ -293,7 +303,7 @@ public class HBaseStore
       {
         key = rec.getValue(J_KEY, null);
       }
-      JString hbaseKey = (JString) key.getNonNull();
+      JsonString hbaseKey = JaqlUtil.enforceNonNull((JsonString) key);
       
       // start transaction
 
@@ -302,22 +312,22 @@ public class HBaseStore
       int arity = rec.arity();
       for (int i = 0; i < arity; i++)
       {
-        JString columnName = rec.getName(i);
+        JsonString columnName = rec.getName(i);
         if (columnName.equals(J_KEY)) continue; // skip the key
         // specify the default column family only when no column family is
         // specified
         if (columnName.indexOf(JAQL_CF_SEPARATOR_CHAR) < 0)
         {
-          columnName = new JString(DEFAULT_HBASE_COLUMN_FAMILY_NAME
+          columnName = new JsonString(DEFAULT_HBASE_COLUMN_FAMILY_NAME
               + columnName);
         }
         else
         {
           // TODO: memory
-          columnName = new JString(columnName);
+          columnName = new JsonString(columnName);
           columnName.replace(JAQL_CF_SEPARATOR_CHAR, HBASE_CF_SEPARATOR_CHAR);
         }
-        Item val = rec.getValue(i);
+        JsonValue val = rec.getValue(i);
         byte[] valueBytes = convertToBytes(val);
         xact.put(columnName.toString(), valueBytes);
       }
@@ -335,8 +345,8 @@ public class HBaseStore
      *            (HBase formatted)
      * @throws IOException
      */
-    public static void deleteFromHBase(HTable table, JString key,
-        JString[] columns) throws Exception
+    public static void deleteFromHBase(HTable table, JsonString key,
+        JsonString[] columns) throws Exception
     {
       // TODO: mismatch between Text and JString
       // start the transaction
@@ -350,7 +360,7 @@ public class HBaseStore
           RowResult row = table.getRow(key.toString());
           columns = row.keySet().toArray(columns);
         }
-        for (JString col : columns)
+        for (JsonString col : columns)
         {
           // int start = col.find(HBASE_CF_SEPARATOR_CHAR) + 1;
           xact.delete(col.getInternalBytes());
@@ -377,9 +387,9 @@ public class HBaseStore
      * @return
      * @throws IOException
      */
-    public static ClosableIter createResult(HTable table, JString startKey,
-        final JString stopKey, JString[] columnNames, long timestamp,
-        final MemoryJRecord current) throws IOException
+    public static ClosableJsonIterator createResult(HTable table, JsonString startKey,
+        final JsonString stopKey, JsonString[] columnNames, long timestamp,
+        final BufferedJsonRecord current) throws IOException
     {
       String[] hbaseColumnNames = new String[columnNames.length];
       for (int i = 0; i < columnNames.length; i++)
@@ -400,9 +410,9 @@ public class HBaseStore
      * @return
      * @throws IOException
      */
-    public static ClosableIter createResultBase(HTable table, JString startKey,
-        final JString stopKey, JString[] columnNames, long timestamp,
-        final MemoryJRecord current) throws IOException
+    public static ClosableJsonIterator createResultBase(HTable table, JsonString startKey,
+        final JsonString stopKey, JsonString[] columnNames, long timestamp,
+        final BufferedJsonRecord current) throws IOException
     {
       Scanner tmpScanner = null;
       String[] cnames = new String[columnNames.length];
@@ -414,13 +424,11 @@ public class HBaseStore
         tmpScanner = table.getScanner(cnames, startKey.toString());
       final Scanner scanner = tmpScanner;
 
-      return new ClosableIter() {
+      return new ClosableJsonIterator(current) {
 
         RowResult               row    = new RowResult();
 
-        Item                    result = new Item(current);
-
-        public Item next() throws Exception
+        public boolean moveNext() throws Exception
         {
           if ( (row = scanner.next()) != null)
           {
@@ -428,11 +436,11 @@ public class HBaseStore
             if (stopKey == null || stopKey.getLength() == 0
                 || key.compareTo(stopKey.toString()) <= 0)
             {
-              HBaseStore.Util.convertMap(new JString(key), row, current);
-              return result;
+              HBaseStore.Util.convertMap(new JsonString(key), row, current);
+              return true; // currentValue == current
             }
           }
-          return null;
+          return false;
         }
 
         public void close() throws IOException
@@ -448,19 +456,18 @@ public class HBaseStore
      * @param rows
      * @throws Exception
      */
-    public static void deleteValues(JString tableName, JArray columnNames,
-        Iter rows) throws Exception
+    public static void deleteValues(JsonString tableName, JsonArray columnNames,
+        JsonIterator rows) throws Exception
     {
       // setup the columns
-      JString[] cols = convertColumns(columnNames);
+      JsonString[] cols = convertColumns(columnNames);
 
       // open the table
       HTable table = openHTable(tableName);
 
-      Item keyItem;
-      while ((keyItem = rows.next()) != null)
+      for (JsonValue value : rows)
       {
-        JString key = (JString) keyItem.getNonNull();
+        JsonString key = JaqlUtil.enforceNonNull((JsonString) value);
         HBaseStore.Util.deleteFromHBase(table, key, cols);
       }
 
@@ -476,15 +483,15 @@ public class HBaseStore
      * @return
      * @throws Exception
      */
-    public static Iter fetchRecords(JString tableName, JArray columnNames,
-        JLong timestampValue, JLong numVersionsValue, Iter rows)
+    public static JsonIterator fetchRecords(JsonString tableName, JsonArray columnNames,
+        JsonLong timestampValue, JsonLong numVersionsValue, JsonIterator rows)
         throws Exception
     {
       // open the table
       HTable table = HBaseStore.Util.openHTable(tableName);
 
       // setup the columns
-      JString[] cols = HBaseStore.Util.convertColumns(columnNames);
+      JsonString[] cols = HBaseStore.Util.convertColumns(columnNames);
 
       // setup the timestamp
       long timestamp = (timestampValue != null) ? timestampValue.value : -1;
@@ -494,7 +501,7 @@ public class HBaseStore
           ? (int) numVersionsValue.value
           : -1;
 
-      Iter result = null;
+      JsonIterator result = null;
 
       if (columnNames == null)
       {
@@ -519,15 +526,13 @@ public class HBaseStore
   /**
    * 
    */
-  static abstract class FetchIter extends Iter
+  static abstract class FetchIter extends JsonIterator
   {
     protected HTable        table;
 
-    protected Iter          keyIter;
+    protected JsonIterator          keyIter;
 
-    protected MemoryJRecord rec;
-
-    protected Item          result;
+    protected BufferedJsonRecord rec;
 
     /**
      * @param table
@@ -535,12 +540,12 @@ public class HBaseStore
      * @param numCols
      * @throws Exception
      */
-    public FetchIter(HTable table, Iter keyIter, int numCols) throws Exception
+    public FetchIter(HTable table, JsonIterator keyIter, int numCols) throws Exception
     {
       this.table = table;
       this.keyIter = keyIter;
-      this.rec = new MemoryJRecord(numCols);
-      this.result = new Item(rec);
+      this.rec = new BufferedJsonRecord(numCols);
+      this.currentValue = rec;
     }
 
     /*
@@ -548,24 +553,23 @@ public class HBaseStore
      * 
      * @see com.ibm.jaql.json.util.Iter#next()
      */
-    public Item next() throws Exception
+    public boolean moveNext() throws Exception
     {
       while (true)
       {
-        Item keyItem = keyIter.next();
-        if (keyItem == null)
+        if (!keyIter.moveNext())
         {
           HBaseStore.Util.closeHTable(table);
-          return null;
+          return false;
         }
 
-        JString hbaseKey = (JString) keyItem.get();
+        JsonString hbaseKey = (JsonString) keyIter.current();
         if (hbaseKey != null)
         {
           if (fetchRecord(hbaseKey))
           {
-            rec.set(HBaseStore.Util.J_KEY, new Item(hbaseKey));
-            return result;
+            rec.set(HBaseStore.Util.J_KEY, hbaseKey);
+            return true; // currentValue == rec
           }
         }
       }
@@ -576,7 +580,7 @@ public class HBaseStore
      * @return
      * @throws Exception
      */
-    protected abstract boolean fetchRecord(JString key) throws Exception;
+    protected abstract boolean fetchRecord(JsonString key) throws Exception;
   }
 
   /**
@@ -589,11 +593,11 @@ public class HBaseStore
      * @param keyIter
      * @throws Exception
      */
-    public FetchAllColumnsIter(HTable table, Iter keyIter) throws Exception
+    public FetchAllColumnsIter(HTable table, JsonIterator keyIter) throws Exception
     {
       super(table, keyIter, 10);
-      rec = new MemoryJRecord(10);
-      result = new Item(rec);
+      rec = new BufferedJsonRecord(10);
+      currentValue = rec;
     }
 
     /*
@@ -601,7 +605,7 @@ public class HBaseStore
      * 
      * @see com.ibm.jaql.io.hbase.HBaseStore.FetchIter#fetchRecord(com.ibm.jaql.json.type.JString)
      */
-    protected boolean fetchRecord(JString key) throws Exception
+    protected boolean fetchRecord(JsonString key) throws Exception
     {
       RowResult row = table.getRow(key.toString());
       if (row.size() > 0)
@@ -619,17 +623,18 @@ public class HBaseStore
    */
   static class FetchSingleVersionIter extends FetchIter
   {
-    protected JString[] jcols;
+    protected JsonString[] jcols;
 
     protected Text[]    tcols;
-
+    private JsonHolder valueHolder = new JsonHolder();
+    
     /**
      * @param table
      * @param keyIter
      * @param cols
      * @throws Exception
      */
-    public FetchSingleVersionIter(HTable table, Iter keyIter, JString[] cols)
+    public FetchSingleVersionIter(HTable table, JsonIterator keyIter, JsonString[] cols)
       throws Exception
     {
       super(table, keyIter, cols.length + 1);
@@ -646,9 +651,9 @@ public class HBaseStore
      * 
      * @see com.ibm.jaql.io.hbase.HBaseStore.FetchIter#fetchRecord(com.ibm.jaql.json.type.JString)
      */
-    protected boolean fetchRecord(JString key) throws Exception
+    protected boolean fetchRecord(JsonString key) throws Exception
     {
-      Text tkey = HBaseStore.Util.makeText(key);
+//      Text tkey = HBaseStore.Util.makeText(key);
       boolean hasValue = false;
       for (int i = 0; i < jcols.length; i++)
       {
@@ -658,12 +663,12 @@ public class HBaseStore
         {
           byte[] value = cell.getValue();
           int idx = rec.findName(jcols[i]);
-          Item item = null;
           if (idx < 0)
-            item = new Item();
+            valueHolder.value = null;
           else
-            item = rec.getValue(idx);
-          HBaseStore.Util.convertFromBytes(jcols[i], value, item, rec);
+            valueHolder.value = rec.getValue(idx);
+          HBaseStore.Util.convertFromBytes(jcols[i], value, valueHolder, rec);
+          rec.set(idx, valueHolder.value);
           hasValue = true;
         }
       }
@@ -688,7 +693,7 @@ public class HBaseStore
      * @param numVersions
      * @throws Exception
      */
-    public FetchMultiVersionIter(HTable table, Iter keyIter, JString[] cols,
+    public FetchMultiVersionIter(HTable table, JsonIterator keyIter, JsonString[] cols,
         long timestamp, int numVersions) throws Exception
     {
       super(table, keyIter, cols);
@@ -696,9 +701,7 @@ public class HBaseStore
       this.numVersions = numVersions;
       for (int i = 0; i < cols.length; i++)
       {
-        Item v = rec.getValue(i + 1);
-        v.set(new SpillJArray());
-        rec.set(i + 1, v);
+        rec.set(i + 1, new SpilledJsonArray());
       }
     }
 
@@ -707,7 +710,7 @@ public class HBaseStore
      * 
      * @see com.ibm.jaql.io.hbase.HBaseStore.FetchSingleVersionIter#fetchRecord(com.ibm.jaql.json.type.JString)
      */
-    protected boolean fetchRecord(JString key) throws Exception
+    protected boolean fetchRecord(JsonString key) throws Exception
     {
       boolean hasValue = false;
       for (int i = 0; i < jcols.length; i++)
@@ -720,8 +723,7 @@ public class HBaseStore
 
         if (value != null && value.length > 0)
         {
-          Item item = rec.getValue(i + 1);
-          SpillJArray tArr = (SpillJArray) item.getNonNull();
+          SpilledJsonArray tArr = JaqlUtil.enforceNonNull((SpilledJsonArray) rec.getValue(i + 1));
           tArr.clear();
 
           for (int j = 0; j < value.length; j++)
@@ -731,7 +733,7 @@ public class HBaseStore
           tArr.freeze();
 
           // set the top-level map
-          HBaseStore.Util.setMap(jcols[i], item, rec);
+          HBaseStore.Util.setMap(jcols[i], tArr, rec);
           hasValue = true;
         }
       }

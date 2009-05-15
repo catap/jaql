@@ -21,8 +21,8 @@ import java.io.IOException;
 
 import com.ibm.jaql.io.serialization.BasicSerializer;
 import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.Item.Encoding;
+import com.ibm.jaql.json.type.JsonEncoding;
+import com.ibm.jaql.json.type.JsonString;
 
 /** Schema that matches a field ((name, value)-pair) where the value matches its 
  * specified schema.   
@@ -32,11 +32,11 @@ import com.ibm.jaql.json.type.Item.Encoding;
 public class SchemaField
 {
 
-  protected final static BasicSerializer<JString> serializer 
-  = (BasicSerializer<JString>)DefaultFullSerializer.getDefaultInstance().getSerializer(Encoding.STRING);
+  protected final static BasicSerializer<JsonString> serializer 
+  = (BasicSerializer<JsonString>)DefaultFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
 
   public SchemaField nextField;
-  public JString     name;
+  public JsonString     name;
   public boolean     wildcard;
   public boolean     optional;
   public Schema      schema;

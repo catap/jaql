@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -75,29 +75,29 @@ public class InExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonBool eval(final Context context) throws Exception
   {
-    Item item1 = exprs[0].eval(context);
-    if (item1.isNull())
+    JsonValue value1 = exprs[0].eval(context);
+    if (value1 == null) // TODO: why?
     {
-      return Item.NIL;
+      return null;
     }
-    Iter iter = exprs[1].iter(context);
+    JsonIterator iter = exprs[1].iter(context);
     if (iter.isNull())
     {
-      return Item.NIL;
+      return null;
     }
-    Item item2;
-    Item result = JBool.falseItem;
-    while ((item2 = iter.next()) != null)
+    
+    JsonBool result = JsonBool.FALSE;
+    for (JsonValue value2 : iter)
     {
-      if (item2.isNull())
+      if (value2 == null) // TODO: why?
       {
-        result = Item.NIL;
+        result = null;
       }
-      else if (item1.equals(item2))
+      else if (value1.equals(value2))
       {
-        result = JBool.trueItem;
+        result = JsonBool.TRUE;
         break;
       }
     }

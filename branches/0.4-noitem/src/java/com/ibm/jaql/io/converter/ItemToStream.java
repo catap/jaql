@@ -23,6 +23,7 @@ import com.ibm.jaql.json.type.Item;
 /** 
  * Interface for writing {@link Item}s to an {@link OutputStream}.
  */
+@Deprecated
 public interface ItemToStream
 {
   /**

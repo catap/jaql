@@ -17,18 +17,17 @@ package com.ibm.jaql.lang.registry;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.io.converter.ToItem;
-import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.io.converter.FromJson;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.core.JaqlFunction;
 
 /**
  * 
  */
-public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
+public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
 {
 
   /**
@@ -36,7 +35,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
    */
   public static class RNGEntry
   {
-    JFunction seed;
+    JaqlFunction seed;
     Object    rng;
 
     /**
@@ -49,7 +48,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
     /**
      * @param seed
      */
-    RNGEntry(JFunction seed)
+    RNGEntry(JaqlFunction seed)
     {
       this.seed = seed;
       this.rng = null;
@@ -58,7 +57,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
     /**
      * @return
      */
-    public JFunction getSeed()
+    public JaqlFunction getSeed()
     {
       return seed;
     }
@@ -66,7 +65,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
     /**
      * @param seed
      */
-    public void setSeed(JFunction seed)
+    public void setSeed(JaqlFunction seed)
     {
       this.seed = seed;
     }
@@ -93,7 +92,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
    */
   public final static class DefaultRegistryFormat
       extends
-        JaqlRegistryFormat<Item, RNGStore.RNGEntry>
+        JaqlRegistryFormat<JsonValue, RNGStore.RNGEntry>
   {
     /*
      * (non-Javadoc)
@@ -101,15 +100,15 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromKeyConverter()
      */
     @Override
-    protected FromItem<Item> createFromKeyConverter()
+    protected FromJson<JsonValue> createFromKeyConverter()
     {
-      return new FromItem<Item>() {
+      return new FromJson<JsonValue>() {
 
-        public void convert(Item src, Item tgt)
+        public JsonValue convert(JsonValue src, JsonValue tgt)
         {
           try
           {
-            tgt.setCopy(src);
+            return JsonValue.getCopy(src, tgt);
           }
           catch (Exception e)
           {
@@ -117,9 +116,9 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
           }
         }
 
-        public Item createTarget()
+        public JsonValue createInitialTarget()
         {
-          return new Item();
+          return null;
         }
 
       };
@@ -139,16 +138,17 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromValConverter()
      */
     @Override
-    protected FromItem<RNGEntry> createFromValConverter()
+    protected FromJson<RNGEntry> createFromValConverter()
     {
-      return new FromItem<RNGEntry>() {
+      return new FromJson<RNGEntry>() {
 
-        public void convert(Item src, RNGEntry tgt)
+        public RNGEntry convert(JsonValue src, RNGEntry tgt)
         {
-          JValue val = src.get();
-          if (val != null && val instanceof JFunction)
+          JsonValue val = src;
+          if (val != null && val instanceof JaqlFunction)
           {
-            tgt.setSeed((JFunction) val);
+            tgt.setSeed((JaqlFunction) val);
+            return tgt;
           }
           else
           {
@@ -157,7 +157,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
           }
         }
 
-        public RNGEntry createTarget()
+        public RNGEntry createInitialTarget()
         {
           return new RNGEntry();
         }
@@ -171,15 +171,22 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToKeyConverter()
      */
     @Override
-    protected ToItem<Item> createToKeyConverter()
+    protected ToJson<JsonValue> createToKeyConverter()
     {
-      return new ToItem<Item>() {
+      return new ToJson<JsonValue>() {
 
-        public void convert(Item src, Item tgt)
+        public JsonValue convert(JsonValue src, JsonValue tgt)
         {
           try
           {
-            tgt.setCopy(src);
+            if ( src == null ) 
+            {
+              return null;
+            }
+            else
+            {
+              return JsonValue.getCopy(src, tgt);
+            }
           }
           catch (Exception e)
           {
@@ -187,9 +194,9 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
           }
         }
 
-        public Item createTarget()
+        public JsonValue createInitialTarget()
         {
-          return new Item();
+          return null;
         }
 
       };
@@ -201,22 +208,22 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToValConverter()
      */
     @Override
-    protected ToItem<RNGEntry> createToValConverter()
+    protected ToJson<RNGEntry> createToValConverter()
     {
-      return new ToItem<RNGEntry>() {
+      return new ToJson<RNGEntry>() {
 
-        public void convert(RNGEntry src, Item tgt)
+        public JsonValue convert(RNGEntry src, JsonValue tgt)
         {
-          JFunction seed = src.getSeed();
+          JaqlFunction seed = src.getSeed();
           if (seed == null)
             throw new UndeclaredThrowableException(new Exception(
                 "seed function is null"));
-          tgt.set(seed);
+          return seed;
         }
 
-        public Item createTarget()
+        public JsonValue createInitialTarget()
         {
-          return new Item();
+          return null;
         }
 
       };
@@ -226,7 +233,7 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
   /**
    * @param fmt
    */
-  public RNGStore(RegistryFormat<Item, RNGStore.RNGEntry, ? extends JValue> fmt)
+  public RNGStore(RegistryFormat<JsonValue, RNGStore.RNGEntry, ? extends JsonValue> fmt)
   {
     super(fmt);
   }
@@ -235,12 +242,12 @@ public class RNGStore extends Registry<Item, RNGStore.RNGEntry>
    * @param key
    * @param seed
    */
-  public void register(Item key, JFunction seed)
+  public void register(JsonValue key, JaqlFunction seed)
   {
-    Item nkey = new Item();
+    JsonValue nkey;
     try
     {
-      nkey.setCopy(key);
+      nkey = JsonValue.getCopy(key, null);
     }
     catch (Exception e)
     {

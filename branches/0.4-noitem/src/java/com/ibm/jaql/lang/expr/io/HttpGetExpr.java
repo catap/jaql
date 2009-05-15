@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.stream.StreamInputAdapter;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -51,7 +51,7 @@ public class HttpGetExpr extends MacroExpr
   public Expr expand(Env env) throws Exception
   {
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
-        new ConstExpr(new JString("uri")));
+        new ConstExpr(new JsonString("uri")));
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
         exprs[0]);
     RecordExpr rec;

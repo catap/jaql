@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -129,9 +129,9 @@ public abstract class JaqlBaseTestCase extends TestCase
     boolean parsing = false;
 
     // saves and restores for rng's
-    HashMap<Item, RNGStore.RNGEntry> qRngMap = new HashMap<Item, RNGStore.RNGEntry>();
-    HashMap<Item, RNGStore.RNGEntry> dRngMap = new HashMap<Item, RNGStore.RNGEntry>();
-    HashMap<Item, RNGStore.RNGEntry> rRngMap = new HashMap<Item, RNGStore.RNGEntry>();
+    HashMap<JsonValue, RNGStore.RNGEntry> qRngMap = new HashMap<JsonValue, RNGStore.RNGEntry>();
+    HashMap<JsonValue, RNGStore.RNGEntry> dRngMap = new HashMap<JsonValue, RNGStore.RNGEntry>();
+    HashMap<JsonValue, RNGStore.RNGEntry> rRngMap = new HashMap<JsonValue, RNGStore.RNGEntry>();
 
     int qNum = 0;
     // consume the input
@@ -229,13 +229,13 @@ public abstract class JaqlBaseTestCase extends TestCase
     {
       if (expr.isArray().always())
       {
-        Iter iter = expr.iter(context);
+        JsonIterator iter = expr.iter(context);
         iter.print(str);
       }
       else
       {
-        Item item = expr.eval(context);
-        item.print(str);
+        JsonValue value = expr.eval(context);
+        JsonValue.print(str, value);
       }
     }
     catch (Exception e)

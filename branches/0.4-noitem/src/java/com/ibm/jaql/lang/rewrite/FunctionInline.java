@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -57,12 +57,12 @@ public class FunctionInline extends Rewrite
     else if (callFn instanceof ConstExpr)
     {
       ConstExpr c = (ConstExpr) callFn;
-      if( !(c.value.get() instanceof JFunction) )
+      if( !(c.value instanceof JaqlFunction) )
       {
         // TODO: throw compile-time type-check error
         return false;
       }
-      JFunction jf = (JFunction) c.value.get();
+      JaqlFunction jf = (JaqlFunction) c.value;
       f =(DefineFunctionExpr)cloneExpr(jf.getFunction());
     }
     else

@@ -18,10 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -80,41 +79,41 @@ public class PathArrayHead extends PathArray
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    JArray arr = (JArray)input.get();
+    JsonArray arr = (JsonArray)input;
     if( arr == null )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    JNumber end = (JNumber)exprs[0].eval(context).get();
+    JsonNumber end = (JsonNumber)exprs[0].eval(context);
     if( end == null )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
     final long e = end.longValueExact();
     if( e < 0 )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    final Iter iter = arr.iter();
-    return new Iter()
+    final JsonIterator iter = arr.iter();
+    return new JsonIterator()
     {
       long index = 0;
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if( index <= e )
         {
           index++;
-          Item item = iter.next();
-          if( item != null )
+          if (iter.moveNext()) 
           {
-            return nextStep(context, item);
+            currentValue = nextStep(context, iter.current());
+            return true;
           }
         }
-        return null;
+        return false;
       }
     };
   }

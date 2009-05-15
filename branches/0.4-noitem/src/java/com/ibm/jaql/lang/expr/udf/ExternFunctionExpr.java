@@ -15,10 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.udf;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
 /**
@@ -49,11 +50,12 @@ public class ExternFunctionExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    JString className = (JString) exprs[1].eval(context).getNonNull();
-    Class<?> cls = ClassLoaderMgr.resolveClass(className.toString());
+    JsonString className = JaqlUtil.enforceNonNull((JsonString) exprs[1].eval(context));
+    ClassLoaderMgr.resolveClass(className.toString());
+//    Class<?> cls = ClassLoaderMgr.resolveClass(className.toString());
     // JaqlUtil.getFunctionStore().register(fnName, className);
-    return Item.NIL; // TODO: do something here!!
+    return null; // TODO: do something here!!
   }
 }

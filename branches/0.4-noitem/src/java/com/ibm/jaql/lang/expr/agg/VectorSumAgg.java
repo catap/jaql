@@ -17,10 +17,9 @@ package com.ibm.jaql.lang.expr.agg;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.agg.SumAgg.Summer;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -55,46 +54,44 @@ public class VectorSumAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
-    if( item.isNull() )
+    if( value == null  )
     {
       return;
     }
-    JArray arr = (JArray)item.get();
+    JsonArray arr = (JsonArray)value;
     for( long n = arr.count() - summers.size() ; n > 0 ; n-- )
     {
       summers.add(new Summer());
     }
-    Iter iter = arr.iter();
     int k = 0;
-    while( (item = iter.next()) != null )
-    {
-      summers.get(k++).add(item);
+    for (JsonValue v : arr.iter()) {
+      summers.get(k++).add(v);
     }
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
     int n = summers.size();
-    FixedJArray arr = new FixedJArray(n);
+    BufferedJsonArray arr = new BufferedJsonArray(n);
     for(int i = 0 ; i < n ; i++)
     {
-      Item item = summers.get(i).get();
-      arr.set(i, item);
+      JsonValue value = summers.get(i).get();
+      arr.set(i, value);
     }
-    return new Item(arr);
+    return arr;
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    addInitial(item);
+    addInitial(value);
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
     return getPartial();
   }

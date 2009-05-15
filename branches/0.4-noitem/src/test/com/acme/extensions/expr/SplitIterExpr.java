@@ -15,9 +15,9 @@
  */
 package com.acme.extensions.expr;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -43,42 +43,41 @@ public class SplitIterExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
     // evaluate this expression's input.
-    Item sItem = exprs[0].eval(context);
-    Item dItem = exprs[1].eval(context);
+    JsonValue sValue = exprs[0].eval(context);
+    JsonValue dValue = exprs[1].eval(context);
 
     // if there is nothing to split or the split is not text, return nil
-    if (sItem == null || !(sItem.get() instanceof JString)) return Iter.empty;
+    if (sValue == null || !(sValue instanceof JsonString)) return JsonIterator.EMPTY;
 
     // if there is no delimter or the delimiter is not text, return nil
-    if (dItem == null || !(dItem.get() instanceof JString)) return Iter.empty;
+    if (dValue == null || !(dValue instanceof JsonString)) return JsonIterator.EMPTY;
 
     // get the input string  
-    String s = ((JString) sItem.get()).toString();
+    String s = ((JsonString) sValue).toString();
 
     // get the delimter
-    String d = ((JString) dItem.get()).toString();
+    String d = ((JsonString) dValue).toString();
 
     // split the string
     final String[] splits = s.split(d);
 
-    return new Iter() {
+    return new JsonIterator() {
       int  i    = 0;
       int  n    = splits.length;
-      Item item = new Item();
 
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if (i < n)
         {
-          item.set(new JString(splits[i]));
+          currentValue = new JsonString(splits[i]);
           i++;
-          return item;
+          return true;
         }
-        return null;
+        return false;
       }
     };
   }

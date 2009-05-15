@@ -15,9 +15,9 @@
  */
 package com.acme.extensions.fn;
 
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.util.JIterator;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.util.JsonIterator;
 
 /**
  * 
@@ -45,7 +45,7 @@ public class GCD1
    * @return
    * @throws Exception
    */
-  public JLong eval(JIterator nums) throws Exception
+  public JsonLong eval(JsonIterator nums) throws Exception
   {
     if (nums == null)
     {
@@ -55,14 +55,14 @@ public class GCD1
     {
       return null;
     }
-    JNumber n = (JNumber) nums.current();
+    JsonNumber n = (JsonNumber) nums.current();
     long g = n.longValueExact();
     while (nums.moveNextNonNull())
     {
-      n = (JNumber) nums.current();
+      n = (JsonNumber) nums.current();
       long x = n.longValueExact();
       g = gcd(g, x);
     }
-    return new JLong(g);
+    return new JsonLong(g);
   }
 }

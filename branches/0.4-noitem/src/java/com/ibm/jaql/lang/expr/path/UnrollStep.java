@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -49,10 +50,10 @@ public abstract class UnrollStep extends Expr // TODO: make PseudoExpr
    * 
    * @return The item to expand.  It's value is replaced.
    */
-  public abstract Item expand(Context context, Item toExpand) throws Exception;
+  public abstract JsonHolder expand(Context context, JsonHolder toExpand) throws Exception;
 
   @Override
-  public final Item eval(Context context) throws Exception
+  public final JsonValue eval(Context context) throws Exception
   {
     throw new RuntimeException("ExpandStep "+getClass().getName()+" should not be evaluated");
   }

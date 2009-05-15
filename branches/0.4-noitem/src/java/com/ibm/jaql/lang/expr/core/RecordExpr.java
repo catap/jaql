@@ -19,10 +19,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -33,8 +32,7 @@ import com.ibm.jaql.util.Bool3;
  */
 public class RecordExpr extends Expr
 {
-  protected MemoryJRecord rec;
-  protected Item result;
+  protected BufferedJsonRecord record;
 
   /**
    * every exprs[i] is a FieldExpr
@@ -149,7 +147,7 @@ public class RecordExpr extends Expr
    * @param name
    * @return
    */
-  public Expr findStaticFieldValue(JString name)
+  public Expr findStaticFieldValue(JsonString name)
   {
     Expr valExpr = null;
     for (int i = 0; i < exprs.length; i++)
@@ -161,8 +159,8 @@ public class RecordExpr extends Expr
         if (nameExpr instanceof ConstExpr)
         {
           ConstExpr ce = (ConstExpr) nameExpr;
-          JValue t = ce.value.get();
-          if (t instanceof JString)
+          JsonValue t = ce.value;
+          if (t instanceof JsonString)
           {
             if (name.equals(t))
             {
@@ -186,7 +184,7 @@ public class RecordExpr extends Expr
    */
   public Expr findStaticFieldValue(String name) // TODO: migrate callers to JString version
   {
-    return findStaticFieldValue(new JString(name)); // TODO: memory
+    return findStaticFieldValue(new JsonString(name)); // TODO: memory
   }
 
   /*
@@ -214,23 +212,22 @@ public class RecordExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    if (rec == null)
+    if (record == null)
     {
-      rec = new MemoryJRecord();
-      result = new Item(rec);
+      record = new BufferedJsonRecord();
     }
     else
     {
-      rec.clear();
+      record.clear();
     }
 
     for (int i = 0; i < exprs.length; i++)
     {
       FieldExpr f = (FieldExpr) exprs[i];
-      f.eval(context, rec);
+      f.eval(context, record);
     }
-    return result;
+    return record;
   }
 }

@@ -4,12 +4,12 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Provides default implementation for some methods of {@link Serializer}. The default 
  * implementations are based on deserialization. They should be overwritten whereever
  * efficiency is a concern. */
-public abstract class AbstractSerializer<T extends JValue> implements Serializer<T>
+public abstract class AbstractSerializer<T extends JsonValue> implements Serializer<T>
 {
   public void skip(DataInput in) throws IOException {
     read(in, null);

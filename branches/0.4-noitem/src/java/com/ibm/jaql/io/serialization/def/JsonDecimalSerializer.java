@@ -1,0 +1,47 @@
+package com.ibm.jaql.io.serialization.def;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.math.BigDecimal;
+
+import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonValue;
+
+public class JsonDecimalSerializer extends BasicSerializer<JsonDecimal>
+{
+
+  @Override
+  public JsonDecimal newInstance()
+  {
+    return new JsonDecimal();
+  }
+
+  @Override
+  public JsonDecimal read(DataInput in, JsonValue target) throws IOException
+  {
+    // TODO: need to read and write binary or at least avoid alloc string
+    // TODO: need to cache bigdecimal
+    String str = in.readUTF();
+    BigDecimal value = new BigDecimal(str);
+    if (target == null || !(target instanceof JsonDecimal)) {
+      return new JsonDecimal(value);
+    } else {
+      JsonDecimal t = (JsonDecimal)target;
+      t.setValue(value);
+      return t;
+    }
+  }
+
+
+  @Override
+  public void write(DataOutput out, JsonDecimal value) throws IOException
+  {
+    String str = value.value.toString();
+    out.writeUTF(str);
+  }
+  
+  
+  //TODO: efficient implementation of compare, skip, and copy
+}

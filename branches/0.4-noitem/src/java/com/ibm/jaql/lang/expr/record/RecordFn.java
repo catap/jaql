@@ -15,11 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -30,8 +30,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "record", minArgs = 1, maxArgs = 1)
 public class RecordFn extends Expr // TODO: make into an aggregate?
 {
-  protected MemoryJRecord rec;
-  protected Item resultRec;
+  protected BufferedJsonRecord rec;
 
   /**
    * @param exprs
@@ -46,36 +45,35 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonRecord eval(final Context context) throws Exception
   {
     if (rec == null)
     {
-      rec = new MemoryJRecord();
-      resultRec = new Item(rec);
+      rec = new BufferedJsonRecord();
     }
     else
     {
       rec.clear();
     }
-    Item item;
-    Iter iter = exprs[0].iter(context);
-    while ((item = iter.next()) != null)
+    
+    JsonIterator iter = exprs[0].iter(context);
+    for (JsonValue v : iter) 
     {
-      JRecord inrec = (JRecord) item.get();
+      JsonRecord inrec = (JsonRecord)v;
       if (inrec != null)
       {
         int n = inrec.arity();
         rec.ensureCapacity(rec.getCapacity() + n);
         for (int i = 0; i < n; i++)
         {
-          JString name = rec.getName(rec.arity());
-          Item value = rec.getValue(rec.arity());
+          JsonString name = rec.getName(rec.arity());
+          JsonValue value = rec.getValue(rec.arity());
           name.setCopy(inrec.getName(i));
-          value.setCopy(inrec.getValue(i));
+          value = inrec.getValue(i).getCopy(value);
           rec.add(name, value);
         }
       }
     }
-    return resultRec;
+    return rec;
   }
 }

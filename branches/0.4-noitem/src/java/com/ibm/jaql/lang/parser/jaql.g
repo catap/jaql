@@ -46,7 +46,6 @@ options {
 }
 
 
-
 class JaqlParser extends Parser;
 options {
     k = 1;                           // number of tokens to lookahead
@@ -324,7 +323,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
     {
       if( e == null )
       {
-        e = new ConstExpr(Item.NIL);
+        e = new ConstExpr(null);
       }
       if( by == null )
       {
@@ -799,14 +798,14 @@ split[Expr in] returns [Expr r=null]
     }
 //    : "split" b=each[in] "("  { es.add( b ); } 
 //         ( "if"  p=expr e=subpipe[b.var]  { es.add(new IfExpr(p,e)); } )*
-//         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JBool.trueItem), e) ); } )?
+//         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JsonBool.trueItem), e) ); } )?
 //       ")"
     : "split" b=each[in]     { es.add( b ); } 
          ( "if"              { b.var.hidden=false; } 
               "(" p=expr ")" { b.var.hidden=true; }
                 e=expr       { es.add(new IfExpr(p,e)); } )*
          ( "else"            { b.var.hidden=true; } 
-                e=expr       { es.add(new IfExpr(new ConstExpr(JBool.trueItem), e) ); } )?
+                e=expr       { es.add(new IfExpr(new ConstExpr(JsonBool.TRUE), e) ); } )?
       {
         r = new SplitExpr(es);
         env.unscope(b.var);
@@ -883,7 +882,7 @@ top[Expr in] returns [Expr r=null]
       	{
           in = new SortExpr(in, by);
       	}
-      	r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JLong.ONE_ITEM))));
+      	r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JsonLong.ONE))));
       }
     ;
 
@@ -1068,7 +1067,7 @@ functionDef returns [Expr r=null]
 	| "import" lang=name s=name e=expr (SEMI|EOF)
 	  {
 	  	if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
-	  	r = new RegisterFunctionExpr(new ConstExpr(new JString(s)), e);
+	  	r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
 	  }
 	;
 	
@@ -1329,7 +1328,7 @@ unaryAdd returns [Expr r = null]
 	
 typeExpr returns [Expr r = null]
     { Schema s; }
-    : "type" s=type   { r = new ConstExpr(new JSchema(s)); }
+    : "type" s=type   { r = new ConstExpr(new JsonSchema(s)); }
     | r=path
     ;	
 
@@ -1513,23 +1512,23 @@ exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
 
 constant returns [Expr r=null]
 	{ String s; }
-    : s=str		 { r = new ConstExpr(new JString(s)); }
-    | i:INT      { r = new ConstExpr(new JLong(i.getText())); }
-    | n:DEC      { r = new ConstExpr(new JDecimal(n.getText())); }
-    | d:DOUBLE   { r = new ConstExpr(new JDouble(d.getText())); }
-    | h:HEXSTR   { r = new ConstExpr(new JBinary(h.getText())); }
-    | t:DATETIME { r = new ConstExpr(new JDate(t.getText())); }
+    : s=str		 { r = new ConstExpr(new JsonString(s)); }
+    | i:INT      { r = new ConstExpr(new JsonLong(i.getText())); }
+    | n:DEC      { r = new ConstExpr(new JsonDecimal(n.getText())); }
+    | d:DOUBLE   { r = new ConstExpr(new JsonDouble(d.getText())); }
+    | h:HEXSTR   { r = new ConstExpr(new JsonBinary(h.getText())); }
+    | t:DATETIME { r = new ConstExpr(new JsonDate(t.getText())); }
     | r=boolLit
     | r=nullExpr
     ;
 
 boolLit returns [Expr r=null]
-    : "true"     { r = new ConstExpr(JBool.trueItem); }
-    | "false"    { r = new ConstExpr(JBool.falseItem); }
+    : "true"     { r = new ConstExpr(JsonBool.TRUE); }
+    | "false"    { r = new ConstExpr(JsonBool.FALSE); }
     ;
     
 nullExpr returns [Expr r=null]
-    : "null"     { r = new ConstExpr(Item.NIL); }
+    : "null"     { r = new ConstExpr(null); }
     ;
     
 str returns [String r=null]
@@ -1543,11 +1542,11 @@ avar returns [String r=null]: n:AVAR { r = n.getText(); }; //  TODO: move to ID
 var returns [String r=null]: n:VAR { r = n.getText(); }; // TODO: move to ID
 name returns [String r=null]: n:ID { r = n.getText(); };
 dotName returns [Expr r = null]
-    : i:DOT_ID     { r = new ConstExpr(new JString(i.getText())); }
+    : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
     ;
 
 fname returns [Expr r=null] 
-    : i:FNAME     { r = new ConstExpr(new JString(i.getText())); }
+    : i:FNAME     { r = new ConstExpr(new JsonString(i.getText())); }
     ;
 
 simpleField returns [Expr f=null]
@@ -1622,11 +1621,11 @@ recordType returns [SchemaRecord s = new SchemaRecord()]
 
 fieldType returns [SchemaField f = new SchemaField()]
     { String n; Schema t; }
-    : (  n=constFieldName   { f.name = new JString(n); }
+    : (  n=constFieldName   { f.name = new JsonString(n); }
          ( "*"              { f.wildcard = true; }
          | "?"              { f.optional = true; }
          )?
-      | "*"               { f.name = new JString(""); 
+      | "*"               { f.name = new JsonString(""); 
                             f.wildcard = true;     }
       )
       ":" t=type        { f.schema = t; }

@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JDouble;
+import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
@@ -45,9 +45,9 @@ public final class FloatMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JsonDouble makeValue()
   {
-    return new Item(new JDouble());
+    return new JsonDouble();
   }
 
   /*
@@ -57,11 +57,12 @@ public final class FloatMetaGetter extends MetaGetter
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void get(Object obj, Item target) throws IllegalArgumentException,
+  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
       IllegalAccessException, InvocationTargetException
   {
     float x = (Float) getter.invoke(obj);
-    ((JDouble) target.get()).value = x;
+    ((JsonDouble) target).value = x;
+    return target;
   }
 
   /*

@@ -20,11 +20,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -61,20 +60,19 @@ public class JaqlGetFn extends Expr
    */
   protected JsonParser fetch(Context context) throws Exception
   {
-    JString urlText = (JString) exprs[0].eval(context).get();
+    JsonString urlText = (JsonString) exprs[0].eval(context);
     String urlStr = urlText.toString();
     // TODO: memory!!
     if (exprs.length == 2)
     {
-      JRecord args = (JRecord) exprs[1].eval(context).get();
+      JsonRecord args = (JsonRecord) exprs[1].eval(context);
       if (args != null)
       {
         String sep = "?";
         for (int i = 0; i < args.arity(); i++)
         {
-          JString name = args.getName(i);
-          Item value = args.getValue(i);
-          JValue w = value.get();
+          JsonString name = args.getName(i);          
+          JsonValue w = args.getValue(i);
           if (w != null)
           {
             String s = w.toString();
@@ -97,11 +95,11 @@ public class JaqlGetFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     JsonParser parser = fetch(context);
-    Item item = parser.TopVal();
-    return item;
+    JsonValue value = parser.TopVal();
+    return value;
   }
 
   /*
@@ -109,28 +107,28 @@ public class JaqlGetFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
     final JsonParser parser = fetch(context);
-    return new Iter() {
-      Item    nextItem   = parser.ArrayFirst();
+    return new JsonIterator() {
+      JsonValue nextValue = parser.ArrayFirst();
       boolean checkedEOF = false;
 
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        if (nextItem == null)
+        if (nextValue == JsonParser.NIL)
         {
           if (!checkedEOF)
           {
             parser.Eof();
             checkedEOF = true;
           }
-          return null;
+          return false;
         }
-        Item item = nextItem;
-        nextItem = parser.ArrayNext();
-        return item;
+        currentValue = nextValue;
+        nextValue = parser.ArrayNext();
+        return true;
       }
     };
   }

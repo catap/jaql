@@ -15,13 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JNumeric;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -32,9 +33,8 @@ import com.ibm.jaql.util.Bool3;
 @JaqlFn(fnName = "strSplitN", minArgs = 3, maxArgs = 3)
 public class StrSplitNFn extends Expr
 {
-  protected FixedJArray tuple = new FixedJArray();
-  protected Item result = new Item(tuple);
-  protected JString[] resultStrings = new JString[0];
+  protected BufferedJsonArray tuple = new BufferedJsonArray();
+  protected JsonString[] resultStrings = new JsonString[0];
   
   /**
    * @param args
@@ -55,18 +55,18 @@ public class StrSplitNFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonArray eval(final Context context) throws Exception
   {
     // TODO: need a way to avoid recomputing const exprs...
-    JString sep = (JString)exprs[1].eval(context).getNonNull();
-    JNumeric num = (JNumeric)exprs[2].eval(context).getNonNull();
+    JsonString sep = JaqlUtil.enforceNonNull((JsonString)exprs[1].eval(context));
+    JsonNumeric num = JaqlUtil.enforceNonNull((JsonNumeric)exprs[2].eval(context));
     char c = sep.toString().charAt(0);
     int n = num.intValueExact();
     
-    JString str = (JString)exprs[0].eval(context).get();
+    JsonString str = (JsonString)exprs[0].eval(context);
     if( str == null )
     {
-      return Item.NIL;
+      return null;
     }
     
     // TODO: would be nice to not convert utf8 and string so much...
@@ -74,12 +74,12 @@ public class StrSplitNFn extends Expr
     if( n > resultStrings.length )
     {
       tuple.resize(n);
-      JString[] rs = new JString[n];
+      JsonString[] rs = new JsonString[n];
       System.arraycopy(resultStrings, 0, rs, 0, resultStrings.length);
       for(int i = resultStrings.length ; i < n ; i++ )
       {
-        rs[i] = new JString();
-        tuple.set(i, new Item(rs[i]));
+        rs[i] = new JsonString();
+        tuple.set(i, rs[i]);
       }
       resultStrings = rs;
     }
@@ -103,6 +103,6 @@ public class StrSplitNFn extends Expr
     }
     ss = (p >= 0) ? s.substring(p) : ""; 
     resultStrings[n-1].set(ss);
-    return result;
+    return tuple;
   }
 }

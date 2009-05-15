@@ -25,9 +25,9 @@ import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JNumeric;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -64,7 +64,7 @@ public class RFn extends Expr
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     try
     {
@@ -73,10 +73,10 @@ public class RFn extends Expr
         init(context);
       }
 
-      JString fn = (JString)exprs[1].eval(context).get();
+      JsonString fn = (JsonString)exprs[1].eval(context);
       if( fn == null )
       {
-        throw new RuntimeException("callR(init, fn, ...): R function required");
+        throw new RuntimeException("R(init, fn, ...): R function required");
       }
       stdin.print("cat(toJSON("); // TODO: we should do the conversion in jaql
       stdin.print(fn);
@@ -84,18 +84,22 @@ public class RFn extends Expr
       String sep = "";
       for(int i = 2 ; i < exprs.length ; i++)
       {
-        Item item = exprs[i].eval(context);
+        JsonValue value = exprs[i].eval(context);
         stdin.print(sep);
         stdin.print("fromJSON('"); // TODO: we should do the conversion in jaql
-        if( item.get() instanceof JNumeric ) // hack around fromJSON('number') doesn't work, but fromJSON('[number]') gives number
+        if (value == null) 
+        {
+          stdin.print("null");
+        } 
+        else if( value instanceof JsonNumeric ) // hack around fromJSON('number') doesn't work, but fromJSON('[number]') gives number
         {
           stdin.print('[');
-          item.print(stdin);
+          JsonValue.print(stdin, value);
           stdin.print(']');
         }
         else
         {
-          item.print(stdin);
+          JsonValue.print(stdin, value);
         }
         stdin.print("')");
         sep = ",";
@@ -112,7 +116,7 @@ public class RFn extends Expr
       parser.ReInit(new StringReader(s));
       try
       {
-        Item result = parser.JsonVal();
+        JsonValue result = parser.JsonVal();
         return result;
       }
       catch( Exception e )
@@ -163,7 +167,7 @@ public class RFn extends Expr
     OutputStream os = proc.getOutputStream();
     stdin = new PrintStream(new BufferedOutputStream(os));
 
-    JString initStr = (JString)exprs[0].eval(context).get();
+    JsonString initStr = (JsonString)exprs[0].eval(context);
     stdin.println("sink(type='output',file=stderr())");
     stdin.println("require('rjson')");
     if( initStr != null )

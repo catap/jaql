@@ -20,8 +20,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Common API for accessing atomic values stored within a Java object. The API includes
  * methods to read the value, write the value, copy the value, and convert the value to 
@@ -29,12 +29,12 @@ import com.ibm.jaql.json.type.JString;
  */
 public abstract class MetaAccessor
 {
-  private JString name;
+  private JsonString name;
 
   /**
    * @param name
    */
-  protected MetaAccessor(JString name)
+  protected MetaAccessor(JsonString name)
   {
     this.name = name;
   }
@@ -44,13 +44,13 @@ public abstract class MetaAccessor
    */
   protected MetaAccessor(String name)
   {
-    this.name = new JString(name);
+    this.name = new JsonString(name);
   }
 
   /**
    * @return
    */
-  public final JString getName()
+  public final JsonString getName()
   {
     return name;
   }
@@ -58,7 +58,7 @@ public abstract class MetaAccessor
   /**
    * @return
    */
-  public abstract Item makeItem();
+  public abstract JsonValue makeValue();
   /**
    * @param obj
    * @param target
@@ -66,7 +66,7 @@ public abstract class MetaAccessor
    * @throws IllegalAccessException
    * @throws InvocationTargetException
    */
-  public abstract void get(Object obj, Item target)
+  public abstract JsonValue get(Object obj, JsonValue target)
       throws IllegalArgumentException, IllegalAccessException,
       InvocationTargetException;
   /**

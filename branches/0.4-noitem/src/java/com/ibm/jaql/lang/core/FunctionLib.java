@@ -27,7 +27,7 @@ import com.ibm.jaql.lang.expr.agg.CountAgg;
 import com.ibm.jaql.lang.expr.agg.CovStatsAgg;
 import com.ibm.jaql.lang.expr.agg.MaxAgg;
 import com.ibm.jaql.lang.expr.agg.MinAgg;
-import com.ibm.jaql.lang.expr.agg.PickAnyAgg;
+import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.PickNAgg;
 import com.ibm.jaql.lang.expr.agg.SingletonAgg;
 import com.ibm.jaql.lang.expr.agg.SumAgg;
@@ -204,7 +204,7 @@ public class FunctionLib
     add(AvgAgg.class);
     add(ArrayAgg.class);
     add(SingletonAgg.class);
-    add(PickAnyAgg.class);
+    add(AnyAgg.class);
     add(PickNAgg.class);
     add(CombineExpr.class);
     add(ArgMaxAgg.class);

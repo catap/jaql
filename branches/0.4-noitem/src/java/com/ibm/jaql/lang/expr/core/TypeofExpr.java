@@ -15,8 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.JsonType;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 
 /**
@@ -39,26 +40,32 @@ public class TypeofExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
     Expr expr = exprs[0];
     // FIXME: the Item created here should be cached.
     if (expr.isArray().always())
     {
-      Iter iter = expr.iter(context);
+      JsonIterator iter = expr.iter(context);
       if (iter.isNull())
       {
-        return new Item(Item.Type.NULL.nameValue);
+        return JsonType.NULL.nameValue;
       }
       else
       {
-        return new Item(Item.Type.ARRAY.nameValue);
+        return JsonType.ARRAY.nameValue;
       }
     }
     else
     {
-      Item item = expr.eval(context);
-      return new Item(item.getEncoding().type.nameValue);
+      JsonValue value = expr.eval(context);
+      if (value == null) {
+        return JsonType.NULL.nameValue;
+      } 
+      else
+      {
+        return value.getEncoding().type.nameValue;
+      }      
     }
-  }
+  }  
 }

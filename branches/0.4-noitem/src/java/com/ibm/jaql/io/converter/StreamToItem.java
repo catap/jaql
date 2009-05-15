@@ -23,6 +23,7 @@ import com.ibm.jaql.json.type.Item;
 /** 
  * Interface for reading {@link Item}s from an {@link InputStream}.
  */
+@Deprecated
 public interface StreamToItem
 {
 

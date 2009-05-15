@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JavaJArray;
+import com.ibm.jaql.json.type.JavaJsonArray;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
@@ -47,9 +47,9 @@ public final class ArrayMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JavaJsonArray makeValue()
   {
-    return new Item(new JavaJArray());
+    return new JavaJsonArray();
   }
 
   /*
@@ -59,17 +59,18 @@ public final class ArrayMetaGetter extends MetaGetter
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void get(Object obj, Item target) throws IllegalArgumentException,
+  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
       IllegalAccessException, InvocationTargetException
   {
     Object x = getter.invoke(obj);
     if (x == null)
     {
-      target.set(null);
+      return null;
     }
     else
     {
-      ((JavaJArray) target.restoreCache()).setObject(x);
+      ((JavaJsonArray) target).setObject(x);
+      return target;
     }
   }
 

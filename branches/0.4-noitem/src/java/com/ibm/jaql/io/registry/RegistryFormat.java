@@ -20,7 +20,7 @@ import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Interface for serialization of a registry.
  * 
@@ -28,7 +28,7 @@ import com.ibm.jaql.json.type.JValue;
  * @param <V> values in the registry
  * @param <E> type external representation of a registry entry
  */
-public interface RegistryFormat<K, V, E extends JValue>
+public interface RegistryFormat<K, V, E extends JsonValue>
 {
 
   /**

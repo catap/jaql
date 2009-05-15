@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.span;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JSpan;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -41,14 +40,14 @@ public class SpanFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonSpan eval(final Context context) throws Exception
   {
-    JLong begin = (JLong) exprs[0].eval(context).get();
-    JLong end = (JLong) exprs[1].eval(context).get();
+    JsonLong begin = (JsonLong) exprs[0].eval(context);
+    JsonLong end = (JsonLong) exprs[1].eval(context);
     if (begin == null || end == null)
     {
-      return Item.NIL;
+      return null;
     }
-    return new Item(new JSpan(begin.value, end.value)); // TODO: reuse
+    return new JsonSpan(begin.value, end.value); // TODO: reuse
   }
 }
