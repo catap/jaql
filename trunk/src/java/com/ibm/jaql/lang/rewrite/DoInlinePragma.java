@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -73,20 +72,22 @@ public class DoInlinePragma extends Rewrite
       }
       else // TODO: I don't think this case arises anymore...
       {
-        assert var.isGlobal();
-        Expr replaceBy;
-        if (var.value != null)
-        {
-          // If the global is already computed, inline its value
-          replaceBy = new ConstExpr(var.value);
-        }
-        else
-        {
-          // If the global is not already computed, inline its expr
-          replaceBy = cloneExpr(def);
-        }
-        expr.replaceInParent(replaceBy);
-        return true;
+        assert false;
+        return false;
+//        assert var.isGlobal();
+//        Expr replaceBy;
+//        if (var.value != null)
+//        {
+//          // If the global is already computed, inline its value
+//          replaceBy = new ConstExpr(var.value);
+//        }
+//        else
+//        {
+//          // If the global is not already computed, inline its expr
+//          replaceBy = cloneExpr(def);
+//        }
+//        expr.replaceInParent(replaceBy);
+//        return true;
       }
     }
     // If this inline request is not over a VarExpr, just remove it.

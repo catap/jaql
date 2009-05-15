@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (C) IBM Corp. 2008.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -36,25 +36,27 @@ public final class DefineFunctionExpr extends Expr
 {
   protected static Expr[] makeArgs(Var[] params, Expr body)
   {
-    Expr[] args = new Expr[params.length+1];
+//    HashSet<Var> cv = body.getCapturedVars();
+//    Expr[] args = new Expr[cv.size() + params.length + 1];
+//    int i = 0;
+//    for( Var oldVar: cv )
+//    {
+//      Var newVar = new Var(oldVar.name());
+//      args[i] = new BindingExpr(BindingExpr.Type.EQ, newVar, null, new VarExpr(oldVar));
+//      body.replaceVar(oldVar, newVar); // TODO: could replace all in one pass with a VarMap
+//    }
+    Expr[] args = new Expr[params.length + 1];
     for(int i = 0 ; i < params.length ; i++)
     {
       args[i] = new BindingExpr(BindingExpr.Type.EQ, params[i], null, Expr.NO_EXPRS);
     }
-    args[params.length] = body;
+    args[args.length-1] = body;
     return args;
   }
 
   protected static Expr[] makeArgs(ArrayList<Var> params, Expr body)
   {
-    int p = params.size();
-    Expr[] args = new Expr[p+1];
-    for(int i = 0 ; i < p ; i++)
-    {
-      args[i] = new BindingExpr(BindingExpr.Type.EQ, params.get(i), null, Expr.NO_EXPRS);
-    }
-    args[p] = body;
-    return args;
+    return makeArgs(params.toArray(new Var[params.size()]), body);
   }
 
   /**
@@ -98,6 +100,7 @@ public final class DefineFunctionExpr extends Expr
    */
   public BindingExpr param(int i)
   {
+    assert i < numParams();
     return (BindingExpr)exprs[i];
   }
 
@@ -182,7 +185,7 @@ public final class DefineFunctionExpr extends Expr
       // We do this by making new local variables in the function that store the captured values.
       // To add new local variables, we have to define a new function.
       // TODO: is it safe to share f when we don't have captures?
-      VarMap varMap = new VarMap(null);
+      VarMap varMap = new VarMap();
       for(Var oldVar: capturedVars)
       {
         Var newVar = new Var(oldVar.name());
@@ -194,7 +197,7 @@ public final class DefineFunctionExpr extends Expr
       for( Var v: capturedVars )
       {
         Item val = new Item();
-        val.setCopy(v.getValue());
+        val.setCopy(v.getValue(context));
         es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
       }
       es[n] = f.body().injectAbove();
@@ -242,4 +245,5 @@ public final class DefineFunctionExpr extends Expr
       }
     }
   }
+
 }

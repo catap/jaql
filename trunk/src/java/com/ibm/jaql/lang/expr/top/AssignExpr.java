@@ -74,7 +74,6 @@ public class AssignExpr extends TopExpr
   public Item eval(Context context) throws Exception
   {
     var.expr = exprs[0];
-    var.value = null;
     return new Item(new JString(var.name()));
 //    var.expr = exprs[0]; // TODO: hack: this is just signalling to use the value
 //    var.value = new Item(); // TODO: memory

@@ -47,7 +47,7 @@ public class StashIterExpr extends IterExpr
   }
 
   /**
-   * @param expr
+   * @param iter
    */
   public StashIterExpr(Iter iter)
   {

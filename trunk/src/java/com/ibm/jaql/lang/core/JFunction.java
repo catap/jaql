@@ -71,7 +71,7 @@ public class JFunction extends JAtom
     HashSet<Var> capturedVars = new HashSet<Var>();
     fn.decompile(ps, capturedVars);
     assert capturedVars.size() == 0;
-    this.fnText = outStream.toString();  
+    this.fnText = outStream.toString();
   }
 
   public void set(String fnText) throws Exception
@@ -170,63 +170,44 @@ public class JFunction extends JAtom
   {
     out.print(fnText);
   }
-
-  protected void setParams(Item[] args)
+  
+  public void checkArgs(int numArgs)
   {
-    int p = fn.numParams();
-    if (p != args.length)
+    int n = fn.numParams();
+    if (n != numArgs)
     {
       throw new RuntimeException(
-          "wrong number of arguments to function.  Expected " + p + " but given " + args.length);
-    }
-    for(int i = 0 ; i < p ; i++)
-    {
-      fn.param(i).var.set(args[i]);
+          "wrong number of arguments to function.  Expected " + n + 
+          " but given " + numArgs + 
+          "\nfunction:\n" + fnText);
     }
   }
 
-  public void setParams(Context context, Expr[] args, int start, int length) throws Exception
+  public void setParams(Item[] args, int offset, int length)
   {
+    checkArgs(length);
     int p = fn.numParams();
-    if (p != length)
-    {
-      throw new RuntimeException(
-          "wrong number of arguments to function.  Expected " + p + " but given " + length);
-    }
     for(int i = 0 ; i < p ; i++)
     {
-      fn.param(i).var.set(args[start + i], context);
+      fn.param(i).var.setValue(args[offset + i]);
+    }
+  }
+
+  public void setParams(Context context, Expr[] args, int offset, int length) throws Exception
+  {
+    checkArgs(length);
+    int p = fn.numParams();
+    for(int i = 0 ; i < p ; i++)
+    {
+      fn.param(i).var.setEval(args[offset + i], context);
     }
   }
 
   /**
-   * @param context
-   * @param args
-   * @return
-   * @throws Exception
-   */
-  public Item eval(Context context, Item[] args) throws Exception
-  {
-    setParams(args);
-    return fn.body().eval(context);
-  }
-
-  /**
-   * @param context
-   * @param args
-   * @param start index of first args to use
-   * @param length number of args to use
-   * @return
-   * @throws Exception
-   */
-  public Item eval(Context context, Expr[] args, int start, int length) throws Exception
-  {
-    setParams(context, args, start, length);
-    return fn.body().eval(context);
-  }
-
-  /**
-   * Assumes all parameters have been set.
+   * Requires:
+   *    * all parameters have been set using:
+   *        * setParams(...)
+   *        * param(i).set...
    * 
    * @param context
    * @return
@@ -243,10 +224,52 @@ public class JFunction extends JAtom
    * @return
    * @throws Exception
    */
+  public Item eval(Context context, Item[] args) throws Exception
+  {
+    setParams(args, 0, args.length);
+    return eval(context);
+  }
+
+  /**
+   * @param context
+   * @param args
+   * @param start index of first args to use
+   * @param length number of args to use
+   * @return
+   * @throws Exception
+   */
+  public Item eval(Context context, Expr[] args, int offset, int length) throws Exception
+  {
+    setParams(context, args, offset, length);
+    return eval(context);
+  }
+
+  /**
+   * Requires:
+   *    * all parameters have been set using:
+   *        * setParams(...)
+   *        * param(i).set...
+   * 
+   * @param context
+   * @return
+   * @throws Exception
+   */
+  public Iter iter(Context context) throws Exception
+  {
+    return fn.body().iter(context);
+  }
+
+
+  /**
+   * @param context
+   * @param args
+   * @return
+   * @throws Exception
+   */
   public Iter iter(Context context, Item[] args) throws Exception
   {
-    setParams(args);
-    return fn.body().iter(context);
+    setParams(args, 0, args.length);
+    return iter(context);
   }
 
   /**
@@ -258,7 +281,7 @@ public class JFunction extends JAtom
   public Iter iter(Context context, Expr[] args, int start, int length) throws Exception
   {
     setParams(context, args, start, length);
-    return fn.body().iter(context);
+    return iter(context);
   }
 
   /**
@@ -268,23 +291,56 @@ public class JFunction extends JAtom
    * @return
    * @throws Exception
    */
-  public Iter iter(Context context, Expr[] args, int x) throws Exception
+  public Iter iter(Context context, Expr[] args) throws Exception
   {
     return iter(context, args, 0, args.length);
   }
 
   /**
-   * Assumes all parameters have been set.
    * 
    * @param context
+   * @param arg0
+   * @param arg1
    * @return
-   * @throws Exception 
+   * @throws Exception
    */
-  public Iter iter(Context context) throws Exception
+  public Iter iter(Context context, Item arg0, Item arg1) throws Exception
   {
-    return fn.body().iter(context);
+    checkArgs(2);
+    param(0).setValue(arg0);
+    param(0).setValue(arg1);
+    return iter(context);
   }
 
+  /**
+   * 
+   * @param context
+   * @param arg0
+   * @return
+   * @throws Exception
+   */
+  public Iter iter(Context context, Iter arg0) throws Exception
+  {
+    checkArgs(1);
+    param(0).setIter(arg0);
+    return iter(context);
+  }
+
+  /**
+   * 
+   * @param context
+   * @param arg0
+   * @param arg1
+   * @return
+   * @throws Exception
+   */
+  public Iter iter(Context context, Item arg0, Iter arg1) throws Exception
+  {
+    checkArgs(2);
+    param(0).setValue(arg0);
+    param(1).setIter(arg1);
+    return iter(context);
+  }
 
   /*
    * (non-Javadoc)
@@ -295,7 +351,7 @@ public class JFunction extends JAtom
   public void setCopy(JValue jvalue) throws Exception
   {
     JFunction f = (JFunction) jvalue;
-    this.fn = (DefineFunctionExpr)f.fn.clone(new VarMap(null));
+    this.fn = (DefineFunctionExpr)f.fn.clone(new VarMap());
     this.ownFn = true;
     this.fnText = f.fnText;
   }
