@@ -105,11 +105,11 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
 [1,2,3]
 -> write({location: 'build/test/cache/mynewfile.txt', 
          outoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
-                      format  : 'com.ibm.jaql.io.stream.converter.JSONOutputStream'}});
+                      format  : 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}});
 
 read({location: 'build/test/cache/mynewfile.txt', 
         inoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
-                    format  : 'com.ibm.jaql.io.stream.converter.JSONInputStream'}});
+                    format  : 'com.ibm.jaql.io.stream.converter.JsonInputStream'}});
 
 [1,2,3]
 -> localWrite({type: 'local', location: 'build/test/cache/myotherfile.txt'});
@@ -267,9 +267,9 @@ $r1 -> write(file($path + "b1"));
 
 read(file($path + "b1")) == read(file($path + "books.json"));
 
-$r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JSONOutputStream"}));
+$r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));
 
-$r2 = read(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JSONInputStream"}));
+$r2 = read(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));
 
 $r1 == $r2;
 

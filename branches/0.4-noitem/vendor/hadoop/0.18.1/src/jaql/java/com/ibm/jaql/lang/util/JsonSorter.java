@@ -22,17 +22,21 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.OutputBuffer;
 import org.apache.hadoop.io.SequenceFile.Sorter.RawKeyValueIterator;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.PublicMergeSorter;
+import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.ItemComparator;
-import com.ibm.jaql.lang.core.JComparator;
+import com.ibm.jaql.io.hadoop.HadoopSerialization;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.DefaultJsonComparator;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.JsonComparator;
 
 /**
  * 
  */
-public class ItemSorter
+public class JsonSorter
 {
   OutputBuffer           obuf         = new OutputBuffer();
 
@@ -46,35 +50,42 @@ public class ItemSorter
 
   DataOutputBuffer       valOut       = new DataOutputBuffer();
 
-  Item                   value        = new Item();
+  private JobConf conf = new JobConf();
 
-  private static JobConf conf         = new JobConf();
-  static
-  {
-    conf.setMapOutputKeyClass(Item.class);
-    conf.setOutputKeyComparatorClass(ItemComparator.class);
-  }
+  FullSerializer serializer = FullSerializer.getDefault();
 
   /**
    * @param comparator
    */
-  public ItemSorter(JComparator comparator)
+  public JsonSorter(JsonComparator comparator)
   {
-    // JobConf conf = new JobConf();
-    // conf.setMapOutputKeyClass(Item.class);
-    sorter.configure(conf);
+    conf.setMapOutputKeyClass(JsonHolder.class);
+    HadoopSerialization.register(conf);
+    if (comparator != null)
+    {
+      conf.setOutputKeyComparatorClass(comparator.getClass());      
+    }
+    else 
+    {
+      conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
+    }
+//    sorter.configure(conf); // done below using setComparator    
     sorter.setInputBuffer(obuf);
     sorter.setProgressable(Reporter.NULL);
     if (comparator != null)
     {
       sorter.setComparator(comparator);
     }
+    else
+    {
+      sorter.setComparator(new DefaultJsonComparator());
+    }
   }
 
   /**
    * 
    */
-  public ItemSorter()
+  public JsonSorter()
   {
     this(null);
   }
@@ -84,12 +95,12 @@ public class ItemSorter
    * @param value
    * @throws IOException
    */
-  public void add(Item key, Item value) throws IOException
+  public void add(JsonValue key, JsonValue value) throws IOException
   {
     int keyOffset = keyValBuffer.getLength();
-    key.write(keyValBuffer);
+    serializer.write(keyValBuffer, key);
     int keyLength = keyValBuffer.getLength() - keyOffset;
-    value.write(keyValBuffer);
+    serializer.write(keyValBuffer, value);
     int valLength = keyValBuffer.getLength() - (keyOffset + keyLength);
     obuf.write(keyValBuffer.getData(), keyOffset, keyLength + valLength);
     sorter.addKeyValue(keyOffset, keyLength, valLength);
@@ -107,22 +118,26 @@ public class ItemSorter
     iter = sorter.sort(); // warning: sort() returns null if no records to sort.
   }
 
-  /**
-   * @return
-   * @throws IOException
-   */
-  public Item nextValue() throws IOException
-  {
-    if (iter == null || !iter.next())
-    {
-      return null;
+  public JsonIterator iter() {
+    if (iter == null) {
+      return JsonIterator.NIL;
     }
+    return new JsonIterator() {
 
-    valOut.reset();
-    iter.getValue().writeUncompressedBytes(valOut);
-    valIn.reset(valOut.getData(), valOut.getLength());
-    value.readFields(valIn);
-
-    return value;
-  }
+      @Override
+      public boolean moveNext() throws Exception
+      {
+        if (!iter.next()) 
+        {
+          return false;
+        }
+        
+        valOut.reset();
+        iter.getValue().writeUncompressedBytes(valOut);
+        valIn.reset(valOut.getData(), valOut.getLength());
+        currentValue = serializer.read(valIn, currentValue);
+        return true;
+      }      
+    };
+  }  
 }

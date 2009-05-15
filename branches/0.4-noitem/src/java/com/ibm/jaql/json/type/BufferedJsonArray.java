@@ -134,7 +134,6 @@ public final class BufferedJsonArray extends JsonArray
   public void set(int i, JsonValue value)
   {
     assert i < count;
-    assert value != null;
     values[i] = value;
   }
 

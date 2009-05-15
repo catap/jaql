@@ -20,15 +20,13 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.hadoop.JSONConfSetter;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * A Configurator that specifically writes the JobConf for OutputFormat
  */
-public class FileOutputConfigurator implements JSONConfSetter
+public class FileOutputConfigurator implements JsonConfSetter
 {
   protected String location;
 
@@ -37,9 +35,9 @@ public class FileOutputConfigurator implements JSONConfSetter
    * 
    * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
    */
-  public void init(Item options) throws Exception
+  public void init(JsonValue options) throws Exception
   {
-    location = AdapterStore.getStore().getLocation((JRecord) options.get());
+    location = AdapterStore.getStore().getLocation((JsonRecord) options);
   }
 
   /*
@@ -49,8 +47,8 @@ public class FileOutputConfigurator implements JSONConfSetter
    */
   public void setSequential(JobConf conf) throws Exception
   {
-    conf.setOutputKeyClass(Item.class);
-    conf.setOutputValueClass(Item.class);
+    conf.setOutputKeyClass(JsonHolder.class);
+    conf.setOutputValueClass(JsonHolder.class);
     HadoopSerialization.register(conf);
     
     // For an expression, the location is the final file name, so its directory
@@ -82,8 +80,9 @@ public class FileOutputConfigurator implements JSONConfSetter
    */
   public void setParallel(JobConf conf) throws Exception
   {
-    conf.setOutputKeyClass(Item.class);
-    conf.setOutputValueClass(Item.class);
+    conf.setOutputKeyClass(JsonHolder.class);
+    conf.setOutputValueClass(JsonHolder.class);
+    // TODO: currently assumes usage of  FullSerializer#getDefault()
     HadoopSerialization.register(conf);
 
     // For map-reduce, multiple files can be produced, so the location is their

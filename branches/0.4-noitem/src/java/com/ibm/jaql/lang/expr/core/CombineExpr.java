@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import java.util.Arrays;
+
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
@@ -121,7 +123,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
     this.context = context;
     bufIdx = 0;
     combiner = JaqlUtil.enforceNonNull((JaqlFunction)exprs[1].eval(context));
-    
+    Arrays.fill(agg, null);
     // context.setVar(binding().var2, agg[0]);
   }
 
