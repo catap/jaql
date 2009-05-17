@@ -637,7 +637,7 @@ hdfsShell("-copyFromLocal "+$path+"test.json jaqlTest/test") * 0;##
 0
 
 
-$r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter"}));##
+$r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));##
 "$r"
 
 
@@ -681,7 +681,7 @@ $r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutput
 }
 
 
-$r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter"}));##
+$r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));##
 "$r2"
 
 
