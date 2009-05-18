@@ -20,7 +20,6 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 

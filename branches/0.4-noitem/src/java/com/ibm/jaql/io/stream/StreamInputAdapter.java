@@ -24,8 +24,7 @@ import java.net.URLEncoder;
 import com.ibm.jaql.io.AbstractInputAdapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonIterator;
-import com.ibm.jaql.io.converter.StreamToItem;
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.converter.StreamToJson;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -43,7 +42,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
   public static String   ARGS_NAME = "args";
   public static String   ARR_NAME  = "asArray"; // @see com.ibm.jaql.io.converter.StreamToItem
 
-  protected StreamToItem formatter;
+  protected StreamToJson<JsonValue> formatter;
 
   protected JsonRecord      strArgs;
 
@@ -63,9 +62,9 @@ public class StreamInputAdapter extends AbstractInputAdapter
     Class<?> fclass = AdapterStore.getStore().getClassFromRecord(inputArgs,
         FORMAT_NAME, null);
     if (fclass == null) throw new Exception("formatter must be specified");
-    if (!StreamToItem.class.isAssignableFrom(fclass))
+    if (!StreamToJson.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemInputStream");
-    formatter = (StreamToItem) fclass.newInstance();
+    formatter = (StreamToJson<JsonValue>) fclass.newInstance();
     JsonValue arrAcc = inputArgs.getValue(ARR_NAME);
     if(arrAcc != null) {
       formatter.setArrayAccessor( ((JsonBool)arrAcc).value);
@@ -89,7 +88,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
 
     return new ClosableJsonIterator() { // TODO: temporary hack until interfaces are adapted
       boolean first = true;
-      Item item = null; 
+      JsonValue val = null; 
       
       @Override
       public void close() throws IOException
@@ -100,27 +99,12 @@ public class StreamInputAdapter extends AbstractInputAdapter
       @Override
       public boolean moveNext() throws IOException
       {
-        if (item == null) {
-          if (!first) return false;
-          item = formatter.createTarget();
-          first = false;
-        }
-        if (formatter.read(item)) {
-          currentValue = item.get();
-          return true;
-        } 
-        else
-        {
-          item = null;
+        val = formatter.read(val);
+        if(val == null)
           return false;
-        }
+        currentValue = val;
+        return true;
       }
-
-//      @Override
-//      public JsonValue createInitialValue()
-//      {
-//        return formatter.createTarget();
-//      }
     };
   }
 

@@ -20,27 +20,19 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.ibm.jaql.io.converter.StreamToItem;
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.converter.StreamToJson;
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Generates {@link Item}s from a binary input stream containing serialized items.
  * 
  */
-public class JsonInputStream implements StreamToItem
+public class JsonInputStream implements StreamToJson<JsonValue>
 {
   private boolean   arrAcc = true;
   private boolean   isDone = false;
   private DataInput input;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.StreamToItem#createTarget()
-   */
-  public Item createTarget()
-  {
-    return new Item();
-  }
+  private DefaultFullSerializer serializer = DefaultFullSerializer.getInstance();
 
   /*
    * (non-Javadoc)
@@ -70,21 +62,21 @@ public class JsonInputStream implements StreamToItem
    * (non-Javadoc) 
    * @see com.ibm.jaql.io.converter.StreamToItem#read(com.ibm.jaql.json.type.Item)
    */
-  public boolean read(Item v) throws IOException
+  public JsonValue read(JsonValue v) throws IOException
   {
     if(isDone)
-      return false;
+      return null;
     try
     {
-      v.readFields(input);
+      v = serializer.read(input, v);
       if(!arrAcc) {
         isDone = true;
       }
     }
     catch (java.io.EOFException eof)
     {
-      return false;
+      return null;
     }
-    return true;
+    return v;
   }
 }

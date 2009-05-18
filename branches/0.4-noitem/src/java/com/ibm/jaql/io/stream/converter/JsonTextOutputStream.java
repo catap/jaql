@@ -19,13 +19,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import com.ibm.jaql.io.converter.ItemToStream;
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.converter.JsonToStream;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Writes serialized {@link Item}s to a binary output stream.
  * 
  */
-public class JsonTextOutputStream implements ItemToStream
+public class JsonTextOutputStream implements JsonToStream<JsonValue>
 {
   private PrintStream output;
   private boolean     arrAcc = true;
@@ -62,7 +62,7 @@ public class JsonTextOutputStream implements ItemToStream
    * 
    * @see com.ibm.jaql.io.converter.ItemToStream#write(com.ibm.jaql.json.type.Item)
    */
-  public void write(Item i) throws IOException
+  public void write(JsonValue i) throws IOException
   {
     try {
       if(seenFirst && !arrAcc)
@@ -74,7 +74,7 @@ public class JsonTextOutputStream implements ItemToStream
         output.print(ARR_SEP);
       else
         seenFirst = true;
-      i.print(output);
+      JsonValue.print(output, i);
     } catch(Exception e) {
       throw new RuntimeException(e);
     }

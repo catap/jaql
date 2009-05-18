@@ -18,30 +18,19 @@ package com.ibm.jaql.io.stream.converter;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.ibm.jaql.io.converter.StreamToItem;
+import com.ibm.jaql.io.converter.StreamToJson;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Parses a JSON file and returns its representation as {@link Item}s. 
  * 
  */
-public class JsonTextInputStream implements StreamToItem
+public class JsonTextInputStream implements StreamToJson<JsonValue>
 {
   private boolean    arrAcc = true;
   private boolean    firstPass = true;
   private JsonParser parser;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.StreamToItem#createTarget()
-   */
-  public Item createTarget()
-  {
-    return new Item();
-  }
 
   /*
    * (non-Javadoc)
@@ -74,7 +63,7 @@ public class JsonTextInputStream implements StreamToItem
    * 
    * @see com.ibm.jaql.io.converter.StreamToItem#read(com.ibm.jaql.json.type.Item)
    */
-  public boolean read(Item v) throws IOException
+  public JsonValue read(JsonValue v) throws IOException
   {
     try
     {
@@ -90,13 +79,12 @@ public class JsonTextInputStream implements StreamToItem
         i = parser.JsonVal();
       }
       if(i == JsonParser.NIL) 
-        return false;
-      v.set(i);
-      return true;
+        return null;
+      return i;
     }
     catch (ParseException ex)
     {
-      return false;
+      return null;
     }
   }
 }

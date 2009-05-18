@@ -21,7 +21,6 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.FromJson;
 import com.ibm.jaql.io.hadoop.converter.JsonToHadoopRecord;
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -33,13 +32,13 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
    * @param i
    * @param t
    */
-  private void convertItemToText(Item i, Text t)
+  private void convertItemToText(JsonValue val, Text t)
   {
-    if (i == null || t == null) return;
+    if (val == null || t == null) return;
 
     try
     {
-      String s = convertItemToString(i);
+      String s = convertItemToString(val);
       t.set(s.getBytes());
     }
     catch (Exception e)
@@ -53,9 +52,9 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
    * @return
    * @throws Exception
    */
-  protected String convertItemToString(Item i) throws Exception
+  protected String convertItemToString(JsonValue val) throws Exception
   {
-    return i.toJSON();
+    return val.toJson();
   }
 
   /*
@@ -88,7 +87,6 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
   {
     return new FromJson<Writable>()
     {
-      Item item = new Item();
 
       /*
        * (non-Javadoc)
@@ -98,8 +96,7 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
        */
       public Writable convert(JsonValue src, Writable tgt)
       {
-        item.set(src);
-        convertItemToText(item, (Text) tgt);
+        convertItemToText(src, (Text) tgt);
         return tgt;
       }
 

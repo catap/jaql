@@ -19,17 +19,19 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.ibm.jaql.io.converter.ItemToStream;
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.converter.JsonToStream;
+import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** Writes serialized {@link Item}s to a binary output stream.
  * 
  */
-public class JsonOutputStream implements ItemToStream
+public class JsonOutputStream implements JsonToStream<JsonValue>
 {
   private DataOutputStream output;
   private boolean          arrAcc = true;
   private boolean          seenFirst = false;
+  private DefaultFullSerializer serializer = DefaultFullSerializer.getInstance();
   
   /*
    * (non-Javadoc)
@@ -60,13 +62,13 @@ public class JsonOutputStream implements ItemToStream
    * 
    * @see com.ibm.jaql.io.converter.ItemToStream#write(com.ibm.jaql.json.type.Item)
    */
-  public void write(Item i) throws IOException
+  public void write(JsonValue i) throws IOException
   {
     if(!arrAcc && seenFirst)
       throw new RuntimeException("Expected only one value when not in array mode");
     if(!seenFirst)
       seenFirst = true;
-    i.write(output);
+    serializer.write(output, i);
   }
 
   /*

@@ -24,8 +24,7 @@ import java.net.URLConnection;
 import com.ibm.jaql.io.AbstractOutputAdapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
-import com.ibm.jaql.io.converter.ItemToStream;
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.converter.JsonToStream;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
@@ -37,7 +36,7 @@ import com.ibm.jaql.json.type.JsonValue;
 public class StreamOutputAdapter extends AbstractOutputAdapter
 {
 
-  protected ItemToStream formatter;
+  protected JsonToStream<JsonValue> formatter;
 
   private ClosableJsonWriter     writer;
 
@@ -56,9 +55,9 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
     Class<?> fclass = AdapterStore.getStore().getClassFromRecord(outputArgs,
         FORMAT_NAME, null);
     if (fclass == null) throw new Exception("formatter must be specified");
-    if (!ItemToStream.class.isAssignableFrom(fclass))
+    if (!JsonToStream.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemOutputStream");
-    formatter = (ItemToStream) fclass.newInstance();
+    formatter = (JsonToStream) fclass.newInstance();
     JsonValue arrAcc = outputArgs.getValue(StreamInputAdapter.ARR_NAME);
     if(arrAcc != null) {
       formatter.setArrayAccessor( ((JsonBool)arrAcc).value);
@@ -75,7 +74,6 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
     final OutputStream output = openStream(location);
     this.formatter.setOutputStream(output);
     this.writer = new ClosableJsonWriter() {
-      private Item item = new Item();
       
       public void close() throws IOException
       {
@@ -84,8 +82,7 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
 
       public void write(JsonValue value) throws IOException
       {
-        item.set(value);
-        formatter.write(item);
+        formatter.write(value);
       }
 
     };

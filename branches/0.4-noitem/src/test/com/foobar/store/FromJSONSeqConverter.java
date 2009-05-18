@@ -24,7 +24,6 @@ import org.apache.hadoop.io.WritableComparable;
 import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -37,9 +36,9 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
    * @param w
    * @param i
    */
-  private void convertWritableToItem(Writable w, Item i)
+  private JsonValue convertWritableToItem(Writable w, JsonValue val)
   {
-    if (w == null || i == null) return;
+    if (w == null || val == null) return null;
     Text t = null;
     if (w instanceof Text)
     {
@@ -55,13 +54,13 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
 
     try
     {
-      JsonValue data = parser.JsonVal();
-      i.set(data);
+      val = parser.JsonVal();
     }
     catch (Exception e)
     {
       throw new RuntimeException(e);
     }
+    return val;
   }
 
   /*
@@ -85,13 +84,10 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
   {
     return new ToJson<Writable>()
     {
-      Item item = new Item();
 
       public JsonValue convert(Writable src, JsonValue tgt)
       {
-        item.set(tgt);
-        convertWritableToItem(src, item);
-        return item.get();
+        return convertWritableToItem(src, tgt);
       }
 
       public JsonValue createInitialTarget()

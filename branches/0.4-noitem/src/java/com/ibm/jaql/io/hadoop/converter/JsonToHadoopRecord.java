@@ -19,7 +19,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.FromJson;
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 

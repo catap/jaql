@@ -16,24 +16,26 @@
 package com.ibm.jaql.io.converter;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.InputStream;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** 
- * Interface for writing {@link Item}s to an {@link OutputStream}.
+ * Interface for reading {@link JsonValue}s from an {@link InputStream}.
  */
-@Deprecated
-public interface ItemToStream
+public interface StreamToJson<T extends JsonValue>
 {
   /**
-   * @param out
+   * Set the input stream.
+   * 
+   * @param in
    */
-  void setOutputStream(OutputStream out);
-
+  void setInputStream(InputStream in);
+  
   /**
-   * If the converter is for array access, then it assumes the item is not part of a JSON array.
-   * In this case, only one value is expected to be written out.
+   * If the converter is for array access, then it assumes the stream encodes a JSON array.
+   * In this case, one JSON value at-a-time is read. Otherwise, the entire stream is read
+   * to produce a single JSON value.
    *  
    * @param a
    */
@@ -45,15 +47,13 @@ public interface ItemToStream
    * @return
    */
   boolean isArrayAccessor();
-  
-  /**
-   * @param i
-   * @throws IOException
-   */
-  void write(Item i) throws IOException;
 
   /**
+   * Read from the stream into the Item.
+   * 
+   * @param v
+   * @return
    * @throws IOException
    */
-  void close() throws IOException;
+  T read(T v) throws IOException;
 }
