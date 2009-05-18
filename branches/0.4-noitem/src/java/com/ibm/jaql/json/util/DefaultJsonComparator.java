@@ -48,6 +48,9 @@ public class DefaultJsonComparator implements JsonComparator
   protected JsonStringSerializer jstringSerializer 
     = (JsonStringSerializer)DefaultFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
 
+  // -- default constructor ----------------------------------------------------------------------
+  public DefaultJsonComparator() { }
+  
   // -- comparison -------------------------------------------------------------------------------
 
   /* @see org.apache.hadoop.io.WritableComparator#compare(byte[], int, int, byte[], int, int) */
