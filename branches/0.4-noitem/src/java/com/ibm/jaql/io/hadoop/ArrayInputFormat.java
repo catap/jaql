@@ -186,7 +186,7 @@ class ArrayRecordReader implements RecordReader<JsonHolder, JsonHolder>
     {
       try
       {
-        splitValue = JsonValue.getCopy(value.value, splitValue);
+        value.value = JsonValue.getCopy(splitValue, value.value);
         seen = true;
         return true;
       }
