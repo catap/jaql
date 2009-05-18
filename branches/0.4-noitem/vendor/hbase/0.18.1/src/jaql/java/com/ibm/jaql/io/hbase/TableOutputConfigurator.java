@@ -27,6 +27,7 @@ import com.ibm.jaql.io.hadoop.JsonConfSetter;
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.DefaultJsonComparator;
 import com.ibm.jaql.lang.core.JsonComparator;
 
 /**
@@ -57,7 +58,7 @@ public class TableOutputConfigurator implements JsonConfSetter
     conf.setOutputKeyClass(JsonHolder.class);
     conf.setOutputValueClass(JsonHolder.class);
     HadoopSerialization.register(conf);
-    conf.setOutputKeyComparatorClass(JsonComparator.class);
+    conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
   }
 
   /*

@@ -47,9 +47,6 @@ public class DefaultJsonComparator implements JsonComparator
   protected DataInputBuffer input2 = new DataInputBuffer();
   protected JsonStringSerializer jstringSerializer 
     = (JsonStringSerializer)DefaultFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
-
-  // -- default constructor ----------------------------------------------------------------------
-  public DefaultJsonComparator() { }
   
   // -- comparison -------------------------------------------------------------------------------
 
