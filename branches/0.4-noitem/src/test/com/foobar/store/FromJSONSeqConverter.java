@@ -38,7 +38,7 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
    */
   private JsonValue convertWritableToItem(Writable w, JsonValue val)
   {
-    if (w == null || val == null) return null;
+    if (w == null) return null;
     Text t = null;
     if (w instanceof Text)
     {
