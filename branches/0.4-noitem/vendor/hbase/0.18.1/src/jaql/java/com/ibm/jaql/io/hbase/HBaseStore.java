@@ -176,13 +176,12 @@ public class HBaseStore
      * @param rec
      * @throws IOException
      */
-    public static void convertFromBytes(JsonString colName, byte[] colVal,
+    public static void convertFromBytes(byte[] colVal,
         JsonHolder valueHolder, BufferedJsonRecord rec) throws IOException
     {
       DataInputStream str = new DataInputStream(
           new ByteArrayInputStream(colVal)); // TODO: memory
       valueHolder.value = SERIALIZER.read(str, valueHolder.value);
-      setMap(colName, valueHolder.value, rec);
     }
 
     /**
@@ -247,14 +246,6 @@ public class HBaseStore
     {
       rec.clear();
       rec.ensureCapacity(row.size() + 1);
-      int i = 0;
-//      JsonString name = rec.getName(i);
-//      Item item = rec.getValue(i);
-//      i++;
-//      name.setCopy(J_KEY); ILLEGAL
-//      item.set(new JsonString(key.getInternalBytes(), key.getLength())); // TODO: memory
-//      rec.add(name, item);
-      // TODO: correct port?
       JsonString name = new JsonString(J_KEY);
       JsonString value = new JsonString(key.getInternalBytes(), key.getLength());
       rec.add(name, value);
@@ -264,13 +255,9 @@ public class HBaseStore
         String n = new String(e.getKey());
         if (!n.equals(KEY_NAME))
         {
-          name = rec.getName(i);
-          valueHolder.value = (JsonString)rec.getValue(i);
-          i++;
-//          name.setCopy(n.getBytes(), n.length()); TODO ILLEGAL
-          convertFromBytes(name, e.getValue().getValue(), valueHolder, rec);
+          convertFromBytes(e.getValue().getValue(), valueHolder, rec);
           JsonString newName = new JsonString(n.getBytes(), n.length());
-          rec.add(newName, valueHolder.value);
+          setMap(newName, valueHolder.value, rec);
         }
       }
     }
@@ -667,8 +654,8 @@ public class HBaseStore
             valueHolder.value = null;
           else
             valueHolder.value = rec.getValue(idx);
-          HBaseStore.Util.convertFromBytes(jcols[i], value, valueHolder, rec);
-          rec.set(idx, valueHolder.value);
+          HBaseStore.Util.convertFromBytes(value, valueHolder, rec);
+          HBaseStore.Util.setMap(jcols[i], valueHolder.value, rec);
           hasValue = true;
         }
       }
