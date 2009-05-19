@@ -74,17 +74,6 @@ public class JsonSchema extends JsonAtom
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return "type " + schema.toString();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override

@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.PrintStream;
-
 import org.apache.hadoop.io.WritableComparator;
 
 import com.ibm.jaql.util.BaseUtil;
@@ -214,44 +212,6 @@ public class JsonBinary extends JsonAtom
   }
 
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JAtom#print(java.io.PrintStream)
-   */
-  @Override
-  public void print(PrintStream out)
-  {
-    out.print("x'");
-    for (int i = 0; i < length; i++)
-    {
-      byte b = value[i];
-      out.print(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
-      out.print(BaseUtil.HEX_NIBBLE[b & 0x0f]);
-    }
-    out.print('\'');
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    StringBuffer buf = new StringBuffer();
-    buf.append("x'");
-    for (int i = 0; i < length; i++)
-    {
-      byte b = value[i];
-      buf.append(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
-      buf.append(BaseUtil.HEX_NIBBLE[b & 0x0f]);
-    }
-    buf.append('\'');
-    return buf.toString();
-  }
-
   /*
    * (non-Javadoc)
    * 

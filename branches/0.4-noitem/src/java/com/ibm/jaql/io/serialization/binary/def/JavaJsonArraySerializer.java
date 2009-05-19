@@ -1,15 +1,15 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.meta.MetaArray;
 import com.ibm.jaql.json.type.JavaJsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JavaJsonArraySerializer extends BasicSerializer<JavaJsonArray>
+public class JavaJsonArraySerializer extends BinaryBasicSerializer<JavaJsonArray>
 {
 
   @Override

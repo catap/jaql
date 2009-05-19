@@ -210,7 +210,13 @@ public abstract class MapReduceBaseExpr extends Expr
       throw new RuntimeException(fnName + " function must have exactly "
           + numArgs + " argument(s)");
     }
-    fn.print(ps);
+    try
+    {
+      JsonValue.print(ps, fn);
+    } catch (IOException e)
+    {
+      throw new UndeclaredThrowableException(e);
+    }
     ps.flush();
     String s = outStream.toString();
     conf.set(IMP + "." + fnName + "." + inId, s);

@@ -27,8 +27,8 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
@@ -208,7 +208,7 @@ class ArrayRecordReader implements RecordReader<JsonHolder, JsonHolder>
  */
 class ArrayInputSplit implements InputSplit
 {
-  private FullSerializer serializer = DefaultFullSerializer.getInstance();
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   private JsonValue value;
 
   /**

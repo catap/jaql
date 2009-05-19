@@ -1,15 +1,15 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
-public class JsonSpanSerializer extends BasicSerializer<JsonSpan>
+public class JsonSpanSerializer extends BinaryBasicSerializer<JsonSpan>
 {
 
   @Override

@@ -138,17 +138,6 @@ public class JsonDouble extends JsonNumeric
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return value + "d"; // TODO: flag to disable suffix for JSON compatibility
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override

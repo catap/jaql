@@ -15,11 +15,9 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -262,30 +260,6 @@ public class JsonString extends JsonAtom
       h *= BaseUtil.GOLDEN_RATIO_64;
     }
     return h;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JAtom#print(java.io.PrintStream)
-   */
-  @Override
-  public void print(PrintStream out)
-  {
-    JsonUtil.printQuoted(out, this);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    String s = toString();
-    s = JsonUtil.quote(s);
-    return s;
   }
 
   /*

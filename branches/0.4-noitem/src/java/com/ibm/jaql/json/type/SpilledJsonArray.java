@@ -23,8 +23,8 @@ import java.util.Arrays;
 
 import org.apache.hadoop.io.DataInputBuffer;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -55,10 +55,10 @@ public class SpilledJsonArray extends JsonArray
   protected SpillFile spillFile = null;
 
   /** Serializer used for writing to the spill file. At the moment, this *has* to be 
-   * {@link DefaultFullSerializer}; that's why its static and final. Be careful when
+   * {@link DefaultBinaryFullSerializer}; that's why its static and final. Be careful when
    * changing this. */
-  protected final static FullSerializer spillSerializer 
-    = DefaultFullSerializer.getInstance(); // TODO: make dynamic
+  protected final static BinaryFullSerializer spillSerializer 
+    = DefaultBinaryFullSerializer.getInstance(); // TODO: make dynamic
   
   /** number of elements to cache */
   protected int cacheSize;
@@ -162,7 +162,7 @@ public class SpilledJsonArray extends JsonArray
     return cache;
   }
   
-  public FullSerializer getSpillSerializer() {
+  public BinaryFullSerializer getSpillSerializer() {
     return spillSerializer;
   }
   
@@ -428,7 +428,7 @@ public class SpilledJsonArray extends JsonArray
    * @param serializer serializer for input
    * @throws IOException 
    */
-  public void addCopySerialized(DataInput input, FullSerializer serializer) throws IOException {
+  public void addCopySerialized(DataInput input, BinaryFullSerializer serializer) throws IOException {
     if (count < cacheSize) {
       int i = (int)count;
       JsonValue value = null;
@@ -459,7 +459,7 @@ public class SpilledJsonArray extends JsonArray
    * @param serializer serializer for input 
    * @throws IOException
    */
-  public void addCopySerialized(byte[] input, int start, int length, FullSerializer serializer) 
+  public void addCopySerialized(byte[] input, int start, int length, BinaryFullSerializer serializer) 
   throws IOException
   {
     if (count < cacheSize || !serializer.equals(spillSerializer)) 

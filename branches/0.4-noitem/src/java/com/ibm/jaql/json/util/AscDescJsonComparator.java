@@ -19,7 +19,7 @@ import java.io.DataInput;
 import java.io.IOException;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.util.BaseUtil;
@@ -53,7 +53,7 @@ public class AscDescJsonComparator extends DefaultJsonComparator
    */
   protected int compareItemsAscDesc(DataInput input1, DataInput input2) throws IOException {
     // TODO: this code breaks with other serializers or when serialization is changed
-    assert serializer instanceof DefaultFullSerializer;
+    assert serializer instanceof DefaultBinaryFullSerializer;
     
     // read and compare encodings / types
     int code1 = BaseUtil.readVUInt(input1);

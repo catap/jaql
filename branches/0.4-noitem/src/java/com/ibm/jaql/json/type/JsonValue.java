@@ -15,7 +15,12 @@
  */
 package com.ibm.jaql.json.type;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.UndeclaredThrowableException;
+
+import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 
 
 // import org.apache.hadoop.io.WritableComparable;
@@ -47,42 +52,26 @@ public abstract class JsonValue implements Comparable<Object>
     target.setCopy(this);
     return target;
   }
-  
-  /**
-   * Print this value on the stream in (extended) JSON text format.
-   * 
-   * @param out
-   * @throws Exception
-   */
-  protected abstract void print(PrintStream out) throws Exception;
-
-  /**
-   * Print this value on the stream in (extended) JSON text format. Nested items
-   * are indented by the indent value.
-   * 
-   * @param out
-   * @param indent
-   * @throws Exception
-   */
-  protected void print(PrintStream out, int indent) throws Exception
-  {
-    print(out);
-  }
-
-  
-  /**
-   * Convert this value to a string in (extended) JSON text format.
-   */
-  public abstract String toJson();
 
   /**
    * Convert this value to a Java String. The default is the JSON string, but
    * some classes will override to return other strings.
    */
   @Override
-  public String toString()
+  public String toString() 
   {
-    return toJson();
+    try
+    {
+      ByteArrayOutputStream bout = new ByteArrayOutputStream();
+      PrintStream out = new PrintStream(bout);
+      TextFullSerializer.getDefault().write(out, this);    
+      return bout.toString();
+    } 
+    catch (IOException e)
+    {
+      // TODO: print exception?
+      throw new UndeclaredThrowableException(e);
+    }
   }
 
   /* @see java.lang.Object#equals(java.lang.Object) */
@@ -113,15 +102,6 @@ public abstract class JsonValue implements Comparable<Object>
   
   // TODO: all these should go to a utility class to keep the API clean
   
-  public static String toString(JsonValue value)
-  {
-    if (value == null) {
-      return "null";
-    } else {
-      return value.toString();
-    }
-  }
-  
   /**
    * Print <code>value</code>, if non-null, on the stream in (extended) JSON text format using
    * <code>v.print(out)</code>. Otherwise, prints <code>null</code>. 
@@ -131,12 +111,10 @@ public abstract class JsonValue implements Comparable<Object>
    * @param indent indentation value
    * @throws Exception
    */
-  public static void print(PrintStream out, JsonValue value) throws Exception {
-    if (value == null) {
-      out.print("null");
-    } else {
-      value.print(out);
-    }
+  public static void print(PrintStream out, JsonValue value) throws IOException {
+    // TODO: remove?
+    TextFullSerializer serializer = TextFullSerializer.getDefault();
+    serializer.write(out, value);
   }
   
   /**
@@ -148,14 +126,29 @@ public abstract class JsonValue implements Comparable<Object>
    * @param indent indentation value
    * @throws Exception
    */
-  public static void print(PrintStream out, JsonValue value, int indent) throws Exception {
-    if (value == null) {
-      out.print("null");
-    } else {
-      value.print(out, indent);
-    }
+  public static void print(PrintStream out, JsonValue value, int indent) throws IOException {
+    // TODO: remove?
+    TextFullSerializer serializer = TextFullSerializer.getDefault();
+    serializer.write(out, value, indent);
   }
 
+  /**
+   * Print <code>value</code>, if non-null, on the stream in (extended) JSON text format using
+   * <code>v.print(out)</code>. Otherwise, prints <code>null</code>. 
+   * 
+   * @param value a value or <code>null</code>
+   * @param out an output stream
+   * @param indent indentation value
+   * @throws Exception
+   */
+  public static String printToString(JsonValue value) throws IOException {
+    ByteArrayOutputStream bout = new ByteArrayOutputStream();
+    PrintStream out = new PrintStream(bout);
+    print(out, value);
+    return bout.toString();
+  }
+  
+  
   /** Handles null */
   public static int compare(JsonValue v1, JsonValue v2) {
     if (v1 == null) {

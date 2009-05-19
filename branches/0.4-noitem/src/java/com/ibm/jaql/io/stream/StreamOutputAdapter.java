@@ -45,6 +45,7 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
    * 
    * @see com.ibm.jaql.io.AbstractOutputAdapter#initializeFrom(com.ibm.jaql.json.type.JRecord)
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void initializeFrom(JsonValue args) throws Exception
   {

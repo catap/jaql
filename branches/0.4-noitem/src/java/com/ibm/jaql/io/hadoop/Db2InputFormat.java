@@ -77,7 +77,7 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
         {
           JsonString key = jrec.getName(i);
           JsonValue value = jrec.getValue(i);
-          props.setProperty(key.toString(), JsonValue.toString(value));
+          props.setProperty(key.toString(), JsonValue.printToString(value));
         }
       }
       catch(ParseException pe)

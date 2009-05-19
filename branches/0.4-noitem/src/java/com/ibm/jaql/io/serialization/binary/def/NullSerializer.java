@@ -1,15 +1,13 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 
-
-@SuppressWarnings("unchecked")
-public class NullSerializer extends BasicSerializer
+public class NullSerializer extends BinaryBasicSerializer<JsonValue>
 {
   @Override
   public JsonValue newInstance()

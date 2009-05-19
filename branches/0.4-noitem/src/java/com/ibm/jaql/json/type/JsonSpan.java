@@ -104,17 +104,6 @@ public class JsonSpan extends JsonAtom
     return h;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return "span(" + begin + "," + end + ")";
-  }
-
   /**
    * @param inText
    * @param outText

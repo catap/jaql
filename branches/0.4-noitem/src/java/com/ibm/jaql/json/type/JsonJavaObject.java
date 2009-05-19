@@ -68,17 +68,6 @@ public class JsonJavaObject extends JsonAtom
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    throw new RuntimeException("JJavaObject cannot be converted to JSON");
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.json.type.JValue#toString()
    */
   @Override
@@ -86,8 +75,6 @@ public class JsonJavaObject extends JsonAtom
   {
     return value.toString();
   }
-
- 
 
   /*
    * (non-Javadoc)

@@ -9,8 +9,8 @@ import java.io.OutputStream;
 
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
 import com.ibm.jaql.io.serialization.Serializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 
 /** Wrapper class to make our serializers available to Hadoop. Currently the {@link Serializer}
  * is hard-coded; future versions will read it from the job configuration. */
@@ -29,7 +29,7 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
       getDeserializer(Class<JsonHolder> c)
   {
     // TODO: make parametrizable
-    return new HadoopDeserializer(FullSerializer.getDefault());
+    return new HadoopDeserializer(BinaryFullSerializer.getDefault());
   }
 
   @Override
@@ -38,7 +38,7 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
       Class<JsonHolder> c)
   {
     // TODO: make parametrizable
-    return new HadoopSerializer(FullSerializer.getDefault());
+    return new HadoopSerializer(BinaryFullSerializer.getDefault());
   }
 
   
@@ -62,12 +62,12 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
    * provided by Hadoop performs poorly when a large number of small elements are written to it.
    * (In our case, these small elements are encoding ids and field lengths, for example.) */
   public static class HadoopSerializer implements org.apache.hadoop.io.serializer.Serializer<JsonHolder> {
-    FullSerializer serializer;
+    BinaryFullSerializer serializer;
     // BufferedOutputStream out;    // would work as well but is synchronized
     UnsynchronizedBufferedOutputStream out;   
     DataOutputStream dataOut;
     
-    public HadoopSerializer(FullSerializer serializer) {
+    public HadoopSerializer(BinaryFullSerializer serializer) {
       this.serializer = serializer;
     }
 
@@ -94,10 +94,10 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
   
   /** Wrapper for reading. */
   public static class HadoopDeserializer implements org.apache.hadoop.io.serializer.Deserializer<JsonHolder> {
-    FullSerializer serializer;
+    BinaryFullSerializer serializer;
     DataInputStream in;
     
-    public HadoopDeserializer(FullSerializer serializer) {
+    public HadoopDeserializer(BinaryFullSerializer serializer) {
       this.serializer = serializer;
     }
 

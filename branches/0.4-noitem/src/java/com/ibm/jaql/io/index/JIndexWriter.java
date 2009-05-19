@@ -23,8 +23,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -47,7 +47,7 @@ public final class JIndexWriter implements Closeable
   private long fileVersion;
   private JsonValue prevKey = null;
   
-  private FullSerializer serializer = DefaultFullSerializer.getInstance();
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   public JIndexWriter(String filename) throws IOException
   {

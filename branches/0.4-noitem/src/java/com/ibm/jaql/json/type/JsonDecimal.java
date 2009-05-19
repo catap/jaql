@@ -210,17 +210,6 @@ public class JsonDecimal extends JsonNumber
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return value.toString();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override

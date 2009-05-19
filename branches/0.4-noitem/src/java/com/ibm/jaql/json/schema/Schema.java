@@ -19,8 +19,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -59,8 +59,8 @@ public abstract class Schema
 
   public Schema               nextSchema;      // used by Array and Or Schemas
 
-  protected final static BasicSerializer<JsonString> serializer 
-    = (BasicSerializer<JsonString>)DefaultFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
+  protected final static BinaryBasicSerializer<JsonString> serializer 
+    = (BinaryBasicSerializer<JsonString>)DefaultBinaryFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
   
   /**
    * @param item

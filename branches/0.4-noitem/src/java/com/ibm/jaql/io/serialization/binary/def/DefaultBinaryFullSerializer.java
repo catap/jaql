@@ -1,12 +1,12 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.EnumMap;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
-import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -15,9 +15,9 @@ import com.ibm.jaql.util.BaseUtil;
 
 /** Jaql's default serializer. This serializer is generic; it does not consider/exploit any
  * schema information. */
-public final class DefaultFullSerializer extends FullSerializer
+public final class DefaultBinaryFullSerializer extends BinaryFullSerializer
 {
-  final EnumMap<JsonEncoding, BasicSerializer<?>> serializers; 
+  final EnumMap<JsonEncoding, BinaryBasicSerializer<?>> serializers; 
 
   // caches
   final JsonValue[] atoms1 = new JsonValue[JsonEncoding.LIMIT];
@@ -26,12 +26,12 @@ public final class DefaultFullSerializer extends FullSerializer
   
   // -- default instance --------------------------------------------------------------------------
   
-  private static DefaultFullSerializer defaultInstance = new DefaultFullSerializer();
-  public static DefaultFullSerializer getInstance() {
+  private static DefaultBinaryFullSerializer defaultInstance = new DefaultBinaryFullSerializer();
+  public static DefaultBinaryFullSerializer getInstance() {
     if (defaultInstance == null) { 
       // TODO: code block needed; why is defaultInstance not initialized?
       // once reslove, make defaultInstance final      
-      defaultInstance = new DefaultFullSerializer();
+      defaultInstance = new DefaultBinaryFullSerializer();
     }
     return defaultInstance;
   }
@@ -39,12 +39,12 @@ public final class DefaultFullSerializer extends FullSerializer
   
   // -- construction ------------------------------------------------------------------------------
 
-  public DefaultFullSerializer() {
+  public DefaultBinaryFullSerializer() {
     assert JsonEncoding.LIMIT == 20; // change when adding the encodings
     
-    serializers = new EnumMap<JsonEncoding, BasicSerializer<?>>(JsonEncoding.class);
+    serializers = new EnumMap<JsonEncoding, BinaryBasicSerializer<?>>(JsonEncoding.class);
     
-    BasicSerializer<JsonString> jstringSerializer = new JsonStringSerializer();
+    BinaryBasicSerializer<JsonString> jstringSerializer = new JsonStringSerializer();
     
 //    UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
 //    UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
@@ -59,7 +59,7 @@ public final class DefaultFullSerializer extends FullSerializer
     serializers.put(JsonEncoding.LONG, new JsonLongSerializer());
     serializers.put(JsonEncoding.DECIMAL, new JsonDecimalSerializer());
     serializers.put(JsonEncoding.DATE_MSEC, new JsonDateSerializer());
-    serializers.put(JsonEncoding.FUNCTION, new JsonFunctionSerializer());
+    serializers.put(JsonEncoding.FUNCTION, new JaqlFunctionSerializer());
     serializers.put(JsonEncoding.SCHEMA, new JsonSchemaSerializer());
     serializers.put(JsonEncoding.JAVAOBJECT_CLASSNAME, new JsonJavaObjectSerializer());
     serializers.put(JsonEncoding.REGEX, new JsonRegexSerializer(jstringSerializer));
@@ -77,7 +77,7 @@ public final class DefaultFullSerializer extends FullSerializer
   {
     int encodingId = BaseUtil.readVUInt(in);
     JsonEncoding encoding = JsonEncoding.valueOf(encodingId);
-    BasicSerializer<?> serializer = serializers.get(encoding);
+    BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     return serializer.read(in, target);
   }
 
@@ -92,7 +92,7 @@ public final class DefaultFullSerializer extends FullSerializer
       encoding = value.getEncoding();
     }
     BaseUtil.writeVUInt(out, encoding.id);
-    BasicSerializer serializer = serializers.get(encoding);
+    BinaryBasicSerializer serializer = serializers.get(encoding);
     assert serializer != null : "No serializer defined for " + encoding;
     serializer.write(out, value);    
   }
@@ -101,7 +101,7 @@ public final class DefaultFullSerializer extends FullSerializer
   public void skip(DataInput in) throws IOException {
     int encodingId = BaseUtil.readVUInt(in);
     JsonEncoding encoding = JsonEncoding.valueOf(encodingId);
-    BasicSerializer<?> serializer = serializers.get(encoding);
+    BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     serializer.skip(in);
   }
 
@@ -126,7 +126,7 @@ public final class DefaultFullSerializer extends FullSerializer
     }
     
     // same encoding
-    BasicSerializer s = getSerializer(encoding1);
+    BinaryBasicSerializer s = getSerializer(encoding1);
     return s.compare(in1, in2);
   }
   
@@ -134,7 +134,7 @@ public final class DefaultFullSerializer extends FullSerializer
   public void copy(DataInput in, DataOutput out) throws IOException {
     int encodingId = BaseUtil.readVUInt(in);
     JsonEncoding encoding = JsonEncoding.valueOf(encodingId);
-    BasicSerializer<?> serializer = serializers.get(encoding);
+    BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     
     BaseUtil.writeVUInt(out, encodingId);
     serializer.copy(in, out);
@@ -144,8 +144,8 @@ public final class DefaultFullSerializer extends FullSerializer
   // -- misc --------------------------------------------------------------------------------------
 
   /** Returns the <code>BasicSerializer</code> used for the given <code>encoding</code>. */
-  public BasicSerializer<?> getSerializer(JsonEncoding encoding) {
-    BasicSerializer<?> serializer = serializers.get(encoding);
+  public BinaryBasicSerializer<?> getSerializer(JsonEncoding encoding) {
+    BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     assert serializer != null : "No serializer defined for " + encoding;
     return serializer;
   }
@@ -164,8 +164,8 @@ public final class DefaultFullSerializer extends FullSerializer
   protected int compareValuesDeserialized(DataInput in1, JsonEncoding encoding1, 
       DataInput in2, JsonEncoding encoding2) throws IOException 
   {
-    BasicSerializer s1 = getSerializer(encoding1);
-    BasicSerializer s2 = getSerializer(encoding2);
+    BinaryBasicSerializer s1 = getSerializer(encoding1);
+    BinaryBasicSerializer s2 = getSerializer(encoding2);
 
     // atoms can be overwritten; they are only used here 
     JsonValue value1 = atoms1[encoding1.id] = s1.read(in1, atoms1[encoding1.id]);

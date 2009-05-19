@@ -20,7 +20,7 @@ import java.io.IOException;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.util.LongArray;
@@ -30,7 +30,7 @@ import com.ibm.jaql.util.LongArray;
  */
 public class JValueHashtable
 {
-  FullSerializer serializer = FullSerializer.getDefault();
+  BinaryFullSerializer serializer = BinaryFullSerializer.getDefault();
   
   /**
    * 

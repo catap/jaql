@@ -30,8 +30,8 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -47,7 +47,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "probeLucene", minArgs = 2, maxArgs = 3)
 public class ProbeLuceneFn extends IterExpr
 {
-  private FullSerializer serializer = DefaultFullSerializer.getInstance();
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   public ProbeLuceneFn(Expr[] exprs)
   {

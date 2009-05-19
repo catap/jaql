@@ -1,15 +1,15 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.JaqlFunction;
 
-public class JsonFunctionSerializer extends BasicSerializer<JaqlFunction>
+public class JaqlFunctionSerializer extends BinaryBasicSerializer<JaqlFunction>
 {
   @Override
   public JaqlFunction newInstance()
@@ -39,7 +39,7 @@ public class JsonFunctionSerializer extends BasicSerializer<JaqlFunction>
   @Override
   public void write(DataOutput out, JaqlFunction value) throws IOException
   {
-    out.writeUTF(value.toJson());
+    out.writeUTF(value.getText());
   }
 
 }

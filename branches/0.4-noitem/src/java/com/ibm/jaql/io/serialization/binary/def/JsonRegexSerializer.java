@@ -1,19 +1,19 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonRegexSerializer extends BasicSerializer<JsonRegex>
+public class JsonRegexSerializer extends BinaryBasicSerializer<JsonRegex>
 {
-  BasicSerializer<JsonString> stringSerializer;
+  BinaryBasicSerializer<JsonString> stringSerializer;
   
-  public JsonRegexSerializer(BasicSerializer<JsonString> stringSerializer) {
+  public JsonRegexSerializer(BinaryBasicSerializer<JsonString> stringSerializer) {
     this.stringSerializer = stringSerializer;
   }
   

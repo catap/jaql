@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import com.ibm.jaql.io.converter.JsonToStream;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Writes serialized {@link Item}s to a binary output stream.
@@ -31,7 +31,7 @@ public class JsonOutputStream implements JsonToStream<JsonValue>
   private DataOutputStream output;
   private boolean          arrAcc = true;
   private boolean          seenFirst = false;
-  private DefaultFullSerializer serializer = DefaultFullSerializer.getInstance();
+  private DefaultBinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   /*
    * (non-Javadoc)

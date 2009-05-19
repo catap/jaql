@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import com.ibm.jaql.io.converter.StreamToJson;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Generates {@link Item}s from a binary input stream containing serialized items.
@@ -32,7 +32,7 @@ public class JsonInputStream implements StreamToJson<JsonValue>
   private boolean   arrAcc = true;
   private boolean   isDone = false;
   private DataInput input;
-  private DefaultFullSerializer serializer = DefaultFullSerializer.getInstance();
+  private DefaultBinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
 
   /*
    * (non-Javadoc)

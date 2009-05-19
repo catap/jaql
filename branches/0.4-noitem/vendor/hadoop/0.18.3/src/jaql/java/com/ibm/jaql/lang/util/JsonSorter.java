@@ -27,7 +27,7 @@ import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.jaql.io.hadoop.HadoopSerialization;
 import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.DefaultJsonComparator;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -52,7 +52,7 @@ public class JsonSorter
 
   private JobConf conf = new JobConf();
 
-  FullSerializer serializer = FullSerializer.getDefault();
+  BinaryFullSerializer serializer = BinaryFullSerializer.getDefault();
 
   /**
    * @param comparator

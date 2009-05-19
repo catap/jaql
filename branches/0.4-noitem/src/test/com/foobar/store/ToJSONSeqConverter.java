@@ -54,7 +54,7 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
    */
   protected String convertItemToString(JsonValue val) throws Exception
   {
-    return val.toJson();
+    return JsonValue.printToString(val);
   }
 
   /*

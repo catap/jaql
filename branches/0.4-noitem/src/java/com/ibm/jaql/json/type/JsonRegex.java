@@ -25,9 +25,9 @@ import com.ibm.jaql.util.BaseUtil;
  */
 public class JsonRegex extends JsonAtom
 {
-  protected final static int GLOBAL           = 1; // return all matches instead of just the first
-  protected final static int MULTILINE        = 2; // ^$ match any line.  Pattern.MULTILINE
-  protected final static int CASE_INSENSITIVE = 4; // Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+  public final static int GLOBAL           = 1; // return all matches instead of just the first
+  public final static int MULTILINE        = 2; // ^$ match any line.  Pattern.MULTILINE
+  public final static int CASE_INSENSITIVE = 4; // Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
   // Hey! Don't use the high-order bit without changing to flags to vint 
 
   protected JsonString          regex;
@@ -203,50 +203,6 @@ public class JsonRegex extends JsonAtom
   public void returnMatcher(Matcher matcher)
   {
     this.matcher = matcher;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    //    out.print('/');
-    //    if( regex.find("/") < 0 )
-    //    {
-    //      out.print(regex);      
-    //    }
-    //    else
-    //    {
-    //      for(int i = 0 ; i < regex.getLength() ; i++)
-    //      {
-    //        int c = regex.charAt(i);
-    //        if( c == '/' )
-    //        {
-    //          out.print("\\/");
-    //        }
-    //        else
-    //        {
-    //          out.print((char)c);
-    //        }
-    //      }
-    //    }
-    //    out.print('/');
-    StringBuffer buf = new StringBuffer();
-    buf.append("regex(");
-    buf.append(regex.toJson());
-    if (flags != 0)
-    {
-      buf.append(",'");
-      if ((flags & GLOBAL) != 0) buf.append('g');
-      if ((flags & MULTILINE) != 0) buf.append('m');
-      if ((flags & CASE_INSENSITIVE) != 0) buf.append('i');
-      buf.append("'");
-    }
-    buf.append(")");
-    return buf.toString();
   }
 
   /*

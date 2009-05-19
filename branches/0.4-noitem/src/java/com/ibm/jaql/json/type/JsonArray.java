@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.util.JsonIterator;
@@ -87,39 +85,6 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
       throw new UndeclaredThrowableException(e);
     }    
   }
-  
-  /* @see JValue#print(PrintStream) */
-  @Override
-  public void print(PrintStream out) throws Exception
-  {
-    iter().print(out);
-  }
-
-  /* @see com.ibm.jaql.json.type.JValue#print(java.io.PrintStream, int) */
-  @Override
-  public void print(PrintStream out, int indent) throws Exception
-  {
-    iter().print(out, indent);
-  }
-
-  /* @see JValue#toJSON() */
-  @Override
-  public String toJson()
-  {
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
-    try
-    {
-      print(out);
-    }
-    catch (Exception e)
-    {
-      throw new UndeclaredThrowableException(e);
-    }
-    out.flush();
-    return baos.toString();
-  }
-
   
   /* @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object) */
   @Override

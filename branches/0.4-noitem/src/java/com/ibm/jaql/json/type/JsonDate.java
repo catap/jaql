@@ -115,17 +115,6 @@ public class JsonDate extends JsonAtom
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return "d'" + toString() + "'"; // TODO: switch to constructor form
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.json.type.JValue#toString()
    */
   @Override

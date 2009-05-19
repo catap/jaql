@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.PrintStream;
 
 /** Superclass for all atomic JSON values. */
 public abstract class JsonAtom extends JsonValue
@@ -26,13 +25,6 @@ public abstract class JsonAtom extends JsonValue
   public final boolean isAtom()
   {
     return true;
-  }
-
-  /* @see JValue#print(PrintStream) */
-  @Override
-  public void print(PrintStream out) throws Exception
-  {
-    out.print(this.toJson());
   }
 
   // TODO: eliminate clone() from JAtoms; can use JaqlType.copy() or Item.copy() instead.

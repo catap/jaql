@@ -34,13 +34,13 @@ import org.apache.hadoop.io.Text;
 
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -51,7 +51,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  */
 public class HBaseStore
 {
-  public static final FullSerializer SERIALIZER = DefaultFullSerializer.getDefault();
+  public static final BinaryFullSerializer SERIALIZER = DefaultBinaryFullSerializer.getDefault();
   
   /**
    * 

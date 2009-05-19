@@ -168,7 +168,7 @@ public abstract class JsonRegistryFormat<K, V>
       JsonRecord r = convert(entry.getKey(), entry.getValue());
       arr.addCopy(r);
     }
-    arr.print(pout);
+    JsonValue.print(pout, arr);
     pout.flush();
   }
 

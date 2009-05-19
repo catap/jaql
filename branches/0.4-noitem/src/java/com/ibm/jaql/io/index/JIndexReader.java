@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -48,7 +48,7 @@ public class JIndexReader implements Closeable
   private long numIndexes;
   private long minOffset;
 
-  private FullSerializer serializer = DefaultFullSerializer.getInstance();
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   /**
    * 

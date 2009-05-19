@@ -51,6 +51,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
    * 
    * @see com.ibm.jaql.io.AbstractInputAdapter#initializeFrom(com.ibm.jaql.json.type.JRecord)
    */
+  @SuppressWarnings("unchecked")
   @Override
   public void initializeFrom(JsonValue args) throws Exception
   {

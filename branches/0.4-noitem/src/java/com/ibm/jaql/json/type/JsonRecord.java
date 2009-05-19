@@ -15,10 +15,6 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.lang.reflect.UndeclaredThrowableException;
-
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -160,77 +156,6 @@ public abstract class JsonRecord extends JsonValue
     {
       return 1;
     }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#print(java.io.PrintStream)
-   */
-  @Override
-  public void print(PrintStream out) throws Exception
-  {
-    print(out, 0);
-  }
-
-  /**
-   * 
-   * <no indent> { <indent+2> name: value, ... <indent> }
-   * 
-   * OR
-   * 
-   * <no indent> {}
-   * 
-   * @param out
-   * @param indent
-   * @throws Exception
-   */
-  public void print(PrintStream out, int indent) throws Exception
-  {
-    out.print("{");
-    indent += 2;
-    final int arity = arity();
-    String sep = "";
-    for (int i = 0; i < arity; i++)
-    {
-      out.println(sep);
-      for (int s = 0; s < indent; s++)
-        out.print(' ');
-      getName(i).print(out);
-      out.print(": ");
-      JsonValue.print(out, getValue(i), indent);
-      sep = ",";
-    }
-    if (sep.length() > 0) // if not empty record
-    {
-      out.println();
-      for (int s = 2; s < indent; s++)
-        out.print(' ');
-    }
-    out.print("}");
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    ByteArrayOutputStream os = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(os);
-    try
-    {
-      this.print(ps);
-    }
-    catch (Exception e)
-    {
-      throw new UndeclaredThrowableException(e);
-    }
-    ps.flush();
-    String s = os.toString();
-    return s;
   }
 
   /*

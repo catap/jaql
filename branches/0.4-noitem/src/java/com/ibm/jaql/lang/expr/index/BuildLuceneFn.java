@@ -26,8 +26,8 @@ import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 
-import com.ibm.jaql.io.serialization.FullSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -41,7 +41,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "buildLucene", minArgs = 3, maxArgs = 4)
 public class BuildLuceneFn extends Expr
 {
-  private FullSerializer serializer = DefaultFullSerializer.getInstance();
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   public BuildLuceneFn(Expr[] exprs)
   {

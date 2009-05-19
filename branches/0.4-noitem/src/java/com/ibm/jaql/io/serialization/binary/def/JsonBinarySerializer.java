@@ -1,16 +1,16 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Default serializer for {@link JsonBinary}. */
-public class JsonBinarySerializer extends BasicSerializer<JsonBinary>
+public class JsonBinarySerializer extends BinaryBasicSerializer<JsonBinary>
 {
   @Override
   public JsonBinary newInstance()

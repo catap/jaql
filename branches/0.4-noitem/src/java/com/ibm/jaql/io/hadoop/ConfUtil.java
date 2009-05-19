@@ -45,7 +45,7 @@ public class ConfUtil
 
     ByteArrayOutputStream bstr = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(bstr);
-    args.print(out, 0);
+    JsonValue.print(out, args);
     out.flush();
     out.close();
     conf.set(name, bstr.toString()); // FIXME: memory and strings...
@@ -102,7 +102,7 @@ public class ConfUtil
     ByteArrayOutputStream bstr = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(bstr);
     JsonArray mdata = (JsonArray) data; // FIXME: don't depend on this...
-    mdata.print(out);
+    JsonValue.print(out, mdata);
     out.flush();
     out.close();
     conf.set(name, bstr.toString());

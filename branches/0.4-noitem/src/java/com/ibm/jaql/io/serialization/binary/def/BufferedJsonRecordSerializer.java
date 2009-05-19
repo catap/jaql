@@ -1,22 +1,22 @@
-package com.ibm.jaql.io.serialization.def;
+package com.ibm.jaql.io.serialization.binary.def;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
-import com.ibm.jaql.io.serialization.FullSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.util.BaseUtil;
 
-public class BufferedJsonRecordSerializer extends BasicSerializer<BufferedJsonRecord>
+public class BufferedJsonRecordSerializer extends BinaryBasicSerializer<BufferedJsonRecord>
 {
-  BasicSerializer<JsonString> nameSerializer;
-  FullSerializer valueSerializer;
+  BinaryBasicSerializer<JsonString> nameSerializer;
+  BinaryFullSerializer valueSerializer;
 
-  public BufferedJsonRecordSerializer(BasicSerializer<JsonString> nameSerializer, FullSerializer valueSerializer)
+  public BufferedJsonRecordSerializer(BinaryBasicSerializer<JsonString> nameSerializer, BinaryFullSerializer valueSerializer)
   {
     this.nameSerializer = nameSerializer ;
     this.valueSerializer = valueSerializer;

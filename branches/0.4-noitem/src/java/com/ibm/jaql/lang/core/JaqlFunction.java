@@ -148,6 +148,11 @@ public class JaqlFunction extends JsonAtom
   {
     return JsonEncoding.FUNCTION;
   }
+  
+  public String getText()
+  {
+    return fnText;
+  }
 
   /*
    * (non-Javadoc)
@@ -158,17 +163,6 @@ public class JaqlFunction extends JsonAtom
   public long longHashCode()
   {
     throw new RuntimeException("functions cannot be hashed");
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JAtom#print(java.io.PrintStream)
-   */
-  @Override
-  public void print(PrintStream out)
-  {
-    out.print(fnText);
   }
 
   protected void setParams(JsonValue[] args)
@@ -299,16 +293,4 @@ public class JaqlFunction extends JsonAtom
     this.ownFn = true;
     this.fnText = f.fnText;
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return fnText; // TODO: wrap in constructor?
-  }
-
 }

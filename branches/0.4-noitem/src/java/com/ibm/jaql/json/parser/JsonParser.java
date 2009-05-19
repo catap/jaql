@@ -42,19 +42,7 @@ public class JsonParser implements JsonParserConstants {
     }
 
     @Override
-    public void print(PrintStream out) throws Exception
-    {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void setCopy(JsonValue jvalue) throws Exception
-    {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String toJson()
     {
       throw new UnsupportedOperationException();
     }

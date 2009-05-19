@@ -114,14 +114,5 @@ public class JsonBool extends JsonAtom
     value = b.value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toJSON()
-   */
-  @Override
-  public String toJson()
-  {
-    return value ? "true" : "false";
-  }
+
 }

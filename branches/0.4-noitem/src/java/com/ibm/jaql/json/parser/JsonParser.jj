@@ -68,22 +68,10 @@ public class JsonParser
     }
 
     @Override
-    public void print(PrintStream out) throws Exception
-    {
-      throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void setCopy(JsonValue jvalue) throws Exception
     {
       throw new UnsupportedOperationException();
     }
-
-    @Override
-    public String toJSON()
-    {
-      throw new UnsupportedOperationException();
-    }      
   };
 	
   public JsonParser() 
