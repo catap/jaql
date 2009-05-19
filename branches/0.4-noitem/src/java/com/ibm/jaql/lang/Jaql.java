@@ -97,7 +97,8 @@ public class Jaql
     main(in);
   }
   
-  public static void main(InputStream in) throws Exception {
+  public static void main(InputStream in) throws Exception
+  {
     JaqlLexer lexer = new JaqlLexer(in);
     JaqlParser parser = new JaqlParser(lexer);
     Context context = new Context();
@@ -143,7 +144,7 @@ public class Jaql
           JsonValue value = expr.eval(context);
           JsonValue.print(System.out, value);
         }
-        context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+        context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
       }
       catch (Exception ex)
       {

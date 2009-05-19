@@ -161,6 +161,11 @@ public abstract class JsonValue implements Comparable<Object>
   }
   
   /** Handles null */
+  public static boolean equals(JsonValue v1, JsonValue v2) {
+    return compare(v1, v2) == 0;
+  }
+  
+  /** Handles null */
   public static long longHashCode(JsonValue v)  {
     if (v == null) {
       return 0;

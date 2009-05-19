@@ -19,7 +19,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -72,11 +71,11 @@ public class VarExpr extends Expr
     {
       return Bool3.UNKNOWN;
     }
-    if (var.value != null)
-    {
-      return Bool3.valueOf(var.value == null);
-    }
-    else
+//    if (var.value != null)
+//    {
+//      return Bool3.valueOf(var.value == null);
+//    }
+//    else
     {
       return var.expr.isNull();
     }
@@ -94,12 +93,12 @@ public class VarExpr extends Expr
     {
       return Bool3.UNKNOWN;
     }
-    if (var.value != null)
-    {
-      JsonValue v = var.value;
-      return Bool3.valueOf(v == null || v instanceof JsonArray);
-    }
-    else
+//    if (var.value != null)
+//    {
+//      JsonValue v = var.value;
+//      return Bool3.valueOf(v == null || v instanceof JsonArray);
+//    }
+//    else
     {
       return var.expr.isArray();
     }
@@ -141,7 +140,7 @@ public class VarExpr extends Expr
    */
   public JsonValue eval(Context context) throws Exception
   {
-    return var.getValue();
+    return var.getValue(context);
   }
 
   /*
@@ -151,7 +150,7 @@ public class VarExpr extends Expr
    */
   public JsonIterator iter(Context context) throws Exception
   {
-    return var.getIter();
+    return var.iter(context);
   }
 
   /*

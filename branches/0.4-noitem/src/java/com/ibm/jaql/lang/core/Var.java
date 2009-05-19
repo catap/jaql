@@ -20,7 +20,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -34,31 +33,24 @@ public class Var extends Object
     UNUSED()   // Variable is never referenced
   };
   
-  private enum Type 
-  {
-    NONE, VALUE, ITER
-  }
-  
   public static final Var[] NO_VARS = new Var[0];
-  public static final Var unused = new Var("$__unused__");
+  public static final Var UNUSED = new Var("$__unused__");
 
   public String             name;
   public boolean            hidden  = false;     // variable not accessible in current parse context (this could reuse Usage)
   public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
-  public JsonValue             value;               // The variable's full value
-  public JsonIterator               iter;                // The variable's lazy value; only one of value or iter is non-null
-  public SpilledJsonArray        tempArray;           // array used to temp evaluation of iter
   public Expr               expr;                // only for global variables
   public Usage              usage = Usage.EVAL;
-  public Type type; // temporary quickfix
   
+  public boolean            isDefined = false;   // variable defined?
+  public Object             value;               // Runtime value: JsonValue (null allowed) or JsonIterator(null disallowed)
+
   /**
    * @param name
    */
   public Var(String name)
   {
     this.name = name;
-    this.type = Type.NONE;
   }
 
   /**
@@ -92,14 +84,9 @@ public class Var extends Object
   public Var clone(VarMap varMap)
   {
     Var v = new Var(name);
-    v.type = type;
-    v.value = value; // TODO: is it safe to share the value?
     v.usage = usage;
+    // Cloning a Var does NOT clone its value!
     // It is NOT safe to share an iter unless one var is never evaluated.
-    if( iter != null )
-    {
-      throw new RuntimeException("cannot clone variable with Iter");
-    }
     if (expr != null)
     {
       // TODO: do we need to clone a Var with an expr? Do we need to clone the Expr?
@@ -109,84 +96,130 @@ public class Var extends Object
     return v;
   }
 
-  /**
-   * 
-   * @param value
-   */
-  public void set(JsonValue value)
+  @Override
+  public String toString()
   {
-    this.value = value;
-    this.iter = null;
-    this.type = Type.VALUE;
+    return name + " @" + System.identityHashCode(this);
   }
 
   /**
-   * 
-   * @param iter
+   * Unset the runtime value
    */
-  public void set(JsonIterator iter)
+  public void undefine()
   {
     this.value = null;
-    this.iter = iter;
-    this.type = Type.ITER;
+    isDefined = false;
   }
   
   /**
+   * Set the runtime value.
+   * 
+   * @param value
+   */
+  public void setValue(JsonValue value)
+  {
+    this.value = value;
+    isDefined = true;
+  }
+
+  /**
+   * Set the runtime value.
+   * 
+   * @param var
+   * @param value
+   */
+  public void setIter(JsonIterator iter)
+  {
+    assert iter != null;
+    value = iter;
+    isDefined = true;
+  }
+
+  /**
    * Set the variable's value to the result of the expression.
    * If the variable is unused, the expression is not evaluated.
-   * If the variable is streamable and the expression is known to produce an array. 
+   * If the variable is streamable and the expression is known to produce an array,
+   *   the expr is evaluated lazily using an Iter. 
    * 
    * @param expr
    * @param context
    * @throws Exception
    */
-  public void set(Expr expr, Context context) throws Exception
+  public void setEval(Expr expr, Context context) throws Exception
   {
-    // TODO: should the usage be STREAM only if it is used in an array context?
     if( usage == Usage.STREAM && expr.isArray().always() ) 
     {
-      set(expr.iter(context));
+      setIter(expr.iter(context));
     }
     else if( usage != Usage.UNUSED )
     {
-      set(expr.eval(context));
+      setValue(expr.eval(context));
+    }
+  }
+  
+  /**
+   * 
+   * @param var
+   * @param value
+   * @throws Exception
+   */
+  public void setGeneral(Object value, Context context) throws Exception
+  {
+    if( value instanceof JsonValue )
+    {
+      setValue((JsonValue)value);
+    }
+    else if( value instanceof JsonIterator )
+    {
+      setIter((JsonIterator)value);
+    }
+    else if( value instanceof Expr )
+    {
+      setEval((Expr)value, context);
+    }
+    else
+    {
+      throw new InternalError("invalid variable value: "+value);
     }
   }
 
+  
   /**
-   * Return the value of a variable.  
-   * It is safe to request the value multiple times.
-   * 
-   * At the time of this writing, global variables are never evaluated; they are first made into
-   * query-local variables.
+   * Get the runtime value of the variable.
    * 
    * @return
    * @throws Exception
    */
-  public JsonValue getValue() throws Exception
+  public JsonValue getValue(Context context) throws Exception
   {
-    if (type.equals(Type.VALUE)) {
-      assert iter == null;
-      return value;
-    }
-    if (type.equals(Type.ITER)) {
-      if (tempArray == null) {
-        tempArray = new SpilledJsonArray();
-      }
-      tempArray.setCopy(iter);
-      value = tempArray;
-      type = Type.VALUE;
-      iter = null;
-      return value;
-    }
-    if (expr != null) // global var
+    if (!isDefined)
     {
-      Context gctx = JaqlUtil.getSessionContext();
-      value = expr.eval(gctx);       // TODO: init/close calls.
-      type = Type.VALUE;
-      return value;
+      throw new NullPointerException("undefined variable: "+name());
     }
-    throw new NullPointerException("undefined variable: "+name);
+    
+    if( value instanceof JsonValue )
+    {
+      return (JsonValue)value;
+    }
+    else if( value instanceof JsonIterator )
+    {
+      SpilledJsonArray arr = new SpilledJsonArray();
+      arr.setCopy((JsonIterator)value);
+      value = arr;
+      return arr;
+    }
+    else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
+    {
+      JsonValue v = expr.eval(context);
+      expr = null;
+      value = v;
+      return v;
+    }
+    else if( value == null ) // value has been set to null explicitly 
+    {
+      return null;
+    }
+    throw new InternalError("bad variable value: "+name()+"="+value);
   }
   
   /**
@@ -197,64 +230,19 @@ public class Var extends Object
    * @return
    * @throws Exception
    */
-  public JsonIterator getIter() throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
-    if( type.equals(Type.VALUE) )
+    if( usage == Usage.STREAM && value instanceof JsonIterator )
     {
-      assert iter == null;
-      JsonArray arr = (JsonArray)value; // cast error intentionally possible
-      if( arr == null )
-      {
-//        return new SingleJsonValueIterator(null);
-        return JsonIterator.NIL;
-      }
-      return arr.iter();
+      JsonIterator iter = (JsonIterator)value;
+      value = null; // set undefined
+      return iter;
     }
-    else if( type.equals(Type.ITER) )
+    JsonArray arr = (JsonArray) getValue(context); // cast error intentionally possible
+    if( arr == null )
     {
-      JsonIterator iter = this.iter;
-      this.iter = null;
-      if( usage == Usage.STREAM )
-      {
-        return iter;
-      }
-      else
-      {
-        if (tempArray == null) {
-          tempArray = new SpilledJsonArray();
-        }
-        tempArray.setCopy(iter);
-        value = tempArray;
-        iter = null;
-        type = Type.VALUE;
-        return tempArray.iter();
-      }
+      return JsonIterator.NIL;
     }
-    else if (expr != null) // global var
-    {
-      Context gctx = JaqlUtil.getSessionContext();
-      if( usage == Usage.STREAM )
-      {
-        return expr.iter(gctx);
-      }
-      else
-      {
-        value = expr.eval(gctx);
-        type = Type.VALUE;
-        JsonArray arr = (JsonArray)value; // cast error intentionally possible
-        if( arr == null )
-        {
-          return JsonIterator.NIL;
-        }
-        return arr.iter();
-      }
-    }
-    throw new NullPointerException("undefined variable: "+name);
-  }
-
-  @Override
-  public String toString()
-  {
-    return name + " @" + System.identityHashCode(this);
+    return arr.iter();
   }
 }

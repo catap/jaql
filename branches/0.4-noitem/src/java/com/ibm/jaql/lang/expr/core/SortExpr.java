@@ -113,59 +113,18 @@ public class SortExpr extends IterExpr
     Var cmpVar = cmpFn.param(0);
     CmpExpr cmp = (CmpExpr)cmpFn.getBody();
     JsonComparator comparator = cmp.getComparator(context);
-//    FixedJArray byArray = null;
-//    Item byItem = null;
-//    final int nby = exprs.length - 1;
-//    if (nby == 1)
-//    {
-//      CmpSpec o = (CmpSpec) exprs[1];
-//      if (o.order == CmpSpec.Order.ASC)
-//      {
-//        comparator = new ItemComparator();
-//      }
-//      else
-//      {
-//        comparator = new ReverseItemComparator();
-//      }
-//    }
-//    else  // if( nby > 1 )
-//    {
-//      boolean[] order = new boolean[nby];
-//      for (int i = 1; i < exprs.length; i++)
-//      {
-//        CmpSpec o = (CmpSpec) exprs[i];
-//        order[i - 1] = (o.order == CmpSpec.Order.ASC);
-//      }
-//      byArray = new FixedJArray(exprs.length - 1); // TODO: memory
-//      byItem = new Item(byArray); // TODO: memory 
-//      comparator = new AscDescItemComparator(order);
-//    }
 
     final JsonSorter temp = new JsonSorter(comparator);
 
     JsonIterator iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return null;
+      return JsonIterator.NIL;
     }
     for (JsonValue value : iter)
     {
-      cmpVar.set(value);
+      cmpVar.setValue(value);
       JsonValue byValue = cmp.eval(context);
-//      if (nby == 1)
-//      {
-//        CmpSpec o = (CmpSpec) exprs[1];
-//        byItem = o.orderExpr().eval(context);
-//      }
-//      else
-//      {
-//        for (int i = 1; i < exprs.length; i++)
-//        {
-//          CmpSpec o = (CmpSpec) exprs[i];
-//          Item col = o.orderExpr().eval(context);
-//          byArray.set(i - 1, col);
-//        }
-//      }
       temp.add(byValue, value);
     }
 

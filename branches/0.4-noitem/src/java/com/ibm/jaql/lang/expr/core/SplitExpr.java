@@ -102,7 +102,7 @@ public class SplitExpr extends Expr
     JsonIterator iter = b.inExpr().iter(context);
     for (JsonValue value : iter)
     {
-      b.var.set(value);
+      b.var.setValue(value);
       for( i = 0 ; i < n ; i++ )
       {
         if( JaqlUtil.ebv(ifs[i].testExpr().eval(context)) )

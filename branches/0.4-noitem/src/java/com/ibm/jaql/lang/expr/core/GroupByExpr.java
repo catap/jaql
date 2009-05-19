@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.util.JValueHashtable;
+import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.Bool3;
 
 // TODO: translate cogroup into group over merge?
@@ -432,19 +432,19 @@ public class GroupByExpr extends IterExpr
     final BindingExpr by = byBinding();
 
     // usingExpr().eval(context); // TODO: comparator NYI
-    JValueHashtable temp = new JValueHashtable(n); // TODO: add comparator support to ItemHashtable
+    JsonHashTable temp = new JsonHashTable(n); // TODO: add comparator support to ItemHashtable
 
     for (int i = 0; i < n; i++)
     {
       for (JsonValue value : in.child(i).iter(context))
       {
-        in.var.set(value);
+        in.var.setValue(value);
         JsonValue byValue = by.child(i).eval(context);
         temp.add(i, byValue, value);
       }
     }
 
-    final JValueHashtable.Iterator tempIter = temp.iter();
+    final JsonHashTable.Iterator tempIter = temp.iter();
 
     return new JsonIterator() {
       JsonIterator collectIter = JsonIterator.EMPTY;
@@ -464,7 +464,7 @@ public class GroupByExpr extends IterExpr
             return false;
           }
 
-          by.var.set(tempIter.key());
+          by.var.setValue(tempIter.key());
 
           for (int i = 0; i < n; i++)
           {
@@ -476,7 +476,7 @@ public class GroupByExpr extends IterExpr
             {
               group = null;
             }
-            getAsVar(i).set(group);
+            getAsVar(i).setValue(group);
           }
 
           collectIter = collectExpr().iter(context);

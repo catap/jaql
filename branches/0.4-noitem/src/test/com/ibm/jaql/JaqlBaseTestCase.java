@@ -204,7 +204,7 @@ public abstract class JaqlBaseTestCase extends TestCase
     }
 
     // close the input and output
-    context.endQuery();
+    context.reset();
     teeRewrite.close();
     teeDecompile.close();
     teeQueries.close();

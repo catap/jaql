@@ -294,7 +294,7 @@ public abstract class MapReduceBaseExpr extends Expr
     public void close() throws IOException
     {
       // TODO: might want sub-query indicator
-      context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+      context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     }
   }
 
@@ -342,12 +342,10 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       try
       {
-        mapFn.param(0).set(new RecordReaderValueIter(input));
-        JsonIterator iter = mapFn.iter(context);
-        
-        while (iter.moveNext())
+        JsonIterator iter = mapFn.iter(context, new RecordReaderValueIter(input));
+        for (JsonValue v : iter)
         {
-          JsonArray inValue = (JsonArray)iter.current();
+          JsonArray inValue = (JsonArray)v;
           assert inValue.count() == 2;
             
           outKey.value = inValue.nth(0);

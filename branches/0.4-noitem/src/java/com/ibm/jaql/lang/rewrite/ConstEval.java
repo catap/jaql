@@ -51,11 +51,11 @@ public class ConstEval extends Rewrite
       return false;
     }
 
-    Context context = new Context(); // TODO: memory
+    Context context = new Context();
     JsonValue value = expr.eval(context);
     ConstExpr c = new ConstExpr(value);
     expr.replaceInParent(c);
-    context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+    context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     return true;
   }
 }

@@ -26,7 +26,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.util.JValueHashtable;
+import com.ibm.jaql.lang.util.JsonHashTable;
 
 /**
  * 
@@ -202,14 +202,14 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
     final int n = numBindings();
     final int lastPreserved = putPreservedFirst() - 1; // TODO: this should be compile time.
     
-    JValueHashtable temp = new JValueHashtable(n);
+    JsonHashTable temp = new JsonHashTable(n);
     final SingleJsonValueIterator[] nilIters = new SingleJsonValueIterator[n];
 
     final SpilledJsonArray nullKeyResults = new SpilledJsonArray();
 
     for (int i = 0; i < n; i++ )
     {
-      binding(i).var.set((JsonValue)null);
+      binding(i).var.setValue(null);
     }
 
     for (int i = 0; i < n; i++ )
@@ -219,7 +219,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       JsonIterator iter = b.inExpr().iter(context);
       for (JsonValue value : iter)
       {
-        b.var.set(value);
+        b.var.setValue(value);
         JsonValue key = on.eval(context);
         if( key != null  )
         {
@@ -227,11 +227,11 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
         }
         else if( i <= lastPreserved )
         {
-          b.var.set(value);
+          b.var.setValue(value);
           nullKeyResults.addCopyAll(collectExpr().iter(context));
         }
       }
-      b.var.set((JsonValue)null);
+      b.var.setValue(null);
 
       // If more than one is preserved, we do the outer-cross product of matching items,
       //   and filter the where at least one preserved input is non-null.
@@ -242,7 +242,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       }
     }
 
-    final JValueHashtable.Iterator tempIter = temp.iter();
+    final JsonHashTable.Iterator tempIter = temp.iter();
     final JsonIterator[] groupIters = new JsonIterator[n];
 
     return new JsonIterator() {
@@ -281,7 +281,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
 
             BindingExpr b = binding(i);
             if (groupIters[i].moveNext()) {
-              b.var.set(groupIters[i].current());
+              b.var.setValue(groupIters[i].current());
               i++;
             }
             else

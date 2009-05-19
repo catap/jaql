@@ -5,11 +5,11 @@ import java.util.Iterator;
 import com.ibm.jaql.io.hadoop.JsonHolder;
 
 /** Temporary class to unwrap items */
-public final class UnwrapJsonValueHolderIterator extends JsonIterator
+public final class UnwrapFromHolderIterator extends JsonIterator
 {
   Iterator<JsonHolder> iterator;
   
-  public UnwrapJsonValueHolderIterator(Iterator<JsonHolder> iterator) {
+  public UnwrapFromHolderIterator(Iterator<JsonHolder> iterator) {
     this.iterator = iterator;
   }
   
@@ -22,5 +22,4 @@ public final class UnwrapJsonValueHolderIterator extends JsonIterator
     }
     return false;
   }
-
 }

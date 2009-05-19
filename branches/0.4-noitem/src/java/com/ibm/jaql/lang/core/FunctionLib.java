@@ -53,6 +53,7 @@ import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.GroupCombineFn;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
@@ -211,6 +212,7 @@ public class FunctionLib
     add(ArgMinAgg.class);
     add(CovStatsAgg.class); // experimental
     add(VectorSumAgg.class); // experimental
+    add(GroupCombineFn.class); // experimental
     add(TeeExpr.class);
     add(PerPartitionFn.class);
     add(PerfFn.class);

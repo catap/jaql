@@ -32,7 +32,7 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.UnwrapJsonValueHolderIterator;
+import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
@@ -253,9 +253,7 @@ public class MapReduceFn extends MapReduceBaseExpr
       {
         if (numInputs == 1)
         {
-          combineFns[0].param(0).set(key.value);
-          combineFns[0].param(1).set(new UnwrapJsonValueHolderIterator(values));
-          JsonIterator iter = combineFns[0].iter(context);
+          JsonIterator iter = combineFns[0].iter(context, key.value, new UnwrapFromHolderIterator(values));
           for (JsonValue value : iter)
           {
             valueHolder.value = value;
@@ -334,9 +332,7 @@ public class MapReduceFn extends MapReduceBaseExpr
         JsonIterator iter;
         if (numInputs == 1)
         {
-          reduceFn.param(0).set(key.value);
-          reduceFn.param(1).set(new UnwrapJsonValueHolderIterator(values));
-          iter = reduceFn.iter(context);
+          iter = reduceFn.iter(context, key.value, new UnwrapFromHolderIterator(values));
         }
         else
         {

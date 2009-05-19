@@ -171,16 +171,19 @@ public class BindingExpr extends Expr
   public JsonValue eval(Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    JsonValue value = exprs[0].eval(context);
-    var.set(value);
-    return value;
+    var.setEval(exprs[0], context); // TODO: set var.usage
+    return null;
   }
 
+  /**
+   * Returns iter that returns the input plus a side-effect of setting the variable
+   * to each element. 
+   */
   @Override
   public JsonIterator iter(final Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.set((JsonValue)null);
+    var.undefine();
     final JsonIterator iter = exprs[0].iter(context);
     return new JsonIterator()
     {
@@ -189,10 +192,10 @@ public class BindingExpr extends Expr
       {
         if (iter.moveNext()) {
           currentValue = iter.current();
-          var.set(currentValue);
+          var.setValue(currentValue);
           return true;
         } 
-        var.set((JsonValue)null);
+        var.undefine();
         return false;
       }
     };

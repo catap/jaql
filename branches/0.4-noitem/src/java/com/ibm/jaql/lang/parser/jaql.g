@@ -126,6 +126,12 @@ block returns [Expr r=null]
         	// r = new ParallelDoExpr(es); // TODO: parallel
         }
       )?
+      {
+      	if( r instanceof BindingExpr )
+      	{
+      	  r = new DoExpr(r);
+      	}
+      }
     ;
 
 
@@ -133,6 +139,7 @@ pipe returns [Expr r=null]
     { String n = "$"; } // TODO: should var source define name? eg, $x -> filter $x.y > 3
     : r=expr ( "->" r=op[r] )*
     | r=pipeFn
+    | r=function
     ;
     
   
@@ -1030,7 +1037,7 @@ extern returns [Expr r = null]
       
 function returns [Expr r = null]
     { ArrayList<Var> p; }
-    : "fn" p=params r=expr
+    : "fn" p=params r=pipe
     { 
       r = new DefineFunctionExpr(p, r);
       for( Var v: p )
@@ -1180,7 +1187,7 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	           	 f = new CopyRecord(e);
 	           }
 	         | ( "?" { required = false; } )?
-	           ( ":" v=expr )?
+	           ( ":" v=pipe )?
 	           {
 	           	 if( v != null )
 	           	 {
@@ -1224,7 +1231,7 @@ expr returns [Expr r]
     | r=ifExpr
     | r=unroll
     // | r=combineExpr
-    | r=function
+   // | r=function
     | r=orExpr
     ;
 
@@ -1278,7 +1285,7 @@ compare returns [Expr r = null]
     { int c; Expr s; Expr t; }
     : r=instanceOfExpr 
           ( c=compareOp  s=instanceOfExpr  { r = new CompareExpr(c,r,s); }
-               ( c=compareOp       { s = s.clone(new VarMap(env)); }  // TODO: introduce a variable?
+               ( c=compareOp       { s = s.clone(new VarMap()); }  // TODO: introduce a variable?
                  t=instanceOfExpr  { r = new AndExpr( r, new CompareExpr(c,s,t) ); s=t; } 
                )*
           )? 

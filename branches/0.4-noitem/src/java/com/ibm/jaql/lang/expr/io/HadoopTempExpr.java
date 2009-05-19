@@ -68,7 +68,7 @@ public class HadoopTempExpr extends Expr
     BufferedJsonRecord r = new BufferedJsonRecord();
     r.add(Adapter.TYPE_NAME, new JsonString("hdfs"));
     r.add(Adapter.LOCATION_NAME, new JsonString(filename));
-    context.doAtQueryEnd(new DeleteFileTask(filename));
+    context.doAtReset(new DeleteFileTask(filename));
     return r; // TODO: memory
   }
 }

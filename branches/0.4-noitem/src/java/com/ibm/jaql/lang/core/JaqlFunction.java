@@ -165,32 +165,51 @@ public class JaqlFunction extends JsonAtom
     throw new RuntimeException("functions cannot be hashed");
   }
 
-  protected void setParams(JsonValue[] args)
+  public void checkArgs(int numArgs)
   {
-    int p = fn.numParams();
-    if (p != args.length)
+    int n = fn.numParams();
+    if (n != numArgs)
     {
       throw new RuntimeException(
-          "wrong number of arguments to function.  Expected " + p + " but given " + args.length);
-    }
-    for(int i = 0 ; i < p ; i++)
-    {
-      fn.param(i).var.set(args[i]);
+          "wrong number of arguments to function.  Expected " + n +
+          " but given " + numArgs +
+          "\nfunction:\n" + fnText);
     }
   }
 
-  public void setParams(Context context, Expr[] args, int start, int length) throws Exception
+  public void setParams(JsonValue[] args, int offset, int length)
   {
+    checkArgs(length);
     int p = fn.numParams();
-    if (p != length)
-    {
-      throw new RuntimeException(
-          "wrong number of arguments to function.  Expected " + p + " but given " + length);
-    }
     for(int i = 0 ; i < p ; i++)
     {
-      fn.param(i).var.set(args[start + i], context);
+      fn.param(i).var.setValue(args[offset + i]);
     }
+  }
+
+  public void setParams(Context context, Expr[] args, int offset, int length) throws Exception
+  {
+    checkArgs(length);
+    int p = fn.numParams();
+    for(int i = 0 ; i < p ; i++)
+    {
+      fn.param(i).var.setEval(args[offset + i], context);
+    }
+  }
+
+  /**
+   * Requires:
+   *    * all parameters have been set using:
+   *        * setParams(...)
+   *        * param(i).set...
+   *
+   * @param context
+   * @return
+   * @throws Exception
+   */
+  public JsonValue eval(Context context) throws Exception
+  {
+    return fn.body().eval(context);
   }
 
   /**
@@ -201,7 +220,7 @@ public class JaqlFunction extends JsonAtom
    */
   public JsonValue eval(Context context, JsonValue[] args) throws Exception
   {
-    setParams(args);
+    setParams(args, 0, args.length);
     return fn.body().eval(context);
   }
 
@@ -219,18 +238,22 @@ public class JaqlFunction extends JsonAtom
     return fn.body().eval(context);
   }
 
+
   /**
-   * Assumes all parameters have been set.
-   * 
+   * Requires:
+   *    * all parameters have been set using:
+   *        * setParams(...)
+   *        * param(i).set...
+   *
    * @param context
    * @return
    * @throws Exception
    */
-  public JsonValue eval(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
-    return fn.body().eval(context);
+    return fn.body().iter(context);
   }
-
+  
   /**
    * @param context
    * @param args
@@ -239,7 +262,7 @@ public class JaqlFunction extends JsonAtom
    */
   public JsonIterator iter(Context context, JsonValue[] args) throws Exception
   {
-    setParams(args);
+    setParams(args, 0, args.length);
     return fn.body().iter(context);
   }
 
@@ -262,34 +285,67 @@ public class JaqlFunction extends JsonAtom
    * @return
    * @throws Exception
    */
-  public JsonIterator iter(Context context, Expr[] args, int x) throws Exception
+  public JsonIterator iter(Context context, Expr[] args) throws Exception
   {
     return iter(context, args, 0, args.length);
   }
 
   /**
-   * Assumes all parameters have been set.
-   * 
+   *
    * @param context
+   * @param arg0
+   * @param arg1
    * @return
-   * @throws Exception 
+   * @throws Exception
    */
-  public JsonIterator iter(Context context) throws Exception
+  public JsonIterator iter(Context context, JsonValue arg0, JsonValue arg1) throws Exception
   {
-    return fn.body().iter(context);
+    checkArgs(2);
+    param(0).setValue(arg0);
+    param(1).setValue(arg1);
+    return iter(context);
   }
 
+  /**
+   *
+   * @param context
+   * @param arg0
+   * @return
+   * @throws Exception
+   */
+  public JsonIterator iter(Context context, JsonIterator arg0) throws Exception
+  {
+    checkArgs(1);
+    param(0).setIter(arg0);
+    return iter(context);
+  }
+
+  /**
+   *
+   * @param context
+   * @param arg0
+   * @param arg1
+   * @return
+   * @throws Exception
+   */
+  public JsonIterator iter(Context context, JsonValue arg0, JsonIterator arg1) throws Exception
+  {
+    checkArgs(2);
+    param(0).setValue(arg0);
+    param(1).setIter(arg1);
+    return iter(context);
+  }
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
    */
   @Override
   public void setCopy(JsonValue jvalue) throws Exception
   {
     JaqlFunction f = (JaqlFunction) jvalue;
-    this.fn = (DefineFunctionExpr)f.fn.clone(new VarMap(null));
+    this.fn = (DefineFunctionExpr)f.fn.clone(new VarMap());
     this.ownFn = true;
     this.fnText = f.fnText;
   }

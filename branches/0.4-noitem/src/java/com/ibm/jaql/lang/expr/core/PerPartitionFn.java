@@ -49,6 +49,6 @@ public class PerPartitionFn extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     JaqlFunction fn = (JaqlFunction)exprs[1].eval(context);
-    return fn.iter(context, new Expr[] {exprs[0]}, 0, 1);
+    return fn.iter(context, new Expr[] {exprs[0]});
   }
 }

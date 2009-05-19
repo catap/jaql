@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.util;
 
+import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.DataInputBuffer;
@@ -23,14 +24,15 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.LongArray;
 
 /**
  * 
  */
-public class JValueHashtable
+public class JsonHashTable
 {
-  BinaryFullSerializer serializer = BinaryFullSerializer.getDefault();
+  private static final BinaryFullSerializer SERIALIZER = BinaryFullSerializer.getDefault();
   
   /**
    * 
@@ -39,6 +41,7 @@ public class JValueHashtable
   {
     int         hashCode;
     long        keyOffset;
+    long        keyLength;
     LongArray[] values;   // offset of each value with this key, partitioned by tag
     Entry       next;
 
@@ -60,15 +63,43 @@ public class JValueHashtable
   DataOutputBuffer outbuf = new DataOutputBuffer();
   DataInputBuffer  inbuf  = new DataInputBuffer();
   int              numTags;
-
+  long             numKeys;
+  long             numValues;
+  
   /**
    * @param numTags
    */
-  public JValueHashtable(int numTags)
+  public JsonHashTable(int numTags)
   {
     this.numTags = numTags;
   }
 
+  public long numKeys()
+  {
+    return numKeys;
+  }
+
+  public long numValues()
+  {
+    return numValues;
+    }
+
+  public long getMemoryUsage()
+  {
+    return outbuf.size() + numKeys * (5*8) + numValues * 8; // TODO: why is size() an int??
+  }
+
+  public void reset()
+  {
+    for(int i = 0 ; i < table.length ; i++)
+    {
+      table[i] = null;
+    }
+    outbuf.reset();
+    numKeys = 0;
+    numValues = 0;
+  }
+  
   /**
    * This must be true: 0 <= tag < numTags
    * 
@@ -87,8 +118,8 @@ public class JValueHashtable
       if (e.hashCode == h)
       {
         inbuf.reset(outbuf.getData(), (int) e.keyOffset, outbuf.getLength());
-        key2 = serializer.read(inbuf, key2);
-        if (key2.equals(key))
+        key2 = SERIALIZER.read(inbuf, key2);
+        if (JsonValue.equals(key, key2)) // TODO: use RawComparator or keep deserialized
         {
           break;
         }
@@ -97,17 +128,41 @@ public class JValueHashtable
 
     if (e == null)
     {
+      numKeys++;
       e = new Entry(numTags);
       e.hashCode = h;
       e.next = table[i];
       table[i] = e;
       e.keyOffset = outbuf.getLength();
-      serializer.write(outbuf, key);
+      SERIALIZER.write(outbuf, key);
+      e.keyLength = outbuf.getLength() - e.keyOffset;
     }
-    e.values[tag].add(outbuf.getLength());
-    serializer.write(outbuf, value);
+    numValues++;
+    long offset = outbuf.getLength();    
+    e.values[tag].add(offset);
+    SERIALIZER.write(outbuf, value);
+    e.values[tag].add(outbuf.getLength() - offset);
   }
 
+  public void write(DataOutput out, int tag) throws IOException
+  {
+    //   this needs to write the keys on one chain in a well-defined order so we can merge them!
+    for( Entry e1: table )
+    {
+      for( Entry e = e1 ; e != null ; e = e.next )
+      {
+        out.write(outbuf.getData(), (int)e.keyOffset, (int)e.keyLength);
+        LongArray la = e.values[tag];
+        int n = la.size();
+        BaseUtil.writeVUInt(out, n / 2);
+        for(int i = 0 ; i < n ; i += 2)
+        {
+          out.write(outbuf.getData(), (int)la.get(i), (int)la.get(i+1));
+        }
+      }
+    }
+  }
+  
   /**
    * 
    */
@@ -151,8 +206,8 @@ public class JValueHashtable
         index++;
       }
 
-      inbuf.reset(outbuf.getData(), (int) entry.keyOffset, outbuf.getLength());
-      key = serializer.read(inbuf, key);
+      inbuf.reset(outbuf.getData(), (int) entry.keyOffset, (int) entry.keyLength);
+      key = SERIALIZER.read(inbuf, key);
 
       // It's sad to copy all the values... I could create a new Table type, but it has to be JaqlType.
       for (int i = 0; i < numTags; i++)
@@ -160,13 +215,10 @@ public class JValueHashtable
         SpilledJsonArray va = values[i];
         va.clear();
         LongArray voffsets = entry.values[i];
-        for (int j = 0; j < voffsets.size(); j++)
+        for (int j = 0; j < voffsets.size(); j+=2)
         {
-          inbuf.reset(outbuf.getData(), (int) voffsets.get(j), outbuf
-              .getLength());
-          value = serializer.read(inbuf, value);
-          boolean copied = va.add(value);
-          if (!copied) value = null;
+          va.addCopySerialized(outbuf.getData(), (int) voffsets.get(j), (int) voffsets.get(j+1),
+              SERIALIZER);
         }
         va.freeze();
       }

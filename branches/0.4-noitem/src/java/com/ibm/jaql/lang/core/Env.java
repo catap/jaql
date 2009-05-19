@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -207,7 +206,7 @@ public class Env
   {
     HashMap<Var, Var> globalToLocal = new HashMap<Var, Var>();
     ArrayList<Expr> bindings = new ArrayList<Expr>();
-    VarMap varMap = new VarMap(this);
+    VarMap varMap = new VarMap();
     PostOrderExprWalker walker = new PostOrderExprWalker(root);
     Expr expr;
     while ((expr = walker.next()) != null)
@@ -224,11 +223,12 @@ public class Env
             localVar = makeVar(var.name);
             globalToLocal.put(var, localVar);
             Expr val;
-            if (var.value != null)
-            {
-              val = new ConstExpr(var.value);
-            }
-            else
+// TODO: make global context and import from there.
+//            if (var.value != null)
+//            {
+//              val = new ConstExpr(var.value);
+//            }
+//            else
             {
               varMap.clear();
               val = var.expr.clone(varMap);
@@ -249,7 +249,7 @@ public class Env
     return root;
   }
 
-  private VarMap tempVarMap = new VarMap(this);
+  private VarMap tempVarMap = new VarMap();
   public VarMap tempVarMap()
   {
     tempVarMap.clear();

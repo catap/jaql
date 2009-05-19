@@ -28,9 +28,8 @@ import com.ibm.jaql.util.Bool3;
  */
 public abstract class IterExpr extends Expr
 {
-  // Runtime state:
   protected SpilledJsonArray tempArray;
-
+  
   /**
    * @param inputs
    */

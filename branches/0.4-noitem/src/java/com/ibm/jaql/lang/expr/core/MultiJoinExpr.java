@@ -251,7 +251,7 @@ public class MultiJoinExpr extends MacroExpr
     JoinGraph graph = new JoinGraph(env);    
     Expr expand = projectExpr();
     Var vjoined = env.makeVar("$");
-    VarMap varMap = new VarMap(env);
+    VarMap varMap = new VarMap();
     
     int n = numBindings();
     Expr pipe = graph.inputs[0].mappedBinding;

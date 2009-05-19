@@ -163,8 +163,7 @@ public class MRAggregate extends MapReduceBaseExpr
         JsonHolder aggArrayHolder = new JsonHolder(aggArray);
         JsonHolder keyHolder = new JsonHolder();
         
-        mapFn.param(0).set(new RecordReaderValueIter(input));
-        JsonIterator iter = mapFn.iter(context);
+        JsonIterator iter = mapFn.iter(context, new RecordReaderValueIter(input));
 
         BufferedJsonArray tmpArray = new BufferedJsonArray(1);
 
@@ -174,9 +173,9 @@ public class MRAggregate extends MapReduceBaseExpr
           if (pair != null)
           {
             pair.getValues(mappedKeyValue);
-            keyVar.set(mappedKeyValue[0]);
+            keyVar.setValue(mappedKeyValue[0]);
             tmpArray.set(0, mappedKeyValue[1]);
-            valVar.set(tmpArray);
+            valVar.setValue(tmpArray);
             for( int i = 0 ; i < aggs.length ; i++ )
             {
               AlgebraicAggregate agg = aggs[i];
@@ -248,7 +247,7 @@ public class MRAggregate extends MapReduceBaseExpr
           aggs[i].initPartial(context);
         }
 
-        keyVar.set(keyHolder.value);
+        keyVar.setValue(keyHolder.value);
         
         while( values.hasNext() )
         {
