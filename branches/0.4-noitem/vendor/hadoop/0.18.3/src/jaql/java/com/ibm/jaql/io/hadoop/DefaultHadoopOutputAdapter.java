@@ -38,13 +38,13 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 /**
  * The default class for writing Items from jaql to Hadoop
  */
-public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<JsonValue>
+public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
 {
   static final Logger                LOG    = Logger.getLogger(DefaultHadoopOutputAdapter.class.getName());
 
   protected OutputFormat<?,?>             oFormat;
 
-  protected JsonConfSetter           configurator;
+  protected InitializableConfSetter           configurator;
 
   protected KeyValueExport<K, V>       converter;
 
@@ -63,12 +63,6 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
 
   @Override
   public void init(JsonValue args) throws Exception
-  {
-    init((JsonRecord)args);
-  }
-
-  @Override
-  public void initializeFrom(JsonValue args) throws Exception
   {
     init((JsonRecord)args);
   }
@@ -98,7 +92,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
         options, CONFIGURATOR_NAME, null);
     if (configuratorClass != null)
     {
-      this.configurator = (JsonConfSetter) configuratorClass.newInstance();
+      this.configurator = (InitializableConfSetter) configuratorClass.newInstance();
       this.configurator.init(args);
     }
 

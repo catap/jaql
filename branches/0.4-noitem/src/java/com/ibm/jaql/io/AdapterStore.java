@@ -289,7 +289,7 @@ public class AdapterStore
       Class<?> adapterClass = getClassFromRecord(options, Adapter.ADAPTER_NAME,
           null);
       Adapter adapter = (Adapter) adapterClass.newInstance();
-      adapter.initializeFrom(value);
+      adapter.init(value);
       return adapter;
     }
   }
@@ -343,7 +343,7 @@ public class AdapterStore
         // Assume its an array which can only be handled by a CompositeInputAdapter
         // TODO: abstract this to let other array handler plug-ins
         CompositeInputAdapter adapter = new CompositeInputAdapter();
-        adapter.initializeFrom(value);
+        adapter.init(value);
         return adapter;
       }
     }

@@ -42,7 +42,7 @@ public abstract class AbstractInputAdapter implements InputAdapter
    * @see com.ibm.jaql.lang.DataStoreAdapter#initializeFrom(com.ibm.jaql.lang.JRecord)
    */
   @Override
-  public void initializeFrom(JsonValue args) throws Exception
+  public void init(JsonValue args) throws Exception
   {
     this.args = (JsonRecord)args;
     // set the location

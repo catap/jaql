@@ -47,9 +47,9 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
    */
   @SuppressWarnings("unchecked")
   @Override
-  public void initializeFrom(JsonValue args) throws Exception
+  public void init(JsonValue args) throws Exception
   {
-    super.initializeFrom(args);
+    super.init(args);
 
     JsonRecord outputArgs = AdapterStore.getStore().output.getOption((JsonRecord)args);
     // setup the formatter

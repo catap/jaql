@@ -53,9 +53,9 @@ public class StreamInputAdapter extends AbstractInputAdapter
    */
   @SuppressWarnings("unchecked")
   @Override
-  public void initializeFrom(JsonValue args) throws Exception
+  public void init(JsonValue args) throws Exception
   {
-    super.initializeFrom(args);
+    super.init(args);
 
     JsonRecord inputArgs = AdapterStore.getStore().input.getOption((JsonRecord)args);
     

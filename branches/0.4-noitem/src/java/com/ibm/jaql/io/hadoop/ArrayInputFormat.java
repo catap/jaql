@@ -280,7 +280,7 @@ class ArrayInputSplit implements InputSplit
 /**
  * 
  */
-class ArrayInputConfigurator implements JsonConfSetter
+class ArrayInputConfigurator implements InitializableConfSetter
 {
 
   protected JsonRecord options;

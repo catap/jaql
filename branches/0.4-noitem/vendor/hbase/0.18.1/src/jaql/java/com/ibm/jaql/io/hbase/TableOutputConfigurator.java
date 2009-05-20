@@ -23,17 +23,16 @@ import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.hadoop.HadoopSerialization;
-import com.ibm.jaql.io.hadoop.JsonConfSetter;
+import com.ibm.jaql.io.hadoop.InitializableConfSetter;
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.DefaultJsonComparator;
-import com.ibm.jaql.lang.core.JsonComparator;
 
 /**
  * 
  */
-public class TableOutputConfigurator implements JsonConfSetter
+public class TableOutputConfigurator implements InitializableConfSetter
 {
   protected String location;
 

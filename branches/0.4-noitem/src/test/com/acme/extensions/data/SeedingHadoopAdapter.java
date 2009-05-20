@@ -43,9 +43,9 @@ public class SeedingHadoopAdapter extends DefaultHadoopInputAdapter
    * @see com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter#initializeFrom(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void initializeFrom(JsonValue value) throws Exception
+  public void init(JsonValue value) throws Exception
   {
-    super.initializeFrom(value);
+    super.init(value);
     seed = ((JsonLong) options.getValue("seed")).value;
     rng = new Random(seed);
   }

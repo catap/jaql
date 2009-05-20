@@ -161,7 +161,7 @@ public abstract class MapReduceBaseExpr extends Expr
       numInputs = 1;
     }
     conf.setInt(numInputsName, numInputs);
-    HadoopInputAdapter<?> inAdapter = (HadoopInputAdapter<?>) JaqlUtil
+    HadoopInputAdapter inAdapter = (HadoopInputAdapter) JaqlUtil
         .getAdapterStore().input.getAdapter(inArgs);
     inAdapter.setParallel(conf);
     //ConfiguratorUtil.writeToConf(inAdapter, conf, inArgs);
@@ -177,7 +177,7 @@ public abstract class MapReduceBaseExpr extends Expr
     // Setup the output
     //
 //    MemoryJRecord outArgRec = (MemoryJRecord) outArgs.getNonNull();
-    HadoopOutputAdapter<?> outAdapter = (HadoopOutputAdapter<?>) JaqlUtil
+    HadoopOutputAdapter outAdapter = (HadoopOutputAdapter) JaqlUtil
         .getAdapterStore().output.getAdapter(outArgs);
     outAdapter.setParallel(conf);
 //    ConfiguratorUtil.writeToConf(outAdapter, conf, outArgRec);

@@ -26,7 +26,7 @@ import com.ibm.jaql.json.type.JsonValue;
 /**
  * A Configurator that specifically writes the JobConf for OutputFormat
  */
-public class FileOutputConfigurator implements JsonConfSetter
+public class FileOutputConfigurator implements InitializableConfSetter
 {
   protected String location;
 

@@ -41,7 +41,7 @@ public class DirectSequenceFileWriter {
     
     // create adapter
     OutputAdapter adapter = new DefaultHadoopOutputAdapter<JsonHolder, JsonHolder>();
-    adapter.initializeFrom(args);
+    adapter.init(args);
     
     // open adapter
     adapter.open();

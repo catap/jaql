@@ -18,7 +18,7 @@ package com.ibm.jaql.io.hbase;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.hadoop.JsonConfSetter;
+import com.ibm.jaql.io.hadoop.InitializableConfSetter;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -30,7 +30,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 /**
  * 
  */
-public class TableInputConfigurator implements JsonConfSetter
+public class TableInputConfigurator implements InitializableConfSetter
 {
 
   protected String  location;

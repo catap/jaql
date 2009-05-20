@@ -15,21 +15,9 @@
  */
 package com.ibm.jaql.io.hadoop;
 
-import org.apache.hadoop.mapred.JobConfigurable;
-
-import com.ibm.jaql.io.Adapter;
+import com.ibm.jaql.io.Initializable;
 
 /**
- * An adapter that is specific for Hadoop Input and Output formats.
+ * 
  */
-public interface HadoopAdapter
-    extends Adapter, ConfSetter, JobConfigurable
-{
-  public final static String IMP                  = "com.ibm.jaql.io.hadoop.MapReduceExpr";
-
-  public final static String storeRegistryVarName = IMP + ".sRegistry";
-
-  static String              CONVERTER_NAME       = "converter";
-
-  static String              CONFIGURATOR_NAME    = "configurator";
-}
+public interface InitializableConfSetter extends Initializable, ConfSetter {}

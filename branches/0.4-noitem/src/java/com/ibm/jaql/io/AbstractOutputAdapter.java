@@ -41,7 +41,7 @@ public abstract class AbstractOutputAdapter implements OutputAdapter
    * 
    * @see com.ibm.jaql.lang.DataStoreAdapter#initializeFrom(com.ibm.jaql.lang.JRecord)
    */
-  public void initializeFrom(JsonValue args) throws Exception
+  public void init(JsonValue args) throws Exception
   {
     this.args = (JsonRecord)args;
     // set the location

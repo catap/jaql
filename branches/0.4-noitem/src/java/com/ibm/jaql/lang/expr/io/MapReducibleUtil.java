@@ -166,12 +166,12 @@ public class MapReducibleUtil
       if(input)
       {
         InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(descriptor);
-        return adapter instanceof HadoopInputAdapter<?>;
+        return adapter instanceof HadoopInputAdapter;
       }
       else
       {
         OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(descriptor);
-        return adapter instanceof HadoopOutputAdapter<?>;
+        return adapter instanceof HadoopOutputAdapter;
       }
     }
     catch(Exception e)

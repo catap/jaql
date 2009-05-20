@@ -13,13 +13,19 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io.hadoop;
+package com.ibm.jaql.io;
 
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
  */
-public interface JsonConfSetter extends ConfSetter<JsonValue> {
-
+public interface Initializable {
+  
+  /**
+   * @param options
+   * @throws Exception
+   */
+  public void init(JsonValue options) throws Exception;
+  
 }

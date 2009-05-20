@@ -277,7 +277,7 @@ group returns [Expr r=null]
 	      in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
 	    }
 	  by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
-		{ if( by.var != Var.unused ) env.scope(by.var); } 
+		{ if( by.var != Var.UNUSED ) env.scope(by.var); } 
 	  ( "using" c=comparator { oops("comparators on group by NYI"); } )?
         {
           for( Var av: as )
@@ -287,7 +287,7 @@ group returns [Expr r=null]
 	    }
 	  r=groupReturn
 	    {
-	      if( by.var != Var.unused ) env.unscope(by.var);
+	      if( by.var != Var.UNUSED ) env.unscope(by.var);
 	      for( Var av: as )
           {
             env.scope(av);
@@ -337,7 +337,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
         Var var;
         if( v == null )
         {
-            var = Var.unused;
+            var = Var.UNUSED;
         }
         else
         {
@@ -345,7 +345,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
         }
         b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
       }
-      else if( v == null || (by.var != Var.unused && by.var.name.equals(v)) )
+      else if( v == null || (by.var != Var.UNUSED && by.var.name.equals(v)) )
       {
         by.addChild(e);
         b = by;
@@ -445,12 +445,12 @@ groupPipe[Expr in] returns [Expr r=null]
       String v="$"; Var asVar; 
     }
     : "group" b=each[in] 
-      by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.unused ) env.scope(by.var); }
+      by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
       ( "as" v=var )?        { asVar=env.scope(v); }
       ( "using" c=comparator { oops("comparators on group by NYI"); } )?
       r=groupReturn
         {
-          if( by.var != Var.unused ) env.unscope(by.var);
+          if( by.var != Var.UNUSED ) env.unscope(by.var);
           env.unscope(asVar);
           r = new GroupByExpr(b,by,asVar,null,r);
         }
