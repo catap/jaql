@@ -60,10 +60,13 @@ public class PathNotFields extends PathFields
   throws Exception
   {
     exprText.print("* -");
-    for(int i = 0 ; i < exprs.length ; i++)
+    String sep = " ";
+    int n = exprs.length - 1;
+    for(int i = 0 ; i < n ; i++)
     {
-      exprText.print(' ');
+      exprText.print(sep);
       exprs[i].decompile(exprText, capturedVars);
+      sep = ", ";
     }
   }
 

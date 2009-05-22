@@ -15,10 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Var;
 
 
 public class PseudoExpr extends Expr
@@ -47,6 +50,24 @@ public class PseudoExpr extends Expr
   public PseudoExpr(ArrayList<? extends Expr> exprs)
   {
     super(exprs);
+  }
+
+  @Override
+  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+      throws Exception
+  {
+    exprText.print("<<");
+    exprText.print(getClass().getSimpleName());
+    exprText.print(">>");
+    exprText.print("(");
+    String sep = "";
+    for (Expr e : exprs)
+    {
+      exprText.print(sep);
+      e.decompile(exprText, capturedVars);
+      sep = ", ";
+    }
+    exprText.print(")");
   }
 
   @Override

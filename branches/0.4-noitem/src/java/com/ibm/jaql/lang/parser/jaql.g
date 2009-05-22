@@ -1169,16 +1169,17 @@ sortCmp returns [Expr r=null]
 //    : e=expr c=cmpSpec    { by.add( new OrderExpr(e,c) ); }
 //    ;
     
-record returns [RecordExpr r = null]
+record returns [Expr r = null]
 	{ ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
 	  FieldExpr f; }
 	: "{" ( f=field  { args.add(f); } )? ( "," ( f=field  { args.add(f); } )? )*  "}"
-	{ r = new RecordExpr(args.toArray(new Expr[args.size()])); }
+    //    { r = new RecordExpr(args.toArray(new Expr[args.size()])); }
+    { r = RecordExpr.make(env, args.toArray(new Expr[args.size()])); }
     ;
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	{ Expr e = null; Expr v=null; boolean required = true; }
-    : e=fname ( "?" { required = false; } )?  ":" v=pipe  
+    : e=fname ( "?" { required = false; } )?  v=fieldValue  
       { 
       	f = new NameValueBinding(e, v, required); 
       }
@@ -1187,7 +1188,7 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	           	 f = new CopyRecord(e);
 	           }
 	         | ( "?" { required = false; } )?
-	           ( ":" v=pipe )?
+	           ( v=fieldValue )?
 	           {
 	           	 if( v != null )
 	           	 {
@@ -1220,6 +1221,18 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	           }
 	         )
 	;    
+
+
+fieldValue returns [Expr r=null]
+    { boolean flat = false; }
+    : ":" ("flatten" {flat=true;})? r=pipe
+      {
+      	if( flat )
+      	{
+      	  r = new FlattenExpr(r);
+      	}
+      }
+    ;
 
 
 expr returns [Expr r]

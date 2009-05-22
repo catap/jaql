@@ -19,11 +19,13 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 import com.ibm.jaql.util.Bool3;
 
 //TODO: add optimized RecordExpr when all cols are known at compile time
@@ -89,6 +91,62 @@ public class RecordExpr extends Expr
   public RecordExpr(ArrayList<FieldExpr> fields)
   {
     super(fields);
+  }
+
+  /**
+   * Either construct a RecordExpr or some for loops over a RecordExpr
+   * to handle flatten requests.
+   * 
+   * @param args
+   * @return
+   */
+  public static Expr make(Env env, Expr[] args)
+  {
+    int n = 0;
+    for(Expr e: args)
+    {
+      if( e instanceof NameValueBinding &&
+          e.child(1) instanceof FlattenExpr )
+      {
+        n++;
+      }
+    }
+    if( n == 0 )
+    {
+      return new RecordExpr(args);
+    }
+
+    Var[] vars = new Var[n];
+    Expr[] ins = new Expr[n];
+    Expr[] doargs = new Expr[n+1];
+    n = 0;
+    for(int i = 0 ; i < args.length ; i++)
+    {
+      if( args[i] instanceof NameValueBinding && 
+          args[i].child(1) instanceof FlattenExpr )
+      {
+        Expr flatten = args[i].child(1);
+        Var letVar = new Var("$_toflat_"+n);
+        vars[n] = env.makeVar("$_flat_"+n);
+        ins[n] = new VarExpr(letVar);
+        Expr e = flatten.child(0);
+        if( e.isEmpty().maybe() )
+        {
+          e = new NullElementOnEmptyFn(e);
+        }
+        doargs[n] = new BindingExpr(BindingExpr.Type.EQ, letVar, null, e);
+        flatten.replaceInParent(new VarExpr(vars[n]));
+        n++;
+      }
+    }
+    Expr e = new ArrayExpr(new RecordExpr(args));
+    for( n-- ; n >= 0 ; n-- )
+    {
+      e = new ForExpr(vars[n], ins[n], e);
+    }
+    doargs[doargs.length-1] = e;
+    e = new DoExpr(doargs);
+    return e;
   }
 
   /*
@@ -186,7 +244,7 @@ public class RecordExpr extends Expr
   {
     return findStaticFieldValue(new JsonString(name)); // TODO: memory
   }
-
+  
   /*
    * (non-Javadoc)
    * 
