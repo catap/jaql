@@ -71,7 +71,7 @@ public class DirectSequenceFileWriter {
     
     // write items
     for(Item i : items) {
-      writer.append(Item.nil, i);
+      writer.append(Item.NIL, i);
     }
     
     // close writer
