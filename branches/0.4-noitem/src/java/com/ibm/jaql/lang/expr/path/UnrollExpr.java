@@ -67,7 +67,7 @@ public final class UnrollExpr extends IterExpr
     JsonValue value = exprs[0].eval(context);
     if( value == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     final JsonHolder top = new JsonHolder(value);  // warning: top does not own (all of) item's value
     JsonHolder hole = top;

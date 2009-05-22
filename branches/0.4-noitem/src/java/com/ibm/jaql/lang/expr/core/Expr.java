@@ -189,7 +189,7 @@ public abstract class Expr
     JsonValue value = eval(context);
     if (value == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JsonArray array = (JsonArray)value; // intentional cast error is possible
     return array.iter();

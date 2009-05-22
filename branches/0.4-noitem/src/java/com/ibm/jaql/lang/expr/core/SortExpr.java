@@ -119,7 +119,7 @@ public class SortExpr extends IterExpr
     JsonIterator iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     for (JsonValue value : iter)
     {

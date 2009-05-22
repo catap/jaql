@@ -54,7 +54,7 @@ public class NullOnEmptyFn extends IterExpr
     boolean hasNext = iter.moveNext();
     if (!hasNext)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
 
     return new JsonIterator() {    

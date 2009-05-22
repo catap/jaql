@@ -79,6 +79,6 @@ public class FirstNonNullFn extends Expr
         return iter;
       }
     }
-    return JsonIterator.NIL;
+    return JsonIterator.NULL;
   }
 }

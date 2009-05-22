@@ -68,7 +68,7 @@ public class PathToArray extends PathArray
     JsonValue val = input;
     if( val == null )
     {
-      return JsonIterator.NIL; // TODO: empty or nil?
+      return JsonIterator.NULL; // TODO: empty or nil?
     }
     final JsonIterator iter;
     if( val instanceof JsonArray )

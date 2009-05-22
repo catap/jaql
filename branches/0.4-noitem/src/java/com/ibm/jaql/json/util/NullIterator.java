@@ -26,13 +26,6 @@ public final class NullIterator extends JsonIterator
     return THE_INSTANCE;
   }
   
-  /** Returns <code>true</code> */
-  @Override
-  public boolean isNull()
-  {
-    return true;
-  }
-
   /** Returns <code>false</code> */
   @Override
   public boolean moveNext()

@@ -305,7 +305,7 @@ public class JavaFnExpr extends Expr
 
     if (result == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     else if (result instanceof JsonIterator)
     {

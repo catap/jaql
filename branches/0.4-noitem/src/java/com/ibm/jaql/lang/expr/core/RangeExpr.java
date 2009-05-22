@@ -105,12 +105,12 @@ public class RangeExpr extends IterExpr
     JsonNumeric v1 = (JsonNumeric) exprs[0].eval(context);
     if (v1 == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JsonNumeric v2 = (JsonNumeric) exprs[1].eval(context);
     if (v2 == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     final long start = v1.longValueExact();
     final long end = v2.longValueExact();

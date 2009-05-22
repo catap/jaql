@@ -241,7 +241,7 @@ public class Var extends Object
     JsonArray arr = (JsonArray) getValue(context); // cast error intentionally possible
     if( arr == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     return arr.iter();
   }

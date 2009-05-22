@@ -66,12 +66,12 @@ public class ExecFn extends IterExpr
     final JsonString cmd = (JsonString)exprs[1].eval(context);
     if( cmd == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     proc = Runtime.getRuntime().exec(cmd.toString());
     // TODO: add thread pool to context

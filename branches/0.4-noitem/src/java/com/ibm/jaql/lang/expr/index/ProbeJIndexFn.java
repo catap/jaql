@@ -44,12 +44,12 @@ public class ProbeJIndexFn extends IterExpr
       JsonRecord fd = (JsonRecord)exprs[0].eval(context);
       if( fd == null )
       {
-        return JsonIterator.NIL;
+        return JsonIterator.NULL;
       }
       JsonString jloc = (JsonString)fd.getValue("location");
       if( jloc == null )
       {
-        return JsonIterator.NIL;
+        return JsonIterator.NULL;
       }
       index = new JIndexReader(jloc.toString());
       context.closeAtQueryEnd(index);

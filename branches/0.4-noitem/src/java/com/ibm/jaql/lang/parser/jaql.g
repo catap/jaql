@@ -1618,24 +1618,43 @@ arrayRepeat[Schema typeList, SchemaArray s]
 
 recordType returns [SchemaRecord s = new SchemaRecord()]
     { SchemaField f; }
-    : "{"
-        ( f=fieldType        { s.addField(f); }
-          ( "," f=fieldType  { s.addField(f); }
-          )*
-        )?
+    : "{" ( ( fieldType[s] | openRecord[s] )
+            ( "," ( fieldType[s] | openRecord[s] ) )*
+          )? 
       "}"
     ;
 
-fieldType returns [SchemaField f = new SchemaField()]
-    { String n; Schema t; }
-    : (  n=constFieldName   { f.name = new JsonString(n); }
-         ( "*"              { f.wildcard = true; }
-         | "?"              { f.optional = true; }
-         )?
-      | "*"               { f.name = new JsonString(""); 
-                            f.wildcard = true;     }
-      )
-      ":" t=type        { f.schema = t; }
+recordElementType[SchemaRecord s]
+    : fieldType[s]
+    | openRecord[s]
+    ;
+
+openRecord[SchemaRecord s]
+    { Schema t; }
+    : "*"  ( /* empty */     { t = new SchemaAny(); }
+           | ":" t=type )
+      { 
+      	if( s.getRest() != null ) 
+      	{
+      	  oops("only one wildcard field is allowed in a record schema");
+      	}
+      	s.setRest(t); 
+      }
+    ;
+
+fieldType[SchemaRecord s]
+    { String n; boolean optional = false; Schema t; }
+    : n=constFieldName
+      ( "?" { optional = true; } )?
+      t=fieldValueType
+      {
+      	s.addField(new SchemaField(n,optional,t));
+      }
+    ;
+    
+fieldValueType returns [Schema s]
+    : /*empty*/   { s = new SchemaAny(); }
+    | ":" s=type
     ;
 
 constFieldName returns [String s=null]
@@ -1927,7 +1946,7 @@ protected IDWORD
 ID
 	options { ignore=WS; }
     : (IDWORD ('?')? ':') => IDWORD {$setType(FNAME);}
-    | (IDWORD '*') => IDWORD
+    // | (IDWORD '*') => IDWORD
 	// | (IDWORD '=') => IDWORD {$setType(AVAR);}
 	| IDWORD { _ttype = testLiteralsTable(_ttype); }
 	;

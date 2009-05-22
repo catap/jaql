@@ -65,17 +65,17 @@ public class ProbeLuceneFn extends IterExpr
     JsonRecord fd = (JsonRecord)exprs[0].eval(context);
     if( fd == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JsonString loc = (JsonString)fd.getValue("location");
     if( loc == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JsonString jquery = (JsonString)exprs[1].eval(context);
     if( jquery == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     
     HashSet<String> fields = null;

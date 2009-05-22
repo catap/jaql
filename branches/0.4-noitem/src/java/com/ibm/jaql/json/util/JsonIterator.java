@@ -39,8 +39,15 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   /** Iterator that does not produce elements */
   public static final JsonIterator EMPTY = EmptyIterator.getInstance(); 
   
-  /** Iterator that is null */
-  public static final JsonIterator NIL   = NullIterator.getInstance();
+  /** 
+   * The one and only Iterator that is null.
+   * 
+   * A null will act like an empty array if iterated. 
+   * To detect null, check for NULL:
+   *  
+   *     if( iter.isNull() ) ...  
+   */
+  public static final JsonIterator NULL   = NullIterator.getInstance();
 
   
   // -- constructors ------------------------------------------------------------------------------
@@ -116,8 +123,9 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
    * 
    * @return whether this iterator is <code>null</code>
    */
-  public boolean isNull() {
-    return false;
+  public final boolean isNull()
+  {
+    return this == NULL;
   }
 
   // -- Java-style interation ---------------------------------------------------------------------

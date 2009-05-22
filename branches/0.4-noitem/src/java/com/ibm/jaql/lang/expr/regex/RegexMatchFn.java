@@ -51,12 +51,12 @@ public class RegexMatchFn extends IterExpr
     final JsonRegex regex = (JsonRegex) exprs[0].eval(context);
     if (regex == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JsonString text = (JsonString) exprs[1].eval(context);
     if (text == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());

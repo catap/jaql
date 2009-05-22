@@ -50,7 +50,7 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
     final JsonString text = (JsonString) exprs[0].eval(context);
     if (text == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
 
     final JsonString tokText   = new JsonString();

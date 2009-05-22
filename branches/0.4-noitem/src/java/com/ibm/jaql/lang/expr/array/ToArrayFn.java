@@ -73,7 +73,7 @@ public class ToArrayFn extends IterExpr
     JsonValue val = exprs[0].eval(context);
     if( val == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     else if( val instanceof JsonArray )
     {

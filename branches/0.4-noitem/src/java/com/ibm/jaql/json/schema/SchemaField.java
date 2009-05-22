@@ -35,17 +35,23 @@ public class SchemaField
   protected final static BinaryBasicSerializer<JsonString> serializer 
   = (BinaryBasicSerializer<JsonString>)DefaultBinaryFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
 
-  public SchemaField nextField;
-  public JsonString     name;
-  public boolean     wildcard;
-  public boolean     optional;
-  public Schema      schema;
+  protected SchemaField nextField;
+  protected JsonString  name;
+  protected boolean     optional;
+  protected Schema      schema;
 
   /**
    * 
    */
   public SchemaField()
   {
+  }
+
+  public SchemaField(String name, boolean optional, Schema schema)
+  {
+    this.name = new JsonString(name);
+    this.optional = optional;
+    this.schema = schema;
   }
 
   /**
@@ -55,7 +61,6 @@ public class SchemaField
   public SchemaField(DataInput in) throws IOException
   {
     name = serializer.read(in, name);
-    wildcard = in.readBoolean();
     optional = in.readBoolean();
     schema = Schema.read(in);
   }
@@ -67,7 +72,6 @@ public class SchemaField
   public void write(DataOutput out) throws IOException
   {
     serializer.write(out, name);
-    out.writeBoolean(wildcard);
     out.writeBoolean(optional);
     schema.write(out);
   }
@@ -80,17 +84,10 @@ public class SchemaField
   @Override
   public String toString()
   {
-    // cannot be both wildcard and optional
-    assert !wildcard || !optional;
-
     String str = "";
     if (name != null)
     {
       str += name;
-    }
-    if (wildcard)
-    {
-      str += "*";
     }
     if (optional)
     {

@@ -22,6 +22,7 @@ import java.io.IOException;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.BaseUtil;
 
 /** Schema that matches a record, i.e., an ordered list of fields.
  * 
@@ -30,7 +31,8 @@ import com.ibm.jaql.json.type.JsonValue;
 public class SchemaRecord extends Schema
 {
   protected SchemaField fullName;
-  protected SchemaField prefix;
+  // protected SchemaField prefix;
+  protected Schema      rest; // Null if record is "closed"
 
   /**
    * 
@@ -45,11 +47,13 @@ public class SchemaRecord extends Schema
    */
   public SchemaRecord(DataInput in) throws IOException
   {
-    while (in.readByte() != 0)
+    int n = BaseUtil.readVUInt(in);
+    for(int i = 0 ; i < n ; i++)
     {
       SchemaField fs = new SchemaField(in);
       addField(fs);
     }
+    rest = Schema.read(in);
   }
 
   /*
@@ -61,17 +65,24 @@ public class SchemaRecord extends Schema
   public void write(DataOutput out) throws IOException
   {
     out.writeByte(RECORD_TYPE);
+    int n = 0;
     for (SchemaField fs = fullName; fs != null; fs = fs.nextField)
     {
-      out.writeByte(1);
-      fs.write(out);
+      n++;
     }
-    for (SchemaField fs = prefix; fs != null; fs = fs.nextField)
+    BaseUtil.writeVUInt(out, n);    
+    for (SchemaField fs = fullName; fs != null; fs = fs.nextField)
     {
-      out.writeByte(1);
       fs.write(out);
     }
-    out.writeByte(0);
+    if( rest == null )
+    {
+      out.writeByte(UNKNOWN_TYPE);
+    }
+    else
+    {
+      rest.write(out);
+    }
   }
 
   /**
@@ -79,41 +90,53 @@ public class SchemaRecord extends Schema
    */
   public void addField(SchemaField fs)
   {
-    if (fs.wildcard)
+    // TODO: keep in an array so we can do binary search.
+    // add in sorted order
+    SchemaField prev;
+    SchemaField cur;
+    for (prev = null, cur = fullName; cur != null; prev = cur, cur = cur.nextField)
     {
-      fs.nextField = prefix;
-      prefix = fs;
+      int c = cur.name.compareTo(fs.name);
+      if (c > 0)
+      {
+        break;
+      }
+      else if (c == 0)
+      {
+        throw new RuntimeException("duplicate field name not allowed: "
+            + cur.name);
+      }
+    }
+    fs.nextField = cur;
+    if (prev == null)
+    {
+      fullName = fs;
     }
     else
     {
-      // add in sorted order
-      SchemaField prev;
-      SchemaField cur;
-      for (prev = null, cur = fullName; cur != null; prev = cur, cur = cur.nextField)
-      {
-        int c = cur.name.compareTo(fs.name);
-        if (c > 0)
-        {
-          break;
-        }
-        else if (c == 0)
-        {
-          throw new RuntimeException("duplicate field name not allowed: "
-              + cur.name);
-        }
-      }
-      fs.nextField = cur;
-      if (prev == null)
-      {
-        fullName = fs;
-      }
-      else
-      {
-        prev.nextField = fs;
-      }
+      prev.nextField = fs;
     }
   }
+  
+  /**
+   * Set the schema of all fields that are not among the named fields.
+   * Set to null to disallow other fields (close the record).
+   * 
+   * @param rest
+   */
+  public void setRest(Schema rest)
+  {
+    this.rest = rest;
+  }
 
+  /**
+   * @return The schema for unnamed fields.
+   */
+  public Schema getRest()
+  {
+    return rest;
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -132,11 +155,11 @@ public class SchemaRecord extends Schema
     int n = rec.arity();
     for (int i = 0; i < n; i++)
     {
-      JsonString recName = rec.getName(i);
-      JsonValue recValue = rec.getValue(i);
+      JsonString fieldName = rec.getName(i);
+      JsonValue fieldValue = rec.getValue(i);
 
       int c = 1;
-      while (fs != null && (c = fs.name.compareTo(recName)) < 0)
+      while (fs != null && (c = fs.name.compareTo(fieldName)) < 0)
       {
         if (!fs.optional)
         {
@@ -148,30 +171,16 @@ public class SchemaRecord extends Schema
 
       if (c == 0)
       {
-        if (!fs.schema.matches(recValue))
+        if (!fs.schema.matches(fieldValue))
         {
           return false;
         }
         fs = fs.nextField;
       }
       else
-      // fs == null || fs.name > rec.name
+      // fs == null || fs.name > fieldName
       {
-        // At least one wildcard schema must match, AND
-        // Every required wildcard schema that prefix matches must match the value.
-        boolean matched = false;
-        for (SchemaField ps = prefix; ps != null; ps = ps.nextField)
-        {
-          if (recName.startsWith(ps.name))
-          {
-            if (!ps.schema.matches(recValue))
-            {
-              return false;
-            }
-            matched = true;
-          }
-        }
-        if (!matched)
+        if( rest == null || ! rest.matches(fieldValue) )
         {
           return false;
         }
@@ -205,12 +214,11 @@ public class SchemaRecord extends Schema
       str += sep + fs.toString();
       sep = ", ";
     }
-    for (SchemaField fs = prefix; fs != null; fs = fs.nextField)
+    if( rest != null )
     {
-      str += sep;
-      str += sep + fs.toString();
-      sep = ",";
+      str += sep + "*: " + rest.toString();
     }
+    str += " }";
     return str;
   }
 }

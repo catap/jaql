@@ -74,7 +74,7 @@ public class ShiftFn extends IterExpr
     final JsonIterator iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     
     JsonNumber beforeNum = (JsonNumber)exprs[1].eval(context);

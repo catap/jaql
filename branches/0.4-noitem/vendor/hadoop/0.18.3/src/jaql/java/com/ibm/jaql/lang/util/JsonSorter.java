@@ -120,7 +120,7 @@ public class JsonSorter
 
   public JsonIterator iter() {
     if (iter == null) {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     return new JsonIterator() {
 

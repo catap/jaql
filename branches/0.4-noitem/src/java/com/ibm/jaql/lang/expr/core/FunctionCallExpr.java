@@ -275,7 +275,7 @@ public class FunctionCallExpr extends Expr
     JsonValue fnVal = exprs[0].eval(context);
     if (fnVal == null)
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
     return fn.iter(context, exprs, 1, exprs.length - 1);

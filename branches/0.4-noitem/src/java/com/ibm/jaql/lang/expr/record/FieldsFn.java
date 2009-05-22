@@ -69,7 +69,7 @@ public final class FieldsFn extends IterExpr
     final JsonRecord rec = (JsonRecord) exprs[0].eval(context);
     if (rec == null)
     {
-      return JsonIterator.NIL; // TODO: should this be []?
+      return JsonIterator.NULL; // TODO: should this be []?
     }
     
     final BufferedJsonArray pair = new BufferedJsonArray(2);

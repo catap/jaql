@@ -59,7 +59,7 @@ public class RowwiseFn extends IterExpr
     JsonValue value = exprs[0].eval(context);
     if( value == null )
     {
-      return JsonIterator.NIL;
+      return JsonIterator.NULL;
     }
     JsonRecord inrec = (JsonRecord)value;
     int n = inrec.arity();

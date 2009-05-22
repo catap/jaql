@@ -243,7 +243,7 @@ public class SpilledJsonArray extends JsonArray
    * element. This method will freeze the array if necessary.
    * 
    * @param n a position (0-based)
-   * @return the item at position <code>n</code> or {@link JsonValue#NIL}
+   * @return the item at position <code>n</code> or {@link JsonValue#NULL}
    * @throws Exception
    */
   @Override
