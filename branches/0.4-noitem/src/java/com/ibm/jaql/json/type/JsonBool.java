@@ -20,6 +20,7 @@ package com.ibm.jaql.json.type;
  */
 public class JsonBool extends JsonAtom
 {
+  // TODO: should be immutable
   public final static JsonBool TRUE  = new JsonBool(true);
   public final static JsonBool FALSE = new JsonBool(false);
 

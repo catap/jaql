@@ -22,7 +22,7 @@ public enum JsonType
 
   BINARY(JsonBinary.class, "binary"),
   DATE(JsonDate.class, "date"),
-  SCHEMA(JsonSchema.class, "type"),
+  SCHEMA(JsonSchema.class, "schema"),
   FUNCTION(JaqlFunction.class, "function"),
 
   // Extensiblity for writable java objects, but the class name is written on every instance!
@@ -36,6 +36,7 @@ public enum JsonType
 
   private static final HashMap<String, JsonType>  nameToType  = new HashMap<String, JsonType>();
   private static final HashMap<JsonString, JsonType> jnameToType = new HashMap<JsonString, JsonType>();
+  private static final HashMap<Class<? extends JsonValue>, JsonType> classToType = new HashMap<Class<? extends JsonValue>, JsonType>();
 
   static
   {
@@ -43,6 +44,7 @@ public enum JsonType
     {
       nameToType.put(t.name, t);
       jnameToType.put(t.nameValue, t);
+      classToType.put(t.clazz, t);
     }
   }
 
@@ -68,6 +70,11 @@ public enum JsonType
   public static JsonType getType(JsonString name)
   {
     return jnameToType.get(name);
+  }
+  
+  public static JsonType getType(Class<? extends JsonValue> clazz)
+  {
+    return classToType.get(clazz);
   }
   
   /**

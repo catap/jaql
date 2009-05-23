@@ -24,6 +24,7 @@
 
     <property name="lib.dir" value="${basedir}/lib" />
     <property name="conf.dir" value="${basedir}/conf" />
+    <property name="resources.dir" value="${basedir}/resources" />
     <property name="bin.dir" value="${basedir}/bin" />
     <property name="docs.dir" value="${basedir}/docs" />
     <property name="build.dir" value="${basedir}/build" />
@@ -450,6 +451,11 @@
             <fileset dir="${conf.dir}" />
         </copy>
 
+        <mkdir dir="${build.dir}/jaql-${version}/resources" />
+        <copy todir="${build.dir}/jaql-${version}/resources">
+            <fileset dir="${resources.dir}" />
+        </copy>
+
         <mkdir dir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}" />
         <copy todir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}">
             <fileset dir="${hadoop.dir}">
@@ -509,6 +515,11 @@
             <fileset dir="${conf.dir}" />
         </copy>
 
+        <mkdir dir="${build.dir}/jaql-${version}/resources" />
+        <copy todir="${build.dir}/jaql-${version}/resources">
+            <fileset dir="${conf.dir}" />
+        </copy>
+
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
         <copy todir="${build.dir}/jaql-${version}/bin">
             <fileset refid="bin.files" />
@@ -544,6 +555,11 @@
         <mkdir dir="${build.dir}/jaql-${version}/conf" />
         <copy todir="${build.dir}/jaql-${version}/conf">
             <fileset dir="${conf.dir}" />
+        </copy>
+
+        <mkdir dir="${build.dir}/jaql-${version}/resources" />
+        <copy todir="${build.dir}/jaql-${version}/resources">
+            <fileset dir="${resources.dir}" />
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />

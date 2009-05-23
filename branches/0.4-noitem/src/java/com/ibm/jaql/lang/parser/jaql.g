@@ -23,6 +23,7 @@ import com.ibm.jaql.lang.core.*;
 import com.ibm.jaql.lang.expr.core.*;
 import com.ibm.jaql.lang.expr.top.*;
 import com.ibm.jaql.lang.expr.path.*;
+import com.ibm.jaql.lang.expr.schema.*;
 
 import com.ibm.jaql.lang.expr.io.*;
 import com.ibm.jaql.lang.expr.udf.*;
@@ -61,6 +62,38 @@ options {
     public void oops(String msg) throws RecognitionException, TokenStreamException
     { 
       throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
+    }
+    
+    public static final JsonLong parseLong(String v, boolean isNegative) 
+    {
+       if (isNegative) {
+         return new JsonLong("-" + v); // handles that case i==Long.MIN
+       } 
+       else
+       {
+         return new JsonLong(v);
+       } 
+    }
+    
+    public static final JsonDouble parseDouble(String v, boolean isNegative) 
+    {
+       JsonDouble d = new JsonDouble(v);
+       if (isNegative)
+       {
+       	 d.value = -d.value;
+       }
+       return d;
+    }
+
+    public static final JsonDecimal parseDecimal(String v, boolean isNegative) 
+    {
+       if (isNegative) {
+         return new JsonDecimal("-" + v);
+       } 
+       else
+       {
+         return new JsonDecimal(v);
+       } 
     }
 }
 
@@ -1348,7 +1381,7 @@ unaryAdd returns [Expr r = null]
 	
 typeExpr returns [Expr r = null]
     { Schema s; }
-    : "type" s=type   { r = new ConstExpr(new JsonSchema(s)); }
+    : "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
     | r=path
     ;	
 
@@ -1531,20 +1564,92 @@ exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     ;
 
 constant returns [Expr r=null]
-	{ String s; }
+	{ String s; JsonNumeric n; JsonBool b;}
     : s=str		 { r = new ConstExpr(new JsonString(s)); }
-    | i:INT      { r = new ConstExpr(new JsonLong(i.getText())); }
-    | n:DEC      { r = new ConstExpr(new JsonDecimal(n.getText())); }
-    | d:DOUBLE   { r = new ConstExpr(new JsonDouble(d.getText())); }
+    | n=numericLit { r = new ConstExpr(n); }
     | h:HEXSTR   { r = new ConstExpr(new JsonBinary(h.getText())); }
     | t:DATETIME { r = new ConstExpr(new JsonDate(t.getText())); }
-    | r=boolLit
+    | b=boolLit  { r = new ConstExpr(b); }
     | r=nullExpr
     ;
 
-boolLit returns [Expr r=null]
-    : "true"     { r = new ConstExpr(JsonBool.TRUE); }
-    | "false"    { r = new ConstExpr(JsonBool.FALSE); }
+numericLit returns [JsonNumeric v=null]
+    : v=intLit
+    | v=doubleLit
+    | v=decLit
+    ;
+
+    
+intLit returns [ JsonLong v=null]
+    : i:INT      { v = new JsonLong(i.getText()); }
+    ;
+
+doubleLit returns [ JsonDouble v=null]
+    : d:DOUBLE   { v = new JsonDouble(d.getText()); }
+    ;
+
+decLit returns [ JsonDecimal v=null]
+    : n:DEC      { v = new JsonDecimal(n.getText()); }
+    ;
+
+
+// not to be used in terms!    
+signedNumericLit returns [ JsonNumeric v = null ]
+    { boolean isNegative = false; }
+    : ( "-" { isNegative = !isNegative; }
+      | "+"
+      )*
+      ( i:INT    { v = parseLong(i.getText(), isNegative); }
+      | j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
+      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
+      )
+    ;
+
+// not to be used in terms!    
+signedNumberLit returns [ JsonNumeric v = null ]
+    { boolean isNegative = false; }
+    : ( "-" { isNegative = !isNegative; }
+      | "+"
+      )*
+      ( i:INT    { v = parseLong(i.getText(), isNegative); }
+      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
+      )
+    ;
+// not to be used in terms!
+signedIntLit returns [ JsonLong v=null]
+    { boolean isNegative = false; }
+    : ( "-" { isNegative = !isNegative; }
+      | "+"
+      )*
+      i:INT    { v = parseLong(i.getText(), isNegative); } 
+    ;
+
+// not to be used in terms! 
+signedDoubleLit returns [ JsonDouble v=null]
+    { boolean isNegative = false; }
+    : ( "-" { isNegative = !isNegative; }
+      | "+"
+      )*
+      j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
+    ;
+     
+// not to be used in terms!     
+signedDecLit returns [ JsonDecimal v=null]
+    { boolean isNegative = false; }
+    : ( "-" { isNegative = !isNegative; }
+      | "+"
+      )*
+      k:DEC    { v = parseDecimal(k.getText(), isNegative); }       
+    ;     
+    
+strLit returns [ JsonString v=null]
+    { String s; }
+    : s=str      { v = new JsonString(s); }
+    ;
+    
+boolLit returns [JsonBool b=null]
+    : "true"     { b = JsonBool.TRUE; }
+    | "false"    { b = JsonBool.FALSE; }
     ;
     
 nullExpr returns [Expr r=null]
@@ -1556,7 +1661,6 @@ str returns [String r=null]
 	| h:HERE_STRING     { r = h.getText(); }
 	| b:BLOCK_STRING    { r = b.getText(); }
 	;
-
 	
 avar returns [String r=null]: n:AVAR { r = n.getText(); }; //  TODO: move to ID
 var returns [String r=null]: n:VAR { r = n.getText(); }; // TODO: move to ID
@@ -1573,105 +1677,236 @@ simpleField returns [Expr f=null]
     : ( f=fname | "(" f=pipe ")" ) ":"
     ;
 
-type returns [Schema s = null]
-    { Schema s2 = null; SchemaOr os = null; }
-    : s = typeTerm 
-    ( "|"              { s2 = s; s = os = new SchemaOr(); os.addSchema(s2); }
-      s2 = typeTerm    { os.addSchema(s2); } 
-    )*
+schema returns [Schema s = null]
+    { List<Schema> alternatives = new ArrayList<Schema>(); Schema s2; }
+    : (
+        s = schemaTerm       { alternatives.add(s); }     
+        ( "|"              
+          s2 = schemaTerm     { alternatives.add(s2); } 
+        )*
+      ) {
+      	  if (alternatives.size()>1) { // if there are alternatives, wrap into OrSchema
+            Schema[] schemata = alternatives.toArray(new Schema[alternatives.size()]); 
+      	    s = new OrSchema(schemata);
+          }
+        }
     ;
     
-typeTerm returns [Schema s = null]
-    : "*"           { s = new SchemaAny(); }
-    | s=oneType
-       ( "?"        { s = new SchemaOr(s, new SchemaAtom("null")); } 
+schemaTerm returns [Schema s = null]
+    : "*"           { s = AnySchema.getInstance(); }
+    | s=aSchema
+       ( "?"        { s = new OrSchema(s, NullSchema.getInstance()); } // TODO: good notation?
        )?
     ;
 
-oneType returns [Schema s = null]
-    : s=atomType
-    | s=arrayType
-    | s=recordType
+aSchema returns [Schema s = null]
+    : s=atomSchema
+    | s=arraySchema
+    | s=recordSchema
     ;
 
-atomType returns [SchemaAtom s = null]
-    : i:ID    { s = new SchemaAtom(i.getText()); }
-    | "null"  { s = new SchemaAtom("null"); }
-    | "type"  { s = new SchemaAtom("type"); }
+atomSchema returns [Schema s = null]
+    : "null"  { s = NullSchema.getInstance(); }
+    | "function" { s = new GenericSchema(JsonType.FUNCTION); }
+    | "boolean"  { s = new GenericSchema(JsonType.BOOLEAN); }
+    | "date"     { s = new GenericSchema(JsonType.DATE); }
+    | "schema"   { s = new GenericSchema(JsonType.SCHEMA); }    
+    | s=numericSchema
+    | s=stringSchema
+    | s=binarySchema
     ;
 
-arrayType returns [SchemaArray s = new SchemaArray()]
-    { Schema head = null; Schema p; Schema q; }
-    : "["
-        ( p=type          { head = p; }
-          ( "," q=type    { p = p.nextSchema = q; }
-          )*
-          arrayRepeat[head,s]
+numericSchema returns [NumericSchema<?> s = null]
+    : s=longSchema
+    | s=doubleSchema
+    | s=decimalSchema;
+
+longSchema returns [LongSchema s = null]
+    { Pair<JsonNumeric, JsonNumeric> interval = null; }
+    : "long"
+      ( "(" interval=numericSchemaInterval ")" )?
+      { 
+      	if (interval==null) 
+      	{
+      	  s = new LongSchema();
+      	} 
+      	else 
+      	{
+      	  s = new LongSchema(interval.a, interval.b);
+      	} 
+      }
+    ;
+
+doubleSchema returns [DoubleSchema s = null]
+    { Pair<JsonNumeric, JsonNumeric> interval = null; }
+    : "double"
+      ( "(" interval=numericSchemaInterval ")" )?
+      { 
+        if (interval==null) 
+        {
+          s = new DoubleSchema();
+        } 
+        else 
+        {
+          s = new DoubleSchema(interval.a, interval.b);
+        } 
+      }
+    ;
+
+decimalSchema returns [DecimalSchema s = null]
+    { Pair<JsonNumeric, JsonNumeric> interval = null; }
+    : "decimal"
+      ( "(" interval=numericSchemaInterval ")" )?
+      { 
+        if (interval==null) 
+        {
+          s = new DecimalSchema();
+        } 
+        else 
+        {
+          s = new DecimalSchema(interval.a, interval.b);
+        } 
+      }
+    ;
+
+numericSchemaInterval returns [Pair<JsonNumeric, JsonNumeric> p = null]
+    {
+      JsonNumeric min = null;
+      JsonNumeric max = null;
+    }
+    : ( min=signedNumericLit
+        | "*" // min stays null
+      )  
+      ( /* empty */   { max=min; }
+      | "," ( "*" // max stays null
+            | max=signedNumericLit
+            )
+      ) { p = new Pair<JsonNumeric, JsonNumeric>(min, max); }
+    ;
+
+stringSchema returns [StringSchema s = null]
+    {
+        Pair<JsonLong,JsonLong> lengthPair = new Pair<JsonLong, JsonLong>();
+        JsonString pattern = null;
+    }
+    : ( "string"
+        ( "(" ( 
+                ( pattern=strLit ( "," lengthPair=schemaLengthArgs )? )
+              | lengthPair=schemaLengthArgs
+              )
+          ")"
         )?
-      "]"
+      ) { s = new StringSchema(pattern, lengthPair.a, lengthPair.b); }
     ;
 
-arrayRepeat[Schema typeList, SchemaArray s]
-    { long lo = 0; long hi = 0; }
-    : /*empty*/           { s.noRepeat(typeList); }
-    | ( "*"                 { lo = 0; hi = SchemaArray.UNLIMITED; }
-      | "+"                 { lo = 1; hi = SchemaArray.UNLIMITED; }
-      | "<" 
-          ( "*"             { lo = 0; hi = SchemaArray.UNLIMITED; }
-          | i1:INT          { lo = Long.parseLong(i1.getText()); }
-            ( /*empty*/     { hi = lo; }
-            | "," ( "*"     { hi = SchemaArray.UNLIMITED; }
-                  | i2:INT  { hi = Long.parseLong(i2.getText()); }
+schemaLengthArgs returns [Pair<JsonLong, JsonLong> s = null]
+    { 
+      JsonLong min = null; 
+      JsonLong max = null; 
+    }
+    : ( ( min=signedIntLit
+        | "*" // min stays null
+        )  
+        ( /* empty */   { max=min; }
+        | "," ( "*" // max stays null
+              | max=signedIntLit
+              )
+        )
+      ) { s = new Pair<JsonLong, JsonLong>(min, max); }
+    ;
+
+binarySchema returns [BinarySchema s = null]
+    { Pair<JsonLong,JsonLong> lengthPair = new Pair<JsonLong,JsonLong>(); }
+    : ( "binary" ("(" lengthPair=schemaLengthArgs ")")?
+      ) { s = new BinarySchema(lengthPair.a, lengthPair.b); }
+    ;
+
+arraySchema returns [ArraySchema s = null]
+    { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
+      Schema p; 
+      Schema rest = null;
+      Pair<JsonLong, JsonLong> repeat = null; 
+    }
+    : "["
+        ( p=schema           { rest = p; }
+          ( "," p=schema     { schemata.add(rest); rest = p; }
+          )*
+          repeat=arraySchemaRepeat
+        )?
+      "]" { 
+            Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
+      	    s = rest != null ? new ArraySchema(schemaArray, rest, repeat.a, repeat.b)
+      	                     : new ArraySchema(schemaArray); // empty array
+          }
+    ;
+
+arraySchemaRepeat returns [Pair<JsonLong, JsonLong> p = null; ]
+    { JsonLong minRest = null; JsonLong maxRest = null; }
+    : ( /*empty*/                     { minRest = JsonLong.ONE; maxRest = JsonLong.ONE; }
+      | ( "*"                         
+        | "+"                         { minRest = JsonLong.ONE; }
+        | "<" 
+            ( "*"                     
+            | minRest=signedIntLit
+            ) 
+            ( /*empty*/               { maxRest = minRest; }
+            | "," ( "*"             
+                    | maxRest=signedIntLit 
                   )
             )
-          )
-        ">" 
-      ) { s.setRepeat(typeList, lo, hi); }
+          ">"
+        )
+      ) { p = new Pair<JsonLong, JsonLong>(minRest, maxRest); }
     ;
 
-recordType returns [SchemaRecord s = new SchemaRecord()]
-    { SchemaField f; }
-    : "{" ( ( fieldType[s] | openRecord[s] )
-            ( "," ( fieldType[s] | openRecord[s] ) )*
+recordSchema returns [RecordSchema s = null]
+    { 
+   	  List<RecordSchema.Field> fields = new ArrayList<RecordSchema.Field>(); 
+   	  Schema rest = null;
+   	  RecordSchema.Field f = null;    
+  	}
+    : "{" ( ( f=recordSchemaField                { fields.add(f); }
+            | rest=recordSchemaRest[rest] 
+            )
+            ( "," ( f=recordSchemaField          { fields.add(f); } 
+                  | rest=recordSchemaRest[rest] 
+                  ) 
+            )*
           )? 
-      "}"
+      "}" { 
+      	    RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
+      	    s = new RecordSchema(fieldsArray, rest);
+          }
     ;
 
-recordElementType[SchemaRecord s]
-    : fieldType[s]
-    | openRecord[s]
-    ;
-
-openRecord[SchemaRecord s]
-    { Schema t; }
-    : "*"  ( /* empty */     { t = new SchemaAny(); }
-           | ":" t=type )
+recordSchemaRest[Schema currentRest] returns [Schema s = null]
+    : "*" s=recordSchemaFieldSchema
       { 
-      	if( s.getRest() != null ) 
+      	if( currentRest != null ) 
       	{
       	  oops("only one wildcard field is allowed in a record schema");
       	}
-      	s.setRest(t); 
       }
     ;
 
-fieldType[SchemaRecord s]
+recordSchemaField returns [RecordSchema.Field s = null]
     { String n; boolean optional = false; Schema t; }
-    : n=constFieldName
+    : n=recordSchemaFieldName
       ( "?" { optional = true; } )?
-      t=fieldValueType
+      t=recordSchemaFieldSchema
       {
-      	s.addField(new SchemaField(n,optional,t));
+      	s = new RecordSchema.Field(new JsonString(n), t, optional);
       }
     ;
     
-fieldValueType returns [Schema s]
-    : /*empty*/   { s = new SchemaAny(); }
-    | ":" s=type
+recordSchemaFieldSchema returns [Schema s]
+    : /*empty*/   { s = AnySchema.getInstance(); }
+    | ":" s=schema
     ;
 
-constFieldName returns [String s=null]
-    : i:FNAME   { s = i.getText(); }
+recordSchemaFieldName returns [String s=null]
+    : i:ID      { s = i.getText(); }
+    | j:FNAME   { s = j.getText(); }
     | s=str
     ;
 

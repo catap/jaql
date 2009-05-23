@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.core;
+package com.ibm.jaql.lang.expr.schema;
 
 import java.io.PrintStream;
 import java.util.HashSet;
@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
  * 

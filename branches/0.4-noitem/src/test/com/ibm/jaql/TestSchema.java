@@ -13,48 +13,35 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.json.schema;
+package com.ibm.jaql;
 
-import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JsonValue;
-
-/** Schema that matches everything.
+/**
  * 
  */
-public class SchemaAny extends Schema
+public class TestSchema extends JaqlBaseTestCase
 {
+
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
+   * @see com.ibm.jaql.lang.JaqlBaseTestCase#setUp()
    */
   @Override
-  public boolean matches(JsonValue value)
+  protected void setUp() throws IOException
   {
-    return true;
+    setFilePrefix("schema");
   }
 
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.json.schema.Schema#toString()
+   * @see com.ibm.jaql.lang.JaqlBaseTestCase#tearDown()
    */
   @Override
-  public String toString()
+  protected void tearDown() throws IOException
   {
-    return "*";
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.schema.Schema#write(java.io.DataOutput)
-   */
-  @Override
-  public void write(DataOutput out) throws IOException
-  {
-    out.writeByte(ANY_TYPE);
-  }
 }

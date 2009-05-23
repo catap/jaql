@@ -15,14 +15,10 @@
  */
 package com.ibm.jaql.json.schema;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
-import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
-import com.ibm.jaql.json.type.JsonEncoding;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
 
 // TODO: handling of null values
@@ -32,35 +28,41 @@ import com.ibm.jaql.json.type.JsonValue;
  * serialization of schema descriptions.
  * 
  * 
- * Data model: ----------- value ::= record | array | atom record ::= { (string:
- * value)* } array ::= [ (value)* ] atom ::= null | string | number | boolean |
- * ...
+ * Data model: 
+ * ----------- 
+ * value ::= record | array | atom 
+ * record ::= { (string: value)* } 
+ * array ::= [ (value)* ] 
+ * atom ::= null | string | number | boolean | ...
  * 
- * Schema language: ---------------- type ::= oneType ('|' oneType)* oneType ::=
- * anyType | atomType | arrayType | recordType anyType ::= '*' atomType ::= ID //
- * null | string | number | boolean | ... arrayType ::= [ ( type (',' type)*
- * (repeat)? )? ] typeList ::= repeat ::= <min,max> // min is integer >= 0, max
- * is integer >= min or * for unbounded | <count> // == <count,count> recordType
- * ::= { fieldType* } fieldType ::= name (fieldOpt)? ':' type fieldOpt ::= '*' //
- * zero or more fields with this prefix have this type | '?' // optional field
- * with this name and type
- * 
- * 
+ * Schema language: 
+ * ---------------- 
+ * type ::= oneType ('|' oneType)* 
+ * oneType ::= anyType | atomType | arrayType | recordType 
+ * anyType ::= '*' 
+ * atomType ::= 'null' | string | number | boolean | ...
+ * numberType ::= 'number' numberTypeArgs?
+ * numberTypeArgs ::= '(' (
+ *                          value             // constant
+ *                        | min,max           // range
+ *                        ) ')'
+ *                           ')' )? 
+ * arrayType ::= [ ( type (',' type)* (repeat)? )? ] 
+ * typeList ::= 
+ * repeat ::= <min,max> // min is integer >= 0, max is integer >= min or for unbounded 
+ *          | <count>   // == <count,count> 
+ * recordType ::= { fieldType*} 
+ * fieldType ::= name (fieldOpt)? ':' type 
+ * fieldOpt ::= '*' // zero or more fields with this prefix have this type 
+ *            | '?' // optional field
+ * with this name and type 
  ******************************************************************************/
-@SuppressWarnings("unchecked")
 public abstract class Schema
 {
-  protected final static byte UNKNOWN_TYPE = 0;
-  protected final static byte ANY_TYPE     = 1;
-  protected final static byte ATOM_TYPE    = 2;
-  protected final static byte ARRAY_TYPE   = 3;
-  protected final static byte RECORD_TYPE  = 4;
-  protected final static byte OR_TYPE      = 5;
-
-  public Schema               nextSchema;      // used by Array and Or Schemas
-
-  protected final static BinaryBasicSerializer<JsonString> serializer 
-    = (BinaryBasicSerializer<JsonString>)DefaultBinaryFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
+  public enum SchemaType
+  {
+    ANY, ARRAY, BINARY, DECIMAL, DOUBLE, GENERIC, LONG, NULL, NUMERIC, OR, RECORD, STRING
+  }
   
   /**
    * @param item
@@ -68,44 +70,24 @@ public abstract class Schema
    * @throws Exception
    */
   public abstract boolean matches(JsonValue value) throws Exception;
-
+  
   /*
    * (non-Javadoc)
    * 
    * @see java.lang.Object#toString()
    */
-  public abstract String toString();
-
-  /**
-   * @param out
-   * @throws IOException
-   */
-  public abstract void write(DataOutput out) throws IOException;
-
-  /**
-   * @param in
-   * @return
-   * @throws IOException
-   */
-  public static Schema read(DataInput in) throws IOException
+  public String toString()
   {
-    byte b = in.readByte();
-    switch (b)
+    JsonSchema s = new JsonSchema(this);
+    try
     {
-      case UNKNOWN_TYPE :
-        return null;
-      case ANY_TYPE :
-        return new SchemaAny();
-      case ATOM_TYPE :
-        return new SchemaAtom(in);
-      case ARRAY_TYPE :
-        return new SchemaArray(in);
-      case RECORD_TYPE :
-        return new SchemaRecord(in);
-      case OR_TYPE :
-        return new SchemaOr(in);
-      default :
-        throw new IOException("invalid schema type: " + b);
+      return JsonValue.printToString(s);
+    } catch (IOException e)
+    {
+      throw new UndeclaredThrowableException(e);
     }
+    
   }
+  
+  public abstract SchemaType getSchemaType();
 }

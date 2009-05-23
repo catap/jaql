@@ -62,7 +62,6 @@ import com.ibm.jaql.lang.expr.core.PerPartitionFn;
 import com.ibm.jaql.lang.expr.core.PerfFn;
 import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
-import com.ibm.jaql.lang.expr.core.TypeofExpr;
 import com.ibm.jaql.lang.expr.date.DateFn;
 import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.DatePartsFn;
@@ -131,6 +130,7 @@ import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
 import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
 import com.ibm.jaql.lang.expr.regex.RegexTestFn;
+import com.ibm.jaql.lang.expr.schema.TypeofExpr;
 import com.ibm.jaql.lang.expr.span.SpanContainsFn;
 import com.ibm.jaql.lang.expr.span.SpanFn;
 import com.ibm.jaql.lang.expr.span.SpanOverlapsFn;
@@ -189,7 +189,9 @@ public class FunctionLib
   static
   {
     // TODO: add "import extension" that loads the functions in some jar (and loads types?)
+    // schema
     add(TypeofExpr.class);
+    //    
     add(CompareFn.class);
     add(ExistsFn.class);
     //lib.put("loadXml", LoadXmlExpr.class);

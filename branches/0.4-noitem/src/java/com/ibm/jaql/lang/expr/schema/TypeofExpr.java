@@ -13,12 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.core;
+package com.ibm.jaql.lang.expr.schema;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
  * 

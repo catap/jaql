@@ -1,0 +1,428 @@
+//-------------------------- PARSING --------------------------------
+
+// atoms
+schema null;##
+schema null
+
+schema *;##
+schema *
+
+
+schema boolean;##
+schema boolean
+
+schema date;##
+schema date
+
+schema function;##
+schema function
+
+
+schema long;##
+schema long
+
+schema long(5);##
+schema long(5)
+
+schema long(*);##
+schema long
+
+schema long(5,10);##
+schema long(5, 10)
+
+schema long(-5,10);##
+schema long(-5, 10)
+
+schema long(5,*);##
+schema long(5,*)
+
+schema long(*,5);##
+schema long(*,5)
+
+schema long(*,*);##
+schema long
+
+schema long(-9223372036854775808, 9223372036854775807);##
+schema long(-9223372036854775808, 9223372036854775807)
+ // should work: long range
+schema long(*, 9223372036854775808)##
+FAILURE
+; // must fail: to large argument
+schema long(-9223372036854775809,##
+FAILURE
+ *); // must fail: to large argument
+schema long(5,3)##
+FAILURE
+; // must fail: invalid interval
+schema long(5d)##
+FAILURE
+; // must fail: invalid argument
+schema long(5.0);##
+schema long(5)
+ // should be ok
+schema long(5.1)##
+FAILURE
+; // must fail: invalid argument
+
+schema double;##
+schema double
+
+schema double(5d);##
+schema double(5.0d)
+
+schema double(*);##
+schema double
+
+schema double(5d,10d);##
+schema double(5.0d, 10.0d)
+
+schema double(-5d,10d);##
+schema double(-5.0d, 10.0d)
+
+schema double(5d,*);##
+schema double(5.0d,*)
+
+schema double(*,5d);##
+schema double(*,5.0d)
+
+schema double(*,*);##
+schema double
+
+schema double(5d,3d)##
+FAILURE
+; // must fail: invalid interval
+schema double(5)##
+FAILURE
+; // must fail: invalid argument
+schema double(5.1)##
+FAILURE
+; // must fail: invalid argument
+
+schema decimal;##
+schema decimal
+
+schema decimal(5);##
+schema decimal(5)
+
+schema decimal(*);##
+schema decimal
+
+schema decimal(5,10);##
+schema decimal(5, 10)
+
+schema decimal(-5,10);##
+schema decimal(-5, 10)
+
+schema decimal(5,*);##
+schema decimal(5,*)
+
+schema decimal(*,5);##
+schema decimal(*,5)
+
+schema decimal(*,*);##
+schema decimal
+
+schema decimal(5.1);##
+schema decimal(5.1)
+
+schema decimal(5.1,10.1);##
+schema decimal(5.1, 10.1)
+
+schema decimal(-5.1,10.1);##
+schema decimal(-5.1, 10.1)
+
+schema decimal(5.1,*);##
+schema decimal(5.1,*)
+
+schema decimal(*,5.1);##
+schema decimal(*,5.1)
+
+// TODO: uncomment next line when parser is fixed to accept big decimals
+// schema decimal(-9223372036854775809, 9223372036854775808); // should work (outside long range)
+schema decimal(5,3)##
+FAILURE
+; // must fail: invalid interval
+schema decimal(5d)##
+FAILURE
+; // must fail: invalid argument
+
+schema string;##
+schema string
+
+schema string(5);##
+schema string(5)
+
+schema string(*);##
+schema string
+
+schema string(5,10);##
+schema string(5, 10)
+
+schema string(5,*);##
+schema string(5, *)
+
+schema string(*,5);##
+schema string(0, 5)
+
+schema string(*,*);##
+schema string
+
+schema string(-1)##
+FAILURE
+; // must fail: invalid interval
+schema string(5,3)##
+FAILURE
+; // must fail: invalid interval
+
+schema string("[ab]*");##
+schema string("[ab]*")
+
+schema string("[ab]*", 5);##
+schema string("[ab]*", 5)
+
+schema string("[ab]*", 5, 10);##
+schema string("[ab]*", 5, 10)
+
+schema string("abc[")##
+FAILURE
+; // must fail: invalid pattern 
+
+schema binary;##
+schema binary
+
+schema binary(*);##
+schema binary
+
+schema binary(5);##
+schema binary(5)
+
+schema binary(5,10);##
+schema binary(5, 10)
+
+schema binary(5,*);##
+schema binary(5, *)
+
+schema binary(*,5);##
+schema binary(0, 5)
+
+schema binary(*,*);##
+schema binary
+
+schema binary(-1)##
+FAILURE
+; // must fail: invalid interval
+schema binary(5,3)##
+FAILURE
+; // must fail: invalid interval
+
+// arrays
+schema [];##
+schema []
+
+schema [ null ];##
+schema [
+         null
+       ]
+
+schema [ long(0,10), string("a*"), boolean ];##
+schema [
+         long(0, 10),
+         string("a*"),
+         boolean
+       ]
+
+schema [ long(5,3)##
+FAILURE
+ ]; // must fail: invalid internal schema
+
+schema [ null* ];##
+schema [
+         null*
+       ]
+
+schema [ null+ ];##
+schema [
+         null+
+       ]
+
+schema [ null<0> ];##
+schema []
+
+schema [ null<5> ];##
+schema [
+         null<5>
+       ]
+
+schema [ null<5,10> ];##
+schema [
+         null<5, 10>
+       ]
+
+schema [ null<5,*> ];##
+schema [
+         null<5, *>
+       ]
+
+schema [ null<*,5> ];##
+schema [
+         null<0, 5>
+       ]
+
+schema [ null<*,*> ];##
+schema [
+         null*
+       ]
+
+schema [ null<-1> ]##
+FAILURE
+; // must fail: invalid interval
+schema [ null<5,3> ]##
+FAILURE
+; // must fail: invalid interval
+
+schema [ long(0,10)* ];##
+schema [
+         long(0, 10)*
+       ]
+
+schema [ long(0,10)+ ];##
+schema [
+         long(0, 10)+
+       ]
+
+schema [ long(0,10)<0> ];##
+schema []
+
+schema [ long(0,10)<5> ];##
+schema [
+         long(0, 10)<5>
+       ]
+
+schema [ long(0,10)<5,10> ];##
+schema [
+         long(0, 10)<5, 10>
+       ]
+
+schema [ long(0,10)<5,*> ];##
+schema [
+         long(0, 10)<5, *>
+       ]
+
+schema [ long(0,10)<*,5> ];##
+schema [
+         long(0, 10)<0, 5>
+       ]
+
+schema [ long(0,10)<*,*> ];##
+schema [
+         long(0, 10)*
+       ]
+
+schema [ long(0,10)<-1> ]##
+FAILURE
+; // must fail: invalid interval
+schema [ long(0,10)<5,3> ]##
+FAILURE
+; // must fail: invalid interval
+
+
+// records
+schema {};##
+schema {}
+
+schema { a };##
+schema {
+         "a": *
+       }
+
+schema { a: * };##
+schema {
+         "a": *
+       }
+
+schema { "a" };##
+schema {
+         "a": *
+       }
+
+schema { "a": * };##
+schema {
+         "a": *
+       }
+
+// schema { for }; // does not work currently 
+schema { for: * };##
+schema {
+         "for": *
+       }
+
+schema { "for" };##
+schema {
+         "for": *
+       }
+
+// schema { null }; // does not work currently
+schema { null: * };##
+schema {
+         "null": *
+       }
+ // treated as "null"
+schema { a: long(0,10) };##
+schema {
+         "a": long(0, 10)
+       }
+
+schema { a: long(0,10), * };##
+schema {
+         "a": long(0, 10),
+         *: *
+       }
+
+schema { a: long(0,10), *: * };##
+schema {
+         "a": long(0, 10),
+         *: *
+       }
+
+schema { a: long(0,10), *: string };##
+schema {
+         "a": long(0, 10),
+         *: string
+       }
+
+schema { a: long(0,10), b: string, c: null };##
+schema {
+         "a": long(0, 10),
+         "b": string,
+         "c": null
+       }
+
+schema { *: * };##
+schema {
+         *: *
+       }
+
+schema { *: long(0,10) };##
+schema {
+         *: long(0, 10)
+       }
+
+schema { "1" };##
+schema {
+         "1": *
+       }
+
+schema { 1:##
+FAILURE
+ * }; // must fail: invalid field name (numbers must be quoted)
+schema { *, * }##
+FAILURE
+; // must fail: wildcard field occurs twice
+schema { a, b, c, a, * }##
+FAILURE
+; // must fail: field name occurs twice
+
+
+//-------------------------- QUIT ---------------------------------
+
+quit;
