@@ -201,7 +201,7 @@ The first statement defines the variable *$introMessage* as a function of two ar
   ]
 }}}
 
-For Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. 
+For Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. First we introduce the *expand* operators which will be used to create a single array of strings, and distinguish it from the *transform* operator:
 
 {{{
   $example = [ 
@@ -231,18 +231,53 @@ For Query 2, we show how to compute *word-count*, the canonical map-reduce examp
   ]
 }}}
 
+*$example* is an array of array of strings, exactly what tokenization will produce for each *msg*. The *transform* operators takes each array child as input, in this case a nested array, and places a single JSON value back into the output array. This leaves us with a nested array of strings whereas word-count operates on a single array of strings. The *expand* operator in contrast expects an array as input, in this case the nested array, and places each of the nested array's children into the output array, thus producing a single array of strings.
+
 {{{
 
   // register the splitArr function
   registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
   splitArr("something simple with five words", " ");
 
+  // results ...
+  [
+    "something",
+    "simple",
+    "with",
+    "five",
+    "words"
+  ]
+
   // Query 2: word count across all messages
   $log
   -> expand splitArr($.msg, " ")
   -> group by $word = $
-      into { $word, num: count($) }
-  -> write(hdfs("wordCount"));
+      into { $word, num: count($) };
+
+  // results ...
+  [
+    {
+      "num": 1,
+      "word": "Agreed,"
+    },
+    {
+      "num": 1,
+      "word": "Ann"
+    },
+    {
+      "num": 2,
+      "word": "Hello,"
+    },
+    {
+      "num": 1,
+      "word": "Joe,"
+    },
+    {
+      "num": 1,
+      "word": "Seinfeld"
+    },
+    ...
+  ]
 }}}
 
 {{{
