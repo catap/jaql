@@ -357,11 +357,44 @@ The sub-pipe is extended to include a transform that associates the sender id wi
 Once word-count is defined per user, we can associate zip code information by joining with the user data, as shown in Query 5.
 
 {{{
+  $senderWordCount = 
+  $log
+  -> expand each $l
+       ( splitArr($l.msg, " ") -> filter $ in $inList
+                               -> transform { $l.from, word: $ } )
+  -> group by $uword = $
+       into { $uword.from, $uword.word, num: count($) };
+
   // Query 5: segment by zip which requires a join with the user data
   join $senderWordCount, $user
   where $senderWordCount.from == $user.id
     into { $senderWordCount.*, $user.zip }
   -> group by $g = {$.zip, $.word}
-       into { $g.zip, $g.word, num: sum($[*].num) }    
-  -> write(hdfs("zipWordCount"));
+       into { $g.zip, $g.word, num: sum($[*].num) };    
+  
+  // results ...
+  [
+    {
+      "num": 1,
+      "word": "Seinfeld",
+      "zip": 94114
+    },
+    {
+      "num": 2,
+      "word": "topic",
+      "zip": 94114
+    },
+    {
+      "num": 1,
+      "word": "topic",
+      "zip": 95008
+    },
+    {
+      "num": 1,
+      "word": "topic",
+      "zip": 95120
+    }
+  ]
 }}}
+
+Query 5 joins the senderWordCount result with user information on id, groups on zip and word, then calculates the total number of times a word is mentioned in a given zip. 
