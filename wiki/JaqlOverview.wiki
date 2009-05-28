@@ -226,5 +226,78 @@ In the above example, *myLib.jaql* contains the definintion of the core function
 whereas *myPipe.jaql* contains a specific pipe, bound to specific types of source and sink. Finally, the shell script calls the Jaql interpreter in batch mode (-b) and passes in parameters (-e) to evaluate the pipe. For more details on how the Jaql script works, refer to [Running].
 
 For Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. 
-Joins can be expressed using group, but the syntax can get a little messy.
-Since joins are common, special syntax has been introduced for them:
+
+{{{
+  $example = [ 
+    ["first", "example"],
+    ["second", "example"]
+  ];
+  $example -> transform $;
+  // results ...
+  [
+    [
+      "first",
+      "example"
+    ],
+    [
+      "second",
+      "example"
+    ]
+  ]
+
+  $example -> expand $;
+  // results ...
+  [
+    "first",
+    "example",
+    "second",
+    "example"
+  ]
+}}}
+
+{{{
+
+  // register the splitArr function
+  registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
+  splitArr("something simple with five words", " ");
+
+  // Query 2: word count across all messages
+  $log
+  -> expand splitArr($.msg, " ")
+  -> group by $word = $
+      into { $word, num: count($) }
+  -> write(hdfs("wordCount"));
+}}}
+
+{{{
+  $inList = ["topic", "Seinfeld"];
+
+  // Query 3: word-count for specific words
+  $log
+  -> expand (splitArr($.msg, " ") -> filter $ in $inList )
+  -> group by $word = $
+      into { $word, num: count($) }
+  -> write(hdfs("filteredWordCount"));
+}}}
+
+{{{
+  //
+  // Query 4: word-count for specific words per sender
+  $log
+  -> expand each $l
+       ( splitArr($l.msg, " ") -> filter $ in $inList
+                               -> transform { $l.from, word: $ } )
+  -> group by $uword = $
+       into { $uword.from, $uword.word, num: count($) }
+  -> write(hdfs("senderWordCount"));
+}}}
+
+{{{
+  // Query 5: segment by zip which requires a join with the user data
+  join $senderWordCount, $user
+  where $senderWordCount.from == $user.id
+    into { $senderWordCount.*, $user.zip }
+  -> group by $g = {$.zip, $.word}
+       into { $g.zip, $g.word, num: sum($[*].num) }    
+  -> write(hdfs("zipWordCount"));
+}}}
