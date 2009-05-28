@@ -284,6 +284,8 @@ The UDF is first registered by associating a name with its implementing class. M
 
 Jaql evaluates this query by translating to map-reduce. The read, tokenization, and expansion are performed in the map step and the grouping and count is performed in the reduce step. Since count is an algebraic function, Jaql pushes its computation into the map step and perfors a sum in the reduce step, i.e., it takes advantage of map-reduce's combiners where applicable. For more details on how Jaql exploits map-reduce, refer to [PlanLanguage].
 
+Query 3 slightly modifies Query 2 by adding a filter on the words that are returned:
+
 {{{
   $inList = ["topic", "Seinfeld"];
 
@@ -291,9 +293,24 @@ Jaql evaluates this query by translating to map-reduce. The read, tokenization, 
   $log
   -> expand (splitArr($.msg, " ") -> filter $ in $inList )
   -> group by $word = $
-      into { $word, num: count($) }
-  -> write(hdfs("filteredWordCount"));
+      into { $word, num: count($) };
+  
+  // results ...
+  [
+    {
+      "num": 1,
+      "word": "Seinfeld"
+    },
+    {
+      "num": 4,
+      "word": "topic"
+    }
+  ]
 }}}
+
+This example illustrates a *sub-pipe*, that is a pipe that is nested under another pipe, in this case, the outer pipe. Tokenization produces an array so is used as the source of the sub-pipe, which simply filters the words according to a simple in-list of words.
+
+Query 4 extends Query 3 by computing word-count per message sender, instead of a global word-count.
 
 {{{
   //
@@ -303,9 +320,41 @@ Jaql evaluates this query by translating to map-reduce. The read, tokenization, 
        ( splitArr($l.msg, " ") -> filter $ in $inList
                                -> transform { $l.from, word: $ } )
   -> group by $uword = $
-       into { $uword.from, $uword.word, num: count($) }
-  -> write(hdfs("senderWordCount"));
+       into { $uword.from, $uword.word, num: count($) };
+  
+  // results ...
+  [
+    {
+      "from": 20,
+      "num": 1,
+      "word": "topic"
+    },
+    {
+      "from": 40,
+      "num": 1,
+      "word": "Seinfeld"
+    },
+    {
+      "from": 40,
+      "num": 1,
+      "word": "topic"
+    },
+    {
+      "from": 81,
+      "num": 1,
+      "word": "topic"
+    },
+    {
+      "from": 201,
+      "num": 1,
+      "word": "topic"
+    }
+  ]
 }}}
+
+The sub-pipe is extended to include a transform that associates the sender id with each filtered word. Note that the sender id is in the JSON object on the outer pipe but *splitArr* "loses" this association by only examining *msg*. As a result, we need to explicitly construct an association of *from* from the outer object with each word in order to later group by *from*. The *each $l* syntax for *expand* saves the outer object so that it can be referenced in the sub-pipe. This is similar to an iteration variable one is familar with in *for-loops*.
+
+Once word-count is defined per user, we can associate zip code information by joining with the user data, as shown in Query 5.
 
 {{{
   // Query 5: segment by zip which requires a join with the user data
