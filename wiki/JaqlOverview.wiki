@@ -14,8 +14,9 @@ Our high-level design objectives include:
   * Parallelism: Jaql queries that process large amounts of data must be able to take advantage of scaled-out architectures
   * Extensibility: users must be able to easily extend Jaql
 
-We begin with an example of JSON data, then go on to describe
-the key features of Jaql and show how it can be used to process
+We begin with an example of JSON data, then go on to several
+examples using the data to illustrate key features of Jaql
+and show how it can be used to process
 JSON data in parallel using Hadoop's map/reduce framework.
 Along the way, we also show how Jaql's [Functions function]
 and [IO] libraries can be extended. To get started with the examples below,
@@ -111,7 +112,7 @@ _Note:_ while Jaql can consume strict JSON, it can also consume minor variants o
 Jaql is a functional query language that provides users with a simple,
 declarative syntax to do things like filter, join, and group JSON data.
 Jaql also allows user-defined functions to be written and used in expressions. 
-Let's begin with some examples using the log and user data presented earlier:
+Let's begin with some examples using the log and user data presented earlier.
 Our first task is to load the locally stored JSON data into Hadoop's file system, HDFS
 (We store data in HDFS since it can processed in parallel using map-reduce).
 
@@ -123,7 +124,7 @@ Our first task is to load the locally stored JSON data into Hadoop's file system
   read(file("user.json")) -> write(hdfs("user"));
 }}}
 
-*read* is an example of a _source_ whereas *write* is an example of a sink. In the example, we've constructed a simple pipe to read from a local file and write to an
+*read* is an example of a _source_ whereas *write* is an example of a _sink_. In the example, we've constructed a simple pipe to read from a local file and write to an
 hdfs file. For a more comprehensive discussion on how sources and sinks can be parameterized and extended, refer to [IO].
 
 Our first query illustrates simple filtering and projection:
@@ -201,7 +202,9 @@ The first statement defines the variable *$introMessage* as a function of two ar
   ]
 }}}
 
-For Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. First we introduce the *expand* operators which will be used to create a single array of strings, and distinguish it from the *transform* operator:
+The remaining examples are organized around the task of aggregating particular word mentions in the log messages by the senders' zip-code. We start with simple *word-count*, then describe several add-ons such as filtering by a list of words, aggregating the filtered word-counts by sender, and finally correlating senders with their zip-codes to aggregate by zip-code.
+
+In Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. First we introduce the *expand* operators which will be used to create a single array of strings, and distinguish it from the *transform* operator that we saw earlier:
 
 {{{
   $example = [ 
