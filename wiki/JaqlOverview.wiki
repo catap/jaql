@@ -231,7 +231,7 @@ For Query 2, we show how to compute *word-count*, the canonical map-reduce examp
   ]
 }}}
 
-*$example* is an array of array of strings, exactly what tokenization will produce for each *msg*. The *transform* operators takes each array child as input, in this case a nested array, and places a single JSON value back into the output array. This leaves us with a nested array of strings whereas word-count operates on a single array of strings. The *expand* operator in contrast expects an array as input, in this case the nested array, and places each of the nested array's children into the output array, thus producing a single array of strings.
+*$example* is an array of array of strings, exactly what tokenization will produce for each *msg*. The *transform* operators takes each array child as input, in this case a nested array, and places a single JSON value back into the output array. This leaves us with a nested array of strings whereas word-count operates on a single array of strings. The *expand* operator in contrast expects an array as input, in this case the nested array, and places each of the nested array's children into the output array, thus producing a single array of strings. The following shows how *expand* is used in conjunction with a simple tokenizer that is implemented as the user-defined function (UDF)*splitArr*:
 
 {{{
 
@@ -279,6 +279,10 @@ For Query 2, we show how to compute *word-count*, the canonical map-reduce examp
     ...
   ]
 }}}
+
+The UDF is first registered by associating a name with its implementing class. More details on extending Jaql with UDF's and other functions can be found in [Functions]. Following, we exercise *splitArr* on a sample string using a simple delimiter. Finally, we implement word-count by reading the log data, tokenizing each *$.msg*, expanding the tokens into the output array, grouping on word, computing a *count* per word, and outputing an object for each word and its associated count.
+
+Jaql evaluates this query by translating to map-reduce. The read, tokenization, and expansion are performed in the map step and the grouping and count is performed in the reduce step. Since count is an algebraic function, Jaql pushes its computation into the map step and perfors a sum in the reduce step, i.e., it takes advantage of map-reduce's combiners where applicable. For more details on how Jaql exploits map-reduce, refer to [PlanLanguage].
 
 {{{
   $inList = ["topic", "Seinfeld"];
