@@ -6,7 +6,7 @@ In this document, we introduce Jaql, a query language for
 !JavaScript Object Notation or [http://www.json.org/ JSON].
 Although Jaql has been designed specifically for JSON,
 we have tried to borrow some of the best features of
-[http://en.wikipedia.org/wiki/SQL SQL], [http://www.w3.org/TR/xquery/ XQuery], and
+[http://en.wikipedia.org/wiki/SQL SQL], [http://www.w3.org/TR/xquery/ XQuery], LISP, and
 [http://wiki.apache.org/pig/PigLatin PigLatin].
 Our high-level design objectives include:
 
@@ -17,502 +17,214 @@ Our high-level design objectives include:
 We begin with an example of JSON data, then go on to describe
 the key features of Jaql and show how it can be used to process
 JSON data in parallel using Hadoop's map/reduce framework.
-Jaql is designed to be extended. Both [Functions functions] 
-as well as [IO] can be extended so as to facilitate
-plugging in your computation for your data. While
-only a high-level description of Jaql is presented here,
-all examples can be run by 
-[http://jaql.googlecode.com/files/jaql-0.4_hadoop-0.18.3.tgz downloading] the
-most recent release of Jaql and following the [Running instructions].
+Along the way, we also show how Jaql's [Functions function]
+and [IO] libraries can be extended. To get started with the examples below,
+you can [http://jaql.googlecode.com/files/jaql-0.4_hadoop-0.18.3.tgz download] the most recent release of Jaql and fire up a Jaql interpreter following these [Running instructions].
 
 _Note:_ Jaql is still in early development, 
 so beware that it is likely to change over the next few months.
 The future development plans are outlined in the [RoadMap roadmap].
-To see a preview of how we plan to further simplify Jaql, please see the
-[http://jaql.googlecode.com/files/Jaql-Pipes-Intro.ppt slides] that we
-presented at the Hadoop User Group on 10/16/2008.
 
 = A JSON Example =
 
-Let's start off with an example of books and their reviews in JSON format 
-
-_Note:_ while Jaql can consume strict JSON, it can also consume minor variants of JSON. In the examples, for the sake of clarity, we omit double-quotes around field names and use single-quotes in place of double-quotes for strings.
+Let's start off with an example of an application log: 
 
 {{{
-  [
-    {publisher: 'Scholastic',
-     author: 'J. K. Rowling',
-     title: 'Deathly Hallows',
-     year: 2007},
-
-    {publisher: 'Scholastic',
-     author: 'J. K. Rowling',
-     title: 'Chamber of Secrets',
-     year: 1999, 
-     reviews: [
-       {rating: 10, user: 'joe', review: 'The best ...'},
-       {rating: 6, user: 'mary', review: 'Average ...'}]},
-
-    {publisher: 'Scholastic',
-     author: 'J. K. Rowling',
-     title: 'Sorcerers Stone',
-     year: 1998},
-
-    {publisher: 'Scholastic',
-     author: 'R. L. Stine',
-     title: 'Monster Blood IV',
-     year: 1997, 
-     reviews: [
-       {rating: 8, user: 'rob', review: 'High on my list...'}, 
-       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
-        discussion:
-          [{user: 'ben', text: 'This is too harsh...'}, 
-           {user: 'jill', text: 'I agree ...'}]}]},
-
-    {publisher: 'Grosset',
-     author: 'Carolyn Keene',
-     title: 'The Secret of Kane',
-     year: 1930}
-  ]
+%cat log.json
+[
+  { from: 101, 
+    to: [102],
+    ts: 1243361567,
+    msg: "Hello, world!" 
+  },
+  { from: 201, 
+    to: [20, 81, 94],
+    ts: 1243361567,
+    msg: "Hello, world! was interesting, but lets start a new topic please" 
+  },
+  { from: 81, 
+    to: [201, 94 40],
+    ts: 1243361567,
+    msg: "Agreed, this topic is not for Joe, but more suitable for Ann" 
+  },
+  { from: 40, 
+    to: [201, 81, 94],
+    ts: 1243361567,
+    msg: "Thanks for including me on this topic about nothing... reminds me of a Seinfeld episode." 
+  },
+  { from: 20, 
+    to: [81, 201, 94],
+    ts: 1243361567,
+    msg: "Where did the topic go.. hopefully its more than about nothing." 
+  }  
+]
 }}}
 
-This example shows an _array_ of JSON _objects_.
-Arrays are delimited by brackets '[]' and objects are delimited by braces '{}'.
-Objects contain name:value pairs or _members_, where the
+and its associated user data:
+
+{{{
+% cat user.json
+[
+  { id: 20,
+    name: "Joe Smith",
+    zip: 95120
+  },
+  { id: 40,
+    name: "Ann Jones",
+    zip: 94114
+  },
+  { id: 101,
+    name: "Alicia Fox",
+    zip: 95008
+  },
+  { id: 201,
+    name: "Mike James",
+    zip: 94114
+  },
+  { id: 102,
+    name: "Adam Baker",
+    zip: 94114
+  },
+  { id: 81,
+    name: "Beth Charles",
+    zip: 95008
+  },
+  { id: 94,
+    name: "Charles Dodd",
+    zip: 95120
+  },
+  { id: 103,
+    name: "Dan Epstein",
+    zip: 95008
+  }
+]
+}}}
+
+Both data sets are assumed to be stored in separate, local files. Each file consists
+of an _array_, deliminted by brackets '[]', of JSON objects (or records), delimited by braces '{}'. Objects contain name:value pairs or _members_, where the
 value can be an atomic type or a nested value.
-In contrast to XML, the type of an atomic value is always known in JSON.
-Here, each top-level object represents a book and its reviews.
-The 'reviews' for a book object is an array and each entry
-in the array corresponds to a review.
-Each review consists of a 'rating', its 'user', and the text of the review. 
-Each review can also contain a 'discussion', which
-itself can be discussed, forming a discussion thread.
 
-== Why did we pick JSON? ==
-
-[http://www.json.org/ JSON] has become a popular data format for many Web-based applications because of its simplicity and modeling flexibility.
-Wikipedia includes a nice [http://en.wikipedia.org/wiki/JSON summary]
-of JSON's advantages over other data formats like XML.
-In contrast to XML, which was originally designed as a markup language,
-JSON was actually designed for data.
-Moreover, JSON is a language-independent format, with bindings
-in a variety of programming languages.
-In short, JSON makes it easy to model a wide spectrum of 
-data, ranging from homogenous flat data to 
-heterogeneous nested data, and it can do this  
-in a language-independent format.
-We believe that these characteristics make JSON
-an ideal data format for many Hadoop applications
-and databases in general.
-
-It is important to point out that the Jaql 
-data model is actually a superset of JSON.
-The only difference is that atomic types like date have been added to Jaql to
-make certain database operations more efficient.
-Also, for readability, the names in name:value pairs
-do not always need to be quoted.
-When data needs to be exported in standard JSON format,
-Jaql can convert non-standard atomic types to strings
-and add quotes to names.
-For the remainder of this document, we will use the Jaql data
-model and JSON interchangeably, although strictly speaking
-the Jaql data model is a superset of JSON.
+_Note:_ while Jaql can consume strict JSON, it can also consume minor variants of JSON. In the examples, for the sake of clarity, we omit double-quotes around field names and use single-quotes in place of double-quotes for strings.
 
 = The Jaql Query Language =
 
 Jaql is a functional query language that provides users with a simple,
 declarative syntax to do things like filter, join, and group JSON data.
 Jaql also allows user-defined functions to be written and used in expressions. 
-Let's begin with some examples using the book data presented earlier:
-Our first two queries illustrate selection, projection, and filtering.
+Let's begin with some examples using the log and user data presented earlier:
+Our first task is to load the locally stored JSON data into Hadoop's file system, HDFS
+(We store data in HDFS since it can processed in parallel using map-reduce).
 
 {{{
-  // Write the books collection from data above.
-  // $books -> write(hdfs('books'));
-  
-  // Query 1. Return the publisher and title of each book.
-  read(hdfs('books'))
-  -> transform {$.publisher, $.title};
-	
-  // result...
-  [  
-    {publisher: 'Scholastic', title: 'Deathly Hallows'},
-    {publisher: 'Scholastic', title: 'Chamber of Secrets'},
-    {publisher: 'Scholastic', title: 'Sorcerers Stone'},
-    {publisher: 'Scholastic', title: 'Monster Blood IV'},
-    {publisher: 'Grosset',    title: 'The Secret of Kane'}
-  ];
-  
-  // Query 2. Find the authors and titles of books that have received
-  // a review.
-  read(hdfs('books'))
-  -> filter exists($.reviews)
-  -> transform {$.author, $.title};
-    
-  // result...
-  [  
-    {author: 'J. K. Rowling', title: 'Chamber of Secrets'},
-    {author: 'R. L. Stine',   title: 'Monster Blood IV'}
-  ];
+  // load log data
+  read(file("log.json")) -> write(hdfs("log"));
+
+  // load user data
+  read(file("user.json")) -> write(hdfs("user"));
 }}}
 
-Query 1 uses a *for* expression to loop over the books
-collection.  Each book is bound to the variable $b and the loop body
-is evaluated.  Both the in-expression and the loop body must produce
-arrays.  The result of the for is an array that contains all of the
-loop iteration results. In Query 1, every iteration returns a record
-containing the publisher and title.  In Query 2, the *if*
-expression causes only books with reviews to be output.
+*read* is an example of a _source_ whereas *write* is an example of a sink. In the example, we've constructed a simple pipe to read from a local file and write to an
+hdfs file. For a more comprehensive discussion on how sources and sinks can be parameterized and extended, refer to [IO].
+
+Our first query illustrates simple filtering and projection:
 
 {{{
-  // Query 3a. Project the title from each book using the short-hand
-  // projection notation. 
-  read(hdfs('books'))[*].title;
-  
-  // Query 3a-alt. Or using equivalent the long-hand notation.
-  read(hdfs('books'))
-  -> transform $.title;
+  //
+  // Bind to variable
+  $log  = read(hdfs("log"));
+  $user = read(hdfs("user"));
 
-  // Query 3b. Project the user from each review of each book using the short-hand
-  // projection notation.  The double-stars flattens the contained arrays.
-  read(hdfs('books'))[*].reviews[*].user -> expand;
+  //
+  // Query 1: filter and transform
+  $log
+  -> filter $.from == 101
+  -> transform { mandatory: $.msg };
 
-  // Query 3b-alt. Or using equivalent the long-hand notation.
-  read(hdfs('books'))
-  -> expand $.reviews
-  -> transform $.user;
-
-  // result...
-  [ "Deathly Hallows",
-    "Chamber of Secrets",
-    "Sorcerers Stone",
-    "Monster Blood IV",
-    "The Secret of Kane" ];
-
-  // Query 4. Find authors, titles, and reviews of books where a review
-  // prompted a discussion by the user 'ben'.
-  read(hdfs('books'))
-  -> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
-  -> transform { $.author, $.title, $.reviews };
-	
-  // result...
-  [  
-    {author: 'R. L. Stine',
-     title: 'Monster Blood IV',
-     reviews: [
-       {rating: 8, user: 'rob', review: 'High on my list...'},
-       {rating: 2, user: 'mike', review: 'Not worth the paper ...',
-        discussion: [
-          {user: 'ben', text: 'This is too harsh...'},
-          {user: 'jill', text: 'I agree ...'}]}]}
-  ];
-}}}
-
-Queries 3a and 3b shows two short-hand notations for projecting
-from an array, as well as their equivalent long-hand notations.
-
-Query 4 is a more complicated variation of Query 2.  Now the
-predicate is based on values that are nested three levels deep (books,
-reviews, discussion). The *in* predicate checks if the user 'ben'
-discussed any book review.
-
-{{{
-  // Query 5. Find the authors and titles of books that had an
-  // average review rating over 5.
-  read(hdfs('books'))
-  -> filter avg($.reviews[*].rating) > 5
-  -> transform {$.author, $.title};
-		 	
-  // result...
-  [  
-    {author: 'J. K. Rowling', title: 'Chamber of Secrets'}
-  ];
-}}}
-
-Query 5 filters books by their average rating.
-For each book $b, the syntax {{{$b.reviews[*].rating}}} creates an array of review
-ratings for each book {{{$b}}}. The average rating for book {{{$b}}} is then computed and tested to see if it is greater than 5.
-
-{{{
-  // Query 6. Show how many books each publisher has published.
-  read(hdfs('books'))
-  -> group by $p = ($.publisher)
-       into {publisher: $p, num: count($)};
-	
-  // result...
-  [  
-    {publisher: 'Scholastic', num: 4},
-    {publisher: 'Grosset', num: 1}
-  ];
-}}}
-
-Query 6 illustrates grouping and aggregation.
-The *group* expression partitions an input collection into groups.
-Books are partitioned into groups by the grouping value {{{$p}}},
-which is set to {{{$b.publisher}}}.
-The {{{$pubs}}} variable is bound to an array associated with each
-group and used to count how many books each publisher has published.
-
-{{{
-  // Query 7. Find the publisher who published the most books.
-
-  // group books by publisher and compute their book count
-  read(hdfs('books'))
-  -> group by $p = ($.publisher)
-       into {publisher: $p, num: count($)}
-    
-  // return the top publisher
-  -> top 1 by [$.num desc];
-	 
-  // result...
-  {publisher: 'Scholastic', num: 4}
-}}}
-
-Query 7 illustrates grouping and sorting.  It shows how
-*group* and *sort* can be used to find the publisher who
-published the most books.  Variables are used to make it easier to
-write the query.  The *group* expression can also be used to
-group multiple collections.  To illustrate group, we define the
-collections X and Y:
-
-{{{
+  // result ...
   [
-    {a:1, b:1}, 
-    {a:1, b:2}, 
-    {a:2, b:3}, 
-    {a:2, b:4}
+    {
+      "mandatory": "Hello, world!"
+    }
   ]
-  -> write(hdfs('X'));
-
-  [
-    {c:2, d:1}, 
-    {c:2, d:2}, 
-    {c:3, d:3}, 
-    {c:3, d:4}
-  ]
-  -> write(hdfs('Y'));
 }}}
 
-Query 8 groups both X and Y, which is similar to a group over the
-union of the input collections, except that two arrays are generated
-for each group, one for each input collection.
+First we assign a variable to both the log and user data in hdfs.
+Then, we start a new Jaql pipe with the log data. A pipe expects an
+array as input and conceptually streams the array's values to its consumer.
+In Query 1, the first consumer is a *filter* operator that outputs only those
+values for which the predicate evaluates to true. In this case, the predicate
+tests the *from* field of each object. The *$* is an implicitly defined variable
+that references the _current_ array value. Note that the *.* used in *$.from* assumes
+that each array value is an object and not some other type of JSON value.
+
+The second consumer is a *transform* operator that takes as input a JSON value
+and outputs a JSON value. In this case, a new object is constructed to project the
+*msg* field. The sink for Query1 writes to the screen. For more details on Jaql's core language features, refer to [LanguageCore].
+
+While Query 1 is reasonably straightforward, it is not reusable. For every combination of
+source, sink, and id (e.g., from), a new Jaql pipe must be defined. Jaql supports functions in the language in order to increase re-usability. Consider defining Query 1 as a function, then calling it:
 
 {{{
-  // Query 8. Co-group X and Y.
-  $x = read(hdfs('X'));
-  $y = read(hdfs('Y'));
-  group $x by $g = ($.a),
-        $y by $g = ($.c)
-    into {g: $g, b: $x[*].b, d: $y[*].d};
+  //
+  // Define Query 1 as a function
+  $introMessage = 
+  fn($input, $id) (
+    $input
+    -> filter $.from == $id
+    -> transform { mandatory: $.msg }
+  );
 
-  // result...
-  [ 
-    {g: 1, b: [1,2], d: []},
-    {g: 2, b: [3,4], d: [1,2]},
-    {g: 3, b: [],    d: [3,4]}
-  ];
+  // Call Query1
+  read(hdfs("log")) 
+  -> $introMessage(101);
+
+  // result ...
+  [
+    {
+      "mandatory": "Hello, world!"
+    }
+  ]
 }}}
 
-In Query 8, both X and Y need to be grouped on the same value,
-namely {{{$g}}}.  The syntax {{{$xgroup[*].b}}} and {{{$ygroup[*].d}}} in the return
-expression projects the 'b' and 'd' values in the arrays created for
-each X and Y group, respectively.
+The first statement defines the variable *$introMessage* as a function of two arguments, namely an *$input* and an *$id* to use for the filter. The second statement shows how to call the newly defined function in the context of a pipe. Log data is used as a source and is implicitly bound to the first agument of the $introMessage function ($input). Using functions allows us to parameterize Query1's filter, use any source that may store log data, and use any sink to consume its output. The following example uses an hdfs sink instead of the screen:
 
+{{{
+  read(hdfs("log"))
+  -> $introMessage(101)
+  -> write(hdfs("greeting"));
+
+  // result ...
+  [
+    {
+      "mandatory": "Hello, world!"
+    }
+  ]
+}}}
+
+While functions increase reusability within a session of the jaql interpreter, they are also useful in conjunction with other tools. Consider the following pipe and how it can be embedded into other scripting languages:
+
+{{{
+  %cat myLib.jaql
+  $introMessage = 
+  fn($input, $id) (
+    $input
+    -> filter $.from == $id
+    -> transform { mandatory: $.msg }
+  );
+
+  %cat myPipe.jaql
+  read($input) -> $introMessage($id) -> write($output)
+
+  %cat myPipe.sh
+  #
+  # TODO: make the param list configurable through script input args
+  jaql JaqlShell -e '$input = hdfs("user"); $id = 101; $output = hdfs("inzip")' -b myLib.jaql, myPipe.jaql
+  
+}}}
+
+In the above example, *myLib.jaql* contains the definintion of the core function
+whereas *myPipe.jaql* contains a specific pipe, bound to specific types of source and sink. Finally, the shell script calls the Jaql interpreter in batch mode (-b) and passes in parameters (-e) to evaluate the pipe. For more details on how the Jaql script works, refer to [Running].
+
+For Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. 
 Joins can be expressed using group, but the syntax can get a little messy.
 Since joins are common, special syntax has been introduced for them:
-
-{{{
-  // Query 9. Join X and Y.
-  join $x, $y
-    where $x.a == $y.c
-    into {$x.a, $x.b, $y.c, $y.d}
-  
-  // result...
-  [ 
-    {a: 2, b: 3, c: 2, d: 1},
-    {a: 2, b: 3, c: 2, d: 2},
-    {a: 2, b: 4, c: 2, d: 1},
-    {a: 2, b: 4, c: 2, d: 2},
-  ];
-}}}
-
-Query 9 shows an inner join on 'a' and 'c' in X and Y, respectively.
-Although it has not be shown, left-, right-, and full-outer joins 
-can also be specified using modifiers.
-
-= Running Jaql in Parallel =
-
-In this section, we show how Jaql queries are evaluated in parallel using 
-Hadoop's map/reduce. Jaql includes a function that directly wraps Hadoop's
-map/reduce, called {{{mapReduce()}}}. 
-It takes a Jaql description of
-the map and reduce functions as input, and uses it to run a map/reduce
-job in Hadoop.
-
-{{{
-// Write to an HDFS file called 'sample'.
-  [
-    {x: 0, text: 'zero'},
-    {x: 1, text: 'one'},
-    {x: 0, text: 'two'},
-    {x: 1, text: 'three'},
-    {x: 0, text: 'four'},
-    {x: 1, text: 'five'},
-    {x: 0, text: 'six'},
-    {x: 1, text: 'seven'},
-    {x: 0, text: 'eight'}
-  ]
-  -> write(hdfs('sample.dat'));
-	
-  // Run a map/reduce job that counts the number objects
-  // for each 'x' value.
-  mapReduce( 
-    { input:  {type: 'hdfs', location: 'sample.dat'}, 
-      output: {type: 'hdfs', location: 'results.dat'}, 
-      map:    fn($v) ( $v -> transform [$.x, 1] ),
-      reduce: fn($x, $v) ( $v -> aggregate {x: $x, num: count($)} )
-    });
-	
-  // Read the results...
-  read(hdfs('results.dat'));
-	
-  // result...
-  [
-    {x: '0', num: 5},
-    {x: '1', num: 4}
-  ];
-}}}
-
-This example groups the input on 'x' and counts the 
-number of objects in each group.
-The map function must specify how to extract a key-value pair, 
-and the reduce function must specify how to aggregate the
-values for a given key.
-Here, the key value is set to $i.x and count($v) is 
-used to count the values $v associated with each key.
-Note that both the map and reduce functions need to output an array
-because each input is allowed to produce multiple outputs.
-
-The mapReduce() function touches on a interesting feature of Jaql,
-namely that Jaql is a second-order language.
-This allows function definitions to be assigned to variables
-and later evaluated. In mapReduce(), the map and reduce phases are specified
-using Jaql functions. Each mapper and reducer that is spawned for a Jaql job
-uses a Jaql interpreter to evaluate the respective jaql map and reduce function.
-
-The mapReduce() is useful for programmers who want to run a map/reduce job
-over JSON data and exploit the expressive power of Jaql yet free themselves
-from all the little details required to actually set up and run a map/reduce job. However, we typically write queries using the higher level operators (e.g., {{{for, group, sort, ...}}}) and let the Jaql rewriter transform the declarative queries into (possiblly multiple) mapReduce() calls. A simple example is Query 1-- a scan (e.g., {{{for}}}) is readily translated into a map-only job as follows:
-
-{{{
-  // Query 1. Return the publisher and title of each book.
-  read(hdfs('books'))
-  -> transform {$.publisher, $.title};
-
-
-  // Explain Query 1: Jaql automatically rewrites the query into a map-only job
-  stRead(
-    mapReduce(
-      {input  : { type: "hdfs", location: "books"}, 
-       output : HadoopTemp(), 
-       map    : fn ($mapIn) [ [null,{ $mapIn.publisher, $mapIn.title }]]
-      }));
-}}}
-
-Note that Query 1 is rewritten into a valid Jaql query, namely one that directly
-corresponds to a map-only job (i.e., a parallel scan of the input file).
-The {{{for}}} loop's input file directly corresponds to the {{{input}}} argument of
-mapReduce(). Since no output was specified, it is written to a temporary file that is then read ({{{stRead}}}) and returned to the client. The body of the {{{for}}} loop is
-translated to the {{{map}}} function of mapReduce(). In mapReduce(), the {{{map}}} function is assumed to take one input (a key is not required), and an array of key, value pairs are returned. For Query 1, no key returned and the value is a projection of the input record. 
-
-All of the other example queries listed here are rewritten into mapReduce() function calls and evaluated as map-reduce jobs. For example, {{{group}}} is translated to a mapReduce() that includes both a map and reduce function. Similarly, {{{join}}} is translated to {{{group}}}, which is then translated to mapReduce(). If the output of a {{{for}}} loop is {{{grouped}}}, both are translated into a single mapReduce(). For grouping, if additional information about the aggregate function is provided, Jaql can automatically rewrite queries so that they can take advantage of map/reduce's {{{combine}}}. Please refer to the discussion on [Functions aggregate functions] to see how you can define your own, plug them into Jaql, and how they're evaluated in parallel.
-
-== Word-count Example ==
-
-Jaql can also be used to process non-JSON data; the 
-[http://hadoop.apache.org/core/docs/r0.19.0/mapred_tutorial.html#Example%3A+WordCount+v1.0 word-count] example provides a good case-study to see how various
-Jaql components work together. Lets say you have a file *docs/jaql-overview.html* whose words you want to count. Les first copy the input file into HDFS:
-
-{{{
-hdfsShell("-copyFromLocal docs/jaql-overview.html test");
-}}}
-
-The {{{hdfsShell}}} function passes its argument, {{{"-copyFromLocal docs/jaql-overview.html test"}}} to the {{{hadoop fs}}} command provided by hadoop. The input file is then available as {{{test}}} in hdfs so can be read by {{{hdfsRead}}} and processed in
-parallel using map-reduce. The {{{hdfsShell}}} function is a simple example of how Jaql
-can be extended with user-defined functions; more examples are provided in [Functions].
-To read {{{test}}} into Jaql, use the expression below:
-
-{{{
-read({type: "hdfs", location: "test", 
-      inoptions: {format: "org.apache.hadoop.mapred.TextInputFormat",  
-                  converter: "com.acme.extensions.data.FromLineConverter"}});
-}}}
-
-This expression assigns the result of {{{hdfsRead}}} to the variable {{{$lineRdr}}}.
-{{{hdfsRead}}} always produces a JSON array; in this case, a JSON array of Strings, each String representing a line from the input file. The conversion to JSON is specified by
-the {{{format}}} and {{{converter}}} parameters. The {{{format}}} specifies a Hadoop
-InputFormat to convert the file into a collection of {{{key, value}}} records. 
-As in Hadoop's word-count example, the {{{TextInputFormat}}} is used to produce {{{line number, Text}}} records. The {{{converter}}} specifies how to transform a given record into a JSON value. The {{{FromLineConverter}}} discards the line-number and trivially converts the {{{Text}}} line into a JSON String. Note that without the {{{format}}} and
-{{{converter}}} parameters, the defaults used are {{{SequenceFileInputFormat}}} and Jaql's native JSON binary. More examples of [IO] show how to further cutomize Jaql
-to read/write other data sources and formats.
-
-Before we can count words, we need to be able to tokenize a given line into words. The following expression registers an example user-defined function for this task:
-
-{{{
-registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
-}}}
-
-When the Jaql interpreter encounters a {{{splitArr}}} invocation, it uses {{{splitArr's}}} associated, implementing class to evaluate the function. For now, it suffices to think of {{{splitArr}}} as calling Java's {{{String.split(...)}}} method. Further details are given in [Functions]. Now that we know how to convert a file into JSON and tokenize lines, we can complete the word-count example:
-
-=== Word-count (a) ===
-{{{
-    $lineRdr
-1.  -> expand splitArr($, " ")
-2.  -> transform [$,1]
-3.  -> group by $w = ($[0])
-         into [$w, sum($[*][1])]
-4.  -> count();
-}}}
-
-These Jaql queries directly correspond to the map-reduce word-count example.
-Each line is read in (1), tokenized in (2), and each word is output along
-with a count of 1 in lines (3-4). This expression produces an arrray of pairs ({{{[$t,1]}}}) that is assigned to {{{$tokens}}} in line (1). The {{{$tokens}}} are
-then grouped on word ({{{$w = $p[0]}}}) in line (5). Each distinct word ({{{$w}}}) is associated with an array of {{{<word, count>}}} pairs ({{{$words}}}) whose count ({{{[1]}}}) is summed in line (6) to produce a final array of pairs, associating for each distinct word in the input file ({{{test}}}), its count. A semantically equivalent, yet simpler Jaql query is as follows:
-
-=== Word-count (b) ===
-{{{
-    $lineRdr
-1.  -> expand splitArr($, " ")
-2.  -> group by $w = ($)
-         into [$w, count($)]
-3.  -> count();
-}}}
-
-As in the previous example, each line is read (1) and tokenized (2). Instead of returning an array of {{{<word, count>}}} pairs, an array of words is returned in lines (3-4). 
-As before, the words are grouped in line (5). However, instead of summing word counts using explicit counts as in the previous example, the {{{$words}}} array is simply counted. To complete the example, the translated Jaql is shown below:
-
-{{{
-stRead(
-  mrAggregate(
-    {input: {type:"hdfs", location: "test", 
-             inoptions: {format:"org.apache.hadoop.mapred.TextInputFormat",          
-                         converter:"com.acme.extensions.data.FromLineConverter"}},
-     output: HadoopTemp(), 
-     init: fn($mapIn0) 
-             for( $p in splitArr($mapIn0, " ") )
-               [[$p, [1]]],
-     combine: fn($ckey0, $ca0, $cb0) [
-                if(isnull($ca0[0]))
-                  $cb0[0]
-                else if(isnull($cb0[0]))
-                  $ca0[0]
-                else $ca0[0] + $cb0[0]
-              ],
-     final: fn($w, $words) 
-              [[$w, firstNonNull($words[0], 0)]]
-          }
-  )
-)
-}}}
-
-In this case, the Jaql compiler uses the {{{mrAggregate}}} function that directly calls Hadoop's map-reduce. The {{{input}}} parameter is derived the the {{{hdfsRead}}} expression and the {{{output}}} is to a temp file. Since {{{count}}} is a distributive aggregate function, it can be decomposed into partial counts which are then summed. The {{{init}}} parameter is a function that tokenizes a given line and outputs {{{<word, 1>}}} pairs, much like the explicit example shown in *Word-count (a)*. The {{{combine}}} parameters is a function that takes two partial results ({{{$ca0, $cb0}}}) for a word ({{{$ckey0}}}) and returns their sum if both partials are non-null (otherwise returning the non-null partial). The {{{final}}} parameter is a function that associates a word with a final count. The {{{init}}} and {{{combine}}} functions are used in the {{{map}}} phase while both the {{{combine}}} and {{{final}}} functions are used in the {{{reduce}}} phase.
