@@ -201,30 +201,6 @@ The first statement defines the variable *$introMessage* as a function of two ar
   ]
 }}}
 
-While functions increase reusability within a session of the jaql interpreter, they are also useful in conjunction with other tools. Consider the following pipe and how it can be embedded into other scripting languages:
-
-{{{
-  %cat myLib.jaql
-  $introMessage = 
-  fn($input, $id) (
-    $input
-    -> filter $.from == $id
-    -> transform { mandatory: $.msg }
-  );
-
-  %cat myPipe.jaql
-  read($input) -> $introMessage($id) -> write($output)
-
-  %cat myPipe.sh
-  #
-  # TODO: make the param list configurable through script input args
-  jaql JaqlShell -e '$input = hdfs("user"); $id = 101; $output = hdfs("inzip")' -b myLib.jaql, myPipe.jaql
-  
-}}}
-
-In the above example, *myLib.jaql* contains the definintion of the core function
-whereas *myPipe.jaql* contains a specific pipe, bound to specific types of source and sink. Finally, the shell script calls the Jaql interpreter in batch mode (-b) and passes in parameters (-e) to evaluate the pipe. For more details on how the Jaql script works, refer to [Running].
-
 For Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. 
 
 {{{
