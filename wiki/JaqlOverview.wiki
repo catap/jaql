@@ -102,10 +102,10 @@ and its associated user data:
 }}}
 
 Both data sets are assumed to be stored in separate, local files. Each file consists
-of an _array_, deliminted by brackets '[]', of JSON objects (or records), delimited by braces '{}'. Objects contain name:value pairs or _members_, where the
+of an _array_, delimited by brackets '[ ]', of JSON objects (or records), delimited by braces '{ }'. Objects contain name:value pairs or _members_, where the
 value can be an atomic type or a nested value.
 
-_Note:_ while Jaql can consume strict JSON, it can also consume minor variants of JSON. In the examples, for the sake of clarity, we omit double-quotes around field names and use single-quotes in place of double-quotes for strings.
+_Note:_ while Jaql can consume strict JSON, it can also consume minor variants of JSON. In the examples, for the sake of clarity, we omit double-quotes around field names when writing Jaql queries. Jaql's output, however, will quote field names and thus produces valid JSON.
 
 = The Jaql Query Language =
 
@@ -202,7 +202,7 @@ The first statement defines the variable *$introMessage* as a function of two ar
   ]
 }}}
 
-The remaining examples are organized around the task of aggregating particular word mentions in the log messages by the senders' zip-code. We start with simple *word-count*, then describe several add-ons such as filtering by a list of words, aggregating the filtered word-counts by sender, and finally correlating senders with their zip-codes to aggregate by zip-code.
+The remaining examples are organized around the task of aggregating particular word mentions in the log messages by the sender's zip-code. We start with simple *word-count*, then describe several add-ons such as filtering by a list of words, aggregating the filtered word-counts by sender, and finally correlating senders with their zip-codes to aggregate by zip-code.
 
 In Query 2, we show how to compute *word-count*, the canonical map-reduce example, on the log *msg* field. First we introduce the *expand* operators which will be used to create a single array of strings, and distinguish it from the *transform* operator that we saw earlier:
 
@@ -285,7 +285,7 @@ In Query 2, we show how to compute *word-count*, the canonical map-reduce exampl
 
 The UDF is first registered by associating a name with its implementing class. More details on extending Jaql with UDF's and other functions can be found in [Functions]. Following, we exercise *splitArr* on a sample string using a simple delimiter. Finally, we implement word-count by reading the log data, tokenizing each *$.msg*, expanding the tokens into the output array, grouping on word, computing a *count* per word, and outputing an object for each word and its associated count.
 
-Jaql evaluates this query by translating to map-reduce. The read, tokenization, and expansion are performed in the map step and the grouping and count is performed in the reduce step. Since count is an algebraic function, Jaql pushes its computation into the map step and perfors a sum in the reduce step, i.e., it takes advantage of map-reduce's combiners where applicable. For more details on how Jaql exploits map-reduce, refer to [PlanLanguage].
+Jaql evaluates this query by translating to map-reduce. The read, tokenization, and expansion are performed in the map step and the grouping and count is performed in the reduce step. Since count is an algebraic function, Jaql pushes its computation into the map step and performs a sum in the reduce step, i.e., it takes advantage of map-reduce's combiners where applicable. For more details on how Jaql exploits map-reduce, refer to [PlanLanguage].
 
 Query 3 slightly modifies Query 2 by adding a filter on the words that are returned:
 
