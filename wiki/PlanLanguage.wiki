@@ -14,34 +14,34 @@ job in Hadoop.
 {{{
 // Write to an HDFS file called 'sample'.
   [
-    {x: 0, text: 'zero'},
-    {x: 1, text: 'one'},
-    {x: 0, text: 'two'},
-    {x: 1, text: 'three'},
-    {x: 0, text: 'four'},
-    {x: 1, text: 'five'},
-    {x: 0, text: 'six'},
-    {x: 1, text: 'seven'},
-    {x: 0, text: 'eight'}
+    {x: 0, text: "zero"},
+    {x: 1, text: "one"},
+    {x: 0, text: "two"},
+    {x: 1, text: "three"},
+    {x: 0, text: "four"},
+    {x: 1, text: "five"},
+    {x: 0, text: "six"},
+    {x: 1, text: "seven"},
+    {x: 0, text: "eight"}
   ]
-  -> write(hdfs('sample.dat'));
+  -> write(hdfs("sample.dat"));
 	
   // Run a map/reduce job that counts the number objects
   // for each 'x' value.
   mapReduce( 
-    { input:  {type: 'hdfs', location: 'sample.dat'}, 
-      output: {type: 'hdfs', location: 'results.dat'}, 
+    { input:  {type: "hdfs", location: "sample.dat"}, 
+      output: {type: "hdfs", location: "results.dat"}, 
       map:    fn($v) ( $v -> transform [$.x, 1] ),
       reduce: fn($x, $v) ( $v -> aggregate {x: $x, num: count($)} )
     });
 	
   // Read the results...
-  read(hdfs('results.dat'));
+  read(hdfs("results.dat"));
 	
   // result...
   [
-    {x: '0', num: 5},
-    {x: '1', num: 4}
+    {x: 0, num: 5},
+    {x: 1, num: 4}
   ];
 }}}
 
@@ -68,7 +68,7 @@ from all the little details required to actually set up and run a map/reduce job
 
 {{{
   // Query 1. Return the publisher and title of each book.
-  read(hdfs('books'))
+  read(hdfs("books"))
   -> transform {$.publisher, $.title};
 
 
