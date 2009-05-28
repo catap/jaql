@@ -193,6 +193,8 @@ The first statement defines the variable *$introMessage* as a function of two ar
   read(hdfs("log"))
   -> $introMessage(101)
   -> write(hdfs("greeting"));
+  
+  read(hdfs("greeting"));
 
   // result ...
   [
