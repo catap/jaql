@@ -1,17 +1,17 @@
 package com.ibm.jaql.json.schema;
 
+import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonType;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
-import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
-/** Generic schema used for types that do not have parameters */
-public class GenericSchema extends Schema
+/** Schema for a boolean value */
+public class BooleanSchema extends Schema 
 {
-  JsonType type;
-
+  private JsonBool value;
+  
   // -- schema parameters -------------------------------------------------------------------------
   
   private static Parameters parameters = null; 
@@ -20,32 +20,38 @@ public class GenericSchema extends Schema
   {
     if (parameters == null)
     {
-      parameters = new Parameters(); // no args
+      parameters = new Parameters(
+          new JsonString[] { PAR_VALUE           },
+          new Schema[]     { new BooleanSchema() },
+          new JsonValue[]  { null                });
     }
     return parameters;
   }
-  
+
   
   // -- construction ------------------------------------------------------------------------------
   
-  public GenericSchema(JsonType type, JsonRecord args)
+  public BooleanSchema(JsonRecord args)
   {
-    this(type);
+    this(
+        (JsonBool)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  public GenericSchema(JsonType type)
+  public BooleanSchema(JsonBool value)
   {
-    JaqlUtil.enforceNonNull(type);
-    this.type = type;
+    this.value = value;
   }
-
+  
+  public BooleanSchema()
+  {
+  }
   
   // -- Schema methods ----------------------------------------------------------------------------
-
+  
   @Override
   public SchemaType getSchemaType()
   {
-    return SchemaType.GENERIC;
+    return SchemaType.BOOLEAN;
   }
 
   @Override
@@ -57,7 +63,7 @@ public class GenericSchema extends Schema
   @Override
   public Bool3 isConst()
   {
-    return Bool3.UNKNOWN;
+    return value == null ? Bool3.UNKNOWN : Bool3.TRUE;
   }
 
   @Override
@@ -65,18 +71,28 @@ public class GenericSchema extends Schema
   {
     return Bool3.FALSE;
   }
-
+  
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
-    return type.clazz.isInstance(value);
+    if (!(value instanceof JsonBool))
+    {
+      return false;
+    }
+    JsonBool b = (JsonBool)value;
+    
+    if (this.value != null)
+    {
+      return b.equals(this.value);
+    }
+    return true;
   }
-
   
+
   // -- getters -----------------------------------------------------------------------------------
   
-  public JsonType getType()
+  public JsonBool getValue()
   {
-    return type;  
+    return value;
   }
 }

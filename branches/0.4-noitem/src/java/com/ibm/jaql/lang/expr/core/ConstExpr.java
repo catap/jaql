@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonLong;
@@ -112,5 +114,10 @@ public final class ConstExpr extends Expr
   public ConstExpr clone(VarMap varMap)
   {
     return new ConstExpr(value);
+  }
+  
+  public Schema getSchema()
+  {
+    return SchemaFactory.schemaOf(value);
   }
 }

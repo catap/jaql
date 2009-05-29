@@ -19,11 +19,10 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.util.Bool3;
 
-/** Schema that matches arrays of element. Schematas for each of the elements are
- * provided as input to this schema.
- * 
- */
+/** Schema for an array. Has individual schemata for the first k elements and a single schema 
+ * for the remaining elements, if any. */
 public class ArraySchema extends Schema
 {
   // If minRest == maxRest then this is a fixed-length array (head length + rest count)
@@ -34,9 +33,9 @@ public class ArraySchema extends Schema
   public JsonLong          minRest;              // min number of values matching rest, >=0, never iff rest==null
   public JsonLong          maxRest;              // max number of items matching rest or null
 
-  /**
-   * 
-   */
+  
+  // -- construction ------------------------------------------------------------------------------
+  
   public ArraySchema(Schema[] head, Schema rest, JsonLong minRest, JsonLong maxRest)
   {
     // assertions to discover internal misusage
@@ -78,6 +77,43 @@ public class ArraySchema extends Schema
     this(schemata, null, JsonLong.ZERO, JsonLong.ZERO);
   }
 
+  // -- Schema methods ----------------------------------------------------------------------------
+  
+  @Override
+  public SchemaType getSchemaType()
+  {
+    return SchemaType.ARRAY;
+  }
+  
+  @Override
+  public Bool3 isNull()
+  {
+    return Bool3.FALSE;
+  }
+
+  @Override
+  public Bool3 isConst()
+  {
+    Bool3 result = Bool3.TRUE;
+    
+    // check head
+    for (Schema s : head)
+    {
+      result = result.and(s.isConst());
+    }
+      
+    // check rest
+    if (rest==null) return result;
+    if (minRest != maxRest) return result.and(Bool3.UNKNOWN); 
+    return result.and(rest.isConst());
+  }
+
+  @Override
+  public Bool3 isArray()
+  {
+    return Bool3.TRUE;
+  }
+
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
@@ -111,35 +147,35 @@ public class ArraySchema extends Schema
       }
     }
 
-    // check max rest
+    // check remaining rest
     assert i==minRest.value;
-    if (maxRest != null)
+    for (; ; i++)
     {
-      for (; i<maxRest.value; i++)
+      if (!iter.moveNext())
       {
-        if (!iter.moveNext())
-        {
-          return true;
-        }
-        else if (!rest.matches(iter.current()))
-        {
-          return false;
-        }
+        return true;
       }
-      assert i==maxRest.value;
-      return !iter.moveNext(); // no additional elements allowed
+      if (maxRest != null && i>=maxRest.value)
+      { 
+        return false;
+      }
+      if (!rest.matches(iter.current()))
+      {
+        return false;
+      }
+      
     }
-    
-    // everything is ok
-    return true;
   }
 
-  public Schema[] getInternalHead()
+  
+  // -- getters -----------------------------------------------------------------------------------
+  
+  public Schema[] getHeadSchemata()
   {
     return head;
   }
   
-  public Schema getInternalRest()
+  public Schema getRestSchema()
   {
     return rest;
   }
@@ -162,12 +198,5 @@ public class ArraySchema extends Schema
   public JsonLong getMaxRest()
   {
     return maxRest;
-  }
-  
-
-  @Override
-  public SchemaType getSchemaType()
-  {
-    return SchemaType.ARRAY;
   }
 }

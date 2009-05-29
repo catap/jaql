@@ -1,14 +1,13 @@
 package com.ibm.jaql.json.schema;
 
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
-/** Schema for a double. */
-public class DoubleSchema extends RangeSchema<JsonDouble>
+/** Schema for a date value */
+public class DateSchema extends RangeSchema<JsonDate>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -18,7 +17,7 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
   {
     if (parameters == null)
     {
-      Schema schema = new DoubleSchema();
+      Schema schema = new DateSchema();
       parameters = new Parameters(
           new JsonString[] { PAR_MIN, PAR_MAX, PAR_VALUE },
           new Schema[]     { schema , schema , schema    },
@@ -26,40 +25,25 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
     }
     return parameters;
   }
-
+  
   
   // -- construction ------------------------------------------------------------------------------
   
-  public DoubleSchema(JsonRecord args)
+  public DateSchema(JsonRecord args)
   {
     this(
-        (JsonNumeric)getParameters().argumentOrDefault(PAR_MIN, args),
-        (JsonNumeric)getParameters().argumentOrDefault(PAR_MAX, args),
-        (JsonNumeric)getParameters().argumentOrDefault(PAR_VALUE, args));
+        (JsonDate)getParameters().argumentOrDefault(PAR_MIN, args),
+        (JsonDate)getParameters().argumentOrDefault(PAR_MAX, args),
+        (JsonDate)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  public DoubleSchema()
+  public DateSchema()
   {
   }
   
-  public DoubleSchema(JsonDouble min, JsonDouble max, JsonDouble value)
+  public DateSchema(JsonDate min, JsonDate max, JsonDate value)
   {
     super(min, max, value);
-  }
-
-  public DoubleSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
-  {
-    this(convert(min), convert(max), convert(value));
-  }
-  
-  /** Convert the specified numeric to a long or throw an exception */  
-  private static JsonDouble convert(JsonNumeric v)
-  {
-    if (v == null || v instanceof JsonDouble)
-    {
-      return (JsonDouble)v;
-    }
-    throw new IllegalArgumentException("interval argument has to be of type double: " + v);
   }
   
   
@@ -68,17 +52,17 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
   @Override
   public SchemaType getSchemaType()
   {
-    return SchemaType.DOUBLE;
+    return SchemaType.DATE;
   }
 
+  @Override
   public boolean matches(JsonValue value)
   {
-    if (!(value instanceof JsonDouble))
+    if (!(value instanceof JsonDate))
     {
       return false;
     }
-    // value is double, as are min and max
-    
+
     if (this.value != null)
     {
       return value.equals(this.value);
@@ -90,5 +74,5 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
     }
     
     return true;
-  }  
+  }
 }

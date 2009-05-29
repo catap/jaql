@@ -16,23 +16,56 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.Bool3;
 
-/** Schema that matches everything.
- * 
- */
+/** Schema for any value */
 public class AnySchema extends Schema
 {
-  private static final AnySchema THE_INSTANCE = new AnySchema();
+  
+  // -- singleton ---------------------------------------------------------------------------------
+  
+  private static AnySchema theInstance = null;
   
   public static AnySchema getInstance()
   {
-    return THE_INSTANCE;
+    if (theInstance == null)
+    {
+      theInstance = new AnySchema();
+    }
+    return theInstance;
   }
   
   private AnySchema()
   {    
   }
+
+  // -- Schema methods ----------------------------------------------------------------------------
   
+  @Override
+  public SchemaType getSchemaType()
+  {
+    return SchemaType.ANY;
+  }
+  
+  @Override
+  public Bool3 isNull()
+  {
+    return Bool3.UNKNOWN;
+  }
+
+  @Override
+  public Bool3 isConst()
+  {
+    return Bool3.UNKNOWN;
+  }
+
+  @Override
+  public Bool3 isArray()
+  {
+    return Bool3.UNKNOWN;
+  }
+
+
   /*
    * (non-Javadoc)
    * 
@@ -44,9 +77,5 @@ public class AnySchema extends Schema
     return true;
   }
 
-  @Override
-  public SchemaType getSchemaType()
-  {
-    return SchemaType.ANY;
-  }
+
 }

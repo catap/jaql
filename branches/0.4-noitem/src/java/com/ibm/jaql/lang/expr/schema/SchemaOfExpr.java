@@ -13,27 +13,23 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.pragma;
+package com.ibm.jaql.lang.expr.schema;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
- * This is a pragma function to force const evaluation.
+ * 
  */
-@JaqlFn(fnName = "const", minArgs = 1, maxArgs = 1)
-public class ConstPragma extends Pragma
+@JaqlFn(fnName = "schemaof", minArgs = 1, maxArgs = 1)
+public class SchemaOfExpr extends Expr
 {
-  protected boolean evaluated = false;
-  protected JsonValue value;
-
   /**
    * @param exprs
    */
-  public ConstPragma(Expr[] exprs)
+  public SchemaOfExpr(Expr[] exprs)
   {
     super(exprs);
   }
@@ -41,31 +37,11 @@ public class ConstPragma extends Pragma
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
-  @Override
-  public boolean isConst()
-  {
-    return true;
-  }
-  
-  public Schema getSchema()
-  {
-    return exprs[0].getSchema();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public JsonSchema eval(final Context context) throws Exception
   {
-    if( !evaluated )
-    {
-      value = exprs[0].eval(context);
-      evaluated = true;
-    }
-    return value;
-  }
+    Expr expr = exprs[0];
+    return new JsonSchema(expr.getSchema());
+  }  
 }

@@ -130,7 +130,8 @@ import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
 import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
 import com.ibm.jaql.lang.expr.regex.RegexTestFn;
-import com.ibm.jaql.lang.expr.schema.TypeofExpr;
+import com.ibm.jaql.lang.expr.schema.SchemaOfExpr;
+import com.ibm.jaql.lang.expr.schema.TypeOfExpr;
 import com.ibm.jaql.lang.expr.span.SpanContainsFn;
 import com.ibm.jaql.lang.expr.span.SpanFn;
 import com.ibm.jaql.lang.expr.span.SpanOverlapsFn;
@@ -190,7 +191,8 @@ public class FunctionLib
   {
     // TODO: add "import extension" that loads the functions in some jar (and loads types?)
     // schema
-    add(TypeofExpr.class);
+    add(TypeOfExpr.class);
+    add(SchemaOfExpr.class);
     //    
     add(CompareFn.class);
     add(ExistsFn.class);

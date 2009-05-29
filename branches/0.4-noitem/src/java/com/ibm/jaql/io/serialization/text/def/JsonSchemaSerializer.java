@@ -7,13 +7,15 @@ import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.schema.AnySchema;
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.BinarySchema;
+import com.ibm.jaql.json.schema.BooleanSchema;
+import com.ibm.jaql.json.schema.DateSchema;
 import com.ibm.jaql.json.schema.DecimalSchema;
 import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.schema.GenericSchema;
-import com.ibm.jaql.json.schema.NullSchema;
 import com.ibm.jaql.json.schema.LongSchema;
-import com.ibm.jaql.json.schema.NumericSchema;
+import com.ibm.jaql.json.schema.NullSchema;
 import com.ibm.jaql.json.schema.OrSchema;
+import com.ibm.jaql.json.schema.RangeSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.StringSchema;
@@ -22,6 +24,7 @@ import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.core.Parameters;
 
 public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
 {
@@ -50,8 +53,14 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     case BINARY:
       writeBinary(out, (BinarySchema)schema, indent);
       break;
-    case DECIMAL:
+    case BOOLEAN:
+      writeBoolean(out, (BooleanSchema)schema, indent);
+      break;
+    case DECFLOAT:
       writeDecimal(out, (DecimalSchema)schema, indent);
+      break;
+    case DATE:
+      writeDate(out, (DateSchema)schema, indent);
       break;
     case DOUBLE:
       writeDouble(out, (DoubleSchema)schema, indent);
@@ -101,7 +110,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     String sep="";
     
     // print head
-    Schema[] head = schema.getInternalHead();
+    Schema[] head = schema.getHeadSchemata();
     for (Schema s : head)
     {
       out.println(sep);
@@ -118,7 +127,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       sep=",";
       indent(out, indent);
 
-      Schema rest = schema.getInternalRest();
+      Schema rest = schema.getRestSchema();
       write(out, rest, indent);
       
       JsonLong minRest = schema.getMinRest();
@@ -155,23 +164,33 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     
     JsonLong min = schema.getMinLength();
     JsonLong max = schema.getMaxLength();
-    if (min != null || max != null) {
-      out.write('(');
-      writeLengthArgs(out, min, max, indent, "");
-      out.write(')');
-    }
+    writeArgs(out, indent, BinarySchema.getParameters(), new JsonValue[] { min, max } );
   }
 
-  private static void writeDecimal(PrintStream out, DecimalSchema schema, int indent) throws IOException
+  private static void writeBoolean(PrintStream out, BooleanSchema schema, int indent) throws IOException
   {
-    out.print("decimal");
-    writeNumericArgs(out, schema, indent);
+    out.print("boolean");
+    
+    JsonValue value = schema.getValue();
+    writeArgs(out, indent, BooleanSchema.getParameters(), new JsonValue[] { value } );
   }
   
+  private static void writeDecimal(PrintStream out, DecimalSchema schema, int indent) throws IOException
+  {
+    out.print("decfloat");
+    writeRangeArgs(out, indent, DecimalSchema.getParameters(), schema);    
+  }
+
+  private static void writeDate(PrintStream out, DateSchema schema, int indent) throws IOException
+  {
+    out.print("date");
+    writeRangeArgs(out, indent, DateSchema.getParameters(), schema);
+  }
+
   private static void writeDouble(PrintStream out, DoubleSchema schema, int indent) throws IOException
   {
     out.print("double");
-    writeNumericArgs(out, schema, indent);
+    writeRangeArgs(out, indent, DoubleSchema.getParameters(), schema);
   }
   
   private static void writeGeneric(PrintStream out, GenericSchema schema, int indent) throws IOException
@@ -182,7 +201,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeLong(PrintStream out, LongSchema schema, int indent) throws IOException
   {
     out.print("long");
-    writeNumericArgs(out, schema, indent);
+    writeRangeArgs(out, indent, LongSchema.getParameters(), schema);
   }
 
   private static void writeNull(PrintStream out, NullSchema schema, int indent) throws IOException
@@ -224,9 +243,6 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       separator = " | ";
     }
   }
-  
-  
-  // -- helpers -----------------------------------------------------------------------------------
   
   private static void writeRecord(PrintStream out, RecordSchema schema, int indent) throws IOException
   {
@@ -282,30 +298,58 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeString(PrintStream out, StringSchema schema, int indent) throws IOException
   {
     out.print("string");
-    
-    JsonString pattern = schema.getPattern();
     JsonLong min = schema.getMinLength();
     JsonLong max = schema.getMaxLength();
-    if (pattern!=null || min!=null || max!=null)
-    {
-      out.print('(');
-      
-      String sep="";
-      if (pattern!=null)
-      {
-        JsonValue.print(out, schema.getPattern());
-        sep=", ";
-      }
-      
-      if (min != null || max != null) {
-        writeLengthArgs(out, min, max, indent, sep);        
-      }
-      
-      out.print(')');
-    }
+    JsonString pattern = schema.getPattern();
+    JsonString value = schema.getValue();
+    
+    writeArgs(out, indent, StringSchema.getParameters(),
+        new JsonValue[] { min, max, pattern, value });
   }
   
   // -- helpers -----------------------------------------------------------------------------------
+  
+  private static void writeArgs(PrintStream out, int indent, 
+      Parameters parameters, JsonValue[] values ) throws IOException
+  {
+    assert values.length == parameters.noParameters();
+    String sep="(";
+    boolean printed = false;
+    for (int i=0; i<values.length; i++)
+    {
+      
+      if (i<parameters.noRequiredParamters())
+      {
+        out.print(sep);
+        JsonValue.print(out, values[i], indent);
+        printed = true;
+        sep = ", ";
+      }
+      else if (!JsonValue.equals(values[i], parameters.defaultOf(i)))
+      {
+        out.print(sep);
+        out.print(parameters.nameOf(i).toString()); // no quotes
+        out.print("=");
+        JsonValue.print(out, values[i], indent);
+        printed = true;
+        sep = ", ";
+      }
+    }
+    if (printed)
+    { 
+      out.print(")");
+    }
+  }
+  
+  private static <T extends JsonValue> void writeRangeArgs(
+      PrintStream out, int indent,  Parameters parameters, RangeSchema<T> schema) 
+  throws IOException
+  {
+    T min = schema.getMin();
+    T max = schema.getMax();
+    T value = schema.getValue();
+    writeArgs(out, indent, parameters, new JsonValue[] { min, max, value });
+  }
   
   private static void writeLengthArgs(PrintStream out, JsonNumeric min, JsonNumeric max, 
       int indent, String sep) throws IOException
@@ -334,33 +378,4 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       }
     }
   }
-  
-  private static void writeNumericArgs(PrintStream out, NumericSchema<?> schema, int indent) throws IOException
-  {
-    JsonNumeric min = schema.getMin();
-    JsonNumeric max = schema.getMax();
-    if (!(min==null && max==null))
-    {
-      out.print("(");
-
-      if (min==null) // max != null
-      {
-         out.print("*,");
-         JsonValue.print(out, max, indent);
-      } else if (max==null) { // min != null
-        JsonValue.print(out, min, indent);
-        out.print(",*");        
-      } else { // both != null
-        JsonValue.print(out, min, indent);
-        if (!min.equals(max))
-        {
-          out.print(", ");        
-          JsonValue.print(out, max, indent);
-        }
-      }
-      
-      out.print(")");
-    }
-  }
-
 }

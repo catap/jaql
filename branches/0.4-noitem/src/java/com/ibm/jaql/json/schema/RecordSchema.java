@@ -24,13 +24,18 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 
-/** Schema that matches a record, i.e., an ordered list of fields.
- * 
- *  @see SchemaField
- */
+/** Schema for a JSON record */
 public class RecordSchema extends Schema
 {
+  protected Field[] fields; // never null
+  protected Schema  rest; // Null if record is "closed"
+
+  
+  // -- inner classes -----------------------------------------------------------------------------
+  
+  /** Describes the field of a record */
   public static class Field
   {
     protected JsonString  name;
@@ -62,7 +67,7 @@ public class RecordSchema extends Schema
       return isOptional;
     }
   }
-  
+
   // accepts JsonString and Field
   public static final Comparator<Object> FIELD_BY_NAME_COMPARATOR = new Comparator<Object>() {
     @Override
@@ -92,9 +97,9 @@ public class RecordSchema extends Schema
     }      
   };
   
-  protected Field[] fields; // never null
-  protected Schema  rest; // Null if record is "closed"
 
+  // -- construction ------------------------------------------------------------------------------
+  
   /**
    * 
    */
@@ -112,6 +117,7 @@ public class RecordSchema extends Schema
     this.rest = rest;
   }
 
+  /** Checks whether all fields are valid. If not, throws an exception */
   private void checkFields(Field[] fields)
   {
     Set<JsonString> names = new TreeSet<JsonString>();
@@ -125,19 +131,45 @@ public class RecordSchema extends Schema
     }
   }
   
-  /**
-   * @return The schema for unnamed fields.
-   */
-  public Schema getRest()
-  {
-    return rest;
-  }
+
+  // -- Schema methods ----------------------------------------------------------------------------
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.schema.Schema#matches(com.ibm.jaql.json.type.Item)
-   */
+  @Override
+  public SchemaType getSchemaType()
+  {
+    return SchemaType.RECORD;
+  }
+
+  @Override
+  public Bool3 isNull()
+  {
+    return Bool3.FALSE;
+  }
+
+  @Override
+  public Bool3 isArray()
+  {
+    return Bool3.FALSE;
+  }
+
+  @Override
+  public Bool3 isConst()
+  {
+    if (rest != null) {
+      return Bool3.UNKNOWN;
+    }
+    Bool3 result = Bool3.TRUE;
+    for (Field f : fields)
+    {
+      if (f.isOptional)
+      {
+        return Bool3.UNKNOWN;
+      }
+      result = result.and(f.schema.isConst());
+    }
+    return result;
+  }
+
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
@@ -214,20 +246,25 @@ public class RecordSchema extends Schema
     // everything ok
     return true;
   }
+
   
+  // -- getters -----------------------------------------------------------------------------------
+
   public Field[] getFields()
   {
     return fields;
   }
 
+  /**
+   * @return The schema for unnamed fields.
+   */
+  public Schema getRest()
+  {
+    return rest;
+  }
+
   public boolean isEmpty()
   {
     return fields.length==0 && rest==null;
-  }
-  
-  @Override
-  public SchemaType getSchemaType()
-  {
-    return SchemaType.RECORD;
   }
 }

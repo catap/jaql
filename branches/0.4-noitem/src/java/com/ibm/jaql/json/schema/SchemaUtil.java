@@ -1,16 +1,20 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonValue;
 
-public class SchemaUtil
+/** Helper methods used internally */
+class SchemaUtil
 {
-  public static boolean checkInterval(JsonNumeric start, JsonNumeric end)
+  /** Checks whether start <= end */
+  public static boolean checkInterval(JsonValue start, JsonValue end)
   {
     return checkInterval(start, end, null, null);
   }
   
-  public static boolean checkInterval(JsonNumeric start, JsonNumeric end, 
-      JsonNumeric minStart, JsonNumeric minEnd)
+  /** Checks whether minStart <= start <= end <= minEnd */
+  public static boolean checkInterval(JsonValue start, JsonValue end, 
+      JsonValue minStart, JsonValue minEnd)
   {
     if (start==null && end==null) 
     {
@@ -28,4 +32,5 @@ public class SchemaUtil
     }
     return true;    
   }
+
 }

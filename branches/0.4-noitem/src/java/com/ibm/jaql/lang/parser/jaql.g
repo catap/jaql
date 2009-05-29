@@ -1546,21 +1546,32 @@ fnArgs returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     			oops("Call by name NYI");
     		}
     	}
-    }
-    
+    }    
     ;
 
 exprList returns [ArrayList<Expr> r = new ArrayList<Expr>()]
-	{ Expr e; }
-	: ( e=pipe 	    { r.add(e); }
-	    ("," e=pipe    { r.add(e); } )*
-	  )?
-	;
+    { Expr e; }
+    : ( e=pipe      { r.add(e); }
+        ("," e=pipe    { r.add(e); } )*
+      )?
+    ;
 
 // An exprList that allows ignores empty exprs
 exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     { Expr e; }
     : ( e=pipe  { r.add(e); } )? ("," ( e=pipe  { r.add(e); } )? )*
+    ;
+
+args[Parameters descriptor] returns [ ArgumentExpr r=null ]
+    { ArrayList<Expr> a = new ArrayList<Expr>(); }
+    : "(" ( arg[a] ("," arg[a])* )? ")" { r=new ArgumentExpr(descriptor, a); }
+    ;
+
+arg[ArrayList<Expr> r]
+    { Expr name = null; Expr value; String v; }
+    : ( (id:AID { name = new ConstExpr(new JsonString(id.getText())); } "=")? value=pipe )
+      { if (name==null) r.add(value); else r.add(new NameValueBinding(name, value)); }
+      // not using AssignExpr because argument name might be computed (later)
     ;
 
 constant returns [Expr r=null]
@@ -1706,121 +1717,29 @@ aSchema returns [Schema s = null]
     ;
 
 atomSchema returns [Schema s = null]
-    : "null"  { s = NullSchema.getInstance(); }
-    | "function" { s = new GenericSchema(JsonType.FUNCTION); }
-    | "boolean"  { s = new GenericSchema(JsonType.BOOLEAN); }
-    | "date"     { s = new GenericSchema(JsonType.DATE); }
-    | "schema"   { s = new GenericSchema(JsonType.SCHEMA); }    
-    | s=numericSchema
-    | s=stringSchema
-    | s=binarySchema
+    { JsonRecord args; }
+    : "null"       { s = NullSchema.getInstance(); }
+    | ( "function" args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.FUNCTION, args); } )
+    | ( "boolean"  args=atomSchemaArgs[BooleanSchema.getParameters()] { s = new BooleanSchema(args); } )
+    | ( "date"     args=atomSchemaArgs[DateSchema.getParameters()] { s = new DateSchema(args); } )
+    | ( "schema"   args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.SCHEMA, args); } )    
+    | ( "binary"   args=atomSchemaArgs[BinarySchema.getParameters()] { s = new BinarySchema(args); } )
+    | ( "long"     args=atomSchemaArgs[LongSchema.getParameters()] { s = new LongSchema(args); } )
+    | ( "double"   args=atomSchemaArgs[DoubleSchema.getParameters()] { s = new DoubleSchema(args); } )
+    | ( "decfloat" args=atomSchemaArgs[DecimalSchema.getParameters()] { s = new DecimalSchema(args); } )
+    | ( "string"   args=atomSchemaArgs[StringSchema.getParameters()] { s = new StringSchema(args); } )
     ;
 
-numericSchema returns [NumericSchema<?> s = null]
-    : s=longSchema
-    | s=doubleSchema
-    | s=decimalSchema;
-
-longSchema returns [LongSchema s = null]
-    { Pair<JsonNumeric, JsonNumeric> interval = null; }
-    : "long"
-      ( "(" interval=numericSchemaInterval ")" )?
-      { 
-      	if (interval==null) 
-      	{
-      	  s = new LongSchema();
-      	} 
-      	else 
-      	{
-      	  s = new LongSchema(interval.a, interval.b);
-      	} 
-      }
+atomSchemaArgs[Parameters d] returns [ JsonRecord args=null ]
+    { ArgumentExpr argsExpr; }
+    : ( argsExpr=args[d] { args = argsExpr.constEval(); 
+                           if (args==null) 
+                           {
+                           	 throw new RuntimeException("schema arguments have to be constants");
+                           }; 
+                         } )?
     ;
-
-doubleSchema returns [DoubleSchema s = null]
-    { Pair<JsonNumeric, JsonNumeric> interval = null; }
-    : "double"
-      ( "(" interval=numericSchemaInterval ")" )?
-      { 
-        if (interval==null) 
-        {
-          s = new DoubleSchema();
-        } 
-        else 
-        {
-          s = new DoubleSchema(interval.a, interval.b);
-        } 
-      }
-    ;
-
-decimalSchema returns [DecimalSchema s = null]
-    { Pair<JsonNumeric, JsonNumeric> interval = null; }
-    : "decimal"
-      ( "(" interval=numericSchemaInterval ")" )?
-      { 
-        if (interval==null) 
-        {
-          s = new DecimalSchema();
-        } 
-        else 
-        {
-          s = new DecimalSchema(interval.a, interval.b);
-        } 
-      }
-    ;
-
-numericSchemaInterval returns [Pair<JsonNumeric, JsonNumeric> p = null]
-    {
-      JsonNumeric min = null;
-      JsonNumeric max = null;
-    }
-    : ( min=signedNumericLit
-        | "*" // min stays null
-      )  
-      ( /* empty */   { max=min; }
-      | "," ( "*" // max stays null
-            | max=signedNumericLit
-            )
-      ) { p = new Pair<JsonNumeric, JsonNumeric>(min, max); }
-    ;
-
-stringSchema returns [StringSchema s = null]
-    {
-        Pair<JsonLong,JsonLong> lengthPair = new Pair<JsonLong, JsonLong>();
-        JsonString pattern = null;
-    }
-    : ( "string"
-        ( "(" ( 
-                ( pattern=strLit ( "," lengthPair=schemaLengthArgs )? )
-              | lengthPair=schemaLengthArgs
-              )
-          ")"
-        )?
-      ) { s = new StringSchema(pattern, lengthPair.a, lengthPair.b); }
-    ;
-
-schemaLengthArgs returns [Pair<JsonLong, JsonLong> s = null]
-    { 
-      JsonLong min = null; 
-      JsonLong max = null; 
-    }
-    : ( ( min=signedIntLit
-        | "*" // min stays null
-        )  
-        ( /* empty */   { max=min; }
-        | "," ( "*" // max stays null
-              | max=signedIntLit
-              )
-        )
-      ) { s = new Pair<JsonLong, JsonLong>(min, max); }
-    ;
-
-binarySchema returns [BinarySchema s = null]
-    { Pair<JsonLong,JsonLong> lengthPair = new Pair<JsonLong,JsonLong>(); }
-    : ( "binary" ("(" lengthPair=schemaLengthArgs ")")?
-      ) { s = new BinarySchema(lengthPair.a, lengthPair.b); }
-    ;
-
+    	   
 arraySchema returns [ArraySchema s = null]
     { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
       Schema p; 
@@ -2194,9 +2113,11 @@ protected IDWORD
 ID
 	options { ignore=WS; }
     : (IDWORD ('?')? ':') => IDWORD {$setType(FNAME);}
+    | (IDWORD '=') => IDWORD {$setType(AID);}
     // | (IDWORD '*') => IDWORD
 	// | (IDWORD '=') => IDWORD {$setType(AVAR);}
 	| IDWORD { _ttype = testLiteralsTable(_ttype); }
+	
 	;
 
 protected DOT_ID

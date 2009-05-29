@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.schema;
 
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -26,13 +27,12 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * 
  */
 @JaqlFn(fnName = "typeof", minArgs = 1, maxArgs = 1)
-// TODO: Should this return a JSchema?
-public class TypeofExpr extends Expr
+public class TypeOfExpr extends Expr
 {
   /**
    * @param exprs
    */
-  public TypeofExpr(Expr[] exprs)
+  public TypeOfExpr(Expr[] exprs)
   {
     super(exprs);
   }
@@ -42,7 +42,7 @@ public class TypeofExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public JsonString eval(final Context context) throws Exception
   {
     Expr expr = exprs[0];
     // FIXME: the Item created here should be cached.

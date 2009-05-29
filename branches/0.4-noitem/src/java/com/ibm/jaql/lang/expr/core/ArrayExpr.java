@@ -19,6 +19,8 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
@@ -87,7 +89,18 @@ public class ArrayExpr extends IterExpr
   {
     return Bool3.FALSE;
   }
-
+  
+  public Schema getSchema()
+  {
+    // TODO: cache?
+    Schema[] schemata = new Schema[exprs.length]; 
+    for (int i=0; i<exprs.length; i++)
+    {
+      schemata[i] = exprs[i].getSchema();
+    }
+    return new ArraySchema(schemata);
+  }
+  
   /**
    * 
    */

@@ -88,7 +88,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
     formatter.setInputStream(istr);
 
     return new ClosableJsonIterator() { // TODO: temporary hack until interfaces are adapted
-      boolean first = true;
+//      boolean first = true;
       JsonValue val = null; 
       
       @Override

@@ -22,6 +22,8 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.AnySchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -291,6 +293,13 @@ public abstract class Expr
     return Bool3.UNKNOWN; // TODO: we could (should?) make the default be true because very few operators reval their children
   }
 
+  /** Returns the schema of this expression. The result is determined at compile-time, i.e., no
+   * subexpressions are evaluated. */
+  public Schema getSchema()
+  {
+    return AnySchema.getInstance();
+  }
+  
   /**
    * This expression can be applied in parallel per partition of child i.
    */

@@ -3,26 +3,69 @@ package com.ibm.jaql.json.schema;
 import java.util.regex.Pattern;
 
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.util.Bool3;
 
+/** Schema for a JSON string */
 public class StringSchema extends Schema
 {
-  private JsonString pattern;
-  private Pattern compiledPattern;
-  private JsonLong minLength;
+  private JsonLong minLength = JsonLong.ZERO;
   private JsonLong maxLength;
+  private JsonString pattern;
+  private JsonString value;
   
-  // TODO: format property
+  // to make matching more efficient
+  private Pattern compiledPattern;
   
-  public StringSchema() { }
+  // -- schema parameters -------------------------------------------------------------------------
+
+  // TODO: format parameter
+
+  public static final JsonString PAR_PATTERN = new JsonString("pattern");
   
-  public StringSchema(JsonString pattern, JsonLong minLength, JsonLong maxLength)
+  private static Parameters parameters = null; 
+  
+  public static Parameters getParameters()
+  {
+    if (parameters == null)
+    {
+      Schema long0 = new LongSchema(JsonLong.ZERO, null, null);
+      Schema string = new StringSchema();
+      parameters = new Parameters(
+          new JsonString[] { PAR_MIN_LENGTH, PAR_MAX_LENGTH, PAR_PATTERN, PAR_VALUE },
+          new Schema[]     { long0         , long0         , string     , string },
+          new JsonValue[]  { JsonLong.ZERO , null          , null       , null });
+    }
+    return parameters;
+  }
+  
+
+  // -- construction ------------------------------------------------------------------------------
+  
+  public StringSchema(JsonRecord args) 
+  { 
+    this(
+        args != null && args.findName(PAR_MIN_LENGTH)>=0 // to distingush whether minlENGTH IS SPECIFIED OR NOT 
+          ? (JsonLong)args.getValue(PAR_MIN_LENGTH) 
+          : null, 
+        (JsonLong)getParameters().argumentOrDefault(PAR_MAX_LENGTH, args),
+        (JsonString)getParameters().argumentOrDefault(PAR_PATTERN, args),
+        (JsonString)getParameters().argumentOrDefault(PAR_VALUE, args));
+  }
+  
+  public StringSchema() 
+  {
+  }
+  
+  public StringSchema(JsonLong minLength, JsonLong maxLength, JsonString pattern, JsonString value)
   {
     // check arguments
     if (!SchemaUtil.checkInterval(minLength, maxLength, JsonLong.ZERO, JsonLong.ZERO))
     {
-      throw new IllegalArgumentException("string lengths out of bounds: " + minLength + " " + maxLength);
+      throw new IllegalArgumentException("invalid range: " + minLength + " " + maxLength);
     }
 
     // store pattern
@@ -38,18 +81,63 @@ public class StringSchema extends Schema
       this.minLength = minLength==null ? JsonLong.ZERO : minLength;
       this.maxLength = maxLength;
     }
-  }
-  
-  public StringSchema(JsonString pattern)
-  {
-    this(pattern, null, null);
+    
+    // store value
+    if (value != null)
+    {
+      boolean matches;
+      try
+      {
+        matches = matches(value);
+      } catch (Exception e)
+      {
+        matches=false;
+      }
+      if (!matches)
+      {
+        throw new IllegalArgumentException("value argument conflicts with other arguments");
+      }        
+      this.value = value;
+      
+      // throw away other stuff
+      this.minLength = JsonLong.ZERO; 
+      this.maxLength = null;
+      this.pattern = null;
+      this.compiledPattern = null;
+    }
   }
   
   public StringSchema(JsonLong minLength, JsonLong maxLength)
   {
-    this(null, minLength, maxLength);    
+    this(minLength, maxLength, null, null);    
   }
   
+  // -- schema methods ----------------------------------------------------------------------------
+  
+  @Override
+  public SchemaType getSchemaType()
+  {
+    return SchemaType.STRING;
+  }
+
+  @Override
+  public Bool3 isNull()
+  {
+    return Bool3.FALSE;
+  }
+
+  @Override
+  public Bool3 isConst()
+  {
+    return Bool3.UNKNOWN;
+  }
+
+  @Override
+  public Bool3 isArray()
+  {
+    return Bool3.FALSE;
+  }
+
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
@@ -59,6 +147,12 @@ public class StringSchema extends Schema
     }
     JsonString s = (JsonString)value;
 
+    // check constant
+    if (this.value != null)
+    {
+      return this.value.equals(value);
+    }
+    
     // check string length
     // TODO: currently uses UTF8 representation
     if (!(minLength==null || s.getLength()>=minLength.value)) return false;
@@ -71,6 +165,14 @@ public class StringSchema extends Schema
     return true;
   }
   
+  
+  // -- getters -----------------------------------------------------------------------------------
+
+  public JsonString getValue()
+  {
+    return value;
+  }
+
   public JsonString getPattern()
   {
     return pattern;
@@ -84,11 +186,5 @@ public class StringSchema extends Schema
   public JsonLong getMaxLength()
   {
     return maxLength;
-  }
-
-  @Override
-  public SchemaType getSchemaType()
-  {
-    return SchemaType.STRING;
   }
 }

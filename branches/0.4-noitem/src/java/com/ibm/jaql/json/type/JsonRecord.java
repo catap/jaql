@@ -15,12 +15,15 @@
  */
 package com.ibm.jaql.json.type;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import com.ibm.jaql.util.BaseUtil;
 
 /**
  * 
  */
-public abstract class JsonRecord extends JsonValue
+public abstract class JsonRecord extends JsonValue implements Iterable<Entry<JsonString, JsonValue>>
 {
   public static final JsonRecord EMPTY = new BufferedJsonRecord(); // TODO: should be immutable
 
@@ -177,6 +180,35 @@ public abstract class JsonRecord extends JsonValue
     }
     return (int) (h >> 32);
   }
+  
+  public Iterator<Entry<JsonString, JsonValue>> iterator()
+  {
+    return new Iterator<Entry<JsonString, JsonValue>>()
+    {
+      int i = 0;
+      
+      @Override
+      public boolean hasNext()
+      {
+        return i < arity();
+      }
+
+      @Override
+      public Entry<JsonString, JsonValue> next()
+      {
+        Entry<JsonString, JsonValue> result = 
+          new RecordEntry(getName(i), getValue(i));
+        i++;
+        return result;
+      }
+
+      @Override
+      public void remove()
+      {
+        throw new UnsupportedOperationException();        
+      }      
+    };
+  }
 
   //  public boolean containsKey(JString key)
   //  {
@@ -272,4 +304,34 @@ public abstract class JsonRecord extends JsonValue
   //  {
   //    entries[i].visible = visible;
   //  }
+  
+  private class RecordEntry implements Entry<JsonString, JsonValue>
+  {
+    private JsonString name;
+    private JsonValue value;
+    
+    public RecordEntry(JsonString name, JsonValue value)
+    {
+      this.name = name;
+      this.value = value;
+    }
+    
+    @Override
+    public JsonString getKey()
+    {
+      return name;
+    }
+
+    @Override
+    public JsonValue getValue()
+    {
+      return value;
+    }
+
+    @Override
+    public JsonValue setValue(JsonValue value)
+    {
+      throw new UnsupportedOperationException();
+    }    
+  }
 }

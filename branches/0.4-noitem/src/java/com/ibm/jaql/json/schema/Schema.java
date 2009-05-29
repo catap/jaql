@@ -16,66 +16,51 @@
 package com.ibm.jaql.json.schema;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
+
 import com.ibm.jaql.json.type.JsonSchema;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
+import com.ibm.jaql.util.Bool3;
 
-// TODO: handling of null values
-
-/*******************************************************************************
- * At the moment, a scheme provides methods that concern schema matching and 
- * serialization of schema descriptions.
- * 
- * 
- * Data model: 
- * ----------- 
- * value ::= record | array | atom 
- * record ::= { (string: value)* } 
- * array ::= [ (value)* ] 
- * atom ::= null | string | number | boolean | ...
- * 
- * Schema language: 
- * ---------------- 
- * type ::= oneType ('|' oneType)* 
- * oneType ::= anyType | atomType | arrayType | recordType 
- * anyType ::= '*' 
- * atomType ::= 'null' | string | number | boolean | ...
- * numberType ::= 'number' numberTypeArgs?
- * numberTypeArgs ::= '(' (
- *                          value             // constant
- *                        | min,max           // range
- *                        ) ')'
- *                           ')' )? 
- * arrayType ::= [ ( type (',' type)* (repeat)? )? ] 
- * typeList ::= 
- * repeat ::= <min,max> // min is integer >= 0, max is integer >= min or for unbounded 
- *          | <count>   // == <count,count> 
- * recordType ::= { fieldType*} 
- * fieldType ::= name (fieldOpt)? ':' type 
- * fieldOpt ::= '*' // zero or more fields with this prefix have this type 
- *            | '?' // optional field
- * with this name and type 
- ******************************************************************************/
+/** Superclass for schemata of JSON values. */
 public abstract class Schema
 {
   public enum SchemaType
   {
-    ANY, ARRAY, BINARY, DECIMAL, DOUBLE, GENERIC, LONG, NULL, NUMERIC, OR, RECORD, STRING
+    ANY, ARRAY, BINARY, BOOLEAN, DATE, DECFLOAT, DOUBLE, GENERIC, LONG, NULL, NUMERIC, OR, RECORD, STRING
   }
   
-  /**
-   * @param item
-   * @return
-   * @throws Exception
-   */
+  // -- common argument names ---------------------------------------------------------------------
+  
+  public static final JsonString PAR_MIN = new JsonString("min");
+  public static final JsonString PAR_MAX = new JsonString("max");
+  public static final JsonString PAR_MIN_LENGTH = new JsonString("minLength");
+  public static final JsonString PAR_MAX_LENGTH = new JsonString("maxLength");
+  public static final JsonString PAR_VALUE = new JsonString("value");
+
+  // -- abstract methods --------------------------------------------------------------------------
+
+  public abstract SchemaType getSchemaType();
+
+  public abstract Bool3 isNull();
+  
+  public abstract Bool3 isConst();
+  
+  public abstract Bool3 isArray();
+  
   public abstract boolean matches(JsonValue value) throws Exception;
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.lang.Object#toString()
-   */
+  
+  // -- printing and parsing ----------------------------------------------------------------------
+  
+  
   public String toString()
   {
     JsonSchema s = new JsonSchema(this);
@@ -86,8 +71,24 @@ public abstract class Schema
     {
       throw new UndeclaredThrowableException(e);
     }
-    
   }
-  
-  public abstract SchemaType getSchemaType();
+
+  /** Parse a schema from the specified string. The string must not contain the "schema" keyword
+   * of Jaql, e.g., <code>long</code> is valid but <code>schema long</code> is not. */
+  public static final Schema parse(String s) throws IOException
+  {
+    
+    JaqlLexer lexer = new JaqlLexer(new StringReader(s));
+    JaqlParser parser = new JaqlParser(lexer);
+    try
+    {
+      return parser.schema();
+    } catch (RecognitionException e)
+    {
+      throw new IOException(e);
+    } catch (TokenStreamException e)
+    {
+      throw new IOException(e);
+    }
+  } 
 }
