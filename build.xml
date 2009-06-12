@@ -121,7 +121,7 @@
     <!-- ================================================================== -->
     <!-- Junit test                                                         -->
     <!-- ================================================================== -->
-    <target name="test" depends="compile-test, jar">
+    <target name="test" depends="jar, extension.jar">
         <mkdir dir="${build.dir}" />
         <mkdir dir="${test.build.dir}" />
         <delete dir="${test.build.data}" />
@@ -316,7 +316,7 @@
         </javac>
     </target>
 
-    <target name="extension.jar" depends="compile">
+    <target name="extension.jar" depends="compile-test">
         <jar jarfile="${build.dir}/extension.jar"
              basedir="${build.dir}/test/classes">
             <fileset dir="${build.dir}" includes="com/foobar/**/*.class" />
@@ -324,7 +324,7 @@
     </target>
 
     <!-- <property name="src.test.dir" value="${basedir}/src/test"/> -->
-    <target name="compile-test" depends="compile, init-test, extension.jar">
+    <target name="compile-test" depends="compile, init-test">
         <javac encoding="${build.encoding}"
                srcdir="${build.src}/test"
                includes="**/*.java"
