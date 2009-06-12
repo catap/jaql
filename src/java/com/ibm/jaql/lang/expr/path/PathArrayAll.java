@@ -18,8 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -65,26 +66,26 @@ public class PathArrayAll extends PathArray
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonArray arr = (JsonArray)input;
+    final JArray arr = (JArray)context.pathInput.get();
     if( arr == null )
     {
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
-    return new JsonIterator()
+    return new Iter()
     {
-      final JsonIterator iter = arr.iter();
+      final Iter iter = arr.iter();
       
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        if (iter.moveNext()) 
+        Item item = iter.next();
+        if( item != null )
         {
-          currentValue = nextStep(context, iter.current());
-          return true;
+          return nextStep(context, item);
         }
-        return false;
+        return null;
       }
     };
   }

@@ -25,20 +25,20 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.expr.array.StashIterExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.IteratorIter;
 
 /**
  * 
@@ -70,12 +70,12 @@ public class MapReduceFn extends MapReduceBaseExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonRecord args = baseSetup(context);
-    JsonValue map = JaqlUtil.enforceNonNull(args.getRequired("map"));
-    JsonValue combine = args.getValue("combine", null);
-    JsonValue reduce = args.getValue("reduce", null);
+    JRecord args = baseSetup(context);
+    Item map = args.getRequired("map");
+    Item combine = args.getValue("combine", null);
+    Item reduce = args.getValue("reduce", null);
 
     //conf.setMapperClass(MapEval.class);
     conf.setMapRunnerClass(MapEval.class);
@@ -95,7 +95,7 @@ public class MapReduceFn extends MapReduceBaseExpr
     {
       // conf.setNumReduceTasks(2); // TODO: get from options
       conf.setReducerClass(ReduceEval.class);
-      JaqlFunction reduceFn = (JaqlFunction) reduce;
+      JFunction reduceFn = (JFunction) reduce.getNonNull();
       prepareFunction("reduce", numInputs + 1, reduceFn, 0);
     }
     else
@@ -105,36 +105,30 @@ public class MapReduceFn extends MapReduceBaseExpr
 
     if (numInputs == 1)
     {
-      JaqlFunction mapFn = (JaqlFunction) map;
+      JFunction mapFn = (JFunction) map.getNonNull();
       prepareFunction("map", 1, mapFn, 0);
       if (combine != null)
       {
-        JaqlFunction combineFn = (JaqlFunction) combine;
+        JFunction combineFn = (JFunction) combine.getNonNull();
         prepareFunction("combine", 2, combineFn, 0);
       }
     }
     else
     {
-      JsonArray mapArray = (JsonArray) map;
-      JsonIterator iter = mapArray.iter();
+      JArray mapArray = (JArray) map.getNonNull();
+      Iter iter = mapArray.iter();
       for (int i = 0; i < numInputs; i++)
       {
-        if (!iter.moveNext()) {
-          throw new IllegalStateException();
-        }
-        JaqlFunction mapFn = (JaqlFunction) JaqlUtil.enforceNonNull(iter.current());
+        JFunction mapFn = (JFunction) iter.next().getNonNull();
         prepareFunction("map", 1, mapFn, i);
       }
       if (combine != null)
       {
-        JsonArray combineArray = (JsonArray) combine;
+        JArray combineArray = (JArray) combine.getNonNull();
         iter = combineArray.iter();
         for (int i = 0; i < numInputs; i++)
         {
-          if (!iter.moveNext()) {
-            throw new IllegalStateException();
-          }
-          JaqlFunction combineFn = (JaqlFunction) JaqlUtil.enforceNonNull(iter.current());
+          JFunction combineFn = (JFunction) iter.next().getNonNull();
           prepareFunction("combine", 2, combineFn, i);
         }
       }
@@ -153,7 +147,7 @@ public class MapReduceFn extends MapReduceBaseExpr
    */
   public static abstract class CombineReduceEval extends RemoteEval
   {
-    protected SpilledJsonArray[] valArrays;
+    protected SpillJArray[] valArrays;
 
     /*
      * (non-Javadoc)
@@ -163,10 +157,10 @@ public class MapReduceFn extends MapReduceBaseExpr
     public void configure(JobConf job)
     {
       super.configure(job);
-      valArrays = new SpilledJsonArray[numInputs];
+      valArrays = new SpillJArray[numInputs];
       for (int i = 0; i < numInputs; i++)
       {
-        valArrays[i] = new SpilledJsonArray();
+        valArrays[i] = new SpillJArray();
       }
     }
 
@@ -174,7 +168,7 @@ public class MapReduceFn extends MapReduceBaseExpr
      * @param values
      * @throws IOException
      */
-    protected void splitValues(Iterator<JsonHolder> values) throws IOException
+    protected void splitValues(Iterator<Item> values) throws IOException
     {
       // TODO: Would like values to be something that I can open an iterator on. 
       // Until I do the analysis that says that we are going over the values just once,
@@ -186,16 +180,16 @@ public class MapReduceFn extends MapReduceBaseExpr
       }
       while (values.hasNext())
       {
-        JsonValue value = values.next().value;
+        Item itemVal = values.next();
         int i = 0;
         if (numInputs > 1)
         {
-          BufferedJsonArray valRec = (BufferedJsonArray) value;
-          JsonLong id = (JsonLong) JaqlUtil.enforceNonNull(valRec.get(0));
+          FixedJArray valRec = (FixedJArray) itemVal.get();
+          JLong id = (JLong) valRec.get(0).getNonNull();
           i = (int) id.value;
-          value = valRec.get(1);
+          itemVal = valRec.get(1);
         }
-        valArrays[i].addCopy(value);
+        valArrays[i].add(itemVal);
       }
       for (int i = 0; i < numInputs; i++)
       {
@@ -208,14 +202,15 @@ public class MapReduceFn extends MapReduceBaseExpr
    * 
    */
   public static class CombineEval extends CombineReduceEval
-      implements Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
+      implements Reducer<Item, Item, Item, Item>
   {
-    protected JaqlFunction[] combineFns;
-    protected JsonValue[]    fnArgs = new JsonValue[2];
-    protected JsonLong       outId;
-    protected BufferedJsonArray outPair;
-    protected JsonHolder valueHolder = new JsonHolder();
-    
+    protected JFunction[] combineFns;
+    protected Item[]      fnArgs = new Item[2];
+    protected Item[]      valItems;
+    protected JLong       outId;
+    protected FixedJArray outPair;
+    protected Item        outItem;
+
     /*
      * (non-Javadoc)
      * 
@@ -224,17 +219,20 @@ public class MapReduceFn extends MapReduceBaseExpr
     public void configure(JobConf job)
     {
       super.configure(job);
-      combineFns = new JaqlFunction[numInputs];
+      combineFns = new JFunction[numInputs];
+      valItems = new Item[numInputs];
       for (int i = 0; i < numInputs; i++)
       {
         combineFns[i] = compile(job, "combine", i);
+        valItems[i] = new Item(valArrays[i]);
       }
       if (numInputs > 1)
       {
         // FIXME: ideally we could know which input was used to when reading map/combine output files without encoding it on every record
-        outId = new JsonLong();
-        outPair = new BufferedJsonArray(2);
-        outPair.set(0, outId);
+        outId = new JLong();
+        outPair = new FixedJArray(2);
+        outPair.set(0, new Item(outId));
+        outItem = new Item(outPair);
       }
     }
 
@@ -245,35 +243,38 @@ public class MapReduceFn extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(JsonHolder key, Iterator<JsonHolder> values,
-        OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
+    public void reduce(Item key, Iterator<Item> values,
+        OutputCollector<Item, Item> output, Reporter reporter)
         throws IOException
     {
       try
       {
         if (numInputs == 1)
         {
-          JsonIterator iter = combineFns[0].iter(context, key.value, new UnwrapFromHolderIterator(values));
-          for (JsonValue value : iter)
+          Expr[] fnExprArgs = new Expr[2];
+          fnExprArgs[0] = new ConstExpr(key);
+          fnExprArgs[1] = new StashIterExpr(new IteratorIter(values));
+          Item item;
+          Iter iter = combineFns[0].iter(context, fnExprArgs);
+          while ((item = iter.next()) != null)
           {
-            valueHolder.value = value;
-            output.collect(key, valueHolder);
+            output.collect(key, item);
           }
         }
         else
         {
-          fnArgs[0] = key.value;
+          fnArgs[0] = key;
           splitValues(values);
-          valueHolder.value = outPair;
           for (int i = 0; i < numInputs; i++)
           {
-            fnArgs[1] = valArrays[i];
-            JsonIterator iter = combineFns[i].iter(context, fnArgs);
-            for (JsonValue value : iter) 
+            fnArgs[1] = valItems[i];
+            Item item;
+            Iter iter = combineFns[i].iter(context, fnArgs);
+            while ((item = iter.next()) != null)
             {
               outId.value = i;
-              outPair.set(1, value);
-              output.collect(key, valueHolder);
+              outPair.set(1, item);
+              output.collect(key, outItem);
             }
           }
         }
@@ -294,11 +295,10 @@ public class MapReduceFn extends MapReduceBaseExpr
    */
   public static class ReduceEval extends CombineReduceEval
       implements
-        Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
+        Reducer<Item, Item, Item, Item>
   {
-    protected JaqlFunction reduceFn;
-    protected JsonValue[]  fnArgs;
-    JsonHolder valueHolder = new JsonHolder();
+    protected JFunction reduceFn;
+    protected Item[]    fnArgs;
 
     /*
      * (non-Javadoc)
@@ -309,10 +309,10 @@ public class MapReduceFn extends MapReduceBaseExpr
     {
       super.configure(job);
       reduceFn = compile(job, "reduce", 0);
-      fnArgs = new JsonValue[numInputs + 1];
+      fnArgs = new Item[numInputs + 1];
       for (int i = 0; i < numInputs; i++)
       {
-        fnArgs[i + 1] = valArrays[i];
+        fnArgs[i + 1] = new Item(valArrays[i]);
       }
     }
 
@@ -323,27 +323,30 @@ public class MapReduceFn extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(JsonHolder key, Iterator<JsonHolder> values,
-        OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
+    public void reduce(Item key, Iterator<Item> values,
+        OutputCollector<Item, Item> output, Reporter reporter)
         throws IOException
     {
       try
       {
-        JsonIterator iter;
+        Iter iter;
         if (numInputs == 1)
         {
-          iter = reduceFn.iter(context, key.value, new UnwrapFromHolderIterator(values));
+          Expr[] fnExprArgs = new Expr[2];
+          fnExprArgs[0] = new ConstExpr(key);
+          fnExprArgs[1] = new StashIterExpr(new IteratorIter(values));
+          iter = reduceFn.iter(context, fnExprArgs);
         }
         else
         {
           splitValues(values);
-          fnArgs[0] = key.value;
+          fnArgs[0] = key;
           iter = reduceFn.iter(context, fnArgs);
         }
-        for (JsonValue value : iter)
+        Item item;
+        while ((item = iter.next()) != null)
         {
-          valueHolder.value = value;
-          output.collect(key, valueHolder);
+          output.collect(key, item);
         }
       }
       catch (IOException ex)

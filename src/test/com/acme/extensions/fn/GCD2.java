@@ -15,8 +15,8 @@
  */
 package com.acme.extensions.fn;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
 
 /**
  * 
@@ -44,11 +44,11 @@ public class GCD2
    * @param y
    * @return
    */
-  public JsonLong eval(JsonNumber x, JsonNumber y)
+  public JLong eval(JNumber x, JNumber y)
   {
     long a = x.longValueExact();
     long b = y.longValueExact();
     long g = gcd(a, b);
-    return new JsonLong(g);
+    return new JLong(g);
   }
 }

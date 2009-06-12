@@ -22,11 +22,10 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.AnySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -96,17 +95,6 @@ public abstract class Expr
   }
 
   /**
-   * @param expr0
-   * @param expr1
-   * @param expr2
-   * @param expr3
-   */
-  public Expr(Expr expr0, Expr expr1, Expr expr2, Expr expr3)
-  {
-    this(new Expr[]{expr0, expr1, expr2, expr3});
-  }
-
-  /**
    * @param exprs
    */
   public Expr(ArrayList<? extends Expr> exprs)
@@ -164,13 +152,13 @@ public abstract class Expr
     }
   }
 
-  /** Evaluates this expression and return the result as a value. 
+  /** Evaluates this expression and return the result as an Item. 
    * 
    * @param context
    * @return
    * @throws Exception
    */
-  public abstract JsonValue eval(Context context) throws Exception;
+  public abstract Item eval(Context context) throws Exception;
 
   //  public void write(Context context, TableWriter writer) throws Exception
   //  {
@@ -186,14 +174,15 @@ public abstract class Expr
    * @return
    * @throws Exception
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
-    JsonValue value = eval(context);
-    if (value == null)
+    Item item = eval(context);
+    JValue w = item.get();
+    if (w == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    JsonArray array = (JsonArray)value; // intentional cast error is possible
+    JArray array = (JArray) w; // intentional cast error is possible
     return array.iter();
   }
 
@@ -293,21 +282,6 @@ public abstract class Expr
     return Bool3.UNKNOWN; // TODO: we could (should?) make the default be true because very few operators reval their children
   }
 
-  /** Returns the schema of this expression. The result is determined at compile-time, i.e., no
-   * subexpressions are evaluated. */
-  public Schema getSchema()
-  {
-    return AnySchema.getInstance();
-  }
-  
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  public boolean isMappable(int i)
-  {
-    return false;
-  }
-  
   /**
    * @return
    */

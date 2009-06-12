@@ -15,17 +15,17 @@
  */
 package com.acme.extensions.fn;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.SpillJArray;
 
 /**
  * 
  */
 public class Split1
 {
-  private SpilledJsonArray result    = new SpilledJsonArray();
-  private JsonString     resultStr = new JsonString();
+  private SpillJArray result    = new SpillJArray();
+  private JString     resultStr = new JString();
 
   /**
    * @param jstr
@@ -33,7 +33,7 @@ public class Split1
    * @return
    * @throws Exception
    */
-  public JsonArray eval(JsonString jstr, JsonString jdelim) throws Exception
+  public JArray eval(JString jstr, JString jdelim) throws Exception
   {
     if (jstr == null || jdelim == null)
     {
@@ -48,7 +48,7 @@ public class Split1
     for (String s : splits)
     {
       resultStr.set(s);
-      result.addCopy(resultStr);
+      result.add(resultStr);
     }
 
     return result;

@@ -24,18 +24,16 @@
 
     <property name="lib.dir" value="${basedir}/lib" />
     <property name="conf.dir" value="${basedir}/conf" />
-    <property name="resources.dir" value="${basedir}/resources" />
     <property name="bin.dir" value="${basedir}/bin" />
     <property name="docs.dir" value="${basedir}/docs" />
     <property name="build.dir" value="${basedir}/build" />
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <!-- Default version is 0.18.3. Other supported versions include: 0.18.1 -->
-    <property name="hadoop.version" value="0.18.3" />
+    <!-- Default version is 0.18.1. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0 -->
+    <property name="hadoop.version" value="0.18.1" />
 
-    <property name="hadoop.dir"
-              value="${basedir}/vendor/hadoop/${hadoop.version}" />
+    <property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
     <property file="${hadoop.dir}/build.properties" />
     <property name="hbase.dir"
               value="${basedir}/vendor/hbase/${hbase.version}" />
@@ -60,8 +58,8 @@
     <!-- <property name="jaql.mapred.mode" value="cluster"/> -->
     <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
     <property name="tmp.dir" value="${build.dir}/tmp" />
-    <property name="year" value="2009" />
-    <property name="version" value="0.4" />
+    <property name="year" value="2008" />
+    <property name="version" value="0.3" />
     <property name="Name" value="jaql" />
     <property name="name" value="jaql" />
 
@@ -91,6 +89,7 @@
         <pathelement location="${conf.dir}" />
         <pathelement location="${test.cache.data}" />
         <pathelement location="${build.dir}/jaql.jar" />
+        <pathelement location="${build.dir}/extension.jar" />
         <fileset dir="${basedir}/lib">
             <include name="**/*.jar" />
             <exclude name="**/excluded" />
@@ -121,7 +120,7 @@
     <!-- ================================================================== -->
     <!-- Junit test                                                         -->
     <!-- ================================================================== -->
-    <target name="test" depends="jar, extension.jar">
+    <target name="test" depends="compile-test, jar">
         <mkdir dir="${build.dir}" />
         <mkdir dir="${test.build.dir}" />
         <delete dir="${test.build.data}" />
@@ -160,7 +159,6 @@
                maxmemory="256m"
                errorProperty="tests.failed"
                failureProperty="tests.failed">
-        	<assertions><enable/></assertions>
             <sysproperty key="test.build.data" value="${test.build.data}" />
             <sysproperty key="test.cache.data" value="${test.cache.data}" />
             <sysproperty key="hadoop.log.dir" value="${test.log.dir}" />
@@ -169,8 +167,7 @@
             <sysproperty key="hadoop.conf.override"
                          value="${test.conf.override.dir}" />
             <sysproperty key="test.deployment" value="${test.deployment}" />
-            <sysproperty key="jaql.mapred.mode"
-                         value="${test.jaql.mapred.mode}" />
+            <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
             <sysproperty key="test.cleanup" value="${test.cleanup}" />
             <sysproperty key="build" value="${build.dir}" />
             <classpath refid="${test.classpath.id}" />
@@ -203,8 +200,7 @@
     <property name="javac.optimize" value="on" />
     <property name="javac.deprecation" value="off" />
     <property name="javac.version" value="1.5" />
-    <property name="javadoc.link.java"
-              value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
+    <property name="javadoc.link.java" value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
     <property name="javac.args" value="" />
 
     <!-- <path id="classpath">
@@ -316,7 +312,7 @@
         </javac>
     </target>
 
-    <target name="extension.jar" depends="compile-test">
+    <target name="extension.jar" depends="compile">
         <jar jarfile="${build.dir}/extension.jar"
              basedir="${build.dir}/test/classes">
             <fileset dir="${build.dir}" includes="com/foobar/**/*.class" />
@@ -324,7 +320,7 @@
     </target>
 
     <!-- <property name="src.test.dir" value="${basedir}/src/test"/> -->
-    <target name="compile-test" depends="compile, init-test">
+    <target name="compile-test" depends="compile, init-test, extension.jar">
         <javac encoding="${build.encoding}"
                srcdir="${build.src}/test"
                includes="**/*.java"
@@ -345,10 +341,8 @@
         <mkdir dir="${tmp.dir}" />
 
         <!-- copy over files to tmp to jar -->
-        <copy todir="${tmp.dir}">
-            <fileset dir="${build.dir}/test/classes/"
-                     includes="JaqlShell.class" />
-        </copy>
+        <copy todir="${tmp.dir}"
+              file="${build.dir}/test/classes/JaqlShell.class" />
 
         <copy todir="${tmp.dir}/org/apache/hadoop/mapred"
               file="${build.dir}/classes/org/apache/hadoop/mapred/PublicMergeSorter.class" />
@@ -389,7 +383,7 @@
         </copy>
 
         <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
-        <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
+	<unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
 
         <unjar dest="${tmp.dir}">
             <fileset dir="${hbase.dir}">
@@ -431,15 +425,6 @@
         </javadoc>
     </target>
 
-
-    <!-- ================================================================== -->
-    <!-- Filesets                                                           -->
-    <!-- ================================================================== -->
-    <fileset dir="${bin.dir}" id="bin.files">
-        <include name="jaql" />
-        <include name="jaqlshell" />
-    </fileset>
-
     <!-- ================================================================== -->
     <!-- Jaql Binary Distribution                                           -->
     <!-- ================================================================== -->
@@ -449,11 +434,6 @@
         <mkdir dir="${build.dir}/jaql-${version}/conf" />
         <copy todir="${build.dir}/jaql-${version}/conf">
             <fileset dir="${conf.dir}" />
-        </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${resources.dir}" />
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}" />
@@ -470,9 +450,7 @@
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin">
-            <fileset refid="bin.files" />
-        </copy>
+        <copy todir="${build.dir}/jaql-${version}/bin" file="${bin.dir}/jaql" />
 
         <copy todir="${build.dir}/jaql-${version}"
               file="${build.dir}/jaql.jar" />
@@ -493,13 +471,9 @@
 
         <tar compression="gzip"
              longfile="gnu"
-             destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
+             destfile="${build.dir}/jaql-${version}.tgz">
             <tarfileset dir="${build.dir}/jaql-${version}"
-                        prefix="jaql-${version}"
-                        excludes="bin/*" />
-            <tarfileset dir="${build.dir}/jaql-${version}/bin"
-                        prefix="jaql-${version}/bin"
-                        filemode="755" />
+                        prefix="jaql-${version}" />
         </tar>
     </target>
 
@@ -515,15 +489,8 @@
             <fileset dir="${conf.dir}" />
         </copy>
 
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${conf.dir}" />
-        </copy>
-
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin">
-            <fileset refid="bin.files" />
-        </copy>
+        <copy todir="${build.dir}/jaql-${version}/bin" file="${bin.dir}/jaql" />
 
         <mkdir dir="${build.dir}/jaql-${version}/lib" />
         <copy todir="${build.dir}/jaql-${version}/lib">
@@ -557,15 +524,8 @@
             <fileset dir="${conf.dir}" />
         </copy>
 
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${resources.dir}" />
-        </copy>
-
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin">
-            <fileset refid="bin.files" />
-        </copy>
+        <copy todir="${build.dir}/jaql-${version}/bin" file="${bin.dir}/jaql" />
 
         <mkdir dir="${build.dir}/jaql-${version}/lib" />
         <copy todir="${build.dir}/jaql-${version}/lib">

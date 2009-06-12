@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -63,12 +63,12 @@ public class AsArrayFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonIterator iter = exprs[0].iter(context);
+    Iter iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      iter = JsonIterator.EMPTY;
+      iter = Iter.empty;
     }
     return iter;
   }

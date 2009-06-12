@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
@@ -75,19 +75,19 @@ public class PathFieldValue extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonRecord rec = (JsonRecord)input;
+    JRecord rec = (JRecord)context.pathInput.get();
     if( rec == null )
     {
-      return null;
+      return Item.nil;
     }
-    JsonString name = (JsonString)exprs[0].eval(context);
+    JString name = (JString)exprs[0].eval(context).get();
     if( name == null )
     {
-      return null;
+      return Item.nil;
     }
-    JsonValue value = rec.getValue(name);
+    Item value = rec.getValue(name);
     return nextStep(context, value);
   }
 
@@ -100,7 +100,7 @@ public class PathFieldValue extends PathStep
    */
   public static Expr byName(Var recVar, String fieldName)
   {
-    Expr f = new ConstExpr(new JsonString(fieldName));
+    Expr f = new ConstExpr(new JString(fieldName));
     return new PathExpr(new VarExpr(recVar), new PathFieldValue(f));
   }
 

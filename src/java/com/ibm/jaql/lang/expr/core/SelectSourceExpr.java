@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.expr.core;
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -35,7 +35,7 @@ public class SelectSourceExpr extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)
@@ -46,7 +46,7 @@ public class SelectSourceExpr extends IterExpr
         return ifExpr.trueExpr().iter(context);
       }
     }
-    return JsonIterator.EMPTY; // exprs[n].iter(context);
+    return Iter.empty; // exprs[n].iter(context);
   }
 
 }

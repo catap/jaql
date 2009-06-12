@@ -17,8 +17,9 @@ package com.ibm.jaql.lang.expr.random;
 
 import java.util.Random;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -30,7 +31,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class RandomLongFn extends Expr
 {
   private Random rng;
-  private JsonLong  longType = new JsonLong();
+  private JLong  longType = new JLong();
+  private Item   longItem = new Item(longType);
 
   /**
    * long randomLong(number seed)
@@ -66,16 +68,16 @@ public class RandomLongFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonLong eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     // FIXME: This class does not work in recursion...
     if (rng == null)
     {
-      JsonNumber seedItem = (JsonNumber) exprs[0].eval(context);
+      JNumber seedItem = (JNumber) (exprs[0].eval(context).get());
       long seed = seedItem.longValue();
       rng = new Random(seed);
     }
     longType.value = rng.nextLong() & 0x7FFFFFFFFFFFFFFFL;
-    return longType;
+    return longItem;
   }
 }

@@ -23,9 +23,9 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -53,7 +53,7 @@ public class ExecFn extends IterExpr
     super(expr0, expr1);
   }
 
-  protected JsonIterator iter;
+  protected Iter iter;
   protected Throwable error;
   protected Process proc;
   
@@ -61,33 +61,34 @@ public class ExecFn extends IterExpr
    * 
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonString cmd = (JsonString)exprs[1].eval(context);
+    final JString cmd = (JString)exprs[1].eval(context).get();
     if( cmd == null )
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
     iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
     proc = Runtime.getRuntime().exec(cmd.toString());
     // TODO: add thread pool to context
     InputThread inputThread = new InputThread();
     ErrorThread errorThread = new ErrorThread();
-    final JsonString str = new JsonString();
+    final JString str = new JString();
+    final Item result = new Item(str);
     try
     {
       InputStream is = proc.getInputStream();
       final BufferedReader reader = new BufferedReader(new InputStreamReader(is));
       errorThread.start();
       inputThread.start();
-      return new JsonIterator(str)
+      return new Iter()
       {
         @Override
-        public boolean moveNext() throws Exception
+        public Item next() throws Exception
         {
           try
           {
@@ -100,10 +101,10 @@ public class ExecFn extends IterExpr
               {
                 System.err.println("non-zero exit code from process ["+cmd+"]: "+rc);
               }
-              return false;
+              return null;
             }
             str.set(s);
-            return true; // currentValue == str
+            return result;
           }
           catch (Throwable e)
           {
@@ -145,14 +146,11 @@ public class ExecFn extends IterExpr
       {
         OutputStream os = proc.getOutputStream();
         PrintStream out = new PrintStream(new BufferedOutputStream(os));
-        for (JsonValue sv : iter)
+        Item item;
+        while( (item = iter.next()) != null )
         {
           // TODO:  force jstrings here? add i/o layer here? add serialize function that has i/o layer?
-          JsonString s = (JsonString)sv;
-          if( s != null )
-          {
-            out.println(s.toString());
-          }
+          out.print(item.toString());
         }
         out.close();
       }

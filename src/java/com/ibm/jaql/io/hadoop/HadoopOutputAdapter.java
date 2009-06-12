@@ -22,8 +22,7 @@ import com.ibm.jaql.io.OutputAdapter;
 /**
  * A Hadoopadapter that converts Items to records and writes them out.
  */
-@SuppressWarnings("unchecked")
-public interface HadoopOutputAdapter
-    extends HadoopAdapter, OutputFormat, OutputAdapter
+public interface HadoopOutputAdapter<T>
+    extends HadoopAdapter<T>, OutputFormat, OutputAdapter
 {
 }

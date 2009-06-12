@@ -18,9 +18,10 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -55,15 +56,6 @@ public class PathArrayHead extends PathArray
 
   /**
    * 
-   * @return
-   */
-  public Expr lastIndex()
-  {
-    return exprs[0];
-  }
-
-  /**
-   * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
@@ -79,43 +71,42 @@ public class PathArrayHead extends PathArray
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonArray arr = (JsonArray)input;
+    JArray arr = (JArray)context.pathInput.get();
     if( arr == null )
     {
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
-    JsonNumber end = (JsonNumber)exprs[0].eval(context);
+    JNumber end = (JNumber)exprs[0].eval(context).get();
     if( end == null )
     {
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
     final long e = end.longValueExact();
     if( e < 0 )
     {
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
-    final JsonIterator iter = arr.iter();
-    return new JsonIterator()
+    final Iter iter = arr.iter();
+    return new Iter()
     {
       long index = 0;
       
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         if( index <= e )
         {
           index++;
-          if (iter.moveNext()) 
+          Item item = iter.next();
+          if( item != null )
           {
-            currentValue = nextStep(context, iter.current());
-            return true;
+            return nextStep(context, item);
           }
         }
-        return false;
+        return null;
       }
     };
   }
-
 }

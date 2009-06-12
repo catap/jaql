@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -58,23 +59,24 @@ public class AppendFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    return new JsonIterator() {
+    return new Iter() {
       int  index = 0;
-      JsonIterator iter  = JsonIterator.EMPTY;
+      Iter iter  = Iter.empty;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (iter.moveNext()) {
-            currentValue = iter.current();
-            return true;
+          Item item = iter.next();
+          if (item != null)
+          {
+            return item;
           }
           if (index >= exprs.length)
           {
-            return false;
+            return null;
           }
           iter = exprs[index].iter(context);
           index++;

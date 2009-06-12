@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JsonComparator;
+import com.ibm.jaql.lang.core.JComparator;
 import com.ibm.jaql.lang.core.Var;
 
 
@@ -62,12 +62,12 @@ public class CmpSingle extends CmpExpr // TODO: merge CmpSingle and CmpSpec?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
   
-  public JsonComparator getComparator(Context context)
+  public JComparator getComparator(Context context)
   {
     return ((CmpSpec)exprs[0]).getComparator(context);
   }

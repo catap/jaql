@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -71,21 +71,21 @@ public abstract class FieldExpr extends Expr
    * @param rec
    * @throws Exception
    */
-  public abstract void eval(Context context, BufferedJsonRecord rec)
+  public abstract void eval(Context context, MemoryJRecord rec)
       throws Exception;
   
   /**
    * @param name
    * @return
    */
-  public abstract Bool3 staticNameMatches(JsonString name);
+  public abstract Bool3 staticNameMatches(JString name);
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     throw new RuntimeException("FieldExpr should never be evaluated!");
   }

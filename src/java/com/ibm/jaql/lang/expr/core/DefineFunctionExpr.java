@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (C) IBM Corp. 2008.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -20,61 +20,35 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 
 /**
- * exprs:
- *    BindingExpr(param)
- *    ...
- *    Expr body
+ * 
  */
-public final class DefineFunctionExpr extends Expr
+public class DefineFunctionExpr extends Expr
 {
-  protected static Expr[] makeArgs(Var[] params, Expr body)
-  {
-//    HashSet<Var> cv = body.getCapturedVars();
-//    Expr[] args = new Expr[cv.size() + params.length + 1];
-//    int i = 0;
-//    for( Var oldVar: cv )
-//    {
-//      Var newVar = new Var(oldVar.name());
-//      args[i] = new BindingExpr(BindingExpr.Type.EQ, newVar, null, new VarExpr(oldVar));
-//      body.replaceVar(oldVar, newVar); // TODO: could replace all in one pass with a VarMap
-//    }
-    Expr[] args = new Expr[params.length + 1];
-    for(int i = 0 ; i < params.length ; i++)
-    {
-      args[i] = new BindingExpr(BindingExpr.Type.EQ, params[i], null, Expr.NO_EXPRS);
-    }
-    args[args.length-1] = body;
-    return args;
-  }
-
-  protected static Expr[] makeArgs(ArrayList<Var> params, Expr body)
-  {
-    return makeArgs(params.toArray(new Var[params.size()]), body);
-  }
+  Var   fnVar; // TODO: use Binding
+  Var[] params; // TODO: use Binding
+  // Function fn;
 
   /**
-   * 
-   * @param exprs
-   */
-  public DefineFunctionExpr(Expr[] exprs)
-  {
-    super(exprs);
-  }
-
-  /**
+   * @param fnVar
    * @param params
    * @param body
    */
-  public DefineFunctionExpr(Var[] params, Expr body)
+  public DefineFunctionExpr(Var fnVar, Var[] params, Expr body)
   {
-    super(makeArgs(params, body));
+    super(new Expr[]{body});
+    this.fnVar = fnVar;
+    this.params = params;
+    //    fn = new Function();
+    //    fn.def.fnVar = fnVar;
+    //    fn.def.params = params;
+    //    fn.setBody(body);
   }
 
   /**
@@ -82,34 +56,55 @@ public final class DefineFunctionExpr extends Expr
    * @param params
    * @param body
    */
-  public DefineFunctionExpr(ArrayList<Var> params, Expr body)
+  public DefineFunctionExpr(Var fnVar, ArrayList<Var> params, Expr body)
   {
-    super(makeArgs(params, body));
+    this(fnVar, params.toArray(new Var[params.size()]), body);
+  }
+
+  //  public FunctionExpr(Env env, String fnName, ArrayList<String> paramNames)
+  //  {
+  //    super(NO_EXPRS);
+  //    fn = new Function();
+  //    int n = paramNames.size();
+  //    fn.def.params = new Var[n];
+  //    for( int i = 0 ; i < n ; i++ )
+  //    {
+  //      String p = paramNames.get(i);
+  //      fn.def.params[i] = env.scope(p);
+  //    }
+  //    if( fnName != null )
+  //    {
+  //      fn.def.fnVar = env.scope(fnName);
+  //    }
+  //  }
+  //
+  //  public void setBody(Env env, Expr body, boolean unscopeFn)
+  //  {
+  //    if( fn.def.fnVar != null && unscopeFn )
+  //    {
+  //      env.unscope(fn.def.fnVar);
+  //    }
+  //    for (Var p : fn.def.params)
+  //    {
+  //      env.unscope(p);
+  //    }
+  //    fn.setBody(body);
+  //  }
+
+  /**
+   * @return
+   */
+  public final Expr body()
+  {
+    return exprs[0];
   }
 
   /**
    * @return
    */
-  public int numParams()
+  public final Var[] params()
   {
-    return exprs.length - 1;
-  }
-  
-  /**
-   * @return
-   */
-  public BindingExpr param(int i)
-  {
-    assert i < numParams();
-    return (BindingExpr)exprs[i];
-  }
-
-  /**
-   * @return
-   */
-  public Expr body()
-  {
-    return exprs[exprs.length-1];
+    return params;
   }
 
   /*
@@ -146,25 +141,53 @@ public final class DefineFunctionExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
+    //    for (Var c : fn.def.capturedVars)
+    //    {
+    //      capturedVars.add(c);
+    //    }
+    //    fn.print(exprText);
     exprText.print("fn");
+    if (fnVar != null)
+    {
+      exprText.print(' ');
+      exprText.print(fnVar.name);
+    }
     exprText.print("(");
     String sep = "";
-    int n = numParams();
-    for(int i = 0 ; i < n ; i++)
+    for (Var v : params)
     {
-      BindingExpr b = param(i);
       exprText.print(sep);
-      exprText.print(b.var.name);
+      exprText.print(v.name);
       sep = ", ";
     }
     exprText.print(") ( ");
-    body().decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars);
     exprText.println(" )");
 
-    for(int i = 0 ; i < n ; i++)
+    if (fnVar != null)
     {
-      capturedVars.remove(param(i).var);
+      capturedVars.remove(fnVar);
     }
+    for (Var v : params)
+    {
+      capturedVars.remove(v);
+    }
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
+   */
+  public DefineFunctionExpr clone(VarMap varMap)
+  {
+    Var[] p = new Var[params.length];
+    for (int i = 0; i < p.length; i++)
+    {
+      p[i] = varMap.remap(params[i]);
+    }
+    return new DefineFunctionExpr(varMap.remap(fnVar), p, exprs[0]
+        .clone(varMap));
   }
 
   /*
@@ -173,76 +196,12 @@ public final class DefineFunctionExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    this.annotate(); // TODO: move to init call
-    DefineFunctionExpr f = this;
-    HashSet<Var> capturedVars = this.getCapturedVars(); // TODO: optimize
-    int n = capturedVars.size();
-    if( n > 0 )
-    {
-      // If we have captured variables, we need to evaluate and save their value now.
-      // We do this by making new local variables in the function that store the captured values.
-      // To add new local variables, we have to define a new function.
-      // TODO: is it safe to share f when we don't have captures?
-      VarMap varMap = new VarMap();
-      for(Var oldVar: capturedVars)
-      {
-        Var newVar = new Var(oldVar.name());
-        varMap.put(oldVar, newVar);
-      }
-      f = (DefineFunctionExpr)this.clone(varMap);
-      Expr[] es = new Expr[n + 1];
-      int i = 0;
-      for( Var v: capturedVars )
-      {
-        JsonValue val = JsonValue.getCopy(v.getValue(context), null);
-        es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
-      }
-      es[n] = f.body().injectAbove();
-      new DoExpr(es);
-    }
-    JaqlFunction fn = new JaqlFunction(f, n > 0);
-    return fn;
-  }
-
-  public void annotate()
-  {
-    int p = numParams();
-    if( p == 0 )
-    {
-      return;
-    }
-    ArrayList<Expr> uses = new ArrayList<Expr>();
-    Expr body = body();
-    for(int i = 0 ; i < p ; i++)
-    {
-      uses.clear();
-      BindingExpr b = param(i);
-      b.var.usage = Var.Usage.EVAL;
-      body.getVarUses(b.var, uses);
-      int n = uses.size();
-      if( n == 0 )
-      {
-        b.var.usage = Var.Usage.UNUSED;
-      }
-      else if( n == 1 )
-      {
-        Expr e = uses.get(0);
-        while( e != body )
-        {
-          if( e.isEvaluatedOnceByParent().maybeNot() )
-          {
-            break;
-          }
-          e = e.parent();
-        }
-        if( e == body )
-        {
-          b.var.usage = Var.Usage.STREAM;
-        }
-      }
-    }
+    // TODO: memory, wasted overhead setting body
+    JFunction fn = new JFunction(fnVar, params, exprs[0]);
+    fn.capture(context);
+    return new Item(fn); // TODO: figure out how to cache items...
   }
 
 }

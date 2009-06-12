@@ -15,20 +15,17 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.io.LocalWriteFn;
 import com.ibm.jaql.lang.expr.io.ReadFn;
 import com.ibm.jaql.lang.expr.io.WriteFn;
-import com.ibm.jaql.lang.walk.ExprWalker;
 
 /**
  * let ... $i = e1 ... $j = e2($i) ... return e3($i) => let ... $j = e2[$i ->
@@ -55,11 +52,17 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
   public boolean rewrite(Expr expr)
   {
     DoExpr doExpr = (DoExpr) expr;
-    int n = doExpr.numChildren();
+    int n = doExpr.numChildren() - 1;
     boolean replaced = false;
     Expr e;
 
-    assert n > 0; // There shouldn't be any empty do exprs
+    assert n >= 0;
+    if( n == 0 )  // do(e) == e
+    {
+      e = doExpr.child(0);
+      doExpr.replaceInParent(e);
+      return true;
+    }
     
     for (int i = 0 ; i < n ; i++)
     {
@@ -71,7 +74,7 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
       BindingExpr b = (BindingExpr) e;
       Expr valExpr = b.eqExpr();
 
-      // FIXME: cannot inline if a side-affecting fn is anywhere in the ENTIRE subtree...
+      // NOW: cannot inline if a side-affecting fn is anywhere in the ENTIRE subtree...
       if (valExpr instanceof WriteFn // FIXME: need to detect write exprs generically - actually need to detect side-effecting fns
           || valExpr instanceof LocalWriteFn
           || valExpr instanceof MapReduceFn || valExpr instanceof MRAggregate)
@@ -90,74 +93,35 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         use.replaceInParent(valExpr);
         replaced = true;
       }
-      else // multiple uses of var
+      else
+      // multiple uses of var
       {
-        // Do not inline a function variable that passes itself to itself (dynamic recursion)
-        // conservative method: Inline only if every var usage goes directly into a function call. 
-        if( valExpr instanceof DefineFunctionExpr   // TODO: we could try to make a Def into a Const
-            || (valExpr instanceof ConstExpr && 
-                ((ConstExpr)valExpr).value instanceof JaqlFunction) ) // TODO: we could inline Const fns because the fn is still shared via the const, but fn inline would need to check 
-        {
-          ExprWalker walker = engine.walker;
-          walker.reset(expr);
-          boolean allCalls = true;
-          while ((e = walker.next()) != null)
-          {
-            if (e instanceof VarExpr)
-            {
-              VarExpr ve = (VarExpr) e;
-              if (ve.var() == b.var)
-              {
-                // If not direct function call like $v(...), then don't inline 
-                if( ve.getChildSlot() != 0 || !(ve.parent() instanceof FunctionCallExpr) )
-                {
-                  allCalls = false;
-                  break;
-                }
-              }
-            }
-          }
-          if( allCalls )
-          {
-            replaceVarUses(b.var, doExpr, valExpr);
-            replaced = true;
-          }
-        }
-        else if (   valExpr instanceof ConstExpr 
-                 // || valExpr.isConst() // const expressions should be handled by compile-time eval to const
-                 || valExpr instanceof VarExpr
-                 || valExpr instanceof ReadFn ) 
+        // TODO: else consider inlining cheap valExprs into multiple uses.
+        if (valExpr instanceof ConstExpr || valExpr instanceof VarExpr
+            // || valExpr.isConst() // const expressions should be handled by compile-time eval to const
+            || valExpr instanceof DefineFunctionExpr
+            || valExpr instanceof ReadFn ) 
         {
           replaceVarUses(b.var, doExpr, valExpr);
           replaced = true;
         }
-        // TODO: else consider inlining cheap valExprs into multiple uses.
       }
 
       if (replaced)
       {
-        if (n == 1) // do($v = e) ==> null
+        if (n == 1)
         {
-          doExpr.replaceInParent(new ConstExpr(null));
+          // Eliminate the DoExpr altogether.
+          e = doExpr.child(1);
+          doExpr.replaceInParent(e);
         }
-        else if( i + 1 == n ) // do(e1,$v=e2) ==> (e1,null)
+        else
         {
-          b.replaceInParent(new ConstExpr(null));
-        }
-        else        // Eliminate the variable definition.
-        {
+          // Eliminate the variable definition.
           b.detach();
         }
         return true;
       }
-    }
-
-    if( n == 1 )  // do(e) == e
-    {
-      e = doExpr.child(0);
-      assert !(e instanceof BindingExpr); // should have been handled above
-      doExpr.replaceInParent(e);
-      return true;
     }
 
     return false;

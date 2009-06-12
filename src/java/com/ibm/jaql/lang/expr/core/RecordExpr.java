@@ -19,13 +19,12 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 import com.ibm.jaql.util.Bool3;
 
 //TODO: add optimized RecordExpr when all cols are known at compile time
@@ -34,8 +33,6 @@ import com.ibm.jaql.util.Bool3;
  */
 public class RecordExpr extends Expr
 {
-  protected BufferedJsonRecord record;
-
   /**
    * every exprs[i] is a FieldExpr
    * 
@@ -91,62 +88,6 @@ public class RecordExpr extends Expr
   public RecordExpr(ArrayList<FieldExpr> fields)
   {
     super(fields);
-  }
-
-  /**
-   * Either construct a RecordExpr or some for loops over a RecordExpr
-   * to handle flatten requests.
-   * 
-   * @param args
-   * @return
-   */
-  public static Expr make(Env env, Expr[] args)
-  {
-    int n = 0;
-    for(Expr e: args)
-    {
-      if( e instanceof NameValueBinding &&
-          e.child(1) instanceof FlattenExpr )
-      {
-        n++;
-      }
-    }
-    if( n == 0 )
-    {
-      return new RecordExpr(args);
-    }
-
-    Var[] vars = new Var[n];
-    Expr[] ins = new Expr[n];
-    Expr[] doargs = new Expr[n+1];
-    n = 0;
-    for(int i = 0 ; i < args.length ; i++)
-    {
-      if( args[i] instanceof NameValueBinding && 
-          args[i].child(1) instanceof FlattenExpr )
-      {
-        Expr flatten = args[i].child(1);
-        Var letVar = new Var("$_toflat_"+n);
-        vars[n] = env.makeVar("$_flat_"+n);
-        ins[n] = new VarExpr(letVar);
-        Expr e = flatten.child(0);
-        if( e.isEmpty().maybe() )
-        {
-          e = new NullElementOnEmptyFn(e);
-        }
-        doargs[n] = new BindingExpr(BindingExpr.Type.EQ, letVar, null, e);
-        flatten.replaceInParent(new VarExpr(vars[n]));
-        n++;
-      }
-    }
-    Expr e = new ArrayExpr(new RecordExpr(args));
-    for( n-- ; n >= 0 ; n-- )
-    {
-      e = new ForExpr(vars[n], ins[n], e);
-    }
-    doargs[doargs.length-1] = e;
-    e = new DoExpr(doargs);
-    return e;
   }
 
   /*
@@ -205,7 +146,7 @@ public class RecordExpr extends Expr
    * @param name
    * @return
    */
-  public Expr findStaticFieldValue(JsonString name)
+  public Expr findStaticFieldValue(JString name)
   {
     Expr valExpr = null;
     for (int i = 0; i < exprs.length; i++)
@@ -217,8 +158,8 @@ public class RecordExpr extends Expr
         if (nameExpr instanceof ConstExpr)
         {
           ConstExpr ce = (ConstExpr) nameExpr;
-          JsonValue t = ce.value;
-          if (t instanceof JsonString)
+          JValue t = ce.value.get();
+          if (t instanceof JString)
           {
             if (name.equals(t))
             {
@@ -242,9 +183,9 @@ public class RecordExpr extends Expr
    */
   public Expr findStaticFieldValue(String name) // TODO: migrate callers to JString version
   {
-    return findStaticFieldValue(new JsonString(name)); // TODO: memory
+    return findStaticFieldValue(new JString(name)); // TODO: memory
   }
-  
+
   /*
    * (non-Javadoc)
    * 
@@ -270,22 +211,25 @@ public class RecordExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    if (record == null)
+    Item result = context.getTemp(this);
+    MemoryJRecord rec = (MemoryJRecord) result.get();
+    if (rec == null)
     {
-      record = new BufferedJsonRecord();
+      rec = new MemoryJRecord();
+      result.set(rec);
     }
     else
     {
-      record.clear();
+      rec.clear();
     }
 
     for (int i = 0; i < exprs.length; i++)
     {
       FieldExpr f = (FieldExpr) exprs[i];
-      f.eval(context, record);
+      f.eval(context, rec);
     }
-    return record;
+    return result;
   }
 }

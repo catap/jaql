@@ -15,8 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.span;
 
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonSpan;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JSpan;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -40,18 +41,18 @@ public class SpanOverlapsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonSpan x = (JsonSpan) exprs[0].eval(context);
+    JSpan x = (JSpan) exprs[0].eval(context).get();
     if (x == null)
     {
-      return null;
+      return Item.nil;
     }
-    JsonSpan y = (JsonSpan) exprs[1].eval(context);
+    JSpan y = (JSpan) exprs[1].eval(context).get();
     if (y == null)
     {
-      return null;
+      return Item.nil;
     }
-    return JsonBool.make(JsonSpan.overlaps(x, y));
+    return JBool.make(JSpan.overlaps(x, y));
   }
 }

@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -65,24 +66,25 @@ public class OrExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonBool b1 = (JsonBool) exprs[0].eval(context);
-    if (b1 != null && b1.getValue() == true)
+    Item item1 = exprs[0].eval(context);
+    JBool b = (JBool) item1.get();
+    if (b != null && b.getValue() == true)
     {
-      return JsonBool.TRUE;
+      return JBool.trueItem;
     }
-    // b1 is false or null
-    JsonBool b2 = (JsonBool) exprs[1].eval(context);
-    if (b2 == null)
+    // item1 is false or null
+    b = (JBool) exprs[1].eval(context).get();
+    if (b == null)
     {
-      return null;
+      return Item.nil;
     }
-    if (b2.getValue() == true)
+    if (b.getValue() == true)
     {
-      return JsonBool.TRUE;
+      return JBool.trueItem;
     }
-    // b1 is false or null, b2 is false
-    return b1;
+    // b is false
+    return item1;
   }
 }

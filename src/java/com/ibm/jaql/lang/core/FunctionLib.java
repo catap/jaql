@@ -19,19 +19,17 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.jaql.lang.expr.agg.ArgMaxAgg;
-import com.ibm.jaql.lang.expr.agg.ArgMinAgg;
 import com.ibm.jaql.lang.expr.agg.ArrayAgg;
 import com.ibm.jaql.lang.expr.agg.AvgAgg;
 import com.ibm.jaql.lang.expr.agg.CountAgg;
-import com.ibm.jaql.lang.expr.agg.CovStatsAgg;
 import com.ibm.jaql.lang.expr.agg.MaxAgg;
 import com.ibm.jaql.lang.expr.agg.MinAgg;
-import com.ibm.jaql.lang.expr.agg.AnyAgg;
+import com.ibm.jaql.lang.expr.agg.MultiAgg;
+import com.ibm.jaql.lang.expr.agg.PickAnyAgg;
 import com.ibm.jaql.lang.expr.agg.PickNAgg;
 import com.ibm.jaql.lang.expr.agg.SingletonAgg;
 import com.ibm.jaql.lang.expr.agg.SumAgg;
-import com.ibm.jaql.lang.expr.agg.VectorSumAgg;
+import com.ibm.jaql.lang.expr.agg.SumPA;
 import com.ibm.jaql.lang.expr.array.AppendFn;
 import com.ibm.jaql.lang.expr.array.ArrayToRecordFn;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
@@ -48,33 +46,22 @@ import com.ibm.jaql.lang.expr.array.ReplaceElementFn;
 import com.ibm.jaql.lang.expr.array.ReverseFn;
 import com.ibm.jaql.lang.expr.array.RowwiseFn;
 import com.ibm.jaql.lang.expr.array.ShiftFn;
-import com.ibm.jaql.lang.expr.array.SliceFn;
-import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.GroupCombineFn;
-import com.ibm.jaql.lang.expr.core.IndexExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.MergeContainersFn;
-import com.ibm.jaql.lang.expr.core.PerPartitionFn;
-import com.ibm.jaql.lang.expr.core.PerfFn;
 import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
+import com.ibm.jaql.lang.expr.core.TypeofExpr;
 import com.ibm.jaql.lang.expr.date.DateFn;
 import com.ibm.jaql.lang.expr.date.DateMillisFn;
-import com.ibm.jaql.lang.expr.date.DatePartsFn;
 import com.ibm.jaql.lang.expr.date.NowFn;
 import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
-import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
-import com.ibm.jaql.lang.expr.index.BuildLuceneFn;
-import com.ibm.jaql.lang.expr.index.KeyLookupFn;
-import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
-import com.ibm.jaql.lang.expr.index.ProbeLuceneFn;
 import com.ibm.jaql.lang.expr.io.ArrayReadExpr;
 import com.ibm.jaql.lang.expr.io.FileFn;
 import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
@@ -130,22 +117,15 @@ import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
 import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
 import com.ibm.jaql.lang.expr.regex.RegexTestFn;
-import com.ibm.jaql.lang.expr.schema.SchemaOfExpr;
-import com.ibm.jaql.lang.expr.schema.TypeOfExpr;
 import com.ibm.jaql.lang.expr.span.SpanContainsFn;
 import com.ibm.jaql.lang.expr.span.SpanFn;
 import com.ibm.jaql.lang.expr.span.SpanOverlapsFn;
 import com.ibm.jaql.lang.expr.span.TokenizeFn;
 import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
-import com.ibm.jaql.lang.expr.string.StrJoinFn;
-import com.ibm.jaql.lang.expr.string.StrSplitNFn;
-import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
-import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.udf.JavaFnExpr;
-import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
 import com.ibm.jaql.lang.registry.RegisterFunctionExpr;
 import com.ibm.jaql.lang.registry.WriteFunctionRegistryExpr;
@@ -190,10 +170,7 @@ public class FunctionLib
   static
   {
     // TODO: add "import extension" that loads the functions in some jar (and loads types?)
-    // schema
-    add(TypeOfExpr.class);
-    add(SchemaOfExpr.class);
-    //    
+    add(TypeofExpr.class);
     add(CompareFn.class);
     add(ExistsFn.class);
     //lib.put("loadXml", LoadXmlExpr.class);
@@ -201,7 +178,6 @@ public class FunctionLib
     add(NowFn.class);
     add(DateFn.class);
     add(DateMillisFn.class);
-    add(DatePartsFn.class);
     add(CountAgg.class);
     add(SumAgg.class);
     add(MinAgg.class);
@@ -209,17 +185,12 @@ public class FunctionLib
     add(AvgAgg.class);
     add(ArrayAgg.class);
     add(SingletonAgg.class);
-    add(AnyAgg.class);
+    add(PickAnyAgg.class);
     add(PickNAgg.class);
     add(CombineExpr.class);
-    add(ArgMaxAgg.class);
-    add(ArgMinAgg.class);
-    add(CovStatsAgg.class); // experimental
-    add(VectorSumAgg.class); // experimental
-    add(GroupCombineFn.class); // experimental
     add(TeeExpr.class);
-    add(PerPartitionFn.class);
-    add(PerfFn.class);
+    add(SumPA.class); // TODO: delete
+    add(MultiAgg.class); // TODO: delete
     add(ShiftFn.class);
     add(ModFn.class);
     add(DivFn.class);
@@ -242,21 +213,17 @@ public class FunctionLib
     add(RegexSpansFn.class);
     add(RegexExtractFn.class);
     add(TokenizeFn.class);
-    add(XmlToJsonFn.class);
     //add(IsnullExpr.class);
     add(DenullFn.class);
     add(DeemptyFn.class);
     add(StartsWithFn.class);
     add(SubstringFn.class);
-    add(SerializeFn.class);
-    add(StrcatFn.class);
-    add(StrSplitNFn.class);
-    add(StrJoinFn.class);
     add(RecordFn.class);
     add(ArityFn.class);
     add(PairwiseFn.class);
     add(NullElementOnEmptyFn.class);
     add(NullOnEmptyFn.class);
+    add(SerializeFn.class);
     add(JaqlGetFn.class);
     add(RemoveFieldsFn.class);
     add(FieldsFn.class);
@@ -270,16 +237,12 @@ public class FunctionLib
     add(AppendFn.class);
     add(ColumnwiseFn.class);
     add(RowwiseFn.class);
-    add(SliceFn.class);
-    add(IndexExpr.class);
     add(ExecFn.class);
-    add(RFn.class);
     add(ReplaceElementFn.class);
     add(RemoveElementFn.class);
     add(InlinePragma.class);
     add(ConstPragma.class);
     add(AsArrayFn.class);
-    add(ToArrayFn.class);
     add(EnumerateExpr.class);
     add(RangeExpr.class);
     // add(CombinerExpr.class);
@@ -302,6 +265,8 @@ public class FunctionLib
     add(HdfsFn.class);
     add(FileFn.class);
     add(HttpFn.class);
+ // TODO: delete: add(DeadReadExpr.class);
+ // TODO: delete: add(DeadWriteExpr.class);
  // TODO: delete: add(HdfsWriteExpr.class);
  // TODO: delete: add(HdfsReadExpr.class);
     add(HadoopTempExpr.class);
@@ -327,11 +292,6 @@ public class FunctionLib
     // lower level shell access
     add(HdfsShellExpr.class);
     add(HBaseShellExpr.class);
-    add(KeyLookupFn.class); // experimental
-    add(BuildLuceneFn.class); // TODO: TEMPORARY
-    add(ProbeLuceneFn.class); // TODO: TEMPORARY
-    add(BuildJIndexFn.class);
-    add(ProbeJIndexFn.class);
   }
 
   /** Creates an instance of the function represented by the given class, passing the 

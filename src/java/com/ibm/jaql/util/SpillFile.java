@@ -27,8 +27,6 @@ import java.nio.ByteBuffer;
  * Write-once DataOutput backed by a {@link PagedFile}. A single page file can serve multiple 
  * spill files. Spill files are intended to be used as temporary files; reading the spill 
  * file requires the SpillFile instance that created it. 
- * 
- * This class is not thread-safe.
  */
 public class SpillFile implements DataOutput
 {
@@ -40,14 +38,12 @@ public class SpillFile implements DataOutput
   protected long             currentPage = -1;
   protected long             fileSize    = 0;
   protected PagedFile        file;
-  protected int              fileVersion;
   private byte[]             byteBuf     = new byte[8];
 
   /** Creates a new, empty spill file backed by the given PagedFile. */
   public SpillFile(PagedFile file)
   {
     this.file = file;
-    this.fileVersion = file.getVersion();
     buffer = ByteBuffer.allocate(file.pageSize());
     try
     {
@@ -55,7 +51,8 @@ public class SpillFile implements DataOutput
     }
     catch (IOException ex)
     {
-      throw new UndeclaredThrowableException(ex, "this should not have happened...");
+      throw new UndeclaredThrowableException(ex,
+          "this should not have happened...");
     }
   }
 
@@ -89,9 +86,15 @@ public class SpillFile implements DataOutput
     return buffer.getInt(8);
   }
 
+  /** Clears this file. Implemented by reading and then freeing all used pages, which might 
+   * be expensive. */
   public void clear() throws IOException
   {
-    fileVersion = file.freePages(fileVersion, firstPage, buffer);
+    for (long page = firstPage; page >= 0; page = getNextPage())
+    {
+      file.read(buffer, page);
+      file.freePage(page);
+    }
     frozen = false;
     firstPage = currentPage = -1;
     initPage(-1);
@@ -119,7 +122,7 @@ public class SpillFile implements DataOutput
     if (firstPage >= 0)
     {
       // write the last page
-      file.write(fileVersion, buffer, currentPage);
+      file.write(buffer, currentPage);
     }
     frozen = true;
   }
@@ -132,13 +135,13 @@ public class SpillFile implements DataOutput
     if (currentPage == -1)
     {
       assert firstPage == -1;
-      firstPage = currentPage = file.allocatePage(fileVersion);
+      firstPage = currentPage = file.allocatePage();
     }
-    long nextPage = file.allocatePage(fileVersion);
+    long nextPage = file.allocatePage();
     int usedBytesOnPage = buffer.position() - headerSize;
     fileSize += usedBytesOnPage;
     putHeader(nextPage);
-    file.write(fileVersion, buffer, currentPage);
+    file.write(buffer, currentPage);
     currentPage = nextPage;
     initPage(-1);
   }
@@ -170,14 +173,7 @@ public class SpillFile implements DataOutput
     {
       rewind();
     }
-    
-    private SFDataInput(SFDataInput other) {
-      rpage = other.rpage;
-      rpos = other.rpos;
-      limit = other.limit;
-      rversion = other.rversion;
-    }
-    
+
     /** Reset the input to the beginning of the file.
      * @throws IOException
      */
@@ -189,7 +185,7 @@ public class SpillFile implements DataOutput
       if (currentPage != rpage)
       {
         currentPage = rpage;
-        file.read(fileVersion, buffer, rpage);
+        file.read(buffer, rpage);
       }
       rpos = headerSize;
       limit = getUsedBytes();
@@ -208,7 +204,7 @@ public class SpillFile implements DataOutput
       if (rpage != currentPage)
       {
         currentPage = rpage;
-        file.read(fileVersion, buffer, rpage);
+        file.read(buffer, rpage);
       }
       if (rpos >= limit)
       {
@@ -220,7 +216,7 @@ public class SpillFile implements DataOutput
         }
         // read the next page
         currentPage = rpage;
-        file.read(fileVersion, buffer, rpage);
+        file.read(buffer, rpage);
         rpos = headerSize;
         limit = getUsedBytes();
       }
@@ -437,10 +433,6 @@ public class SpillFile implements DataOutput
       return s;
     }
 
-    /** Make a copy of this input stream. Can be used to remember positions in the input file. */ 
-    public SFDataInput getCopy() {
-      return new SFDataInput(this);
-    }
   }
 
   /**
@@ -461,14 +453,14 @@ public class SpillFile implements DataOutput
     if (currentPage != firstPage)
     {
       currentPage = firstPage;
-      file.read(fileVersion, buffer, currentPage);
+      file.read(buffer, currentPage);
     }
     out.write(buffer.array(), buffer.arrayOffset() + headerSize, getUsedBytes()
         - headerSize);
     for (long page = getNextPage(); page >= 0; page = getNextPage())
     {
       currentPage = page;
-      file.read(fileVersion, buffer, page);
+      file.read(buffer, page);
       out.write(buffer.array(), buffer.arrayOffset() + headerSize,
           getUsedBytes() - headerSize);
     }

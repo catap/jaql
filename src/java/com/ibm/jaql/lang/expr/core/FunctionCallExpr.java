@@ -19,12 +19,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.util.Bool3;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -73,27 +72,6 @@ public class FunctionCallExpr extends Expr
   }
 
   /**
-   * 
-   * @param fn
-   * @param arg0
-   */
-  public FunctionCallExpr(Expr fn, Expr arg1)
-  {
-    super(fn,arg1);
-  }
-
-  /**
-   * 
-   * @param fn
-   * @param arg1
-   * @param arg2
-   */
-  public FunctionCallExpr(Expr fn, Expr arg1, Expr arg2)
-  {
-    super(fn,arg1,arg2);
-  }
-
-  /**
    * @return
    */
   public final Expr fnExpr()
@@ -118,34 +96,6 @@ public class FunctionCallExpr extends Expr
     return exprs[i + 1];
   }
 
-  @Override
-  public Bool3 isArray()
-  {
-    Expr fn = fnExpr();
-    DefineFunctionExpr def = null;
-    if( fn instanceof DoExpr )
-    {
-      fn = ((DoExpr)fn).returnExpr();
-    }
-    if( fn instanceof DefineFunctionExpr )
-    {
-      def = (DefineFunctionExpr)fn;
-    }
-    else if( fn instanceof ConstExpr )
-    {
-      JaqlFunction jf = (JaqlFunction)((ConstExpr)fn).value;
-      if( fn != null )
-      {
-        def = jf.getFunction();
-      }
-    }
-    if( def != null )
-    {
-      return def.body().isArray();
-    }
-    return Bool3.UNKNOWN;
-  }
-  
   /*
    * (non-Javadoc)
    * 
@@ -178,17 +128,23 @@ public class FunctionCallExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue fnVal = exprs[0].eval(context);
-    if( fnVal == null )
+    JValue fnVal = exprs[0].eval(context).get();
+    JFunction fn = (JFunction)fnVal;
+    // if( fnVal instanceof JFunction )
     {
-      return null;
-    }
-    // if( fnVal instanceof JaqlFunction  )
-    {
-      JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
-      return fn.eval(context, exprs, 1, exprs.length - 1);
+      // JFunction fn = (JFunction)fnVal;
+      if (fn == null)
+      {
+        return Item.nil;
+      }
+      for (int i = 1; i < exprs.length; i++)
+      {
+        //args[i - 1] = exprs[i].eval(context);
+        args[i - 1] = exprs[i];
+      }
+      return fn.eval(context, args);
     }
 //    else if( fnVal instanceof JString )
 //    {
@@ -269,15 +225,4 @@ public class FunctionCallExpr extends Expr
 //    }
   }
 
-  @Override
-  public JsonIterator iter(Context context) throws Exception
-  {
-    JsonValue fnVal = exprs[0].eval(context);
-    if (fnVal == null)
-    {
-      return JsonIterator.NULL;
-    }
-    JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
-    return fn.iter(context, exprs, 1, exprs.length - 1);
-  }
 }

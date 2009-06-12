@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -26,7 +26,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "max", minArgs = 1, maxArgs = 1)
 public final class MaxAgg extends AlgebraicAggregate
 {
-  private JsonValue max;
+  private Item max;
   
   /**
    * @param exprs
@@ -51,36 +51,33 @@ public final class MaxAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void addInitial(Item item) throws Exception
   {
-    if( value == null )
-    {
-      return;
-    }
     if( max == null )
     {
-      max = value.getCopy(null);
+      max = new Item();
+      max.copy(item);
     }
-    else if( value.compareTo(max) > 0 )
+    else if( item.compareTo(max) > 0 )
     {
-      max.setCopy(value);
+      max.copy(item);
     }
   }
 
   @Override
-  public JsonValue getPartial() throws Exception
+  public Item getPartial() throws Exception
   {
     return max;
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void addPartial(Item item) throws Exception
   {
-    addInitial(value);
+    addInitial(item);
   }
 
   @Override
-  public JsonValue getFinal() throws Exception
+  public Item getFinal() throws Exception
   {
     return max;
   }

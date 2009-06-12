@@ -19,6 +19,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
@@ -29,59 +31,66 @@ import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.ClosableJsonWriter;
+import com.ibm.jaql.io.ItemWriter;
 import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.MemoryJRecord;
 
 /**
  * The default class for writing Items from jaql to Hadoop
  */
-public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<JsonValue>
+public class DefaultHadoopOutputAdapter implements HadoopOutputAdapter<Item>
 {
   static final Logger                LOG    = Logger.getLogger(DefaultHadoopOutputAdapter.class.getName());
 
-  protected OutputFormat<?,?>             oFormat;
+  protected OutputFormat             oFormat;
 
-  protected JsonConfSetter           configurator;
+  protected JSONConfSetter           configurator;
 
-  protected KeyValueExport<K, V>       converter;
+  protected KeyValueExport<WritableComparable, Writable>       converter;
 
   protected JobConf                  conf;
 
-  protected BufferedJsonRecord            args;                      // original arguments
+  protected MemoryJRecord            args;                      // original arguments
 
   protected String                   location;
 
-  protected BufferedJsonRecord            options;                   // options from arguments unioned with
+  protected MemoryJRecord            options;                   // options from arguments unioned with
   // defaults in registry
 
   protected Progressable             reporter;
 
-  protected RecordWriter<JsonHolder, JsonHolder> writer = null;
+  protected RecordWriter<Item, Item> writer = null;
 
-  @Override
-  public void init(JsonValue args) throws Exception
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.StorableAdapter#initializeFrom(com.ibm.jaql.lang.JRecord)
+   */
+  public void initializeFrom(Item item) throws Exception
   {
-    init((JsonRecord)args);
+    initializeFrom((JRecord) item.get());
   }
 
-  @Override
-  public void initializeFrom(JsonValue args) throws Exception
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
+   */
+  public void init(Item item) throws Exception
   {
-    init((JsonRecord)args);
+    initializeFrom(item);
   }
 
   /**
    * @param args
    * @throws Exception
    */
-  @SuppressWarnings("unchecked")
-  private void init(JsonRecord args) throws Exception
+  private void initializeFrom(JRecord args) throws Exception
   {
-    this.args = new BufferedJsonRecord(args.arity());
-    this.args.setCopy(args);
+    this.args = new MemoryJRecord(args.arity());
+    this.args.copy(args);
 
     // set the location
     this.location = AdapterStore.getStore().getLocation(args);
@@ -90,24 +99,24 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
     this.options = AdapterStore.getStore().output.getOption(args);
 
     // set the format
-    this.oFormat = (OutputFormat<?,?>) AdapterStore.getStore().getClassFromRecord(
+    this.oFormat = (OutputFormat) AdapterStore.getStore().getClassFromRecord(
         options, FORMAT_NAME, null).newInstance();
 
     // set the configurator
-    Class<?> configuratorClass = AdapterStore.getStore().getClassFromRecord(
+    Class configuratorClass = AdapterStore.getStore().getClassFromRecord(
         options, CONFIGURATOR_NAME, null);
     if (configuratorClass != null)
     {
-      this.configurator = (JsonConfSetter) configuratorClass.newInstance();
-      this.configurator.init(args);
+      this.configurator = (JSONConfSetter) configuratorClass.newInstance();
+      this.configurator.init(new Item(args));
     }
 
     // set the converter
-    Class<?> converterClass = AdapterStore.getStore().getClassFromRecord(options,
+    Class converterClass = AdapterStore.getStore().getClassFromRecord(options,
         CONVERTER_NAME, null);
     if (converterClass != null)
     {
-      this.converter = (KeyValueExport<K,V>) converterClass.newInstance();
+      this.converter = (KeyValueExport) converterClass.newInstance();
       this.converter.init(options);
     }
   }
@@ -133,7 +142,6 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
       {
       }
 
-      @SuppressWarnings("unchecked")
       public void incrCounter(Enum key, long amount)
       {
       }
@@ -145,7 +153,6 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
     };
 
     configurator.setSequential(conf);
-    Globals.setJobConf(conf);
     if (oFormat instanceof JobConfigurable)
       ((JobConfigurable) oFormat).configure(conf);
   }
@@ -168,25 +175,21 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
    * 
    * @see com.ibm.jaql.lang.OutputAdapter#getRecordWriter()
    */
-  public ClosableJsonWriter getJsonWriter() throws Exception
+  public ItemWriter getItemWriter() throws Exception
   {
     Path lPath = new Path(location);
 
-    final RecordWriter<JsonHolder, JsonHolder> writer = getRecordWriter(FileSystem
+    final RecordWriter<Item, Item> writer = getRecordWriter(FileSystem
         .get(conf), conf, lPath.getName(), reporter);
-    return new ClosableJsonWriter() {
-      JsonHolder keyHolder = new JsonHolder();
-      JsonHolder valueHolder = new JsonHolder();
-      
+    return new ItemWriter() {
       public void close() throws IOException
       {
         writer.close(null);
       }
 
-      public void write(JsonValue value) throws IOException
+      public void write(Item value) throws IOException
       {
-        valueHolder.value = value;
-        writer.write(keyHolder, valueHolder);
+        writer.write(Item.nil, value);
       }
     };
   }
@@ -198,35 +201,35 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
    *      org.apache.hadoop.mapred.JobConf, java.lang.String,
    *      org.apache.hadoop.util.Progressable)
    */
-  @SuppressWarnings("unchecked")
-  public RecordWriter<JsonHolder, JsonHolder> getRecordWriter(FileSystem ignored,
+  public RecordWriter<Item, Item> getRecordWriter(FileSystem ignored,
       JobConf job, String name, Progressable progress) throws IOException
   {
     if (converter == null)
     {
-      writer = ((OutputFormat<JsonHolder, JsonHolder>) oFormat).getRecordWriter(ignored,
+      writer = ((OutputFormat<Item, Item>) oFormat).getRecordWriter(ignored,
           job, name, progress);
     }
     else
     {
-      final RecordWriter<K, V> baseWriter = ((OutputFormat<K, V>) oFormat)
+      final RecordWriter<WritableComparable, Writable> baseWriter = ((OutputFormat<WritableComparable, Writable>) oFormat)
           .getRecordWriter(ignored, job, name, progress);
 
-      final K baseKey = converter.createKeyTarget();
-      final V baseValue = converter.createValueTarget();
+      final WritableComparable baseKey = converter.createKeyTarget();
+      final Writable baseValue = converter.createValTarget();
 
-      writer = new RecordWriter<JsonHolder, JsonHolder>() {
+      writer = new RecordWriter<Item, Item>() {
 
         public void close(Reporter reporter) throws IOException
         {
           baseWriter.close(reporter);
         }
 
-        public void write(JsonHolder key, JsonHolder value) throws IOException
+        public void write(Item key, Item value) throws IOException
         {
-          converter.convert(value.value, baseKey, baseValue);
+          converter.convert(value, baseKey, baseValue);
           baseWriter.write(baseKey, baseValue);
         }
+
       };
     }
     return writer;
@@ -251,13 +254,12 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
    */
   public void configure(JobConf conf)
   {
-    Globals.setJobConf(conf);
     if (oFormat == null)
     {
       try
       {
-        JsonRecord r = ConfUtil.readConf(conf, ConfSetter.CONFOUTOPTIONS_NAME);
-        init(r);
+        JRecord r = ConfUtil.readConf(conf, ConfSetter.CONFOUTOPTIONS_NAME);
+        initializeFrom(r);
       }
       catch (Exception e)
       {
@@ -302,6 +304,5 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter<Json
     // write out args and options to the conf
     ConfUtil.writeConf(conf, ConfSetter.CONFOUTOPTIONS_NAME, args);
     configurator.setParallel(conf);
-    Globals.setJobConf(conf);
   }
 }

@@ -15,10 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.InputAdapter;
-import com.ibm.jaql.io.ClosableJsonIterator;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.io.ItemReader;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -59,30 +62,30 @@ public abstract class AbstractReadExpr extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     // evaluate the arguments
-    JsonValue args = exprs[0].eval(context);
+    Item args = exprs[0].eval(context);
   
     // get the InputAdapter according to the type
     final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
     adapter.open();
-    return new JsonIterator() {
-      ClosableJsonIterator reader = adapter.getJsonReader();
+    return new Iter() {
+      ItemReader reader = adapter.getItemReader();
+      Item       item   = reader.createValue();
   
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        if (reader.moveNext()) 
+        while (true)
         {
-          currentValue = reader.current();
-          return true;
-        }
-        else
-        {
+          if (reader == null) return null;
+          if (reader.next(item))
+          {
+            return item;
+          }
           reader.close();
           reader = null;
-          return false;
         }
       }
     };

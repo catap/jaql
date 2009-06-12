@@ -19,14 +19,15 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.MemoryJRecord;
 
 /**
  * A configurator that specifically writes the JobConf for a given
  * FileInputFormat
  */
-public class FileInputConfigurator implements InitializableConfSetter
+public class FileInputConfigurator implements JSONConfSetter
 {
   protected String location;
 
@@ -35,9 +36,9 @@ public class FileInputConfigurator implements InitializableConfSetter
    * 
    * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
    */
-  public void init(JsonValue options) throws Exception
+  public void init(Item options) throws Exception
   {
-    location = AdapterStore.getStore().getLocation((JsonRecord) options);
+    location = AdapterStore.getStore().getLocation((JRecord) options.get());
   }
 
   /*
@@ -47,7 +48,7 @@ public class FileInputConfigurator implements InitializableConfSetter
    */
   public void setSequential(JobConf conf) throws Exception
   {
-    set(conf);    
+    set(conf);
   }
 
   /*
@@ -57,7 +58,7 @@ public class FileInputConfigurator implements InitializableConfSetter
    */
   public void setParallel(JobConf conf) throws Exception
   {
-    set(conf);    
+    set(conf);
   }
 
   /**
@@ -67,6 +68,5 @@ public class FileInputConfigurator implements InitializableConfSetter
   protected void set(JobConf conf) throws Exception
   {
     conf.setInputPath(new Path(location));
-    HadoopSerialization.register(conf);
   }
 }

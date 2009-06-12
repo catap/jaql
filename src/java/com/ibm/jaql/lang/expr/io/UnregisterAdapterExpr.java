@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -41,11 +42,12 @@ public class UnregisterAdapterExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonString eval(Context context) throws Exception {
-    JsonString     key     = JaqlUtil.enforceNonNull((JsonString) exprs[0].eval(context));
+  public Item eval(Context context) throws Exception {
+    Item        keyItem = exprs[0].eval(context);
+    JString     key     = (JString)keyItem.getNonNull();
     
     JaqlUtil.getAdapterStore().unregister(key);
-    return key;
+    return keyItem;
   }
 }
 

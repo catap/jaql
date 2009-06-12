@@ -15,8 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -41,37 +42,39 @@ public class PairwiseFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonIterator[] iters = new JsonIterator[exprs.length];
+    final Iter[] iters = new Iter[exprs.length];
     for (int i = 0; i < exprs.length; i++)
     {
       iters[i] = exprs[i].iter(context);
     }
 
-    final BufferedJsonArray tuple = new BufferedJsonArray(exprs.length); // TODO: memory
-    return new JsonIterator(tuple) {
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      FixedJArray tuple  = new FixedJArray(exprs.length); // TODO: memory
+      Item        result = new Item(tuple);              // TODO: memory
+
+      public Item next() throws Exception
       {
         boolean foundOne = false;
         for (int i = 0; i < exprs.length; i++)
         {
-          JsonIterator iter = iters[i];
-          if (iter.moveNext())
+          Item item = iters[i].next();
+          if (item != null)
           {
             foundOne = true;
-            tuple.set(i, iter.current());
+            tuple.set(i, item);
           }
           else
           {
-            tuple.set(i, null);
+            tuple.set(i, Item.nil);
           }
         }
         if (foundOne)
         {
-          return true; // currentValue == tuple
+          return result;
         }
-        return false;
+        return null;
       }
     };
   }

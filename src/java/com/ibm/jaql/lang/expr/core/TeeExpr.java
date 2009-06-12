@@ -16,11 +16,11 @@
 package com.ibm.jaql.lang.expr.core;
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 
 @JaqlFn(fnName="tee", minArgs=1, maxArgs=Expr.UNLIMITED_EXPRS)
 public class TeeExpr extends IterExpr
@@ -41,14 +41,14 @@ public class TeeExpr extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonValue[] args = new JsonValue[1]; // TODO: memory
+    Item[] args = new Item[1]; // TODO: memory
     args[0] = exprs[0].eval(context); // TODO: stream into each function!
-    JsonArray arr = (JsonArray)args[0];
+    JArray arr = (JArray)args[0].get();
     for(int i = 1 ; i < exprs.length ; i++)
     {
-      JaqlFunction f = (JaqlFunction)exprs[i].eval(context);
+      JFunction f = (JFunction)exprs[i].eval(context).get();
       f.eval(context, args);
     }
     return arr.iter();

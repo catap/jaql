@@ -38,7 +38,6 @@ public class DeleteFileTask implements Runnable
   }
 
   // fails on java 1.5: @Override
-  @SuppressWarnings("deprecation")
   public void run()
   {
     try

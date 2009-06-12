@@ -18,13 +18,12 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-public final class PathExpr extends Expr
+public class PathExpr extends PathStep
 {
   /**
    * @param exprs
@@ -54,30 +53,6 @@ public final class PathExpr extends Expr
   }
 
   /**
-   * Return the input to the path expression.
-   */
-  public Expr input()
-  {
-    return exprs[0];
-  }
-
-  /**
-   * Return the first step of the path expression.
-   */
-  public PathStep firstStep()
-  {
-    return (PathStep)exprs[1];
-  }
-
-  /**
-   * Return the last step of the path expression.
-   */
-  public PathStep getReturn() // TODO: Should this be a PathReturn?
-  {
-    return firstStep().getReturn();
-  }
-
-  /**
    * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
@@ -93,22 +68,9 @@ public final class PathExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    PathStep s = firstStep();
-    s.input = input().eval(context);
-    return s.eval(context);
+    Item input = exprs[0].eval(context);
+    return nextStep(context, input);
   }
-
-  /**
-   * 
-   */
-  @Override
-  public JsonIterator iter(Context context) throws Exception
-  {
-    PathStep s = firstStep();
-    s.input = input().eval(context);
-    return s.iter(context);
-  }
-
 }

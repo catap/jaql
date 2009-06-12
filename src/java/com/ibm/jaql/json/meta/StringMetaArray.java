@@ -18,10 +18,9 @@ package com.ibm.jaql.json.meta;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -44,9 +43,9 @@ public class StringMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public JsonString makeValue()
+  public Item makeItem()
   {
-    return new JsonString();
+    return new Item(new JString());
   }
 
   /*
@@ -67,22 +66,23 @@ public class StringMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#iter(java.lang.Object)
    */
   @Override
-  public JsonIterator iter(Object obj) throws Exception
+  public Iter iter(Object obj) throws Exception
   {
     final String[] arr = (String[]) obj;
-    final JsonString jstring = new JsonString();
-    return new JsonIterator() {
+    return new Iter() {
       int     i       = 0;
+      JString jstring = new JString();
+      Item    item    = new Item(jstring);
 
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         if (i < arr.length)
         {
           jstring.set(arr[i++]);
-          return true; // currentValue == jstring
+          return item;
         }
-        return false;
+        return null;
       }
     };
   }
@@ -94,17 +94,16 @@ public class StringMetaArray extends MetaArray
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public JsonValue nth(Object obj, long n, JsonValue target) throws Exception
+  public void nth(Object obj, long n, Item result) throws Exception
   {
     String[] arr = (String[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonString) target).set(arr[(int) n]);
-      return target;
+      ((JString) result.restoreCache()).set(arr[(int) n]);
     }
     else
     {
-      return null;
+      result.set(null);
     }
   }
 

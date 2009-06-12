@@ -17,17 +17,12 @@
 #
 #   HADOOP_ROOT_LOGGER The root appender. Default is INFO,console
 #
-#
-#
-# IF SUCCESSFUL, THIS SCRIPT MUST NOT OUTPUT ANYTHING TO STDOUT EXCEPT WHAT
-# IS OUTPUTTED BY THE CALL TO JAVA AT THE VERY BOTTOM.
-
 
 if [ "$DFLT_HADOOP_VERSION" = "" ]; then
-	DFLT_HADOOP_VERSION=0.18.3
+	DFLT_HADOOP_VERSION=0.18.1
 fi
 if [ "$DFLT_HBASE_VERSION" = "" ]; then
- DFLT_HBASE_VERSION=0.18.3
+ DFLT_HBASE_VERSION=0.18.1
 fi
 
 if [ "$JAQL_HOME" = "" ]; then
@@ -197,11 +192,6 @@ if [ "$JAQL_CLASSPATH" != "" ]; then
   CLASSPATH=${CLASSPATH}:${JAQL_CLASSPATH}
 fi
 
-# add jaqlshell user-specified CLASSPATH
-if [ "$JAQLSHELL_CLASSPATH" != "" ]; then
-  CLASSPATH=${CLASSPATH}:${JAQLSHELL_CLASSPATH}
-fi
-
 # default log directory & file
 if [ "$HADOOP_LOG_DIR" = "" ]; then
   HADOOP_LOG_DIR="$HADOOP_HOME/logs"
@@ -260,9 +250,15 @@ fi
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   HADOOP_OPTS="$HADOOP_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
-
-# for debugging (leave commented in SVN)
-# echo $CLASSPATH 1>&2
-
+# 
 # run it
+
+# save, then modify terminal settings 
+STTY_STATE=`stty -g 2>/dev/null` 
+"stty -icanon min 1 -echo;" 2>/dev/null
+
+#exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
 "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+
+# restore terminal settings (will not be executed if exec "$JAVA" ... is used)
+stty $STTY_STATE 2>/dev/null

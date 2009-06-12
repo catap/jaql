@@ -17,17 +17,17 @@ package com.ibm.jaql.lang.expr.hadoop;
 
 import org.apache.hadoop.mapred.RecordReader;
 
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 
 
-public class RecordReaderValueIter extends JsonIterator
+public class RecordReaderValueIter extends Iter
 {
-  protected RecordReader<JsonHolder, JsonHolder> reader;
-  protected JsonHolder key;
-  protected JsonHolder value;
+  protected RecordReader<Item,Item> reader;
+  protected Item key;
+  protected Item value;
   
-  public RecordReaderValueIter(RecordReader<JsonHolder, JsonHolder> reader)
+  public RecordReaderValueIter(RecordReader<Item,Item> reader)
   {
     this.reader = reader;
     this.key = reader.createKey();
@@ -35,14 +35,13 @@ public class RecordReaderValueIter extends JsonIterator
   }
 
   @Override
-  public boolean moveNext() throws Exception
+  public Item next() throws Exception
   {
     if( reader.next(key, value) )
     {
-      currentValue = value.value;
-      return true;
+      return value;
     }
-    return false;
+    return null;
   }
 
 }

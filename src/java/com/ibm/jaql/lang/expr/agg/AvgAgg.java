@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -55,42 +55,40 @@ public class AvgAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void addInitial(Item item) throws Exception
   {
-    if( value == null  )
-    {
-      return;
-    }
-    summer.add(value);
+    summer.add(item);
     count++;
   }
 
   @Override
-  public JsonValue getPartial() throws Exception
+  public Item getPartial() throws Exception
   {
-    JsonValue sum = summer.get();
-    JsonValue cnt = new JsonLong(count);
-    BufferedJsonArray pair = new BufferedJsonArray(new JsonValue[]{sum,cnt});
-    return pair;
+    Item sum = summer.get();
+    Item cnt = new Item(new JLong(count));
+    FixedJArray pair = new FixedJArray(new Item[]{sum,cnt});
+    return new Item(pair);
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void addPartial(Item item) throws Exception
   {
-    JsonArray arr = (JsonArray)value;
-    JsonValue[] pair = new JsonValue[2];
-    arr.getValues(pair);
+    JArray arr = (JArray)item.get();
+    Item[] pair = new Item[2];
+    arr.getTuple(pair);
     summer.add(pair[0]);
-    JsonLong jlong = (JsonLong)pair[1];
+    JLong jlong = (JLong)pair[1].get();
     count += jlong.value;
   }
 
   @Override
-  public JsonValue getFinal() throws Exception
+  public Item getFinal() throws Exception
   {
-    JsonValue sum = summer.get();
-    JsonLong n = new JsonLong(count);
-    return MathExpr.divide(sum, n);    
+    Item sum = summer.get();
+    JLong n = new JLong(count);
+    Item result = new Item();
+    MathExpr.divide(sum.get(), n, result);
+    return result;
   }
 
   

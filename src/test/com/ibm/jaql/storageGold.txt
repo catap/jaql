@@ -213,19 +213,19 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
 [1,2,3]
 -> write({location: 'build/test/cache/mynewfile.txt', 
          outoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
-                      format  : 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}});##
+                      format  : 'com.ibm.jaql.io.stream.converter.JSONOutputStream'}});##
 {
   "location": "build/test/cache/mynewfile.txt",
   "outoptions": {
     "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
-    "format": "com.ibm.jaql.io.stream.converter.JsonOutputStream"
+    "format": "com.ibm.jaql.io.stream.converter.JSONOutputStream"
   }
 }
 
 
 read({location: 'build/test/cache/mynewfile.txt', 
         inoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
-                    format  : 'com.ibm.jaql.io.stream.converter.JsonInputStream'}});##
+                    format  : 'com.ibm.jaql.io.stream.converter.JSONInputStream'}});##
 [
   1,
   2,
@@ -583,18 +583,18 @@ read(file($path + "b1")) == read(file($path + "books.json"));##
 true
 
 
-$r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));##
+$r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JSONOutputStream"}));##
 {
   "location": "build/test/cache/b2",
   "options": {
     "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
-    "format": "com.ibm.jaql.io.stream.converter.JsonOutputStream"
+    "format": "com.ibm.jaql.io.stream.converter.JSONOutputStream"
   },
   "type": "local"
 }
 
 
-$r2 = read(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));##
+$r2 = read(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JSONInputStream"}));##
 "$r2"
 
 
@@ -623,7 +623,7 @@ $v = {someField: "some value"};##
   "options": {
     "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
     "asArray": false,
-    "format": "com.ibm.jaql.io.stream.converter.JsonTextOutputStream"
+    "format": "com.ibm.jaql.io.stream.converter.JSONTextOutputStream"
   },
   "type": "local"
 }
@@ -637,7 +637,7 @@ hdfsShell("-copyFromLocal "+$path+"test.json jaqlTest/test") * 0;##
 0
 
 
-$r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));##
+$r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter"}));##
 "$r"
 
 
@@ -655,33 +655,33 @@ $l = [
 "$l"
 
 
-$l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));##
+$l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter"}));##
 {
   "location": "jaqlTest/test2",
   "options": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
   "type": "hdfs"
 }
 
 
-$r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));##
+$r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter"}));##
 {
   "location": "jaqlTest/test2",
   "options": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
   "type": "hdfs"
 }
 
 
-$r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));##
+$r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter"}));##
 "$r2"
 
 

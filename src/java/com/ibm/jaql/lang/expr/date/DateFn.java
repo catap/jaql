@@ -18,8 +18,9 @@ package com.ibm.jaql.lang.expr.date;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDate;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -33,12 +34,12 @@ public class DateFn extends Expr
   }
 
   @Override
-  public JsonDate eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    String f = JsonDate.iso8601UTCFormat;
+    String f = JDate.iso8601UTCFormat;
     if( exprs.length == 2 )
     {
-      JsonString js = (JsonString)exprs[1].eval(context);
+      JString js = (JString)exprs[1].eval(context).get();
       if( js != null )
       {
         f = js.toString();
@@ -46,15 +47,16 @@ public class DateFn extends Expr
     }
     SimpleDateFormat format = new SimpleDateFormat(f); // TODO: memory
     
-    
+    Item s = exprs[0].eval(context);
     // TODO: support date(millis)
-    JsonString js = (JsonString)exprs[0].eval(context);
+    JString js = (JString)s.get();
     
     Date date = format.parse(js.toString());
     long millis = date.getTime();
     millis -= format.getTimeZone().getRawOffset();
-    JsonDate d = new JsonDate(millis); // TODO: memory
-    return d;
+    JDate d = new JDate(millis); // TODO: memory
+    Item item = new Item(d); // TODO: memory
+    return item;
   }
 
 }

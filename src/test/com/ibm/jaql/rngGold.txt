@@ -119,7 +119,7 @@ $a =
 
 join $a, $j in read(hdfs('test2'))
 where $a.k == $j.k
-into $a -> sort by [$];##
+into $a;##
 [
   {
     "k": 2

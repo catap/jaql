@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.io.hadoop.converter;
 
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
 
 /**
  * Import a Hadoop record, composed of a key K and value V, and convert it into a JSON Item
@@ -31,14 +31,14 @@ public interface KeyValueImport<K,V> {
    * 
    * @param options
    */
-  void init(JsonRecord options);
+  void init(JRecord options);
   
   /**
    * Construct the target Item to which the source key K, value V is converted
    * 
    * @return
    */
-  JsonValue createInitialTarget();
+  Item createTarget();
   
   /**
    * Import a key K, value V into an Item target (assumed to be constructed using createTarget)
@@ -47,5 +47,5 @@ public interface KeyValueImport<K,V> {
    * @param val
    * @param tgt
    */
-  JsonValue convert(K key, V val, JsonValue target);
+  void convert(K key, V val, Item tgt);
 }
