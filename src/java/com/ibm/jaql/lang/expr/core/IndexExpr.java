@@ -15,12 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 
 /**
@@ -53,7 +52,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
    */
   public IndexExpr(Expr expr, int i)
   {
-    this(expr, new ConstExpr(JLong.sharedLongItem(i)));
+    this(expr, new ConstExpr(JsonLong.sharedLong(i)));
   }
 
   /**
@@ -94,37 +93,34 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
     // TODO: support multiple indexes? $a[3 to 7], $a[ [3,4,5,6,7] ]
     // TODO: support array slices?  $a[3:7]
-    Item item = exprs[1].eval(context);
-    JValue w = item.get();
+    JsonValue value;
+    JsonValue w = exprs[1].eval(context);
     if (w == null)
     {
-      return Item.NIL;
+      return null;
     }
-    long i = ((JNumber) w).longValueExact();
+    long i = ((JsonNumber) w).longValueExact();
     Expr arrayExpr = exprs[0];
     if (arrayExpr.isArray().always())
     {
-      Iter iter = arrayExpr.iter(context);
-      if( iter.isNull() )
-      {
-        return Item.NIL;
-      }
-      item = iter.nth(i);
+      JsonIterator iter = arrayExpr.iter(context);
+      boolean hasNext = iter.moveN(i+1);
+      value = hasNext ? iter.current() : null;
     }
     else
     {
-      item = arrayExpr.eval(context);
-      JArray array = (JArray) item.get();
+      value = arrayExpr.eval(context);
+      JsonArray array = (JsonArray) value;
       if (array == null)
       {
-        return Item.NIL;
+        return null;
       }
-      item = array.nth(i);
+      value = array.nth(i);
     }
-    return item;
+    return value;
   }
 }

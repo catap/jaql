@@ -15,8 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
@@ -97,7 +96,7 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         // conservative method: Inline only if every var usage goes directly into a function call. 
         if( valExpr instanceof DefineFunctionExpr   // TODO: we could try to make a Def into a Const
             || (valExpr instanceof ConstExpr && 
-                ((ConstExpr)valExpr).value.get() instanceof JFunction) ) // TODO: we could inline Const fns because the fn is still shared via the const, but fn inline would need to check 
+                ((ConstExpr)valExpr).value instanceof JaqlFunction) ) // TODO: we could inline Const fns because the fn is still shared via the const, but fn inline would need to check 
         {
           ExprWalker walker = engine.walker;
           walker.reset(expr);
@@ -139,11 +138,11 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
       {
         if (n == 1) // do($v = e) ==> null
         {
-          doExpr.replaceInParent(new ConstExpr(Item.NIL));
+          doExpr.replaceInParent(new ConstExpr(null));
         }
         else if( i + 1 == n ) // do(e1,$v=e2) ==> (e1,null)
         {
-          b.replaceInParent(new ConstExpr(Item.NIL));
+          b.replaceInParent(new ConstExpr(null));
         }
         else        // Eliminate the variable definition.
         {

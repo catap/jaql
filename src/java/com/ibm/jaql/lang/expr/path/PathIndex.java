@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -78,19 +78,19 @@ public class PathIndex extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    JArray arr = (JArray)input.get();
+    JsonArray arr = (JsonArray)input;
     if( arr == null )
     {
-      return Item.NIL;
+      return null;
     }
-    JNumber index = (JNumber)indexExpr().eval(context).get();
+    JsonNumber index = (JsonNumber)indexExpr().eval(context);
     if( index == null )
     {
-      return Item.NIL;
+      return null;
     }
-    Item value = arr.nth(index.longValueExact());
+    JsonValue value = arr.nth(index.longValueExact());
     return nextStep(context, value);
   }
 }

@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -64,7 +64,7 @@ public class NameValueBinding extends FieldExpr
    */
   public NameValueBinding(String name, Expr value, boolean required)
   {
-    this(required, new Expr[]{new ConstExpr(new JString(name)), value});
+    this(required, new Expr[]{new ConstExpr(new JsonString(name)), value});
   }
 
   /**
@@ -110,13 +110,12 @@ public class NameValueBinding extends FieldExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.FieldExpr#staticNameMatches(com.ibm.jaql.json.type.JString)
    */
-  public Bool3 staticNameMatches(JString name)
+  public Bool3 staticNameMatches(JsonString name)
   {
     if (exprs[0] instanceof ConstExpr)
     {
       ConstExpr c = (ConstExpr) exprs[0];
-      Item value = c.value;
-      JString str = (JString) value.get();
+      JsonString str = (JsonString) c.value;
       if (str != null && str.equals(name))
       {
         return Bool3.TRUE;
@@ -178,13 +177,13 @@ public class NameValueBinding extends FieldExpr
    * @see com.ibm.jaql.lang.expr.core.FieldExpr#eval(com.ibm.jaql.lang.core.Context,
    *      com.ibm.jaql.json.type.MemoryJRecord)
    */
-  public void eval(Context context, MemoryJRecord rec) throws Exception
+  public void eval(Context context, BufferedJsonRecord rec) throws Exception
   {
-    Item value = exprs[1].eval(context);
-    if (required || !value.isNull())
+    JsonValue value = exprs[1].eval(context);
+    if (required || value!=null)
     {
       // TODO: should we generate an error when the name is null or ignore the item?
-      JString name = (JString) exprs[0].eval(context).get();
+      JsonString name = (JsonString) exprs[0].eval(context);
       if (name == null)
       {
         throw new NullPointerException("field name cannot be null");

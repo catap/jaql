@@ -27,62 +27,54 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
 
-
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.ItemReader;
+import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.registry.RegistryUtil;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 // TODO: look into factoring some of this code with DefaultHadoopInputAdapter
 /** Takes an array of HadoopInputAdapters and operates on the union of their inputs. */
-public class CompositeInputAdapter implements HadoopInputAdapter<Item>
+public class CompositeInputAdapter implements HadoopInputAdapter<JsonValue>
 {
   public static String         CURRENT_IDX_NAME = "com.ibm.jaql.lang.CompositeinputAdapter.currentIdx";
 
-  private JArray               args;
+  private JsonArray               args;
 
-  private HadoopInputAdapter[] adapters;
+  private HadoopInputAdapter<?>[] adapters;
 
+  @Override
+  public void init(JsonValue val) throws Exception {
+    initializeFrom(val);
+  }
+  
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.Adapter#initializeFrom(com.ibm.jaql.json.type.Item)
    */
-  public void initializeFrom(Item item) throws Exception
+  @Override
+  public void initializeFrom(JsonValue val) throws Exception
   {
-    JValue val = item.get();
-    if(val instanceof JArray)
-      initializeFrom((JArray) val);
-    else if(val instanceof JRecord) {
+    if(val instanceof JsonArray)
+      initializeFrom((JsonArray) val);
+    else if(val instanceof JsonRecord) {
       // dig the location out
-      JRecord rval = (JRecord)val;
-      Item loc = rval.getValue(Adapter.LOCATION_NAME);
-      initializeFrom((JArray)loc.get());
+      JsonRecord rval = (JsonRecord)val;
+      JsonArray loc = (JsonArray)rval.getValue(Adapter.LOCATION_NAME);
+      initializeFrom(loc);
     }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
-   */
-  public void init(Item item) throws Exception
-  {
-    initializeFrom(item);
   }
 
   /**
    * @param args
    * @throws Exception
    */
-  protected void initializeFrom(JArray args) throws Exception
+  private void initializeFrom(JsonArray args) throws Exception
   {
-    this.args = args;
+    this.args = (JsonArray)args;
 
     // 1. make a InputAdapter array of the same size as args
     int numAdapters = (int) this.args.count();
@@ -91,11 +83,11 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
     // 2. instantiate and initialize all StorableInputAdapters
     for (int i = 0; i < numAdapters; i++)
     {
-      Item item = this.args.nth(i);
+      JsonValue value = this.args.nth(i);
       // adapters[i] = AdapterStore.getInputAdapter((JRecord) item.getNonNull(),
       // item);
-      adapters[i] = (HadoopInputAdapter) AdapterStore.getStore().input
-          .getAdapter(item);
+      adapters[i] = (HadoopInputAdapter<?>) AdapterStore.getStore().input
+          .getAdapter(value);
     }
   }
 
@@ -119,16 +111,16 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
    * 
    * @see com.ibm.jaql.io.InputAdapter#getItemReader()
    */
-  public ItemReader getItemReader() throws Exception
+  public ClosableJsonIterator getJsonReader() throws Exception
   {
     // Return a RecordReader that gets a RecordReader from all adapters.
-    return new ItemReader() {
-      ItemReader baseReader = null;
+    return new ClosableJsonIterator() { // TODO: temprory hack until input get updated
+      ClosableJsonIterator baseReader = null;
 
       int        idx        = 0;
 
       @Override
-      public boolean next(Item value) throws IOException
+      public boolean moveNext() throws Exception
       {
         while (true)
         {
@@ -137,7 +129,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
           {
             try
             {
-              baseReader = adapters[idx++].getItemReader();
+              baseReader = adapters[idx++].getJsonReader();
             }
             catch (Exception e)
             {
@@ -145,8 +137,9 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
               continue;
             }
           }
-          if (baseReader.next(value))
+          if (baseReader.moveNext())
           {
+            currentValue = baseReader.current();
             return true;
           }
           else
@@ -166,7 +159,8 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(org.apache.hadoop.mapred.InputSplit,
    *      org.apache.hadoop.mapred.JobConf, org.apache.hadoop.mapred.Reporter)
    */
-  public RecordReader<Item, Item> getRecordReader(InputSplit split,
+  @SuppressWarnings("unchecked")
+  public RecordReader<JsonHolder, JsonHolder> getRecordReader(InputSplit split,
       JobConf job, Reporter reporter) throws IOException
   {
     CompositeSplit cSplit = (CompositeSplit) split;
@@ -178,7 +172,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
     try
     {
       // 2. get the ith adapter's args record
-      Item item = this.args.nth(idx);
+      JsonValue value = this.args.nth(idx);
       // JRecord baseArgs = (JRecord) item.getNonNull();
       // record the current index to the job conf
       // ASSUMES: in map/reduce, the format's record reader is called *before*
@@ -186,9 +180,9 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
       writeCurrentIndex(job, idx);
 
       // 3. insantiate and initialize the adapter
-      HadoopInputAdapter adapter = (HadoopInputAdapter) AdapterStore.getStore().input
+      HadoopInputAdapter<?> adapter = (HadoopInputAdapter<?>) AdapterStore.getStore().input
           .getAdapter(/** baseArgs, */
-          item);
+          value);
 
       // 4. create a new JobConf j'
       JobConf jTmp = new JobConf();
@@ -201,7 +195,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
       adapter.configure(jTmp);
 
       // 7. call adapter's getRecordReader with j'
-      return adapter.getRecordReader(baseSplit, jTmp, reporter);
+      return (RecordReader<JsonHolder, JsonHolder>)adapter.getRecordReader(baseSplit, jTmp, reporter);
     }
     catch (Exception e)
     {
@@ -262,10 +256,10 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
       }
       // TODO: is this needed?
       // ((DefaultHadoopInputAdapter)adapters[i]).configure(jTmp);
-      ((HadoopInputAdapter) adapters[i]).configure(jTmp);
+      ((HadoopInputAdapter<?>) adapters[i]).configure(jTmp);
 
       // get its splits
-      InputSplit[] splits = ((InputFormat) adapters[i]).getSplits(jTmp,
+      InputSplit[] splits = ((InputFormat<?,?>) adapters[i]).getSplits(jTmp,
           numSplits);
       for (int j = 0; j < splits.length; j++)
       {
@@ -306,7 +300,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<Item>
         // (JRecord)this.args.nth(i).getNonNull());
 
         // call adapter's validateInput(j')
-        ((InputFormat) adapters[i]).validateInput(jTmp);
+        ((InputFormat<?,?>) adapters[i]).validateInput(jTmp);
       }
     }
     catch (Exception e)
@@ -471,7 +465,7 @@ class CompositeSplit implements InputSplit
     String cName = in.readUTF();
     try
     {
-      Class c = Class.forName(cName).asSubclass(InputSplit.class);;
+      Class<?> c = Class.forName(cName).asSubclass(InputSplit.class);;
       this.baseSplit = (InputSplit) ReflectionUtils.newInstance(c, null);
       this.baseSplit.readFields(in);
     }

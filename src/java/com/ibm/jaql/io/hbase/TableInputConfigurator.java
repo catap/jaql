@@ -18,34 +18,34 @@ package com.ibm.jaql.io.hbase;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.hadoop.JSONConfSetter;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.hadoop.InitializableConfSetter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
-public class TableInputConfigurator implements JSONConfSetter
+public class TableInputConfigurator implements InitializableConfSetter
 {
 
   protected String  location;
 
-  protected JRecord options;
+  protected JsonRecord options;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
    */
-  public void init(Item options) throws Exception
+  public void init(JsonValue options) throws Exception
   {
-    location = AdapterStore.getStore().getLocation((JRecord) options.get());
-    this.options = AdapterStore.getStore().input.getOption((JRecord) options
-        .get());
+    location = AdapterStore.getStore().getLocation((JsonRecord) options);
+    this.options = AdapterStore.getStore().input.getOption((JsonRecord) options);
   }
 
   /*
@@ -76,10 +76,10 @@ public class TableInputConfigurator implements JSONConfSetter
   {
     conf.set(JaqlTableInputFormat.JOB_TABLE, location);
     // set column family
-    JArray columnNames = null;
+    JsonArray columnNames = null;
     if (options != null)
     {
-      columnNames = (JArray) options.getValue("columns").get();
+      columnNames = (JsonArray) options.getValue("columns");
     }
     if (columnNames == null)
     {
@@ -88,18 +88,17 @@ public class TableInputConfigurator implements JSONConfSetter
     }
     else
     {
-      Iter colIter = columnNames.iter();
-      Item current = null;
+      JsonIterator colIter = columnNames.iter();
       StringBuilder colList = new StringBuilder();
       boolean first = true;
-      while ((current = colIter.next()) != null)
+      for (JsonValue current : colIter)
       {
         if (!first)
         {
           first = false;
           colList.append(",");
         }
-        JString colName = (JString) current.getNonNull();
+        JsonString colName = JaqlUtil.enforceNonNull((JsonString) current);
         colList.append(HBaseStore.Util.convertColumn(colName));
       }
       conf.set(JaqlTableInputFormat.JOB_COLUMNS, colList.toString());
@@ -109,7 +108,7 @@ public class TableInputConfigurator implements JSONConfSetter
     if (options != null)
     {
       // set timestamp
-      JLong timestampValue = (JLong) options.getValue("timestamp").get();
+      JsonLong timestampValue = (JsonLong) options.getValue("timestamp");
       if (timestampValue != null)
       {
         conf.set(JaqlTableInputFormat.JOB_TS, String
@@ -117,14 +116,14 @@ public class TableInputConfigurator implements JSONConfSetter
       }
 
       // set start key
-      JString lowKeyArg = (JString) options.getValue("lowKey").get();
+      JsonString lowKeyArg = (JsonString) options.getValue("lowKey");
       if (lowKeyArg != null)
       {
         conf.set(JaqlTableInputFormat.JOB_LOWKEY, lowKeyArg.toString());
       }
 
       // set the end key
-      JString highKeyArg = (JString) options.getValue("highKey").get();
+      JsonString highKeyArg = (JsonString) options.getValue("highKey");
       if (highKeyArg != null)
       {
         conf.set(JaqlTableInputFormat.JOB_HIGHKEY, highKeyArg.toString());

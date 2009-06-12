@@ -18,12 +18,12 @@ package com.ibm.jaql.lang.expr.array;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -54,23 +54,21 @@ public class ColumnwiseFn extends Expr
    * 
    */
   @Override
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
-    Iter iter = exprs[0].iter(context);
+    JsonIterator iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return Item.NIL;
+      return null;
     }
-    MemoryJRecord rec = new MemoryJRecord();
-    Item result = new Item(rec);
-    HashMap<JString,SpillJArray> temp = new HashMap<JString, SpillJArray>();
-    ArrayList<SpillJArray> arrays = new ArrayList<SpillJArray>();
+    BufferedJsonRecord rec = new BufferedJsonRecord();
+    HashMap<JsonString,SpilledJsonArray> temp = new HashMap<JsonString, SpilledJsonArray>();
+    ArrayList<SpilledJsonArray> arrays = new ArrayList<SpilledJsonArray>();
     int count = 0;
     
-    Item item;
-    while( (item = iter.next()) != null )
+    for (JsonValue value : iter)
     {
-      JRecord r = (JRecord)item.get();
+      JsonRecord r = (JsonRecord)value;
       if( r == null )
       {
         continue;
@@ -78,19 +76,19 @@ public class ColumnwiseFn extends Expr
       int n = r.arity();
       for( int i = 0 ; i < n ; i++ )
       {
-        JString name = r.getName(i);
-        Item val = r.getValue(i);
-        SpillJArray arr = temp.get(name);
+        JsonString name = r.getName(i);
+        JsonValue val = r.getValue(i);
+        SpilledJsonArray arr = temp.get(name);
         if( arr == null )
         {
-          arr = new SpillJArray();
+          arr = new SpilledJsonArray();
           temp.put(name, arr);
           arrays.add(arr);
           rec.add(name, arr);
           // pad the array with initial nulls
           for(int j = 0 ; j < count ; j++)
           {
-            arr.addCopy(Item.NIL);
+            arr.addCopy(null);
           }
         }
         arr.addCopy(val);
@@ -100,14 +98,14 @@ public class ColumnwiseFn extends Expr
       n = arrays.size();
       for(int i = 0 ; i < n ; i++)
       {
-        SpillJArray arr = arrays.get(i);
+        SpilledJsonArray arr = arrays.get(i);
         if( arr.count() != count )
         {
-          arr.addCopy(Item.NIL);
+          arr.addCopy(null);
         }
       }
     }
     
-    return result;
+    return rec;
   }
 }

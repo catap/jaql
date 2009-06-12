@@ -19,10 +19,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
-import com.ibm.jaql.json.util.ScalarIter;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -61,15 +62,15 @@ public final class UnrollExpr extends IterExpr
   }
   
 
-  public final Iter iter(final Context context) throws Exception
+  public final JsonIterator iter(final Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    if( item.isNull() )
+    JsonValue value = exprs[0].eval(context);
+    if( value == null )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
-    final Item top = new Item(item.get());  // warning: top does not own (all of) item's value
-    Item hole = top;
+    final JsonHolder top = new JsonHolder(value);  // warning: top does not own (all of) item's value
+    JsonHolder hole = top;
     for(int i = 1 ; i < exprs.length ; i++)
     {
       // Share as much of input item as possible
@@ -77,41 +78,48 @@ public final class UnrollExpr extends IterExpr
       hole = ((UnrollStep)exprs[i]).expand(context, hole); 
       if( hole == null ) // input item doesn't have our path
       {
-        return new ScalarIter(item);
+        return new SingleJsonValueIterator(value);
       }
     }
     // We found the path to expand.
-    final Item lastHole = hole;
+    final JsonHolder lastHole = hole;
     
-    JArray array = (JArray)lastHole.get(); // possible intentional cast error
+    JsonArray array = (JsonArray)lastHole.value; // possible intentional cast error
     
-    final Iter iter = (array != null) ? array.iter() : Iter.empty;
+    final JsonIterator iter = (array != null) ? array.iter() : JsonIterator.EMPTY;
     
-    return new Iter()
+    return new JsonIterator()
     {
       boolean atStart = true;
+      boolean eof = false;
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception // TODO: somethign seems wrong here: lastHole is updated but not used
       {
         while( true )
         {
-          Item item = iter.next();
-          if( item == null )
+          if (eof) 
           {
+            return false;
+          }
+          if (!iter.moveNext()) 
+          {
+            eof = true;
             if( atStart )
             {
               // Null or empty array.
               // Return item with null value
               atStart = false;
-              lastHole.set(null);
-              return top;
+              lastHole.value = null;
+              currentValue = top.value;
+              return true;
             }
-            return null;
+            return false;
           }
           atStart = false;
-          lastHole.set(item.get());
-          return top;
+          lastHole.value = iter.current();
+          currentValue = top.value;
+          return true;
         }
       }
     };

@@ -19,8 +19,8 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -121,7 +121,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)
@@ -133,7 +133,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)

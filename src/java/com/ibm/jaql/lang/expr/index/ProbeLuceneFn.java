@@ -30,12 +30,14 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Scorer;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -45,6 +47,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "probeLucene", minArgs = 2, maxArgs = 3)
 public class ProbeLuceneFn extends IterExpr
 {
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
+  
   public ProbeLuceneFn(Expr[] exprs)
   {
     super(exprs);
@@ -56,32 +60,31 @@ public class ProbeLuceneFn extends IterExpr
   }
 
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    JRecord fd = (JRecord)item.get();
+    JsonRecord fd = (JsonRecord)exprs[0].eval(context);
     if( fd == null )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
-    JString loc = (JString)fd.getValue("location").get();
+    JsonString loc = (JsonString)fd.getValue("location");
     if( loc == null )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
-    JString jquery = (JString)exprs[1].eval(context).get();
+    JsonString jquery = (JsonString)exprs[1].eval(context);
     if( jquery == null )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
     
     HashSet<String> fields = null;
     if( exprs.length > 2 )
     {
-      Iter iter = exprs[2].iter(context);
-      while( (item = iter.next()) != null )
+      JsonIterator iter = exprs[2].iter(context);
+      for (JsonValue sv : iter)
       {
-        JString s = (JString)item.get();
+        JsonString s = (JsonString)sv;
         if( s != null )
         {
           if( fields == null )
@@ -102,25 +105,23 @@ public class ProbeLuceneFn extends IterExpr
 
     query = searcher.rewrite(query);
     final Scorer scorer = query.weight(searcher).scorer(searcher.getIndexReader());
-    final MemoryJRecord rec = new MemoryJRecord();
-    final Item result = new Item(rec);
-    final JString jdoc = new JString("doc");
-    final JLong jdocid = new JLong();
-    final Item docid = new Item(jdocid);
+    final BufferedJsonRecord rec = new BufferedJsonRecord();
+    final JsonString jdoc = new JsonString("doc");
+    final JsonLong jdocid = new JsonLong();
     
-    return new Iter()
+    return new JsonIterator(rec)
     {
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if( ! scorer.next() )
         {
-          return null;
+          return false;
         }
         rec.clear();
         int i = scorer.doc();
         jdocid.setValue(i);
-        rec.add(jdoc, docid);
+        rec.add(jdoc, jdocid);
         if( fieldSelector != null )
         {
           Document doc = searcher.doc(i, fieldSelector);
@@ -131,12 +132,11 @@ public class ProbeLuceneFn extends IterExpr
             byte[] val = f.binaryValue();
             ByteArrayInputStream bais = new ByteArrayInputStream(val); // TODO: reuse
             DataInputStream in = new DataInputStream(bais); // TODO: reuse
-            Item ival = new Item();
-            ival.readFields(in);
+            JsonValue ival = serializer.read(in, null);
             rec.add(name, ival);
           }
         }
-        return result;
+        return true; // currentValue == rec
       }
     };
   }

@@ -14,9 +14,9 @@
  * the License.
  */
 package com.ibm.jaql.lang.expr.core;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 
 @JaqlFn(fnName="perPartition", minArgs=2, maxArgs=2)
 public class PerPartitionFn extends IterExpr
@@ -46,9 +46,9 @@ public class PerPartitionFn extends IterExpr
   }
 
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    JFunction fn = (JFunction)exprs[1].eval(context).get();
+    JaqlFunction fn = (JaqlFunction)exprs[1].eval(context);
     return fn.iter(context, new Expr[] {exprs[0]});
   }
 }

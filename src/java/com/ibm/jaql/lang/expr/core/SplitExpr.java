@@ -18,11 +18,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
@@ -84,49 +84,47 @@ public class SplitExpr extends Expr
   }
 
   @Override
-  public Item eval(final Context context) throws Exception // TODO: sinks should not return anything
+  public JsonValue eval(final Context context) throws Exception // TODO: sinks should not return anything
   {
     // TODO: this and tee could/should fork threads to eval branches without temping
     BindingExpr b = (BindingExpr)exprs[0];
     int i;
     final int n = exprs.length - 1;
     // TODO: we can simplify when all the predicates are constant (not per input item) 
-    final SpillJArray[] temps = new SpillJArray[n];
+    final SpilledJsonArray[] temps = new SpilledJsonArray[n];
     final IfExpr[] ifs = new IfExpr[n];
     for( i = 0 ; i < n ; i++ )
     {
-      temps[i] = new SpillJArray(); // TODO: memory
+      temps[i] = new SpilledJsonArray(); // TODO: memory
       ifs[i] = (IfExpr)exprs[i+1];
     }
     
-    Iter iter = b.inExpr().iter(context);
-    Item item;
-    while( (item = iter.next()) != null )
+    JsonIterator iter = b.inExpr().iter(context);
+    for (JsonValue value : iter)
     {
-      b.var.setValue(item);
+      b.var.setValue(value);
       for( i = 0 ; i < n ; i++ )
       {
         if( JaqlUtil.ebv(ifs[i].testExpr().eval(context)) )
         {
-          temps[i].addCopy(item);
+          temps[i].addCopy(value);
           break;
         }
       }
     }
 
-    Item[] args = new Item[1];
-    args[0] = new Item();
+    JsonValue[] args = new JsonValue[1];
     for( i = 0 ; i < n ; i++ )
     {
       //if( ! temps[i].isEmpty() ) // TODO: should empty flow?
       {
-        args[0].set(temps[i]);
-        JFunction f = (JFunction)ifs[i].trueExpr().eval(context).get();
+        args[0]= temps[i];
+        JaqlFunction f = (JaqlFunction)ifs[i].trueExpr().eval(context);
         f.eval(context, args);
       }
     }
 
-    return Item.NIL;
+    return null;
   }
 
 }

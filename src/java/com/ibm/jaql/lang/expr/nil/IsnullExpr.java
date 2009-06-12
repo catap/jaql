@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.nil;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -61,20 +61,20 @@ public class IsnullExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
     Expr expr = exprs[0];
     boolean b;
     if (expr.isArray().always())
     {
-      Iter iter = expr.iter(context);
+      JsonIterator iter = expr.iter(context);
       b = iter.isNull();
     }
     else
     {
-      Item item = expr.eval(context);
-      b = item.isNull();
+      JsonValue value = expr.eval(context);
+      b = value == null;
     }
-    return JBool.make(b);
+    return JsonBool.make(b);
   }
 }

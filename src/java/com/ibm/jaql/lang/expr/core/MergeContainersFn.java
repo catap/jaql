@@ -17,13 +17,12 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.util.Bool3;
 
@@ -94,32 +93,31 @@ public class MergeContainersFn extends Expr
   }
   
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     int i;
-    Item item = null;
+    JsonValue value = null;
     for( i = 0 ; i < exprs.length ; i++ )
     {
-      item = exprs[i].eval(context);
-      if( ! item.isNull() )
+      value = exprs[i].eval(context);
+      if( value != null  )
       {
         break;
       }
     }
-    JValue val = item.get();
-    Item result;
-    if( val == null )
+    JsonValue result;
+    if( value == null )
     {
-      result = Item.NIL;
+      result = null;
     }
-    else if( val instanceof JArray )
+    else if( value instanceof JsonArray )
     {
-      SpillJArray resultArr = new SpillJArray();
+      SpilledJsonArray resultArr = new SpilledJsonArray(); // TODO: memory
       while(true)
       {
-        if( val != null )
+        if( value != null )
         {
-          JArray arr = (JArray)val;
+          JsonArray arr = (JsonArray)value;
           resultArr.addCopyAll(arr.iter());
         }
         i++;
@@ -127,18 +125,18 @@ public class MergeContainersFn extends Expr
         {
           break;
         }
-        val = exprs[i].eval(context).get();
+        value = exprs[i].eval(context);
       }
-      result = new Item(resultArr); // TODO: memory
+      result = resultArr;
     }
-    else if( val instanceof JRecord )
+    else if( value instanceof JsonRecord )
     {
-      MemoryJRecord resultRec = new MemoryJRecord(); // TODO: memory
+      BufferedJsonRecord resultRec = new BufferedJsonRecord(); // TODO: memory
       while(true)
       {
-        if( val != null )
+        if( value != null )
         {
-          JRecord rec = (JRecord)val;
+          JsonRecord rec = (JsonRecord)value;
           for(int j = 0 ; j < rec.arity() ; j++)
           {
             resultRec.add(rec.getName(j), rec.getValue(j));
@@ -149,9 +147,9 @@ public class MergeContainersFn extends Expr
         {
           break;
         }
-        val = exprs[i].eval(context).get();
+        value = exprs[i].eval(context);
       }
-      result = new Item(resultRec); // TODO: memory
+      result = resultRec; // TODO: memory
     }
     else
     {
@@ -162,26 +160,25 @@ public class MergeContainersFn extends Expr
   }
 
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    return new Iter()
+    return new JsonIterator()
     {
       int input = 0;
-      Iter iter = Iter.empty;
+      JsonIterator iter = JsonIterator.EMPTY;
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while( true )
         {
-          Item item = iter.next();
-          if( item != null )
-          {
-            return item;
+          if (iter.moveNext()) {
+            currentValue = iter.current();
+            return true;
           }
           if( input >= exprs.length )
           {
-            return null;
+            return false;
           }
           iter = exprs[input++].iter(context);
         }

@@ -19,12 +19,12 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.util.ItemHashtable;
+import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.Bool3;
 
 // TODO: translate cogroup into group over merge?
@@ -96,7 +96,7 @@ public class GroupByExpr extends IterExpr
     exprs[1] = by;
     if( using == null )
     {
-      using = new ConstExpr(Item.NIL);
+      using = new ConstExpr(null);
     }
     exprs[n+2] = using;
     exprs[n+3] = expand;
@@ -114,7 +114,7 @@ public class GroupByExpr extends IterExpr
     assert 1 == by.numChildren();
     if( using == null )
     {
-      using = new ConstExpr(Item.NIL);
+      using = new ConstExpr(null);
     }
     return new Expr[]{ in, by, as, using, expand };
   }
@@ -424,7 +424,7 @@ public class GroupByExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
     final int n = numInputs();
@@ -432,38 +432,36 @@ public class GroupByExpr extends IterExpr
     final BindingExpr by = byBinding();
 
     // usingExpr().eval(context); // TODO: comparator NYI
-    ItemHashtable temp = new ItemHashtable(n); // TODO: add comparator support to ItemHashtable
+    JsonHashTable temp = new JsonHashTable(n); // TODO: add comparator support to ItemHashtable
 
     for (int i = 0; i < n; i++)
     {
-      Item item;
-      Iter iter = in.child(i).iter(context);
-      while ((item = iter.next()) != null)
+      for (JsonValue value : in.child(i).iter(context))
       {
-        in.var.setValue(item);
-        Item byItem = by.child(i).eval(context);
-        temp.add(i, byItem, item);
+        in.var.setValue(value);
+        JsonValue byValue = by.child(i).eval(context);
+        temp.add(i, byValue, value);
       }
     }
 
-    final ItemHashtable.Iterator tempIter = temp.iter();
+    final JsonHashTable.Iterator tempIter = temp.iter();
 
-    return new Iter() {
-      Iter collectIter = Iter.empty;
+    return new JsonIterator() {
+      JsonIterator collectIter = JsonIterator.EMPTY;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while (true)
         {
-          Item item = collectIter.next();
-          if (item != null)
+          if (collectIter.moveNext())
           {
-            return item;
+            currentValue = collectIter.current();
+            return true;
           }
 
           if (!tempIter.next())
           {
-            return null;
+            return false;
           }
 
           by.var.setValue(tempIter.key());
@@ -472,11 +470,11 @@ public class GroupByExpr extends IterExpr
           {
             // TODO: any reason to NOT set the groups to null when empty? it was [].
             // context.setVar(getIntoVar(i), tempIter.values(i));
-            Item group = tempIter.values(i);
-            JArray arr = (JArray)group.get();
+            JsonValue group = tempIter.values(i);
+            JsonArray arr = (JsonArray)group;
             if( arr.isEmpty() )
             {
-              group = Item.NIL;
+              group = null;
             }
             getAsVar(i).setValue(group);
           }

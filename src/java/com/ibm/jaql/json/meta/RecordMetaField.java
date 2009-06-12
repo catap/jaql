@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JavaJRecord;
+import com.ibm.jaql.json.type.JavaJsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
@@ -47,9 +47,9 @@ public class RecordMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JsonValue makeValue()
   {
-    return new Item(new JavaJRecord());
+    return new JavaJsonRecord();
   }
 
   /*
@@ -59,17 +59,18 @@ public class RecordMetaField extends MetaField
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void get(Object obj, Item target) throws IllegalArgumentException,
+  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
       IllegalAccessException, InvocationTargetException
   {
     Object x = field.get(obj);
     if (x == null)
     {
-      target.set(null);
+      return null;
     }
     else
     {
-      ((JavaJRecord) target.restoreCache()).setObject(x);
+      ((JavaJsonRecord) target).setObject(x);
+      return target;
     }
   }
 

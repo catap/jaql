@@ -17,9 +17,9 @@ package com.ibm.jaql.json.util;
 
 import java.io.PrintStream;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
 
 /**
  * 
@@ -152,7 +152,7 @@ public class JsonUtil
    * @param out
    * @param str
    */
-  public static void printQuoted(PrintStream out, JString str)
+  public static void printQuoted(PrintStream out, JsonString str)
   {
     String s = str.toString(); // TODO: memory; efficient JString to escaped string
     printQuoted(out, s);
@@ -266,7 +266,7 @@ public class JsonUtil
   //  }
 
   // TODO: not needed anymore, kept because it is still used
-  public static int deepCompare(SpillJArray x, SpillJArray y) throws Exception
+  public static int deepCompare(SpilledJsonArray x, SpilledJsonArray y) throws Exception
   {
     return x.compareTo(y);
   }
@@ -277,26 +277,28 @@ public class JsonUtil
    * @return
    * @throws Exception
    */
-  public static int deepCompare(Iter iter1, Iter iter2) throws Exception
+  public static int deepCompare(JsonIterator iter1, JsonIterator iter2) throws Exception
   {
-    Item item1, item2;
-    for (item1 = iter1.next(), item2 = iter2.next(); item1 != null
-        && item2 != null; item1 = iter1.next(), item2 = iter2.next())
+    boolean hasNext1, hasNext2;
+    for (hasNext1 = iter1.moveNext(), hasNext2 = iter2.moveNext(); 
+         hasNext1 && hasNext2;
+         hasNext1 = iter1.moveNext(), hasNext2 = iter2.moveNext())
     {
-      int c = item1.compareTo(item2);
+      JsonValue value1 = iter1.current();
+      JsonValue value2 = iter2.current();
+
+      if (value1 == null)
+      {
+        return value2==null ? 0 : -1;
+      }
+
+      int c = value1.compareTo(value2);
       if (c != 0)
       {
         return c;
       }
     }
-    if (item1 == null)
-    {
-      if (item2 == null)
-      {
-        return 0;
-      }
-      return -1;
-    }
-    return 1;
+    
+    return !hasNext1 ? (!hasNext2 ? 0 : -1) : 1;
   }
 }

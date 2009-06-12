@@ -18,8 +18,8 @@ package com.acme.extensions.fn;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.JIterator;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.util.JsonIterator;
 
 /**
  * 
@@ -32,7 +32,7 @@ public class Grep
    * @return
    * @throws Exception
    */
-  public JIterator eval(JString regex, JIterator jstrs) throws Exception
+  public JsonIterator eval(JsonString regex, JsonIterator jstrs) throws Exception
   {
     return eval(regex, null, jstrs);
   }
@@ -44,7 +44,7 @@ public class Grep
    * @return
    * @throws Exception
    */
-  public JIterator eval(JString regex, JString flags, final JIterator jstrs)
+  public JsonIterator eval(JsonString regex, JsonString flags, final JsonIterator jstrs)
       throws Exception
   {
     if (regex == null || jstrs == null)
@@ -81,9 +81,9 @@ public class Grep
     final Matcher matcher = pattern.matcher("");
     final boolean global = global1;
 
-    final JString resultStr = new JString();
+    final JsonString resultStr = new JsonString();
 
-    return new JIterator(resultStr) {
+    return new JsonIterator(resultStr) {
       private boolean needInput = true;
 
       public boolean moveNext() throws Exception
@@ -96,14 +96,14 @@ public class Grep
             {
               return false;
             }
-            JString jstr = (JString) jstrs.current(); // could raise a cast error
+            JsonString jstr = (JsonString) jstrs.current(); // could raise a cast error
             matcher.reset(jstr.toString());
           }
           if (matcher.find())
           {
             resultStr.set(matcher.group());
             needInput = !global;
-            return true;
+            return true; // currentValue == resultStr
           }
           needInput = true;
         }

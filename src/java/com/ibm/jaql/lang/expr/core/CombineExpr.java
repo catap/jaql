@@ -15,10 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.Item;
+import java.util.Arrays;
+
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -107,11 +110,11 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
 //  }
 
   // Not safe for recursion.
-  protected final Item[] agg = new Item[] {new Item(), new Item()};
+  protected final JsonValue[] agg = new JsonValue[2];
   protected Context context;
   protected int bufIdx = 0;
-  protected JFunction combiner;
-  protected final Item[] args = new Item[2];
+  protected JaqlFunction combiner;
+  protected final JsonValue[] args = new JsonValue[2];
 
       
   @Override
@@ -119,32 +122,31 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   {
     this.context = context;
     bufIdx = 0;
-    agg[0].set(null);
-    combiner = (JFunction)exprs[1].eval(context).getNonNull();
-    
+    combiner = JaqlUtil.enforceNonNull((JaqlFunction)exprs[1].eval(context));
+    Arrays.fill(agg, null);
     // context.setVar(binding().var2, agg[0]);
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
-    if( item.isNull() )
+    if( value == null )
     {
       return;
     }
     // BindingExpr b = binding();
-    Item combined;
-    if (agg[bufIdx].isNull())
+    JsonValue combined;
+    if (agg[bufIdx] == null )
     {
-      combined = item;
+      combined = value;
     }
     else
     {
-      args[1] = item;
+      args[1] = value;
       combined = combiner.eval(context, args);
       // context.setVar(b.var, item);
       // combined = usingExpr().eval(context);
-      if (combined.isNull())
+      if (combined == null )
       {
         throw new RuntimeException("combiners cannot return null");
       }
@@ -152,25 +154,25 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
     // We need to use two buffers because we might copy part 
     // of the previous result into the new result.
     bufIdx = 1 - bufIdx; 
-    agg[bufIdx].setCopy(combined);
+    agg[bufIdx] = combined.getCopy(agg[bufIdx]);
     args[0] = agg[bufIdx];
     // context.setVar(b.var2, agg[bufIdx]);
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
     return agg[bufIdx];
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    addInitial(item);
+    addInitial(value);
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
     return agg[bufIdx];
   }

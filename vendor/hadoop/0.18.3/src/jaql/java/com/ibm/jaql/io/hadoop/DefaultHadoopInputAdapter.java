@@ -26,22 +26,22 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.ItemReader;
+import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.hadoop.converter.KeyValueImport;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * The default class for reading Items from Hadoop into jaql
  */
-public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
+public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
 {
   static final Logger          LOG = Logger.getLogger(DefaultHadoopInputAdapter.class.getName());
 
-  protected InputFormat        iFormat;
+  protected InputFormat<K,V>        iFormat;
 
-  protected JSONConfSetter     configurator;
+  protected InitializableConfSetter     configurator;
 
   protected KeyValueImport<K, V> converter;
 
@@ -49,39 +49,24 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
 
   protected Reporter           reporter;
 
-  protected MemoryJRecord      args;
+  protected BufferedJsonRecord      args;
 
   protected String             location;
 
-  protected MemoryJRecord      options;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.StorableAdapter#initializeFrom(com.ibm.jaql.lang.JRecord)
-   */
-  public void initializeFrom(Item item) throws Exception
-  {
-    initializeFrom((JRecord) item.get());
+  protected BufferedJsonRecord      options;
+  
+  public void init(JsonValue args) throws Exception {
+    initializeFrom((JsonRecord)args);
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
-   */
-  public void init(Item item) throws Exception
-  {
-    initializeFrom(item);
-  }
-
+  
   /**
    * @param args
    * @throws Exception
    */
-  private void initializeFrom(JRecord args) throws Exception
+  @SuppressWarnings("unchecked")
+  private void initializeFrom(JsonRecord args) throws Exception
   {
-    this.args = (MemoryJRecord) args;
+    this.args = (BufferedJsonRecord) args;
 
     // set the location
     this.location = AdapterStore.getStore().getLocation(args);
@@ -90,24 +75,24 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
     this.options = AdapterStore.getStore().input.getOption(args);
 
     // set the format
-    this.iFormat = (InputFormat) AdapterStore.getStore().getClassFromRecord(
+    this.iFormat = (InputFormat<K,V>) AdapterStore.getStore().getClassFromRecord(
         options, FORMAT_NAME, null).newInstance();
 
     // set the configurator
-    Class configuratorClass = AdapterStore.getStore().getClassFromRecord(
+    Class<?> configuratorClass = AdapterStore.getStore().getClassFromRecord(
         options, CONFIGURATOR_NAME, null);
     if (configuratorClass != null)
     {
-      this.configurator = (JSONConfSetter) configuratorClass.newInstance();
-      this.configurator.init(new Item(args)); // FIXME: no need to "new"
+      this.configurator = (InitializableConfSetter) configuratorClass.newInstance();
+      this.configurator.init(args); // FIXME: no need to "new"
     }
 
     // set the converter
-    Class converterClass = AdapterStore.getStore().getClassFromRecord(options,
+    Class<?> converterClass = AdapterStore.getStore().getClassFromRecord(options,
         CONVERTER_NAME, null);
     if (converterClass != null)
     {
-      this.converter = (KeyValueImport) converterClass.newInstance();
+      this.converter = (KeyValueImport<K, V>) converterClass.newInstance();
       this.converter.init(options);
     }
   }
@@ -134,6 +119,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
       {
       }
 
+      @SuppressWarnings("unchecked")
       public void incrCounter(Enum key, long amount)
       {
       }
@@ -180,7 +166,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
   {
     int                      splitId = 0;
 
-    RecordReader<Item, Item> reader  = null;
+    RecordReader<JsonHolder, JsonHolder> reader  = null;
   };
 
   /*
@@ -188,14 +174,15 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
    * 
    * @see com.ibm.jaql.lang.InputAdapter#getRecordReader()
    */
-  public ItemReader getItemReader() throws IOException
+  public ClosableJsonIterator getJsonReader() throws IOException
   {
     final SplitState state = new SplitState();
     final InputSplit[] splits = getSplits(conf, conf.getNumMapTasks());
 
-    return new ItemReader() {
-      private Item key = null;
-
+    final JsonHolder valueHolder = new JsonHolder();
+    valueHolder.value = converter != null ? converter.createInitialTarget() : null;
+    return new ClosableJsonIterator() {
+      JsonHolder key;
       /*
        * (non-Javadoc)
        * 
@@ -213,21 +200,9 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
       /*
        * (non-Javadoc)
        * 
-       * @see com.ibm.jaql.io.ItemReader#createValue()
-       */
-      @Override
-      public Item createValue()
-      {
-        if (converter != null) return converter.createTarget();
-        return new Item();
-      }
-
-      /*
-       * (non-Javadoc)
-       * 
        * @see com.ibm.jaql.io.ItemReader#next(com.ibm.jaql.json.type.Item)
        */
-      public boolean next(Item value) throws IOException
+      public boolean moveNext() throws IOException
       {
         while (true)
         {
@@ -242,8 +217,9 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
             state.reader = getRecordReader(split, conf, reporter);
             if (key == null) key = state.reader.createKey();
           }
-          if (state.reader.next(key, value))
+          if (state.reader.next(key, valueHolder))
           {
+            currentValue = valueHolder.value;
             return true;
           }
           state.reader.close();
@@ -260,32 +236,35 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(org.apache.hadoop.mapred.InputSplit,
    *      org.apache.hadoop.mapred.JobConf, org.apache.hadoop.mapred.Reporter)
    */
-  public RecordReader<Item, Item> getRecordReader(InputSplit split,
+  @SuppressWarnings("unchecked")
+  public RecordReader<JsonHolder, JsonHolder> getRecordReader(InputSplit split,
       JobConf job, Reporter reporter) throws IOException
   {
     if (converter == null)
-      return ((InputFormat<Item, Item>) iFormat).getRecordReader(split, job,
-          reporter);
+      return ((InputFormat<JsonHolder, JsonHolder>) iFormat)
+          .getRecordReader(split, job, reporter);
     final RecordReader<K, V> baseReader = ((InputFormat<K, V>) iFormat)
         .getRecordReader(split, job, reporter);
     final K baseKey = baseReader.createKey();
     final V baseValue = baseReader.createValue();
 
-    return new RecordReader<Item, Item>() {
+    return new RecordReader<JsonHolder, JsonHolder>() {
 
       public void close() throws IOException
       {
         baseReader.close();
       }
 
-      public Item createKey()
+      public JsonHolder createKey()
       {
-        return Item.NIL;
+        return new JsonHolder();
       }
 
-      public Item createValue()
+      public JsonHolder createValue()
       {
-        return converter.createTarget();
+        JsonHolder holder = new JsonHolder();
+        holder.value = converter.createInitialTarget();
+        return holder;
       }
 
       public long getPos() throws IOException
@@ -298,14 +277,13 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
         return baseReader.getProgress();
       }
 
-      public boolean next(Item key, Item value) throws IOException
+      public boolean next(JsonHolder key, JsonHolder value) throws IOException
       {
         boolean hasMore = baseReader.next(baseKey, baseValue);
         if (!hasMore) return false;
-        converter.convert(baseKey, baseValue, value);
+        value.value = converter.convert(baseKey, baseValue, value.value);
         return true;
       }
-
     };
   }
 
@@ -318,7 +296,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
   {
 
     // check the input format
-    InputFormat adapter = job.getInputFormat();
+    InputFormat<?,?> adapter = job.getInputFormat();
     if (!(adapter instanceof HadoopInputAdapter))
       throw new IOException("invalid input format: " + adapter);
 
@@ -341,7 +319,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<Item>
     {
       try
       {
-        JRecord options = ConfUtil
+        JsonRecord options = ConfUtil
             .readConf(conf, ConfSetter.CONFINOPTIONS_NAME);
         initializeFrom(options);
       }

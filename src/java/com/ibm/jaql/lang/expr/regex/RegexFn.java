@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.regex;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRegex;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonRegex;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -42,22 +41,22 @@ public class RegexFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonRegex eval(final Context context) throws Exception
   {
-    JString regex = (JString) exprs[0].eval(context).get();
+    JsonString regex = (JsonString) exprs[0].eval(context);
     if (regex == null)
     {
-      return Item.NIL;
+      return null;
     }
-    JString flags = JaqlUtil.emptyString;
+    JsonString flags = JaqlUtil.emptyString;
     if (exprs.length == 2)
     {
-      flags = (JString) exprs[1].eval(context).get();
+      flags = (JsonString) exprs[1].eval(context);
       if (flags == null)
       {
         flags = JaqlUtil.emptyString;
       }
     }
-    return new Item(new JRegex(regex, flags)); // TODO: memory!
+    return new JsonRegex(regex, flags); // TODO: memory!
   }
 }

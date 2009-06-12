@@ -16,9 +16,9 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.InputAdapter;
-import com.ibm.jaql.io.ItemReader;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.ClosableJsonIterator;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -59,30 +59,30 @@ public abstract class AbstractReadExpr extends IterExpr
   }
 
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
     // evaluate the arguments
-    Item args = exprs[0].eval(context);
+    JsonValue args = exprs[0].eval(context);
   
     // get the InputAdapter according to the type
     final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
     adapter.open();
-    return new Iter() {
-      ItemReader reader = adapter.getItemReader();
-      Item       item   = reader.createValue();
+    return new JsonIterator() {
+      ClosableJsonIterator reader = adapter.getJsonReader();
   
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        while (true)
+        if (reader.moveNext()) 
         {
-          if (reader == null) return null;
-          if (reader.next(item))
-          {
-            return item;
-          }
+          currentValue = reader.current();
+          return true;
+        }
+        else
+        {
           reader.close();
           reader = null;
+          return false;
         }
       }
     };

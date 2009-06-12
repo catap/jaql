@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
@@ -27,10 +27,10 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "argmin", minArgs = 2, maxArgs = 2)
 public final class ArgMinAgg extends AlgebraicAggregate
 {
-  private Item min;
-  private Item arg;
-  private JFunction keyFn;
-  private Item[] fnArgs = new Item[1];
+  private JsonValue min;
+  private JsonValue arg;
+  private JaqlFunction keyFn;
+  private JsonValue[] fnArgs = new JsonValue[1];
   private Context context;
   
   
@@ -46,49 +46,48 @@ public final class ArgMinAgg extends AlgebraicAggregate
   public void initInitial(Context context) throws Exception
   {
     this.context = context;
-    min = Item.NIL;
-    arg = Item.NIL;
-    keyFn = (JFunction)exprs[1].eval(context).get();
+    min = null;
+    arg = null;
+    keyFn = (JaqlFunction)exprs[1].eval(context);
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
-    if( item.isNull() )
+    if( value == null )
     {
       return;
     }
-    fnArgs[0] = item;
-    Item key = keyFn.eval(context,fnArgs);
-    if( min == Item.NIL )
+    fnArgs[0] = value;
+    JsonValue key = keyFn.eval(context,fnArgs);
+    if( min == null )
     {
-      min = new Item();
-      arg = new Item();
-      min.setCopy(key);
-      arg.setCopy(item);
+      min = key.getCopy(null);
+      arg = value.getCopy(null);
     }
     else if( key.compareTo(min) < 0 )
     {
       min.setCopy(key);
-      arg.setCopy(item);
+      arg.setCopy(value);
     }
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
     return arg;
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    addInitial(item);
+    addInitial(value);
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
     return arg;
   }
+
 }

@@ -20,9 +20,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 
@@ -173,7 +173,7 @@ public final class DefineFunctionExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     this.annotate(); // TODO: move to init call
     DefineFunctionExpr f = this;
@@ -196,15 +196,14 @@ public final class DefineFunctionExpr extends Expr
       int i = 0;
       for( Var v: capturedVars )
       {
-        Item val = new Item();
-        val.setCopy(v.getValue(context));
+        JsonValue val = JsonValue.getCopy(v.getValue(context), null);
         es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
       }
       es[n] = f.body().injectAbove();
       new DoExpr(es);
     }
-    JFunction fn = new JFunction(f, n > 0);
-    return new Item(fn);
+    JaqlFunction fn = new JaqlFunction(f, n > 0);
+    return fn;
   }
 
   public void annotate()

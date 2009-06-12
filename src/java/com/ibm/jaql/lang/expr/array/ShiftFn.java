@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -68,16 +68,16 @@ public class ShiftFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
-    final Iter iter = exprs[0].iter(context);
+    final JsonIterator iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
     
-    JNumber beforeNum = (JNumber)exprs[1].eval(context).get();
+    JsonNumber beforeNum = (JsonNumber)exprs[1].eval(context);
     final long before;
     if( beforeNum == null )
     {
@@ -99,7 +99,7 @@ public class ShiftFn extends IterExpr
     }
     else
     {
-      JNumber afterNum = (JNumber)exprs[2].eval(context).get();
+      JsonNumber afterNum = (JsonNumber)exprs[2].eval(context);
       if( afterNum == null )
       {
         after = 0;
@@ -120,77 +120,85 @@ public class ShiftFn extends IterExpr
     }
 
     final int size = (int)(before + after + 1);
-    final InMemoryCircularItemBuffer buffer = new InMemoryCircularItemBuffer(size);
-    final ResettableIter window = buffer.iter();
-    final FixedJArray arr = new FixedJArray(size);
-    final Item result = new Item(arr);
+    final InMemoryCircularJsonBuffer buffer = new InMemoryCircularJsonBuffer(size);
+    final ResettableJsonIterator window = buffer.iter();
+    final BufferedJsonArray arr = new BufferedJsonArray(size);
     
-    Item item = Item.NIL;
+    boolean eof = false;
+    JsonValue value = null;
     for( long i = 0 ; i < after ; i++ )
     {
-      if( item != null ) // Don't call next() once we hit eof
-      {
-        item = iter.next();
+      if (!eof && iter.moveNext()) { // Don't call moveNext() once we hit eof
+        value = iter.current();
+        eof = true;
+      } else {
+        value = null;
       }
-      buffer.add(item);
+      buffer.add(value);
     }
 
-    final Item tmpItem = item;
-
-    return new Iter() 
+    return new JsonIterator(arr) 
     {
+      boolean eof = false;
       long tail = after;
-      Item item = tmpItem; 
       
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        if( item != null )
-        {
-          item = iter.next();
+        if (!eof) {
+          eof = iter.moveNext();
         }
-        if( item == null )
+        if( eof )
         {
           if( tail == 0 )
           {
-            return null;
+            return false;
           }
           tail--;
+          buffer.add(null);
+        } 
+        else 
+        {
+          buffer.add(iter.current());
         }
-        buffer.add(item);
         window.reset();
         for(int i = 0 ; i < size ; i++)
         {
-          arr.set(i, window.next());
+          boolean hasNext = window.moveNext();
+          assert hasNext;
+          arr.set(i, window.current());
         }
-        return result;
+        return true; // currentValue == arr
       }
     };
   }
 
   
-  public static abstract class ResettableIter extends Iter // TODO: move out
+  public static abstract class ResettableJsonIterator extends JsonIterator // TODO: move out
   {
     public abstract void reset();
   }
   
-  public static class InMemoryCircularItemBuffer // TODO: move out
+  public static class InMemoryCircularJsonBuffer // TODO: move out
   {
-    private Item[] buffer;
+    private JsonValue[] buffer;
     private int end;
     
-    public InMemoryCircularItemBuffer(int size)
+    public InMemoryCircularJsonBuffer(int size)
     {
-      buffer = new Item[size+1];
-      for(int i = 0 ; i < buffer.length ; i++)
-      {
-        buffer[i] = new Item();
-      }
+      buffer = new JsonValue[size+1];
       end = size;
     }
     
-    public void add(Item item) throws Exception
+    public void add(JsonValue value) throws Exception
     {
-      buffer[end].setCopy(item);
+      if (value == null) 
+      {
+        buffer[end] = null;
+      }
+      else
+      {
+        buffer[end] = value.getCopy(buffer[end]);
+      }
       end++;
       if( end == buffer.length )
       {
@@ -198,14 +206,14 @@ public class ShiftFn extends IterExpr
       }
     }
     
-    public ResettableIter iter()
+    public ResettableJsonIterator iter()
     {
-      return new ResettableIter()
+      return new ResettableJsonIterator()
       {
         int i = end + 1;
         
         @Override
-        public Item next() throws Exception
+        public boolean moveNext() throws Exception
         {
           if( i == buffer.length )
           {
@@ -213,10 +221,10 @@ public class ShiftFn extends IterExpr
           }
           if( i == end )
           {
-            return null;
+            return false;
           }
-          Item item = buffer[i++];
-          return item;
+          currentValue = buffer[i++];
+          return true;
         }
 
         public void reset()

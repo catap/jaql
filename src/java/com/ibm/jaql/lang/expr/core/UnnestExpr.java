@@ -18,10 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -68,40 +67,38 @@ public class UnnestExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    final Iter iter = exprs[0].iter(context);
+    final JsonIterator iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
 
-    return new Iter() {
-      Iter inner = Iter.empty;
+    return new JsonIterator() {
+      JsonIterator inner = JsonIterator.EMPTY;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while (true)
         {
-          Item item;
-          while ((item = inner.next()) != null)
-          {
-            return item;
+          if (inner.moveNext()) {
+            currentValue = inner.current();
+            return true;
           }
-          item = iter.next();
-          if (item == null)
-          {
-            return null;
+          if (!iter.moveNext()) {
+            return false;
           }
-          JValue w = item.get();
-          if (w instanceof JArray)
+          JsonValue w = iter.current();
+          if (w instanceof JsonArray)
           {
-            inner = ((JArray) w).iter();
+            inner = ((JsonArray) w).iter();
           }
           else
           {
-            inner = Iter.empty;
-            return item;
+            inner = JsonIterator.EMPTY;
+            currentValue = w;
+            return true;
           }
         }
       }

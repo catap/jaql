@@ -17,12 +17,12 @@ package com.ibm.jaql.lang.expr.array;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -54,20 +54,20 @@ public class RowwiseFn extends IterExpr
    * 
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    if( item.isNull() )
+    JsonValue value = exprs[0].eval(context);
+    if( value == null )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
-    JRecord inrec = (JRecord)item.get();
+    JsonRecord inrec = (JsonRecord)value;
     int n = inrec.arity();
-    final ArrayList<JString> names = new ArrayList<JString>(n);
-    final ArrayList<Iter> values = new ArrayList<Iter>(n);
+    final ArrayList<JsonString> names = new ArrayList<JsonString>(n);
+    final ArrayList<JsonIterator> values = new ArrayList<JsonIterator>(n);
     for(int i = 0 ; i < n ; i++)
     {
-      JArray val = (JArray)inrec.getValue(i).get();
+      JsonArray val = (JsonArray)inrec.getValue(i);
       if( val != null && ! val.isEmpty() )
       {
         names.add(inrec.getName(i));
@@ -76,39 +76,36 @@ public class RowwiseFn extends IterExpr
     }
     if( names.isEmpty() )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    final MemoryJRecord outrec = new MemoryJRecord();
-    final Item result = new Item(outrec);
-    
-    return new Iter()
+    final BufferedJsonRecord outrec = new BufferedJsonRecord();
+    return new JsonIterator(outrec)
     {      
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         outrec.clear();
         int n = names.size();
         int done = 0;
         for(int i = 0 ; i < n ; i++)
         {
-          JString name = names.get(i);
-          Iter iter = values.get(i);
-          Item item = iter.next();
-          if( item == null )
+          JsonString name = names.get(i);
+          JsonIterator iter = values.get(i);
+          if (!iter.moveNext())
           {
-            values.set(i, Iter.empty);
+            values.set(i, JsonIterator.EMPTY);
             done++;
           }
-          else if( ! item.isNull() )
+          else if( iter.current() != null  )
           {
-            outrec.add(name, item);
+            outrec.add(name, iter.current());
           }
         }
         if( done == n )
         {
-          return null;
+          return false;
         }
-        return result;
+        return true; // currentValue == outRec
       }
     };
   }

@@ -15,8 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -49,7 +48,7 @@ public class ConstArrayAccess extends Rewrite
     
     if( array.isNull().always() )
     {
-      ie.replaceInParent(new ConstExpr(Item.NIL));
+      ie.replaceInParent(new ConstExpr(null));
       return true;
     }
     
@@ -66,7 +65,7 @@ public class ConstArrayAccess extends Rewrite
 
     Expr replaceBy;
     ConstExpr c = (ConstExpr) index;
-    JLong li = (JLong) c.value.get();
+    JsonLong li = (JsonLong) c.value;
     if (li == null)
     {
       replaceBy = c; // a[null] -> null
@@ -76,7 +75,7 @@ public class ConstArrayAccess extends Rewrite
       long i = li.value;
       if (i < 0 || i >= array.numChildren())
       {
-        replaceBy = new ConstExpr(Item.NIL);
+        replaceBy = new ConstExpr(null);
       }
       else
       {

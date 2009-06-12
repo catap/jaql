@@ -27,18 +27,20 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -70,12 +72,12 @@ public class MRAggregate extends MapReduceBaseExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
-    JRecord args = baseSetup(context);
-    Item map = args.getRequired("map");
-    Item agg = args.getRequired("aggregate");
-    Item finl = args.getRequired("final");
+    JsonRecord args = baseSetup(context);
+    JsonValue map = args.getRequired("map");
+    JsonValue agg = args.getRequired("aggregate");
+    JsonValue finl = args.getRequired("final");
 
     // use default: conf.setNumMapTasks(10); // TODO: need a way to specify options
     // use default: conf.setNumReduceTasks(2); // TODO: get from options
@@ -83,11 +85,11 @@ public class MRAggregate extends MapReduceBaseExpr
     conf.setCombinerClass(AggCombineEval.class);
     conf.setReducerClass(AggFinalEval.class);
 
-    JFunction mapFn = (JFunction) map.getNonNull();
+    JaqlFunction mapFn = JaqlUtil.enforceNonNull((JaqlFunction) map);
     prepareFunction("map", 1, mapFn, 0);
-    JFunction aggFn = (JFunction) agg.getNonNull();
+    JaqlFunction aggFn = JaqlUtil.enforceNonNull((JaqlFunction) agg);
     prepareFunction("aggregate", 2, aggFn, 0);
-    JFunction finalFn = (JFunction) finl.getNonNull();
+    JaqlFunction finalFn = JaqlUtil.enforceNonNull((JaqlFunction) finl);
     prepareFunction("final", 2, finalFn, 0);
 
     JobClient.runJob(conf);
@@ -95,7 +97,7 @@ public class MRAggregate extends MapReduceBaseExpr
     return outArgs;
   }
 
-  protected static AlgebraicAggregate[] makeAggs(JFunction aggFn)
+  protected static AlgebraicAggregate[] makeAggs(JaqlFunction aggFn)
   {
     Expr e = aggFn.getBody();
     if( !(e instanceof ArrayExpr) )
@@ -120,10 +122,10 @@ public class MRAggregate extends MapReduceBaseExpr
    * Used for both map and init functions
    */
   public static class MapEval extends RemoteEval
-      implements MapRunnable<Item, Item, Item, Item>
+      implements MapRunnable<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
-    protected JFunction mapFn;
-    protected JFunction aggFn;
+    protected JaqlFunction mapFn;
+    protected JaqlFunction aggFn;
 
     /*
      * (non-Javadoc)
@@ -142,8 +144,8 @@ public class MRAggregate extends MapReduceBaseExpr
      * 
      */
     // fails on java 1.5: @Override
-    public void run( RecordReader<Item, Item> input,
-                     OutputCollector<Item, Item> output, 
+    public void run( RecordReader<JsonHolder, JsonHolder> input,
+                     OutputCollector<JsonHolder, JsonHolder> output, 
                      Reporter reporter) 
       throws IOException
     {
@@ -156,34 +158,32 @@ public class MRAggregate extends MapReduceBaseExpr
         AlgebraicAggregate[] aggs = makeAggs(aggFn);
         Var keyVar = aggFn.param(0);
         Var valVar = aggFn.param(1);
-        Item[] mappedKeyValue = new Item[2];
-        FixedJArray aggArray = new FixedJArray(aggs.length);
-        Item aggItem = new Item(aggArray);
-
-        Iter iter = mapFn.iter(context, new RecordReaderValueIter(input));
-
-        FixedJArray tmpArray = new FixedJArray(1);
-        Item tmpItem = new Item(tmpArray);
-
-        Item item;
-        while ((item = iter.next()) != null)
+        JsonValue[] mappedKeyValue = new JsonValue[2];
+        BufferedJsonArray aggArray = new BufferedJsonArray(aggs.length);
+        JsonHolder aggArrayHolder = new JsonHolder(aggArray);
+        JsonHolder keyHolder = new JsonHolder();
+        
+        JsonIterator iter = mapFn.iter(context, new RecordReaderValueIter(input));
+        BufferedJsonArray tmpArray = new BufferedJsonArray(1);
+        for (JsonValue value : iter)
         {
-          JArray pair = (JArray) item.get();
+          JsonArray pair = (JsonArray) value;
           if (pair != null)
           {
-            pair.getTuple(mappedKeyValue);
+            pair.getValues(mappedKeyValue);
             keyVar.setValue(mappedKeyValue[0]);
             tmpArray.set(0, mappedKeyValue[1]);
-            valVar.setValue(tmpItem);
+            valVar.setValue(tmpArray);
             for( int i = 0 ; i < aggs.length ; i++ )
             {
               AlgebraicAggregate agg = aggs[i];
               agg.initInitial(context);
               aggs[i].evalInitial(context);
-              Item part = agg.getPartial();
+              JsonValue part = agg.getPartial();
               aggArray.set(i, part);
             }
-            output.collect(mappedKeyValue[0], aggItem);
+            keyHolder.value = mappedKeyValue[0]; 
+            output.collect(keyHolder, aggArrayHolder);
           }
         }
       }
@@ -203,13 +203,13 @@ public class MRAggregate extends MapReduceBaseExpr
    */
   public static class AggCombineEval extends RemoteEval
       implements
-        Reducer<Item, Item, Item, Item>
+        Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
-    protected JFunction aggFn;
+    protected JaqlFunction aggFn;
     protected Var keyVar;
     protected AlgebraicAggregate[] aggs;
-    protected FixedJArray aggArray;
-    protected Item aggItem;
+    protected BufferedJsonArray aggArray;
+    protected JsonHolder aggArrayHolder;
 
 
     /*
@@ -227,8 +227,8 @@ public class MRAggregate extends MapReduceBaseExpr
       }
       keyVar = aggFn.param(0);
       aggs = makeAggs(aggFn);
-      aggArray = new FixedJArray(aggs.length);
-      aggItem = new Item(aggArray);
+      aggArray = new BufferedJsonArray(aggs.length);
+      aggArrayHolder = new JsonHolder(aggArray);
     }
 
     /*
@@ -238,8 +238,8 @@ public class MRAggregate extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(Item key, Iterator<Item> values,
-        OutputCollector<Item, Item> output, Reporter reporter)
+    public void reduce(JsonHolder keyHolder, Iterator<JsonHolder> values,
+        OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
         throws IOException
     {
       try
@@ -249,18 +249,17 @@ public class MRAggregate extends MapReduceBaseExpr
           aggs[i].initPartial(context);
         }
 
-        keyVar.setValue(key);
+        keyVar.setValue(keyHolder.value);
         
         while( values.hasNext() )
         {
-          Item parts = values.next();
-          FixedJArray partArray = (FixedJArray)parts.get();
+          BufferedJsonArray partArray = (BufferedJsonArray) values.next().value;
           for(int i = 0 ; i < aggs.length ; i++)
           {
             aggs[i].addPartial(partArray.get(i));
           }
         }
-        processAggs(key, output);
+        processAggs(keyHolder, output);
       }
       catch (IOException ex)
       {
@@ -272,16 +271,16 @@ public class MRAggregate extends MapReduceBaseExpr
       }
     }
 
-    protected void processAggs(Item key, OutputCollector<Item, Item> output)
+    protected void processAggs(JsonHolder keyHolder, OutputCollector<JsonHolder, JsonHolder> output)
        throws Exception
     {
       for(int i = 0 ; i < aggs.length ; i++)
       {
-        Item part = aggs[i].getPartial();
+        JsonValue part = aggs[i].getPartial();
         aggArray.set(i, part);
       }
 
-      output.collect(key, aggItem);
+      output.collect(keyHolder, aggArrayHolder);
     }  
   }
 
@@ -290,8 +289,8 @@ public class MRAggregate extends MapReduceBaseExpr
    */
   public static class AggFinalEval extends AggCombineEval
   {
-    protected JFunction finalFn;
-    protected Item[]    finalArgs;
+    protected JaqlFunction finalFn;
+    protected JsonValue[] finalArgs;
 
     /*
      * (non-Javadoc)
@@ -302,7 +301,7 @@ public class MRAggregate extends MapReduceBaseExpr
     {
       super.configure(job);
       finalFn = compile(job, "final", 0);
-      finalArgs = new Item[2];
+      finalArgs = new JsonValue[2];
     }
 
     /*
@@ -312,22 +311,22 @@ public class MRAggregate extends MapReduceBaseExpr
      *      org.apache.hadoop.mapred.OutputCollector)
      */
     @Override
-    protected void processAggs(Item key, OutputCollector<Item, Item> output)
+    protected void processAggs(JsonHolder keyHolder, OutputCollector<JsonHolder, JsonHolder> output)
        throws Exception
     {
       for(int i = 0 ; i < aggs.length ; i++)
       {
-        Item item = aggs[i].getFinal();
-        aggArray.set(i, item);
+        JsonValue value = aggs[i].getFinal();
+        aggArray.set(i, value);
       }
 
-      finalArgs[0] = key;
-      finalArgs[1] = aggItem;
-      Iter iter = finalFn.iter(context, finalArgs);
-      Item item;
-      while( (item = iter.next()) != null )
-      {
-        output.collect(key, item);
+      finalArgs[0] = keyHolder.value;
+      finalArgs[1] = aggArray;
+      JsonIterator iter = finalFn.iter(context, finalArgs);
+      JsonHolder valueHolder = new JsonHolder();
+      for (JsonValue value : iter) {
+        valueHolder.value = value;
+        output.collect(keyHolder, valueHolder);
       }
     }
   }

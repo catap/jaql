@@ -25,5 +25,5 @@ public interface OutputAdapter extends Adapter
    * @return ItemWriter
    * @throws Exception
    */
-  ItemWriter getItemWriter() throws Exception;
+  ClosableJsonWriter getJsonWriter() throws Exception;
 }

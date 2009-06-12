@@ -15,95 +15,80 @@
  */
 package com.ibm.jaql.json.schema;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.io.serialization.BasicSerializer;
-import com.ibm.jaql.io.serialization.def.DefaultFullSerializer;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.Item.Encoding;
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
 
-/*******************************************************************************
- * At the moment, a scheme provides methods that concern schema matching and 
- * serialization of schema descriptions.
- * 
- * 
- * Data model: ----------- value ::= record | array | atom record ::= { (string:
- * value)* } array ::= [ (value)* ] atom ::= null | string | number | boolean |
- * ...
- * 
- * Schema language: ---------------- type ::= oneType ('|' oneType)* oneType ::=
- * anyType | atomType | arrayType | recordType anyType ::= '*' atomType ::= ID //
- * null | string | number | boolean | ... arrayType ::= [ ( type (',' type)*
- * (repeat)? )? ] typeList ::= repeat ::= <min,max> // min is integer >= 0, max
- * is integer >= min or * for unbounded | <count> // == <count,count> recordType
- * ::= { fieldType* } fieldType ::= name (fieldOpt)? ':' type fieldOpt ::= '*' //
- * zero or more fields with this prefix have this type | '?' // optional field
- * with this name and type
- * 
- * 
- ******************************************************************************/
-@SuppressWarnings("unchecked")
+import com.ibm.jaql.json.type.JsonSchema;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
+import com.ibm.jaql.util.Bool3;
+
+/** Superclass for schemata of JSON values. */
 public abstract class Schema
 {
-  protected final static byte UNKNOWN_TYPE = 0;
-  protected final static byte ANY_TYPE     = 1;
-  protected final static byte ATOM_TYPE    = 2;
-  protected final static byte ARRAY_TYPE   = 3;
-  protected final static byte RECORD_TYPE  = 4;
-  protected final static byte OR_TYPE      = 5;
-
-  public Schema               nextSchema;      // used by Array and Or Schemas
-
-  protected final static BasicSerializer<JString> serializer 
-    = (BasicSerializer<JString>)DefaultFullSerializer.getDefaultInstance().getSerializer(Encoding.STRING);
-  
-  /**
-   * @param item
-   * @return
-   * @throws Exception
-   */
-  public abstract boolean matches(Item item) throws Exception;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.lang.Object#toString()
-   */
-  public abstract String toString();
-
-  /**
-   * @param out
-   * @throws IOException
-   */
-  public abstract void write(DataOutput out) throws IOException;
-
-  /**
-   * @param in
-   * @return
-   * @throws IOException
-   */
-  public static Schema read(DataInput in) throws IOException
+  public enum SchemaType
   {
-    byte b = in.readByte();
-    switch (b)
+    ANY, ARRAY, BINARY, BOOLEAN, DATE, DECFLOAT, DOUBLE, GENERIC, LONG, NULL, NUMERIC, OR, RECORD, STRING
+  }
+  
+  // -- common argument names ---------------------------------------------------------------------
+  
+  public static final JsonString PAR_MIN = new JsonString("min");
+  public static final JsonString PAR_MAX = new JsonString("max");
+  public static final JsonString PAR_MIN_LENGTH = new JsonString("minLength");
+  public static final JsonString PAR_MAX_LENGTH = new JsonString("maxLength");
+  public static final JsonString PAR_VALUE = new JsonString("value");
+
+  // -- abstract methods --------------------------------------------------------------------------
+
+  public abstract SchemaType getSchemaType();
+
+  public abstract Bool3 isNull();
+  
+  public abstract Bool3 isConst();
+  
+  public abstract Bool3 isArray();
+  
+  public abstract boolean matches(JsonValue value) throws Exception;
+  
+  
+  // -- printing and parsing ----------------------------------------------------------------------
+  
+  
+  public String toString()
+  {
+    JsonSchema s = new JsonSchema(this);
+    try
     {
-      case UNKNOWN_TYPE :
-        return null;
-      case ANY_TYPE :
-        return new SchemaAny();
-      case ATOM_TYPE :
-        return new SchemaAtom(in);
-      case ARRAY_TYPE :
-        return new SchemaArray(in);
-      case RECORD_TYPE :
-        return new SchemaRecord(in);
-      case OR_TYPE :
-        return new SchemaOr(in);
-      default :
-        throw new IOException("invalid schema type: " + b);
+      return JsonValue.printToString(s);
+    } catch (IOException e)
+    {
+      throw new UndeclaredThrowableException(e);
     }
   }
+
+  /** Parse a schema from the specified string. The string must not contain the "schema" keyword
+   * of Jaql, e.g., <code>long</code> is valid but <code>schema long</code> is not. */
+  public static final Schema parse(String s) throws IOException
+  {
+    
+    JaqlLexer lexer = new JaqlLexer(new StringReader(s));
+    JaqlParser parser = new JaqlParser(lexer);
+    try
+    {
+      return parser.schema();
+    } catch (RecognitionException e)
+    {
+      throw new IOException(e);
+    } catch (TokenStreamException e)
+    {
+      throw new IOException(e);
+    }
+  } 
 }

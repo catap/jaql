@@ -21,36 +21,37 @@ import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.ibm.jaql.io.converter.*;
+import com.ibm.jaql.io.converter.FromJson;
+import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
 
 /** Super class for registry formats that serialize the (key, value)-pairs in the registry
- * to {@link JRecord}s. Subclasses provide methods that convert keys/values to {@link Items}s
+ * to {@link JsonRecord}s. Subclasses provide methods that convert keys/values to {@link Items}s
  * and vice versa.
  * 
  * @param <K>
  * @param <V>
  */
 public abstract class JsonRegistryFormat<K, V>
-    implements RegistryFormat<K, V, JRecord>
+    implements RegistryFormat<K, V, JsonRecord>
 {
 
   public static final String KEY_NAME = "key";
 
   public static final String VAL_NAME = "val";
 
-  private ToItem<K>        toKeyConverter;
+  private ToJson<K>        toKeyConverter;
 
-  private ToItem<V>        toValConverter;
+  private ToJson<V>        toValConverter;
 
-  private FromItem<K>          fromKeyConverter;
+  private FromJson<K>          fromKeyConverter;
 
-  private FromItem<V>          fromValConverter;
+  private FromJson<V>          fromValConverter;
 
   /**
    * 
@@ -66,22 +67,22 @@ public abstract class JsonRegistryFormat<K, V>
   /**
    * @return
    */
-  protected abstract ToItem<K> createToKeyConverter();
+  protected abstract ToJson<K> createToKeyConverter();
 
   /**
    * @return
    */
-  protected abstract ToItem<V> createToValConverter();
+  protected abstract ToJson<V> createToValConverter();
 
   /**
    * @return
    */
-  protected abstract FromItem<K> createFromKeyConverter();
+  protected abstract FromJson<K> createFromKeyConverter();
 
   /**
    * @return
    */
-  protected abstract FromItem<V> createFromValConverter();
+  protected abstract FromJson<V> createFromValConverter();
 
   /*
    * (non-Javadoc)
@@ -89,13 +90,13 @@ public abstract class JsonRegistryFormat<K, V>
    * @see com.ibm.jaql.io.registry.RegistryFormat#convert(java.lang.Object,
    *      java.lang.Object)
    */
-  public MemoryJRecord convert(K key, V value)
+  public BufferedJsonRecord convert(K key, V value)
   {
-    MemoryJRecord r = new MemoryJRecord();
-    Item kTgt = toKeyConverter.createTarget();
-    Item vTgt = toValConverter.createTarget();
-    toKeyConverter.convert(key, kTgt);
-    toValConverter.convert(value, vTgt);
+    BufferedJsonRecord r = new BufferedJsonRecord();
+    JsonValue kTgt = toKeyConverter.createInitialTarget();
+    JsonValue vTgt = toValConverter.createInitialTarget();
+    kTgt = toKeyConverter.convert(key, kTgt);
+    vTgt = toValConverter.convert(value, vTgt);
     r.add(KEY_NAME, kTgt);
     r.add(VAL_NAME, vTgt);
     return r;
@@ -106,11 +107,11 @@ public abstract class JsonRegistryFormat<K, V>
    * 
    * @see com.ibm.jaql.io.registry.RegistryFormat#convertKey(com.ibm.jaql.json.type.JValue)
    */
-  public K convertKey(JRecord external)
+  public K convertKey(JsonRecord external)
   {
-    Item kItem = external.getValue(KEY_NAME);
-    K kTgt = fromKeyConverter.createTarget();
-    fromKeyConverter.convert(kItem, kTgt);
+    JsonValue kValue = external.getValue(KEY_NAME);
+    K kTgt = fromKeyConverter.createInitialTarget();
+    kTgt = fromKeyConverter.convert(kValue, kTgt);
     return kTgt;
   }
 
@@ -119,11 +120,11 @@ public abstract class JsonRegistryFormat<K, V>
    * 
    * @see com.ibm.jaql.io.registry.RegistryFormat#convertVal(com.ibm.jaql.json.type.JValue)
    */
-  public V convertVal(JRecord external)
+  public V convertVal(JsonRecord external)
   {
-    Item vItem = external.getValue(VAL_NAME);
-    V vTgt = fromValConverter.createTarget();
-    fromValConverter.convert(vItem, vTgt);
+    JsonValue vValue= external.getValue(VAL_NAME);
+    V vTgt = fromValConverter.createInitialTarget();
+    vTgt = fromValConverter.convert(vValue, vTgt);
     return vTgt;
   }
 
@@ -138,11 +139,11 @@ public abstract class JsonRegistryFormat<K, V>
   {
     // Array of records
     JsonParser parser = new JsonParser(input);
-    JArray arr = (JArray) parser.TopVal().get();
+    JsonArray arr = (JsonArray) parser.TopVal();
     long n = arr.count();
     for (long i = 0; i < n; i++)
     {
-      JRecord r = (JRecord) arr.nth(i).get();
+      JsonRecord r = (JsonRecord) arr.nth(i);
       K kVal = convertKey(r);
       V vVal = convertVal(r);
       registry.register(kVal, vVal);
@@ -160,14 +161,14 @@ public abstract class JsonRegistryFormat<K, V>
   {
     // Array of records
     PrintStream pout = new PrintStream(out);
-    SpillJArray arr = new SpillJArray();
+    SpilledJsonArray arr = new SpilledJsonArray();
     while (iter.hasNext())
     {
       Map.Entry<K, V> entry = iter.next();
-      JRecord r = convert(entry.getKey(), entry.getValue());
+      JsonRecord r = convert(entry.getKey(), entry.getValue());
       arr.addCopy(r);
     }
-    arr.print(pout);
+    JsonValue.print(pout, arr);
     pout.flush();
   }
 

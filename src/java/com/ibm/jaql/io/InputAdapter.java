@@ -26,6 +26,6 @@ public interface InputAdapter extends Adapter
    * @return ItemReader
    * @throws Exception
    */
-  ItemReader getItemReader() throws Exception;
+  ClosableJsonIterator getJsonReader() throws Exception;
 
 }

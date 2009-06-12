@@ -15,10 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -44,29 +43,27 @@ public class RenameFieldsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonRecord eval(Context context) throws Exception
   {
-    Item oldItem = exprs[0].eval(context);
-    JRecord oldRec = (JRecord) oldItem.get();
+    JsonRecord oldRec = (JsonRecord) exprs[0].eval(context);
     if (oldRec == null)
     {
-      return Item.NIL;
+      return null;
     }
 
-    JRecord map = (JRecord) exprs[1].eval(context).get();
+    JsonRecord map = (JsonRecord) exprs[1].eval(context);
     if (map == null || map.arity() == 0)
     {
-      return oldItem;
+      return oldRec;
     }
 
     int n = oldRec.arity();
-    MemoryJRecord newRec = new MemoryJRecord(n); // TODO: memory
-    Item newItem = new Item(newRec); // TODO: memory
+    BufferedJsonRecord newRec = new BufferedJsonRecord(n); // TODO: memory
     // TODO: create a JRecord that references another JRecord and overrides fields 
     for (int i = 0; i < n; i++)
     {
-      JString name = oldRec.getName(i);
-      JString name2 = (JString) map.getValue(name).get();
+      JsonString name = oldRec.getName(i);
+      JsonString name2 = (JsonString) map.getValue(name);
       if (name2 != null)
       {
         name = name2;
@@ -74,6 +71,6 @@ public class RenameFieldsFn extends Expr
       newRec.add(name, oldRec.getValue(i));
     }
 
-    return newItem;
+    return newRec;
   }
 }

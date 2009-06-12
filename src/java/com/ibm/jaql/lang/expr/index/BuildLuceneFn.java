@@ -26,12 +26,14 @@ import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.IndexWriter;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
@@ -39,6 +41,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "buildLucene", minArgs = 3, maxArgs = 4)
 public class BuildLuceneFn extends Expr
 {
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
+  
   public BuildLuceneFn(Expr[] exprs)
   {
     super(exprs);
@@ -50,28 +54,26 @@ public class BuildLuceneFn extends Expr
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    Item fdItem = exprs[1].eval(context);
-    JRecord fd = (JRecord)fdItem.get();
+    JsonRecord fd = (JsonRecord)exprs[1].eval(context);
     if( fd == null )
     {
-      return Item.NIL;
+      return null;
     }
-    JString loc = (JString)fd.getValue("location").get();
+    JsonString loc = (JsonString)fd.getValue("location");
     if( loc == null )
     {
-      return Item.NIL;
+      return null;
     }
-    JFunction keyFn = (JFunction)exprs[2].eval(context).get();
+    JaqlFunction keyFn = (JaqlFunction)exprs[2].eval(context);
     if( keyFn == null )
     {
-      return Item.NIL;
+      return null;
     }
-    JFunction valFn = (JFunction)exprs[3].eval(context).get();
-    Iter iter = exprs[0].iter(context);
-    Item item;
-    Item[] fnArgs = new Item[1];
+    JaqlFunction valFn = (JaqlFunction)exprs[3].eval(context);
+    JsonIterator iter = exprs[0].iter(context);
+    JsonValue[] fnArgs = new JsonValue[1];
     Analyzer analyzer = new StandardAnalyzer();
     IndexWriter writer = new IndexWriter(loc.toString(), analyzer, true);
     ByteArrayOutputStream buf = null;
@@ -82,15 +84,14 @@ public class BuildLuceneFn extends Expr
       out = new DataOutputStream(buf);
     }
 
-    while( (item = iter.next()) != null )
+    for (JsonValue value : iter)
     {
-      fnArgs[0] = item;
-      Iter keyIter = keyFn.iter(context, fnArgs);
-      Item key;
+      fnArgs[0] = value;
+      JsonIterator keyIter = keyFn.iter(context, fnArgs);
       Document doc = null;
-      while( (key = keyIter.next()) != null )
+      for (JsonValue key : keyIter)
       {
-        JString jkey = (JString)key.get();
+        JsonString jkey = (JsonString)key;
         if( doc == null )
         {
           doc = new Document();
@@ -102,18 +103,17 @@ public class BuildLuceneFn extends Expr
       {
         if( valFn != null )
         {
-          Iter valIter = valFn.iter(context, fnArgs);
-          Item val;
-          while( (val = valIter.next()) != null )
+          JsonIterator valIter = valFn.iter(context, fnArgs);
+          for (JsonValue val : valIter)
           {
-            JRecord jrec = (JRecord)val.get();
+            JsonRecord jrec = (JsonRecord)val;
             int n = jrec.arity();
             for( int i = 0 ; i < n ; i++ )
             {
-              JString name = jrec.getName(i);
-              Item fval = jrec.getValue(i);
+              JsonString name = jrec.getName(i);
+              JsonValue fval = jrec.getValue(i);
               buf.reset();
-              fval.write(out);
+              serializer.write(out, fval);
               out.flush();
               byte[] bytes = buf.toByteArray();
               doc.add(new Field(name.toString(), bytes, Store.COMPRESS));
@@ -126,7 +126,7 @@ public class BuildLuceneFn extends Expr
         
     writer.optimize();
     writer.close();
-    return fdItem;
+    return fd;
   }
 
 }

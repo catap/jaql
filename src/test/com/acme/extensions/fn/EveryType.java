@@ -15,20 +15,20 @@
  */
 package com.acme.extensions.fn;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.JBinary;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JDate;
-import com.ibm.jaql.json.type.JDecimal;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.JIterator;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonBinary;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.JaqlFunction;
 
 /**
  * 
@@ -40,29 +40,29 @@ public class EveryType
    * @return
    * @throws Exception
    */
-  public JIterator eval(final JIterator vals) throws Exception
+  public JsonIterator eval(final JsonIterator vals) throws Exception
   {
     if (vals == null)
     {
       return null;
     }
 
-    return new JIterator() {
+    return new JsonIterator() {
       // These are both types and encodings
-      MemoryJRecord rec  = new MemoryJRecord();
-      JBool         bool = new JBool();
-      JString       str  = new JString();
-      JBinary       bin  = new JBinary();
-      JDate         date = new JDate();
-      JFunction     fn   = new JFunction();
+      BufferedJsonRecord rec  = new BufferedJsonRecord();
+      JsonBool         bool = new JsonBool();
+      JsonString       str  = new JsonString();
+      JsonBinary       bin  = new JsonBinary();
+      JsonDate         date = new JsonDate();
+      JaqlFunction     fn   = new JaqlFunction();
 
       // These are encodings of JArray
-      SpillJArray   arrs = new SpillJArray();
-      FixedJArray   arrf = new FixedJArray();
+      SpilledJsonArray   arrs = new SpilledJsonArray();
+      BufferedJsonArray   arrf = new BufferedJsonArray();
 
       // These are encodings of JNumber
-      JDecimal      dec  = new JDecimal();
-      JLong         lng  = new JLong();
+      JsonDecimal      dec  = new JsonDecimal();
+      JsonLong         lng  = new JsonLong();
 
       public boolean moveNext() throws Exception
       {
@@ -70,18 +70,18 @@ public class EveryType
         {
           return false;
         }
-        JValue v = vals.current();
+        JsonValue v = vals.current();
         if (v == null)
         {
           // Just return nulls
-          current = null;
+          currentValue = null;
         }
-        else if (v instanceof SpillJArray)
+        else if (v instanceof SpilledJsonArray)
         {
           // Keep every other entry of the array
-          SpillJArray a = (SpillJArray) v;
+          SpilledJsonArray a = (SpilledJsonArray) v;
           arrs.clear();
-          JIterator iter = a.jIterator();
+          JsonIterator iter = a.iter();
           boolean addit = true;
           while (iter.moveNext())
           {
@@ -91,67 +91,67 @@ public class EveryType
             }
             addit = !addit;
           }
-          current = arrs;
+          currentValue = arrs;
         }
-        else if (v instanceof FixedJArray)
+        else if (v instanceof BufferedJsonArray)
         {
           // Reverse the array
-          FixedJArray a = (FixedJArray) v;
+          BufferedJsonArray a = (BufferedJsonArray) v;
           int n = a.size();
           arrf.resize(n);
           for (int i = 0; i < n; i++)
           {
             arrf.set(i, a.get(n - 1 - i));
           }
-          current = arrf;
+          currentValue = arrf;
         }
-        else if (v instanceof JRecord)
+        else if (v instanceof JsonRecord)
         {
           // Add "my_" before all the names of the record
-          JRecord r = (JRecord) v;
+          JsonRecord r = (JsonRecord) v;
           rec.clear();
           for (int i = 0; i < r.arity(); i++)
           {
-            JString oldName = r.getName(i);
-            v = r.getJValue(i);
+            JsonString oldName = r.getName(i);
+            v = r.getValue(i);
             String nm = "my_" + oldName;
             rec.add(nm, v);
           }
-          current = rec;
+          currentValue = rec;
         }
-        else if (v instanceof JBool)
+        else if (v instanceof JsonBool)
         {
           // Negate bools
-          JBool b = (JBool) v;
+          JsonBool b = (JsonBool) v;
           bool.setValue(!b.getValue());
-          current = bool;
+          currentValue = bool;
         }
-        else if (v instanceof JString)
+        else if (v instanceof JsonString)
         {
           // Add "hi, " before JStrings
-          JString s = (JString) v;
+          JsonString s = (JsonString) v;
           str.set("hi, " + s);
-          current = str;
+          currentValue = str;
         }
-        else if (v instanceof JNumber)
+        else if (v instanceof JsonNumber)
         {
           // Set a number to the negated or floor the value (and muck with encodings)
-          JNumber n = (JNumber) v;
-          if (n instanceof JDecimal)
+          JsonNumber n = (JsonNumber) v;
+          if (n instanceof JsonDecimal)
           {
             lng.setValue(n.longValue());
-            current = lng;
+            currentValue = lng;
           }
-          else if (n instanceof JLong)
+          else if (n instanceof JsonLong)
           {
             dec.setValue(-n.longValue());
-            current = dec;
+            currentValue = dec;
           }
         }
-        else if (v instanceof JBinary)
+        else if (v instanceof JsonBinary)
         {
           // Add 0xABADDEED before JBinary
-          JBinary b = (JBinary) v;
+          JsonBinary b = (JsonBinary) v;
           byte[] bytes1 = b.getInternalBytes(); // Don't modify this!  v, b, bytes1 are not ours!
           int n = b.getLength();
           bin.ensureCapacity(n + 4);
@@ -162,21 +162,21 @@ public class EveryType
           bytes2[3] = (byte) 0xED;
           System.arraycopy(bytes1, 0, bytes2, 4, n);
           bin.setBytes(bytes2, n + 4);
-          current = bin;
+          currentValue = bin;
         }
-        else if (v instanceof JDate)
+        else if (v instanceof JsonDate)
         {
           // Add one hour to the date
-          JDate d = (JDate) v;
+          JsonDate d = (JsonDate) v;
           date.setMillis(d.getMillis() + 60 * 60 * 1000);
-          current = date;
+          currentValue = date;
         }
-        else if (v instanceof JFunction)
+        else if (v instanceof JaqlFunction)
         {
           // TODO: Java functions need the context to be evaluated, and take Item arguments...
-          JFunction f = (JFunction) v;
+          JaqlFunction f = (JaqlFunction) v;
           fn.setCopy(f);
-          current = f;
+          currentValue = f;
         }
         else
         {

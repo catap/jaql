@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.CopyField;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -62,7 +62,7 @@ public class ConstFieldAccess extends Rewrite
     }
 
     ConstExpr c = (ConstExpr) nameExpr;
-    JString name = (JString) c.value.get();
+    JsonString name = (JsonString) c.value;
     Expr replaceBy = null;
     if (name == null)
     {
@@ -71,13 +71,13 @@ public class ConstFieldAccess extends Rewrite
     else if (recExpr instanceof ConstExpr)
     {
       c = (ConstExpr) recExpr;
-      if (!(c.value.get() instanceof JRecord))
+      if (!(c.value instanceof JsonRecord))
       {
         return false;
       }
-      JRecord rec = (JRecord) c.value.get();
-      Item item = rec.getValue(name);
-      c.value = item;
+      JsonRecord rec = (JsonRecord) c.value;
+      JsonValue value = rec.getValue(name);
+      c.value = value;
       replaceBy = c;
     }
     else  // recExpr instanceof RecordExpr
@@ -119,7 +119,7 @@ public class ConstFieldAccess extends Rewrite
       }
       if (replaceBy == null)
       {
-        replaceBy = new ConstExpr(Item.NIL);
+        replaceBy = new ConstExpr(null);
       }
     }
     expr.replaceInParent(replaceBy);
