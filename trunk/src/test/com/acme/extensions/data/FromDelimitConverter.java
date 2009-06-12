@@ -21,15 +21,15 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.JaqlBaseTestCase;
-import com.ibm.jaql.io.converter.ToItem;
-import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * This converter is used to convert a text-based data file, with an optional header, into
@@ -39,7 +39,7 @@ import com.ibm.jaql.json.type.MemoryJRecord;
  * Otherwise, the header is used to construct record field names. The header is assumed to be an
  * array of field names; it can be provided by reading a file of such names or as a literal array. 
  */
-public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable, Writable> {
+public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable, Writable> {
   
   private static final Log LOG             = LogFactory.getLog(FromDelimitConverter.class.getName());
   
@@ -47,23 +47,23 @@ public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable,
   public static final String HEADER_NAME = "header";
   
   private String delimitter = ",";
-  private JArray header = null;
+  private JsonArray header = null;
   
   @Override
-  public void init(JRecord options)
+  public void init(JsonRecord options)
   {
     if(options != null) {
       // 1. check for delimiter override
-      Item arg = options.getValue(DELIMITER_NAME);
-      if(!arg.isNull()) {
-        delimitter = arg.get().toString();
+      JsonValue arg = options.getValue(DELIMITER_NAME);
+      if(arg != null) {
+        delimitter = arg.toString();
       }
       
       // 2. check for header
       arg = options.getValue(HEADER_NAME);
-      if(!arg.isNull()) {
+      if(arg != null) {
         try {
-          header = (JArray) arg.get();
+          header = (JsonArray) arg;
         } catch(Exception e) {
           LOG.info("exception with header: " + arg + "," + e);
         }
@@ -77,7 +77,7 @@ public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToItem<WritableComparable> createKeyConverter()
+  protected ToJson<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -88,12 +88,12 @@ public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected ToItem<Writable> createValConverter()
+  protected ToJson<Writable> createValueConverter()
   {
-    return new ToItem<Writable>() {
-      public void convert(Writable src, Item tgt)
+    return new ToJson<Writable>() {
+      public JsonValue convert(Writable src, JsonValue tgt)
       {
-        if (src == null || tgt == null) return;
+        if (src == null) return null;
         Text t = null;
         if (src instanceof Text)
         {
@@ -107,49 +107,50 @@ public class FromDelimitConverter extends HadoopRecordToItem<WritableComparable,
         String[] vals = new String(t.getBytes()).split(delimitter);
         try {
           if(header == null) {
-            setArray(vals, (FixedJArray)tgt.get());
+            setArray(vals, (BufferedJsonArray)tgt);
           } else {
-            setRecord(vals, header, (MemoryJRecord)tgt.get());
+            setRecord(vals, header, (BufferedJsonRecord)tgt);
           }
+          return tgt;
         } catch(Exception e) {
           throw new RuntimeException(e);
         }
       }
       
-      private void setRecord(String[] vals, JArray names, MemoryJRecord tgt) throws Exception
+      private void setRecord(String[] vals, JsonArray names, BufferedJsonRecord tgt) throws Exception
       {
         int n = (int) names.count();
         if(n != vals.length) 
           throw new RuntimeException("values and header disagree in length: " + vals.length + "," + n);
         
         for(int i = 0; i < n; i++) {
-          JString name = (JString) names.nth(i).get();
-          ((JString)tgt.getRequired(name.toString()).getNonNull()).set(vals[i]);
+          JsonString name = (JsonString) names.nth(i);
+          ((JsonString)tgt.getRequired(name.toString())).set(vals[i]);
         }
       }
       
-      private void setArray(String[] vals, FixedJArray tgt) {
+      private void setArray(String[] vals, BufferedJsonArray tgt) {
         tgt.clear();
         int n = vals.length;
         for(int i = 0; i < n; i++) {
-          tgt.add(new JString(vals[i])); // FIXME: memory
+          tgt.add(new JsonString(vals[i])); // FIXME: memory
         }
       }
       
-      public Item createTarget()
+      public JsonValue createInitialTarget()
       {
         if(header == null)
-          return new Item(new FixedJArray());
+          return new BufferedJsonArray();
         else {
           int n = (int)header.count();
-          MemoryJRecord r = new MemoryJRecord(n);
+          BufferedJsonRecord r = new BufferedJsonRecord(n);
           try {
             for(int i = 0; i < n; i++) {
-              r.add( (JString)header.nth(i).getNonNull(), new JString());
+              r.add( JaqlUtil.enforceNonNull((JsonString)header.nth(i)), new JsonString());
             }
           } catch(Exception e) { throw new RuntimeException(e);}
 
-          return new Item(r);
+          return r;
         }
       }
     };

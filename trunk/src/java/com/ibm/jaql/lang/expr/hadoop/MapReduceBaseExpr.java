@@ -35,16 +35,17 @@ import com.ibm.jaql.io.hadoop.HadoopAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopSerialization;
+import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.registry.RegistryUtil;
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.util.ItemComparator;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.DefaultJsonComparator;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -69,7 +70,7 @@ public abstract class MapReduceBaseExpr extends Expr
 
   protected int                 numInputs;
   protected JobConf             conf;
-  protected Item                outArgs;
+  protected JsonValue              outArgs;
 
   /**
    * mapReduce( record args )
@@ -105,12 +106,12 @@ public abstract class MapReduceBaseExpr extends Expr
    * @return
    * @throws Exception
    */
-  protected final JRecord baseSetup(Context context) throws Exception
+  protected final JsonRecord baseSetup(Context context) throws Exception
   {
-    JRecord args = (JRecord) exprs[0].eval(context).getNonNull();
-    Item inArgs = args.getRequired("input");
+    JsonRecord args = JaqlUtil.enforceNonNull((JsonRecord) exprs[0].eval(context));    
+    JsonValue inArgs = args.getRequired("input");
     outArgs = args.getRequired("output");
-    JRecord options = (JRecord) args.getNull("options");
+    JsonRecord options = (JsonRecord) args.getValue("options");
 
     conf = new JobConf();
     File extensions = ClassLoaderMgr.getExtensionJar();
@@ -127,10 +128,10 @@ public abstract class MapReduceBaseExpr extends Expr
     String jobName = "jaql job";
     if (options != null)
     {
-      Item nameItem = options.getValue("jobname");
-      if (nameItem != null)
+      JsonValue nameValue = options.getValue("jobname");
+      if (nameValue != null)
       {
-        jobName = nameItem.toString();
+        jobName = nameValue.toString();
       }
     }
     conf.setJobName(jobName);
@@ -146,9 +147,9 @@ public abstract class MapReduceBaseExpr extends Expr
     //
     // Setup the input
     //
-    if (inArgs.getNonNull() instanceof JArray)
+    if (inArgs instanceof JsonArray)
     {
-      JArray inArray = (JArray) inArgs.get();
+      JsonArray inArray = (JsonArray) inArgs;
       numInputs = (int) inArray.count();
       if (numInputs < 1)
       {
@@ -160,7 +161,7 @@ public abstract class MapReduceBaseExpr extends Expr
       numInputs = 1;
     }
     conf.setInt(numInputsName, numInputs);
-    HadoopInputAdapter<?> inAdapter = (HadoopInputAdapter<?>) JaqlUtil
+    HadoopInputAdapter inAdapter = (HadoopInputAdapter) JaqlUtil
         .getAdapterStore().input.getAdapter(inArgs);
     inAdapter.setParallel(conf);
     //ConfiguratorUtil.writeToConf(inAdapter, conf, inArgs);
@@ -170,13 +171,13 @@ public abstract class MapReduceBaseExpr extends Expr
     
     // TODO: currently assumes usage of  FullSerializer#getDefault()
     HadoopSerialization.register(conf);
-    conf.setOutputKeyComparatorClass(ItemComparator.class);
+    conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
     
     //
     // Setup the output
     //
 //    MemoryJRecord outArgRec = (MemoryJRecord) outArgs.getNonNull();
-    HadoopOutputAdapter<?> outAdapter = (HadoopOutputAdapter<?>) JaqlUtil
+    HadoopOutputAdapter outAdapter = (HadoopOutputAdapter) JaqlUtil
         .getAdapterStore().output.getAdapter(outArgs);
     outAdapter.setParallel(conf);
 //    ConfiguratorUtil.writeToConf(outAdapter, conf, outArgRec);
@@ -198,7 +199,7 @@ public abstract class MapReduceBaseExpr extends Expr
    * @param inId
    */
   protected final void prepareFunction(String fnName, int numArgs,
-      JFunction fn, int inId)
+      JaqlFunction fn, int inId)
   {
     // TODO: pass functions (and their captures!) as strings through the job conf or a temp file?
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -209,7 +210,13 @@ public abstract class MapReduceBaseExpr extends Expr
       throw new RuntimeException(fnName + " function must have exactly "
           + numArgs + " argument(s)");
     }
-    fn.print(ps);
+    try
+    {
+      JsonValue.print(ps, fn);
+    } catch (IOException e)
+    {
+      throw new UndeclaredThrowableException(e);
+    }
     ps.flush();
     String s = outStream.toString();
     conf.set(IMP + "." + fnName + "." + inId, s);
@@ -260,7 +267,7 @@ public abstract class MapReduceBaseExpr extends Expr
      * @param inId
      * @return
      */
-    public JFunction compile(JobConf job, String fnName, int inId)
+    public JaqlFunction compile(JobConf job, String fnName, int inId)
     {
       try
       {
@@ -275,7 +282,7 @@ public abstract class MapReduceBaseExpr extends Expr
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
         JaqlParser parser = new JaqlParser(lexer);
         Expr expr = parser.parse();
-        JFunction fn = (JFunction) expr.eval(context).getNonNull();
+        JaqlFunction fn = JaqlUtil.enforceNonNull((JaqlFunction) expr.eval(context));
         return fn;
       }
       catch (Exception ex)
@@ -295,14 +302,14 @@ public abstract class MapReduceBaseExpr extends Expr
    * Used for both map and init functions
    */
   public static class MapEval extends RemoteEval
-      implements MapRunnable<Item, Item, Item, Item>
+      implements MapRunnable<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
     int         inputId     = 0;
-    JFunction   mapFn;
-    Item[]      outKeyValue = new Item[2];
+    JaqlFunction   mapFn;
     boolean     makePair    = false;
-    FixedJArray outPair;
-    Item        pairItem;
+    BufferedJsonArray outPair;
+    JsonHolder outKey = new JsonHolder();
+    JsonHolder outValue = new JsonHolder();
 
     /*
      * (non-Javadoc)
@@ -320,54 +327,47 @@ public abstract class MapReduceBaseExpr extends Expr
         if (makePair)
         {
           // FIXME: ideally we could know which input was used to when reading map/combine output files without encoding it on every record
-          outPair = new FixedJArray(2);
-          outPair.set(0, new Item(new JLong(inputId)));
-          pairItem = new Item(outPair);
+          outPair = new BufferedJsonArray(2);
+          outPair.set(0, new JsonLong(inputId));
         }
       }
       mapFn = compile(job, "map", inputId);
     }
 
-    /**
-     * 
-     */
-    // fails on java 1.5: @Override
-    public void run( RecordReader<Item, Item> input,
-                     OutputCollector<Item, Item> output, 
+    @Override
+    public void run( RecordReader<JsonHolder, JsonHolder> input,
+                     OutputCollector<JsonHolder, JsonHolder> output, 
                      Reporter reporter) 
       throws IOException
     {
       try
       {
-        Iter iter = mapFn.iter(context,new RecordReaderValueIter(input));
-        Item item;
-        while ((item = iter.next()) != null)
+        JsonIterator iter = mapFn.iter(context, new RecordReaderValueIter(input));
+        for (JsonValue v : iter)
         {
-          JArray pair = (JArray) item.get();
-          if (pair != null)
+          JsonArray inValue = (JsonArray)v;
+          assert inValue.count() == 2;
+            
+          outKey.value = inValue.nth(0);
+          if (makePair)
           {
-            assert pair.count() == 2;
-            Item val;
-            if (makePair)
-            {
-              outPair.set(1, pair.nth(1));
-              val = pairItem;
-            }
-            else 
-            {
-              val = pair.nth(1);
-            }
-            output.collect(pair.nth(0), val);
+            outPair.set(1, inValue.nth(1));
+            outValue.value = outPair;
           }
+          else 
+          {
+            outValue.value = inValue.nth(1);
+          }
+          output.collect(outKey, outValue);
         }
       }
       catch (IOException ex)
       {
         throw ex;
-      }
-      catch (Exception ex)
+      } 
+      catch (Exception e)
       {
-        throw new UndeclaredThrowableException(ex);
+        throw new UndeclaredThrowableException(e);
       }
     }
   }

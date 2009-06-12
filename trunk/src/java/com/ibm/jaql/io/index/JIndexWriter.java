@@ -23,7 +23,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
 public final class JIndexWriter implements Closeable
@@ -43,7 +45,9 @@ public final class JIndexWriter implements Closeable
   private long totalItems = 0;
   private long baseItems = 0;
   private long fileVersion;
-  private Item prevKey = new Item();
+  private JsonValue prevKey = null;
+  
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   public JIndexWriter(String filename) throws IOException
   {
@@ -82,11 +86,11 @@ public final class JIndexWriter implements Closeable
    * @param value
    * @throws IOException
    */
-  public void add(Item key, Item value) throws Exception
+  public void add(JsonValue key, JsonValue value) throws Exception
   {
     if( totalItems == 0 )
     {
-      key.write(summary);
+      serializer.write(summary, key);
       baseItems++;
       if( baseItems >= baseSkip )
       {
@@ -104,8 +108,8 @@ public final class JIndexWriter implements Closeable
       }
     }
     prevKey.setCopy(key);
-    key.write(base);
-    value.write(base);
+    serializer.write(base, key);
+    serializer.write(base, value);
     totalItems++;
   }
   
@@ -135,9 +139,9 @@ public final class JIndexWriter implements Closeable
 
     if( totalItems == 0 ) // if empty file, write null for min key
     {
-      prevKey.write(summary);
+      serializer.write(summary, prevKey);
     }
-    prevKey.write(summary); // write max key
+    serializer.write(summary, prevKey); // write max key
     BaseUtil.writeVULong(summary, totalItems);
     BaseUtil.writeVULong(summary, indexes.size());
 
@@ -152,7 +156,7 @@ public final class JIndexWriter implements Closeable
     summary.close();
   }
   
-  private void writeIndex(int level, Item key, long offset) throws IOException
+  private void writeIndex(int level, JsonValue key, long offset) throws IOException
   {
     Index index0 = indexes.get(level);
     Index index1 = indexes.get(level+1);
@@ -165,7 +169,7 @@ public final class JIndexWriter implements Closeable
       }
       writeIndex(level+1, key, index0.out.size());
     }
-    key.write(index0.out);
+    serializer.write(index0.out, key);
     BaseUtil.writeVULong(index0.out, offset);
     index0.numKeys++;
     index0.counter = 0;

@@ -19,14 +19,14 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * A configurator that specifically writes the JobConf for a given
  * FileInputFormat
  */
-public class FileInputConfigurator implements JSONConfSetter
+public class FileInputConfigurator implements InitializableConfSetter
 {
   protected String location;
 
@@ -35,9 +35,9 @@ public class FileInputConfigurator implements JSONConfSetter
    * 
    * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
    */
-  public void init(Item options) throws Exception
+  public void init(JsonValue options) throws Exception
   {
-    location = AdapterStore.getStore().getLocation((JRecord) options.get());
+    location = AdapterStore.getStore().getLocation((JsonRecord) options);
   }
 
   /*

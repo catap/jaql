@@ -27,14 +27,16 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
-/** Input format that reads an {@link JArray} from Hadoop's job configuration and creates
+/** Input format that reads an {@link JsonArray} from Hadoop's job configuration and creates
  * a single split for each element of that array. */
-public class ArrayInputFormat implements InputFormat<Item, Item>
+public class ArrayInputFormat implements InputFormat<JsonHolder, JsonHolder>
 {
 
   public static final String ARRAY_NAME     = "array";
@@ -47,7 +49,7 @@ public class ArrayInputFormat implements InputFormat<Item, Item>
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(org.apache.hadoop.mapred.InputSplit,
    *      org.apache.hadoop.mapred.JobConf, org.apache.hadoop.mapred.Reporter)
    */
-  public RecordReader<Item, Item> getRecordReader(InputSplit split,
+  public RecordReader<JsonHolder, JsonHolder> getRecordReader(InputSplit split,
       JobConf job, Reporter reporter) throws IOException
   {
     return new ArrayRecordReader(((ArrayInputSplit) split).getValue());
@@ -62,7 +64,7 @@ public class ArrayInputFormat implements InputFormat<Item, Item>
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException
   {
     // get the JArray of Items from the conf
-    JArray arr = null;
+    JsonArray arr = null;
     try
     {
       arr = ConfUtil.readConfArray(job, JOB_ARRAY_NAME);
@@ -107,17 +109,17 @@ public class ArrayInputFormat implements InputFormat<Item, Item>
 /**
  * 
  */
-class ArrayRecordReader implements RecordReader<Item, Item>
+class ArrayRecordReader implements RecordReader<JsonHolder, JsonHolder>
 {
 
-  private Item    splitValue;
+  private JsonValue splitValue;
 
   private boolean seen = false;
 
   /**
    * @param value
    */
-  public ArrayRecordReader(Item value)
+  public ArrayRecordReader(JsonValue value)
   {
     this.splitValue = value;
   }
@@ -137,7 +139,7 @@ class ArrayRecordReader implements RecordReader<Item, Item>
    * 
    * @see org.apache.hadoop.mapred.RecordReader#createKey()
    */
-  public Item createKey()
+  public JsonHolder createKey()
   {
     return null;
   }
@@ -147,9 +149,9 @@ class ArrayRecordReader implements RecordReader<Item, Item>
    * 
    * @see org.apache.hadoop.mapred.RecordReader#createValue()
    */
-  public Item createValue()
+  public JsonHolder createValue()
   {
-    return new Item();
+    return new JsonHolder();
   }
 
   /*
@@ -178,13 +180,13 @@ class ArrayRecordReader implements RecordReader<Item, Item>
    * @see org.apache.hadoop.mapred.RecordReader#next(java.lang.Object,
    *      java.lang.Object)
    */
-  public boolean next(Item key, Item value) throws IOException
+  public boolean next(JsonHolder key, JsonHolder value) throws IOException
   {
     if (!seen)
     {
       try
       {
-        value.setCopy(splitValue);
+        value.value = JsonValue.getCopy(splitValue, value.value);
         seen = true;
         return true;
       }
@@ -206,21 +208,21 @@ class ArrayRecordReader implements RecordReader<Item, Item>
  */
 class ArrayInputSplit implements InputSplit
 {
-
-  private Item value;
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
+  private JsonValue value;
 
   /**
    * 
    */
   public ArrayInputSplit()
   {
-    value = new Item();
+    value = null;
   }
 
   /**
    * @param v
    */
-  public ArrayInputSplit(Item v)
+  public ArrayInputSplit(JsonValue v)
   {
     value = v;
   }
@@ -228,7 +230,7 @@ class ArrayInputSplit implements InputSplit
   /**
    * @return
    */
-  public Item getValue()
+  public JsonValue getValue()
   {
     return value;
   }
@@ -260,7 +262,7 @@ class ArrayInputSplit implements InputSplit
    */
   public void readFields(DataInput in) throws IOException
   {
-    value.readFields(in);
+    value = serializer.read(in, value);
   }
 
   /*
@@ -270,7 +272,7 @@ class ArrayInputSplit implements InputSplit
    */
   public void write(DataOutput out) throws IOException
   {
-    value.write(out);
+    serializer.write(out, value);
   }
 
 }
@@ -278,19 +280,19 @@ class ArrayInputSplit implements InputSplit
 /**
  * 
  */
-class ArrayInputConfigurator implements JSONConfSetter
+class ArrayInputConfigurator implements InitializableConfSetter
 {
 
-  protected JRecord options;
+  protected JsonRecord options;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
    */
-  public void init(Item data) throws Exception
+  public void init(JsonValue data) throws Exception
   {
-    options = AdapterStore.getStore().input.getOption((JRecord) data.get());
+    options = AdapterStore.getStore().input.getOption((JsonRecord) data);
   }
 
   /*
@@ -319,7 +321,7 @@ class ArrayInputConfigurator implements JSONConfSetter
    */
   protected void set(JobConf conf) throws Exception
   {
-    JArray data = (JArray) options.getValue(ArrayInputFormat.ARRAY_NAME).get();
+    JsonArray data = (JsonArray) options.getValue(ArrayInputFormat.ARRAY_NAME);
     ConfUtil.writeConfArray(conf, ArrayInputFormat.JOB_ARRAY_NAME, data);
   }
 

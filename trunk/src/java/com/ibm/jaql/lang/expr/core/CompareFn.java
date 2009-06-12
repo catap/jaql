@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 
 /**
@@ -38,22 +38,22 @@ class CompareFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
-    Item item1 = exprs[0].eval(context);
-    Item item2 = exprs[1].eval(context);
-    int cmp = item1.compareTo(item2);
+    JsonValue value1 = exprs[0].eval(context);
+    JsonValue value2 = exprs[1].eval(context);
+    int cmp = JsonValue.compare(value1, value2);
     if (cmp < 0)
     {
-      return JLong.MINUS_ONE_ITEM;
+      return JsonLong.MINUS_ONE;
     }
     else if (cmp == 0)
     {
-      return JLong.ZERO_ITEM;
+      return JsonLong.ZERO;
     }
     else
     {
-      return JLong.ONE_ITEM;
+      return JsonLong.ONE;
     }
   }
 }

@@ -33,10 +33,9 @@ public class Context
 {
   // protected HashMap<Var,Object> varValues = new HashMap<Var,Object>();
   // protected HashMap<Expr,Item>  tempArrays = new HashMap<Expr,Item>(); // TODO: we could use one hashmap
-  protected HashMap<Pair<Expr,JFunction>,JFunction> fnMap = new HashMap<Pair<Expr,JFunction>,JFunction>(); // TODO: this will be a compiled expr soon 
-  protected Pair<Expr,JFunction> exprFnPair = new Pair<Expr, JFunction>();
+  protected HashMap<Pair<Expr,JaqlFunction>,JaqlFunction> fnMap = new HashMap<Pair<Expr,JaqlFunction>,JaqlFunction>(); // TODO: this will be a compiled expr soon 
+  protected Pair<Expr,JaqlFunction> exprFnPair = new Pair<Expr, JaqlFunction>();
   protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
-  
   // PyModule pyModule;
 
   /**
@@ -130,16 +129,16 @@ public class Context
     });
   }
 
-  public JFunction getCallable(Expr callSite, JFunction fn) throws Exception
+  public JaqlFunction getCallable(Expr callSite, JaqlFunction fn) throws Exception
   {
     exprFnPair.a = callSite;
     exprFnPair.b = fn;
-    JFunction fn2 = fnMap.get(exprFnPair);
+    JaqlFunction fn2 = fnMap.get(exprFnPair);
     if( fn2 == null )
     {
-      fn2 = new JFunction();
+      fn2 = new JaqlFunction();
       fn2.setCopy(fn);
-      Pair<Expr,JFunction> p = new Pair<Expr, JFunction>(callSite, fn);
+      Pair<Expr,JaqlFunction> p = new Pair<Expr, JaqlFunction>(callSite, fn);
       fnMap.put(p, fn2);
     }
     return fn2;
@@ -158,5 +157,4 @@ public class Context
     });
     return f;
   }
-
 }

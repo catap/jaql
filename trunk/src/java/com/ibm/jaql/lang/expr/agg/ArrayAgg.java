@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -29,20 +29,20 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "array", minArgs = 1, maxArgs = 1)
 public final class ArrayAgg extends AlgebraicAggregate
 {
-  private SpillJArray array = new SpillJArray();
+  private SpilledJsonArray array = new SpilledJsonArray();
   
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    Iter iter = exprs[0].iter(context);
+    JsonIterator iter = exprs[0].iter(context);
     initInitial(context);
-    Item arg;
-    while( (arg = iter.next()) != null )
+    
+    for (JsonValue arg : iter) 
     {
       addInitial(arg);
     }
-    Item result = getFinal();
-    return result;
+    
+    return getFinal();
   }
 
   /**
@@ -51,7 +51,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   @Override
   public void evalInitial(Context context) throws Exception
   {
-    Item arg = exprs[0].eval(context);
+    JsonValue arg = exprs[0].eval(context);
     addInitial(arg);
   }
 
@@ -78,30 +78,30 @@ public final class ArrayAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
-    array.addCopy(item);
+    array.addCopy(value);
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
-    return new Item(array);
+    return array;
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    JArray array2 = (JArray)item.get();
+    JsonArray array2 = (JsonArray)value;
     array.addCopyAll(array2.iter());
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
     if( array.isEmpty() )
     {
-      return Item.NIL;
+      return null;
     }
     return getPartial();
   }

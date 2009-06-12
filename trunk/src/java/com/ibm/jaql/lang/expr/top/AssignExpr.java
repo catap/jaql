@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.expr.top;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -71,10 +71,10 @@ public class AssignExpr extends TopExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     var.expr = exprs[0];
-    return new Item(new JString(var.name()));
+    return new JsonString(var.name());
 //    var.expr = exprs[0]; // TODO: hack: this is just signalling to use the value
 //    var.value = new Item(); // TODO: memory
 //    var.value.copy(exprs[0].eval(context)); // TODO: need deferred evaluation for top var defs; 

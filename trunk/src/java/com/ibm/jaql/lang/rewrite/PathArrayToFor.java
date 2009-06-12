@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
@@ -103,7 +102,7 @@ public class PathArrayToFor extends Rewrite
       Expr high;
       if( expr instanceof PathArrayHead )
       {
-        low  = new ConstExpr(Item.NIL);
+        low  = new ConstExpr(null);
         high = ((PathArrayHead)expr).lastIndex();
       }
       else if( expr instanceof PathArraySlice )
@@ -114,7 +113,7 @@ public class PathArrayToFor extends Rewrite
       else if( expr instanceof PathArrayTail )
       {
         low  = ((PathArrayTail)expr).firstIndex();
-        high  = new ConstExpr(Item.NIL);
+        high  = new ConstExpr(null);
       }
       else
       {

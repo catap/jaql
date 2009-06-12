@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -45,28 +44,28 @@ public class RemoveElementFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    final Iter tmpIter = exprs[0].iter(context);
-    final JLong indexLong = (JLong) exprs[1].eval(context).get();
+    final JsonIterator tmpIter = exprs[0].iter(context);
+    final JsonLong indexLong = (JsonLong) exprs[1].eval(context);
     if (indexLong == null || indexLong.value < 0)
     {
       return tmpIter;
     }
-    return new Iter() {
+    return new JsonIterator() {
       long index    = 0;
       long toDelete = indexLong.value;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        Item item = tmpIter.next();
-        if (index == toDelete)
-        {
-          item = tmpIter.next();
+        boolean hasNext = tmpIter.moveNext();
+        if (hasNext && index==toDelete) {
+          hasNext = tmpIter.moveNext();
           index++;
         }
         index++;
-        return item;
+        currentValue = tmpIter.current();
+        return hasNext;
       }
     };
   }

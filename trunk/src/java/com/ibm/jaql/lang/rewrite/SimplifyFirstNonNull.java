@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
+
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.nil.FirstNonNullFn;
@@ -52,7 +52,7 @@ public class SimplifyFirstNonNull extends Rewrite
       if (c instanceof ConstExpr)
       {
         ConstExpr ce = (ConstExpr) c;
-        if (ce.value.get() == null)
+        if (ce.value == null)
         {
           modified = true;
           fnn.removeChild(i);
@@ -64,7 +64,7 @@ public class SimplifyFirstNonNull extends Rewrite
     // If we have no arguments, replace firstNonNull with null
     if (last < 0)
     {
-      fnn.replaceInParent(new ConstExpr(Item.NIL));
+      fnn.replaceInParent(new ConstExpr(null));
       return true;
     }
 

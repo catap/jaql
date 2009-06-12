@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
@@ -45,9 +45,9 @@ public final class StringMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JsonString makeValue()
   {
-    return new Item(new JString());
+    return new JsonString();
   }
 
   /*
@@ -57,11 +57,12 @@ public final class StringMetaGetter extends MetaGetter
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void get(Object obj, Item target) throws IllegalArgumentException,
+  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
       IllegalAccessException, InvocationTargetException
   {
     String x = (String) getter.invoke(obj);
-    ((JString) target.get()).set(x);
+    ((JsonString) target).set(x);
+    return target;
   }
 
   /*

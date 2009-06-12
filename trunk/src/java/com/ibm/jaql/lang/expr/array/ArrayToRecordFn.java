@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -50,19 +50,15 @@ public class ArrayToRecordFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonRecord eval(final Context context) throws Exception
   {
-    final Iter names  = exprs[0].iter(context);
-    final Iter values = exprs[1].iter(context);
-    Item n,v;
-    MemoryJRecord rec = new MemoryJRecord(); // TODO: memory
-    Item result = new Item(rec); // TODO: memory
-    while( (n = names.next()) != null && 
-           (v = values.next()) != null )
+    final JsonIterator names  = exprs[0].iter(context);
+    final JsonIterator values = exprs[1].iter(context);
+    BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: memory
+    while( names.moveNext() && values.moveNext() )
     {
-      JString s = (JString)n.get();
-      rec.add(s,v);
+      rec.add((JsonString)names.current(), values.current());
     }
-    return result;
+    return rec;
   }
 }

@@ -20,7 +20,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.URI;
 
-import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JsonRecord;
 
 /** Input adapter that reads from a file.
  * 
@@ -34,7 +34,7 @@ public class FileStreamInputAdapter extends StreamInputAdapter
    *      com.ibm.jaql.json.type.JRecord)
    */
   @Override
-  protected InputStream openStream(String location, JRecord args)
+  protected InputStream openStream(String location, JsonRecord args)
       throws Exception
   {
     File f = null;

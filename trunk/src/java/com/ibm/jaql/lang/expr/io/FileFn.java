@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
@@ -26,7 +26,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName="file", minArgs=1, maxArgs=2)
 public class FileFn extends AbstractHandleFn
 {
-  private final static Item TYPE = new Item(new JString("local"));
+  private final static JsonValue TYPE = new JsonString("local");
   
   /**
    * exprs[0]: path
@@ -43,7 +43,7 @@ public class FileFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#getType()
    */
   @Override
-  protected Item getType()
+  protected JsonValue getType()
   {
     return TYPE;
   }

@@ -18,9 +18,9 @@ package com.ibm.jaql.io.hadoop;
 import org.apache.hadoop.mapred.JobConf;
 
 /**
- * @param <T>
+ * 
  */
-public interface ConfSetter<T>
+public interface ConfSetter
 {
 
   /**
@@ -32,12 +32,6 @@ public interface ConfSetter<T>
    * conf variable name for where to store outputoptions record
    */
   static String CONFOUTOPTIONS_NAME = "JAQL_OUTOPTIONS";
-
-  /**
-   * @param options
-   * @throws Exception
-   */
-  public void init(T options) throws Exception;
 
   /**
    * @param conf

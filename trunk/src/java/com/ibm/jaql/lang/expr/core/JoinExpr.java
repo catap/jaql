@@ -19,14 +19,14 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
-import com.ibm.jaql.json.util.ScalarIter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.util.ItemHashtable;
+import com.ibm.jaql.lang.util.JsonHashTable;
 
 /**
  * 
@@ -196,69 +196,67 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
     final int n = numBindings();
     final int lastPreserved = putPreservedFirst() - 1; // TODO: this should be compile time.
     
-    ItemHashtable temp = new ItemHashtable(n);
-    final ScalarIter[] nilIters = new ScalarIter[n];
+    JsonHashTable temp = new JsonHashTable(n);
+    final SingleJsonValueIterator[] nilIters = new SingleJsonValueIterator[n];
 
-    final SpillJArray nullKeyResults = new SpillJArray();
+    final SpilledJsonArray nullKeyResults = new SpilledJsonArray();
 
     for (int i = 0; i < n; i++ )
     {
-      binding(i).var.setValue(Item.NIL);
+      binding(i).var.setValue(null);
     }
 
     for (int i = 0; i < n; i++ )
     {
       BindingExpr b = binding(i);
       Expr on = onExpr(i);
-      Item item;
-      Iter iter = b.inExpr().iter(context);
-      while ((item = iter.next()) != null)
+      JsonIterator iter = b.inExpr().iter(context);
+      for (JsonValue value : iter)
       {
-        b.var.setValue(item);
-        Item key = on.eval(context);
-        if( ! key.isNull() )
+        b.var.setValue(value);
+        JsonValue key = on.eval(context);
+        if( key != null  )
         {
-          temp.add(i, key, item);
+          temp.add(i, key, value);
         }
         else if( i <= lastPreserved )
         {
-          b.var.setValue(item);
+          b.var.setValue(value);
           nullKeyResults.addCopyAll(collectExpr().iter(context));
         }
       }
-      b.var.setValue(Item.NIL);
+      b.var.setValue(null);
 
       // If more than one is preserved, we do the outer-cross product of matching items,
       //   and filter the where at least one preserved input is non-null.
       // If exactly one is preserved, we avoid the null case on the preserved one and the filter.
       if( lastPreserved >= 0 ) 
       {
-        nilIters[i] = new ScalarIter(Item.NIL);
+        nilIters[i] = new SingleJsonValueIterator(null);
       }
     }
 
-    final ItemHashtable.Iterator tempIter = temp.iter();
-    final Iter[] groupIters = new Iter[n];
+    final JsonHashTable.Iterator tempIter = temp.iter();
+    final JsonIterator[] groupIters = new JsonIterator[n];
 
-    return new Iter() {
+    return new JsonIterator() {
       int  i           = -1;
-      Iter collectIter = nullKeyResults.iter();
+      JsonIterator collectIter = nullKeyResults.iter();
       int firstNonEmpty = n;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while( true )
         {
-          Item item = collectIter.next();
-          if( item != null )
-          {
-            return item;
+          if (collectIter.moveNext()) {
+            currentValue = collectIter.current();
+            return true;
           }
 
           do
@@ -267,7 +265,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
             {
               if( !tempIter.next() )
               {
-                return null;
+                return false;
               }
               
               // Item key = tempIter.key();
@@ -282,10 +280,8 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
             }
 
             BindingExpr b = binding(i);
-            item = groupIters[i].next();
-            if (item != null)
-            {
-              b.var.setValue(item);
+            if (groupIters[i].moveNext()) {
+              b.var.setValue(groupIters[i].current());
               i++;
             }
             else
@@ -310,9 +306,8 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
        */
       private void resetIter(int j) throws Exception
       {
-        Item item = tempIter.values(j);
-        
-        JArray arr = (JArray) item.get();
+        JsonValue value = tempIter.values(j);
+        JsonArray arr = (JsonArray) value;
         if( !arr.isEmpty() )
         {
           groupIters[j] = arr.iter(); // TODO: should be able to reuse array iterator
@@ -327,12 +322,12 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
               ( j != lastPreserved ||            // This input is not the last preserved input
                 firstNonEmpty < lastPreserved )) // Some earlier preserved input is non-empty
           {
-            nilIters[j].reset(Item.NIL);
+            nilIters[j].reset(null);
             groupIters[j] = nilIters[j];
           }
           else
           {
-            groupIters[j] = Iter.empty;
+            groupIters[j] = JsonIterator.EMPTY;
           }
         }
       }

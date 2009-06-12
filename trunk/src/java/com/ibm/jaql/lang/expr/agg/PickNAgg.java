@@ -15,11 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -30,7 +30,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "pickN", minArgs = 2, maxArgs = 2)
 public final class PickNAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {
-  private SpillJArray array = new SpillJArray();
+  private SpilledJsonArray array = new SpilledJsonArray();
   private long limit;
   
   /**
@@ -54,36 +54,36 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
   public void initInitial(Context context) throws Exception
   {
     array.clear();
-    JNumber num = (JNumber)exprs[1].eval(context).get();
+    JsonNumber num = (JsonNumber)exprs[1].eval(context);
     limit = num.longValueExact();
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
-    if( item.isNull() )
+    if( value == null  )
     {
       return;
     }
     if( array.count() < limit )
     {
-      array.addCopy(item);
+      array.addCopy(value);
     }
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
-    return new Item(array);
+    return array;
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    JArray array2 = (JArray)item.get();
+    JsonArray array2 = (JsonArray)value;
     long m = array.count();
     long n = array2.count();
-    Iter iter = array2.iter();
+    JsonIterator iter = array2.iter();
     if( m + n < limit )
     {
       array.addCopyAll(iter);
@@ -92,13 +92,15 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
     {
       for( ; m < limit ; m++ )  
       {
-        array.addCopy(iter.next()); // TODO: we will find all of them
+        boolean valid = iter.moveNext();
+        assert valid;
+        array.addCopy(iter.current()); // TODO: we will find all of them
       }
     }
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
     return getPartial();
   }

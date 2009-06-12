@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.hadoop.ArrayInputFormat;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -48,10 +48,10 @@ public class ArrayReadExpr extends MacroExpr
   public Expr expand(Env env) throws Exception
   {
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
-        new ConstExpr(new JString("array")));
+        new ConstExpr(new JsonString("array")));
     // FIXME: get rid of the need for a location field
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
-        new ConstExpr(new JString("")));
+        new ConstExpr(new JsonString("")));
     NameValueBinding aField = new NameValueBinding(ArrayInputFormat.ARRAY_NAME,
         exprs[0]);
     RecordExpr oRec = new RecordExpr(new Expr[]{aField});

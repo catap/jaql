@@ -19,10 +19,12 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -33,8 +35,7 @@ import com.ibm.jaql.util.Bool3;
 public class ArrayExpr extends IterExpr
 {
   // Runtime state:
-  protected FixedJArray tuple;
-  protected Item result;
+  protected BufferedJsonArray tuple;
   
   
   /**
@@ -88,7 +89,18 @@ public class ArrayExpr extends IterExpr
   {
     return Bool3.FALSE;
   }
-
+  
+  public Schema getSchema()
+  {
+    // TODO: cache?
+    Schema[] schemata = new Schema[exprs.length]; 
+    for (int i=0; i<exprs.length; i++)
+    {
+      schemata[i] = exprs[i].getSchema();
+    }
+    return new ArraySchema(schemata);
+  }
+  
   /**
    * 
    */
@@ -135,23 +147,22 @@ public class ArrayExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception // TODO: generalize for other tuple-like exprs?
+  public JsonValue eval(Context context) throws Exception // TODO: generalize for other tuple-like exprs?
   {
     if (exprs.length == 0)
     {
-      return JArray.EMPTY_ITEM;
+      return JsonArray.EMPTY;
     }
-    if( result == null )
+    if( tuple == null )
     {
-      tuple = new FixedJArray(exprs.length);
-      result = new Item(tuple);
+      tuple = new BufferedJsonArray(exprs.length);
     }
     for (int i = 0; i < exprs.length; i++)
     {
-      Item item = exprs[i].eval(context);
-      tuple.set(i, item);
+      JsonValue value = exprs[i].eval(context);
+      tuple.set(i, value);
     }
-    return result;
+    return tuple;
   }
 
   /*
@@ -159,26 +170,26 @@ public class ArrayExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     if (exprs.length == 0)
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    return new Iter() {
+    return new JsonIterator() {
       int i = 0;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while (true)
         {
           if (i == exprs.length)
           {
-            return null;
+            return false;
           }
           Expr expr = exprs[i++];
-          Item item = expr.eval(context);
-          return item;
+          currentValue = expr.eval(context);
+          return true;
         }
       }
     };

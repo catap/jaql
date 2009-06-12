@@ -19,16 +19,16 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.ToItem;
-import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * Assumes that the "value" of a [key, value] pair is of type
  * o.a.h.io.Text. For each such value, this converter returns a JString.
  */
-public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Writable> {
+public class FromLineConverter extends HadoopRecordToJson<WritableComparable, Writable> {
   
   /*
    * (non-Javadoc)
@@ -36,7 +36,7 @@ public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Wr
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToItem<WritableComparable> createKeyConverter()
+  protected ToJson<WritableComparable> createKeyConverter()
   {
     return null;
   }
@@ -47,12 +47,12 @@ public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Wr
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected ToItem<Writable> createValConverter()
+  protected ToJson<Writable> createValueConverter()
   {
-    return new ToItem<Writable>() {
-      public void convert(Writable src, Item tgt)
+    return new ToJson<Writable>() {
+      public JsonValue convert(Writable src, JsonValue tgt)
       {
-        if (src == null || tgt == null) return;
+        if (src == null) return null;
         Text t = null;
         if (src instanceof Text)
         {
@@ -62,12 +62,13 @@ public class FromLineConverter extends HadoopRecordToItem<WritableComparable, Wr
         {
           throw new RuntimeException("tried to convert from: " + src);
         }
-        ((JString)tgt.getNonNull()).set(t.getBytes(), t.getLength());
+        ((JsonString)tgt).set(t.getBytes(), t.getLength());
+        return tgt;
       }
       
-      public Item createTarget()
+      public JsonValue createInitialTarget()
       {
-        return new Item(new JString());
+        return new JsonString();
       }
 
     };

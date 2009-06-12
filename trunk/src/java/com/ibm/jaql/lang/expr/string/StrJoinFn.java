@@ -15,10 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -35,8 +34,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class StrJoinFn extends Expr // TODO: make Aggregate?
 {
   protected StringBuilder builder;
-  protected JString text;
-  protected Item result;
+  protected JsonString text;
   
   /**
    * @param exprs
@@ -51,26 +49,23 @@ public class StrJoinFn extends Expr // TODO: make Aggregate?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonString eval(Context context) throws Exception
   {
-    if( result == null )
+    if( text == null )
     {
       builder = new StringBuilder();
-      text = new JString();
-      result = new Item(text);
+      text = new JsonString();      
     }
     else
     {
       builder.setLength(0);
     }
-    JValue v = exprs[1].eval(context).get();
-    String theSep = ( v == null ) ? "" : v.toString();
+    JsonValue value = exprs[1].eval(context);
+    String theSep = ( value == null ) ? "" : value.toString();
     String sep = "";
-    Iter iter = exprs[0].iter(context);
-    Item item;
-    while( (item = iter.next()) != null )
+    JsonIterator iter = exprs[0].iter(context);
+    for (JsonValue v : iter)
     {
-      v = item.get();
       if( v != null ) 
       {
         builder.append(sep);
@@ -80,6 +75,6 @@ public class StrJoinFn extends Expr // TODO: make Aggregate?
       }
     }
     text.set(builder.toString());
-    return result;
+    return text;
   }
 }

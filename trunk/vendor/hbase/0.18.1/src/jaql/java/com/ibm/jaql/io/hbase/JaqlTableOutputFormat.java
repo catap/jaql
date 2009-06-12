@@ -21,7 +21,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.mapred.TableOutputFormat;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileAlreadyExistsException;
 import org.apache.hadoop.mapred.InvalidJobConfException;
 import org.apache.hadoop.mapred.JobConf;
@@ -31,13 +30,14 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
-public class JaqlTableOutputFormat extends OutputFormatBase<Item, Item>
+public class JaqlTableOutputFormat extends OutputFormatBase<JsonHolder, JsonHolder>
 {
 
   static final Logger LOG = Logger.getLogger(JaqlTableOutputFormat.class.getName());
@@ -52,7 +52,7 @@ public class JaqlTableOutputFormat extends OutputFormatBase<Item, Item>
   /**
    * 
    */
-  protected class JaqlTableRecordWriter implements RecordWriter<Item, Item>
+  protected class JaqlTableRecordWriter implements RecordWriter<JsonHolder, JsonHolder>
   {
     private HTable m_table;
 
@@ -69,8 +69,7 @@ public class JaqlTableOutputFormat extends OutputFormatBase<Item, Item>
      * 
      * @see org.apache.hadoop.mapred.RecordWriter#close(org.apache.hadoop.mapred.Reporter)
      */
-    public void close(@SuppressWarnings("unused")
-    Reporter reporter)
+    public void close(Reporter reporter)
     {
       if (m_table == null)
       {
@@ -84,9 +83,9 @@ public class JaqlTableOutputFormat extends OutputFormatBase<Item, Item>
      * @see org.apache.hadoop.mapred.RecordWriter#write(java.lang.Object,
      *      java.lang.Object)
      */
-    public void write(Item key, Item value) throws IOException
+    public void write(JsonHolder key, JsonHolder value) throws IOException
     {
-      HBaseStore.Util.writeJMapToHBase(key, (JRecord) value.getNonNull(),
+      HBaseStore.Util.writeJMapToHBase(key.value, (JsonRecord) JaqlUtil.enforceNonNull(value.value), 
           m_table, true);
     }
   }
@@ -99,8 +98,7 @@ public class JaqlTableOutputFormat extends OutputFormatBase<Item, Item>
    *      org.apache.hadoop.util.Progressable)
    */
   @Override
-  @SuppressWarnings("unused")
-  public RecordWriter<Item, Item> getRecordWriter(FileSystem ignored,
+  public RecordWriter<JsonHolder, JsonHolder> getRecordWriter(FileSystem ignored,
       JobConf job, String name, Progressable progress) throws IOException
   {
 
@@ -127,7 +125,6 @@ public class JaqlTableOutputFormat extends OutputFormatBase<Item, Item>
    *      org.apache.hadoop.mapred.JobConf)
    */
   @Override
-  @SuppressWarnings("unused")
   public void checkOutputSpecs(FileSystem ignored, JobConf job)
       throws FileAlreadyExistsException, InvalidJobConfException, IOException
   {

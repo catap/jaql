@@ -3,9 +3,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -49,9 +49,9 @@ public class CopyRecord extends FieldExpr
    * 
    */
   @Override
-  public void eval(Context context, MemoryJRecord outrec) throws Exception
+  public void eval(Context context, BufferedJsonRecord outrec) throws Exception
   {
-    JRecord inrec = (JRecord) exprs[0].eval(context).get();
+    JsonRecord inrec = (JsonRecord) exprs[0].eval(context);
     if (inrec != null)
     {
       int m = inrec.arity();
@@ -66,7 +66,7 @@ public class CopyRecord extends FieldExpr
    * 
    */
   @Override
-  public Bool3 staticNameMatches(JString name)
+  public Bool3 staticNameMatches(JsonString name)
   {
     return Bool3.UNKNOWN;
   }

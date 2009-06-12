@@ -15,13 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JDate;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 
 @JaqlFn(fnName="perf", minArgs=1, maxArgs=1)
@@ -33,26 +32,25 @@ public class PerfFn extends Expr
   }
   
   @Override
-  public Item eval(final Context context) throws Exception
+  public JsonValue eval(final Context context) throws Exception
   {
     Expr e = exprs[0];
     long start = System.currentTimeMillis();
     long n = 0;
     if( e.isArray().always() )
     {
-      Iter iter = e.iter(context);
-      while( iter.next() != null )
+      JsonIterator iter = e.iter(context);
+      while (iter.moveNext()) 
       {
         n++;
       }
     }
     else
     {
-      Item item = e.eval(context);
-      JValue val = item.get();
-      if( val instanceof JArray )
+      JsonValue val = e.eval(context);
+      if( val instanceof JsonArray )
       {
-        n = ((JArray)val).count();
+        n = ((JsonArray)val).count();
       }
       else
       {
@@ -60,11 +58,11 @@ public class PerfFn extends Expr
       }
     }
     long end = System.currentTimeMillis();
-    MemoryJRecord rec = new MemoryJRecord();
-    rec.add("start", new JDate(start));
-    rec.add("end", new JDate(end));
-    rec.add("millis", new JLong(end - start));
-    rec.add("count", new JLong(n));
-    return new Item(rec);
+    BufferedJsonRecord rec = new BufferedJsonRecord();
+    rec.add("start", new JsonDate(start));
+    rec.add("end", new JsonDate(end));
+    rec.add("millis", new JsonLong(end - start));
+    rec.add("count", new JsonLong(n));
+    return rec;
   }
 }

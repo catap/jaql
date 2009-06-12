@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.core;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.SpillJArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
@@ -34,7 +34,7 @@ public class Var extends Object
   };
   
   public static final Var[] NO_VARS = new Var[0];
-  public static final Var unused = new Var("$__unused__");
+  public static final Var UNUSED = new Var("$__unused__");
 
   public String             name;
   public boolean            hidden  = false;     // variable not accessible in current parse context (this could reuse Usage)
@@ -42,7 +42,8 @@ public class Var extends Object
   public Expr               expr;                // only for global variables
   public Usage              usage = Usage.EVAL;
   
-  public Object             value;               // Runtime value: Item or Iter
+  public boolean            isDefined = false;   // variable defined?
+  public Object             value;               // Runtime value: JsonValue (null allowed) or JsonIterator(null disallowed)
 
   /**
    * @param name
@@ -107,6 +108,7 @@ public class Var extends Object
   public void undefine()
   {
     this.value = null;
+    isDefined = false;
   }
   
   /**
@@ -114,10 +116,10 @@ public class Var extends Object
    * 
    * @param value
    */
-  public void setValue(Item value)
+  public void setValue(JsonValue value)
   {
-    assert value != null;
     this.value = value;
+    isDefined = true;
   }
 
   /**
@@ -126,10 +128,11 @@ public class Var extends Object
    * @param var
    * @param value
    */
-  public void setIter(Iter iter)
+  public void setIter(JsonIterator iter)
   {
     assert iter != null;
     value = iter;
+    isDefined = true;
   }
 
   /**
@@ -162,13 +165,13 @@ public class Var extends Object
    */
   public void setGeneral(Object value, Context context) throws Exception
   {
-    if( value instanceof Item )
+    if( value instanceof JsonValue )
     {
-      setValue((Item)value);
+      setValue((JsonValue)value);
     }
-    else if( value instanceof Iter )
+    else if( value instanceof JsonIterator )
     {
-      setIter((Iter)value);
+      setIter((JsonIterator)value);
     }
     else if( value instanceof Expr )
     {
@@ -187,30 +190,34 @@ public class Var extends Object
    * @return
    * @throws Exception
    */
-  public Item getValue(Context context) throws Exception
+  public JsonValue getValue(Context context) throws Exception
   {
-    if( value instanceof Item )
+    if (!isDefined)
     {
-      return (Item)value;
+      throw new NullPointerException("undefined variable: "+name());
     }
-    else if( value instanceof Iter )
+    
+    if( value instanceof JsonValue )
     {
-      SpillJArray arr = new SpillJArray();
-      arr.setCopy((Iter)value);
-      Item v = new Item(arr);
-      value = v;
-      return v;
+      return (JsonValue)value;
+    }
+    else if( value instanceof JsonIterator )
+    {
+      SpilledJsonArray arr = new SpilledJsonArray();
+      arr.setCopy((JsonIterator)value);
+      value = arr;
+      return arr;
     }
     else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
     {
-      Item v = expr.eval(context);
+      JsonValue v = expr.eval(context);
       expr = null;
       value = v;
       return v;
     }
-    else if( value == null )
+    else if( value == null ) // value has been set to null explicitly 
     {
-      throw new NullPointerException("undefined variable: "+name());
+      return null;
     }
     throw new InternalError("bad variable value: "+name()+"="+value);
   }
@@ -223,21 +230,21 @@ public class Var extends Object
    * @return
    * @throws Exception
    */
-  public Iter getIter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
-    if( usage == Usage.STREAM && value instanceof Iter )
+    if( usage == Usage.STREAM && value instanceof JsonIterator )
     {
-      Iter iter = (Iter)value;
+      JsonIterator iter = (JsonIterator)value;
       value = null; // set undefined
       return iter;
     }
-    Item v = getValue(context);
-    JArray arr = (JArray)v.get(); // cast error intentionally possible
+    JsonArray arr = (JsonArray) getValue(context); // cast error intentionally possible
     if( arr == null )
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
     return arr.iter();
   }
+
 
 }

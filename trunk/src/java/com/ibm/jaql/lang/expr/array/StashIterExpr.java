@@ -18,7 +18,7 @@ package com.ibm.jaql.lang.expr.array;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -35,7 +35,7 @@ import com.ibm.jaql.util.Bool3;
  */
 public class StashIterExpr extends IterExpr
 {
-  protected Iter iter;
+  protected JsonIterator iter;
   
   /**
    * 
@@ -49,7 +49,7 @@ public class StashIterExpr extends IterExpr
   /**
    * @param iter
    */
-  public StashIterExpr(Iter iter)
+  public StashIterExpr(JsonIterator iter)
   {
     super(NO_EXPRS);
     this.iter = iter;
@@ -87,13 +87,13 @@ public class StashIterExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     if( iter == null )
     {
       throw new RuntimeException("iter never set or requested multiple times");
     }
-    Iter iter2 = iter;
+    JsonIterator iter2 = iter;
     iter = null;
     return iter2;
   }  

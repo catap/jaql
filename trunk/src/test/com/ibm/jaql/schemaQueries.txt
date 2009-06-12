@@ -1,0 +1,487 @@
+// -- parsing and matching: simple schemata -------------------------------------------------------
+
+$x = schema null;
+$x;
+null instanceof $x;
+1 instanceof $x;   // incompatible
+
+$x = schema *;
+$x;
+null instanceof $x;
+1 instanceof $x;
+
+$x = schema function;
+$x;
+(fn($) $) instanceof $x;
+1 instanceof $x;  // incompatible
+
+
+// -- parsing and matching: boolean ---------------------------------------------------------------
+
+$x = schema boolean;
+$x;
+true instanceof $x;
+false instanceof $x;
+1 instanceof $x;        // incompatible
+
+$x = schema boolean(true);
+$x;
+true instanceof $x;
+false instanceof $x;    // incompatible
+
+$x = schema boolean(false);
+$x;
+true instanceof $x;     // incompatible
+false instanceof $x; 
+
+
+
+// -- parsing and matching: long ------------------------------------------------------------------
+
+$x = schema long;
+$x;
+1 instanceof $x;
+1.0 instanceof $x;
+1.1 instanceof $x; // incompatible
+1d instanceof $x;  // incompatible
+"a" instanceof $x; // incompatible
+
+$x = schema long(5);
+$x;
+4 instanceof $x;  // incompatible
+5 instanceof $x;
+6 instanceof $x;
+
+$x = schema long(max=5);
+$x;
+4 instanceof $x;  
+5 instanceof $x;
+6 instanceof $x; // incompatible
+
+$x = schema long(-1,1);
+$x;
+-2 instanceof $x; // incompatible
+-1 instanceof $x;
+0 instanceof $x;
+1 instanceof $x;
+2 instanceof $x; // incompatible
+
+$x = schema long(value=5);
+$x;
+4 instanceof $x;  // incompatible
+5 instanceof $x;
+6 instanceof $x;  // incompatible
+
+
+// TODO: uncomment next line when parser is fixed to accept Long.MIN
+// schema long(-9223372036854775808, 9223372036854775807); // should work: long range
+schema long(max=9223372036854775808); // must fail: too large argument
+schema long(min=-9223372036854775809, *); // must fail: too large argument
+schema long(5,3); // must fail: invalid interval
+schema long(5d); // must fail: invalid argument
+schema long(5.0); // should be ok
+schema long(5.1); // must fail: invalid argument
+schema long(5, value=4); // must fail: invalid argument
+
+
+// -- parsing and matching: double ----------------------------------------------------------------
+
+$x = schema double;
+$x;
+1d instanceof $x;
+1 instanceof $x;   // incompatible
+1.0 instanceof $x; // incompatible
+1.1 instanceof $x; // incompatible
+"a" instanceof $x; // incompatible
+
+$x = schema double(5d);
+$x;
+4d instanceof $x;  // incompatible
+5d instanceof $x;
+5.001d instanceof $x;
+
+$x = schema double(max=5d);
+$x;
+4d instanceof $x;  
+5d instanceof $x;
+5.001d instanceof $x; // incompatible
+
+$x = schema double(-1d,1d);
+$x;
+-1.001d instanceof $x; // incompatible
+-1d instanceof $x;
+0d instanceof $x;
+1d instanceof $x;
+1.001d instanceof $x; // incompatible
+
+$x = schema double(value=5d);
+$x;
+4.999d instanceof $x;  // incompatible
+5d instanceof $x;
+5.001d instanceof $x;  // incompatible
+
+schema double(5d,3d); // must fail: invalid interval
+schema double(5); // must fail: invalid argument
+schema double(5.0); // must fail: invalid argument
+schema double(5.1); // must fail: invalid argument
+schema double(5d, value=4d); // must fail: invalid argument
+
+// -- parsing and matching: decfloat --------------------------------------------------------------
+
+$x = schema decfloat;
+$x;
+1 instanceof $x;   
+1.1 instanceof $x;
+1d instanceof $x; // incompatible
+"a" instanceof $x; // incompatible
+
+$x = schema decfloat(5);
+$x;
+4 instanceof $x;  // incompatible
+5 instanceof $x;
+5.001 instanceof $x;
+
+$x = schema decfloat(max=5);
+$x;
+4 instanceof $x;  
+5 instanceof $x;
+5.001 instanceof $x; // incompatible
+
+$x = schema decfloat(-1,1);
+$x;
+-1.001 instanceof $x; // incompatible
+-1 instanceof $x;
+0 instanceof $x;
+1 instanceof $x;
+1.001 instanceof $x; // incompatible
+
+$x = schema decfloat(value=5);
+$x;
+4.999 instanceof $x;  // incompatible
+5 instanceof $x;
+5.001 instanceof $x;  // incompatible
+
+// TODO: uncomment next line when parser is fixed to accept big decimals
+// schema decfloat(-9223372036854775809, 9223372036854775808); // should work (outside long range)
+schema decfloat(5,3); // must fail: invalid interval
+schema decfloat(5d); // must fail: invalid argument
+schema decfloat(5, value=4d); // must fail: invalid argument
+
+
+// -- parsing and matching: date ------------------------------------------------------------------
+
+$x = schema date;
+$x;
+d'2000-01-01T12:00:00Z' instanceof $x;
+'2000-01-01T12:00:00Z' instanceof $x; // incompatible, that's a string
+
+$x = schema date(d'2000-01-01T12:00:00Z');
+$x;
+d'2000-01-01T11:59:59Z' instanceof $x;  // incompatible
+d'2000-01-01T12:00:00Z' instanceof $x;
+d'2000-01-01T12:00:01Z' instanceof $x;
+
+$x = schema date(max=d'2000-01-01T12:00:00Z');
+$x;
+d'2000-01-01T11:59:59Z' instanceof $x;  
+d'2000-01-01T12:00:00Z' instanceof $x;
+d'2000-01-01T12:00:01Z' instanceof $x;   // incompatible
+
+$x = schema date(d'2000-01-01T12:00:00Z', d'2000-02-01T12:00:00Z');
+$x;
+d'2000-01-01T11:59:59Z' instanceof $x;  // incompatible
+d'2000-01-01T12:00:00Z' instanceof $x;
+d'2000-01-02T13:00:00Z' instanceof $x;
+d'2000-02-01T12:00:00Z' instanceof $x;
+d'2000-02-01T12:00:01Z' instanceof $x;   // incompatible
+
+$x = schema date(value=d'2000-01-01T12:00:00Z');
+$x;
+d'2000-01-01T11:59:59Z' instanceof $x;   // incompatible
+d'2000-01-01T12:00:00Z' instanceof $x;
+d'2000-01-01T12:00:01Z' instanceof $x;   // incompatible
+
+schema date(d'2000-01-01T12:00:00Z', d'2000-01-01T11:00:00Z'); // must fail: invalid interval
+schema date(d'2000-01-01T12:00:00Z', value=d'2000-01-01T11:00:00Z'); // must fail: invalid argument
+
+
+// -- parsing and matching: string ----------------------------------------------------------------
+
+$x = schema string;
+$x;
+"1" instanceof $x;
+1 instanceof $x;
+
+$x = schema string(5);
+$x;
+"1234" instanceof $x;  // incompatible
+"12345" instanceof $x;
+"123456" instanceof $x;
+
+$x = schema string(maxLength=5);
+$x;
+"1234" instanceof $x;
+"12345" instanceof $x;
+"123456" instanceof $x;  // incompatible
+
+$x = schema string(4,6);
+$x;
+"123" instanceof $x;  // incompatible
+"1234" instanceof $x;
+"12345" instanceof $x;
+"123456" instanceof $x;
+"1234567" instanceof $x;  // incompatible
+
+schema string(-1); // must fail: invalid interval
+schema string(5,3); // must fail: invalid interval
+
+$x = schema string(pattern="ba*b");
+$x;
+"baaab" instanceof $x;
+"babab" instanceof $x;  // incompatible
+
+$x = schema string(value="ba*b");
+$x;
+"ba*b" instanceof $x;
+"baaab" instanceof $x;  // incompatible
+
+
+schema string(5, pattern="[ab]*");
+schema string(5, 10, pattern="[ab]*");
+schema string("abc["); // must fail: invalid pattern 
+
+
+// -- parsing and matching: binary ----------------------------------------------------------------
+
+schema binary;
+schema binary(5);
+schema binary(maxLength=5);
+schema binary(4,6);
+schema binary(-1); // must fail: invalid interval
+schema binary(5,3); // must fail: invalid interval
+
+
+// -- parsing and matching: arrays ----------------------------------------------------------------
+
+$x = schema [];
+$x;
+[] instanceof $x;
+[ null ] instanceof $x;    // incompatible
+1 instanceof $x;           // incompatible
+{} instanceof $x;          // incompatible
+
+$x = schema [ null ];
+$x;
+[ null ] instanceof $x;
+null instanceof $x;       // incompatible
+[] instanceof $x;       // incompatible
+[ 1 ] instanceof $x;    // incompatible
+
+$x = schema [ long(0,10), string(pattern="a*"), boolean ];
+$x;
+[ 1, "a", true ] instanceof $x;
+[ 1, "a", true, 1 ] instanceof $x;  // incompatible
+[ 11, "a", true ] instanceof $x;  // incompatible
+[ 1, "b", true ] instanceof $x;   // incompatible
+[ 1, "a", null ] instanceof $x;   // incompatible
+
+$x = schema [ long, boolean<2,3> ];
+$x;
+[ 1, true ] instanceof $x; // incompatible
+[ 1, true, true ] instanceof $x;
+[ 1, true, true, true ] instanceof $x;
+[ 1, true, true, true, true ] instanceof $x; // incompatible
+
+$x = schema [ long, boolean* ];
+$x;
+[ 1 ] instanceof $x; 
+[ 1, true ] instanceof $x;
+[ 1, true, true ] instanceof $x;  
+[ 1, 1 ] instanceof $x; // incompatible
+
+$x = schema [ long, boolean+ ];
+$x;
+[ 1 ] instanceof $x;  // incompatible
+[ 1, true ] instanceof $x;
+[ 1, true, true ] instanceof $x;  
+[ 1, 1 ] instanceof $x; // incompatible
+
+$x = schema [ long, boolean<2,*> ];
+$x;
+[ 1 ] instanceof $x;  // incompatible
+[ 1, true ] instanceof $x;  // incompatible
+[ 1, true, true ] instanceof $x;
+[ 1, true, true, true ] instanceof $x;    
+[ 1, 1 ] instanceof $x; // incompatible
+
+$x = schema [ long, boolean<*,2> ];
+$x;
+[ 1 ] instanceof $x;  
+[ 1, true ] instanceof $x;  
+[ 1, true, true ] instanceof $x;
+[ 1, true, true, true ] instanceof $x; // incompatible    
+[ 1, 1 ] instanceof $x; // incompatible
+
+
+schema [ null* ];
+schema [ null+ ];
+schema [ null<0> ];
+schema [ null<5> ];
+schema [ null<5,10> ];
+schema [ null<5,*> ];
+schema [ null<*,5> ];
+schema [ null<*,*> ];
+schema [ null<-1> ]; // must fail: invalid interval
+schema [ null<5,3> ]; // must fail: invalid interval
+
+schema [ long(0,10)* ];
+schema [ long(0,10)+ ];
+schema [ long(0,10)<0> ];
+schema [ long(0,10)<5> ];
+schema [ long(0,10)<5,10> ];
+schema [ long(0,10)<5,*> ];
+schema [ long(0,10)<*,5> ];
+schema [ long(0,10)<*,*> ];
+schema [ long(0,10)<-1> ]; // must fail: invalid interval
+schema [ long(0,10)<5,3> ]; // must fail: invalid interval
+
+schema [ long(5,3) ]; // must fail: invalid internal schema
+
+
+// -- parsing and matching: records ---------------------------------------------------------------
+
+$x = schema {};
+$x;
+{} instanceof $x;
+[] instanceof $x;               // incompatible
+{ a: null } instanceof $x;      // incompatible
+1 instanceof $x;                // incompatible
+
+$x = schema { a };
+$x;
+{ a: 1 } instanceof $x;
+{ "a": 1 } instanceof $x;
+{ } instanceof $x;              // incompatible
+{ a: 1, b: 1 } instanceof $x;   // incompatible
+{ b: 1 } instanceof $x;         // incompatible
+
+$x = schema { "a" };
+$x;
+{ a: 1 } instanceof $x;
+{ "a": 1 } instanceof $x;
+{ } instanceof $x;              // incompatible
+{ b: 1 } instanceof $x;         // incompatible
+
+$x = schema { a? };
+$x;
+{ } instanceof $x; 
+{ a: 1 } instanceof $x; 
+{ b: 1 } instanceof $x;         // incompatible
+
+$x = schema { a: long };
+$x;
+{ a: 1 } instanceof $x;
+{ a: "1" } instanceof $x;       // incompatible
+
+$x = schema { a: * };
+$x;
+{ a: 1 } instanceof $x;
+{ a: "1" } instanceof $x;
+
+$x = schema { * };
+$x;
+{ } instanceof $x;
+{ a: 1 } instanceof $x;
+{ a: 1, b: 1 } instanceof $x;
+
+$x = schema { a: long, * };
+$x;
+{ a: 1 } instanceof $x;
+{ a: 1, b: 1 } instanceof $x;
+{ b: 1 } instanceof $x;         // incompatible
+
+$x = schema { a?: long, * };
+$x;
+{ a: 1 } instanceof $x;
+{ a: 1, b: 1 } instanceof $x;
+{ b: 1 } instanceof $x;
+{ a: "1" } instanceof $x;       // incompatible
+
+$x = schema { a: long, *: long };
+$x;
+{ a: 1 } instanceof $x;
+{ a: 1, b: 1 } instanceof $x;
+{ a: 1, b: "1" } instanceof $x; // incompatible
+
+$x = schema { a?: long, *: string };
+$x;
+{ a: 1 } instanceof $x;
+{ a: 1, b: "1" } instanceof $x;
+{ b: "1" } instanceof $x;
+{ a: "1" } instanceof $x;       // incompatible
+
+// keyword checks
+// schema { for }; // does not work currently 
+schema { for: * };
+schema { "for" };
+// schema { null }; // does not work currently
+schema { null: * }; // treated as "null"
+
+schema { "1" };
+schema { 1: * }; // must fail: invalid field name (numbers must be quoted)
+schema { *, * }; // must fail: wildcard field occurs twice
+schema { a, b, c, a, * }; // must fail: field name occurs twice
+
+
+// -- parsing and matching: alternatives ----------------------------------------------------------
+
+$x = schema null?;
+$x;
+null instanceof $x;
+1 instanceof $x;        // incompatible
+
+$x = schema long?;
+$x;
+null instanceof $x;
+1 instanceof $x;        
+"1" instanceof $x;      // incompatible
+
+$x = schema null | long;
+$x;
+null instanceof $x;
+1 instanceof $x;        
+"1" instanceof $x;      // incompatible
+
+$x = schema string(pattern="a*") | string(pattern="b*") | long;
+$x;
+"aaa" instanceof $x;
+"bbb" instanceof $x;
+1 instanceof $x;
+null instanceof $x;     // incompatible
+"c" instanceof $x;      // incompatible
+
+
+$x = schema string(pattern="a*") | string(pattern="b*") | long?;
+$x;
+"aaa" instanceof $x;
+"bbb" instanceof $x;
+1 instanceof $x;
+null instanceof $x;
+"c" instanceof $x;      // incompatible
+
+
+//-------------------------- SCHEMAOF -----------------------------
+
+schemaof(null);
+schemaof(false);
+schemaof(1);
+schemaof(1d);
+schemaof(1.0);
+schemaof("a string");
+schemaof(d'2001-07-04T12:08:56Z');
+schemaof({ a: 1, b: "2" });
+schemaof([ 1, "2" ]);
+
+//-------------------------- QUIT ---------------------------------
+
+quit;

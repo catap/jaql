@@ -17,9 +17,10 @@
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.util.Iter;
+
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -41,9 +42,9 @@ public class BooleanMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JsonBool makeValue()
   {
-    return new Item(new JBool());
+    return new JsonBool();
   }
 
   /*
@@ -64,23 +65,22 @@ public class BooleanMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#iter(java.lang.Object)
    */
   @Override
-  public Iter iter(Object obj) throws Exception
+  public JsonIterator iter(Object obj) throws Exception
   {
     final boolean[] arr = (boolean[]) obj;
-    return new Iter() {
+    final JsonBool jbool = new JsonBool();
+    return new JsonIterator(jbool) {
       int   i     = 0;
-      JBool jbool = new JBool();
-      Item  item  = new Item(jbool);
 
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if (i < arr.length)
         {
           jbool.value = arr[i++];
-          return item;
+          return true; // currentValue == jbool
         }
-        return null;
+        return false;
       }
     };
   }
@@ -92,16 +92,17 @@ public class BooleanMetaArray extends MetaArray
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void nth(Object obj, long n, Item result) throws Exception
+  public JsonValue nth(Object obj, long n, JsonValue target) throws Exception
   {
     boolean[] arr = (boolean[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JBool) result.restoreCache()).value = arr[(int) n];
+      ((JsonBool) target).value = arr[(int) n];
+      return target;
     }
     else
     {
-      result.set(null);
+      return null;
     }
   }
 

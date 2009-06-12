@@ -410,18 +410,18 @@ read(hdfs('books.jqlb'));
 
 // DIFF: not in docs
 $books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter'}});
+                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});
 
 // DIFF
 read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}});
 
 // DIFF
 read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter'}});
+                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});
 
 $myRead = fn($path) read({type:'hdfs', location:$path, 
                           inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
-                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter'}});
+                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});
                                 
 $myRead('example.jql');
 
@@ -429,7 +429,7 @@ $myRead('example.jql');
 registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter',
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
                              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
 
 read({type:'myHDFSFile', location:'example.jql'});
@@ -446,7 +446,7 @@ read({type:'myHDFSFile', location:'example.jql'})
 // (see hbaseQueries.txt)
 // hbaseWrite('example', $q);
 
-read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JSONTextInputStream'}});
+read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});
 
 hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;
 

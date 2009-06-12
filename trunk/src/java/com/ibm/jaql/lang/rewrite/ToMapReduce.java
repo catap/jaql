@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.rewrite;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.DeemptyFn;
@@ -497,7 +496,7 @@ public class ToMapReduce extends Rewrite
     // build key value pair:
     //   for $fv in <lastExpr> collect [[null, $fv]]
     Var forVar = engine.env.makeVar("$fv");
-    expr = new ArrayExpr(new ConstExpr(Item.NIL), new VarExpr(forVar));
+    expr = new ArrayExpr(new ConstExpr(null), new VarExpr(forVar));
     expr = new ForExpr(forVar, lastExpr, new ArrayExpr(expr));
 
     Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);

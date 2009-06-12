@@ -20,7 +20,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonValue;
 
 /** provides a registry, i.e., a set of (key, value) pairs, and methods for its serialization. 
  * @param <K> type of keys
@@ -31,12 +31,12 @@ public class Registry<K, V>
 
   private HashMap<K, V>                          map;
 
-  private RegistryFormat<K, V, ? extends JValue> fmt;
+  private RegistryFormat<K, V, ? extends JsonValue> fmt;
 
   /**
    * @param fmt
    */
-  public Registry(RegistryFormat<K, V, ? extends JValue> fmt)
+  public Registry(RegistryFormat<K, V, ? extends JsonValue> fmt)
   {
     this.map = new HashMap<K, V>();
     this.fmt = fmt;

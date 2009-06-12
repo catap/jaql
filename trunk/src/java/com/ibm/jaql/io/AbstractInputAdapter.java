@@ -15,16 +15,16 @@
  */
 package com.ibm.jaql.io;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
-/** Superclass for input adapters that take a {@link JRecord} for initialization. */
+/** Superclass for input adapters that take a {@link JsonRecord} for initialization. */
 public abstract class AbstractInputAdapter implements InputAdapter
 {
   /**
    * 
    */
-  protected JRecord args;
+  protected JsonRecord args;
 
   /**
    * 
@@ -34,31 +34,22 @@ public abstract class AbstractInputAdapter implements InputAdapter
   /**
    * 
    */
-  protected JRecord options;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.DataStoreAdapter#initializeFrom(com.ibm.jaql.lang.Item)
-   */
-  public void initializeFrom(Item item) throws Exception
-  {
-    initializeFrom((JRecord) item.get());
-  }
+  protected JsonRecord options;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.DataStoreAdapter#initializeFrom(com.ibm.jaql.lang.JRecord)
    */
-  protected void initializeFrom(JRecord args) throws Exception
+  @Override
+  public void init(JsonValue args) throws Exception
   {
-    this.args = args;
+    this.args = (JsonRecord)args;
     // set the location
-    this.location = AdapterStore.getStore().getLocation(args);
+    this.location = AdapterStore.getStore().getLocation((JsonRecord)args);
 
     // set the options
-    this.options = AdapterStore.getStore().input.getOption(args);
+    this.options = AdapterStore.getStore().input.getOption((JsonRecord)args);
   }
 
   /*

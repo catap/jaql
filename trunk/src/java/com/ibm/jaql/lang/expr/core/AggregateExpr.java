@@ -18,10 +18,10 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
-import com.ibm.jaql.json.util.ScalarIter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
@@ -31,9 +31,8 @@ import com.ibm.jaql.util.Bool3;
 
 public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/final flags
 {
-  protected Item[] tempAggs;
-  protected FixedJArray tmpArray;
-  protected Item tmpItem;
+  protected JsonValue[] tempAggs;
+  protected BufferedJsonArray tmpArray;
 
   public static enum AggType
   {
@@ -157,9 +156,8 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
 
   protected void makeWorkingArea()
   {
-    tempAggs = new Item[numAggs()];
-    tmpArray = new FixedJArray(1);
-    tmpItem = new Item(tmpArray);
+    tempAggs = new JsonValue[numAggs()];
+    tmpArray = new BufferedJsonArray(1);
   }
   
   /**
@@ -180,36 +178,34 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
 
     boolean hadInput = false;
     BindingExpr in = binding();    
-    in.var.setValue(tmpItem);
-    Item item;
-    Iter iter = in.inExpr().iter(context);
-    while( (item = iter.next()) != null )
+    in.var.setValue(tmpArray);
+    JsonIterator iter = in.inExpr().iter(context);
+    for (JsonValue value : iter)
     {
       hadInput = true;
-      tmpArray.set(0,item);
+      tmpArray.set(0, value);
       for(int i = 0 ; i < aggs.length ; i++)
       {
         aggs[i].evalInitial(context);
       }
     }
-
+    
     return hadInput;
   }
 
   
-  protected Iter finalResult(boolean hadInput, Aggregate[] aggs) throws Exception
+  protected JsonIterator finalResult(boolean hadInput, Aggregate[] aggs) throws Exception
   {
     if( ! hadInput )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
     for(int i = 0 ; i < aggs.length ; i++)
     {
       tempAggs[i] = aggs[i].getFinal();
     }
-    FixedJArray tuple = new FixedJArray(tempAggs); // TODO: memory
-    Item item = new Item(tuple); // TODO: memory
-    return new ScalarIter(item); // TODO: memory
+    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs); // TODO: memory
+    return new SingleJsonValueIterator(tuple); // TODO: memory
   }
 
 }

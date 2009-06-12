@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -29,8 +28,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class StrcatFn extends Expr
 {
   protected StringBuilder builder;
-  protected JString text;
-  protected Item result;
+  protected JsonString text;
   
   /**
    * string strcat(...)
@@ -47,13 +45,12 @@ public class StrcatFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonString eval(Context context) throws Exception
   {
-    if( result == null )
+    if( text == null )
     {
       builder = new StringBuilder();
-      text = new JString();
-      result = new Item(text);
+      text = new JsonString();
     }
     else
     {
@@ -61,8 +58,7 @@ public class StrcatFn extends Expr
     }
     for(Expr e: exprs)
     {
-      Item item = e.eval(context);
-      JValue v = item.get();
+      JsonValue v = e.eval(context);
       // TODO: should arrays and records get special handling here?
       if( v != null )
       {
@@ -71,6 +67,6 @@ public class StrcatFn extends Expr
       }
     }
     text.set(builder.toString());
-    return result;
+    return text;
   }
 }

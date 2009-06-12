@@ -17,9 +17,10 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.stream.StreamInputAdapter;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -30,7 +31,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName="http", minArgs=1, maxArgs=3)
 public class HttpFn extends AbstractHandleFn
 {
-  private final static Item TYPE = new Item(new JString("uri"));
+  private final static JsonValue TYPE = new JsonString("uri");
   
   /**
    * exprs[0]: URL domain and path
@@ -48,7 +49,7 @@ public class HttpFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#getType()
    */
   @Override
-  protected Item getType()
+  protected JsonValue getType()
   {
     return TYPE;
   }
@@ -66,22 +67,22 @@ public class HttpFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonRecord eval(Context context) throws Exception
   {
-    MemoryJRecord rec = new MemoryJRecord();
+    BufferedJsonRecord rec = new BufferedJsonRecord();
     rec.add(Adapter.TYPE_NAME, getType());
     rec.add(Adapter.LOCATION_NAME, location().eval(context));
     
     if(exprs.length > 1) {
-      MemoryJRecord opts = null;
+      BufferedJsonRecord opts = null;
       if(exprs.length > 2) 
-        opts = (MemoryJRecord)exprs[2].eval(context).get();
+        opts = (BufferedJsonRecord)exprs[2].eval(context);
       else
-        opts = new MemoryJRecord();
+        opts = new BufferedJsonRecord();
       opts.add(StreamInputAdapter.ARGS_NAME, exprs[1].eval(context));
       rec.add(Adapter.INOPTIONS_NAME, opts);
     }
     
-    return new Item(rec);
+    return rec;
   }
 }

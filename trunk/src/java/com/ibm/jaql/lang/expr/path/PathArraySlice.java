@@ -18,10 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -91,57 +90,55 @@ public class PathArraySlice extends PathArray
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    JArray arr = (JArray)input.get();
+    JsonArray arr = (JsonArray)input;
     if( arr == null )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    JNumber start = (JNumber)exprs[0].eval(context).get();
+    JsonNumber start = (JsonNumber)exprs[0].eval(context);
     if( start == null )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    JNumber end = (JNumber)exprs[1].eval(context).get();
+    JsonNumber end = (JsonNumber)exprs[1].eval(context);
     if( end == null )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
     final long s = start.longValueExact();
     final long e = end.longValueExact();
     if( s > e )
     {
-      return Iter.empty;
+      return JsonIterator.EMPTY;
     }
-    Item item;
-    final Iter iter = arr.iter();
+    final JsonIterator iter = arr.iter();
     long i;
     for( i = 0 ; i < s ; i++ )
     {
-      item = iter.next();
-      if( item == null )
+      if (!iter.moveNext()) 
       {
-        return Iter.empty;
+        return JsonIterator.EMPTY;
       }
     }
-    return new Iter()
+    return new JsonIterator()
     {
       long index = s;
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if( index <= e )
         {
           index++;
-          Item item = iter.next();
-          if( item != null )
+          if (iter.moveNext()) 
           {
-            return nextStep(context, item);
+            currentValue = nextStep(context, iter.current());
+            return true;
           }
         }
-        return null;
+        return false;
       }
     };
   }

@@ -18,12 +18,12 @@ package com.ibm.jaql.lang.expr.agg;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JDecimal;
-import com.ibm.jaql.json.type.JNumeric;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -39,7 +39,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "covStats", minArgs = 1, maxArgs = 1)
 public class CovStatsAgg extends AlgebraicAggregate
 {
-  private Item[]         tuple; // [n]
+  private JsonValue[]       tuple; // [n]
   private BigDecimal[]   vec;   // [n+1]
   private BigDecimal[][] sum;   // [n+1][n+1]
   
@@ -65,18 +65,18 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
-    if( item.isNull() )
+    if( value == null  )
     {
       return;
     }
-    JArray arr = (JArray)item.get();
+    JsonArray arr = (JsonArray)value;
     if( tuple == null )
     {
       long nn = arr.count();
       int n = (int)nn;
-      tuple = new Item[n];
+      tuple = new JsonValue[n];
       vec = new BigDecimal[n+1];
       vec[0] = BigDecimal.ONE;
       sum = new BigDecimal[n+1][n+1];
@@ -88,10 +88,10 @@ public class CovStatsAgg extends AlgebraicAggregate
         }
       }
     }
-    arr.getTuple(tuple);
+    arr.getValues(tuple);
     for(int i = 0 ; i < tuple.length ; i++)
     {
-      JNumeric num = (JNumeric)tuple[i].get();
+      JsonNumeric num = (JsonNumeric)tuple[i];
       BigDecimal d = num.decimalValue();
       vec[i+1] = d;
     }
@@ -106,24 +106,24 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
-    FixedJArray arr = new FixedJArray(sum.length * (sum.length + 1) / 2);
+    BufferedJsonArray arr = new BufferedJsonArray(sum.length * (sum.length + 1) / 2);
     int k = 0;
     for(int i = 0 ; i < sum.length ; i++)
     {
       for(int j = i ; j < sum.length ; j++)
       {
-        arr.set(k++, new Item(new JDecimal(sum[i][j])));
+        arr.set(k++, new JsonDecimal(sum[i][j]));
       }
     }
-    return new Item(arr);
+    return arr;
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    JArray arr = (JArray)item.get();
+    JsonArray arr = (JsonArray)value;
     if( sum == null )
     {
       // a = n * (n+1) / 2
@@ -139,12 +139,14 @@ public class CovStatsAgg extends AlgebraicAggregate
         }
       }
     }
-    Iter iter = arr.iter();
+    JsonIterator iter = arr.iter();
     for(int i = 0 ; i < sum.length ; i++)
     {
       for(int j = i ; j < sum.length ; j++)
       {
-        JNumeric num = (JNumeric)iter.next().get();
+        boolean valid = iter.moveNext();
+        assert valid == true;
+        JsonNumeric num = (JsonNumeric)iter.current();
         BigDecimal d = num.decimalValue();
         sum[i][j] = sum[i][j].add(d, MathContext.DECIMAL128);
       }
@@ -152,7 +154,7 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
     return getPartial();
   }
