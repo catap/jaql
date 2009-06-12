@@ -439,6 +439,7 @@ public class SpilledJsonArray extends JsonArray
       setCache(i, value);
     } else {
       if (serializer.equals(spillSerializer)) {
+    	ensureSpillFile();
         spillSerializer.copy(input, spillFile); 
       } else {
         tempValue = serializer.read(input, tempValue);

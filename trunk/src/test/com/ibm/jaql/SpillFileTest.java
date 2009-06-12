@@ -17,10 +17,19 @@ package com.ibm.jaql;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.util.PagedFile;
 import com.ibm.jaql.util.SpillFile;
 
@@ -50,6 +59,30 @@ public class SpillFileTest
     file.setLength(0);
     pfile = new PagedFile(file.getChannel(), 128);
     spill = new SpillFile(pfile);
+  }
+  
+  @Test
+  public void testSpillJsonArray() throws Exception {
+	  ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+	  DataOutput out = new DataOutputStream(byteOut);
+	  
+	  //Prepare a array with data and serialize it
+	  SpilledJsonArray original = new SpilledJsonArray();
+	  original.add(new JsonString("test"));
+	  original.add(new JsonString("test"));
+	  original.add(new JsonString("test"));
+	  original.add(new JsonString("test"));
+	  original.getSpillSerializer().write(out, original);
+	  
+	  //Initialize a test array with a cache size of 0 so that the values should be
+	  //immediately written to the spill file.
+	  SpilledJsonArray testArr = new SpilledJsonArray(0);
+	  //Use the serialized data as input for testing
+	  DataInput in = new DataInputStream(new ByteArrayInputStream(byteOut.toByteArray()));
+	  
+	  //Copy the serialized data, and test if it created a spill file
+	  testArr.addCopySerialized(in, testArr.getSpillSerializer());
+	  assertTrue(testArr.hasSpillFile());
   }
 
   /**
