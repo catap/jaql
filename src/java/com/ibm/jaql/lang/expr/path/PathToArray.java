@@ -18,11 +18,10 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
-import com.ibm.jaql.json.util.ScalarIter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -64,33 +63,33 @@ public class PathToArray extends PathArray
   }
   
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    JValue val = input.get();
+    JsonValue val = input;
     if( val == null )
     {
-      return Iter.nil; // TODO: empty or nil?
+      return JsonIterator.NULL; // TODO: empty or nil?
     }
-    final Iter iter;
-    if( val instanceof JArray )
+    final JsonIterator iter;
+    if( val instanceof JsonArray )
     {
-      iter = ((JArray)val).iter();
+      iter = ((JsonArray)val).iter();
     }
     else
     {
-      iter = new ScalarIter(input);
+      iter = new SingleJsonValueIterator(input);
     }
-    return new Iter()
+    return new JsonIterator()
     {
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        Item item = iter.next();
-        if( item != null )
+        if (iter.moveNext())
         {
-          return nextStep(context, item);
+          currentValue = nextStep(context, iter.current());
+          return true;
         }
-        return null;
+        return false;
       }
     };
   }

@@ -16,8 +16,7 @@
 package com.ibm.jaql.lang.expr.array;
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -49,26 +48,25 @@ public class MergeFn extends IterExpr // TODO: add intersect, union, difference,
 
 
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    return new Iter()
+    return new JsonIterator()
     {
       int input = 0;
-      Iter iter = Iter.empty;
+      JsonIterator iter = JsonIterator.EMPTY;
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while( true )
         {
-          Item item = iter.next();
-          if( item != null )
-          {
-            return item;
+          if (iter.moveNext()) {
+            currentValue = iter.current();
+            return true;
           }
           if( input >= exprs.length )
           {
-            return null;
+            return false;
           }
           iter = exprs[input++].iter(context);
         }

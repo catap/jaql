@@ -272,13 +272,13 @@ $books = [
 $books
 -> write({type:'hdfs', location:'example.jql', 
           outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                      converter : 'com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter'}});##
+                      converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
 {
   "location": "example.jql",
   "outoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
   "type": "hdfs"
@@ -289,13 +289,13 @@ $books
 registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter',
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
                              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
 {
   "inoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter",
+    "converter": "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter",
     "format": "org.apache.hadoop.mapred.TextInputFormat"
   },
   "type": "myHDFSFile"

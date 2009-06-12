@@ -22,7 +22,7 @@ import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
@@ -116,7 +116,7 @@ public class MapReducibleUtil
         // test it from the registry
         if (typeField instanceof ConstExpr)
         {
-          String typeName = ((ConstExpr) typeField).value.get().toString();
+          String typeName = ((ConstExpr) typeField).value.toString();
           if (input)
           {
             Class<?> c = JaqlUtil.getAdapterStore().input
@@ -137,8 +137,7 @@ public class MapReducibleUtil
         // get the class string
         if (adapterField instanceof ConstExpr)
         {
-          String adapterName = ((ConstExpr) adapterField).value.get()
-              .toString();
+          String adapterName = ((ConstExpr) adapterField).value.toString();
           Class<?> adapterClass = ClassLoaderMgr.resolveClass(adapterName);
           //Class<?> adapterClass = Class.forName(adapterName);
           if (input)
@@ -160,19 +159,19 @@ public class MapReducibleUtil
     return false;
   }
 
-  public static boolean isMapReducible(boolean input, Item descriptor) // TODO: throws Exception
+  public static boolean isMapReducible(boolean input, JsonValue descriptor) // TODO: throws Exception
   {
     try
     {
       if(input)
       {
         InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(descriptor);
-        return adapter instanceof HadoopInputAdapter<?>;
+        return adapter instanceof HadoopInputAdapter;
       }
       else
       {
         OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(descriptor);
-        return adapter instanceof HadoopOutputAdapter<?>;
+        return adapter instanceof HadoopOutputAdapter;
       }
     }
     catch(Exception e)

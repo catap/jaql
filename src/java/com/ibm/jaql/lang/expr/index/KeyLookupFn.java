@@ -17,14 +17,15 @@ package com.ibm.jaql.lang.expr.index;
 
 import java.util.HashMap;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * [ [key,value1] ] -> keyLookup([ [key,value2] ]) ==> [ [key, value1, value2] ]
@@ -63,48 +64,40 @@ public class KeyLookupFn extends IterExpr
   }
 
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    final HashMap<Item,Item> inner = new HashMap<Item,Item>();
-    final Item[] keyval = new Item[2];
-    Iter iter = exprs[1].iter(context);
-    Item item;
-    while( (item = iter.next()) != null )
+    final HashMap<JsonValue,JsonValue> inner = new HashMap<JsonValue,JsonValue>();
+    final JsonValue[] keyval = new JsonValue[2];
+    JsonIterator iter = exprs[1].iter(context);
+    for (JsonValue av : iter)
     {
-      JArray a = (JArray)item.getNonNull();
-      a.getTuple(keyval);
-      Item key = new Item();
-      Item val = new Item();
-      key.setCopy(keyval[0]);
-      val.setCopy(keyval[1]);
+      JsonArray a = JaqlUtil.enforceNonNull((JsonArray)av);
+      a.getValues(keyval);
+      JsonValue key = JsonValue.getCopy(keyval[0], null);
+      JsonValue val = JsonValue.getCopy(keyval[1], null);
       inner.put(key, val);
     }
     
-    return new Iter()
+    final BufferedJsonArray resultArray = new BufferedJsonArray(3);
+    return new JsonIterator(resultArray)
     {
-      FixedJArray resultArray = new FixedJArray(3);
-      Item result = new Item(resultArray);
-      Iter iter = exprs[0].iter(context);
+      
+      JsonIterator iter = exprs[0].iter(context);
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        Item item = iter.next();
-        if( item == null )
+        if (!iter.moveNext()) 
         {
-          return null;
+          return false;
         }
-        JArray a = (JArray)item.getNonNull();
-        a.getTuple(keyval);
-        Item val = inner.get(keyval[0]);
-        if( val == null )
-        {
-          val = Item.NIL;
-        }
+        JsonArray a = JaqlUtil.enforceNonNull((JsonArray)iter.current());
+        a.getValues(keyval);
+        JsonValue val = inner.get(keyval[0]);
         resultArray.set(0, keyval[0]);
         resultArray.set(1, keyval[1]);
         resultArray.set(2, val);
-        return result;
+        return true; // currentValue == resultArray
       }
     };
   }

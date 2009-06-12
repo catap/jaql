@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -47,17 +47,17 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    Iter iter = exprs.length == 0 ? Iter.empty : exprs[0].iter(context);
+    JsonIterator iter = exprs.length == 0 ? JsonIterator.EMPTY : exprs[0].iter(context);
     count = 0;
 
-    while( iter.next() != null )
+    while( iter.moveNext() )
     {
       count++;
     }
 
-    return new Item(new JLong(count));
+    return new JsonLong(count);
   }
 
   @Override
@@ -67,27 +67,27 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(Item item) throws Exception
+  public void addInitial(JsonValue value) throws Exception
   {
     count++;
   }
 
   @Override
-  public Item getPartial() throws Exception
+  public JsonValue getPartial() throws Exception
   {
-    return new Item(new JLong(count));
+    return new JsonLong(count);
   }
 
   @Override
-  public void addPartial(Item item) throws Exception
+  public void addPartial(JsonValue value) throws Exception
   {
-    JLong n = (JLong)item.get();
+    JsonLong n = (JsonLong)value;
     count += n.value;
   }
 
   @Override
-  public Item getFinal() throws Exception
+  public JsonValue getFinal() throws Exception
   {
-    return new Item(new JLong(count));
+    return new JsonLong(count);
   }
 }

@@ -22,8 +22,8 @@ import com.ibm.jaql.io.Adapter;
 /**
  * An adapter that is specific for Hadoop Input and Output formats.
  */
-public interface HadoopAdapter<T>
-    extends Adapter, ConfSetter<T>, JobConfigurable
+public interface HadoopAdapter
+    extends Adapter, ConfSetter, JobConfigurable
 {
   public final static String IMP                  = "com.ibm.jaql.io.hadoop.MapReduceExpr";
 

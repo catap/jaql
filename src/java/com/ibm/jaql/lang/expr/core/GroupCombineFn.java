@@ -20,12 +20,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.PriorityQueue;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
-import com.ibm.jaql.lang.util.ItemHashtable;
+import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.Bool3;
 import com.ibm.jaql.util.BufferedRandomAccessFile;
@@ -42,16 +45,16 @@ public class GroupCombineFn extends IterExpr
 {
   public static final long memoryLimit = 32 * 1024 * 1024;  // TODO: make configurable
   public static final long keyLimit    =  1 * 1024 * 1024;  // TODO: make configurable
-  protected ItemHashtable initialHT;
-  protected ItemHashtable partialHT;
-  protected Item[] pair = new Item[2];
-  protected JFunction initialFn;
-  protected JFunction partialFn;
-  protected JFunction finalFn;
+  protected JsonHashTable initialHT;
+  protected JsonHashTable partialHT;
+  protected JsonValue[] pair = new JsonValue[2];
+  protected JaqlFunction initialFn;
+  protected JaqlFunction partialFn;
+  protected JaqlFunction finalFn;
   protected File spillFileHandle;
   protected RandomAccessFile spillFile;
   protected LongArray spillOffsets;
-  
+  private final BinaryFullSerializer SERIALIZER =DefaultBinaryFullSerializer.getInstance();
   /**
    * @param exprs
    */
@@ -100,21 +103,20 @@ public class GroupCombineFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     initialFn = getFunction(context, initialExpr());
     partialFn = getFunction(context, partialExpr());
     finalFn   = getFunction(context, finalExpr());
     
-    Item item;
     boolean madePartials = false;
-    initialHT = new ItemHashtable(1); // TODO: add comparator support to ItemHashtable
-    partialHT = new ItemHashtable(1); // TODO: add comparator support to ItemHashtable
-    Iter iter = input().iter(context);
-    while ((item = iter.next()) != null)
+    initialHT = new JsonHashTable(1); // TODO: add comparator support to JsonHashtable
+    partialHT = new JsonHashTable(1); // TODO: add comparator support to JsonHashtable
+    JsonIterator iter = input().iter(context);
+    for (JsonValue value : iter)
     {
-      JArray pairArr = (JArray)item.getNonNull();
-      pairArr.getTuple(pair);
+      JsonArray pairArr = (JsonArray)JaqlUtil.enforceNonNull(value);
+      pairArr.getValues(pair);
       initialHT.add(0, pair[0], pair[1]);
       if( initialHT.getMemoryUsage() >= memoryLimit || initialHT.numKeys() >= keyLimit )
       {
@@ -139,9 +141,9 @@ public class GroupCombineFn extends IterExpr
   }
 
 
-  private JFunction getFunction(Context context, Expr expr) throws Exception
+  private JaqlFunction getFunction(Context context, Expr expr) throws Exception
   {
-    JFunction f = (JFunction)expr.eval(context).getNonNull();
+    JaqlFunction f = JaqlUtil.enforceNonNull((JaqlFunction)expr.eval(context));
     if( f.getNumParameters() != 2 )
     {
       throw new RuntimeException("function must have two parameters: "+f);
@@ -152,15 +154,14 @@ public class GroupCombineFn extends IterExpr
 
   protected void spillInitial(Context context) throws Exception
   {
-    ItemHashtable.Iterator tempIter = initialHT.iter();
+    JsonHashTable.Iterator tempIter = initialHT.iter();
     while( tempIter.next() )
     {
-      Item item;
-      Item key = tempIter.key();
-      Iter iter = initialFn.iter(context, key, tempIter.values(0));
-      while( (item = iter.next()) != null )
+      JsonValue key = tempIter.key();
+      JsonIterator iter = initialFn.iter(context, key, tempIter.values(0));
+      for (JsonValue value : iter)
       {
-        partialHT.add(0, key, item);
+        partialHT.add(0, key, value);
         if( partialHT.getMemoryUsage() >= memoryLimit || partialHT.numKeys() >= keyLimit )
         {
           spillPartial(context);
@@ -183,28 +184,28 @@ public class GroupCombineFn extends IterExpr
     partialHT.reset();
   }
 
-  protected Iter aggInitial(final Context context)
+  protected JsonIterator aggInitial(final Context context)
   {
-    return new Iter()
+    return new JsonIterator()
     {
-      Iter inner = Iter.empty;
-      ItemHashtable.Iterator tempIter = initialHT.iter();
+      JsonIterator inner = JsonIterator.EMPTY;
+      JsonHashTable.Iterator tempIter = initialHT.iter();
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while( true )
         {
-          Item item = inner.next();
-          if( item != null )
+          if (inner.moveNext())
           {
-            return item;
+            currentValue = inner.current();
+            return true;
           }
           if( ! tempIter.next() )
           {
-            return null;
+            return false;
           }
-          Item key = tempIter.key();
+          JsonValue key = tempIter.key();
           inner = 
             finalFn.iter(context, key,
                 partialFn.iter(context, key, 
@@ -214,28 +215,28 @@ public class GroupCombineFn extends IterExpr
     };
   }
 
-  protected Iter aggPartial(final Context context)
+  protected JsonIterator aggPartial(final Context context)
   {
-    return new Iter()
+    return new JsonIterator()
     {
-      Iter inner = Iter.empty;
-      ItemHashtable.Iterator tempIter = partialHT.iter();
+      JsonIterator inner = JsonIterator.EMPTY;
+      JsonHashTable.Iterator tempIter = partialHT.iter();
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while( true )
         {
-          Item item = inner.next();
-          if( item != null )
+          if (inner.moveNext())
           {
-            return item;
+            currentValue = inner.current();
+            return true;
           }
           if( ! tempIter.next() )
           {
-            return null;
+            return false;
           }
-          Item key = tempIter.key();
+          JsonValue key = tempIter.key();
           inner = 
             finalFn.iter(context, key,
                 partialFn.iter(context, key, tempIter.values(0)));
@@ -244,31 +245,30 @@ public class GroupCombineFn extends IterExpr
     };
   }
 
-  protected Iter aggSpill(final Context context) throws IOException
+  protected JsonIterator aggSpill(final Context context) throws IOException
   {
-    return new Iter()
+    return new JsonIterator()
     {
-      Iter inner = Iter.empty;
+      JsonIterator inner = JsonIterator.EMPTY;
       Merger merger = new Merger(spillFileHandle);
       
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while( true )
         {
-          Item item = inner.next();
-          if( item != null )
+          if (inner.moveNext())
           {
-            return item;
+            currentValue = inner.current();
+            return true;
           }
           
-          Item key = merger.nextKey();
-          if( key == null )
+          if (!merger.moveNextKey())
           {
-            return null;
+            return false;
           }
           
-          inner = finalFn.iter(context, key, merger);
+          inner = finalFn.iter(context, merger.currentKey(), merger);
         }
       }
     };
@@ -276,7 +276,7 @@ public class GroupCombineFn extends IterExpr
 
   protected static class Chunk implements Comparable<Chunk>
   {
-    Item key = new Item();
+    JsonValue key = null;
     long offset;
     int numValues;
     long endOffset;
@@ -289,11 +289,12 @@ public class GroupCombineFn extends IterExpr
     
   };
   
-  protected class Merger extends Iter
+  protected class Merger extends JsonIterator
   {
     protected PriorityQueue<Chunk> queue = new PriorityQueue<Chunk>();
-    protected Item value = new Item();
+    protected JsonValue value = null;
     protected BufferedRandomAccessFile spillFile;
+    protected JsonValue currentKey;
     
     public Merger(File file) throws IOException
     {
@@ -309,7 +310,7 @@ public class GroupCombineFn extends IterExpr
         advanceChunk(chunk);
       }
     }
-    
+
     /**
      * Move to the next group.  You must consume the entire group using next() before 
      * calling nextKey().  It simply skips to the next chunk of data, and does not
@@ -318,35 +319,42 @@ public class GroupCombineFn extends IterExpr
      * @return
      * @throws Exception
      */
-    public Item nextKey() throws Exception
-    {
+    public boolean moveNextKey() throws Exception
+    {    
       if( queue.isEmpty() )
       {
-        return null;
+        return false;
       }
       Chunk chunk = queue.peek();
       spillFile.seek(chunk.offset);
-      return chunk.key;
+      currentKey = chunk.key;
+      return true;
     }
     
+    public JsonValue currentKey() throws Exception
+    {
+      return currentKey;
+    }
 
     /**
      * Returns the next value with the same key
      */
     @Override
-    public Item next() throws Exception
+    public boolean moveNext() throws Exception
     {
       while( true )
       {
-        Item item = nextValueInChunk();
-        if( item != null )
+        Chunk chunk = queue.peek();
+        if( chunk.numValues <= 0 )
         {
-          return item;
+          return false;
         }
+        currentValue = SERIALIZER.read(spillFile, currentValue);
         if( ! nextChunkWithSameKey() )
         {
-          return null;
+          return false;
         }
+        return true;
       }
     }
 
@@ -355,7 +363,7 @@ public class GroupCombineFn extends IterExpr
     {
       Chunk chunk = queue.remove();
       Chunk chunk2 = queue.peek();
-      boolean same = chunk2 != null && chunk2.key.equals(chunk.key); 
+      boolean same = chunk2 != null && JsonValue.equals(chunk.key, chunk2.key); 
       advanceChunk(chunk);
       if( same )
       {
@@ -369,24 +377,12 @@ public class GroupCombineFn extends IterExpr
     {
       if( spillFile.getFilePointer() < chunk.endOffset )
       {
-        chunk.key.readFields(spillFile);
+        chunk.key = SERIALIZER.read(spillFile, chunk.key);
         chunk.numValues = BaseUtil.readVUInt(spillFile);
         assert chunk.numValues > 0;
         chunk.offset = spillFile.getFilePointer();
         queue.add(chunk);
       }
-    }
-
-    private Item nextValueInChunk() throws IOException
-    {
-      Chunk chunk = queue.peek();
-      if( chunk.numValues <= 0 )
-      {
-        return null;
-      }
-      value.readFields(spillFile);
-      chunk.numValues--;
-      return value;
     }
   }
 

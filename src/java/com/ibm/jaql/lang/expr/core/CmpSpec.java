@@ -18,11 +18,11 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.ItemComparator;
-import com.ibm.jaql.json.util.ReverseItemComparator;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.DefaultJsonComparator;
+import com.ibm.jaql.json.util.ReverseJsonComparator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JComparator;
+import com.ibm.jaql.lang.core.JsonComparator;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 
@@ -95,7 +95,7 @@ public class CmpSpec extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
@@ -117,15 +117,15 @@ public class CmpSpec extends Expr
    * @param context
    * @return
    */
-  public JComparator getComparator(Context context)
+  public JsonComparator getComparator(Context context)
   {
     if( order == Order.DESC )
     {
-      return new ReverseItemComparator();
+      return new ReverseJsonComparator();
     }
     else
     {
-      return new ItemComparator();
+      return new DefaultJsonComparator();
     }
   }
 }

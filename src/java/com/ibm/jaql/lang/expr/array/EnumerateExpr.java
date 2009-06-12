@@ -15,10 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -66,25 +65,22 @@ public final class EnumerateExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    final Iter iter = exprs[0].iter(context);
-    final FixedJArray pair = new FixedJArray(2);
-    final JLong counter = new JLong(-1);
-    pair.set(0, new Item(counter));
-    final Item result = new Item(pair);
+    final JsonIterator iter = exprs[0].iter(context);
+    final BufferedJsonArray pair = new BufferedJsonArray(2);
+    final JsonLong counter = new JsonLong(-1);
+    pair.set(0, counter);
 
-    return new Iter() {
-      public Item next() throws Exception
+    return new JsonIterator(pair) {
+      public boolean moveNext() throws Exception
       {
-        Item item = iter.next();
-        if (item == null)
-        {
-          return null;
+        if (!iter.moveNext()) {
+          return false;
         }
         counter.value++;
-        pair.set(1, item);
-        return result;
+        pair.set(1, iter.current());
+        return true;
       }
     };
   }

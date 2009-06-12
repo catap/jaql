@@ -15,15 +15,15 @@
  */
 package com.foobar.function;
 
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
 
 /**
  * 
  */
 public class MyNewFunction
 {
-  public JString eval(JString who) throws Exception
+  public JsonString eval(JsonString who) throws Exception
   {
-    return new JString("Hello, " + who.toString() + "!");
+    return new JsonString("Hello, " + who.toString() + "!");
   }
 }

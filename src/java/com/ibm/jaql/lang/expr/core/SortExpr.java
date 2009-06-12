@@ -18,13 +18,13 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JComparator;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JsonComparator;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.util.ItemSorter;
+import com.ibm.jaql.lang.util.JsonSorter;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -103,30 +103,29 @@ public class SortExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    JFunction cmpFn = (JFunction)cmpExpr().eval(context).get();
+    JaqlFunction cmpFn = (JaqlFunction)cmpExpr().eval(context);
     if( cmpFn.getNumParameters() != 1 || !(cmpFn.getBody() instanceof CmpExpr) )
     {
       throw new RuntimeException("invalid comparator function");
     }
     Var cmpVar = cmpFn.param(0);
     CmpExpr cmp = (CmpExpr)cmpFn.getBody();
-    JComparator comparator = cmp.getComparator(context);
+    JsonComparator comparator = cmp.getComparator(context);
 
-    final ItemSorter temp = new ItemSorter(comparator);
+    final JsonSorter temp = new JsonSorter(comparator);
 
-    Item item;
-    Iter iter = exprs[0].iter(context);
+    JsonIterator iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
-    while ((item = iter.next()) != null)
+    for (JsonValue value : iter)
     {
-      cmpVar.setValue(item);
-      Item byItem = cmp.eval(context);
-      temp.add(byItem, item);
+      cmpVar.setValue(value);
+      JsonValue byValue = cmp.eval(context);
+      temp.add(byValue, value);
     }
 
     temp.sort();
@@ -137,12 +136,6 @@ public class SortExpr extends IterExpr
 //      byItems[i] = new Item();
 //    }
 
-    return new Iter() {
-      public Item next() throws Exception
-      {
-        return temp.nextValue();
-      }
-    };
+    return temp.iter();
   }
-
 }

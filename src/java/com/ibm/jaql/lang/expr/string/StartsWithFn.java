@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -41,19 +40,19 @@ public class StartsWithFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonBool eval(final Context context) throws Exception
   {
-    JString text = (JString) exprs[0].eval(context).get();
+    JsonString text = (JsonString) exprs[0].eval(context);
     if (text == null)
     {
-      return Item.NIL;
+      return null;
     }
-    JString prefix = (JString) exprs[1].eval(context).get();
+    JsonString prefix = (JsonString) exprs[1].eval(context);
     if (prefix == null)
     {
-      return Item.NIL;
+      return null;
     }
     boolean rc = text.startsWith(prefix);
-    return JBool.make(rc);
+    return JsonBool.make(rc);
   }
 }

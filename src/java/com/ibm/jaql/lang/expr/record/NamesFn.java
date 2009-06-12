@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -57,26 +56,25 @@ public class NamesFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    final JRecord rec = (JRecord) exprs[0].eval(context).get();
+    final JsonRecord rec = (JsonRecord) exprs[0].eval(context);
     if (rec == null)
     {
-      return Iter.empty; // TODO: should this return null? If so, then not the same as fields($rec)[*][0]
+      return JsonIterator.EMPTY; // TODO: should this return null? If so, then not the same as fields($rec)[*][0]
     }
-    return new Iter() {
+    return new JsonIterator() {
       int  i    = 0;
-      Item item = new Item(); // TODO: memory
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if (i < rec.arity())
         {
-          item.set(rec.getName(i));
+          currentValue = rec.getName(i);
           i++;
-          return item;
+          return true;
         }
-        return null;
+        return false;
       }
     };
   }

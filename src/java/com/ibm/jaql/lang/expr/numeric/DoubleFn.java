@@ -15,11 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.numeric;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JDouble;
-import com.ibm.jaql.json.type.JNumeric;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -53,32 +52,31 @@ public class DoubleFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonDouble eval(final Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    JValue val = item.get();
+    JsonValue val = exprs[0].eval(context);
     if (val == null)
     {
-      return Item.NIL;
+      return null;
     }
-    else if (val instanceof JDouble)
+    else if (val instanceof JsonDouble)
     {
-      return item;
+      return (JsonDouble)val;
     }
-    else if (val instanceof JNumeric)
+    else if (val instanceof JsonNumeric)
     {
-      JNumeric n = (JNumeric) val;
-      val = new JDouble(n.doubleValue()); // TODO: memory
+      JsonNumeric n = (JsonNumeric) val;
+      val = new JsonDouble(n.doubleValue()); // TODO: memory
     }
-    else if (val instanceof JString)
+    else if (val instanceof JsonString)
     {
-      val = new JDouble(val.toString()); // TODO: memory
+      val = new JsonDouble(val.toString()); // TODO: memory
     }
     else
     {
       throw new ClassCastException("cannot convert "
           + val.getEncoding().getType().name() + " to double");
     }
-    return new Item(val); // TODO: memory
+    return (JsonDouble)val; // TODO: memory
   }
 }

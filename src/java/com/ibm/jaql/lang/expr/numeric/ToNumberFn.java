@@ -18,13 +18,12 @@ package com.ibm.jaql.lang.expr.numeric;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JDecimal;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -35,9 +34,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "number", minArgs = 1, maxArgs = 1)
 public class ToNumberFn extends Expr
 {
-  protected JLong jlong = new JLong();
-  protected JDecimal jdec = new JDecimal();
-  protected Item result = new Item();
+  protected JsonLong jlong = new JsonLong();
+  protected JsonDecimal jdec = new JsonDecimal();
   
   /**
    * @param exprs
@@ -52,20 +50,19 @@ public class ToNumberFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonNumber eval(final Context context) throws Exception
   {
-    Item item = exprs[0].eval(context);
-    JValue w = item.get();
-    if (w == null || w instanceof JNumber)
+    JsonValue w = exprs[0].eval(context);
+    if (w == null || w instanceof JsonNumber)
     {
-      return item;
+      return (JsonNumber)w;
     }
 
-    JNumber num;
-    if (w instanceof JString)
+    JsonNumber num;
+    if (w instanceof JsonString)
     {
       // TODO: long vs decimal...
-      String s = ((JString) w).toString();
+      String s = ((JsonString) w).toString();
       try
       {
         long x = Long.parseLong(s);
@@ -79,15 +76,15 @@ public class ToNumberFn extends Expr
         num = jdec;
       }
     }
-    else if (w instanceof JBool)
+    else if (w instanceof JsonBool)
     {
-      if (((JBool) w).getValue())
+      if (((JsonBool) w).getValue())
       {
-        return JLong.ONE_ITEM;
+        return JsonLong.ONE;
       }
       else
       {
-        return JLong.ZERO_ITEM;
+        return JsonLong.ZERO;
       }
     }
     else
@@ -95,7 +92,6 @@ public class ToNumberFn extends Expr
       throw new RuntimeException("cannot cast " + w.getClass().getName()
           + " to number");
     }
-    result.set(num);
-    return result;
+    return num;
   }
 }

@@ -16,11 +16,11 @@
 package com.ibm.jaql.lang.expr.index;
 
 import com.ibm.jaql.io.index.JIndexWriter;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JArray;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -35,37 +35,35 @@ public class BuildJIndexFn extends Expr
   }
 
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    Item fdItem = exprs[1].eval(context);
-    JRecord fd = (JRecord)fdItem.get();
+    JsonRecord fd = (JsonRecord)exprs[1].eval(context);
     if( fd == null )
     {
-      return Item.NIL;
+      return null;
     }
-    JString jloc = (JString)fd.getRequired("location").get();
+    JsonString jloc = (JsonString)fd.getRequired("location");
     if( jloc == null )
     {
-      return Item.NIL;
+      return null;
     }
 
     JIndexWriter index = new JIndexWriter(jloc.toString());
 
-    Item[] kvpair = new Item[2];
+    JsonValue[] kvpair = new JsonValue[2];
 
-    Item item;
-    Iter iter = exprs[0].iter(context);
-    while( (item = iter.next()) != null )
+    JsonIterator iter = exprs[0].iter(context);
+    for (JsonValue value : iter)
     {
-      JArray arr = (JArray)item.get();
-      arr.getTuple(kvpair);
-      Item key = kvpair[0];
-      Item val = kvpair[1];
+      JsonArray arr = (JsonArray)value;
+      arr.getValues(kvpair);
+      JsonValue key = kvpair[0];
+      JsonValue val = kvpair[1];
       index.add(key,val);
     }
     
     index.close();
     
-    return fdItem;
+    return fd;
   }
 }

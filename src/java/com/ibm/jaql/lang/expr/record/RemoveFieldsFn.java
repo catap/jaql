@@ -17,11 +17,11 @@ package com.ibm.jaql.lang.expr.record;
 
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -47,37 +47,35 @@ public class RemoveFieldsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonRecord eval(Context context) throws Exception
   {
-    JRecord rec = (JRecord) exprs[0].eval(context).get();
+    JsonRecord rec = (JsonRecord) exprs[0].eval(context);
     if (rec == null)
     {
-      return Item.NIL;
+      return null;
     }
 
-    Iter iter = exprs[1].iter(context);
+    JsonIterator iter = exprs[1].iter(context);
     // TODO: it would be great to detect a constant list of names here
-    HashSet<JString> removeNames = new HashSet<JString>(); // TODO: memory
-    Item name;
-    while ((name = iter.next()) != null)
+    HashSet<JsonString> removeNames = new HashSet<JsonString>(); // TODO: memory
+    for (JsonValue name : iter)
     {
-      JString nm = (JString) name.get();
-      removeNames.add(new JString(nm)); // TODO: memory
+      JsonString nm = (JsonString) name;
+      removeNames.add(new JsonString(nm)); // TODO: memory
     }
 
-    MemoryJRecord outRec = new MemoryJRecord(); // TODO: memory
-    Item result = new Item(outRec); // TODO: memory
+    BufferedJsonRecord outRec = new BufferedJsonRecord(); // TODO: memory
 
     int n = rec.arity();
     for (int i = 0; i < n; i++)
     {
-      JString nm = rec.getName(i);
+      JsonString nm = rec.getName(i);
       if (!removeNames.contains(nm))
       {
         outRec.add(nm, rec.getValue(i));
       }
     }
 
-    return result;
+    return outRec;
   }
 }

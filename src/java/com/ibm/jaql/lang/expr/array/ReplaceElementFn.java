@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -50,38 +49,40 @@ public class ReplaceElementFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    final Iter tmpIter = exprs[0].iter(context);
-    final JLong replaceIndexLong = (JLong) exprs[1].eval(context).get();
+    final JsonIterator tmpIter = exprs[0].iter(context);
+    final JsonLong replaceIndexLong = (JsonLong) exprs[1].eval(context);
     if (replaceIndexLong == null || replaceIndexLong.value < 0)
     {
       return tmpIter;
     }
-    return new Iter() {
+    return new JsonIterator() {
       long index        = 0;
       long replaceIndex = replaceIndexLong.value;
-      Iter iter         = tmpIter;
+      JsonIterator iter         = tmpIter;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         long i = index;
-        Item item = iter.next();
+        boolean hasNext = iter.moveNext();
         index++;
         if (i == replaceIndex)
         {
-          return exprs[2].eval(context);
+          currentValue = exprs[2].eval(context);
+          return true;
         }
-        if (item != null)
-        {
-          return item;
+        if (hasNext) {
+          currentValue = iter.current();
+          return hasNext;
         }
         if (i >= replaceIndex)
         {
-          return null;
+          return false;
         }
-        iter = Iter.empty;
-        return Item.NIL;
+        iter = JsonIterator.EMPTY;
+        currentValue = null;
+        return true;
       }
     };
   }

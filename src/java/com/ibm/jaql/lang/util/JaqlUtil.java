@@ -25,9 +25,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
@@ -40,21 +40,30 @@ import com.ibm.jaql.util.PagedFile;
  */
 public class JaqlUtil
 {
-  public final static JString emptyString = new JString();
+  public final static JsonString emptyString = new JsonString();
 
-  /** Returns true if the value embedded in the specified item is a JBool that equals true
-   * @param item an Item embedding a JBool
+  /** Returns true if the value is a JBool that equals true
+   * @param value a JBool
    * @return
-   * @throws Exception
+   * @throws Exception if the value is not a JBool
    */
-  public static boolean ebv(Item item) throws Exception
+  public static boolean ebv(JsonValue value) throws Exception
   {
-    JBool b = (JBool) item.get();
+    JsonBool b = (JsonBool) value;
     if (b != null)
     {
       return b.value;
     }
     return false;
+  }
+
+  public final static <T> T enforceNonNull(T v)
+  {
+    if (v == null)
+    {
+      throw new NullPointerException("value must not be null");
+    }
+    return v;
   }
 
   //  private static HashMap<Seekable, Long> fileIdMap = new HashMap<Seekable, Long>();

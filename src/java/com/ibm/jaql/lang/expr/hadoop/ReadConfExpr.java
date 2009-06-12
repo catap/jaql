@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.expr.hadoop;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.hadoop.Globals;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -44,10 +44,10 @@ public class ReadConfExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
     JobConf conf = Globals.getJobConf();
-    Item dflt = Item.NIL;
+    JsonValue dflt = null;
     if (conf == null)
     {
       if (exprs.length == 2)
@@ -57,7 +57,7 @@ public class ReadConfExpr extends Expr
       return dflt;
     }
 
-    JString name = (JString) (exprs[0].eval(context).get());
+    JsonString name = (JsonString) exprs[0].eval(context);
     String val = conf.get(name.toString());
     if (val == null)
     {
@@ -68,6 +68,6 @@ public class ReadConfExpr extends Expr
       return dflt;
     }
 
-    return new Item(new JString(val));
+    return new JsonString(val);
   }
 }

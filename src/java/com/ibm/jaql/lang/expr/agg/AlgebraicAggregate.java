@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -40,9 +40,9 @@ public abstract class AlgebraicAggregate extends Aggregate
     initInitial(context);
   }
   
-  public abstract void addPartial(Item item) throws Exception;
+  public abstract void addPartial(JsonValue value) throws Exception;
   
-  public abstract Item getPartial() throws Exception;
+  public abstract JsonValue getPartial() throws Exception;
 }
 
 

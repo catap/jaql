@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -41,27 +40,27 @@ public class SubstringFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(final Context context) throws Exception
+  public JsonString eval(final Context context) throws Exception
   {
-    JString text = (JString) exprs[0].eval(context).get();
+    JsonString text = (JsonString) exprs[0].eval(context);
     if (text == null)
     {
-      return Item.NIL;
+      return null;
     }
-    JNumber n = (JNumber) exprs[1].eval(context).get();
+    JsonNumber n = (JsonNumber) exprs[1].eval(context);
     if (n == null)
     {
-      return Item.NIL;
+      return null;
     }
     String s = text.toString(); // TODO: add JString.substring() methods with target buffer
     long start = n.longValueExact();
 
     if (exprs.length == 3)
     {
-      n = (JNumber) exprs[2].eval(context).get();
+      n = (JsonNumber) exprs[2].eval(context);
       if (n == null)
       {
-        return Item.NIL;
+        return null;
       }
       long end = n.longValueExact();
       s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?
@@ -71,8 +70,7 @@ public class SubstringFn extends Expr
       s = s.substring((int) start); // TODO: switch to python/js semantics?
     }
 
-    JString js = new JString(s); // TODO: memory
-    Item result = new Item(js); // TODO: memory
-    return result;
+    JsonString js = new JsonString(s); // TODO: memory
+    return js;
   }
 }

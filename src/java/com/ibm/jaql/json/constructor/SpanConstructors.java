@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.json.constructor;
 
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.type.JSpan;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonSpan;
 
 /**
  * 
@@ -27,8 +27,8 @@ public class SpanConstructors
    * @param iso8601
    * @return
    */
-  public JSpan span(JNumber begin, JNumber end)
+  public JsonSpan span(JsonNumber begin, JsonNumber end)
   {
-    return new JSpan(begin.longValue(), end.longValue());
+    return new JsonSpan(begin.longValue(), end.longValue());
   }
 }

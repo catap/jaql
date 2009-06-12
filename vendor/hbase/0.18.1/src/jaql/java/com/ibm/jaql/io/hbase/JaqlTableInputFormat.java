@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.mapred.TableSplit;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
@@ -30,16 +29,17 @@ import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.log4j.Logger;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
-import com.ibm.jaql.json.util.ClosableIter;
+import com.ibm.jaql.io.ClosableJsonIterator;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * 
  */
 public class JaqlTableInputFormat
-    implements InputFormat<Item, Item>, JobConfigurable
+    implements InputFormat<JsonHolder, JsonHolder>, JobConfigurable
 {
   static final Logger  LOG         = Logger.getLogger(JaqlTableInputFormat.class.getName());
 
@@ -57,11 +57,11 @@ public class JaqlTableInputFormat
 
   private byte[]         tableName;
 
-  private JString[]       columnNames;
+  private JsonString[]       columnNames;
 
-  private JString         lowKey      = null;
+  private JsonString         lowKey      = null;
 
-  private JString         highKey     = null;
+  private JsonString         highKey     = null;
 
   private long         timeStamp   = -1;
 
@@ -77,10 +77,10 @@ public class JaqlTableInputFormat
   /**
    * 
    */
-  public class JaqlTableRecordReader implements RecordReader<Item, Item>
+  public class JaqlTableRecordReader implements RecordReader<JsonHolder, JsonHolder>
   {
     // replace with Muse Iter
-    private ClosableIter tupleIter;
+    private ClosableJsonIterator tupleIter;
 
     private boolean      hasMore;
 
@@ -94,10 +94,10 @@ public class JaqlTableInputFormat
         Reporter reporter) throws IOException
     {
       // setup tuple memory
-      MemoryJRecord current = new MemoryJRecord();
+      BufferedJsonRecord current = new BufferedJsonRecord();
 
       // setup startKey
-      JString startKey = new JString(split.getStartRow());
+      JsonString startKey = new JsonString(split.getStartRow());
       if (lowKey != null && lowKey.compareTo(startKey) > 0) startKey = lowKey;
 
       // create iterator
@@ -105,7 +105,7 @@ public class JaqlTableInputFormat
       try
       {
         // TODO: not clear that this is the right context?
-        JString endKey = new JString(split.getEndRow());
+        JsonString endKey = new JsonString(split.getEndRow());
         tupleIter = HBaseStore.Util.createResultBase(table, startKey, endKey,
             columnNames, timeStamp, current);
       }
@@ -131,9 +131,9 @@ public class JaqlTableInputFormat
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createKey()
      */
-    public Item createKey()
+    public JsonHolder createKey()
     {
-      return new Item();
+      return new JsonHolder();
     }
 
     /*
@@ -141,9 +141,9 @@ public class JaqlTableInputFormat
      * 
      * @see org.apache.hadoop.mapred.RecordReader#createValue()
      */
-    public Item createValue()
+    public JsonHolder createValue()
     {
-      return new Item();
+      return new JsonHolder();
     }
 
     /*
@@ -175,7 +175,7 @@ public class JaqlTableInputFormat
      * @see org.apache.hadoop.mapred.RecordReader#next(java.lang.Object,
      *      java.lang.Object)
      */
-    public boolean next(Item key, Item value) throws IOException
+    public boolean next(JsonHolder key, JsonHolder value) throws IOException
     {
       if (!hasMore) return hasMore;
 
@@ -183,16 +183,15 @@ public class JaqlTableInputFormat
       // to current tuple
       try
       {
-        Item item = tupleIter.next();
-
-        if (item == null)
+        if (!tupleIter.moveNext())
         {
           hasMore = false;
         }
         else
         {
-          LOG.info("Retrieved tuple: " + item.getNonNull());
-          value.set(item.getNonNull());
+          JsonValue t = tupleIter.current();
+          LOG.info("Retrieved tuple: " + t);
+          value.value = t;
         }
       }
       catch (IOException e)
@@ -213,7 +212,7 @@ public class JaqlTableInputFormat
    * @see org.apache.hadoop.mapred.InputFormat#getRecordReader(org.apache.hadoop.mapred.InputSplit,
    *      org.apache.hadoop.mapred.JobConf, org.apache.hadoop.mapred.Reporter)
    */
-  public RecordReader<Item, Item> getRecordReader(InputSplit split,
+  public RecordReader<JsonHolder, JsonHolder> getRecordReader(InputSplit split,
       @SuppressWarnings("unused")
       JobConf job, @SuppressWarnings("unused")
       Reporter reporter) throws IOException
@@ -272,21 +271,21 @@ public class JaqlTableInputFormat
     // column names
     String colArg = job.get(JOB_COLUMNS);
     String[] splitArr = colArg.split(" ");
-    columnNames = new JString[splitArr.length];
+    columnNames = new JsonString[splitArr.length];
     for (int i = 0; i < columnNames.length; i++)
     {
-      columnNames[i] = new JString(splitArr[i]);
+      columnNames[i] = new JsonString(splitArr[i]);
     }
 
     // option arguments
 
     // low key
     String lowKeyArg = job.get(JOB_LOWKEY);
-    if (lowKeyArg != null) lowKey = new JString(lowKeyArg);
+    if (lowKeyArg != null) lowKey = new JsonString(lowKeyArg);
 
     // high key
     String highKeyArg = job.get(JOB_HIGHKEY);
-    if (highKeyArg != null) highKey = new JString(highKeyArg);
+    if (highKeyArg != null) highKey = new JsonString(highKeyArg);
 
     // timestamp
     String timestampArg = job.get(JOB_TS);

@@ -17,7 +17,8 @@ package com.foobar.store;
 
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
+
 
 /**
  * 
@@ -31,9 +32,9 @@ public class ToJSONTxtConverter extends ToJSONSeqConverter
    * @see com.foobar.store.ToJSONSeqConverter#convertItemToString(com.ibm.jaql.json.type.Item)
    */
   @Override
-  protected String convertItemToString(Item i) throws Exception
+  protected String convertItemToString(JsonValue val) throws Exception
   {
-    String s = super.convertItemToString(i);
+    String s = super.convertItemToString(val);
     s = s.replace("\r", ""); // this loses information in case there are newlines in the data
     s = s.replace("\n", "");
     return s;

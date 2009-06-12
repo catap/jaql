@@ -22,9 +22,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import com.ibm.jaql.json.type.FixedJArray;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.BufferedRandomAccessFile;
 import com.ibm.jaql.util.LongArray;
@@ -35,17 +37,18 @@ public class JIndexReader implements Closeable
   private long fileVersion;
   private BufferedRandomAccessFile base;
   private ArrayList<Index> indexes = new ArrayList<Index>();
-  private ArrayList<Item> root;
+  private ArrayList<JsonValue> root;
   private LongArray rootp;
-  private Item key = new Item();
-  private Item value = new Item();
-  private FixedJArray tuple = new FixedJArray(2);
-  private Item result = new Item(tuple);
-  private Item minKey = new Item();
-  private Item maxKey = new Item();
+  private JsonValue key;
+  private JsonValue value;
+  private BufferedJsonArray tuple = new BufferedJsonArray(2);
+//  private Item result = new Item(tuple);
+  private JsonValue minKey;
+  private JsonValue maxKey;
   private long numIndexes;
   private long minOffset;
 
+  private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   /**
    * 
@@ -84,9 +87,9 @@ public class JIndexReader implements Closeable
    * @param high maximum value to include in scan, or null for no max
    * @return
    */
-  public Iter rangeScan(final Item low, final Item high) throws IOException
+  public JsonIterator rangeScan(final JsonValue low, final JsonValue high) throws IOException
   {
-    if( low == null || low.isNull() )
+    if( low == null )
     {
       base.seek(minOffset);
     }
@@ -105,7 +108,7 @@ public class JIndexReader implements Closeable
         {
           if( low.compareTo(maxKey) > 0 ) // root[last] < max < low
           {
-            return Iter.empty;            // no results
+            return JsonIterator.EMPTY;            // no results
           }
           // root[p-1] < low <= max
         }
@@ -122,47 +125,47 @@ public class JIndexReader implements Closeable
       base.seek(offset);
       try
       {
-        key.readFields(base);
+        key = serializer.read(base, key);
         while( key.compareTo(low) < 0 )
         {
-          value.readFields(base);
+          value = serializer.read(base, value);
           offset = base.getFilePointer();
-          key.readFields(base);
+          key = serializer.read(base, key);
         }
         base.seek(offset);
       }
       catch(EOFException ex)
       {
-        return Iter.empty;
+        return JsonIterator.EMPTY;
       }
     }
 
-    return new Iter()
+    return new JsonIterator(tuple)
     {
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         try
         {
-          key.readFields(base);
-          value.readFields(base);
+          key = serializer.read(base, key);
+          value = serializer.read(base, value);
           if( high == null || key.compareTo(high) <= 0 )
           {
             tuple.set(0, key);
             tuple.set(1, value);
-            return result;
+            return true; // currentValue == tuple
           }
         }
         catch(EOFException e) {}
-        base.seek(base.length()); // just to be safe in case next() is called again
-        return null;
+        base.seek(base.length()); // just to be safe in case moveNext() is called again
+        return false; 
       }
     };
   }
     
   private void loadIndexes() throws IOException
   {
-    root = new ArrayList<Item>();
+    root = new ArrayList<JsonValue>();
     rootp = new LongArray();
 
     for(int i = 0 ; i < numIndexes ; i++)
@@ -176,8 +179,7 @@ public class JIndexReader implements Closeable
       rootp.add(index.prevMinOffset);
       while( true )
       {
-        Item k = new Item();
-        k.readFields(index.in);
+        JsonValue k = serializer.read(index.in, null);
         root.add(k);
         long offset = BaseUtil.readVULong(index.in);
         rootp.add(offset);
@@ -186,7 +188,7 @@ public class JIndexReader implements Closeable
     catch( EOFException ex ) {}
   }
   
-  private long indexLookup(int i, long offset, final Item low) throws IOException
+  private long indexLookup(int i, long offset, final JsonValue low) throws IOException
   {
     for( ; i >= 0 ; i--)
     {
@@ -195,12 +197,12 @@ public class JIndexReader implements Closeable
         Index index = indexes.get(i);
         index.in.seek(offset);
         offset = index.prevMinOffset;
-        key.readFields(index.in);
+        key = serializer.read(index.in, key);
         int c;
         while( (c = low.compareTo(key)) > 0 )
         {
           offset = BaseUtil.readVULong(index.in);
-          key.readFields(index.in);
+          key = serializer.read(index.in, key);
         }
         if( c == 0 )
         {
@@ -241,8 +243,8 @@ public class JIndexReader implements Closeable
     BufferedRandomAccessFile summary =  new BufferedRandomAccessFile(filename+".summary", "r", 4096);
     readHeader(summary, JIndexWriter.SUMMARY_FILE);
     
-    minKey.readFields(summary);
-    maxKey.readFields(summary);
+    minKey = serializer.read(summary, minKey);
+    maxKey = serializer.read(summary, maxKey);
     /*totalItems =*/ BaseUtil.readVULong(summary);
     numIndexes = BaseUtil.readVULong(summary);
 

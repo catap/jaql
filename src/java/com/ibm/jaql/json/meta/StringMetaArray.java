@@ -18,9 +18,10 @@ package com.ibm.jaql.json.meta;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.Iter;
+
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -43,9 +44,9 @@ public class StringMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public Item makeItem()
+  public JsonString makeValue()
   {
-    return new Item(new JString());
+    return new JsonString();
   }
 
   /*
@@ -66,23 +67,22 @@ public class StringMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#iter(java.lang.Object)
    */
   @Override
-  public Iter iter(Object obj) throws Exception
+  public JsonIterator iter(Object obj) throws Exception
   {
     final String[] arr = (String[]) obj;
-    return new Iter() {
+    final JsonString jstring = new JsonString();
+    return new JsonIterator() {
       int     i       = 0;
-      JString jstring = new JString();
-      Item    item    = new Item(jstring);
 
       @Override
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         if (i < arr.length)
         {
           jstring.set(arr[i++]);
-          return item;
+          return true; // currentValue == jstring
         }
-        return null;
+        return false;
       }
     };
   }
@@ -94,16 +94,17 @@ public class StringMetaArray extends MetaArray
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void nth(Object obj, long n, Item result) throws Exception
+  public JsonValue nth(Object obj, long n, JsonValue target) throws Exception
   {
     String[] arr = (String[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JString) result.restoreCache()).set(arr[(int) n]);
+      ((JsonString) target).set(arr[(int) n]);
+      return target;
     }
     else
     {
-      result.set(null);
+      return null;
     }
   }
 

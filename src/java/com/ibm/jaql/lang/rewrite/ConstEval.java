@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
@@ -52,8 +52,8 @@ public class ConstEval extends Rewrite
     }
 
     Context context = new Context();
-    Item item = expr.eval(context);
-    ConstExpr c = new ConstExpr(item);
+    JsonValue value = expr.eval(context);
+    ConstExpr c = new ConstExpr(value);
     expr.replaceInParent(c);
     context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     return true;

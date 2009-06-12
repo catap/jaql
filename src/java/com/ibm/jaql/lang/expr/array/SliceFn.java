@@ -15,9 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JNumber;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -54,39 +53,36 @@ public class SliceFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
-    JNumber jlow  = (JNumber)exprs[1].eval(context).get();
-    JNumber jhigh = (JNumber)exprs[2].eval(context).get();
+    JsonNumber jlow  = (JsonNumber)exprs[1].eval(context);
+    JsonNumber jhigh = (JsonNumber)exprs[2].eval(context);
     
     final long low  = (jlow == null) ? 0 : jlow.longValueExact();
     final long high = (jhigh == null) ? Long.MAX_VALUE : jhigh.longValueExact();
-    final Iter iter = exprs[0].iter(context);
+    final JsonIterator iter = exprs[0].iter(context);
     
     for(long i = 0 ; i < low ; i++)
     {
-      if( iter.next() == null )
+      if (!iter.moveNext()) 
       {
-        return Iter.empty;
+        return JsonIterator.EMPTY;
       }
     }
     
-    return new Iter() 
+    return new JsonIterator() 
     {
       long index = low;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
-        if( index <= high )
+        if( index <= high && iter.moveNext())
         {
-          Item item = iter.next();
-          if( item != null )
-          {
-            index++;
-            return item;
-          }
+          currentValue = iter.current();
+          index++;
+          return true;
         }
-        return null;
+        return false;
       }
     };
   }

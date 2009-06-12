@@ -18,8 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -188,34 +187,34 @@ public final class ForExpr extends IterExpr // TODO: rename
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public Iter iter(final Context context) throws Exception
+  public JsonIterator iter(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr collectExpr = collectExpr();
 
-    final Iter inIter = inBinding.iter(context);
+    final JsonIterator inIter = inBinding.iter(context);
 
-    return new Iter() 
+    return new JsonIterator() 
     {
-      Iter inner = Iter.empty;
+      JsonIterator inner = JsonIterator.EMPTY;
 
-      public Item next() throws Exception
+      public boolean moveNext() throws Exception
       {
         while (true)
         {
-          Item item;
-          while ((item = inner.next()) != null)
-          {
-            return item;
+          if (inner.moveNext()) {
+            currentValue = inner.current();
+            return true;
           }
 
-          item = inIter.next();
-          if (item == null)
+          if (inIter.moveNext()) 
           {
-            return null;
+            inner = collectExpr.iter(context); 
           }
-
-          inner = collectExpr.iter(context);
+          else
+          {
+            return false;
+          }
         }
       }
     };

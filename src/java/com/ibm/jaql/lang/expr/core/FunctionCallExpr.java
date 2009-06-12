@@ -19,11 +19,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JValue;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
 
@@ -134,7 +133,7 @@ public class FunctionCallExpr extends Expr
     }
     else if( fn instanceof ConstExpr )
     {
-      JFunction jf = (JFunction)((ConstExpr)fn).value.get();
+      JaqlFunction jf = (JaqlFunction)((ConstExpr)fn).value;
       if( fn != null )
       {
         def = jf.getFunction();
@@ -179,16 +178,16 @@ public class FunctionCallExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item eval(Context context) throws Exception
+  public JsonValue eval(Context context) throws Exception
   {
-    JValue fnVal = exprs[0].eval(context).get();
+    JsonValue fnVal = exprs[0].eval(context);
     if( fnVal == null )
     {
-      return Item.NIL;
+      return null;
     }
-    // if( fnVal instanceof JFunction )
+    // if( fnVal instanceof JaqlFunction  )
     {
-      JFunction fn = context.getCallable(this, (JFunction)fnVal);
+      JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
       return fn.eval(context, exprs, 1, exprs.length - 1);
     }
 //    else if( fnVal instanceof JString )
@@ -271,14 +270,14 @@ public class FunctionCallExpr extends Expr
   }
 
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
-    JValue fnVal = exprs[0].eval(context).get();
+    JsonValue fnVal = exprs[0].eval(context);
     if (fnVal == null)
     {
-      return Iter.nil;
+      return JsonIterator.NULL;
     }
-    JFunction fn = context.getCallable(this, (JFunction)fnVal);
+    JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
     return fn.iter(context, exprs, 1, exprs.length - 1);
   }
 }

@@ -18,10 +18,11 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -60,32 +61,32 @@ public class UnrollField extends UnrollStep
    * @see com.ibm.jaql.lang.expr.core.ExpandStep#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public Item expand(Context context, Item toExpand) throws Exception
+  public JsonHolder expand(Context context, JsonHolder toExpand) throws Exception
   {
-    JRecord rec = (JRecord)toExpand.get();
+    JsonRecord rec = (JsonRecord)toExpand.value;
     if( rec == null )
     {
       return null;
     }
-    JString ename = (JString)exprs[0].eval(context).get();
+    JsonString ename = (JsonString)exprs[0].eval(context);
     if( ename == null )
     {
       return null;
     }
     int n = rec.arity();
-    MemoryJRecord out = new MemoryJRecord(n); // TODO: memory
-    Item hole = null;
+    BufferedJsonRecord out = new BufferedJsonRecord(n); // TODO: memory
+    JsonHolder hole = null;
     for(int i = 0 ; i < n ; i++)
     {
-      JString name = rec.getName(i);
-      Item value = rec.getValue(i);
+      JsonString name = rec.getName(i);
+      JsonValue value = rec.getValue(i);
       if( name.equals(ename) )
       {
-        value = hole = new Item(value.get()); // TODO: memory
+        hole = new JsonHolder(value); // TODO: memory
       }
       out.add(name, value);
     }
-    toExpand.set(out);
+    toExpand.value = out;
     return hole;
   }
 }

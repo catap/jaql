@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.json.constructor;
 
-import com.ibm.jaql.json.type.JDate;
-import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonString;
 
 /**
  * 
@@ -27,8 +27,10 @@ public class DateConstructors
    * @param iso8601
    * @return
    */
-  public JDate date(JString iso8601)
+  public JsonDate date(JsonString iso8601)
   {
-    return new JDate(iso8601);
+    return new JsonDate(iso8601);
   }
+  
+  
 }

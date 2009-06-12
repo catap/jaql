@@ -18,10 +18,10 @@ package com.ibm.jaql.lang.expr.numeric;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JDecimal;
-import com.ibm.jaql.json.type.JLong;
-import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -53,24 +53,24 @@ public class LnFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonNumeric eval(Context context) throws Exception
   {
-    JValue item1 = exprs[0].eval(context).get();
-    if (item1 == null)
+    JsonValue value1 = exprs[0].eval(context);
+    if (value1 == null)
     {
-      return Item.NIL;
+      return null;
     }
     BigDecimal n1, n2;
-    if (item1 instanceof JLong)
+    if (value1 instanceof JsonLong)
     {
-      n1 = new BigDecimal(((JLong) item1).value);
+      n1 = new BigDecimal(((JsonLong) value1).value);
     }
     else
     {
-      n1 = ((JDecimal) item1).value;
+      n1 = ((JsonDecimal) value1).value;
     }
     // TODO: How I hate Java's decimal support... get better decimal log
     n2 = new BigDecimal(Math.log(n1.doubleValue()), MathContext.DECIMAL128);
-    return new Item(new JDecimal(n2)); // TODO: reuse
+    return new JsonDecimal(n2); // TODO: reuse
   }
 }

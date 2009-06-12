@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -66,14 +66,14 @@ public class MaterializeExpr extends TopExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public Item eval(Context context) throws Exception
+  public JsonBool eval(Context context) throws Exception
   {
-    Item result = JBool.falseItem;
+    JsonBool result = JsonBool.FALSE;
     if (var.expr != null && var.value == null )
     {
-      result = JBool.trueItem;
+      result = JsonBool.TRUE;
       Context gctx = JaqlUtil.getSessionContext();
-      Item value = var.expr.eval(gctx);
+      JsonValue value = var.expr.eval(gctx);
       var.setValue(value);
     }
     return result;

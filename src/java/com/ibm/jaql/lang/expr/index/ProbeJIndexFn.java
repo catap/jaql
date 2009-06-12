@@ -16,10 +16,10 @@
 package com.ibm.jaql.lang.expr.index;
 
 import com.ibm.jaql.io.index.JIndexReader;
-import com.ibm.jaql.json.type.Item;
-import com.ibm.jaql.json.type.JRecord;
-import com.ibm.jaql.json.type.JString;
-import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -37,29 +37,27 @@ public class ProbeJIndexFn extends IterExpr
   }
 
   @Override
-  public Iter iter(Context context) throws Exception
+  public JsonIterator iter(Context context) throws Exception
   {
     if( index == null )
     {
-      Item fdItem = exprs[0].eval(context);
-      JRecord fd = (JRecord)fdItem.get();
+      JsonRecord fd = (JsonRecord)exprs[0].eval(context);
       if( fd == null )
       {
-        return Iter.nil;
+        return JsonIterator.NULL;
       }
-      JString jloc = (JString)fd.getValue("location").get();
+      JsonString jloc = (JsonString)fd.getValue("location");
       if( jloc == null )
       {
-        return Iter.nil;
+        return JsonIterator.NULL;
       }
       index = new JIndexReader(jloc.toString());
       context.closeAtQueryEnd(index);
     }
     
-    Item range = exprs[1].eval(context);
-    JRecord jrange = (JRecord)range.get();
-    Item low = jrange.getValue("low", null);
-    Item high = jrange.getValue("high", null);
+    JsonRecord jrange = (JsonRecord)exprs[1].eval(context);
+    JsonValue low = jrange.getValue("low", null);
+    JsonValue high = jrange.getValue("high", null);
     return index.rangeScan(low, high);
   }
 }
