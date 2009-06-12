@@ -40,7 +40,7 @@ import org.junit.Test;
 /**
  * 
  */
-public class SpillFileTest
+public class TestSpillFile
 {
   String           filename = "c:/temp/spillfile.dat";
   RandomAccessFile file;
