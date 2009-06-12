@@ -49,11 +49,6 @@ public class RebindVars extends Rewrite
     Var var = ve.var();
     Expr realDef = findVarDef(ve);
     Expr nameDef = findVarDef(ve, var.name);
-    if( realDef == null || nameDef == null )
-    {
-      findVarDef(ve);
-      findVarDef(ve, var.name);
-    }
     assert realDef != null && nameDef != null;
     if (realDef != nameDef)
     {

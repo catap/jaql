@@ -2,46 +2,47 @@ registerRNG('r1', fn() 17);
 
 registerRNG('r2', fn() 5);
 
-range(1,5) -> transform sampleRNG('r1');
+for( $i in 1 to 5 )
+  [ sampleRNG('r1') ];
   
-range(1,10) -> transform sampleRNG('r2');
+for( $i in 1 to 10 )
+  [ sampleRNG('r2') ];
   
-[1,2,3,4,5] -> write(hdfs('test'));
+hdfsWrite('test', [1,2,3,4,5]);
 
 registerRNG('r3', fn() 17);
 
 // test map-reduce using the same seed per-split
-read(hdfs('test')) -> transform sampleRNG('r3');
+for( $i in hdfsRead('test') )
+  [ sampleRNG('r3') ];
   
 registerRNG('r4', fn() 5);  
 
 // test map-reduce using the same seed per-split
-read(hdfs('test')) -> transform sampleRNG('r4');
+for( $i in hdfsRead('test') )
+  [ sampleRNG('r4') ];
   
 // test map-reduce and reading a variable from the jobConf
-read({type:'hdfs', location:'test', inoptions:
-                  {seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter', 
-                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
-	              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}})
--> transform readConf("seed", 17);
+for( $i in hdfsRead('test', {seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter', 
+					                                 format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
+					                                 configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}) )
+  [ readConf("seed", 17) ];
   
 // seed based on the value in the jobConf named "seed"
 registerRNG('r5', fn() readConf("seed", 17));
 
 // test map-reduce using a variable seed per-split. this example has one split
 // so expect repeated value
-read({type:'hdfs', location:'test', inoptions:{seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter', 
-                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
-                      configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}})
--> transform sampleRNG('r5');
+for( $i in hdfsRead('test', {seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter', 
+                                      format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
+					                                 configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}) )
+  [ sampleRNG('r5') ];
   
 // test seeding adapter with composite split
-$a = 
-  read({type:'hdfs', location:'test', inoptions:{seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter'}})
-  -> transform {k:$};
+$a = for( $i in hdfsRead('test', {seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter'}) ) [{k:$i}];
 
-[ {k:2}, {k:2}, {k:3} ] -> write(hdfs('test2'));
+hdfsWrite('test2', [ {k:2}, {k:2}, {k:3} ]);
 
-join $a, $j in read(hdfs('test2'))
-where $a.k == $j.k
-into $a -> sort by [$];
+join( $i in $a on $i.k,
+      $j in hdfsRead('test2') on $j.k )
+  [ $i ];

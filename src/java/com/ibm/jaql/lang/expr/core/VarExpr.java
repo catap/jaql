@@ -16,18 +16,18 @@
 package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
-import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.util.Bool3;
 
-/** A variable.
+/**
  * 
  */
 public class VarExpr extends Expr
@@ -71,11 +71,11 @@ public class VarExpr extends Expr
     {
       return Bool3.UNKNOWN;
     }
-//    if (var.value != null)
-//    {
-//      return Bool3.valueOf(var.value == null);
-//    }
-//    else
+    if (var.value != null)
+    {
+      return Bool3.valueOf(var.value.isNull());
+    }
+    else
     {
       return var.expr.isNull();
     }
@@ -93,12 +93,12 @@ public class VarExpr extends Expr
     {
       return Bool3.UNKNOWN;
     }
-//    if (var.value != null)
-//    {
-//      JsonValue v = var.value;
-//      return Bool3.valueOf(v == null || v instanceof JsonArray);
-//    }
-//    else
+    if (var.value != null)
+    {
+      JValue v = var.value.get();
+      return Bool3.valueOf(v == null || v instanceof JArray);
+    }
+    else
     {
       return var.expr.isArray();
     }
@@ -138,9 +138,9 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    return var.getValue(context);
+    return context.getValue(var);
   }
 
   /*
@@ -148,9 +148,9 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
-    return var.iter(context);
+    return context.getIter(var);
   }
 
   /*
@@ -164,27 +164,7 @@ public class VarExpr extends Expr
     if (oldVar == var)
     {
       var = newVar;
-      subtreeModified();
     }
-  }
-  
-  /**
-   * Replace all uses of $oldVar with $recVar.fieldName
-   * 
-   * @param oldVar
-   * @param recVar
-   * @param fieldName
-   * @return
-   */
-  public Expr replaceVar(Var oldVar, Var recVar, String fieldName)
-  {
-    if (oldVar == var)
-    {
-      Expr proj = PathFieldValue.byName(recVar, fieldName);
-      this.replaceInParent(proj);
-      return proj;
-    }
-    return this;
   }
 
   /**
@@ -202,14 +182,4 @@ public class VarExpr extends Expr
   {
     this.var = var;
   }
-  
-  @Override
-  public void getVarUses(Var var, ArrayList<Expr> uses)
-  {
-    if( this.var == var )
-    {
-      uses.add(this);
-    }
-  }
-
 }

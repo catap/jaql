@@ -15,26 +15,23 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.core.LetExpr;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.MathExpr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.nil.DenullFn;
 
 /**
  * 
  */
 @JaqlFn(fnName = "avg", minArgs = 1, maxArgs = 1)
-public class AvgAgg extends AlgebraicAggregate
+public class AvgAgg extends MacroExpr // AlgebraicAggregate
 {
-  private SumAgg.Summer summer = new SumAgg.Summer();
-  private long count = 0;
-  
   /**
-   * one arg
    * @param exprs
    */
   public AvgAgg(Expr[] exprs)
@@ -42,145 +39,92 @@ public class AvgAgg extends AlgebraicAggregate
     super(exprs);
   }
 
-  public AvgAgg(Expr arg)
-  {
-    super(arg);
-  }
-  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
+   */
   @Override
-  public void initInitial(Context context) throws Exception
+  public Expr expand(Env env) throws Exception
   {
-    summer.init();
-    count = 0;
+    // TODO: expand should be done by a transformation
+    Var var = env.makeVar("$avgIn");
+    Expr sum = new SumAgg(new VarExpr(var)).expand(env);
+    Expr count = new CountAgg(new VarExpr(var)).expand(env);;
+    Expr divide = new MathExpr(MathExpr.DIVIDE, sum, count);
+    Expr denull = new DenullFn(exprs[0]).expand(env);
+    LetExpr letExpr = new LetExpr(var, denull, divide);
+    return letExpr;
   }
 
-  @Override
-  public void addInitial(JsonValue value) throws Exception
-  {
-    if( value == null  )
-    {
-      return;
-    }
-    summer.add(value);
-    count++;
-  }
+  /*
+   * @Override protected Expr initExpr(Env env, Var forVar) throws Exception {
+   * return new IfExpr( new IsnullExpr(new VarExpr(forVar)), new ListExpr( new
+   * ConstExpr(LongItem.ZERO_ITEM), new ConstExpr(LongItem.ZERO_ITEM)), new
+   * ListExpr( new VarExpr(forVar), new ConstExpr(LongItem.ONE_ITEM))); }
+   * 
+   * @Override protected DistributiveAggregate aggExpr(Env env, Expr initLoop)
+   * throws Exception { return new VectorSum(initLoop); }
+   * 
+   * @Override protected Expr finalExpr(Env env, Expr agg) throws Exception {
+   * return agg; }
+   */
 
-  @Override
-  public JsonValue getPartial() throws Exception
-  {
-    JsonValue sum = summer.get();
-    JsonValue cnt = new JsonLong(count);
-    BufferedJsonArray pair = new BufferedJsonArray(new JsonValue[]{sum,cnt});
-    return pair;
-  }
-
-  @Override
-  public void addPartial(JsonValue value) throws Exception
-  {
-    JsonArray arr = (JsonArray)value;
-    JsonValue[] pair = new JsonValue[2];
-    arr.getValues(pair);
-    summer.add(pair[0]);
-    JsonLong jlong = (JsonLong)pair[1];
-    count += jlong.value;
-  }
-
-  @Override
-  public JsonValue getFinal() throws Exception
-  {
-    JsonValue sum = summer.get();
-    JsonLong n = new JsonLong(count);
-    return MathExpr.divide(sum, n);    
-  }
-
-  
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
-//   */
-//  @Override
-//  public Expr expand(Env env) throws Exception
-//  {
-//    // TODO: expand should be done by a transformation
-//    return new SumAgg(exprs[0].clone(varMap)
-//    Var var = env.makeVar("$avgIn");
-//    Expr sum = new SumAgg(new VarExpr(var)).expand(env);
-//    Expr count = new CountAgg(new VarExpr(var)).expand(env);;
-//    Expr divide = new MathExpr(MathExpr.DIVIDE, sum, count);
-//    Expr denull = new DenullFn(exprs[0]).expand(env);
-//    LetExpr letExpr = new LetExpr(var, denull, divide);
-//    return letExpr;
-//  }
-//
-//  /*
-//   * @Override protected Expr initExpr(Env env, Var forVar) throws Exception {
-//   * return new IfExpr( new IsnullExpr(new VarExpr(forVar)), new ListExpr( new
-//   * ConstExpr(LongItem.ZERO_ITEM), new ConstExpr(LongItem.ZERO_ITEM)), new
-//   * ListExpr( new VarExpr(forVar), new ConstExpr(LongItem.ONE_ITEM))); }
-//   * 
-//   * @Override protected DistributiveAggregate aggExpr(Env env, Expr initLoop)
-//   * throws Exception { return new VectorSum(initLoop); }
-//   * 
-//   * @Override protected Expr finalExpr(Env env, Expr agg) throws Exception {
-//   * return agg; }
-//   */
-//
-//  //  public Item eval(final Context context) throws Exception
-//  //  {
-//  //    boolean sawLong = false;
-//  //    long count = 0;
-//  //    long lsum = 0;
-//  //    BigDecimal sum = null;
-//  //    Iter iter = exprs[0].iter(context);
-//  //    if( iter.isNull() )
-//  //    {
-//  //      return Item.nil;
-//  //    }
-//  //    Item item;
-//  //    while( (item = iter.next()) != null )
-//  //    {
-//  //      JaqlType w = item.get();
-//  //      if( w == null) 
-//  //      {
-//  //        continue;
-//  //      }
-//  //      else if( w instanceof LongItem )
-//  //      {
-//  //        sawLong = true;
-//  //        lsum += ((LongItem)w).value;
-//  //        count++;
-//  //      }
-//  //      else
-//  //      {
-//  //        DecimalItem n = (DecimalItem)w;
-//  //        // TODO: need a mutable BigDecimal...
-//  //        if( sum == null )
-//  //        {
-//  //          sum = n.value;
-//  //        }
-//  //        else
-//  //        {
-//  //          sum = sum.add(n.value);
-//  //        }
-//  //        count++;
-//  //      }
-//  //    }
-//  //    if( sum == null )
-//  //    {
-//  //      if( sawLong )
-//  //      {
-//  //        return new Item(new LongItem(lsum/count));  // TODO: memory
-//  //      }
-//  //      return Item.nil;
-//  //    }
-//  //    else
-//  //    {
-//  //      if( lsum != 0 )
-//  //      {
-//  //        sum = sum.add(new BigDecimal(lsum));
-//  //      }
-//  //      return new Item(new DecimalItem(sum.longValue()/count)); // TODO: memory
-//  //    }
-//  //  }
+  //  public Item eval(final Context context) throws Exception
+  //  {
+  //    boolean sawLong = false;
+  //    long count = 0;
+  //    long lsum = 0;
+  //    BigDecimal sum = null;
+  //    Iter iter = exprs[0].iter(context);
+  //    if( iter.isNull() )
+  //    {
+  //      return Item.nil;
+  //    }
+  //    Item item;
+  //    while( (item = iter.next()) != null )
+  //    {
+  //      JaqlType w = item.get();
+  //      if( w == null) 
+  //      {
+  //        continue;
+  //      }
+  //      else if( w instanceof LongItem )
+  //      {
+  //        sawLong = true;
+  //        lsum += ((LongItem)w).value;
+  //        count++;
+  //      }
+  //      else
+  //      {
+  //        DecimalItem n = (DecimalItem)w;
+  //        // TODO: need a mutable BigDecimal...
+  //        if( sum == null )
+  //        {
+  //          sum = n.value;
+  //        }
+  //        else
+  //        {
+  //          sum = sum.add(n.value);
+  //        }
+  //        count++;
+  //      }
+  //    }
+  //    if( sum == null )
+  //    {
+  //      if( sawLong )
+  //      {
+  //        return new Item(new LongItem(lsum/count));  // TODO: memory
+  //      }
+  //      return Item.nil;
+  //    }
+  //    else
+  //    {
+  //      if( lsum != 0 )
+  //      {
+  //        sum = sum.add(new BigDecimal(lsum));
+  //      }
+  //      return new Item(new DecimalItem(sum.longValue()/count)); // TODO: memory
+  //    }
+  //  }
 }

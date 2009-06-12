@@ -17,7 +17,9 @@ package com.ibm.jaql.json.meta;
 
 import java.lang.reflect.Method;
 
-/** MetaAccessor in which the value is provided by getter() and setter() methods. */
+/**
+ * 
+ */
 public abstract class MetaGetter extends MetaAccessor
 {
   protected Method getter;

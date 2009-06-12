@@ -20,14 +20,15 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDate;
+import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JDouble;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.type.JNumeric;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -55,14 +56,14 @@ public class MathExpr extends Expr
     if (expr instanceof ConstExpr)
     {
       ConstExpr ce = (ConstExpr) expr;
-      JsonValue t = ce.value;
-      if (t instanceof JsonNumeric)
+      JValue t = ce.value.get();
+      if (t instanceof JNumeric)
       {
-        ((JsonNumeric) t).negate();
+        ((JNumeric) t).negate();
         return expr;
       }
     }
-    return new MathExpr(MathExpr.MINUS, new ConstExpr(JsonLong.ZERO), expr);
+    return new MathExpr(MathExpr.MINUS, new ConstExpr(JLong.ZERO), expr);
   }
 
   /**
@@ -107,55 +108,55 @@ public class MathExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue value1 = exprs[0].eval(context);
-    if (value1 == null)
+    JValue item1 = exprs[0].eval(context).get();
+    if (item1 == null)
     {
-      return null;
+      return Item.nil;
     }
-    JsonValue value2 = exprs[1].eval(context);
-    if (value2 == null)
+    JValue item2 = exprs[1].eval(context).get();
+    if (item2 == null)
     {
-      return null;
+      return Item.nil;
     }
-    if (value1 instanceof JsonLong && value2 instanceof JsonLong)
+    if (item1 instanceof JLong && item2 instanceof JLong)
     {
-      long n1 = ((JsonLong) value1).value;
-      long n2 = ((JsonLong) value2).value;
+      long n1 = ((JLong) item1).value;
+      long n2 = ((JLong) item2).value;
       return longEval(n1, n2);
     }
-    else if (value1 instanceof JsonDate && value2 instanceof JsonDate)
+    else if (item1 instanceof JDate && item2 instanceof JDate)
     {
-      long n1 = ((JsonDate) value1).millis;
-      long n2 = ((JsonDate) value2).millis;
+      long n1 = ((JDate) item1).millis;
+      long n2 = ((JDate) item2).millis;
       return longEval(n1, n2);
     }
-    else if (value1 instanceof JsonString || value2 instanceof JsonString)
+    else if (item1 instanceof JString || item2 instanceof JString)
     {
       if (op != PLUS) // TODO: use a different symbol or function for string concat? javascript uses +
       {
         throw new RuntimeException("invalid operator on strings");
       }
       // TODO: memory
-      JsonString text1 = (JsonString) value1;
-      JsonString text2 = (JsonString) value2;
+      JString text1 = (JString) item1;
+      JString text2 = (JString) item2;
       byte[] buf = new byte[text1.getLength() + text2.getLength()];
-      System.arraycopy(text1.getInternalBytes(), 0, buf, 0, text1.getLength());
-      System.arraycopy(text2.getInternalBytes(), 0, buf, text1.getLength(), text2
+      System.arraycopy(text1.getBytes(), 0, buf, 0, text1.getLength());
+      System.arraycopy(text2.getBytes(), 0, buf, text1.getLength(), text2
           .getLength());
-      return new JsonString(buf);
+      return new Item(new JString(buf));
     }
-    else if (value1 instanceof JsonDouble || value2 instanceof JsonDouble)
+    else if (item1 instanceof JDouble || item2 instanceof JDouble)
     {
-      double d1 = ((JsonNumeric) value1).doubleValue();
-      double d2 = ((JsonNumeric) value2).doubleValue();
+      double d1 = ((JNumeric) item1).doubleValue();
+      double d2 = ((JNumeric) item2).doubleValue();
       return doubleEval(d1, d2);
     }
     else
     {
-      BigDecimal n1 = ((JsonNumber) value1).decimalValue();
-      BigDecimal n2 = ((JsonNumber) value2).decimalValue();
+      BigDecimal n1 = ((JNumber) item1).decimalValue();
+      BigDecimal n2 = ((JNumber) item2).decimalValue();
       BigDecimal n3;
       switch (op)
       {
@@ -179,14 +180,14 @@ public class MathExpr extends Expr
           catch (ArithmeticException e)
           {
             // TODO: need +INF, -INF, and NaN
-            return null;
+            return Item.nil;
           }
           break;
         }
         default :
           throw new RuntimeException("invalid op:" + op);
       }
-      return new JsonDecimal(n3);
+      return new Item(new JDecimal(n3)); // TODO: reuse
     }
   }
 
@@ -195,7 +196,7 @@ public class MathExpr extends Expr
    * @param n2
    * @return
    */
-  private JsonValue longEval(long n1, long n2)
+  private Item longEval(long n1, long n2)
   {
     long n3;
     switch (op)
@@ -219,18 +220,18 @@ public class MathExpr extends Expr
           BigDecimal d1 = new BigDecimal(n1);
           BigDecimal d2 = new BigDecimal(n2);
           BigDecimal d3 = d1.divide(d2, MathContext.DECIMAL128);
-          return new JsonDecimal(d3); // TODO: memory
+          return new Item(new JDecimal(d3)); // TODO: memory
         }
         catch (ArithmeticException e)
         {
           // TODO: need +INF, -INF, and NaN
-          return null;
+          return Item.nil;
         }
       }
       default :
         throw new RuntimeException("invalid op:" + op);
     }
-    return new JsonLong(n3);
+    return new Item(new JLong(n3));
   }
 
   /**
@@ -238,7 +239,7 @@ public class MathExpr extends Expr
    * @param n2
    * @return
    */
-  private JsonValue doubleEval(double n1, double n2)
+  private Item doubleEval(double n1, double n2)
   {
     double n3;
     switch (op)
@@ -262,38 +263,6 @@ public class MathExpr extends Expr
       default :
         throw new RuntimeException("invalid op:" + op);
     }
-    return new JsonDouble(n3); // TODO: memory!
-  }
-
-  public static JsonValue divide(JsonValue x, JsonValue y)
-  {
-    if( x == null || y == null )
-    {
-      return null;
-    }
-    
-    if( x instanceof JsonDouble )
-    {
-      JsonDouble dx = (JsonDouble)x;
-      JsonDouble dy = (JsonDouble)y;
-      double div = dx.value / dy.value;
-      return new JsonDouble(div);
-    }
-    else
-    {
-      BigDecimal dx = ((JsonNumber)x).decimalValue();
-      BigDecimal dy = ((JsonNumber)y).decimalValue();
-      try
-      {
-        // dz = dx / dy
-        BigDecimal dz = dx.divide(dy, MathContext.DECIMAL128);
-        return new JsonDecimal(dz); // TODO: memory
-      }
-      catch (ArithmeticException e)
-      {
-        // TODO: need +INF, -INF, and NaN
-        return null;
-      }
-    }
+    return new Item(new JDouble(n3)); // TODO: memory!
   }
 }

@@ -18,9 +18,9 @@
 // local file data
 {key: 'local',
  val: {inoptions : 	{adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
-				                 format  : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'},
+				                 format  : 'com.ibm.jaql.io.stream.converter.JSONInputStream'},
        outoptions: 	{adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
-                     format  : 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}}
+                     format  : 'com.ibm.jaql.io.stream.converter.JSONOutputStream'}}
 },
 				 
 // hdfs data
@@ -53,7 +53,6 @@
 // http data
 {key: 'uri',
  val: {inoptions  : {adapter      : 'com.ibm.jaql.io.stream.StreamInputAdapter',
-                     format       : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream',
-                     asArray      : false}}
+                     format       : 'com.ibm.jaql.io.stream.converter.JSONTextInputStream'}}
 }
 ]

@@ -22,17 +22,19 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.AnySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.util.Bool3;
 
-/** Superclass for all JAQL expressions.
+/**
+ * 
+ */
+/**
  * 
  */
 public abstract class Expr
@@ -40,11 +42,8 @@ public abstract class Expr
   public final static Expr[] NO_EXPRS        = new Expr[0];
   public final static int    UNLIMITED_EXPRS = Integer.MAX_VALUE;
 
-  /** parent expression in which this expression is used, if any, otherwise null */
-  protected Expr             parent;					 
-  
-  /** list of subexpressions (e.g., arguments) */
-  protected Expr[]           exprs           = NO_EXPRS; 
+  protected Expr             parent;
+  protected Expr[]           exprs           = NO_EXPRS;
 
   /**
    * @param exprs
@@ -58,11 +57,6 @@ public abstract class Expr
       {
         // this is not true during some rewrites
         // assert exprs[i].parent == null;
-        if( exprs[i] instanceof InjectAboveExpr )
-        {
-          exprs[i].replaceInParent(this);
-          exprs[i] = exprs[i].exprs[0];
-        }
         exprs[i].parent = this;
       }
     }
@@ -86,40 +80,16 @@ public abstract class Expr
   }
 
   /**
-   * @param expr0
-   * @param expr1
-   * @param expr2
-   */
-  public Expr(Expr expr0, Expr expr1, Expr expr2)
-  {
-    this(new Expr[]{expr0, expr1, expr2});
-  }
-
-  /**
-   * @param expr0
-   * @param expr1
-   * @param expr2
-   * @param expr3
-   */
-  public Expr(Expr expr0, Expr expr1, Expr expr2, Expr expr3)
-  {
-    this(new Expr[]{expr0, expr1, expr2, expr3});
-  }
-
-  /**
    * @param exprs
    */
-  public Expr(ArrayList<? extends Expr> exprs)
+  public Expr(ArrayList<Expr> exprs)
   {
     this(exprs.toArray(new Expr[exprs.size()]));
   }
 
-  /** Decompiles this expression. The resulting JSON code is written to <tt>exprText</tt>
-   * stream and all variables referenced by this expression are added <tt>capturedVars</tt>.
-   * 
-   * <p> The default implementation only works for built-in functions that do not capture
-   * variables (over the ones used in their arguments). It must be overridden for non-functions 
-   * and functions that capture variables.
+  /**
+   * This must be overridden for non-functions and expressions that capture
+   * variables.
    * 
    * @param exprText
    * @param capturedVars
@@ -154,7 +124,7 @@ public abstract class Expr
     HashSet<Var> capturedVars = new HashSet<Var>();
     try
     {
-      this.decompile(exprText, capturedVars); // TODO: capturedVars should be optional
+      this.decompile(exprText, capturedVars);
       exprText.flush();
       return outStream.toString();
     }
@@ -164,13 +134,12 @@ public abstract class Expr
     }
   }
 
-  /** Evaluates this expression and return the result as a value. 
-   * 
+  /**
    * @param context
    * @return
    * @throws Exception
    */
-  public abstract JsonValue eval(Context context) throws Exception;
+  public abstract Item eval(Context context) throws Exception;
 
   //  public void write(Context context, TableWriter writer) throws Exception
   //  {
@@ -178,22 +147,23 @@ public abstract class Expr
   //  }
 
   /**
-   * Evaluates this expression. If it produces an array, this method returns an iterator
-   * over the elements of the array. If it produces null, this method returns a null
+   * Evaluates this expression. If it produces an array, it returns an iterator
+   * over the elements of the array. If it produces null, it returns a null
    * iterator. Otherwise, it throws a cast error.
    * 
    * @param context
    * @return
    * @throws Exception
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
-    JsonValue value = eval(context);
-    if (value == null)
+    Item item = eval(context);
+    JValue w = item.get();
+    if (w == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    JsonArray array = (JsonArray)value; // intentional cast error is possible
+    JArray array = (JArray) w; // intentional cast error is possible
     return array.iter();
   }
 
@@ -217,19 +187,19 @@ public abstract class Expr
   }
 
   /**
-   * true iff this expression is compile-time provably constant. ie, not:
+   * false iff this expression is compile-time provably constant. ie, not:
    * nondeterministic (eg, random number generator) side-effect producing (eg,
    * write to file, send mail) uses a variable that is not defined in this scope
    * 
    * @return
    */
-  public boolean isConst() 
+  public boolean isConst()
   {
     for (Expr e : exprs)
     {
       if (!e.isConst())
       {
-        return false; // cache this?
+        return false;
       }
     }
     return true;
@@ -267,47 +237,6 @@ public abstract class Expr
     return Bool3.UNKNOWN;
   }
 
-  /**
-   * true iff this expression is compile-time provably going to be
-   * evaluated once per evaluation of its parent. If the parent is 
-   * evaluated multiple times, this expression might still be 
-   * evaluated multiple times.
-   * 
-   * @return
-   */
-  public final Bool3 isEvaluatedOnceByParent()
-  {
-    return parent.evaluatesChildOnce(getChildSlot());
-  }
-
-  /**
-   * true iff this expression is compile-time provably going to be
-   * evaluated once per evaluation of its parent. If the parent is 
-   * evaluated multiple times, this expression might still be 
-   * evaluated multiple times.
-   * 
-   * @return
-   */
-  public Bool3 evaluatesChildOnce(int i)
-  {
-    return Bool3.UNKNOWN; // TODO: we could (should?) make the default be true because very few operators reval their children
-  }
-
-  /** Returns the schema of this expression. The result is determined at compile-time, i.e., no
-   * subexpressions are evaluated. */
-  public Schema getSchema()
-  {
-    return AnySchema.getInstance();
-  }
-  
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  public boolean isMappable(int i)
-  {
-    return false;
-  }
-  
   /**
    * @return
    */
@@ -348,11 +277,6 @@ public abstract class Expr
    */
   public void addChild(Expr e)
   {
-    if( e instanceof InjectAboveExpr ) // TODO: this really looks like hacking
-    {
-      this.parent = e.parent;
-      e = e.exprs[0];
-    }
     e.parent = this;
     Expr[] es = new Expr[exprs.length + 1];
     System.arraycopy(exprs, 0, es, 0, exprs.length);
@@ -362,30 +286,6 @@ public abstract class Expr
   }
 
   /**
-   * @param e
-   */
-  public void addChildren(ArrayList<? extends Expr> es)
-  {
-    int n = exprs.length;
-    int m = es.size();
-    Expr[] exprs2 = new Expr[n + m];
-    System.arraycopy(exprs, 0, exprs2, 0, n);
-    for( int i = 0 ; i < m ; i++ )
-    {
-      Expr e = es.get(i);
-      if( e instanceof InjectAboveExpr )
-      {
-        this.parent = e.parent;
-        e = e.exprs[0];
-      }
-      e.parent = this;
-      exprs2[n + i] = e;
-    }
-    exprs = exprs2;
-    subtreeModified();
-  }
-
-  /** In the parent of this expression, replace this expression by the given expression.
    * @param replaceBy
    */
   public void replaceInParent(Expr replaceBy)
@@ -408,7 +308,7 @@ public abstract class Expr
     // parent = null;
   }
 
-  /** Returns the index of this expression in the parent's list of child expressions.
+  /**
    * @return
    */
   public int getChildSlot()
@@ -427,7 +327,7 @@ public abstract class Expr
     return -1;
   }
 
-  /** Removes the child expression at index in.
+  /**
    * @param i
    */
   public void removeChild(int i)
@@ -442,7 +342,7 @@ public abstract class Expr
     subtreeModified();
   }
 
-  /** Detaches this expression from it's parent.
+  /**
    * 
    */
   public void detach()
@@ -451,7 +351,6 @@ public abstract class Expr
     {
       int i = getChildSlot();
       parent.removeChild(i);
-      parent = null;
     }
   }
 
@@ -469,30 +368,10 @@ public abstract class Expr
     //    {
     //      exprs[i].parent = null;
     //    }
-    if( e instanceof InjectAboveExpr )
-    {
-      this.parent = e.parent;
-      e = e.exprs[0];
-    }
     exprs[i] = e;
     e.parent = this;
     subtreeModified();
     return e;
-  }
-  
-  /**
-   * Replace all the children expressions.
-   * 
-   * @param exprs
-   */
-  public void setChildren(Expr[] exprs)
-  {
-    for( Expr e: exprs )
-    {
-      e.parent = this;
-    }
-    this.exprs = exprs;
-    subtreeModified();
   }
 
   /**
@@ -507,37 +386,7 @@ public abstract class Expr
     {
       exprs[i].replaceVar(oldVar, newVar);
     }
-  }
-  
-  /**
-   * Replace all uses of $oldVar with $recVar.fieldName
-   * 
-   * @param oldVar
-   * @param recVar
-   * @param fieldName
-   * @return
-   */
-  public Expr replaceVar(Var oldVar, Var recVar, String fieldName)
-  {
-    for (int i = 0; i < exprs.length; i++)
-    {
-      exprs[i].replaceVar(oldVar, recVar, fieldName);
-    }
-    return this;
-  }
-
-  /**
-   * Return the list of VarExpr's that reference the given variable in this subtree.
-   * 
-   * @param var
-   * @param exprs
-   */
-  public void getVarUses(Var var, ArrayList<Expr> uses)
-  {
-    for( Expr e: exprs )
-    {
-      e.getVarUses(var, uses);
-    }
+    subtreeModified();
   }
 
   /**
@@ -622,36 +471,305 @@ public abstract class Expr
     return capturedVars;
   }
 
-  public InjectAboveExpr injectAbove()
-  {
-    Expr p = this.parent;
-    InjectAboveExpr e = new InjectAboveExpr();
-    this.replaceInParent(e);
-    e.addChild(this);
-    e.parent = p;
-    return e;
-  }
-
-  public final Expr replaceVarUses(Var var, Expr replaceBy, VarMap varMap)
-  {
-    if(this instanceof VarExpr)
-    {
-      if( ((VarExpr)this).var == var )
-      {
-        varMap.clear();
-        return replaceBy.clone(varMap);
-      }
-        return this;
-    }
-    for( Expr e: exprs )
-    {
-      Expr e2 = e.replaceVarUses(var, replaceBy, varMap);
-      if( e2 != e )
-      {
-        e.replaceInParent(e2);
-      }
-    }
-    return this;
-  }
-
 }
+
+//class RecProjectExpr extends Expr
+//{
+//  ProjPattern pattern;
+//
+//  public RecProjectExpr(ProjPattern pattern)
+//  {
+//    this.pattern = pattern;
+//  }
+//
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
+//  {
+//    pattern.decompile(exprText, capturedVars);
+//  }
+//
+//  public Item eval(final Context context) throws Exception
+//  {
+//    JRecord inrec = (JRecord)pattern.recExpr.eval(context).get();
+//    if( inrec == null )
+//    {
+//      return Item.nil;
+//    }
+//    Item res = context.getTemp(this); // TODO: versions of getTemp that ensures the correct JaqlType
+//    JRecord outrec;
+//    if( res.get() != null && res.get() instanceof JRecord )
+//    {
+//      outrec = (JRecord)res.get();
+//      outrec.clear();
+//    }
+//    else
+//    {
+//      outrec = new JRecord();
+//      res.set(outrec);        
+//    }
+//    pattern.evalProj(context, inrec, outrec);
+//    return res;
+//  }
+//}
+
+//class SortItem
+//{
+//  public final static int UNORDERED = 0;
+//  public final static int ASC       = 1;
+//  public final static int DESC      = 2;
+//  
+//  Expr expr;
+//  int order;
+//}
+//
+
+//class EmptyExpr extends Expr
+//{
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
+//  {
+//    exprText.print("null");
+//  }
+//
+//  public Item eval(final Context context) throws Exception
+//  {
+//    return Item.nil;
+//  }
+//}
+
+// TODO: support CombineExpr, SumExpr as Distributive aggregates
+//abstract class DistributiveAggregate extends Expr
+//{
+//  public DistributiveAggregate(Expr[] exprs)
+//  {
+//    super(exprs);
+//  }
+//  
+//}
+
+//@JaqlFn(fnName="combiner", minArgs=2, maxArgs=2)
+//class CombinerExpr extends Expr
+//{
+//  // item combiner(fn combineFn, array partials)
+//  public CombinerExpr(Expr[] exprs)
+//  {
+//    super(exprs);
+//  }
+//
+//  public Item eval(final Context context) throws Exception
+//  {
+//    Item[] args = new Item[2]; // TODO: memory
+//    Function combineFn = (Function)exprs[0].eval(context).getNonNull();
+//    Iter iter = exprs[1].iter(context);    
+//    
+//    Item item = iter.next();
+//    if( item == null )
+//    {
+//      return Item.nil;
+//    }
+//    
+//    args[0] = new Item(); // TODO: memory
+//    args[0].copy(item);
+//    while( (item = iter.next()) != null )
+//    {
+//      args[1] = item;
+//      item = combineFn.eval(context, args);
+//      args[0].copy(item);
+//    }
+//    return args[0];
+//  }
+//}
+
+/*
+ * 
+ * class LoadXmlExpr extends Expr { Expr expr;
+ * 
+ * public LoadXmlExpr(Expr expr) { this.expr = expr; }
+ * 
+ * public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+ * throws Exception { // TODO: use proper function exprText.print("loadXml(");
+ * expr.decompile(exprText, capturedVars); exprText.print(")"); }
+ * 
+ * public Result eval(final Context context) throws Exception { StringItem uri =
+ * (StringItem)expr.eval(context).atom1(); XmlConverter xc = new XmlConverter();
+ * TableWriter writer = Util.makeTempWriter("x"); return
+ * xc.convert(uri.getValue(), writer); } }
+ */
+
+//@JaqlFn(fnName="read", minArgs=1, maxArgs=1)
+//class ReadExpr extends IterExpr
+//{
+//  public ReadExpr(Expr[] exprs)
+//  {
+//    super(exprs);
+//  }
+//
+//public boolean isConst()
+//{
+//  return false;
+//}
+//
+//  public Iter iter(Context context) throws Exception
+//  {
+//    JString filename = (JString)exprs[0].eval(context).get();
+//    final FileInputStream file = new FileInputStream(filename.toString());
+//    final DataInput input = new DataInputStream(new BufferedInputStream(file));
+//    
+//    return new Iter() 
+//    {
+//      Item item = new Item(); // TODO: memory
+//      
+//      public Item next() throws IOException
+//      {
+//        try
+//        {
+//          item.readFields(input);
+//          return item;
+//        }
+//        catch( EOFException e )
+//        {
+//          file.close();
+//          return null;
+//        }
+//      }
+//    };
+//  }
+//}
+//
+//@JaqlFn(fnName="write", minArgs=2, maxArgs=2)
+//class WriteExpr extends Expr
+//{
+//  public WriteExpr(Expr[] exprs)
+//  {
+//    super(exprs);
+//  }
+//  
+//public boolean isConst()
+//{
+//return false;
+//}
+//
+//  public Item eval(Context context) throws Exception
+//  {
+//    Item fileitem = exprs[0].eval(context);
+//    JString filename = (JString)fileitem.get();
+//    FileOutputStream file = new FileOutputStream(filename.toString());
+//    DataOutputStream out = new DataOutputStream(new BufferedOutputStream(file));
+//    
+//    Item item;
+//    Expr dataExpr = exprs[1];
+//    Iter iter = dataExpr.iter(context);
+//    while( (item = iter.next()) != null )
+//    {
+//      item.write(out);
+//    }
+//    out.flush();
+//    file.close();
+//    return fileitem;
+//  }
+//}
+
+//abstract class Agg
+//{
+//  public abstract void init();
+//  public abstract void add(Item item);
+//  public abstract Item result();
+//}
+//
+//class CountAgg extends Agg
+//{
+//  long n;
+//  public void init() { n = 0; }
+//  public void add(Item item) { n++; }
+//  public Item result() { return new DecimalItem(n); }
+//}
+//
+//class AggExpr extends Expr
+//{
+//  Expr expr;
+//  Agg[] aggs;
+//
+//  public AggExpr(Expr expr, Agg[] aggs)
+//  {
+//    this.expr = expr;
+//    this.aggs = aggs;
+//  }
+//  
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
+//  {
+//    throw new Exception("NYI");
+//  }
+//
+//  public Result eval(final Context context) throws Exception
+//  {
+//    Iter iter = expr.eval(context).iter();
+//    Item item = null;
+//
+//    for( int i = 0 ; i < aggs.length ; i++ )
+//    {
+//      aggs[i].init();
+//    }
+//
+//    while( (item = iter.next()) != null )
+//    {
+//      for( int i = 0 ; i < aggs.length ; i++ )
+//      {
+//        aggs[i].add(item);
+//      }
+//    }
+//
+//    MemoryTable seq = new MemoryTable();
+//    for( int i = 0 ; i < aggs.length ; i++ )
+//    {
+//      seq.add( aggs[i].result() );
+//    }
+//
+//    return new Cell("aggs", seq);
+//  }
+//}
+//// $a.[n] == for $x in $a return $x.n
+//class ProjectValueExpr extends IterExpr
+//{
+//  // exprs[0].[exprs[1]]
+//  public ProjectValueExpr(Expr[] exprs)
+//  {
+//    super(exprs);
+//  }
+//
+//  public ProjectValueExpr(Expr array, Expr name)
+//  {
+//    super(new Expr[]{ array, name });
+//  }
+//  
+//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
+//  {
+//    exprText.print("(");
+//    exprs[0].decompile(exprText, capturedVars);
+//    exprText.print(").[");
+//    exprs[1].decompile(exprText, capturedVars);
+//    exprText.print("]");
+//  }
+//
+//  @Override
+//  public Iter iter(final Context context) throws Exception
+//  {
+//    return new Iter()
+//    {
+//      Iter iter = exprs[0].iter(context);
+//      JString name = (JString)exprs[1].eval(context).get();
+//
+//      public Item next() throws Exception
+//      {
+//        Item item = iter.next();
+//        if( item != null )
+//        {
+//          JRecord rec = (JRecord)item.get();
+//          if( rec == null )
+//          {
+//            return Item.nil;
+//          }
+//          return rec.getValue(name);
+//        }
+//        return null;
+//      }
+//    };
+//  }
+//}

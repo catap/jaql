@@ -15,9 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.span;
 
-import com.ibm.jaql.json.type.JsonSpan;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JSpan;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -45,28 +46,28 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonString text = (JsonString) exprs[0].eval(context);
+    final JString text = (JString) exprs[0].eval(context).get();
     if (text == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
+    return new Iter() {
+      JString               tokText   = new JString();
+      Item                  item      = new Item(tokText);
 
-    final JsonString tokText   = new JsonString();
-    return new JsonIterator(tokText) {
-
-      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getInternalBytes(), 0,
+      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getBytes(), 0,
                                           text.getLength()); // TODO: reuse
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        JsonSpan span = tokenizer.next();
+        JSpan span = tokenizer.next();
         if (span == null)
         {
-          return false;
+          return null;
         }
         span.getText(text, tokText);
-        return true; // currentValue == tokText
+        return item;
       }
     };
   }

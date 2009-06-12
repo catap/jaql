@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -24,10 +25,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * 
  */
 @JaqlFn(fnName = "min", minArgs = 1, maxArgs = 1)
-public final class MinAgg extends AlgebraicAggregate
+public class MinAgg extends Expr
 {
-  private JsonValue min;
-  
   /**
    * @param exprs
    */
@@ -36,52 +35,37 @@ public final class MinAgg extends AlgebraicAggregate
     super(exprs);
   }
 
-  /**
-   * @param expr
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public MinAgg(Expr expr)
+  public Item eval(final Context context) throws Exception
   {
-    super(expr);
-  }
-
-  @Override
-  public void initInitial(Context context) throws Exception
-  {
-    min = null;
-  }
-
-  @Override
-  public void addInitial(JsonValue value) throws Exception
-  {
-    if( value == null  )
+    Iter iter = exprs[0].iter(context);
+    if (iter.isNull())
     {
-      return;
+      return Item.nil;
     }
-    if( min == null )
+    Item item;
+    do
     {
-      min = value.getCopy(null);
-    }
-    else if( value.compareTo(min) < 0 )
+      item = iter.next();
+      if (item == null)
+      {
+        return Item.nil;
+      }
+    } while (item.isNull());
+
+    Item min = new Item(); // TODO: memory
+    min.copy(item);
+    while ((item = iter.next()) != null)
     {
-      min.setCopy(value);
+      if (!item.isNull() && item.compareTo(min) < 0)
+      {
+        min.copy(item);
+      }
     }
-  }
-
-  @Override
-  public JsonValue getPartial() throws Exception
-  {
-    return min;
-  }
-
-  @Override
-  public void addPartial(JsonValue value) throws Exception
-  {
-    addInitial(value);
-  }
-
-  @Override
-  public JsonValue getFinal() throws Exception
-  {
     return min;
   }
 }

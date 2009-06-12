@@ -16,15 +16,10 @@
 package com.ibm.jaql.lang;
 
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
-import jline.ConsoleReader;
-import jline.ConsoleReaderInputStream;
-import antlr.collections.impl.BitSet;
-
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
@@ -32,6 +27,8 @@ import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.util.ClassLoaderMgr;
+
+import antlr.collections.impl.BitSet;
 
 public class Jaql
 {
@@ -42,64 +39,10 @@ public class Jaql
     System.exit(0); // possible jvm 1.6 work around for "JDWP Unable to get JNI 1.2 environment"
   }
 
-//  public static void main2(String av[]) throws Exception
-//  {
-//    InputStream input = av.length > 0 ? new FileInputStream(av[0]) : System.in;
-//    Jaql2Lexer lexer = new Jaql2Lexer(input);
-//    Jaql2Parser parser = new Jaql2Parser(lexer);
-//    Context context = new Context();
-//    while (true)
-//    {
-//      System.out.print("\njaql2> ");
-//      System.out.flush();
-//      parser.env.reset();
-//      Expr expr = parser.parse();
-//      if (parser.done)
-//      {
-//        break;
-//      }
-//      else if( expr != null )
-//      {
-//        context.reset();
-//        // TODO: enable push style?
-//        // expr.write(context, writer);
-//        if (expr instanceof ExplainExpr) // TODO: statement.eval
-//        {
-//          Item item = expr.eval(context);
-//          System.out.println(item.get());
-//        }
-//        else if (expr.isArray().always())
-//        {
-//          Iter iter = expr.iter(context);
-//          iter.print(System.out);
-//        }
-//        else
-//        {
-//          Item item = expr.eval(context);
-//          item.print(System.out);
-//        }
-//      }
-//    }
-//  }
-
-  public static void main1(String[] args) throws Exception
+  public static void main1(String av[]) throws Exception
   {
-    InputStream in;
-    if (args.length > 0) {
-    	in = new FileInputStream(args[0]);
-    } else {
-    	try {
-    		in = new ConsoleReaderInputStream(new ConsoleReader());
-    	} catch (IOException e) {
-    		in = System.in;
-    	}
-    }
-    main(in);
-  }
-  
-  public static void main(InputStream in) throws Exception
-  {
-    JaqlLexer lexer = new JaqlLexer(in);
+    InputStream input = av.length > 0 ? new FileInputStream(av[0]) : System.in;
+    JaqlLexer lexer = new JaqlLexer(input);
     JaqlParser parser = new JaqlParser(lexer);
     Context context = new Context();
     RewriteEngine rewriter = new RewriteEngine();
@@ -114,7 +57,7 @@ public class Jaql
         System.out.flush();
         parser.env.reset();
         parsing = true;
-        Expr expr = parser.parse();
+        Expr expr = parser.query();
         parsing = false;
         if (parser.done)
         {
@@ -124,27 +67,25 @@ public class Jaql
         {
           continue;
         }
-        expr = rewriter.run(parser.env, expr);
-//        System.out.println(expr.getClass());
+        rewriter.run(parser.env, expr);
         context.reset();
         // TODO: enable push style?
         // expr.write(context, writer);
         if (expr instanceof ExplainExpr) // TODO: statement.eval
         {
-          JsonValue value = expr.eval(context);
-          System.out.println(value);
+          Item item = expr.eval(context);
+          System.out.println(item.get());
         }
         else if (expr.isArray().always())
         {
-          JsonIterator iter = expr.iter(context);
+          Iter iter = expr.iter(context);
           iter.print(System.out);
         }
         else
         {
-          JsonValue value = expr.eval(context);
-          JsonValue.print(System.out, value);
+          Item item = expr.eval(context);
+          item.print(System.out);
         }
-        context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
       }
       catch (Exception ex)
       {
@@ -161,7 +102,7 @@ public class Jaql
       }
     }
   }
-  
+
   public static void addExtensionJars(String[] jars) throws Exception
   {
     ClassLoaderMgr.addExtensionJars(jars);

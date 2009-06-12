@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
  * Used to tag an Expr if it may potentially be rewritten to a MapReduceExpr.
@@ -27,4 +28,13 @@ public interface PotentialMapReducible
    * @return
    */
   boolean isMapReducible();
+
+  // FIXME: get rid of the input expr
+  /**
+   * Rewrite this expression's parameters to the given MapReduceExpr parameters.
+   * 
+   * @param expr
+   * @return
+   */
+  Expr rewriteToMapReduce(Expr expr);
 }

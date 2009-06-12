@@ -1,5 +1,5 @@
 /*
- * Copyright (C) IBM Corp. 2009.
+ * Copyright (C) IBM Corp. 2008.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -22,21 +22,10 @@ import java.util.*;
 import com.ibm.jaql.lang.core.*;
 import com.ibm.jaql.lang.expr.core.*;
 import com.ibm.jaql.lang.expr.top.*;
-import com.ibm.jaql.lang.expr.path.*;
-import com.ibm.jaql.lang.expr.schema.*;
-
-import com.ibm.jaql.lang.expr.io.*;
-import com.ibm.jaql.lang.expr.udf.*;
-import com.ibm.jaql.lang.expr.record.IsdefinedExpr;
-import com.ibm.jaql.lang.expr.array.ExistsFn;
-import com.ibm.jaql.lang.expr.nil.IsnullExpr;
-import com.ibm.jaql.lang.expr.agg.Aggregate;
-import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 import com.ibm.jaql.json.type.*;
 import com.ibm.jaql.json.schema.*;
 import com.ibm.jaql.json.util.*;
-import com.ibm.jaql.lang.registry.*;
 
 import com.ibm.jaql.util.*;
 
@@ -47,1032 +36,78 @@ options {
 }
 
 
+
 class JaqlParser extends Parser;
 options {
-    k = 1;                           // number of tokens to lookahead
+    k = 1;                          // number of tokens to lookahead
 	exportVocab=Jaql;               // Call its vocabulary "Jaql"
     defaultErrorHandler = false;     // Don't generate parser error handlers
 }
-
 {
-	public boolean done = false;
-	public Env env = new Env();
-    // static abstract class ExpandMapper { public abstract Expr remap(Expr ctx); } 
-
-    public void oops(String msg) throws RecognitionException, TokenStreamException
-    { 
-      throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
-    }
-    
-    public static final JsonLong parseLong(String v, boolean isNegative) 
-    {
-       if (isNegative) {
-         return new JsonLong("-" + v); // handles that case i==Long.MIN
-       } 
-       else
-       {
-         return new JsonLong(v);
-       } 
-    }
-    
-    public static final JsonDouble parseDouble(String v, boolean isNegative) 
-    {
-       JsonDouble d = new JsonDouble(v);
-       if (isNegative)
-       {
-       	 d.value = -d.value;
-       }
-       return d;
-    }
-
-    public static final JsonDecimal parseDecimal(String v, boolean isNegative) 
-    {
-       if (isNegative) {
-         return new JsonDecimal("-" + v);
-       } 
-       else
-       {
-         return new JsonDecimal(v);
-       } 
-    }
+  public Env env = new Env();
+  public boolean done;
 }
 
-parse returns [Expr r=null]
-    : r=stmtOrFn
-    | EOF { done = true; }
-	;
-	
-
-stmtOrFn returns [Expr r=null]
-	: r=stmt (SEMI|EOF)
-	| SEMI
-	| r=functionDef
-	;
-	
-stmt returns [Expr r=null]
+query returns [Expr r = null]
+	{ done = false; DefineFunctionExpr f; }
+	: "declare" f=functionDef[true]
+    | r=stmt (SEMI | EOF)
+    | SEMI
+    | EOF						{ done=true; }
+    ;
+    
+stmt returns [Expr r = null]
     { String v; }
-    : r=topAssign
-    | "explain" r=topAssign  { r = new ExplainExpr(r); }
-    | "materialize" v=var    { r = new MaterializeExpr(env.inscope(v)); }
-    | "quit"                 { done = true; }
-    ;
-
-//assign2 returns [Expr r=null]
-//   // { String v; }
-//    : r=pipe  // TODO: keep this?
-//        {
-//          if( r instanceof BindingExpr )
-//          {
-//            BindingExpr b = (BindingExpr)r; 
-//            r = new AssignExpr( env.sessionEnv().scopeGlobal(b.var.name),  b.inExpr());
-//          }
-
-//          BindingExpr b = (BindingExpr)r; 
-//          if( "$".equals(b.var.name) )
-//          {
-//          	r = b.inExpr();
-//          }
-//          else
-//          {
-//          	r = new AssignExpr( env.sessionEnv().scopeGlobal(b.var.name),  b.inExpr());
-//          }
-//        }
-//      ( "=>" v=var { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = pipe, do-block scope
-//      )?
-//    ;
-
-block returns [Expr r=null] 
-    { ArrayList<Expr> es=null; }
-    : r=optAssign  //TODO: ("=>" var ";" block)? ???
-      ("," { es = new ArrayList<Expr>(); es.add(r); }
-         r=optAssign       { es.add(r); }
-        ("," r=optAssign   { es.add(r); } )*
-        { 
-        	for(Expr e: es)
-        	{
-        		if( e instanceof BindingExpr )
-        		{
-        			env.unscope(((BindingExpr)e).var);
-        		}
-        	}
-        	r = new DoExpr(es);
-        	// r = new ParallelDoExpr(es); // TODO: parallel
-        }
-      )?
-      {
-      	if( r instanceof BindingExpr )
-      	{
-      	  r = new DoExpr(r);
-      	}
-      }
-    ;
-
-
-pipe returns [Expr r=null]
-    { String n = "$"; } // TODO: should var source define name? eg, $x -> filter $x.y > 3
-    : r=expr ( "->" r=op[r] )*
-    | r=pipeFn
-    | r=function
-    ;
-    
-  
-subpipe[Var inVar] returns [Expr r=null]
-    {
-    	inVar.hidden = true;
-        r= new VarExpr(inVar);
-    }
-    : ( "->" r=op[r] )+
-    ;
-
-pipeFn returns [Expr r=null]
-    {
-        Var v = env.makeVar("$");
-    }
-    : r=subpipe[v]
-    {
-        ArrayList<Var> p = new ArrayList<Var>();
-        p.add(v);
-        r = new DefineFunctionExpr(p, r); // TODO: use a diff class
-    }
-    ;
-
-    
-vpipe returns [BindingExpr r=null]
-    { String v; Expr e=null; }
-    : v=var ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
-            | "in" e=expr )
-    { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e); }
-    ;
-
-// A pipe must end with a binding, with the name still in scope
-//vpipe returns [BindingExpr r=null]
-//    : v=var ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
-//      {
-//      	if( !( e instanceof BindingExpr ) )
-//      	{
-//      	  throw new NoViableAltException(LT(1), getFilename()); // binding required in this context
-//      	}
-//      	r = (BindingExpr)e;
-//      }
-//    ;
-
-
-//vpipe returns [BindingExpr r=null]
-//    { String v=null; Expr e; }
-//    : v=var ( /*empty*/       { e=makeVarExpr(v); }
-//            | "in" e=inPipe )
-//    {
-//      Var var = env.scope(v);
-//      r = new BindingExpr(BindingExpr.Type.IN, var, null, e);
-//    }
-//    ;
-    
-//subPipe[Var v] returns [Expr r=null]
-//    { String vn = "$"; r = new PipeInput(new VarExpr(v)); }
-//    : ("->" r=op[vn, r] ("as" vn=var)?)+ 
-//    ;
-
-//outPipe[Var v] returns [Expr r=null]
-//    { String vn = "$"; r = new VarExpr(v); }
-//    : "->" (r=op[r] "->")* r=sink[r]
-//    : ("->" r=op[vn,r] )+
-//    ;
-
-
-
-//fnOp returns [Expr r=null]
-//    { String s=null; ArrayList<Expr> args; }  
-//    : s=name "(" args=exprList ")" 
-//      { r = FunctionLib.lookup(env, s, args);  }
-//    ;
-
-aggregate[Expr in] returns [Expr r=null]
-    { String v="$"; BindingExpr b; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
-//    : ("aggregate" | "agg") b=each[in] r=expr
-//       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
-    : ("aggregate" | "agg") ("as" v=var)?
-         {
-           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in); 
-         }
-      ( "into" r=expr { r = AggregateFullExpr.make(env, b, r, false); }
-      | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
-      | "initial" aa=algAggList { r = new AggregateInitialExpr(b, aa); }
-      | "partial" aa=algAggList { r = new AggregatePartialExpr(b, aa); }
-      | "final"   aa=algAggList { r = new AggregateFinalExpr(b, aa); }
-      )
-      { env.unscope(b.var); }
-    ;
-
-aggList returns [ArrayList<Aggregate> r = new ArrayList<Aggregate>()]
-    { Aggregate a; }
-    : "[" ( a=aggFn { r.add(a); } ("," a=aggFn { r.add(a); } )* )? "]"
-    ;
-
-aggFn returns [Aggregate agg]
-    { Expr e; }
-    : e = expr
-      {
-      	if( !( e instanceof Aggregate ) )
-      	{
-          oops("Aggregate required");
-      	}
-        agg = (Aggregate)e;
-      }
-    ;
-
-algAggList returns [ArrayList<AlgebraicAggregate> r = new ArrayList<AlgebraicAggregate>()]
-    { AlgebraicAggregate a; }
-    : "[" ( a=algAggFn { r.add(a); } ("," a=algAggFn { r.add(a); } )* )? "]"
-    ;
-
-algAggFn returns [AlgebraicAggregate agg]
-    { Expr e; }
-    : e = expr
-      {
-        if( !( e instanceof AlgebraicAggregate ) )
-        {
-          oops("Aggregate required");
-        }
-        agg = (AlgebraicAggregate)e;
-      }
-    ;
-
-group returns [Expr r=null]
-	{ 
-	  BindingExpr in;
-	  BindingExpr by = null;
-	  Expr c=null;
-	  String v = "$";
-	  ArrayList<Var> as = new ArrayList<Var>();
-	}
-	: "group" ("each" v=var "in")? 
-	    { 
-	      in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
-	    }
-	  by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
-		{ if( by.var != Var.UNUSED ) env.scope(by.var); } 
-	  ( "using" c=comparator { oops("comparators on group by NYI"); } )?
-        {
-          for( Var av: as )
-          {
-            env.scope(av);
-          }
-	    }
-	  r=groupReturn
-	    {
-	      if( by.var != Var.UNUSED ) env.unscope(by.var);
-	      for( Var av: as )
-          {
-            env.scope(av);
-          }
-          r = new GroupByExpr(in, by, as, c, r); // .expand(env);
-	    }
+    : r=assignment
+	| r=expr              { r = new QueryExpr(env.importGlobals(r)); }
+    | "explain" r=expr    { r = new ExplainExpr(env.importGlobals(r)); }
+	| "materialize" v=var { r = new MaterializeExpr(env.sessionEnv().inscope(v)); }
+	| "quit"              { done=true; }
 	;
 
-groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [BindingExpr by]
-    { Expr e; String v=null; }
-	: e=expr { env.scope(in.var); } by=groupBy[prevBy] ( "as" v=var )?    
-	    {
-          if( v == null )
-          {
-            if( e instanceof VarExpr )
-            {
-              v = ((VarExpr)e).var().name;
-            }
-            else
-            {
-              oops("\"as\" variable required when grouping expression is not a simple variable");
-            }
-          }
-          for( Var as: asVars ) 
-          {
-            if( as.name.equals(v) )
-            {
-              oops("duplicate group \"as\" variable: "+v);
-            }
-          }
-	      in.addChild(e); 
-          env.unscope(in.var); // TODO: unscope or hide?
-          asVars.add(env.makeVar(v));
-        }
-	;
-
-groupBy[BindingExpr by] returns [BindingExpr b=null]
-    { String v = null; Expr e=null; }
-    : ( "by" (v=avar "=")? e=expr )?
-    {
-      if( e == null )
-      {
-        e = new ConstExpr(null);
-      }
-      if( by == null )
-      {
-        Var var;
-        if( v == null )
-        {
-            var = Var.UNUSED;
-        }
-        else
-        {
-            var = env.makeVar(v);
-        }
-        b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
-      }
-      else if( v == null || (by.var != Var.UNUSED && by.var.name.equals(v)) )
-      {
-        by.addChild(e);
-        b = by;
-      }
-      else
-      {
-        oops("all group by variables must have the same name:" +by.var.name+" != "+v);
-      }
-    }
-    ;
-
-groupReturn returns [Expr r=null]
-    : "into" r=expr    { r = new ArrayExpr(r); }
-    | "expand" r=expr
-    //| r=aggregate[new VarExpr(pipeVar)] 
-    //    { if(numInputs != 1) throw new RuntimeException("cannot use aggregate with cogroup"); } 
-    ;
-
-//group returns [Expr r=null]
-//    {
-//      ArrayList<BindingExpr> inputs = new ArrayList<BindingExpr>();
-//      ArrayList<Expr> keys = new ArrayList<Expr>();
-//      ArrayList<Expr> intos = new ArrayList<Expr>();
-//      inputs.add(null); // for the by expressions
-//    }
-//    : "group" "(" groupIn[inputs, keys, intos] ( "," groupIn[inputs, keys, intos] )* ")" 
-//      {
-//        int n = keys.size();
-//      	Var keyVar = env.makeVar("$key");
-//        Expr[] args = new Expr[n];
-//        inputs.set(0, new BindingExpr(BindingExpr.Type.EQ, keyVar, null, keys.toArray(args)));
-//        args = new Expr[n+1];
-//        args[0] = new ProjPattern(new VarExpr(keyVar),null,true);
-//        for(int i = 0 ; i < n ; i++)
-//        {
-//          Var aggVar = env.makeVar("$av");
-//          Var inVar = inputs.get(i+1).var;
-//          Expr e = intos.get(i);
-//          e.replaceVar(inVar, aggVar);
-//          e = AggregateExpr.make(env, aggVar, new VarExpr(inVar), e);
-//          e = new IndexExpr(e,0);
-//          e = new ProjPattern(e,null,true); // TODO: eliminate record assumption
-//          args[i+1] = e;
-//        }
-//        r = new RecordExpr(args);
-//        r = new ArrayExpr(r); 
-//        r = new GroupByExpr(inputs, r); // .expand(env);
-//      }
-//    ;
-//
-//groupIn[ArrayList<BindingExpr> inputs, ArrayList<Expr> keys, ArrayList<Expr> intos]
-//    { Expr f=null; String vn="$"; Var v; Expr e; Expr key=null; Expr r=null; }
-//    // TODO: verify that all keys and into are compatible (all recs/arrays)
-//    // TODO: verify that all keys have same fields??
-//    // TODO: make comparators another class of special functions (ignored outside of sorting/grouping)?
-//    : (f=simpleField)?
-//      (vn=var ( /*empty*/      { e = new VarExpr(env.inscope(vn)); }
-//              | "in" e=expr))  { v=env.scope(vn); } 
-//      ("by" key=cmp)?
-//      ("into" r=expr)?
-//    {
-//       env.unscope(v);
-//       if( key == null )
-//       {
-//         key = new ConstExpr(Item.NIL);
-//       }
-//       if( r == null )
-//       {
-//       	 r = new ArrayAgg(new VarExpr(v));
-//       	 if( f == null )
-//       	 {
-//       	   r = new ArrayExpr(r);
-//       	 }
-//       	 else
-//         {
-//           r = new RecordExpr(new NameValueBinding(f, r, false));
-//         }
-//       }
-//       else if( f != null )
-//       {
-//       	 // TODO: just ignore this?
-//       	 throw new RecognitionException("warning: field label cannot be used with 'into' clause: "+f,
-//       	    getFilename(), LT(1).getColumn(), LT(1).getLine());
-//       }
-//       
-//       BindingExpr in = new BindingExpr(BindingExpr.Type.IN, v, null, e);
-//       inputs.add(in);
-//       keys.add(key);
-//       intos.add(r);
-//     }
-//   ;
-
-
-groupPipe[Expr in] returns [Expr r=null]
-    { 
-      BindingExpr b; BindingExpr by=null; Expr key=null;  Expr c; 
-      String v="$"; Var asVar; 
-    }
-    : "group" b=each[in] 
-      by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
-      ( "as" v=var )?        { asVar=env.scope(v); }
-      ( "using" c=comparator { oops("comparators on group by NYI"); } )?
-      r=groupReturn
-        {
-          if( by.var != Var.UNUSED ) env.unscope(by.var);
-          env.unscope(asVar);
-          r = new GroupByExpr(b,by,asVar,null,r);
-        }
-    ;
-
-comparator returns [Expr r=null]
-    { String s; Expr e; }
-    : r=cmpArrayFn["$"]
-    //  | "default"      { r = new DefaultComparatorExpr(); }
-    | (s=name|s=str)     { oops("named comparators NYI: "+s); } // r=new InvokeBuiltinCmp(ctx, e);
-    | r=cmpFnExpr
-    | r=varExpr
-    | r=parenExpr 
-    ;
-
-cmpExpr returns [Expr r=null]
-    { String v; Var var; }
-    : "cmp" ( "(" v=var ")" r=cmpArrayFn[v]
-            | r=cmpArray )
-    ;
-
-cmpFnExpr returns [Expr r=null]
-    { String v; Var var; }
-    : "cmp" "(" v=var ")" r=cmpArrayFn[v]
-    ;
-
-cmpArrayFn[String vn] returns [Expr r=null]
-    { Var var=env.scope(vn); }
-    : r=cmpArray
-    {
-      env.unscope(var);
-      r = new DefineFunctionExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
-    }
-    ;
-
-cmpArray returns [CmpArray r=null]
-    { Var var; ArrayList<CmpSpec> keys = new ArrayList<CmpSpec>(); }
-    : "[" ( cmpSpec[keys] ("," (cmpSpec[keys])? )* )? "]"
-    {
-      r = new CmpArray(keys);
-    }
-    ;
-cmpSpec[ArrayList<CmpSpec> keys]
-    { Expr e; Expr c=null; CmpSpec.Order o = CmpSpec.Order.ASC; }
-    : e=expr 
-      ( "using" c=comparator { oops("nested comparators NYI"); } )? 
-      ( "asc" | "desc" { o = CmpSpec.Order.DESC; } )?
-    {
-      keys.add( new CmpSpec(e, o) );
-    }
-    ;
-    
-
-//defBinding[String name] returns [BindingExpr b]
-//    { Expr e; }
-//    : e=pipe
-//    {
-//    	if( e instanceof BindingExpr )
-//    	{
-//    		b=(BindingExpr)e;
-//    	}
-//    	else
-//    	{
-//    		b = new BindingExpr(BindingExpr.Type.IN, env.scope(name), null, e);
-//    	} 
-//    }
-//    ;
-    
-//groupBy[BindingExpr by] returns [BindingExpr b=null]
-//    { String n = "$key"; Expr e=null; }
-//    : ("by" b=defBinding[n])? // TODO: start at simple expr
-////    : ("by" (bv=avar "=")? e=expr)?
-//    {
-//      if( b == null )
-//      {
-//        b = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, new ConstExpr(Item.NIL));
-//      }
-//      if( by == null )
-//      {
-//        by = b;
-//      }
-//      else if( by.var.name.equals(b.var.name) )
-//      {
-//        by.addChild(b.inExpr());
-//      }
-//      else
-//      {
-//        throw new RuntimeException("all group by variables must have the same name:" +by.var.name+" != "+b.var.name);
-//      }
-////      if( e == null )
-////      {
-////          e = new ConstExpr(Item.NIL);
-////      }
-//      b.type = BindingExpr.Type.EQ;
-//      by.addChild(b);
-//    }
-//    ;
- 
-
-//groupReturn[ArrayList<BindingExpr> in] returns [Expr r=null]
-//    : "into" r=expr // { r = new ArrayExpr(r); } 
-//    : "into" r=subpipe[null] // "into" r=expr { r = new ArrayExpr(r); } 
-//    | /* empty */
-//        {
-//          Expr[] fields = new Expr[in.size()];
-//          for(int i = 0 ; i < in.size() ; i++ )
-//          {
-//            Var var = i == 0 ? in.get(i).var : in.get(i).var2;
-//            env.unscope(var);
-//            fields[i] = new NameValueBinding(var, false);
-//          }
-//          r = new ArrayExpr(new RecordExpr(fields));
-//        }
-//    ;
-
-//partition[Expr in] returns [Expr r=null]
-//    { BindingExpr b; Var by = null; Expr e = null; String bn = "$key"; }
-//    : "partition" b=each[in]
-//          "by" ( "(" ( bn=avar "=" )? e=expr ")" // TODO: allow a list and comparators
-//               | "default" { e = new DefaultExpr(); } ) // use input/arbitrary partitioning 
-//                           { by = env.scope(bn); }
-//          "into" "(" r=subpipe[b.var] ")"
-//          // | r=aggregate[in.var,new PipeInput(new VarExpr(in.var))]
-//          // | r=window[in.var,new PipeInput(new VarExpr(in.var))] )
-//      { 
-//        env.unscope(by);
-//        env.unscope(b.var);
-//        r = new PartitionExpr(b.var,b.inExpr(),by,e,r); 
-//      }
-//    ;
-
-
-//window[Expr in] returns [Expr r=null]
-//    { BindingExpr b; Expr s = null; Expr e=null; String w = "$window"; }
-//    //: "tumble" "window" (w=var) windowStart (windowEnd)? r=aggregate[v,new PipeInput(new VarExpr(v))]
-//    //| "slide" "window" (w=var) windowStart windowEnd r=aggregate[v,new PipeInput(new VarExpr(v))]
-//    : "shift" b=each[in] { b.var.hidden=true; } 
-//               s=expr ( "before" e=expr "after" 
-//                       | "after"  { e=s; s=null; } )
-//             { b.var.hidden=false; } 
-//       { env.unscope(b.var); r = new ShiftExpr(v,input,s,e); }
-//    ;
-    
-//windowStart
-//    { Expr e; }
-//    : "start" windowVars "when" e=expr
-//    ;
-//
-//windowEnd
-//    { Expr e; }
-//    : "end" windowVars "when" e=expr
-//    ;
-//
-//windowVars
-//    { 
-//    	String c, a, p, n; 
-//    	Var v;
-//    }
-//    : (c=var) // ("at" a=var)? ("previous" p=var)? ("next" n=var)?
-//    ;
-
-
-join returns [Expr r=null]
-    { 
-      ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();
-      HashMap<String,Var> keys = new HashMap<String,Var>();
-      Expr p; 
-      BindingExpr b;
-    }
-    : "join" b=joinIn     { in.add(b); b.var.hidden=true; }
-            ("," b=joinIn { in.add(b); b.var.hidden=true; } )+  
-      {
-        for( BindingExpr b2: in )
-        {
-          b2.var.hidden = false;
-        }
-      }
-      "where" p=expr
-      ( "into" r=expr     { r = new ArrayExpr(r); }
-      | "expand" r=expr )
-      {
-        for( BindingExpr b2: in )
-        {
-          env.unscope(b2.var);
-        }
-        r = new MultiJoinExpr(in, p, r).expand(env);  
-      }
-    ;
-
-joinIn returns [BindingExpr b=null]
-    { boolean p = false; }
-    : ("preserve" { p = true; })? b=vpipe
-      {
-        b.preserve = p;
-      }
-    ;
-
-equijoin returns [Expr r=null]
-    { 
-        ArrayList<BindingExpr> in = new ArrayList<BindingExpr>(); 
-        ArrayList<Expr> on = new ArrayList<Expr>(); 
-        Expr c=null; 
-    }
-    : "equijoin" ejoinIn[in,on] ( "," ejoinIn[in,on] )+ 
-      ( "using" c=comparator { oops("comparators on joins are NYI"); } )?
-      {
-      	for( BindingExpr b: in )
-        {
-          b.var.hidden = false;
-        }
-      }
-      ( "into" r=expr     { r = new ArrayExpr(r); }
-      | "expand" r=expr )
-    {
-      r = new JoinExpr(in,on,r); // TODO: add comparator
-      for( BindingExpr b: in )
-      {
-      	env.unscope(b.var);
-      }
-    }
-    ;
-
-ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
-    { Expr e; BindingExpr b; }
-    : b=joinIn       { in.add(b); } 
-      "on" e=expr    { on.add(e); b.var.hidden=true; }
-    ;
-
-
-//join returns [Expr r=null]
-//    { 
-//      ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();
-//      HashMap<String,Var> keys = new HashMap<String,Var>(); 
-//    }
-//    : "join" joinIn[keys,in] ("," joinIn[keys,in])+
-//        {
-//          for(int i = 0 ; i < in.size() ; i++ )
-//          {
-//            Var var = in.get(i).var;
-//            var.hidden = false;
-//          }
-//        }
-//      ( "into" r=expr { r = new ArrayExpr(r); } 
-//      | "expand" r=expr //TODO: support join...expand? 
-//      )
-//      { r = new MultiJoinExpr(in, r).expand(env);  }
-//    ;
-//
-//joinIn[HashMap<String,Var> keys, ArrayList<BindingExpr> bindings]
-//	{ 
-//		boolean p = false; 
-//		BindingExpr b; 
-//		ArrayList<BindingExpr> on = new ArrayList<BindingExpr>(); 
-//	}
-//	: ( "preserve" { p = true; })? b=vpipe "on" "(" joinOn[keys,on] ("," joinOn[keys,on])* ")"  // TODO: define $ = b.var during on
-//		{
-//	  	  b.var.hidden = true;
-//	      b.preserve = p;
-//	      b.addChildren(on);
-//	      bindings.add( b );
-//	    }
-//	;
-//
-//joinOn[HashMap<String,Var> keys, ArrayList<BindingExpr> on]
-//    { String k = "$__key__"; Expr e; } // TODO: define $ has current input so $ or $input can be used
-//    : (k=avar "=")? e=expr 
-//      {
-//      	Var var = keys.get(k);
-//      	if( var == null )
-//      	{
-//    	  var = env.scope(k);
-//          var.hidden = true;
-//          keys.put(k,var);
-//      	}
-//      	on.add(new BindingExpr(BindingExpr.Type.EQ, var, null, e)); 
-//      }
-//    ;
-	
-//joinReturn[ArrayList<BindingExpr> in] returns [Expr r=null]
-//    : "into" r=expr { r = new ArrayExpr(r); } 
-  //  | /* empty */
-//        {
-//          Expr[] fields = new Expr[in.size()];
-//          for(int i = 0 ; i < in.size() ; i++ )
-//          {
-//            Var var = in.get(i).var;
-//            env.unscope(var);
-//            fields[i] = new NameValueBinding(var, false);
-//          }
-//          r = new ArrayExpr(new RecordExpr(fields));
-//        }
-//    ;
-
-	
-// Introduce uncorrelated expand operator?
-// 
-//cross returns [Expr r=null]
-//    {  BindingExpr b; ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();  }
-//    : "cross" "(" b=vpipe   { in.add(b); } 
-//         ("," b=vpipe   { in.add(b); } )* ")"
-//      {
-//        Expr[] fields = new Expr[in.size()];
-//        for(int i = 0 ; i < in.size() ; i++ )
-//        {
-//          Var var = in.get(i).var;
-//          env.unscope(var);
-//          fields[i] = new NameValueBinding(var, false);
-//        }
-//        r = new ArrayExpr(new RecordExpr(fields));
-//        r = new MultiForExpr(in, null, r).expand(env);
-//      }
-//    ;
-
-
-// TODO: keep or remove taggedMerge?
-//taggedMerge returns [Expr r=null]
-//    { ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); }
-//    : "taggedMerge" "(" taggedInput[bs] ( "," taggedInput[bs] )* ")" 
-//      { r = new TaggedMergeExpr(bs); }
-//    ;
-//    
-//taggedInput[ArrayList<BindingExpr> bs]
-//    { BindingExpr b; String v; Expr e; }
-//    : b=vpipe 
-//      ( "with" v=avar "=" e=expr  // TODO: define $ as alias to pipe name here, and on join, copartition, etc 
-//        { b.var2 = env.makeVar(v); b.addChild(e); }
-//      )?
-//      { env.unscope(b.var); bs.add(b); }
-//    ;
-
-
-//tee[Expr in] returns [Expr r=null]
-//    { 
-//      ArrayList<Expr> es = new ArrayList<Expr>();
-//      Var var = env.makeVar("$tee");
-//      es.add( new BindingExpr(BindingExpr.Type.IN, var, null, in) );
-//    }
-//    : "tee" "("      r=subpipe[var] { es.add(r); }  
-//                ("," r=subpipe[var] { es.add(r); } )*
-//            ")"
-//      {
-//     	r = new TeeExpr(es);
-//      }
-//    ;
-
-split[Expr in] returns [Expr r=null]
-    { 
-      ArrayList<Expr> es = new ArrayList<Expr>();
-      Var tmpVar = env.makeVar("$split");
-      Expr p; Expr e;
-      BindingExpr b;
-    }
-//    : "split" b=each[in] "("  { es.add( b ); } 
-//         ( "if"  p=expr e=subpipe[b.var]  { es.add(new IfExpr(p,e)); } )*
-//         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JsonBool.trueItem), e) ); } )?
-//       ")"
-    : "split" b=each[in]     { es.add( b ); } 
-         ( "if"              { b.var.hidden=false; } 
-              "(" p=expr ")" { b.var.hidden=true; }
-                e=expr       { es.add(new IfExpr(p,e)); } )*
-         ( "else"            { b.var.hidden=true; } 
-                e=expr       { es.add(new IfExpr(new ConstExpr(JsonBool.TRUE), e) ); } )?
-      {
-        r = new SplitExpr(es);
-        env.unscope(b.var);
-      }
-    ;
-
-
-op[Expr in] returns [Expr r=null]
-	{ BindingExpr b=null; } 
-	: "filter" b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
-    | "transform" b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
-    | "expand"  b=each[in] ( r=expr
-                           | /*empty*/ { r = new VarExpr(b.var); } )
-                                     { r = new ForExpr(b, r);       env.unscope(b.var); }
-    | r=groupPipe[in]
-    | r=sort[in]
-    | r=top[in]
-    //| r=tee[in]
-    | r=split[in]
-    | r=aggregate[in]
-    | r=call[in]
-    // | r=partition[in]
-    // TODO: add rename path
-    // | r=window[in]
-	;
-
-each[Expr in] returns [BindingExpr b=null]
-    { String v = "$"; }
-    : ( "each" v=var )?
-    { b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in); }
-    ;
-
-//assignOrCall[Expr in] returns [Expr r]
-call[Expr in] returns [Expr r=null]
-    { String n; ArrayList<Expr> args; }
-    : n=var ( // /*empty*/          { r = new AssignExpr( env.sessionEnv().scopeGlobal(n), in); }
-              // |
-              args=fnArgs        { args.add(0, in); r = new FunctionCallExpr(new VarExpr(env.inscope(n)), args); }
-               ( args=fnArgs     { r = new FunctionCallExpr(r, args); } )*
-            )
-    | n=name args=fnArgs         { args.add(0, in); r = FunctionLib.lookup(env, n, args); }
-               ( args=fnArgs     { r = new FunctionCallExpr(r, args); }    )*
-    ;
-
-//bindOrCall[BindingExpr in] returns [Expr r]
-//    { String n; ArrayList<Expr> args; }
-//    : n=var ( /*empty*/          { r = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, in.inExpr()); }
-//            | args=fnArgs        { r = new DoExpr(in, new FunctionCallExpr(new VarExpr(env.inscope(n)), args)); }
-//               ( args=fnArgs     { r = new FunctionCallExpr(r, args); } )*
-//            )
-//    | n=name args=fnArgs         { r = new DoExpr(in, FunctionLib.lookup(env, n, args)); }
-//               ( args=fnArgs     { r = new FunctionCallExpr(r, args); }    )*
-//    ;
-    
-
-// TODO: we might have to merge sink and op and make a semantic check for sinks to handle ops that can also be sinks, eg fnCall, select 
-//sink[Expr input] returns [Expr r=null]
-//    { String v; }
-////    : "write" v=var     { r = new StWriteExpr(new VarExpr(env.inscope(v)), input); }
-//    : "write" r=expr     { r = new StWriteExpr(r, input); }
-//    // | "return" // TODO: keep this?
-//   // | v=var             { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), input); } // TODO: var.type = pipe, do-block scope 
-//    // | "discard"           { r = new EatExpr(input); } // TODO: discard
-//    // | fnCall
-//    ;
-    
-
-top[Expr in] returns [Expr r=null]
-    { Expr n; Expr by=null; }
-    : "top" n=expr (by=sortCmp)?
-      {
-      	// TODO: add heap-based top operator
-      	if( by != null )
-      	{
-          in = new SortExpr(in, by);
-      	}
-      	r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JsonLong.ONE))));
-      }
-    ;
-
-// TODO: we need temp analysis to break undirected cycles in the flow!!!!
-// eg, tee |- $X
-//         |- $Y -|
-//     cross $X,$Y  // either $X or $Y must be temped
-//     merge $X,$Y  // neither needs to be temped if merge is willing to read from either ready input; otherwise, one needs to be temped.  
-
-// TODO: cross operator
-//
-// TODO: add co-partition; eliminate group by?
-// TODO: co-partition produces one tagged, merged stream? or multiple streams?
-// TODO: if multiple streams, can easily merge, cross.  need co-aggregate?
-
-//copartition returns [Expr r=null]
-//    { 
-//      ArrayList<BindingExpr> inputs = new ArrayList<BindingExpr>();
-//      Var byVar = null;
-//      Var partVar = env.makeVar("$"); // TODO: one part variable or multiple??
-//    }
-//    : "copartition" copartitionIn[inputs] ("," copartitionIn[inputs])*
-//         {
-//           byVar = inputs.get(0).var2;
-//           byVar.hidden = false;
-//           for( BindingExpr b: inputs )
-//           {
-//          	 // TODO: should copart introduce multiple streams?? 
-//          	 // b.var.hidden = false;
-//           }
-//         }
-//      "|-" r=opPipe[partVar] "-|" // r=srcPipe "-|" 
-//         {
-//           env.unscope( byVar );
-//           for( BindingExpr b: inputs )
-//           {
-//           	 env.unscope(b.var);
-//           }
-//           r = PartitionExpr.makeCopartition(env, inputs, partVar, r);
-//         }
-//    ;
-//
-//copartitionIn[ArrayList<BindingExpr> inputs]
-//    { 
-//        BindingExpr in;
-//        String bn = null; 
-//        Expr by;
-//    }
-//    : in=vpipe "by" (bn=avar "=")? by=expr // TODO: should copartition support "by default"?
-//        {  // TODO: define $ = in.var during by
-//          Var byVar;
-//          if( inputs.size() == 0 )
-//          {
-//            if( bn == null )
-//            {
-//              bn = "$key"; // TODO: this should be a constant somewhere
-//            }
-//            byVar = env.scope(bn);
-//            byVar.hidden = true;
-//          }
-//          else 
-//          {
-//          	byVar = inputs.get(0).var2;
-//          	if( bn != null && ! byVar.name().equals(bn) )
-//          	{
-//          	  throw new RuntimeException("must use same name for all key expressions: "+bn+" != "+byVar.name());
-//          	}
-//          }
-//          in.var.hidden = true;
-//          in.var2 = byVar;
-//          in.addChild( by );
-//          inputs.add( in );
-//        }
-//    ;
-
-    
-//coaggregate returns [Expr r=null]
-//    { 
-//      BindingExpr b;
-//      ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); 
-//    }
-//    : "coaggregate" b=vpipe {bs.add(b);} ("," b=vpipe {bs.add(b);})* r=expr
-//       { r = CoaggregateExpr.make(env, bs, r); }
-//    ;
-
-
-unroll returns [Expr r=null]
-    { ArrayList<Expr> args = new ArrayList<Expr>(); }
-    : "unroll" r=fnCall  { args.add(r); }
-          ( r=estep      { args.add(r); } )+
-          // TODO: as name
-      {
-        r = new UnrollExpr(args);
-      }
-    ;
-
-
-estep returns [Expr r = null] // TOD: Unify step expressions
-    : r=projName       { r = new UnrollField(r); }
-    | "[" r=expr "]"   { r = new UnrollIndex(r); }
-    // TODO: add [*], .*
-    ;
-	
-
-assign returns [Expr r=null]
+assignment returns [Expr r = null]
 	{ String v; }
-    : v=avar "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
-    | r=pipe "=>" v=var    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
+	: v=avar "=" r=expr
+	  { r = new AssignExpr(v, r); }
 	;
-
-optAssign returns [Expr r=null]
-    { String v; }
-    : v=avar "=" r=rvalue  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, r); } 
-    | r=pipe 
-         ( "=>" v=var      { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, r); } )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
-    ;
-
-// Same as optAssign but creates global variables on assigment, and inlines referenced globals
-topAssign returns [Expr r=null]
-    { String v; }
-    : ( v=avar "=" r=rvalue  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } // TODO: expr name should reflect global var
-      | r=pipe
-         ( /*empty*/         { r = env.importGlobals(r); } 
-         | "=>" v=var        { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } )
-      )
-    ;
-
-rvalue returns [Expr r = null]
-    : r=pipe
-//    | r=collection
-    // | r=function
-    | r=extern
-    ;
 	
-//collection returns [Expr r = null]
-//	: "collection" r=expr { r = new FileExpr(r); } // TODO: rename to CollectionExpr
-//	// TODO: this expression is evaluated immediately and replaced with a constant; file is registered, dups detected, type found. read and write get constant.
-//	;
+// TODO: should functions be in the session state?
+// TODO: how to catalog functions in the db?
+// TODO: need to scope/unscope declared functions
+// TODO: is declare needed?  can we declare other things (vars)?
 
-extern returns [Expr r = null]
-    { String lang; }
-    : "extern" lang=name "fn" r=expr
-      { r = new ExternFunctionExpr(lang, r); }
-    ;
-      
-function returns [Expr r = null]
-    { ArrayList<Var> p; }
-    : "fn" p=params r=pipe
+expr returns [Expr r = null]
+    : r=kwExpr
+    | r=orExpr
+	;
+	
+kwExpr returns [Expr r = null]
+    : r=forExpr
+	| r=letExpr
+    | r=ifExpr
+	| r=joinExpr
+	| r=groupExpr
+    | r=sortExpr
+	| r=combineExpr
+	| r=reduceExpr
+	| r=functionDef[false]
+//    | r=unnestExpr
+//    | "some"  bs=inBindingList "satisfies" p=expr {
+//        { bs[-1].setWhere(p); foreach b in bs: bs[-1].setWhere();  r=None }
+//    | "every" bs=inBindingList "satisfies" p=expr { r=None }
+	;
+	
+functionDef[boolean declaring] returns [DefineFunctionExpr fn = null]
+	{ String i = null; ArrayList<Var> p; Var fnVar = null; Expr body; }
+    : "fn" ( i=id         { fnVar = env.scope(i); } )? 
+       p=params 
+       body=expr        
     { 
-      r = new DefineFunctionExpr(p, r);
+	  fn = new DefineFunctionExpr(fnVar, p, body);
+      if( fnVar != null && !declaring )
+      {
+        env.unscope(fnVar);
+      }
       for( Var v: p )
       {
         env.unscope(v);
@@ -1080,261 +115,105 @@ function returns [Expr r = null]
     }
     ;
 
-
 params returns [ArrayList<Var> p = new ArrayList<Var>()]
-    { String v; }
+	{ String v; }
     : "(" ( v=var          { p.add(env.scope(v)); }
              ( "," v=var   { p.add(env.scope(v)); } )*
           )?
-      ")"
+       ")"
     ;
 
-//exceptions
-//	: "exceptions" "to" str ("limit" expr)?
-//	;
-
-//returnStmt returns [Expr r=null]
-//	: "return" ( r=topExpr )? // ("," var)* )?
-//	;
-	
-functionDef returns [Expr r=null]
-	{ String lang; String s; String body; Expr e; }
-	// : "function" name "(" (var ("," var)*)? ")" block
-	: "script" lang=name body=str
-	  {
-	  	r = new ScriptBlock(lang, body);
-	  }
-	| "import" lang=name s=name e=expr (SEMI|EOF)
-	  {
-	  	if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
-	  	r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
-	  }
-	;
-	
-forExpr returns [Expr r = null]
-    { 
-    	ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
-    }
-    : "for" "(" forDef[bs] ("," forDef[bs])* ")" r=expr
-//    : "for" forDef[bs] ("," forDef[bs])* 
-//        ( "into" r=expr    { r = new ArrayExpr(r); }
-//        | "expand" r=expr )
-    {
-      for(int i = 0 ; i < bs.size() ; i++ )
-      {
-        BindingExpr e = bs.get(i);
-        env.unscope(e.var);
-      }
-      MultiForExpr f = new MultiForExpr(bs, null, r /*new ArrayExpr(r)*/); // TODO: eleminate WHERE, array return, make native multifor
-      r = f.expand(env);
-    }
-    ;
-
-
-forDef[ArrayList<BindingExpr> bindings]
-    { String v; Expr e; String v2 = null; BindingExpr.Type t = null; BindingExpr b; }
-//    : b=vpipe
-//    {
-//    	bindings.add(b);
-//    }
-    : v=var ( /*( "at" v2=var )?*/  "in" e=pipe { t = BindingExpr.Type.IN; }
-            // | ":" v2=var "in" e=pipe        { t = BindingExpr.Type.INREC; }
-            // | "="  e=expr                { t = BindingExpr.Type.EQ; }
-            )
-    { 
-      Var var = env.scope(v);
-//      Var var2 = null;
-//      if( v2 != null )
-//      {
-//        var2 = env.scope(v2); 
-//      }
-      bindings.add( new BindingExpr(t, var, null, e) );
-    }
-    ;
-
-
-ifExpr returns [Expr r=null]
-	{ Expr p=null; Expr s=null; }
-	: "if" "(" p=expr ")" r=expr 
-	  ( options {greedy=true;} : 
-        "else" s=expr )?
-	{
-		r = new IfExpr(p, r, s);
-	}
-	;
-
-//combineExpr returns [CombineExpr r = null]
-//    { String v1, v2; Var var1 = null; Var var2 = null; Expr in; Expr use; }
-//    : 
-//      "combine" v1=var "," v2=var "in" in=pipe
-//         { 
-//           var1 = env.scope(v1);
-//           var2 = env.scope(v2);
-//         }
-//      "using" use=expr
-//         {
-//           env.unscope(var1);
-//           env.unscope(var2);
-//           r = new CombineExpr(var1, var2, in, use);
-//         }
-//    ;
-
-
-sort[Expr in] returns [Expr r=null]
-    : "sort" r=sortCmp
-      { r = new SortExpr(in, r); }
-    ;
-
-sortCmp returns [Expr r=null]
-    { String v="$"; }
-    : ("each" v=var)? "by" r=cmpArrayFn[v]
-    | "using" r=comparator
-    ;
-    
-//sortSpec returns [ArrayList<OrderExpr> by = new ArrayList<OrderExpr>()]
-//    : "(" (sortStep[by] ("," sortStep[by])*)? ")"
-//    //| "[" (sortStep[by] ("," sortStep[by])*)? "]"
-//    //| "{" (sortField[by] ("," sortField[by])*)? "}"
-//    ;
-//
-//sortStep[ArrayList<OrderExpr> by]
-//    { Expr e; OrderExpr.Order c; }
-//    : e=expr c=cmpSpec    { by.add( new OrderExpr(e,c) ); }
-//    ;
-    
-record returns [Expr r = null]
+recordExpr returns [RecordExpr r = null]
 	{ ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
 	  FieldExpr f; }
-	: "{" ( f=field  { args.add(f); } )? ( "," ( f=field  { args.add(f); } )? )*  "}"
-    //    { r = new RecordExpr(args.toArray(new Expr[args.size()])); }
-    { r = RecordExpr.make(env, args.toArray(new Expr[args.size()])); }
+	: "{" ( f=fieldExpr          { args.add(f); }
+	        ( "," ( f=fieldExpr  { args.add(f); }
+	              )? 
+	        )*
+	      )? 
+	  "}"
+	{ r = new RecordExpr(args.toArray(new Expr[args.size()])); }
     ;
 
-field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
-	{ Expr e = null; Expr v=null; boolean required = true; }
-    : e=fname ( "?" { required = false; } )?  v=fieldValue  
-      { 
-      	f = new NameValueBinding(e, v, required); 
-      }
-	| e=path ( DOT_STAR    
-	           { 
-	           	 f = new CopyRecord(e);
-	           }
-	         | ( "?" { required = false; } )?
-	           ( ":" v=pipe )?
-	           {
-	           	 if( v != null )
-	           	 {
-	           	    f = new NameValueBinding(e, v, required); 
-	           	 }
-                 else if( e instanceof VarExpr )
-                 {
-                   f = new NameValueBinding( ((VarExpr)e).var(), required );
-                 }
-                 else if( e instanceof PathExpr )
-                 {
-                   // TODO: { $r.x } becomes { $r.{.x} }.  keep it that way or leave it as { $r.x }??
-                   PathStep ret = ((PathExpr)e).getReturn();
-                   Expr step = ret.parent();
-                   if( step instanceof PathFieldValue )
-                   {
-                   	 step.replaceInParent(ret);
-                   	 f = new CopyField(e, step.child(0), required ? CopyField.When.DEFINED : CopyField.When.NONNULL );
-                   }
-                   else
-                   {
-                     // ((PathExpr)e).forceRecord();
-                     f = new CopyRecord(e);
-                   }
-                 }
-                 else
-                 {
-                   oops("field name required, or use (expr).* to copy records");
-                 }
-	           }
-	         )
-	;    
-
-
-fieldValue returns [Expr r=null]
-    { boolean flat = false; }
-    : ":" ("flatten" {flat=true;})? r=pipe
-      {
-      	if( flat )
-      	{
-      	  r = new FlattenExpr(r);
-      	}
-      }
+fieldExpr returns [FieldExpr f]
+	{ Expr n = null; String i; VarExpr v; }
+	: i=id f=fieldValue[new ConstExpr(new JString(i))]
+    | n=literalExpr ( f=fieldValue[n] 
+                    | f=projPattern[n] )
+    | v=varExpr ( ("?" ":") => f=fieldValue[v] 
+                | f=projPattern[v] 
+                | f=varField[v] )
+	;
+    
+fieldValue[Expr name] returns [FieldExpr f = null]
+	{ Expr v; boolean required = true; }
+	: ("?" { required = false; } )?
+      ":" v=expr
+    { f = new NameValueBinding(name, v, required); }
     ;
 
-
-expr returns [Expr r]
-    : r=group
-    | r=join
-    | r=equijoin
-    | r=forExpr
-    // | r=taggedMerge
-    | r=ifExpr
-    | r=unroll
-    // | r=combineExpr
-   // | r=function
-    | r=orExpr
+projPattern[Expr ctx] returns [FieldExpr f = null]
+	{ Expr n = null; boolean wild = false; }
+    : ( n=dotId        ( "*" { wild = true; } )?
+      | "." ( n=basic  ( "*" { wild = true; } )?
+            | "*" { wild = true; }
+            ) 
+      )
+      { f = new ProjPattern(ctx,n,wild); }
+    ;
+    
+varField[VarExpr ve] returns [FieldExpr f = null]
+	{ boolean required = true; }
+	: ("?" { required = false; } )?
+	{ 
+		String name = ve.var().name().substring(1);
+        f = new NameValueBinding(name,ve,required);
+    }
     ;
 
+dotId returns [Expr r = null]
+    : i:DOT_ID     { r = new ConstExpr(new JString(i.getText())); }
+    ;
+    
+dotName returns [Expr r = null]
+    : r=dotId
+    | "." r=basic 
+    ;
+    
+fieldName returns [Expr r = null]
+	{ String i; }
+	: r=basic
+	| i=id		{ r = new ConstExpr(new JString(i)); }
+	;
 
-orExpr returns [Expr r]
+constFieldName returns [String name = null]
+	: name=id
+	| s:STR		{ name=s.getText(); }
+	;
+
+orExpr returns [Expr r = null]
 	{ Expr s; }
 	: r=andExpr ( "or" s=andExpr { r = new OrExpr(r,s); } )*
 	;
 
-andExpr returns [Expr r]
+andExpr returns [Expr r = null]
 	{ Expr s; }
 	: r=notExpr ( "and" s=notExpr { r = new AndExpr(r,s); } )*
 	;
 
-notExpr returns [Expr r]
-	: "not" r=notExpr  { r = new NotExpr(r); }
-	| r=kwTest
+notExpr returns [Expr r = null]
+	: "not" r=notExpr { r = new NotExpr(r); }
+	| r=inExpr
 	;
 
-kwTest returns [Expr r]
-    : r=inExpr
-    | r=isnullExpr
-    | r=isdefinedExpr
-    | r=existexpr
-    ;
-
-isnullExpr returns [Expr r]
-    : "isnull" r=inExpr
-    { r = new IsnullExpr(r); }
-    ;
-
-existexpr returns [Expr r]
-    : "exists" r=inExpr
-    { r = new ExistsFn(r); }
-    ;
-
-
-isdefinedExpr returns [Expr r]
-    { Expr n; }
-    : "isdefined" r=fnCall n=projName // TODO: this should be a path expression
-    { r = new IsdefinedExpr(r,n); }
-    ;
-
-    
 inExpr returns [Expr r = null]
 	{ Expr s; }
 	: r=compare ( "in" s=compare  { r = new InExpr(r,s); } )?
 	;
 
 compare returns [Expr r = null]
-    { int c; Expr s; Expr t; }
-    : r=instanceOfExpr 
-          ( c=compareOp  s=instanceOfExpr  { r = new CompareExpr(c,r,s); }
-               ( c=compareOp       { s = s.clone(new VarMap()); }  // TODO: introduce a variable?
-                 t=instanceOfExpr  { r = new AndExpr( r, new CompareExpr(c,s,t) ); s=t; } 
-               )*
-          )? 
+    { int c; Expr r2; }
+    : r=instanceOfExpr ( c=compareOp  r2=instanceOfExpr { r = new CompareExpr(c,r,r2); } )?
     ;
 
 compareOp returns [int r = -1]
@@ -1345,13 +224,19 @@ compareOp returns [int r = -1]
     | "<=" { r = CompareExpr.LE; }
     | ">=" { r = CompareExpr.GE; }
     ;
-
+	
+// FIXME: make "type blah" a basic type when Schema is an atom.
 instanceOfExpr returns [Expr r = null]
-    { Expr s; }
-    : r=addExpr 
-    ( "instanceof" s=addExpr { r = new InstanceOfExpr(r,s); } )? 
-    ;
+	{ Expr s; }
+	: r=toExpr 
+	( "instanceof" s=toExpr { r = new InstanceOfExpr(r,s); } )?
+	;
 
+toExpr returns [Expr r = null]
+	{ Expr s; }
+    : r=addExpr ( "to" s=addExpr  { r = new RangeExpr(r,s); } )?
+    ;
+    
 addExpr returns [Expr r = null]
 	{ Expr s; int op; }
     : r=multExpr ( op=addOp s=multExpr  { r = new MathExpr(op,r,s); } )*
@@ -1375,459 +260,606 @@ multOp returns [int op=0]
 // TODO: there is a bug handling negative numbers minLong (= -maxLong -1) doesn't parse
 // TODO: there is a bug parsing large integers that can fit into a decimal
 unaryAdd returns [Expr r = null]
-	: "-" r=typeExpr { r = MathExpr.negate(r); } 
-	| ("+")? r=typeExpr	
+	: "-" r=access { r = MathExpr.negate(r); } 
+	| ("+")? r=access	
 	;
-	
-typeExpr returns [Expr r = null]
-    { Schema s; }
-    : "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
-    | r=path
-    ;	
 
-path returns [Expr r=null]
-    { PathStep s=null; }
-    : r=fnCall 
-       ( s=step             { r = new PathExpr(r,s); }
-         steps[s]
-       )?
-    ;
-
-steps[PathStep p]
-    { PathStep s; }
-    : ( s=step  { p.setNext(s); p = s; }
-      )*
-    ;
-
-step returns [PathStep r = null]
-    { Expr e; Expr f; ArrayList<PathStep> pn; }
-    : ( e=projName                   { r = new PathFieldValue(e); }
-      | "{" pn=projFields "}"        { r = new PathRecord(pn); } // TODO: all steps after names: {.x.y, .z[2]}
-      | "[" ( e=expr
-                ( /*empty*/       { r = new PathIndex(e); }
-                | ":" ( f=expr    { r = new PathArraySlice(e,f); }
-                      | "*"       { r = new PathArrayTail(e); }
-              ))
-            | "*" ( /*empty*/     { r = new PathArrayAll(); }
-                  | ":" ( e=expr  { r = new PathArrayHead(e); }
-                        | "*"     { r = new PathArrayAll(); }
-                ))
-            | "?"                 { r = new PathToArray(); }
-            | /*empty*/           { r = new PathExpand(); }
-          ) // ( "*" { ((PathArray)r).setExpand(true); } )? // TODO: add shorthand to expand?
-        "]"
+access returns [Expr r = null]
+    { String i; ArrayList<Expr> args; }
+    : ( r=construct
+      | i=id "(" args=exprList ")"  { r = FunctionLib.lookup(env, i, args); }
       )
+      r=step[r]
     ;
 
-projFields returns [ArrayList<PathStep> names = new ArrayList<PathStep>()]
-    { PathStep s; }
-    : s=projField steps[s]           { names.add(s); } // TODO: ? indicator to eliminate nulls
-      ( projFieldsMore[names] )?
-    | s=projNotFields steps[s]     { names.add(s); }
-    ;
-
-projFieldsMore[ArrayList<PathStep> names]
-    { PathStep s; }
-    : "," ( s=projField steps[s]     { names.add(s); } // TODO: ? indicator to eliminate nulls
-            ( projFieldsMore[names] )?
-          | s=projNotFields steps[s] { names.add(s); }
-          )
-    ;
-    
-projNotFields returns [PathStep s=null]
-    { ArrayList<PathStep> names = null; }
-    : "*"
-      ( /* empty */       { s = new PathAllFields(); }
-      | "-" s=projField   { names = new ArrayList<PathStep>(); names.add(s); }
-        ( "," s=projField { names.add(s); }
-        )*
-                          { s = new PathNotFields(names); } 
-      )
-    ;
-
-projField returns [PathOneField r=null]
-    { Expr e; }
-    : e=projName  { r = new PathOneField(e); } 
-    ;
-
-projName returns [Expr r=null]
-    : r=dotName
-    | DOT r=basic
-    ;
-
-
-fnCall returns [Expr r=null]
-    { String s; ArrayList<Expr> args; }
-    : ( r=basic 
-      | r=builtinCall )
-	     ( args=fnArgs    { r = new FunctionCallExpr(r, args); } )*
-	;
-
-builtinCall returns [Expr r=null]
-    { String s; ArrayList<Expr> args; }
-    : s=name args=fnArgs
-    { 
-      r = FunctionLib.lookup(env, s, args);
-    }
-    ;
-    
-basic returns [Expr r=null]
-    : r=constant
-    | r=record
-    | r=array
-    | r=varExpr
-    | r=cmpExpr
-    | r=parenExpr
-    ;
-	
-parenExpr returns [Expr r=null]
-//    : "(" r=letExpr ")"
-    : "(" r=block ")"
-	;
-
-//letExpr returns [Expr r=null]
-//	{ String v; Var var=null; Expr s; }
-//	: v=avar "=" s=expr ";"
-//	  {
-//	  	var = env.scope(v); 
-//	  } 
-//	  r=letExpr
-//	  {
-//	  	env.unscope(var);
-//	  	r = new LetExpr(var, s, r);
-//	  }
-//	| r=expr
-//	;
-
-//nameUse returns [Expr r=null] // TODO: eliminate this if var keeps $
-//	: r=fnCall
-//	: r=varExpr 
-//    ;
-    
-//nameUse2[BindingExpr b] returns [Expr r=null]
-//    { String v; }
-//    : r=fnCall    { r = new DoExpr(b, r); }
-//    | v=var       { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, b.inExpr()); } // { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), input); } // TODO: var.type = pipe, do-block scope
-//    ;
-    
-//fnCall returns [Expr r=null]
-//	{ String s; ArrayList<Expr> args; }
-//    : s=name "(" args=exprList ")" { r = FunctionLib.lookup(env, s, args); }
-//    | s=var "(" args=exprList ")"  { r = new FunctionCallExpr(new VarExpr(env.inscope(s)), args); }
-//	;	
-
-//fnCall returns [Expr r=null]
-//    { String s; Expr e; ArrayList<Expr> args; }
-//    :// s=name "(" args=exprList ")" { r = FunctionLib.lookup(env, s, args); }
-//     e=basic "(" args=exprList ")"  { r = new FunctionCallExpr(e, args); }
-//    ;   
-
-varExpr returns [Expr r = null]
-    { String v; }
-    : v=var 
-    { r = new VarExpr( env.inscope(v) ); }
-    ;
-
-
-array returns [Expr r=null]
-	{ ArrayList<Expr> a; }
-	: "[" a=exprList2 "]"
-	{ r = new ArrayExpr(a); }
-	;
-
-
-fnArgs returns [ArrayList<Expr> r = new ArrayList<Expr>()]
-    : "(" r=exprList ")"
-    { 
-    	for(Expr e: r)
-    	{
-    		if( e instanceof AssignExpr )
-    		{
-    			oops("Call by name NYI");
-    		}
-    	}
-    }    
-    ;
-
-exprList returns [ArrayList<Expr> r = new ArrayList<Expr>()]
-    { Expr e; }
-    : ( e=pipe      { r.add(e); }
-        ("," e=pipe    { r.add(e); } )*
-      )?
-    ;
-
-// An exprList that allows ignores empty exprs
-exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
-    { Expr e; }
-    : ( e=pipe  { r.add(e); } )? ("," ( e=pipe  { r.add(e); } )? )*
-    ;
-
-args[Parameters descriptor] returns [ ArgumentExpr r=null ]
-    { ArrayList<Expr> a = new ArrayList<Expr>(); }
-    : "(" ( arg[a] ("," arg[a])* )? ")" { r=new ArgumentExpr(descriptor, a); }
-    ;
-
-arg[ArrayList<Expr> r]
-    { Expr name = null; Expr value; String v; }
-    : ( (id:AID { name = new ConstExpr(new JsonString(id.getText())); } "=")? value=pipe )
-      { if (name==null) r.add(value); else r.add(new NameValueBinding(name, value)); }
-      // not using AssignExpr because argument name might be computed (later)
-    ;
-
-constant returns [Expr r=null]
-	{ String s; JsonNumeric n; JsonBool b;}
-    : s=str		 { r = new ConstExpr(new JsonString(s)); }
-    | n=numericLit { r = new ConstExpr(n); }
-    | h:HEXSTR   { r = new ConstExpr(new JsonBinary(h.getText())); }
-    | t:DATETIME { r = new ConstExpr(new JsonDate(t.getText())); }
-    | b=boolLit  { r = new ConstExpr(b); }
-    | r=nullExpr
-    ;
-
-numericLit returns [JsonNumeric v=null]
-    : v=intLit
-    | v=doubleLit
-    | v=decLit
-    ;
-
-    
-intLit returns [ JsonLong v=null]
-    : i:INT      { v = new JsonLong(i.getText()); }
-    ;
-
-doubleLit returns [ JsonDouble v=null]
-    : d:DOUBLE   { v = new JsonDouble(d.getText()); }
-    ;
-
-decLit returns [ JsonDecimal v=null]
-    : n:DEC      { v = new JsonDecimal(n.getText()); }
-    ;
-
-
-// not to be used in terms!    
-signedNumericLit returns [ JsonNumeric v = null ]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      ( i:INT    { v = parseLong(i.getText(), isNegative); }
-      | j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
-      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
-      )
-    ;
-
-// not to be used in terms!    
-signedNumberLit returns [ JsonNumeric v = null ]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      ( i:INT    { v = parseLong(i.getText(), isNegative); }
-      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
-      )
-    ;
-// not to be used in terms!
-signedIntLit returns [ JsonLong v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      i:INT    { v = parseLong(i.getText(), isNegative); } 
-    ;
-
-// not to be used in terms! 
-signedDoubleLit returns [ JsonDouble v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
-    ;
-     
-// not to be used in terms!     
-signedDecLit returns [ JsonDecimal v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      k:DEC    { v = parseDecimal(k.getText(), isNegative); }       
-    ;     
-    
-strLit returns [ JsonString v=null]
-    { String s; }
-    : s=str      { v = new JsonString(s); }
-    ;
-    
-boolLit returns [JsonBool b=null]
-    : "true"     { b = JsonBool.TRUE; }
-    | "false"    { b = JsonBool.FALSE; }
-    ;
-    
-nullExpr returns [Expr r=null]
-    : "null"     { r = new ConstExpr(null); }
-    ;
-    
-str returns [String r=null]
-	: s:STR 			{ r = s.getText(); }
-	| h:HERE_STRING     { r = h.getText(); }
-	| b:BLOCK_STRING    { r = b.getText(); }
-	;
-	
-avar returns [String r=null]: n:AVAR { r = n.getText(); }; //  TODO: move to ID
-var returns [String r=null]: n:VAR { r = n.getText(); }; // TODO: move to ID
-name returns [String r=null]: n:ID { r = n.getText(); };
-dotName returns [Expr r = null]
-    : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
-    ;
-
-fname returns [Expr r=null] 
-    : i:FNAME     { r = new ConstExpr(new JsonString(i.getText())); }
-    ;
-
-simpleField returns [Expr f=null]
-    : ( f=fname | "(" f=pipe ")" ) ":"
-    ;
-
-schema returns [Schema s = null]
-    { List<Schema> alternatives = new ArrayList<Schema>(); Schema s2; }
-    : (
-        s = schemaTerm       { alternatives.add(s); }     
-        ( "|"              
-          s2 = schemaTerm     { alternatives.add(s2); } 
-        )*
-      ) {
-      	  if (alternatives.size()>1) { // if there are alternatives, wrap into OrSchema
-            Schema[] schemata = alternatives.toArray(new Schema[alternatives.size()]); 
-      	    s = new OrSchema(schemata);
-          }
-        }
-    ;
-    
-schemaTerm returns [Schema s = null]
-    : "*"           { s = AnySchema.getInstance(); }
-    | s=aSchema
-       ( "?"        { s = new OrSchema(s, NullSchema.getInstance()); } // TODO: good notation?
-       )?
-    ;
-
-aSchema returns [Schema s = null]
-    : s=atomSchema
-    | s=arraySchema
-    | s=recordSchema
-    ;
-
-atomSchema returns [Schema s = null]
-    { JsonRecord args; }
-    : "null"       { s = NullSchema.getInstance(); }
-    | ( "function" args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.FUNCTION, args); } )
-    | ( "boolean"  args=atomSchemaArgs[BooleanSchema.getParameters()] { s = new BooleanSchema(args); } )
-    | ( "date"     args=atomSchemaArgs[DateSchema.getParameters()] { s = new DateSchema(args); } )
-    | ( "schema"   args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.SCHEMA, args); } )    
-    | ( "binary"   args=atomSchemaArgs[BinarySchema.getParameters()] { s = new BinarySchema(args); } )
-    | ( "long"     args=atomSchemaArgs[LongSchema.getParameters()] { s = new LongSchema(args); } )
-    | ( "double"   args=atomSchemaArgs[DoubleSchema.getParameters()] { s = new DoubleSchema(args); } )
-    | ( "decfloat" args=atomSchemaArgs[DecimalSchema.getParameters()] { s = new DecimalSchema(args); } )
-    | ( "string"   args=atomSchemaArgs[StringSchema.getParameters()] { s = new StringSchema(args); } )
-    ;
-
-atomSchemaArgs[Parameters d] returns [ JsonRecord args=null ]
-    { ArgumentExpr argsExpr; }
-    : ( argsExpr=args[d] { args = argsExpr.constEval(); 
-                           if (args==null) 
-                           {
-                           	 throw new RuntimeException("schema arguments have to be constants");
-                           }; 
-                         } )?
-    ;
-    	   
-arraySchema returns [ArraySchema s = null]
-    { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
-      Schema p; 
-      Schema rest = null;
-      Pair<JsonLong, JsonLong> repeat = null; 
-    }
-    : "["
-        ( p=schema           { rest = p; }
-          ( "," p=schema     { schemata.add(rest); rest = p; }
-          )*
-          repeat=arraySchemaRepeat
-        )?
-      "]" { 
-            Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
-      	    s = rest != null ? new ArraySchema(schemaArray, rest, repeat.a, repeat.b)
-      	                     : new ArraySchema(schemaArray); // empty array
-          }
-    ;
-
-arraySchemaRepeat returns [Pair<JsonLong, JsonLong> p = null; ]
-    { JsonLong minRest = null; JsonLong maxRest = null; }
-    : ( /*empty*/                     { minRest = JsonLong.ONE; maxRest = JsonLong.ONE; }
-      | ( "*"                         
-        | "+"                         { minRest = JsonLong.ONE; }
-        | "<" 
-            ( "*"                     
-            | minRest=signedIntLit
-            ) 
-            ( /*empty*/               { maxRest = minRest; }
-            | "," ( "*"             
-                    | maxRest=signedIntLit 
-                  )
+step[Expr ctx] returns [Expr r = null]
+    { Var var = null; ArrayList<Expr> args; boolean addArray = true; }
+    : /* empty */                { r = ctx; }
+    | ( ( r=dotName              { r = new FieldValueExpr(ctx, r); }
+        | "(" args=exprList ")"  { r = new FunctionCallExpr(ctx, args); } 
+        | "[" 
+            ( r=expr "]"         { r = new IndexExpr(ctx, r); }
+            | "*" ( "*"          { addArray = false; }
+                  )?
+                  "]"            { var = env.makeVar("$star"); r = new VarExpr(var); }
             )
-          ">"
         )
-      ) { p = new Pair<JsonLong, JsonLong>(minRest, maxRest); }
-    ;
-
-recordSchema returns [RecordSchema s = null]
-    { 
-   	  List<RecordSchema.Field> fields = new ArrayList<RecordSchema.Field>(); 
-   	  Schema rest = null;
-   	  RecordSchema.Field f = null;    
-  	}
-    : "{" ( ( f=recordSchemaField                { fields.add(f); }
-            | rest=recordSchemaRest[rest] 
-            )
-            ( "," ( f=recordSchemaField          { fields.add(f); } 
-                  | rest=recordSchemaRest[rest] 
-                  ) 
-            )*
-          )? 
-      "}" { 
-      	    RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
-      	    s = new RecordSchema(fieldsArray, rest);
-          }
-    ;
-
-recordSchemaRest[Schema currentRest] returns [Schema s = null]
-    : "*" s=recordSchemaFieldSchema
+        r=step[r]
+      )
       { 
-      	if( currentRest != null ) 
+      	if( var != null ) 
       	{
-      	  oops("only one wildcard field is allowed in a record schema");
+      	  if( addArray )
+      	  {
+      	  	r = new ArrayExpr(r); 
+      	  }
+      	  r = new ForExpr(var, ctx, r); 
       	}
       }
     ;
 
-recordSchemaField returns [RecordSchema.Field s = null]
-    { String n; boolean optional = false; Schema t; }
-    : n=recordSchemaFieldName
-      ( "?" { optional = true; } )?
-      t=recordSchemaFieldSchema
-      {
-      	s = new RecordSchema.Field(new JsonString(n), t, optional);
-      }
-    ;
     
-recordSchemaFieldSchema returns [Schema s]
-    : /*empty*/   { s = AnySchema.getInstance(); }
-    | ":" s=schema
+construct returns [Expr r = null]
+    : "true"     { r = new ConstExpr(JBool.trueItem); }
+    | "false"    { r = new ConstExpr(JBool.falseItem); }
+    | "null"     { r = new ConstExpr(Item.nil); }
+    | r=typeExpr
+    | r=arrayExpr
+    | r=recordExpr
+    //| r=functionDef[false]
+    | r=basic
     ;
 
-recordSchemaFieldName returns [String s=null]
-    : i:ID      { s = i.getText(); }
-    | j:FNAME   { s = j.getText(); }
-    | s=str
+basic returns [Expr r = null]
+	: r=varExpr
+	| r=literalExpr
+	;
+
+literalExpr returns [Expr r = null]
+    : s:STR      { r = new ConstExpr(new JString(s.getText())); }
+    | i:INT      { r = new ConstExpr(new JLong(i.getText())); }
+    | n:DEC      { r = new ConstExpr(new JDecimal(n.getText())); }
+    | d:DOUBLE   { r = new ConstExpr(new JDouble(d.getText())); }
+    | h:HEXSTR   { r = new ConstExpr(new JBinary(h.getText())); }
+    | t:DATETIME { r = new ConstExpr(new JDate(t.getText())); }
+    // | x:REGEX    { r = new ConstExpr(RegexItem.parse(x.getText())); }
+    // | "(" r=expr ")"
+    | r=parenExpr 
     ;
+    
+parenExpr returns [Expr r = null]
+	{ ArrayList<BindingExpr> b = new ArrayList<BindingExpr>(); }
+ 	: "(" ( letDef[b] "," )*  r=expr ")"
+ 	{
+ 		if( ! b.isEmpty() )
+ 		{
+	      for(int i = 0 ; i < b.size() ; i++ )
+    	  {
+      		BindingExpr e = b.get(i);
+      		env.unscope(e.var);
+	  	  }
+      	  r = new LetExpr(b, r);
+ 		}
+ 	}
+    ;
+
+
+varExpr returns [VarExpr r = null]
+    { String v; }
+    : v=var 
+    { 
+      Var var = env.inscope(v);
+      r = new VarExpr(var);
+    }
+    ;
+
+arrayExpr returns [Expr r = null]
+    { ArrayList<Expr> es; }
+    : "[" es=exprList "]"    { r = new ArrayExpr(es); }
+    ;
+
+exprList returns [ArrayList<Expr> es = new ArrayList<Expr>()]
+    { Expr e; }
+    : (",")* ( e=expr { es.add(e); }
+        ( (",") (e=expr  { es.add(e); })? )*
+      )?
+    ;
+    
+
+forExpr returns [Expr r = null]
+	{ ArrayList<BindingExpr> b = new ArrayList<BindingExpr>(); }
+    : "for" "(" forDef[b] ("," forDef[b])* ")" r=expr
+    {
+      for(int i = 0 ; i < b.size() ; i++ )
+      {
+      	BindingExpr e = b.get(i);
+      	env.unscope(e.var);
+	  }
+      MultiForExpr f = new MultiForExpr(b, null, r); // TODO: eleminate WHERE
+      r = f.expand(env);
+    }
+    ;
+
+// forExprOld returns [Expr r = null]
+// 	{ Expr p = null; Expr d; ArrayList<BindingExpr> b = new ArrayList<BindingExpr>(); }
+//     : "for" forDef[b] ("," forDef[b])*
+//       ( "where" p=expr )?
+//       ( "return" d=expr	  { d = new ArrayExpr(d); }
+//       | "collect" d=expr )
+//     {
+//       for(int i = 0 ; i < b.size() ; i++ )
+//       {
+//       	BindingExpr e = b.get(i);
+//       	env.unscope(e.var);
+// 	  }
+//       MultiForExpr f = new MultiForExpr(b, p, d);
+//       r = f.expand(env);
+//     }
+//     ;
+
+
+forDef[ArrayList<BindingExpr> bindings]
+	{ String v; Expr e; String v2 = null; BindingExpr.Type t = null; }
+	: v=var ( ( "at" v2=var )?	"in" e=expr { t = BindingExpr.Type.IN; }
+			| ":" v2=var "in" e=expr 		{ t = BindingExpr.Type.INREC; }
+			// | "="  e=expr   	            { t = BindingExpr.Type.EQ; }
+			)
+	{ 
+	  Var var = env.scope(v);
+	  Var var2 = null;
+	  if( v2 != null )
+	  {
+	  	var2 = env.scope(v2); 
+	  }
+	  bindings.add( new BindingExpr(t, var, var2, e) );
+	}
+	;
+
+letExpr returns [Expr r = null]
+	{ ArrayList<BindingExpr> b = new ArrayList<BindingExpr>(); }
+    : "let" "(" letDef[b] ("," letDef[b])* ")" r=expr
+    {
+      for(int i = 0 ; i < b.size() ; i++ )
+      {
+      	BindingExpr e = b.get(i);
+      	env.unscope(e.var);
+	  }
+      r = new LetExpr(b, r);
+    }
+    ;
+
+// letExprOld returns [Expr r = null]
+// 	{ ArrayList<BindingExpr> b = new ArrayList<BindingExpr>(); }
+//     : "let" letDef[b] ("," letDef[b])*
+//       "return" r=expr
+//     {
+//       for(int i = 0 ; i < b.size() ; i++ )
+//       {
+//       	BindingExpr e = b.get(i);
+//       	env.unscope(e.var);
+// 	  }
+//       r = new LetExpr(b, r);
+//     }
+//     ;
+
+letDef[ArrayList<BindingExpr> bindings]
+	{ String v; Expr e; }
+	: v=avar "="  e=expr
+	{ 
+	  Var var = env.scope(v);
+	  bindings.add( new BindingExpr(BindingExpr.Type.EQ, var, null, e) );
+	}
+	;
+
+ifExpr returns [Expr r = null]
+    { Expr p; Expr t; Expr f = null; }
+    : "if" "(" p=expr ")" t=expr
+      ( options {greedy=true;} : 
+        "else" f=expr )? 
+      { r = new IfExpr(p,t,f); }
+    ;
+
+// ifExprOld returns [Expr r = null]
+//     { Expr p; Expr t; Expr f = null; }
+//     : "if" p=expr "then" t=expr
+//       ( options {greedy=true;} : "else" f=expr )? 
+//       { r = new IfExpr(p,t,f); }
+//     ;
+
+//unnestExpr returns [Expr r]
+//    : "unnest" r=expr // TODO: eliminate unnest altogether
+//      {
+//		  r = new UnnestExpr(r);
+//		}
+//	  }
+//    ;
+
+//unnestExpr returns [Expr r]
+//    : "unnest" r=expr // TODO: eliminate unnest altogether
+//      {
+      	// Var v = env.makeVar(Var.autoForName);
+      	// r = new ForExpr(v, r, new VarExpr(v)); // TODO: no longer supports non-arrays??
+//        // Some expressions can push unnest inside them for efficiency
+//        if( r instanceof ForExpr )
+//        {
+//		  ((ForExpr)r).setUnnest(true);
+//        }
+//        //else if( r instanceof ArrayExpr )
+//        //{
+//		//  ((ArrayExpr)r).setUnnest(true);
+//        //}
+//		else
+//		{      	
+//		  r = new UnnestExpr(r);
+//		}
+//	  }
+//    ;
+
+
+// We might add ANY/ALL to join.  Right now the meaning is ALL non-optional
+// bindings must be non-empty.  The alternative is that ANY non-optional binding
+// must exist.  ANY can be achieved with the current syntax using multiple binary joins.
+joinExpr returns [JoinExpr r = null]
+	{ Expr e; ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); }
+	: "join" "(" joinDef[bs] "," (joinDef[bs]) ("," joinDef[bs])* ")"
+	  {
+	  	for(int i = 0 ; i < bs.size() ; i++ )
+	  	{
+	  	  BindingExpr b = bs.get(i);
+	  	  b.var.hidden = false;
+	  	}
+	  }
+	  e=expr
+	  {
+  	    for(int i = 0 ; i < bs.size() ; i++ )
+	    {
+	      BindingExpr b = bs.get(i);
+	  	  env.unscope(b.var);
+	    }
+        r = new JoinExpr(bs, e);
+	  }
+	;
+
+// We might add ANY/ALL to join.  Right now the meaning is ALL non-optional
+// bindings must be non-empty.  The alternative is that ANY non-optional binding
+// must exist.  ANY can be achieved with the current syntax using multiple binary joins.
+// joinExprOld returns [JoinExpr r = null]
+// 	{ Expr e; ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); }
+// 	: "join" joinDef[bs] "," (joinDef[bs]) ("," joinDef[bs])*
+// 	  {
+// 	  	for(int i = 0 ; i < bs.size() ; i++ )
+// 	  	{
+// 	  	  BindingExpr b = bs.get(i);
+// 	  	  b.var.hidden = false;
+// 	  	}
+// 	  }
+// 	  "return" e=expr
+// 	{
+//   	  for(int i = 0 ; i < bs.size() ; i++ )
+// 	  {
+// 	    BindingExpr b = bs.get(i);
+// 	  	env.unscope(b.var);
+// 	  }
+//       r = new JoinExpr(bs, e);
+// 	}
+// 	;
+
+joinDef[ArrayList<BindingExpr> bindings]
+	{ String v1; Expr e1; Expr e2; Var var1 = null; 
+      boolean opt = false; }
+	: ( "optional"   { opt = true; } )?
+	  v1=var "in" e1=expr 		{ var1 = env.scope(v1); }
+	  "on" e2=expr
+	{
+	  var1.hidden = true;
+	  BindingExpr b = new BindingExpr(BindingExpr.Type.IN, var1, null, e1, e2);
+	  b.optional = opt;
+	  bindings.add( b );
+	}
+	;
+
+groupExpr returns [GroupByExpr r = null]
+	{ Expr e; ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); }
+	: "group" "(" groupDef[bs] ("," (groupDef[bs])?)* ")"
+	  {
+	  	bs.get(0).var.hidden = false;
+	  	for(int i = 1 ; i < bs.size() ; i++ )
+	  	{
+	  	  BindingExpr b = bs.get(i);
+	  	  b.var2.hidden = false;
+	  	}
+	  }
+	  e=expr
+	  {
+        env.unscope(bs.get(0).var);
+  	    for(int i = 1 ; i < bs.size() ; i++ )
+	    {
+          BindingExpr b = bs.get(i);
+	  	  env.unscope(b.var2);
+	    }
+        r = new GroupByExpr(bs, e);
+	  }
+	;
+
+// groupExprOld returns [GroupByExpr r = null]
+// 	{ Expr e; ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); }
+// 	: "group" groupDef[bs] ("," (groupDef[bs])?)*
+// 	  {
+// 	  	bs.get(0).var.hidden = false;
+// 	  	for(int i = 1 ; i < bs.size() ; i++ )
+// 	  	{
+// 	  	  BindingExpr b = bs.get(i);
+// 	  	  b.var2.hidden = false;
+// 	  	}
+// 	  }
+// 	  ( "return"  e=expr   { e = new ArrayExpr(e); }
+// 	  | "collect" e=expr )
+// 	{
+//       env.unscope(bs.get(0).var);
+//   	  for(int i = 1 ; i < bs.size() ; i++ )
+// 	  {
+// 	    BindingExpr b = bs.get(i);
+// 	  	env.unscope(b.var2);
+// 	  }
+//       r = new GroupByExpr(bs, e);
+// 	}
+// 	;
+
+// TODO: the groups should be able to be sorted at the same time, so asc/desc/unordered and multi-column...??
+groupDef[ArrayList<BindingExpr> bindings]
+	{ String v1, v2, v3; Expr e1, e2; Var inVar = null; }
+	: v1=var "in" e1=expr 		{ inVar = env.scope(v1); }
+	  "by" v2=avar "=" e2=expr
+	  "into" v3=var
+	{
+      env.unscope(inVar);
+	  if( bindings.size() == 0 )
+	  {
+	    Var byVar = env.scope(v2);
+	    bindings.add( new BindingExpr(BindingExpr.Type.EQ, byVar, null, e2) );
+	    byVar.hidden = true;
+	  }
+	  else
+	  {
+	  	BindingExpr byBinding = bindings.get(0);
+	  	if( ! byBinding.var.name.equals(v2) )
+	  	{
+	  	  throw new RuntimeException("all by expressions must use the same variable: " +
+                                     v2 + " != " + byBinding.var.name );
+	  	}
+	    bindings.get(0).addChild( e2 );
+	  }
+	  Var intoVar = env.scope(v3);
+	  bindings.add( new BindingExpr(BindingExpr.Type.IN, inVar, intoVar, e1) );
+	  intoVar.hidden = true;
+	}
+	;
+	
+combineExpr returns [Expr r = null]
+	{ String v1, v2; Var var1 = null; Var var2 = null; Expr in; Expr use; }
+	: "combine" "(" v1=var "," v2=var "in" in=expr ")"
+         { 
+	       var1 = env.scope(v1);
+	       var2 = env.scope(v2);
+	     }
+	  use=expr
+	     {
+	       env.unscope(var1);
+	       env.unscope(var2);
+    	   r = new CombineExpr(var1, var2, in, use);
+	     }
+//	  ( options {greedy=true;} : "when" "empty" empty=expr ) ?
+//	  { 
+//	    r = new CombineExpr(var1, var2, in, use, empty);
+//	  }
+	;
+	
+reduceExpr returns [ReduceExpr r = null]
+	{ 
+	  String v; Expr inExpr; Expr ret; Var inVar = null; int n = 0;
+	  BindingExpr a;
+	  ArrayList<BindingExpr> aggs = new ArrayList<BindingExpr>(); 
+	}
+ 	: "reduce" "(" v=var "in" inExpr=expr
+ 	     { 
+ 	     	inVar = env.scope(v);
+ 	     } 
+ 	  "into" a=agg     { aggs.add(a); }
+ 	  ( "," a=agg      { aggs.add(a); } )*
+ 	     {
+ 	     	env.unscope(inVar);
+ 	     	n = aggs.size();
+ 	     	for(int i = 0 ; i < n ; i++)
+ 	     	{
+ 	     		aggs.get(i).var.hidden = false;
+ 	     	}
+ 	     }
+ 	  ")" ret=expr
+ 	      {
+ 	     	for(int i = 0 ; i < n ; i++)
+ 	     	{
+	 	        env.unscope( aggs.get(i).var );
+ 	     	}
+ 	     	r = new ReduceExpr(inVar, inExpr, aggs, ret);
+ 	     }
+ 	;
+
+agg returns [BindingExpr b=null]
+ 	{ String v; Var var=null; String i; Expr e; }
+ 	: v=avar "=" e=expr
+      {  
+		var = env.scope(v);
+		var.hidden = true;
+		b = new BindingExpr(BindingExpr.Type.AGGFN, var, null, e);
+	  }
+	;
+   
+// agg returns [BindingExpr b=null]
+// 	{ String v; Var var=null; String i; Expr e; }
+// 	: v=var "=" 
+//    	{  
+//			var = env.scope(v);
+//			var.hidden = true;
+//		}
+// 	  ( i=id "(" e=expr ")"
+// 		{  
+//			e = FunctionLib.lookup(env, i, e);
+//			b = new BindingExpr(BindingExpr.Type.AGGFN, var, null, e);
+//		}
+//	  | e=combineExpr
+// 		{  
+//			b = new BindingExpr(BindingExpr.Type.AGGFN, var, null, e);
+//		}
+//	  )
+//	;
+   
+sortExpr returns [SortExpr s = null]
+	{ 
+	  String v;
+	  Expr e;
+	  Var var = null;
+	  BindingExpr b = null;
+	  ArrayList<OrderExpr> by = new ArrayList<OrderExpr>();
+	}
+	: "sort" "(" v=var "in" e=expr	
+	  { 
+	  	var = env.scope(v);
+	  	b = new BindingExpr(BindingExpr.Type.IN, var, null, e);
+	  }
+	  "by" sortSpec[by] ("," sortSpec[by])* ")"
+	  { 
+	  	env.unscope(var);
+	  	s = new SortExpr(b, by);
+	  }
+	;
+	
+
+// sortExprOld returns [SortExpr s = null]
+// 	{ 
+// 	  // TODO: i don't like the () around the by list. They were needed to avoid an ambiguity. 
+// 	  String v;
+// 	  Expr e;
+// 	  Var var = null;
+// 	  BindingExpr b = null;
+// 	  ArrayList<OrderExpr> by = new ArrayList<OrderExpr>();
+// 	}
+// 	: "sort" v=var "in" e=expr	
+// 	  { 
+// 	  	var = env.scope(v);
+// 	  	b = new BindingExpr(BindingExpr.Type.IN, var, null, e);
+// 	  }
+// 	  "by" "(" sortSpec[by] ("," sortSpec[by])* ")"
+// 	  { 
+// 	  	env.unscope(var);
+// 	  	s = new SortExpr(b, by);
+// 	  }
+// 	;
+	
+
+sortSpec[ArrayList<OrderExpr> by]
+	{ Expr e; OrderExpr.Order order = OrderExpr.Order.ASC; }
+	: e=expr ( options {greedy=true;}
+			 : "asc" 
+	         | "desc"  { order = OrderExpr.Order.DESC; }
+	         )?
+	  { by.add( new OrderExpr(e, order) ); }
+	;
+	
+
+var returns [String s = null]
+    : v:VAR  { s = v.getText(); }
+    ;
+
+avar returns [String s = null]
+    : v:AVAR  { s = v.getText(); }
+    ;
+
+id returns [String s = null]
+    : i:ID   { s = i.getText(); }
+    ;
+
+typeExpr returns [Expr r = null]
+	{ Schema s; }
+	: "type" s=type   { r = new ConstExpr(new JSchema(s)); }
+	;
+
+type returns [Schema s = null]
+	{ Schema s2 = null; SchemaOr os = null; }
+	: s = typeTerm 
+	( "|"              { s2 = s; s = os = new SchemaOr(); os.addSchema(s2); }
+	  s2 = typeTerm    { os.addSchema(s2); } 
+	)*
+	;
+	
+typeTerm returns [Schema s = null]
+	: "*"			{ s = new SchemaAny(); }
+	| s=oneType
+	   ( "?"        { s = new SchemaOr(s, new SchemaAtom("null")); } 
+	   )?
+	;
+
+oneType returns [Schema s = null]
+	: s=atomType
+	| s=arrayType
+	| s=recordType
+	;
+
+atomType returns [SchemaAtom s = null]
+	: i:ID    { s = new SchemaAtom(i.getText()); }
+	| "null"  { s = new SchemaAtom("null"); }
+	| "type"  { s = new SchemaAtom("type"); }
+	;
+
+arrayType returns [SchemaArray s = new SchemaArray()]
+    { Schema head = null; Schema p; Schema q; }
+	: "["
+        ( p=type		  { head = p; }
+	      ( "," q=type	  { p = p.nextSchema = q; }
+	      )*
+	      arrayRepeat[head,s]
+	    )?
+	  "]"
+	;
+
+arrayRepeat[Schema typeList, SchemaArray s]
+	{ long lo = 0; long hi = 0; }
+	: /**/				  
+	  { s.noRepeat(typeList); }
+	| "<" 
+	    ( "*"			  { lo = 0; hi = SchemaArray.UNLIMITED; }
+	    | i1:INT          { lo = Long.parseLong(i1.getText()); }
+		  ( /**/          { hi = lo; }
+		  | "," ( "*"	  { hi = SchemaArray.UNLIMITED; }
+		        | i2:INT  { hi = Long.parseLong(i2.getText()); }
+		        )
+		  )
+		)
+	  ">"
+	  { s.setRepeat(typeList, lo, hi); }
+	;
+
+recordType returns [SchemaRecord s = new SchemaRecord()]
+	{ SchemaField f; }
+	: "{"
+	    ( f=fieldType		 { s.addField(f); }
+	      ( "," f=fieldType	 { s.addField(f); }
+	      )*
+	    )?
+	  "}"
+	;
+
+fieldType returns [SchemaField f = new SchemaField()]
+    { String n; Schema t; }
+	: ( n=constFieldName    { f.name = new JString(n); }
+         ( "*"				{ f.wildcard = true; }
+	     | "?"				{ f.optional = true; }
+	     )?
+	  | "*"               { f.name = new JString(""); 
+	                        f.wildcard = true;     }
+	  )
+	  ":" t=type		{ f.schema = t; }
+	;
+	
 
 class JaqlLexer extends Lexer;
 
@@ -1835,12 +867,6 @@ options {
   charVocabulary = '\3'..'\377'; // all characters except special ANTLR ones
   testLiterals=false;    // don't automatically test for literals
   k=3;                   // lookahead // TODO: try to reduce to 2
-}
-
-{
-	private int indent;
-	private int blockIndent;
-	private String blockTag;
 }
 
 protected DIGIT
@@ -1873,117 +899,18 @@ COMMENT
 		{$setType(Token.SKIP);}
     ;
     
-protected NL
-	options { generateAmbigWarnings=false; }
-  	: "\r\n" | '\r' | '\n' { newline(); }
-  	;
-  	
 ML_COMMENT
 	:	"/*"
 		( ~('*'|'\n'|'\r')
         | '*' ~('/')
-        | NL
+        | ( options { generateAmbigWarnings=false; }
+          : "\r\n"
+          | '\r'
+          | '\n'
+          ) { newline(); }
 		)*
 		"*/"
 		{$setType(Token.SKIP);}
-	;
-
-
-	
-protected BLOCK_LINE1
-	: (' '! (~('\n'|'\r'))*)? NL
-	{
-		for( indent = 1; indent < blockIndent && LA(1) == ' ' ; indent++)
-		{
-			_saveIndex=text.length();
-			match(' ');
-			text.setLength(_saveIndex);
-		}
-	}
-	;
-	
-
-//protected BLOCK_STRING1 // options { generateAmbigWarnings=false; }
-//	{ blockIndent = 0; }
-//	: "|"! (' '! | '\t'!)* NL! (' '! {blockIndent++;})+ (~(' '|'\t'|'\n'|'\r'))* NL (BLOCK_LINE)*
-//	{ System.out.println("here: ["+new String(text.getBuffer(), _begin, text.length()-_begin)+"]"); }
-//	;
-//
-//protected BLOCK_LINE
-//	: '|'! (' '! (~('\n'|'\r'))*)? NL
-//	;
-//
-//BLOCK_STRING
-//	: (BLOCK_LINE (' '! | '\t'!)* )+
-//	;
-
-protected HERE_TAG
-	{ int start = text.length(); }
-	: (' '|'\t')*           { text.setLength(start); } // ignore leading whitespace 
-	  ~(' '|'\t'|'\n'|'\r'|'\f') (~('\n'|'\r'))*
-	  { 
-	  	blockTag = new String(text.getBuffer(), start, text.length());
-	  	text.setLength(start);
-	  }
-	;
-
-protected HERE_LINE
-	{ 
-		boolean firstLine = text.length() == 0; 
-	}
-	: NL 
-	{
-		newline();
-		if( firstLine ) // don't put the first newline in the token
-		{
-			text.setLength(0);
-		}
-		int start = text.length();
-		int i;
-		char c;
-		int n = blockTag.length();
-		boolean done = false;
-		for( i = 0 ; i < n && (c = LA(1)) == blockTag.charAt(i) ; i++ )
-		{
-			match(c);
-		}
-		if( i == n )
-		{
-			// We matched the tag; look for whitespace then newline
-			while( (c = LA(1)) == ' ' || c == '\t' )
-			{
-				match(c);
-			}
-			if( (c = LA(1)) == '\n' || c == '\r' )
-			{
-				// We found the end; consume until we find a non-newline to signal end of string
-				while( (c = LA(1)) == '\n' || c == '\r' )
-				{
-					match(c);
-				}
-				// Erase the tag
-				text.setLength(start);
-				done = true;
-			}
-		}
-		if( !done )
-		{
-			while( (c = LA(1)) != '\n' && c != '\r' )
-			{
-				match(c);
-			}
-		}
-	}
-	;
-
-protected HERE_END
-	{ int start = text.length(); }
-	: (~('\r'|'\n'))
-	{ text.setLength(start); } 
-	;
-
-HERE_STRING
-	: '<'! '<'! HERE_TAG (HERE_LINE)+ HERE_END
 	;
 
 protected VAR1
@@ -1992,31 +919,26 @@ protected VAR1
 
 VAR
 	options { ignore=WS; }
-    : (VAR1 '=' ('='|'>')) => VAR1
-    | (VAR1 '=') => VAR1     { $setType(AVAR); }
+	: (VAR1 '=' ('='|'>')) => VAR1
+	| (VAR1 '=') => VAR1 {$setType(AVAR);}
 	| VAR1 
     ;
 
 SYM
     options { testLiterals=true; }
-    : '(' | ')' | '[' | ']' | ',' 
-    | '|' | '&'
+    : '(' | ')' | '[' | ']' | ',' | '|'
     | '}' 
-    | '=' ('=' | '>')? | ('<' | '>' ) ('=')? | "!" ("=")?
-    | '/' | '*' | '+' | '-' ('>' | '|')?
+    | '=' ('=')? | ('<' | '>' ) ('=')? | "!="
+    | '/' | '*' | '+' | '-'
     | ':' (':'|'=')? | '?'
     ;
 
-SEMI
-    options { testLiterals=true; }
-    : ';'
-    ;
-    
 SYM2
     options { testLiterals=true; }
     : '{' (('=' | (('<' | '>') ('=')?) | "!=") '}')?
     ;
 
+SEMI: ';' ;
 
 // STRCHAR doesn't allow single OR double quotes.
 protected STRCHAR
@@ -2088,22 +1010,21 @@ protected DEC
     ;
     
 DOTTY
-    options { testLiterals=false; }
+    options { testLiterals=true; }
  	: (DEC) => 
  	     DEC   		
- 	       ( /*empty*/       {$setType(DEC);} // TODO: flag to control default decimal/double
- 	       | "m"!            {$setType(DEC);}
- 	       | "d"!            {$setType(DOUBLE);}
+ 	       ( /*empty*/      {$setType(DEC);} // TODO: flag to control default decimal/double
+ 	       | "m"!           {$setType(DEC);}
+ 	       | "d"!           {$setType(DOUBLE);}
  	       )
     |  INT
-        ( /*empty*/    		 {$setType(INT);} // TODO: flag to control default decimal/double
-        | "m"!               {$setType(INT);}
-        | "d"!               {$setType(DOUBLE);}
+        ( /*empty*/    		{$setType(INT);} // TODO: flag to control default decimal/double
+        | "m"!              {$setType(INT);}
+        | "d"!              {$setType(DOUBLE);}
         )
-    | '0'('x'|'X')(HEX)+     {$setType(INT);}
-    | (DOT_ID) => DOT_ID     {$setType(DOT_ID);}
-    | (DOT_STAR) => DOT_STAR {$setType(DOT_STAR); }
-    | '.'                    {$setType(DOT);}
+    | '0'('x'|'X')(HEX)+	{$setType(INT);}
+    | '.'
+    | (DOT_ID) => DOT_ID    {$setType(DOT_ID);}
     ;
 
 protected IDWORD
@@ -2112,22 +1033,21 @@ protected IDWORD
 
 ID
 	options { ignore=WS; }
-    : (IDWORD ('?')? ':') => IDWORD {$setType(FNAME);}
-    | (IDWORD '=') => IDWORD {$setType(AID);}
-    // | (IDWORD '*') => IDWORD
-	// | (IDWORD '=') => IDWORD {$setType(AVAR);}
+	: (IDWORD ('*'|'?')? ':') => IDWORD
 	| IDWORD { _ttype = testLiteralsTable(_ttype); }
-	
 	;
 
 protected DOT_ID
 	: '.'! IDWORD
 	;
-
-protected DOT_STAR
-    : '.' '*'
-    ;
 	    
+//DOT_OR_DEC
+//    options { testLiterals=true; }
+//	: '.' (
+//	        INT ( ('e'|'E') ('+' | '-')? INT )? { $setType(DEC); }
+//	      )?
+//   ;
+		      
 DATETIME
     : ('d'!|'D'!) '\"'! (~('\"'))* '\"'!
     | ('d'!|'D'!) '\''! (~('\''))* '\''!

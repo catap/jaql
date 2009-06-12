@@ -19,26 +19,26 @@ import java.io.ByteArrayInputStream;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.ToJson;
-import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
+import com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem;
+import com.ibm.jaql.io.hadoop.converter.WritableComparableToItem;
+import com.ibm.jaql.io.hadoop.converter.WritableToItem;
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 
 /**
  * 
  */
-public class FromJSONSeqConverter extends HadoopRecordToJson
+public class FromJSONSeqConverter extends HadoopRecordToItem
 {
 
   /**
    * @param w
    * @param i
    */
-  private JsonValue convertWritableToItem(Writable w, JsonValue val)
+  private void convertWritableToItem(Writable w, Item i)
   {
-    if (w == null) return null;
+    if (w == null || i == null) return;
     Text t = null;
     if (w instanceof Text)
     {
@@ -54,13 +54,30 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
 
     try
     {
-      val = parser.JsonVal();
+      Item data = parser.JsonVal();
+      i.set(data.get());
     }
     catch (Exception e)
     {
       throw new RuntimeException(e);
     }
-    return val;
+  }
+
+  /**
+   * 
+   */
+  class ToItem implements WritableToItem
+  {
+
+    public void convert(Writable src, Item tgt)
+    {
+      convertWritableToItem(src, tgt);
+    }
+
+    public Item createTarget()
+    {
+      return new Item();
+    }
   }
 
   /*
@@ -69,7 +86,7 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToJson<WritableComparable> createKeyConverter()
+  protected WritableComparableToItem createKeyConverter()
   {
     return null;
   }
@@ -80,21 +97,9 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createValConverter()
    */
   @Override
-  protected ToJson<Writable> createValueConverter()
+  protected WritableToItem createValConverter()
   {
-    return new ToJson<Writable>()
-    {
-
-      public JsonValue convert(Writable src, JsonValue tgt)
-      {
-        return convertWritableToItem(src, tgt);
-      }
-
-      public JsonValue createInitialTarget()
-      {
-        return null;
-      }
-    };
+    return new ToItem();
   }
 
 }

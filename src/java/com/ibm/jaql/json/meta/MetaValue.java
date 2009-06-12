@@ -19,25 +19,23 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-/** Provides read/write functionality for plain Java objects. Subclasses implement this 
- * functionality for specific Java objects. */
+/**
+ * 
+ */
 public abstract class MetaValue
 {
-  /** Create an instance of the JSON structure represented by this MetaValue.
+  /**
    * @return
    */
   public abstract Object newInstance();
-
-  /** Read the JSON structure represented by this MetaValue from the input 
-   * and return it. Reuses the provided instance, if possible.
+  /**
    * @param in
-   * @param obj instance of the type returned by {@link #newInstance()}; must not be null
+   * @param obj
    * @return
    * @throws IOException
    */
   public abstract Object read(DataInput in, Object obj) throws IOException;
- 
-  /** Write the provided JSON structure to the output.
+  /**
    * @param out
    * @param obj
    * @throws IOException

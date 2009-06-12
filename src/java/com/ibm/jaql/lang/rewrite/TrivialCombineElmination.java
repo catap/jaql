@@ -15,11 +15,13 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ReduceExpr;
 
 /**
  * combine $a, $b in [e1] using e2($a,$b) ==> e1
@@ -59,13 +61,17 @@ public class TrivialCombineElmination extends Rewrite
   {
     CombineExpr ce = (CombineExpr) expr;
 
-    if( true ) return false; // TODO: re-enable with function api?
+    // We cannot simplify a CombineExpr as an aggregate in a ReduceExpr
+    if (ce.parent().parent() instanceof ReduceExpr)
+    {
+      return false;
+    }
 
-    BindingExpr bind = null;// ce.binding();
+    BindingExpr bind = ce.binding();
     Expr inExpr = bind.inExpr();
 
     // combine $a,$b in null ... => null
-    if (inExpr instanceof ConstExpr && ((ConstExpr) inExpr).value == null)
+    if (inExpr instanceof ConstExpr && ((ConstExpr) inExpr).value.get() == null)
     {
       ce.replaceInParent(inExpr);
       return true;
@@ -80,7 +86,7 @@ public class TrivialCombineElmination extends Rewrite
     if (inExpr.numChildren() == 0)
     {
       // combine $a,$b in [] ... => null
-      replaceBy = new ConstExpr(null);
+      replaceBy = new ConstExpr(Item.nil);
       //      replaceBy = ce.emptyExpr();
     }
     else

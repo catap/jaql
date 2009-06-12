@@ -19,15 +19,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.DoExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.LetExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
-/** Stores the compile-time environment, i.e., a set of named {@link Var}s. Distinguishes 
- * between a local environment (represented by an instance of this class) and a special global 
- * environment (represented by another, static instance of this class). 
+/**
  * 
  */
 public class Env
@@ -35,10 +34,10 @@ public class Env
   private Env                  globalEnv;
   private HashMap<String, Var> nameMap = new HashMap<String, Var>();
   //  private HashMap<Var, Var> globalVars = new HashMap<Var, Var>(); // global vars imported into this local scope as this local var
+  private int                  index   = 0;
   private int                  varId   = 0;
 
-  /** Initializes an local environment. The global environment corresponding to this
-   * environment is taken as the current value returned by {@link JaqlUtil#getSessionEnv()}. 
+  /**
    * 
    */
   public Env()
@@ -53,6 +52,7 @@ public class Env
   {
     nameMap.clear();
     //    globalVars.clear();
+    index = 0;
     varId = 0;
   }
 
@@ -67,40 +67,20 @@ public class Env
     varId++;
   }
 
-//  public Var scope(String varName, Var.Type type)
-//  {
-//    Var var = new Var(varName, type, index);
-//    index++;
-//    var.varStack = nameMap.get(var.name);
-//    nameMap.put(var.name, var);
-//    return var;
-//  }
-
   /**
-   * Place a variable (back) in scope
-   */
-  public void scope(Var var)
-  {
-    var.varStack = nameMap.get(var.name);
-    nameMap.put(var.name, var);
-  }
-
-  /** Creates a new variable with the specified name and puts it into the local scope.
-   * Previous definitions of variables of the specified name are hidden but not overwritten.
-   * 
    * @param varName
    * @return
    */
   public Var scope(String varName)
   {
-    Var var = new Var(varName);
-    scope(var);
+    Var var = new Var(varName, index);
+    index++;
+    var.varStack = nameMap.get(var.name);
+    nameMap.put(var.name, var);
     return var;
   }
-  
-  /** Returns the global environment. Must not be called from the instance of
-   * Env that represents the global environment.
-   * 
+
+  /**
    * @return
    */
   public Env sessionEnv()
@@ -113,10 +93,7 @@ public class Env
     return globalEnv;
   }
 
-  /** Creates a new variable with the specified name and puts it into the global scope. 
-   * The most recent definition of the variable of the specified name is overwritten. This 
-   * method has to be called from the instance of Env that represents the global environment.
-   * 
+  /**
    * @param varName
    * @return
    */
@@ -130,15 +107,13 @@ public class Env
     Var var = nameMap.get(varName);
     if (var != null)
     {
-      unscope(var); // TODO: varName might still be on the globals scope... 
+      unscope(var);
     }
     var = scope(varName);
     return var;
   }
 
-  /** Removes the most recent definition of the specified variable from this scope. 
-   * The most recent but one definition of the specified variable, if existent, 
-   * becomes visible.
+  /**
    * @param var
    */
   public void unscope(Var var)
@@ -148,12 +123,9 @@ public class Env
     // index--;
   }
 
-  /** Returns the variable of the specified name, searching in both the local and the
-   * global scope (in this order).
-   * 
+  /**
    * @param varName
    * @return
-   * @throws IndexOutOfBoundsException if varName is not defined or hidden
    */
   public Var inscope(String varName)
   {
@@ -185,8 +157,7 @@ public class Env
     return var;
   }
 
-  /** Creates a new variable, scopes it, unscopes it, and returns it.
-   * 
+  /**
    * @param name
    * @return
    */
@@ -205,8 +176,8 @@ public class Env
   public Expr importGlobals(Expr root)
   {
     HashMap<Var, Var> globalToLocal = new HashMap<Var, Var>();
-    ArrayList<Expr> bindings = new ArrayList<Expr>();
-    VarMap varMap = new VarMap();
+    ArrayList<BindingExpr> bindings = new ArrayList<BindingExpr>();
+    VarMap varMap = new VarMap(this);
     PostOrderExprWalker walker = new PostOrderExprWalker(root);
     Expr expr;
     while ((expr = walker.next()) != null)
@@ -223,12 +194,11 @@ public class Env
             localVar = makeVar(var.name);
             globalToLocal.put(var, localVar);
             Expr val;
-// TODO: make global context and import from there.
-//            if (var.value != null)
-//            {
-//              val = new ConstExpr(var.value);
-//            }
-//            else
+            if (var.value != null)
+            {
+              val = new ConstExpr(var.value);
+            }
+            else
             {
               varMap.clear();
               val = var.expr.clone(varMap);
@@ -243,17 +213,9 @@ public class Env
     }
     if (bindings.size() > 0)
     {
-      bindings.add(root);
-      root = new DoExpr(bindings);
+      root = new LetExpr(bindings, root);
     }
     return root;
-  }
-
-  private VarMap tempVarMap = new VarMap();
-  public VarMap tempVarMap()
-  {
-    tempVarMap.clear();
-    return tempVarMap;
   }
 
 }

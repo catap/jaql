@@ -8,7 +8,7 @@ registerAdapter({type: 'myAdapter1',
                              format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
                              configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });
 
-[
+stWrite({type: 'myAdapter1', location: 'jaqlTest/test10.dat'}, [
   { key: 0, g:0, text: 'zero' },
   { key: 1, g:1, text: 'one' },
   { key: 2, g:0, text: 'two' },
@@ -17,25 +17,25 @@ registerAdapter({type: 'myAdapter1',
   { key: 5, g:1, text: 'five' },
   { key: 6, g:0, text: 'six' },
   { key: 7, g:1, text: 'seven' },
-  { key: 8, g:0, text: 'eight' }
-]
--> write({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+  { key: 8, g:0, text: 'eight' },
+]);
 
-read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+stRead({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
 
 writeAdapterRegistry('build/test/cache/registryTest1.dat');
 
 readAdapterRegistry('registryTest1.dat');
 
-[1,2,3] -> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+stWrite({type: 'hdfs', location: 'jaqlTest/test1.dat'},
+        [1,2,3]);
         
-read({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+stRead({type: 'hdfs', location: 'jaqlTest/test1.dat'});
 
-read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+stRead({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
 
 readAdapterRegistry('registryTest2.dat');
 
-[
+stWrite({type: 'myAdapter2', location: 'jaqlTest/test11.dat'}, [
   { key: 0, g:0, text: 'zero' },
   { key: 1, g:1, text: 'one' },
   { key: 2, g:0, text: 'two' },
@@ -44,23 +44,23 @@ readAdapterRegistry('registryTest2.dat');
   { key: 5, g:1, text: 'five' },
   { key: 6, g:0, text: 'six' },
   { key: 7, g:1, text: 'seven' },
-  { key: 8, g:0, text: 'eight' }
-]
--> write({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+  { key: 8, g:0, text: 'eight' },
+]);
 
-read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+stRead({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
 
 unregisterAdapter('myAdapter2');
 
-read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+stRead({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
 
-mapReduce( {
+stRead(
+  mapReduce( {
     'input': {type: 'myAdapter1', location: 'jaqlTest/test10.dat'},
-    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test10out.dat'}
   })
--> read();
+);
 
 registerAdapter({type: 'myAdapter3', 
                  inoptions: {adapter: 'com.foobar.store.MyInputAdapter3', 
@@ -70,7 +70,7 @@ registerAdapter({type: 'myAdapter3',
                              format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
                              configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });
 
-[
+stWrite({type: 'myAdapter3', location: 'jaqlTest/test12.dat'}, [
   { key: 0, g:0, text: 'zero' },
   { key: 1, g:1, text: 'one' },
   { key: 2, g:0, text: 'two' },
@@ -79,29 +79,30 @@ registerAdapter({type: 'myAdapter3',
   { key: 5, g:1, text: 'five' },
   { key: 6, g:0, text: 'six' },
   { key: 7, g:1, text: 'seven' },
-  { key: 8, g:0, text: 'eight' }
-]
--> write({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
+  { key: 8, g:0, text: 'eight' },
+]);
 
-read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
+stRead({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
 
-mapReduce( {
+stRead(
+  mapReduce( {
     'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
-    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test12out.dat'}
   })
--> read();
+);
 
 //-- test user defined storage registration
 registerFunction('heyya', 'com.foobar.function.MyNewFunction');
 
 heyya('world');
 
+stRead(
 mapReduce( {
     'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
-    'map'   : fn($) ( $ -> transform [ heyya('world'), 1 ] ),
+    'map'   : fn($i) [ [ heyya('world'), 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test13out.dat'}
   })
--> read();
+);

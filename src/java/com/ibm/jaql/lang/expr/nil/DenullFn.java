@@ -57,7 +57,7 @@ public class DenullFn extends MacroExpr
   public Expr expand(Env env) throws Exception
   {
     Var var = env.makeVar("$denull");
-    Expr test = new NotExpr(new IsnullExpr(new VarExpr(var)));
+    Expr test = new NotExpr(new IsnullFn(new VarExpr(var)));
     Expr collect = new IfExpr(test, new ArrayExpr(new VarExpr(var)));
     Expr fe = new ForExpr(var, exprs[0], collect);
     return fe;

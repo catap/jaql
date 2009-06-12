@@ -15,11 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.numeric;
 
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumeric;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -53,31 +54,32 @@ public class IntFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonValue val = exprs[0].eval(context);
+    Item item = exprs[0].eval(context);
+    JValue val = item.get();
     if (val == null)
     {
-      return null;
+      return Item.nil;
     }
-    else if (val instanceof JsonLong)
+    else if (val instanceof JLong)
     {
-      return (JsonNumeric) val;
+      return item;
     }
-    else if (val instanceof JsonNumeric)
+    else if (val instanceof JNumeric)
     {
-      JsonNumeric n = (JsonNumeric) val;
-      val = new JsonDecimal(n.longValue()); // TODO: memory
+      JNumeric n = (JNumeric) val;
+      val = new JDecimal(n.longValue()); // TODO: memory
     }
-    else if (val instanceof JsonString)
+    else if (val instanceof JString)
     {
-      val = new JsonLong(val.toString()); // TODO: memory
+      val = new JLong(val.toString()); // TODO: memory
     }
     else
     {
       throw new ClassCastException("cannot convert "
           + val.getEncoding().getType().name() + " to number");
     }
-    return (JsonNumeric) val; // TODO: memory
+    return new Item(val); // TODO: memory
   }
 }

@@ -17,8 +17,9 @@ package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.DoExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.LetExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.pragma.InlinePragma;
 
@@ -50,47 +51,40 @@ public class DoInlinePragma extends Rewrite
       VarExpr varExpr = (VarExpr) c;
       Var var = varExpr.var();
       Expr def = findVarDef(varExpr);
-//    // TODO: I think this case is gone now; function parameters are in bindings that are found.
-//      if (def == null)
-//      {
-//        // must be a function parameter // TODO: findVarDef SHOULD find it, and params should use Bindings
-//        return false;
-//      }
-      if (def instanceof BindingExpr)
+      if (def == null)
       {
-        BindingExpr b = (BindingExpr)def;
-        assert var == b.var; // or else findDef is broken
-        Expr p = def.parent();
-        if( p instanceof DoExpr )
+        // must be a function parameter // TODO: findVarDef SHOULD find it, and params should use Bindings
+        return false;
+      }
+      else if (def instanceof BindingExpr)
+      {
+        BindingExpr b = (BindingExpr) def;
+        if (b.parent() instanceof LetExpr && var == b.var)
         {
           expr.replaceInParent(cloneExpr(b.eqExpr()));
           return true;
         }
-        //else if( p instanceof DefineFunctionExpr )
-        // We couldn't inline, yet...
-        return false;
       }
-      else // TODO: I don't think this case arises anymore...
+      else
       {
-        assert false;
-        return false;
-//        assert var.isGlobal();
-//        Expr replaceBy;
-//        if (var.value != null)
-//        {
-//          // If the global is already computed, inline its value
-//          replaceBy = new ConstExpr(var.value);
-//        }
-//        else
-//        {
-//          // If the global is not already computed, inline its expr
-//          replaceBy = cloneExpr(def);
-//        }
-//        expr.replaceInParent(replaceBy);
-//        return true;
+        assert var.isGlobal();
+        Expr replaceBy;
+        if (var.value != null)
+        {
+          // If the global is already computed, inline its value
+          replaceBy = new ConstExpr(var.value);
+        }
+        else
+        {
+          // If the global is not already computed, inline its expr
+          replaceBy = cloneExpr(def);
+        }
+        expr.replaceInParent(replaceBy);
+        return true;
       }
     }
-    // If this inline request is not over a VarExpr, just remove it.
+
+    // If this inline request is not over a VarExpr for a let variable or global variable, just remove it.
     expr.replaceInParent(c);
     return true;
   }

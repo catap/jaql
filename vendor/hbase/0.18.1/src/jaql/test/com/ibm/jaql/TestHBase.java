@@ -68,7 +68,7 @@ public class TestHBase extends JaqlBaseTestCase
 
       //    setup conf according to the Hadoop version
       String vInfo = VersionInfo.getVersion();
-      if (vInfo.indexOf("0.18") >= 0)
+      if (vInfo.indexOf("0.16") >= 0 || vInfo.indexOf("0.17") >= 0)
       {
         conf.set(HConstants.MASTER_ADDRESS, "local");
       }

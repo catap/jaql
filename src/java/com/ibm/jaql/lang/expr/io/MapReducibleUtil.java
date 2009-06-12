@@ -15,14 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import java.lang.reflect.UndeclaredThrowableException;
-
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.io.InputAdapter;
-import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
-import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
@@ -50,14 +45,12 @@ public class MapReducibleUtil
     {
       return true;
     }
-    if (e instanceof WriteFn)
+    if (e instanceof StWriteExpr)
     {
-      return ((WriteFn) e).isMapReducible();
+      return ((StWriteExpr) e).isMapReducible();
     }
 
-    if (e instanceof AbstractHandleFn) return ((AbstractHandleFn) e).isMapReducible();
     if (e instanceof RecordExpr) return isMapReducible(input, (RecordExpr) e);
-    if (e instanceof ConstExpr) return isMapReducible(input, ((ConstExpr) e).value);
 
     return false;
 
@@ -79,7 +72,7 @@ public class MapReducibleUtil
     //    }
     //    return mapReducible;
   }
-  
+
   /**
    * @param input
    * @param recExpr
@@ -116,7 +109,7 @@ public class MapReducibleUtil
         // test it from the registry
         if (typeField instanceof ConstExpr)
         {
-          String typeName = ((ConstExpr) typeField).value.toString();
+          String typeName = ((ConstExpr) typeField).value.get().toString();
           if (input)
           {
             Class<?> c = JaqlUtil.getAdapterStore().input
@@ -137,7 +130,8 @@ public class MapReducibleUtil
         // get the class string
         if (adapterField instanceof ConstExpr)
         {
-          String adapterName = ((ConstExpr) adapterField).value.toString();
+          String adapterName = ((ConstExpr) adapterField).value.get()
+              .toString();
           Class<?> adapterClass = ClassLoaderMgr.resolveClass(adapterName);
           //Class<?> adapterClass = Class.forName(adapterName);
           if (input)
@@ -159,24 +153,25 @@ public class MapReducibleUtil
     return false;
   }
 
-  public static boolean isMapReducible(boolean input, JsonValue descriptor) // TODO: throws Exception
+  /**
+   * Rewrite the parameters of PotentialMapReducible to a target parameter. It
+   * is assumed that a PotentialMapReducible's parameters is the same as the
+   * MapReduce expression's input or output parameter.
+   * 
+   * @param fromExpr
+   * @param toExpr
+   * @return
+   */
+  public static RecordExpr rewriteToMapReduce(RecordExpr fromExpr,
+      RecordExpr toExpr)
   {
-    try
+    //  echo all fields
+    int numFields = fromExpr.numChildren();
+    for (int i = 0; i < numFields; i++)
     {
-      if(input)
-      {
-        InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(descriptor);
-        return adapter instanceof HadoopInputAdapter;
-      }
-      else
-      {
-        OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(descriptor);
-        return adapter instanceof HadoopOutputAdapter;
-      }
+      toExpr.addChild(fromExpr.child(i));
     }
-    catch(Exception e)
-    {
-      throw new UndeclaredThrowableException(e); // TODO: shouldn't need wrapper here
-    }
+
+    return toExpr;
   }
 }

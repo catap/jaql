@@ -19,17 +19,14 @@ import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
-import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 
 /**
+ * for $i in e collect [$i] ==> asArray(e)
+ * 
  * for $i in e collect ([] | null) ==> []
  * 
  * for $i in ([] | null) collect e ==> []
- * 
- * for $i in e collect [$i] ==> asArray(e)
- * 
- * e1 -> expand [e2] ==> e1 -> transform e2
  * 
  */
 public class TrivialForElimination extends Rewrite
@@ -67,27 +64,24 @@ public class TrivialForElimination extends Rewrite
     if (!(c instanceof ArrayExpr) || c.numChildren() != 1)
     {
       return false;
-    }    
-    c = c.child(0);
-    
-    // for( $i in e1 ) [$i] => asArray(e1) => e1 (when non-null array)
-    if (c instanceof VarExpr)
-    {
-      VarExpr ve = (VarExpr) c;
-      if (ve.var() == fe.var())
-      {
-        if (inExpr.isArray().maybeNot() || inExpr.isNull().maybe())
-        {
-          inExpr = new AsArrayFn(inExpr);
-        }
-        fe.replaceInParent(inExpr);
-        return true;
-      }
     }
-    
-    // e1 -> expand [e2] ==> e1 -> transform e2
-    expr = new TransformExpr(fe.binding(), c);
-    fe.replaceInParent(expr);
+    c = c.child(0);
+    if (!(c instanceof VarExpr))
+    {
+      return false;
+    }
+    VarExpr ve = (VarExpr) c;
+    if (ve.var() != fe.var())
+    {
+      return false;
+    }
+
+    // for $i in collect [$i] => asArray($i) => $i (when non-null array)
+    if (inExpr.isArray().maybeNot() || inExpr.isNull().maybe())
+    {
+      inExpr = new AsArrayFn(inExpr);
+    }
+    fe.replaceInParent(inExpr);
     return true;
   }
 }

@@ -18,10 +18,10 @@ package com.ibm.jaql.lang.expr.numeric;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -45,36 +45,36 @@ public class ModFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonValue w1 = exprs[0].eval(context);
+    JValue w1 = exprs[0].eval(context).get();
     if (w1 == null)
     {
-      return null;
+      return Item.nil;
     }
-    JsonValue w2 = exprs[1].eval(context);
+    JValue w2 = exprs[1].eval(context).get();
     if (w2 == null)
     {
-      return null;
+      return Item.nil;
     }
 
-    boolean long1 = w1 instanceof JsonLong;
-    boolean long2 = w2 instanceof JsonLong;
+    boolean long1 = w1 instanceof JLong;
+    boolean long2 = w2 instanceof JLong;
     long mod;
     if (long1 && long2)
     {
-      mod = ((JsonLong) w1).value % ((JsonLong) w2).value;
+      mod = ((JLong) w1).value % ((JLong) w2).value;
     }
     else
     {
       BigDecimal x1 = long1
-          ? new BigDecimal(((JsonLong) w1).value)
-          : ((JsonDecimal) w1).value;
+          ? new BigDecimal(((JLong) w1).value)
+          : ((JDecimal) w1).value;
       BigDecimal x2 = long2
-          ? new BigDecimal(((JsonLong) w2).value)
-          : ((JsonDecimal) w2).value;
+          ? new BigDecimal(((JLong) w2).value)
+          : ((JDecimal) w2).value;
       mod = x1.remainder(x2, MathContext.DECIMAL128).longValue();
     }
-    return new JsonLong(mod); // TODO: memory
+    return new Item(new JLong(mod)); // TODO: memory
   }
 }

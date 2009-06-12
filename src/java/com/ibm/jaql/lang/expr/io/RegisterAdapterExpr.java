@@ -17,9 +17,9 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -44,23 +44,23 @@ public class RegisterAdapterExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue rValue = exprs[0].eval(context);
-    JsonRecord registry = (JsonRecord) rValue;
+    Item rItem = exprs[0].eval(context);
+    JRecord registry = (JRecord) rItem.getNonNull();
 
-    String type = JaqlUtil.enforceNonNull(registry.getValue(Adapter.TYPE_NAME)).toString();
-    JsonValue inValue = registry.getValue(Adapter.INOPTIONS_NAME);
-    JsonValue outValue = registry.getValue(Adapter.OUTOPTIONS_NAME);
-    if (inValue == null && outValue == null)
+    String type = registry.getValue(Adapter.TYPE_NAME).getNonNull().toString();
+    Item inItem = registry.getValue(Adapter.INOPTIONS_NAME);
+    Item outItem = registry.getValue(Adapter.OUTOPTIONS_NAME);
+    if (inItem.isNull() && outItem.isNull())
       throw new RuntimeException("Both input and output options cannot be null");
 
-    JsonRecord inOptions = (JsonRecord) inValue;
-    JsonRecord outOptions = (JsonRecord) outValue;
+    JRecord inOptions = (JRecord) inItem.get();
+    JRecord outOptions = (JRecord) outItem.get();
 
-    JaqlUtil.getAdapterStore().register(new JsonString(type),
+    JaqlUtil.getAdapterStore().register(new JString(type),
         new AdapterStore.AdapterRegistry(inOptions, outOptions));
 
-    return rValue;
+    return rItem;
   }
 }

@@ -18,12 +18,11 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
-import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.lang.expr.agg.PushAggExpr;
 
 /**
  * A BindingExpr is not really an Expr at all. It is used to associate a
@@ -38,7 +37,7 @@ public class BindingExpr extends Expr
     EQ(), IN(), INREC(), INPAIR(), INAGG(), AGGFN(),
   }
 
-  public Type type;
+  protected Type type;
 
   //           exprs[0]        exprs[1]
   //    EQ     defining expr   n/a
@@ -58,10 +57,9 @@ public class BindingExpr extends Expr
   //    INREC  required value variable
   public Var     var2;            // FIXME: make protected
 
-  /**
-   * For a join expression, true means this input is preserved in the output (no records dropped).
-   */
-  public boolean preserve = false; // FIXME: make protected
+  // Wether an IN iteration will fire when given [] (or null) with a null value.
+  // Only set true for IN bindings, and then only for "join" expression (right now at least)
+  public boolean optional = false; // FIXME: make protected
 
   /**
    * @param type
@@ -70,30 +68,14 @@ public class BindingExpr extends Expr
    * @param optional
    * @param exprs
    */
-  public BindingExpr(Type type, Var var, Var var2, boolean preserved, Expr[] exprs)
+  public BindingExpr(Type type, Var var, Var var2, boolean optional,
+      Expr[] exprs)
   {
     super(exprs);
     this.type = type;
     this.var = var;
     this.var2 = var2;
-    this.preserve = preserved;
-  }
-
-  /**
-   * 
-   * @param type
-   * @param var
-   * @param var2
-   * @param preserved
-   * @param expr
-   */
-  public BindingExpr(Type type, Var var, Var var2, boolean preserved, Expr expr)
-  {
-    super(expr);
-    this.type = type;
-    this.var = var;
-    this.var2 = var2;
-    this.preserve = preserved;
+    this.optional = optional;
   }
 
   /**
@@ -130,16 +112,6 @@ public class BindingExpr extends Expr
     this(type, var, var2, false, new Expr[]{expr0, expr1});
   }
 
-  /**
-   * 
-   */
-  @Override
-  public Bool3 evaluatesChildOnce(int i)
-  {
-    return Bool3.TRUE;
-  }
-
-
   /*
    * (non-Javadoc)
    * 
@@ -149,17 +121,7 @@ public class BindingExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(var.name);
-    exprText.print(" = ");
-    if( exprs.length == 0 )
-    {
-      exprText.print("??");
-    }
-    else
-    {
-      exprs[0].decompile(exprText, capturedVars);
-    }
-    // throw new RuntimeException("BindingExpr should never be decompiled");
+    throw new RuntimeException("BindingExpr should never be decompiled");
   }
 
   /*
@@ -167,62 +129,9 @@ public class BindingExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.setEval(exprs[0], context); // TODO: set var.usage
-    return null;
-  }
-
-  /**
-   * Returns iter that returns the input plus a side-effect of setting the variable
-   * to each element. 
-   */
-  @Override
-  public JsonIterator iter(final Context context) throws Exception
-  {
-    //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.undefine();
-    final JsonIterator iter = exprs[0].iter(context);
-    return new JsonIterator()
-    {
-      @Override
-      public boolean moveNext() throws Exception
-      {
-        if (iter.moveNext()) {
-          currentValue = iter.current();
-          var.setValue(currentValue);
-          return true;
-        } 
-        var.undefine();
-        return false;
-      }
-    };
-  }
-  
-  @Override
-  public Bool3 isArray()
-  {
-    return exprs[0].isArray();
-  }
-
-  @Override
-  public boolean isConst()
-  {
-    return exprs[0].isConst();
-  }
-
-  @Override
-  public Bool3 isEmpty()
-  {
-    return exprs[0].isEmpty();
-  }
-
-  @Override
-  public Bool3 isNull()
-  {
-    return exprs[0].isNull();
+    throw new RuntimeException("BindingExpr should never be evaluated");
   }
 
   /*
@@ -233,7 +142,7 @@ public class BindingExpr extends Expr
   public BindingExpr clone(VarMap varMap)
   {
     return new BindingExpr(type, varMap.remap(var), varMap.remap(var2),
-        preserve, cloneChildren(varMap));
+        optional, cloneChildren(varMap));
   }
 
   /**
@@ -252,14 +161,14 @@ public class BindingExpr extends Expr
     return exprs[0];
   }
 
-//  /**
-//   * @return
-//   */
-//  public final Expr onExpr()
-//  {
-//    return exprs[1];
-//  }
-//
+  /**
+   * @return
+   */
+  public final Expr onExpr()
+  {
+    return exprs[1];
+  }
+
   /**
    * @param i
    * @return
@@ -269,4 +178,12 @@ public class BindingExpr extends Expr
     return exprs[i];
   }
 
+  /**
+   * @return
+   */
+  public PushAggExpr aggExpr()
+  {
+    assert type == Type.AGGFN;
+    return (PushAggExpr) exprs[0];
+  }
 }

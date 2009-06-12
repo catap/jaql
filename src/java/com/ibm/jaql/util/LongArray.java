@@ -15,7 +15,9 @@
  */
 package com.ibm.jaql.util;
 
-/** Dynamically growing array of longs. */
+/**
+ * 
+ */
 public class LongArray
 {
   int    n     = 0;

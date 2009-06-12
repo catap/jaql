@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -24,10 +25,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * 
  */
 @JaqlFn(fnName = "max", minArgs = 1, maxArgs = 1)
-public final class MaxAgg extends AlgebraicAggregate
+public class MaxAgg extends Expr
 {
-  private JsonValue max;
-  
   /**
    * @param exprs
    */
@@ -36,52 +35,37 @@ public final class MaxAgg extends AlgebraicAggregate
     super(exprs);
   }
 
-  /**
-   * @param expr
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public MaxAgg(Expr expr)
+  public Item eval(final Context context) throws Exception
   {
-    super(expr);
-  }
-
-  @Override
-  public void initInitial(Context context) throws Exception
-  {
-    max = null;
-  }
-
-  @Override
-  public void addInitial(JsonValue value) throws Exception
-  {
-    if( value == null )
+    Iter iter = exprs[0].iter(context);
+    if (iter.isNull())
     {
-      return;
+      return Item.nil;
     }
-    if( max == null )
+    Item item;
+    do
     {
-      max = value.getCopy(null);
-    }
-    else if( value.compareTo(max) > 0 )
+      item = iter.next();
+      if (item == null)
+      {
+        return Item.nil;
+      }
+    } while (item.isNull());
+
+    Item max = new Item(); // TODO: memory
+    max.copy(item);
+    while ((item = iter.next()) != null)
     {
-      max.setCopy(value);
+      if (!item.isNull() && item.compareTo(max) > 0)
+      {
+        max.copy(item);
+      }
     }
-  }
-
-  @Override
-  public JsonValue getPartial() throws Exception
-  {
-    return max;
-  }
-
-  @Override
-  public void addPartial(JsonValue value) throws Exception
-  {
-    addInitial(value);
-  }
-
-  @Override
-  public JsonValue getFinal() throws Exception
-  {
     return max;
   }
 }

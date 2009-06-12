@@ -39,7 +39,7 @@ $books = [
 
   
 // Example 1. Write to a file named 'hey.dat'. DIFF
-[{text: 'Hello World'}] -> localWrite(file('build/test/cache/hey.dat'));##
+localWrite('build/test/cache/hey.dat', [{text: 'Hello World'}]);##
 {
   "location": "build/test/cache/hey.dat",
   "type": "local"
@@ -47,7 +47,7 @@ $books = [
 
 	
 // Read it back... DIFF
-read(file('build/test/cache/hey.dat'));##
+localRead('build/test/cache/hey.dat');##
 [
   {
     "text": "Hello World"
@@ -56,7 +56,7 @@ read(file('build/test/cache/hey.dat'));##
 
 
 // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
-[
+hdfsWrite('orders.dat', [
     {order: 1, cust: 'c1', items: [ 
       {item: 1, qty: 2},
       {item: 3, qty: 6},
@@ -69,8 +69,7 @@ read(file('build/test/cache/hey.dat'));##
       {item: 1, qty: 2},
       {item: 7, qty: 14},
       {item: 5, qty: 10}]} 
-] 
--> write(hdfs('orders.dat'));##
+  ]);##
 {
   "location": "orders.dat",
   "type": "hdfs"
@@ -78,7 +77,7 @@ read(file('build/test/cache/hey.dat'));##
 
 
 // Read it back...
-read(hdfs('orders.dat'));##
+hdfsRead('orders.dat');##
 [
   {
     "cust": "c1",
@@ -142,7 +141,7 @@ read(hdfs('orders.dat'));##
 // Read it back... (see hbaseQueries.txt)
 
 // Write the books collection from data above. DIFF
-$books -> write(hdfs('books'));##
+hdfsWrite('books', $books);##
 {
   "location": "books",
   "type": "hdfs"
@@ -150,8 +149,8 @@ $books -> write(hdfs('books'));##
 
   
 // Query 1. Return the publisher and title of each book. DIFF
-read(hdfs('books'))
--> transform {$.publisher, $.title};##
+for( $b in hdfsRead('books') )
+  [ {$b.publisher, $b.title} ];##
 [
   {
     "publisher": "Scholastic",
@@ -178,9 +177,9 @@ read(hdfs('books'))
   
 // Query 2. Find the authors and titles of books that have received 
 // a review. DIFF
-read(hdfs('books'))
--> filter exists($.reviews)
--> transform {$.author, $.title};##
+  for( $b in hdfsRead('books') )
+   if( exists($b.reviews) )
+    [ {$b.author, $b.title} ];##
 [
   {
     "author": "J. K. Rowling",
@@ -195,7 +194,7 @@ read(hdfs('books'))
 
 // Query 3a. Project the title from each book using the short-hand
 // projection notation. DIFF
-read(hdfs('books'))[*].title;##
+hdfsRead('books')[*].title;##
 [
   "Deathly Hallows",
   "Chamber of Secrets",
@@ -206,8 +205,8 @@ read(hdfs('books'))[*].title;##
 
 
 // Query 3a-alt. Or using equivalent the long-hand notation. DIFF
-read(hdfs('books'))
--> transform $.title;##
+for( $b in hdfsRead('books') )
+  [ $b.title ];##
 [
   "Deathly Hallows",
   "Chamber of Secrets",
@@ -219,9 +218,7 @@ read(hdfs('books'))
   
 // Query 3b. Project the user from each review of each book using the short-hand
 // projection notation.  The double-stars flattens the contained arrays.
-// TODO: lost this notation; bring it back?
-// read(hdfs('books'))[**].reviews[*].user;
-read(hdfs('books'))[*].reviews[*].user -> expand;##
+hdfsRead('books')[**].reviews[*].user;##
 [
   "joe",
   "mary",
@@ -231,9 +228,9 @@ read(hdfs('books'))[*].reviews[*].user -> expand;##
 
 
 // Query 3b-alt. Or using equivalent the long-hand notation.
-read(hdfs('books'))
--> expand $.reviews
--> transform $.user;##
+for( $b in hdfsRead('books') )
+  for( $r in $b.reviews )
+    [ $r.user ];##
 [
   "joe",
   "mary",
@@ -241,12 +238,13 @@ read(hdfs('books'))
   "mike"
 ]
 
+  
 
 // Query 4. Find authors, titles, and reviews of books where a review
 // prompted a discussion by the user 'ben'. DIFF
-read(hdfs('books'))
--> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
--> transform { $.author, $.title, $.reviews };##
+for( $b in hdfsRead('books') )
+ if( 'ben' in $b.reviews[**].discussion[*].user )
+  [{ $b.author, $b.title, $b.reviews }];##
 [
   {
     "author": "R. L. Stine",
@@ -279,9 +277,9 @@ read(hdfs('books'))
 
 // Query 5. Find the authors and titles of books that had an
 // average review rating over 5. DIFF
-read(hdfs('books'))
--> filter avg($.reviews[*].rating) > 5
--> transform {$.author, $.title};##
+for( $b in hdfsRead('books') )
+ if( avg($b.reviews[*].rating) > 5 )
+  [ {$b.author, $b.title} ];##
 [
   {
     "author": "J. K. Rowling",
@@ -291,10 +289,10 @@ read(hdfs('books'))
 
 
 // Query 6. Show how many books each publisher has published. DIFF
-read(hdfs('books'))
--> group by $p = ($.publisher)
-    into {publisher: $p, num: count($)}
--> sort by [$.publisher];##
+sort( $s in 
+      group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
+          [ {publisher: $p, num: count($pubs)} ]
+  by $s.publisher );##
 [
   {
     "num": 1,
@@ -308,65 +306,55 @@ read(hdfs('books'))
 
   
 // Query 7. Find the publisher who published the most books. DIFF
-read(hdfs('books'))
--> group by $p = ($.publisher)
-    into {publisher: $p, num: count($)}
--> top 1 by [$.num desc];##
-[
-  {
-    "num": 4,
-    "publisher": "Scholastic"
-  }
-]
+    // group books by publisher and compute their book count
+ (
+    $g = group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
+             [ {publisher: $p, num: count($pubs)} ],
+
+    // sort publishers by descending book count
+    $sorted = sort( $i in $g by $i.num desc ),
+
+    // return the top publisher
+    $sorted[0]
+ );##
+{
+  "num": 4,
+  "publisher": "Scholastic"
+}
 
 
 // Setup for co-group example DIFF
-[
-  {a:1, b:1}, 
-  {a:1, b:2}, 
-  {a:2, b:3}, 
-  {a:2, b:4}
-]
--> write(hdfs('X'));##
+hdfsWrite('X',
+    [
+      {a:1, b:1}, 
+      {a:1, b:2}, 
+      {a:2, b:3}, 
+      {a:2, b:4}
+    ] );##
 {
   "location": "X",
   "type": "hdfs"
 }
 
 
-[
-  {c:2, d:1}, 
-  {c:2, d:2}, 
-  {c:3, d:3}, 
-  {c:3, d:4}
-]
--> write(hdfs('Y'));##
+hdfsWrite('Y',
+    [
+      {c:2, d:1}, 
+      {c:2, d:2}, 
+      {c:3, d:3}, 
+      {c:3, d:4}
+    ] );##
 {
   "location": "Y",
   "type": "hdfs"
 }
 
 
-// Query 8. Co-group X and Y. DIFF
-$x = read(hdfs('X'));##
-"$x"
-
-$y = read(hdfs('Y'));##
-"$y"
-
-group $x by $g = ($.a),
-      $y by $g = ($.c)
- into {g: $g, b: $x[*].b, d: $y[*].d}
--> sort by [$];##
+// Query 8. Co-group X and Y. DIFF    
+group( $x in hdfsRead('X') by $g = $x.a into $xgroup,
+       $y in hdfsRead('Y') by $g = $y.c into $ygroup )
+    [ {g: $g, b: $xgroup[*].b, d: $ygroup[*].d} ];##
 [
-  {
-    "b": [],
-    "d": [
-      3,
-      4
-    ],
-    "g": 3
-  },
   {
     "b": [
       1,
@@ -385,45 +373,27 @@ group $x by $g = ($.a),
       2
     ],
     "g": 2
+  },
+  {
+    "b": [],
+    "d": [
+      3,
+      4
+    ],
+    "g": 3
   }
 ]
 
 
-// Query 9. Join X and Y. DIFF: sort to ensure order
-join $x, $y
-where $x.a == $y.c
-into {$x.a, $x.b, $y.c, $y.d}
--> sort by [$];##
-[
-  {
-    "a": 2,
-    "b": 3,
-    "c": 2,
-    "d": 1
-  },
-  {
-    "a": 2,
-    "b": 3,
-    "c": 2,
-    "d": 2
-  },
-  {
-    "a": 2,
-    "b": 4,
-    "c": 2,
-    "d": 1
-  },
-  {
-    "a": 2,
-    "b": 4,
-    "c": 2,
-    "d": 2
-  }
-]
+// Query 9. Join X and Y. DIFF: rely on count, since order differs from run to run
+count(join( $x in hdfsRead('X') on $x.a,
+            $y in hdfsRead('Y') on $y.c )
+         [ {$x.a, $x.b, $y.c, $y.d} ] );##
+4
 
 
 // Write to an HDFS file called 'sample'.
-[
+hdfsWrite('sample.dat', [
     {x: 0, text: 'zero'},
     {x: 1, text: 'one'},
     {x: 0, text: 'two'},
@@ -433,8 +403,7 @@ into {$x.a, $x.b, $y.c, $y.d}
     {x: 0, text: 'six'},
     {x: 1, text: 'seven'},
     {x: 0, text: 'eight'}
-]
--> write(hdfs('sample.dat'));##
+  ]);##
 {
   "location": "sample.dat",
   "type": "hdfs"
@@ -443,7 +412,7 @@ into {$x.a, $x.b, $y.c, $y.d}
 
 
   $median = fn($items) (
-    $sorted = $items -> sort by [$],
+    $sorted = sort( $i in $items by $i ),
 
     $sorted[int(count($sorted)/2)]
   );##
@@ -456,16 +425,15 @@ into {$x.a, $x.b, $y.c, $y.d}
 
   $var = fn($items) (
     $init = 
-       $items
-       -> filter not isnull($)
-       -> transform { n: 1, s1: $, s2: $*$ },
+       for( $i in $items )
+        if( not isnull($i) )
+         [ { n: 1, s1: $i, s2: $i*$i } ],
 
     $combined =
-       $init 
-       -> combine( fn($a,$b)
+       combine( $a, $b in $init )
               { n:  $a.n  + $b.n,
                s1: $a.s1 + $b.s1,
-               s2: $a.s2 + $b.s2 }),
+               s2: $a.s2 + $b.s2 },
 
     $E_X  = $combined.s1 / $combined.n,
     $E_X2 = $combined.s2 / $combined.n,
@@ -484,8 +452,8 @@ into {$x.a, $x.b, $y.c, $y.d}
 mapReduce( 
     { input:  {type: 'hdfs', location: 'sample.dat'}, 
       output: {type: 'hdfs', location: 'results.dat'}, 
-      map:    fn($v) ( $v -> transform [$.x, 1] ),
-      reduce: fn($x, $v) ( $v -> aggregate into {x: $x, num: count($)} )
+      map:    fn($i) [ [$i.x, 1] ],
+      reduce: fn($x, $v) [ {x: $x, num: count($v)} ]
     });##
 {
   "location": "results.dat",
@@ -493,7 +461,7 @@ mapReduce(
 }
 
     
-read(hdfs('results.dat'));##
+hdfsRead('results.dat');##
 [
   {
     "num": 5,
@@ -510,11 +478,14 @@ read(hdfs('results.dat'));##
 // written by a given author. DIFF
   $mostRecent = 
     fn($author) (
-         read(hdfs('books'))
-         -> filter $.author == $author
-         -> top 1 by [$.year desc]
-         -> transform $.title
-         -> singleton()
+        $authorsBooks =
+           for( $b in hdfsRead('books') )
+            if( $b.author == $author )
+             [ {title: $b.title, year: $b.year} ],
+
+         $sorted = sort( $b in $authorsBooks by $b.year desc ),
+        
+      $sorted[0].title
     );##
 "$mostRecent"
 
@@ -542,7 +513,7 @@ read(hdfs('results.dat'));##
 //              }
 //            ) }) [0],
 //  
-//    $freebase.myquery.result[*].album -> expand
+//    for( $i in $freebase.myquery.result[**].album ) $i
 //  );
 
 // non-deterministic function-- do not test this for now...  
@@ -557,7 +528,8 @@ read(hdfs('results.dat'));##
 //          output: "json"
 //        })[0],
 //  
-//    $trafficData.ResultSet.Result[*].title
+//    for( $i in $trafficData.ResultSet.Result )
+//      [ $i.Title ]
 // );
 
 // ====== SPLIT1 ======
@@ -699,7 +671,7 @@ FAILURE
     gcd1([36,18,12]);##
 6
  // 6
-    gcd1(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    gcd1(for( $i in 1000 to 2000 ) if( mod($i,3) == 0 ) [$i * 31]);##
 93
  // 31*3 = 93
 
@@ -719,34 +691,34 @@ FAILURE
  // 6
 
 
-    $gcd = fn($nums) combine($nums, fn($a,$b) gcd2($a,$b));##
+    $gcd = fn($nums) combine( $a,$b in $nums ) gcd2($a,$b);##
 "$gcd"
 
 
-    $gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    $gcd(for( $i in 1000 to 2000 ) if( mod($i,3) == 0 ) [$i * 31]);##
 93
  // 31*3 = 93
 
 
-    $gcd = fn($nums) ($nums -> combine( fn($a,$b) gcd1( [$a,$b] ) ));##
+    $gcd = fn($nums) combine( $a,$b in $nums ) gcd1( [$a,$b] );##
 "$gcd"
 
 
-    $gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    $gcd(for($i in 1000 to 2000) if( mod($i,3) == 0 ) [$i * 31]);##
 93
  // 31*3 = 93
 
 
-    range(1,100)
-    -> expand each $i (
-         range(1,100)
-         -> transform each $j { a: $i, b: $i * $j }
-       )
-    -> write(hdfs('/temp/nums'));##
+    hdfsWrite('/temp/nums', 
+      for( $i in 1 to 100, 
+           $j in 1 to 100 )
+        [ { a: $i, b: $i * $j } ]
+    );##
 {
   "location": "/temp/nums",
   "type": "hdfs"
 }
+
 
 
     registerFunction("gcd1", "com.acme.extensions.fn.GCD1");##
@@ -757,10 +729,10 @@ FAILURE
 
 
 // DIFF: sort added for stabilty
-read(hdfs('/temp/nums'))
--> group by $a = ($.a)
-    into { a: $a, g: $gcd($[*].b) }
--> sort by [$.a];##
+sort( $x in
+    group( $i in hdfsRead('/temp/nums') by $a = $i.a into $is )
+        [ { a: $a, g: $gcd($is[*].b) } ]
+  by $x.a );##
 [
   {
     "a": 1,
@@ -1164,22 +1136,23 @@ read(hdfs('/temp/nums'))
   }
 ]
 
-// [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
+    // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
 
 
     registerFunction("gcd2", "com.acme.extensions.fn.GCD2");##
 "gcd2"
 
-    $gcd = fn($nums) ( $nums -> combine( fn($a,$b) gcd2( $a,$b ) ) );##
+    $gcd = fn($nums) combine( $a,$b in $nums ) gcd2( $a,$b );##
 "$gcd"
 
 
 // DIFF: sort added for stabilty
 
-read(hdfs('/temp/nums'))
--> group by $a = ($.a)
-    into { a: $a, g: $gcd($[*].b) }
--> sort by [$.a];##
+$q = group( $i in hdfsRead('/temp/nums') by $a = $i.a into $is )
+         [ { a: $a, g: $gcd($is[*].b) } ];##
+"$q"
+
+sort( $x in $q by $x.a );##
 [
   {
     "a": 1,
@@ -1587,19 +1560,21 @@ read(hdfs('/temp/nums'))
 
 // DIFF: this is unstable during testing (because of different options):
 //  explain 
-// read(hdfs('/temp/nums'))
-// -> group by $a = ($.a)
-//     into { a: $a, g: $gcd($[*].b) }
+//  group( $i in hdfsRead('/temp/nums') by $a = $i.a into $is )
+//      [ { a: $a, g: $gcd($is[*].b) } ];
 
+$q = stRead(
       mrAggregate( {
          input: { type: "hdfs", location: "/temp/nums" }, 
          output: HadoopTemp(),
-         map: fn ($) ( $ -> transform [ $.a, $ ] ),
-         aggregate: fn ($k, $) [ combine($[*].b, fn($a,$b) gcd2( $a,$b ) ) ],
-         final: fn ($k, $aggs) [{ a:$k, g: $aggs[0] }]
-     } )
-     -> read()
-     -> sort by [$.a];##
+         init: fn ($x) [[ $x.a, [$x.b] ]],
+         combine: fn ($x, $y, $z) [ gcd2( $y[0], $z[0] ) ],
+         final: fn ($a, $is) [{ a:$a, g: $is[0] }]
+     } ));##
+"$q"
+
+
+sort( $x in $q by $x.a);##
 [
   {
     "a": 1,
@@ -2101,9 +2076,13 @@ null
     d'2008-03-14T12:15:00Z'
   ],
   [
-    fn($x) ( ($x)+(1) )
+    fn ($x) (
+($x)+(1)
+)
 ,
-    fn($x) ( ($x)+(1) )
+    fn ($x) (
+($x)+(1)
+)
 
   ]
 ]
@@ -2112,7 +2091,7 @@ null
 // =============================================================================
 
 // DIFF: not in docs
-$books -> write(hdfs('books.jqlb'));##
+hdfsWrite('books.jqlb', $books);##
 {
   "location": "books.jqlb",
   "type": "hdfs"
@@ -2120,7 +2099,7 @@ $books -> write(hdfs('books.jqlb'));##
 
 
 // DIFF
-read(hdfs('books.jqlb'));##
+read('hdfs', 'books.jqlb');##
 [
   {
     "author": "J. K. Rowling",
@@ -2190,14 +2169,14 @@ read(hdfs('books.jqlb'));##
 
 
 // DIFF: not in docs
-$books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
+write('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextOutputFormat',
+                              converter : 'com.acme.extensions.data.ToJSONTxtConverter'}, $books);##
 {
   "location": "example.jql",
   "outoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
+    "converter": "com.acme.extensions.data.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
   "type": "hdfs"
@@ -2205,13 +2184,13 @@ $books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'o
 
 
 // DIFF
-read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}});##
+read('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextInputFormat'});##
 [FAILURE
 
 
 // DIFF
-read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+read('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextInputFormat',
+                             converter : 'com.acme.extensions.data.FromJSONTxtConverter'});##
 [
   {
     "author": "J. K. Rowling",
@@ -2280,9 +2259,9 @@ read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.ha
 ]
 
 
-$myRead = fn($path) read({type:'hdfs', location:$path, 
-                          inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
-                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+$myRead = fn($path) read('hdfs', $path, 
+                              {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
+                                converter : 'com.acme.extensions.data.FromJSONTxtConverter'});##
 "$myRead"
 
                                 
@@ -2359,20 +2338,20 @@ $myRead('example.jql');##
 registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+                             converter    : 'com.acme.extensions.data.FromJSONTxtConverter',
                              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
 {
   "inoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter",
+    "converter": "com.acme.extensions.data.FromJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextInputFormat"
   },
   "type": "myHDFSFile"
 }
 
 
-read({type:'myHDFSFile', location:'example.jql'});##
+read('myHDFSFile', 'example.jql');##
 [
   {
     "author": "J. K. Rowling",
@@ -2442,32 +2421,9 @@ read({type:'myHDFSFile', location:'example.jql'});##
 
 
 // variant of Query 1 in overview
-// DIFF: sort added because of different outputs from map/reduce
-read({type:'myHDFSFile', location:'example.jql'})
--> transform {key: $.publisher, ($.title): $.year}
--> sort by [$];##
-[
-  {
-    "Chamber of Secrets": 1999,
-    "key": "Scholastic"
-  },
-  {
-    "Deathly Hallows": 2007,
-    "key": "Scholastic"
-  },
-  {
-    "Monster Blood IV": 1997,
-    "key": "Scholastic"
-  },
-  {
-    "Sorcerers Stone": 1998,
-    "key": "Scholastic"
-  },
-  {
-    "The Secret of Kane": 1930,
-    "key": "Grosset"
-  }
-]
+$q = for( $i in read('myHDFSFile', 'example.jql') )
+       [ {key: $i.publisher, ($i.title): $i.year} ];##
+"$q"
 
 
 // (see hbaseQueries.txt)
@@ -2476,72 +2432,74 @@ read({type:'myHDFSFile', location:'example.jql'})
 // (see hbaseQueries.txt)
 // hbaseWrite('example', $q);
 
-read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
+localRead('build/test/cache/books.jql', {format : 'com.acme.extensions.data.FromJSONTxtConverter'});##
 [
-  {
-    "author": "J. K. Rowling",
-    "publisher": "Scholastic",
-    "title": "Deathly Hallows",
-    "year": 2007
-  },
-  {
-    "author": "J. K. Rowling",
-    "publisher": "Scholastic",
-    "reviews": [
-      {
-        "rating": 10,
-        "review": "The best ...",
-        "user": "joe"
-      },
-      {
-        "rating": 6,
-        "review": "Average ...",
-        "user": "mary"
-      }
-    ],
-    "title": "Chamber of Secrets",
-    "year": 1999
-  },
-  {
-    "author": "J. K. Rowling",
-    "publisher": "Scholastic",
-    "title": "Sorcerers Stone",
-    "year": 1998
-  },
-  {
-    "author": "R. L. Stine",
-    "publisher": "Scholastic",
-    "reviews": [
-      {
-        "rating": 8,
-        "review": "High on my list...",
-        "user": "rob"
-      },
-      {
-        "discussion": [
-          {
-            "text": "This is too harsh...",
-            "user": "ben"
-          },
-          {
-            "text": "I agree ...",
-            "user": "jill"
-          }
-        ],
-        "rating": 2,
-        "review": "Not worth the paper ...",
-        "user": "mike"
-      }
-    ],
-    "title": "Monster Blood IV",
-    "year": 1997
-  },
-  {
-    "author": "Carolyn Keene",
-    "publisher": "Grosset",
-    "title": "The Secret of Kane",
-    "year": 1930
-  }
+  [
+    {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "title": "Deathly Hallows",
+      "year": 2007
+    },
+    {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "reviews": [
+        {
+          "rating": 10,
+          "review": "The best ...",
+          "user": "joe"
+        },
+        {
+          "rating": 6,
+          "review": "Average ...",
+          "user": "mary"
+        }
+      ],
+      "title": "Chamber of Secrets",
+      "year": 1999
+    },
+    {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "title": "Sorcerers Stone",
+      "year": 1998
+    },
+    {
+      "author": "R. L. Stine",
+      "publisher": "Scholastic",
+      "reviews": [
+        {
+          "rating": 8,
+          "review": "High on my list...",
+          "user": "rob"
+        },
+        {
+          "discussion": [
+            {
+              "text": "This is too harsh...",
+              "user": "ben"
+            },
+            {
+              "text": "I agree ...",
+              "user": "jill"
+            }
+          ],
+          "rating": 2,
+          "review": "Not worth the paper ...",
+          "user": "mike"
+        }
+      ],
+      "title": "Monster Blood IV",
+      "year": 1997
+    },
+    {
+      "author": "Carolyn Keene",
+      "publisher": "Grosset",
+      "title": "The Secret of Kane",
+      "year": 1930
+    }
+  ]
 ]
 
 
@@ -2549,7 +2507,7 @@ hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;##
 0
 
 
-$lineRdr = read({type: "hdfs", location: "test", inoptions: {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.acme.extensions.data.FromLineConverter"}});##
+$lineRdr = hdfsRead("test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.acme.extensions.data.FromLineConverter"});##
 "$lineRdr"
 
 
@@ -2557,23 +2515,32 @@ registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");##
 "splitArr"
 
 
-$lineRdr
--> expand splitArr($, " ")
--> transform [$,1]
--> group by $w = ($[0])
-    into [$w, sum($[*][1])]
--> count();##
-1341
+$tokens  = for($line in $lineRdr) (
+             $tokens = splitArr($line, " "),
+             for($t in $tokens)
+               [ [$t, 1] ]
+           );##
+"$tokens"
+
+           
+count(group($p in $tokens by $w = $p[0] into $words)
+  [ [$w, sum($words[*][1])] ]);##
+1615
 
 
-$lineRdr
--> expand splitArr($, " ")
--> group by $w = ($)
-    into [$w, count($)]
--> count();##
-1341
+$tokens  = for($line in $lineRdr) (
+             $tokens = splitArr($line, " "),
+             for($t in $tokens)
+               [ $t ]
+           );##
+"$tokens"
 
-             
+           
+count(group($p in $tokens by $w = $p into $words)
+  [ [$w, count($words)] ]);##
+1615
+
+  
 hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat") * 0;##
 0
 
@@ -2582,16 +2549,17 @@ hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr") * 0;##
 0
 
 
-$dhRead = fn($data,$header) 
-           read({type:"hdfs", location:$data,
-                 inoptions:{format: "org.apache.hadoop.mapred.TextInputFormat", 
-                            converter: "com.acme.extensions.data.FromDelimitConverter",
-                            header?: $header}});##
-"$dhRead"
-
-
-$dRead = fn($data) $dhRead($data, null);##
+$dRead = fn($data) 
+           hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat", 
+                            converter: "com.acme.extensions.data.FromDelimitConverter"});##
 "$dRead"
+
+
+$dhRead = fn($data, $header)
+            hdfsRead($data, {format: "org.apache.hadoop.mapred.TextInputFormat",
+			                          converter: "com.acme.extensions.data.FromDelimitConverter",
+			                          header: $header});##
+"$dhRead"
 
 
 $dRead("delimited.dat");##

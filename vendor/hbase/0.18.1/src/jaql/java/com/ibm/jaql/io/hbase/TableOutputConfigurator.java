@@ -15,24 +15,22 @@
  */
 package com.ibm.jaql.io.hbase;
 
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.mapred.TableOutputFormat;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.hadoop.HadoopSerialization;
-import com.ibm.jaql.io.hadoop.InitializableConfSetter;
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.DefaultJsonComparator;
+import com.ibm.jaql.io.hadoop.JSONConfSetter;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
 
 /**
  * 
  */
-public class TableOutputConfigurator implements InitializableConfSetter
+public class TableOutputConfigurator implements JSONConfSetter
 {
   protected String location;
 
@@ -41,9 +39,9 @@ public class TableOutputConfigurator implements InitializableConfSetter
    * 
    * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
    */
-  public void init(JsonValue options) throws Exception
+  public void init(Item options) throws Exception
   {
-    location = AdapterStore.getStore().getLocation((JsonRecord) options);
+    location = AdapterStore.getStore().getLocation((JRecord) options.get());
   }
 
   /*
@@ -54,10 +52,8 @@ public class TableOutputConfigurator implements InitializableConfSetter
   public void setParallel(JobConf conf) throws Exception
   {
     conf.set(TableOutputFormat.OUTPUT_TABLE, location);
-    conf.setOutputKeyClass(JsonHolder.class);
-    conf.setOutputValueClass(JsonHolder.class);
-    HadoopSerialization.register(conf);
-    conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
+    conf.setOutputKeyClass(Item.class);
+    conf.setOutputValueClass(Item.class);
   }
 
   /*

@@ -19,10 +19,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.record.FieldsFn;
 
 /**
  * 
@@ -154,13 +155,13 @@ public class MultiForExpr extends IterExpr // extends MacroExpr
           expr = new ForExpr(b.var, b.inExpr(), expr);
           break;
 
-//        case INREC : // TODO: this is not used anymore, use: for $f in fields($rec)
-//          // expr = new WithInRecExpr(unnest, b, ifExpr, expr );
-//          Var pairVar = env.makeVar("$kvpair");
-//          expr = new LetExpr(b.var, new IndexExpr(new VarExpr(pairVar), 0),
-//              b.var2, new IndexExpr(new VarExpr(pairVar), 1), expr);
-//          expr = new ForExpr(pairVar, new FieldsFn(b.inExpr()), expr);
-//          break;
+        case INREC :
+          // expr = new WithInRecExpr(unnest, b, ifExpr, expr );
+          Var pairVar = env.makeVar("$kvpair");
+          expr = new LetExpr(b.var, new IndexExpr(new VarExpr(pairVar), 0),
+              b.var2, new IndexExpr(new VarExpr(pairVar), 1), expr);
+          expr = new ForExpr(pairVar, new FieldsFn(b.inExpr()), expr);
+          break;
 
         default :
           throw new RuntimeException("bad binding type");
@@ -176,7 +177,7 @@ public class MultiForExpr extends IterExpr // extends MacroExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     throw new RuntimeException("this should have been expanded!"); // expand it...
   }

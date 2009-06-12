@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -57,7 +58,7 @@ import com.ibm.jaql.util.Bool3;
  * $e
  * 
  */
-public final class ForExpr extends IterExpr // TODO: rename
+public final class ForExpr extends IterExpr
 {
   /**
    * BindingExpr inExpr, Expr collectExpr
@@ -125,60 +126,22 @@ public final class ForExpr extends IterExpr // TODO: rename
     // return binding().inExpr().isNull().or(collectExpr().isNull());
   }
 
-  /**
-   * 
-   */
-  @Override
-  public Bool3 evaluatesChildOnce(int i)
-  {
-    if( i == 0 )
-    {
-      return Bool3.TRUE;
-    }
-    return Bool3.FALSE;
-  }
-
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  @Override
-  public boolean isMappable(int i)
-  {
-    return i == 0;
-  }
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    // TODO: decompile as "for" or "expand"?
     BindingExpr b = binding();
-    if( false )
-    {
-      exprText.print("\nfor( ");
-      exprText.print(b.var.name);
-      exprText.print(" in ");
-      b.inExpr().decompile(exprText, capturedVars);
-      exprText.print(" ) ( ");
-      collectExpr().decompile(exprText, capturedVars);
-      exprText.println(" )");
-      capturedVars.remove(b.var);
-    }
-    else
-    {
-      b.inExpr().decompile(exprText, capturedVars);
-      exprText.print(" -> expand each ");
-      exprText.print(b.var.name);
-      exprText.print(" ( ");
-      collectExpr().decompile(exprText, capturedVars);
-      exprText.println(" )");
-    }
+    exprText.print("\nfor( ");
+    exprText.print(b.var.name);
+    exprText.print(" in ");
+    b.inExpr().decompile(exprText, capturedVars);
+    exprText.println(" )");
+    collectExpr().decompile(exprText, capturedVars);
     capturedVars.remove(b.var);
   }
 
@@ -187,34 +150,58 @@ public final class ForExpr extends IterExpr // TODO: rename
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr collectExpr = collectExpr();
 
-    final JsonIterator inIter = inBinding.iter(context);
+    final Iter inIter = inBinding.inExpr().iter(context);
 
-    return new JsonIterator() 
-    {
-      JsonIterator inner = JsonIterator.EMPTY;
+    //    // If the input is null, return null
+    //    if( inIter.isNull() )
+    //    {
+    //      return Iter.nil;
+    //    }
+    //
+    //    // If every iteration returns null, return null
+    //    Iter iter;
+    //    do
+    //    {
+    //      Item item = inIter.next();
+    //      if( item == null )
+    //      {
+    //        return Iter.nil;
+    //      }
+    //      context.setVar(inBinding.var, item);
+    //      iter = collectExpr.iter(context);
+    //    }
+    //    while( iter.isNull() );
+    //    
+    //    // Return a non-null result
+    //    final Iter tmpIter = iter;
 
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      //      Iter collectIter = tmpIter;
+      Iter collectIter = Iter.empty;
+
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (inner.moveNext()) {
-            currentValue = inner.current();
-            return true;
+          Item item;
+          while ((item = collectIter.next()) != null)
+          {
+            return item;
           }
 
-          if (inIter.moveNext()) 
+          item = inIter.next();
+          if (item == null)
           {
-            inner = collectExpr.iter(context); 
+            return null;
           }
-          else
-          {
-            return false;
-          }
+          context.setVar(inBinding.var, item);
+
+          collectIter = collectExpr.iter(context);
         }
       }
     };

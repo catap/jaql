@@ -18,9 +18,10 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -67,38 +68,40 @@ public class UnnestExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonIterator iter = exprs[0].iter(context);
+    final Iter iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
 
-    return new JsonIterator() {
-      JsonIterator inner = JsonIterator.EMPTY;
+    return new Iter() {
+      Iter inner = Iter.empty;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (inner.moveNext()) {
-            currentValue = inner.current();
-            return true;
-          }
-          if (!iter.moveNext()) {
-            return false;
-          }
-          JsonValue w = iter.current();
-          if (w instanceof JsonArray)
+          Item item;
+          while ((item = inner.next()) != null)
           {
-            inner = ((JsonArray) w).iter();
+            return item;
+          }
+          item = iter.next();
+          if (item == null)
+          {
+            return null;
+          }
+          JValue w = item.get();
+          if (w instanceof JArray)
+          {
+            inner = ((JArray) w).iter();
           }
           else
           {
-            inner = JsonIterator.EMPTY;
-            currentValue = w;
-            return true;
+            inner = Iter.empty;
+            return item;
           }
         }
       }

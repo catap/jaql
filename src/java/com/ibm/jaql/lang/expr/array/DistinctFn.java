@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import java.util.ArrayList;
+
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
@@ -48,15 +50,15 @@ public class DistinctFn extends MacroExpr
   public Expr expand(Env env) throws Exception
   {
     // group $inVar in <expr0> by $byVar = $inVar into $intoVar collect [$byVar]
-    Var v = env.makeVar("$");
-    Var by = env.makeVar("$key");
-    Var as = env.makeVar("$as");
-    Expr r = new GroupByExpr(
-        new BindingExpr(BindingExpr.Type.IN, v, null, exprs[0]),
-        new BindingExpr(BindingExpr.Type.IN, by, null, new VarExpr(v)),
-        as,
-        null,
-        new ArrayExpr(new VarExpr(by)));
-    return r;
+    Var inVar = env.makeVar("$distinctIn");
+    Var byVar = env.makeVar("$distinctBy");
+    Var intoVar = env.makeVar("$distinctInto");
+    ArrayList<BindingExpr> bindings = new ArrayList<BindingExpr>(2);
+    bindings.add(new BindingExpr(BindingExpr.Type.EQ, byVar, null, new VarExpr(
+        inVar)));
+    bindings
+        .add(new BindingExpr(BindingExpr.Type.IN, inVar, intoVar, exprs[0]));
+    Expr expr = new GroupByExpr(bindings, new ArrayExpr(new VarExpr(byVar)));
+    return expr;
   }
 }

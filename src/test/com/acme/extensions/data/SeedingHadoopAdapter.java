@@ -22,11 +22,10 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-
 import com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter;
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.MemoryJRecord;
 
 /**
  * 
@@ -43,10 +42,10 @@ public class SeedingHadoopAdapter extends DefaultHadoopInputAdapter
    * @see com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter#initializeFrom(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void init(JsonValue value) throws Exception
+  public void initializeFrom(Item item) throws Exception
   {
-    super.init(value);
-    seed = ((JsonLong) options.getValue("seed")).value;
+    super.initializeFrom(item);
+    seed = ((JLong) options.getValue("seed").get()).value;
     rng = new Random(seed);
   }
 
@@ -84,7 +83,7 @@ public class SeedingHadoopAdapter extends DefaultHadoopInputAdapter
    *      org.apache.hadoop.mapred.JobConf, org.apache.hadoop.mapred.Reporter)
    */
   @Override
-  public RecordReader<JsonHolder, JsonHolder> getRecordReader(InputSplit split,
+  public RecordReader<Item, Item> getRecordReader(InputSplit split,
       JobConf job, Reporter reporter) throws IOException
   {
 

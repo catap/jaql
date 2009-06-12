@@ -17,11 +17,12 @@ package com.ibm.jaql.json.meta;
 
 import java.util.HashMap;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 
-/** Common API for accessing Java arrays. Each subclass implements these methods for a
- * specific (atomic) type. */
+/**
+ * 
+ */
 public abstract class MetaArray extends MetaValue
 {
   protected Class<?> clazz;
@@ -49,29 +50,28 @@ public abstract class MetaArray extends MetaValue
   /**
    * @return
    */
-  public abstract JsonValue makeValue();
-  
+  public abstract Item makeItem();
   /**
-   * @param obj a Java array
+   * @param obj
    * @return
    */
   public abstract long count(Object obj);
   /**
-   * @param obj a Java array
+   * @param obj
    * @return
    * @throws Exception
    */
-  public abstract JsonIterator iter(Object obj) throws Exception;
+  public abstract Iter iter(Object obj) throws Exception;
   /**
-   * @param obj a Java array
+   * @param obj
    * @param n
    * @param result
    * @throws Exception
    */
-  public abstract JsonValue nth(Object obj, long n, JsonValue target) throws Exception;
+  public abstract void nth(Object obj, long n, Item result) throws Exception;
   /**
-   * @param toValue a Java array
-   * @param fromValue a Java array
+   * @param toValue
+   * @param fromValue
    * @return
    */
   public abstract Object copy(Object toValue, Object fromValue);

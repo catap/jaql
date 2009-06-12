@@ -18,16 +18,12 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonRegex;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.util.Bool3;
@@ -37,23 +33,25 @@ import com.ibm.jaql.util.Bool3;
  */
 public final class ConstExpr extends Expr
 {
-  public JsonValue value;
+  public Item value;
 
   /**
    * @param value
    */
-  public ConstExpr(JsonValue value)
+  public ConstExpr(Item value)
   {
     super(NO_EXPRS);
     this.value = value;
   }
 
-
-  public ConstExpr(long v)
+  /**
+   * @param value
+   */
+  public ConstExpr(JValue value)
   {
-    this(new JsonLong(v));
+    this(new Item(value));
   }
-  
+
   /*
    * (non-Javadoc)
    * 
@@ -62,7 +60,7 @@ public final class ConstExpr extends Expr
   @Override
   public Bool3 isNull()
   {
-    return Bool3.valueOf(value == null);
+    return Bool3.valueOf(value.get() == null);
   }
 
   /*
@@ -73,7 +71,8 @@ public final class ConstExpr extends Expr
   @Override
   public Bool3 isArray()
   {
-    return Bool3.valueOf(value == null || value instanceof JsonArray);
+    JValue v = value.get();
+    return Bool3.valueOf(v == null || v instanceof JArray);
   }
 
   /*
@@ -85,14 +84,11 @@ public final class ConstExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    boolean annotate = 
-      value instanceof JsonArray    || 
-      value instanceof JsonRecord   || 
-      value instanceof JaqlFunction || // TODO: JValue.getType().isExtendedJson()
-      value instanceof JsonDate     || // TODO: parser should recognize constructors and eval during parse
-      value instanceof JsonRegex;
+    JValue w = value.get();
+    boolean annotate = w instanceof JArray || w instanceof JRecord
+        || w instanceof JFunction;
     if (annotate) exprText.print("const("); // FIXME: remove
-    JsonValue.print(exprText, value, 2);
+    value.print(exprText, 2);
     if (annotate) exprText.print(")");// FIXME: remove
   }
 
@@ -101,7 +97,7 @@ public final class ConstExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     return value;
   }
@@ -114,10 +110,5 @@ public final class ConstExpr extends Expr
   public ConstExpr clone(VarMap varMap)
   {
     return new ConstExpr(value);
-  }
-  
-  public Schema getSchema()
-  {
-    return SchemaFactory.schemaOf(value);
   }
 }

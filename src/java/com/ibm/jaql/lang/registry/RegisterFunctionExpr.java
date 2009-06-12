@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.registry;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -36,22 +36,18 @@ public class RegisterFunctionExpr extends Expr
     super(exprs);
   }
 
-  public RegisterFunctionExpr(Expr jaqlName, Expr javaName)
-  {
-    super(jaqlName, javaName);
-  }
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonString fnName = JaqlUtil.enforceNonNull((JsonString)exprs[0].eval(context));
-    JsonString className = JaqlUtil.enforceNonNull((JsonString) exprs[1].eval(context));
+    Item fnNameItem = exprs[0].eval(context);
+    JString fnName = (JString) fnNameItem.getNonNull();
+    JString className = (JString) exprs[1].eval(context).getNonNull();
     JaqlUtil.getFunctionStore().register(fnName, className);
-    return fnName;
+    return fnNameItem;
   }
 }

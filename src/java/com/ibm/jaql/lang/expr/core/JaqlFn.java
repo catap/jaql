@@ -20,7 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation for JAQL functions. Defines function name and number of arguments.
+/**
  * 
  */
 @Target(ElementType.TYPE)

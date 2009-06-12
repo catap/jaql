@@ -20,21 +20,20 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 
-/** Common API for accessing atomic values stored within a Java object. The API includes
- * methods to read the value, write the value, copy the value, and convert the value to 
- * an item. Subclasses implement the API for specific types of Java objects.  
+/**
+ * 
  */
 public abstract class MetaAccessor
 {
-  private JsonString name;
+  private JString name;
 
   /**
    * @param name
    */
-  protected MetaAccessor(JsonString name)
+  protected MetaAccessor(JString name)
   {
     this.name = name;
   }
@@ -44,13 +43,13 @@ public abstract class MetaAccessor
    */
   protected MetaAccessor(String name)
   {
-    this.name = new JsonString(name);
+    this.name = new JString(name);
   }
 
   /**
    * @return
    */
-  public final JsonString getName()
+  public final JString getName()
   {
     return name;
   }
@@ -58,7 +57,7 @@ public abstract class MetaAccessor
   /**
    * @return
    */
-  public abstract JsonValue makeValue();
+  public abstract Item makeItem();
   /**
    * @param obj
    * @param target
@@ -66,7 +65,7 @@ public abstract class MetaAccessor
    * @throws IllegalAccessException
    * @throws InvocationTargetException
    */
-  public abstract JsonValue get(Object obj, JsonValue target)
+  public abstract void get(Object obj, Item target)
       throws IllegalArgumentException, IllegalAccessException,
       InvocationTargetException;
   /**

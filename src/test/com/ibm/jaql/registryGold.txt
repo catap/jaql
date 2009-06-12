@@ -22,7 +22,7 @@ registerAdapter({type: 'myAdapter1',
 }
 
 
-[
+stWrite({type: 'myAdapter1', location: 'jaqlTest/test10.dat'}, [
   { key: 0, g:0, text: 'zero' },
   { key: 1, g:1, text: 'one' },
   { key: 2, g:0, text: 'two' },
@@ -31,16 +31,15 @@ registerAdapter({type: 'myAdapter1',
   { key: 5, g:1, text: 'five' },
   { key: 6, g:0, text: 'six' },
   { key: 7, g:1, text: 'seven' },
-  { key: 8, g:0, text: 'eight' }
-]
--> write({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+  { key: 8, g:0, text: 'eight' },
+]);##
 {
   "location": "jaqlTest/test10.dat",
   "type": "myAdapter1"
 }
 
 
-read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+stRead({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
 [
   {
     "g": 0,
@@ -98,14 +97,15 @@ readAdapterRegistry('registryTest1.dat');##
 "registryTest1.dat"
 
 
-[1,2,3] -> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+stWrite({type: 'hdfs', location: 'jaqlTest/test1.dat'},
+        [1,2,3]);##
 {
   "location": "jaqlTest/test1.dat",
   "type": "hdfs"
 }
 
         
-read({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+stRead({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
 [
   1,
   2,
@@ -113,7 +113,7 @@ read({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
 ]
 
 
-read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+stRead({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
 [
   {
     "g": 0,
@@ -167,7 +167,7 @@ readAdapterRegistry('registryTest2.dat');##
 "registryTest2.dat"
 
 
-[
+stWrite({type: 'myAdapter2', location: 'jaqlTest/test11.dat'}, [
   { key: 0, g:0, text: 'zero' },
   { key: 1, g:1, text: 'one' },
   { key: 2, g:0, text: 'two' },
@@ -176,16 +176,15 @@ readAdapterRegistry('registryTest2.dat');##
   { key: 5, g:1, text: 'five' },
   { key: 6, g:0, text: 'six' },
   { key: 7, g:1, text: 'seven' },
-  { key: 8, g:0, text: 'eight' }
-]
--> write({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+  { key: 8, g:0, text: 'eight' },
+]);##
 {
   "location": "jaqlTest/test11.dat",
   "type": "myAdapter2"
 }
 
 
-read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+stRead({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
 [
   {
     "g": 0,
@@ -239,17 +238,18 @@ unregisterAdapter('myAdapter2');##
 "myAdapter2"
 
 
-read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+stRead({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
 FAILURE
 
 
-mapReduce( {
+stRead(
+  mapReduce( {
     'input': {type: 'myAdapter1', location: 'jaqlTest/test10.dat'},
-    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test10out.dat'}
   })
--> read();##
+);##
 [
   {
     "g": 0,
@@ -284,7 +284,7 @@ registerAdapter({type: 'myAdapter3',
 }
 
 
-[
+stWrite({type: 'myAdapter3', location: 'jaqlTest/test12.dat'}, [
   { key: 0, g:0, text: 'zero' },
   { key: 1, g:1, text: 'one' },
   { key: 2, g:0, text: 'two' },
@@ -293,16 +293,15 @@ registerAdapter({type: 'myAdapter3',
   { key: 5, g:1, text: 'five' },
   { key: 6, g:0, text: 'six' },
   { key: 7, g:1, text: 'seven' },
-  { key: 8, g:0, text: 'eight' }
-]
--> write({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
+  { key: 8, g:0, text: 'eight' },
+]);##
 {
   "location": "jaqlTest/test12.dat",
   "type": "myAdapter3"
 }
 
 
-read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
+stRead({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
 [
   {
     "g": 0,
@@ -352,13 +351,14 @@ read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
 ]
 
 
-mapReduce( {
+stRead(
+  mapReduce( {
     'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
-    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test12out.dat'}
   })
--> read();##
+);##
 [
   {
     "g": 0,
@@ -380,13 +380,14 @@ heyya('world');##
 "Hello, world!"
 
 
+stRead(
 mapReduce( {
     'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
-    'map'   : fn($) ( $ -> transform [ heyya('world'), 1 ] ),
+    'map'   : fn($i) [ [ heyya('world'), 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test13out.dat'}
   })
--> read();##
+);##
 [
   {
     "g": "Hello, world!",

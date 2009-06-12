@@ -15,8 +15,10 @@
  */
 package com.ibm.jaql.util;
 
-/** Class that implements common operations for ternary logic, in which each variable
- * may have one of the following values: FALSE, UNKNOWN, TRUE. */
+/*
+ * 
+ * 
+ */
 public enum Bool3
 {
   FALSE(0), UNKNOWN(1), TRUE(3);

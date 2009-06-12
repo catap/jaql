@@ -20,7 +20,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-/** Provides direct access to the buffer that backs a {@link ByteArrayOutputStream}. 
+/**
  * 
  */
 public class RandomAccessBuffer extends ByteArrayOutputStream

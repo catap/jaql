@@ -18,7 +18,9 @@ package com.ibm.jaql.json.meta;
 import java.lang.reflect.Field;
 import java.util.Collection;
 
-/** MetaAccessor in which the value corresponds to a public field of a class. */
+/**
+ * 
+ */
 public abstract class MetaField extends MetaAccessor
 {
   protected Field field;

@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -60,7 +60,7 @@ public class HBaseReadExpr extends MacroExpr
   {
     // replace the input with a record expression
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
-        new ConstExpr(new JsonString("hbase")));
+        new ConstExpr(new JString("hbase")));
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
         exprs[0]);
     RecordExpr rec = new RecordExpr(new Expr[]{tField, lField});
@@ -70,6 +70,6 @@ public class HBaseReadExpr extends MacroExpr
           exprs[1]);
       rec.addChild(oField);
     }
-    return new ReadFn(rec);
+    return new StReadExpr(rec);
   }
 }

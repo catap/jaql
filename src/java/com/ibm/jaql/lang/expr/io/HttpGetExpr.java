@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.stream.StreamInputAdapter;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -25,12 +25,11 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
-import com.ibm.jaql.lang.expr.record.RemapFn;
 
 /**
  * 
  */
-@JaqlFn(fnName = "httpGet", minArgs = 1, maxArgs = 3)
+@JaqlFn(fnName = "httpGet", minArgs = 1, maxArgs = 2)
 public class HttpGetExpr extends MacroExpr
 {
 
@@ -51,29 +50,23 @@ public class HttpGetExpr extends MacroExpr
   public Expr expand(Env env) throws Exception
   {
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
-        new ConstExpr(new JsonString("uri")));
+        new ConstExpr(new JString("uri")));
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
         exprs[0]);
     RecordExpr rec;
-    if (exprs.length > 1)
+    if (exprs.length == 2)
     {
       NameValueBinding aField = new NameValueBinding(
           StreamInputAdapter.ARGS_NAME, exprs[1]);
-      
       RecordExpr oRec = new RecordExpr(new Expr[]{aField});
-      Expr oExpr = oRec;
-      if(exprs.length > 2) 
-      {
-        oExpr = new RemapFn(oRec, exprs[2]);
-      } 
       NameValueBinding oField = new NameValueBinding(Adapter.INOPTIONS_NAME,
-          oExpr);
+          oRec);
       rec = new RecordExpr(new Expr[]{tField, lField, oField});
     }
     else
     {
       rec = new RecordExpr(new Expr[]{tField, lField});
     }
-    return new ReadFn(rec);
+    return new StReadExpr(rec);
   }
 }

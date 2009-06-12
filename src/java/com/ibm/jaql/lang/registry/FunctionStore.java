@@ -17,20 +17,21 @@ package com.ibm.jaql.lang.registry;
 
 import org.apache.log4j.Logger;
 
-import com.ibm.jaql.io.converter.FromJson;
-import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.FunctionLib;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
 /**
  * Manage a directory of function extensions.
  */
-public class FunctionStore extends Registry<JsonString, JsonString>
+public class FunctionStore extends Registry<JString, JString>
 {
   static final Logger LOG = Logger.getLogger(FunctionStore.class.getName());
 
@@ -39,36 +40,35 @@ public class FunctionStore extends Registry<JsonString, JsonString>
    */
   public static class DefaultRegistryFormat
       extends
-        JsonRegistryFormat<JsonString, JsonString>
+        JsonRegistryFormat<JString, JString>
   {
 
-    final static FromJson<JsonString>   tic = new FromJson<JsonString>() {
+    final static ToItem<JString>   tic = new ToItem<JString>() {
 
-                                         public JsonString convert(JsonValue src,
-                                             JsonString tgt)
+                                         public void convert(Item src,
+                                             JString tgt)
                                          {
-                                           tgt.set(src.toString());
-                                           return tgt;
+                                           tgt.set(src.get().toString());
                                          }
 
-                                         public JsonString createInitialTarget()
+                                         public JString createTarget()
                                          {
-                                           return new JsonString();
+                                           return new JString();
                                          }
 
                                        };
-    final static ToJson<JsonString> fic = new ToJson<JsonString>() {
+    final static FromItem<JString> fic = new FromItem<JString>() {
 
-                                         public JsonValue convert(JsonString src,
-                                             JsonValue tgt)
+                                         public void convert(JString src,
+                                             Item tgt)
                                          {
-                                           ((JsonString) tgt).setCopy(src);
-                                           return tgt;
+                                           ((JString) tgt.get()).set(src
+                                               .toString());
                                          }
 
-                                         public JsonValue createInitialTarget()
+                                         public Item createTarget()
                                          {
-                                           return new JsonString();
+                                           return new Item(new JString());
                                          }
 
                                        };
@@ -87,7 +87,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromKeyConverter()
      */
     @Override
-    protected FromJson<JsonString> createFromKeyConverter()
+    protected ToItem<JString> createFromKeyConverter()
     {
       return tic;
     }
@@ -98,7 +98,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createFromValConverter()
      */
     @Override
-    protected FromJson<JsonString> createFromValConverter()
+    protected ToItem<JString> createFromValConverter()
     {
       return tic;
     }
@@ -109,7 +109,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToKeyConverter()
      */
     @Override
-    protected ToJson<JsonString> createToKeyConverter()
+    protected FromItem<JString> createToKeyConverter()
     {
       return fic;
     }
@@ -120,7 +120,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
      * @see com.ibm.jaql.io.registry.JsonRegistryFormat#createToValConverter()
      */
     @Override
-    protected ToJson<JsonString> createToValConverter()
+    protected FromItem<JString> createToValConverter()
     {
       return fic;
     }
@@ -129,7 +129,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
   /**
    * @param fmt
    */
-  public FunctionStore(RegistryFormat<JsonString, JsonString, ? extends JsonValue> fmt)
+  public FunctionStore(RegistryFormat<JString, JString, ? extends JValue> fmt)
   {
     super(fmt);
   }
@@ -141,7 +141,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
    *      java.lang.Object)
    */
   @Override
-  public void register(JsonString fnName, JsonString className)
+  public void register(JString fnName, JString className)
   {
     Class<?> c = ClassLoaderMgr.resolveClass(className.toString());
     FunctionLib.add(fnName.toString(), c);

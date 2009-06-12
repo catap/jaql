@@ -20,9 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 // TODO: this should really work on Readers instead of InputStreams
-/** 
- * InputStream that forwards everything that is read from it to the provided 
- * output stream.
+/**
  * 
  */
 public class TeeInputStream extends InputStream

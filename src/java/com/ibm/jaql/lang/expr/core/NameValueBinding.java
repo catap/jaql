@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -64,16 +64,7 @@ public class NameValueBinding extends FieldExpr
    */
   public NameValueBinding(String name, Expr value, boolean required)
   {
-    this(required, new Expr[]{new ConstExpr(new JsonString(name)), value});
-  }
-
-  /**
-   * @param name
-   * @param value
-   */
-  public NameValueBinding(Expr name, Expr value)
-  {
-    this(name, value, true);
+    this(required, new Expr[]{new ConstExpr(new JString(name)), value});
   }
 
   /**
@@ -83,16 +74,6 @@ public class NameValueBinding extends FieldExpr
   public NameValueBinding(String name, Expr value)
   {
     this(name, value, true);
-  }
-
-  /**
-   * 
-   * @param var var name is name, var value is value
-   * @param required
-   */
-  public NameValueBinding(Var var, boolean required)
-  {
-    this(var.nameAsField(), new VarExpr(var), required);
   }
 
   /*
@@ -110,12 +91,13 @@ public class NameValueBinding extends FieldExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.FieldExpr#staticNameMatches(com.ibm.jaql.json.type.JString)
    */
-  public Bool3 staticNameMatches(JsonString name)
+  public Bool3 staticNameMatches(JString name)
   {
     if (exprs[0] instanceof ConstExpr)
     {
       ConstExpr c = (ConstExpr) exprs[0];
-      JsonString str = (JsonString) c.value;
+      Item value = c.value;
+      JString str = (JString) value.get();
       if (str != null && str.equals(name))
       {
         return Bool3.TRUE;
@@ -139,15 +121,6 @@ public class NameValueBinding extends FieldExpr
   public Expr valueExpr()
   {
     return exprs[1];
-  }
-
-  /**
-   * 
-   */
-  @Override
-  public Bool3 evaluatesChildOnce(int i)
-  {
-    return Bool3.TRUE;
   }
 
   /*
@@ -177,13 +150,13 @@ public class NameValueBinding extends FieldExpr
    * @see com.ibm.jaql.lang.expr.core.FieldExpr#eval(com.ibm.jaql.lang.core.Context,
    *      com.ibm.jaql.json.type.MemoryJRecord)
    */
-  public void eval(Context context, BufferedJsonRecord rec) throws Exception
+  public void eval(Context context, MemoryJRecord rec) throws Exception
   {
-    JsonValue value = exprs[1].eval(context);
-    if (required || value!=null)
+    Item value = exprs[1].eval(context);
+    if (required || !value.isNull())
     {
       // TODO: should we generate an error when the name is null or ignore the item?
-      JsonString name = (JsonString) exprs[0].eval(context);
+      JString name = (JString) exprs[0].eval(context).get();
       if (name == null)
       {
         throw new NullPointerException("field name cannot be null");
@@ -191,4 +164,5 @@ public class NameValueBinding extends FieldExpr
       rec.add(name, value);
     }
   }
+
 }

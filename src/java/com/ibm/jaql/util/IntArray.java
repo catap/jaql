@@ -15,7 +15,9 @@
  */
 package com.ibm.jaql.util;
 
-/** Dynamically growing array of ints. */
+/**
+ * 
+ */
 public class IntArray
 {
   int   n     = 0;

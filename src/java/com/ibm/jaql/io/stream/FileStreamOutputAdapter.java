@@ -20,7 +20,7 @@ import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 
-/** Output adapter that writes to a file.
+/**
  * 
  */
 public class FileStreamOutputAdapter extends StreamOutputAdapter

@@ -14,7 +14,7 @@ $data = [
 
 
 // write it out
-$data -> hbaseWrite('test1');##
+hbaseWrite('test1', $data);##
 {
   "location": "test1",
   "type": "hbase"
@@ -188,14 +188,13 @@ hbaseFetch('test1', ['2']);##
 
 
 // Example 3. Write to an HBase table named 'webcrawl'. (from exampleQueries)
-[
+hbaseWrite('webcrawl', [
     {key: "www.cnn.com", page:'...', rank: 0.9,
      inlinks:[
        {link: 'www.news.com', anchor: 'newsite'},
        {link: 'www.jscript.com', anchor: 'look here'}]},
     {key: "www.json.org", page:'...', rank: 0.8}
-]
--> hbaseWrite('webcrawl');##
+  ]);##
 {
   "location": "webcrawl",
   "type": "hbase"
@@ -269,16 +268,14 @@ $books = [
 
   
 // (from exampleQueries)
-$books
--> write({type:'hdfs', location:'example.jql', 
-          outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                      converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
+write('hdfs', 'example.jql', {format    : 'org.apache.hadoop.mapred.TextOutputFormat',
+                              converter : 'com.acme.extensions.data.ToJSONTxtConverter'}, $books);##
 {
   "location": "example.jql",
   "outoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
+    "converter": "com.acme.extensions.data.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
   "type": "hdfs"
@@ -289,21 +286,27 @@ $books
 registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+                             converter    : 'com.acme.extensions.data.FromJSONTxtConverter',
                              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
 {
   "inoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter",
+    "converter": "com.acme.extensions.data.FromJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextInputFormat"
   },
   "type": "myHDFSFile"
 }
 
 
+// (from exampleQueries)                             
+$q = for( $i in read('myHDFSFile', 'example.jql') )
+       [ {key: $i.publisher, ($i.title): $i.year} ];##
+"$q"
+
+
 // (from exampleQueries)       
-[] -> hbaseWrite('example');##
+hbaseWrite('example', []);##
 {
   "location": "example",
   "type": "hbase"
@@ -311,9 +314,7 @@ registerAdapter({type     :	'myHDFSFile',
 
 
 // (from exampleQueries)
-read({type:'myHDFSFile', location:'example.jql'})
--> transform {key: $.publisher, ($.title): $.year}
--> hbaseWrite('example');##
+hbaseWrite('example', $q);##
 {
   "location": "example",
   "type": "hbase"
@@ -323,15 +324,14 @@ read({type:'myHDFSFile', location:'example.jql'})
 //-- hbase write/read expressions --
 
 // write/read Items to an HBase Table as Items: default adapter, default format, no converter (from storageQueries)
-[{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]
--> write({type: 'hbase', location: 'jaqlTesttest5'});##
+stWrite({type: 'hbase', location: 'jaqlTesttest5'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);##
 {
   "location": "jaqlTesttest5",
   "type": "hbase"
 }
 
 
-read({type: 'hbase', location: 'jaqlTesttest5'});##
+stRead({type: 'hbase', location: 'jaqlTesttest5'});##
 [
   {
     "key": "1",
@@ -348,9 +348,7 @@ read({type: 'hbase', location: 'jaqlTesttest5'});##
 ]
 
 
-[{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]
--> write({type: 'hbase', location: 'jaqlTesttest5alt1'})
--> read();##
+stRead(stWrite({type: 'hbase', location: 'jaqlTesttest5alt1'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));##
 [
   {
     "key": "1",
@@ -368,11 +366,11 @@ read({type: 'hbase', location: 'jaqlTesttest5'});##
 
 
 // can do the same thing if you pass in the right options to HadoopRead
-[{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]
--> write({location: 'jaqlTesttest5alt2', 
+stWrite({location: 'jaqlTesttest5alt2', 
          outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
                       format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
-                      configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'}});##
+                      configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'}}, 
+         [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);##
 {
   "location": "jaqlTesttest5alt2",
   "outoptions": {
@@ -383,7 +381,7 @@ read({type: 'hbase', location: 'jaqlTesttest5'});##
 }
 
                             
-read({location: 'jaqlTesttest5alt2',
+stRead({location: 'jaqlTesttest5alt2',
 	    inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
 			  	    format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
 			  	    configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}});##
@@ -403,15 +401,14 @@ read({location: 'jaqlTesttest5alt2',
 ]
 
 
-[{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]
--> write({location: 'jaqlTesttest5alt3', 
+stRead(stWrite({location: 'jaqlTesttest5alt3', 
                 outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
                              format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
                              configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'},
                 inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
 			  	            format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
-			  	            configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}})
--> read();##
+			  	            configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}}, 
+              [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));##
 [
   {
     "key": "1",
@@ -429,7 +426,7 @@ read({location: 'jaqlTesttest5alt2',
 
               
 // input is hdfs sequence file of Items, output is hbase table (note that 'g' renamed to 'key') (from storageQueries.txt)
-[] -> write({type: 'hbase', location: 'jaqlTesttest6out'});##
+stWrite({type: 'hbase', location: 'jaqlTesttest6out'}, []);##
 {
   "location": "jaqlTesttest6out",
   "type": "hbase"
@@ -437,7 +434,7 @@ read({location: 'jaqlTesttest5alt2',
 
 
 // note, 'g' is quoted so that it can be used as a key for subsequent hbase tests (from storageQueries.txt)
-[
+stWrite({ type: 'hdfs', location: 'jaqlTest/test6.dat'}, [
   { key: 0, g:"0", text: 'zero' },
   { key: 1, g:"1", text: 'one' },
   { key: 2, g:"0", text: 'two' },
@@ -447,21 +444,21 @@ read({location: 'jaqlTesttest5alt2',
   { key: 6, g:"0", text: 'six' },
   { key: 7, g:"1", text: 'seven' },
   { key: 8, g:"0", text: 'eight' },
-]
--> write({ type: 'hdfs', location: 'jaqlTest/test6.dat'});##
+]);##
 {
   "location": "jaqlTest/test6.dat",
   "type": "hdfs"
 }
 
 
-mapReduce( {
+stRead( 
+  mapReduce( {
    'input' : {type: 'hdfs', location: 'jaqlTest/test6.dat'},
-   'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+   'map'   : fn($i) [ [ $i.g, 1 ] ],
    'reduce': fn($key, $values) [{ key: $key, n: count($values) }],
    'output': {type: 'hbase', location: 'jaqlTesttest6out'}
    })
--> read();##
+);##
 [
   {
     "key": "0",
@@ -475,7 +472,7 @@ mapReduce( {
 
  
 // input is hbase table, output is sequence file of Items
-[
+stWrite({ type: 'hbase', location: 'jaqlTesttest7'}, [
   { key: "0", g:0, text: 'zero' },
   { key: "1", g:1, text: 'one' },
   { key: "2", g:0, text: 'two' },
@@ -485,21 +482,21 @@ mapReduce( {
   { key: "6", g:0, text: 'six' },
   { key: "7", g:1, text: 'seven' },
   { key: "8", g:0, text: 'eight' },
-]
--> write({ type: 'hbase', location: 'jaqlTesttest7'});##
+]);##
 {
   "location": "jaqlTesttest7",
   "type": "hbase"
 }
 
 
-mapReduce( {
+stRead( 
+  mapReduce( {
     'input' : {type: 'hbase', location: 'jaqlTesttest7'},
-    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'map'   : fn($i) [ [ $i.g, 1 ] ],
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test7.dat'}
     })
--> read();##
+ );##
 [
   {
     "g": 0,
@@ -515,14 +512,13 @@ mapReduce( {
 //-- test composite input adapter (from storageQueries.txt)
 
 // write out an hdfs file
-[
+stWrite({ type: 'hdfs', location: 'jaqlTest/test9.dat'}, [
   { key: "0", g:0, text: 'zero' },
   { key: "1", g:1, text: 'one' },
   { key: "2", g:0, text: 'two' },
   { key: "3", g:1, text: 'three' },
   { key: "4", g:0, text: 'four' }
-]
--> write({ type: 'hdfs', location: 'jaqlTest/test9.dat'});##
+]);##
 {
   "location": "jaqlTest/test9.dat",
   "type": "hdfs"
@@ -530,20 +526,19 @@ mapReduce( {
 
 
 // write out an hbase table
-[
+stWrite({ type: 'hbase', location: 'jaqlTesttest9'}, [
   { key: "5", g:1, text: 'five' },
   { key: "6", g:0, text: 'six' },
   { key: "7", g:1, text: 'seven' },
   { key: "8", g:0, text: 'eight' },
-]
--> write({ type: 'hbase', location: 'jaqlTesttest9'});##
+]);##
 {
   "location": "jaqlTesttest9",
   "type": "hbase"
 }
 
 
-read([{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}]);##
+stRead([{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}]);##
 [
   {
     "g": 0,
@@ -593,13 +588,14 @@ read([{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 
 ]
 
 
-mapReduce( {
+stRead(
+  mapReduce( {
     'input': [ [{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}] ],
-     'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+     'map'   : fn($i) [ [ $i.g, 1 ] ],
      'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
      'output': {type: 'hdfs', location: 'jaqlTest/test9out.dat'}
    })
--> read();##
+);##
 [
   {
     "g": 0,
@@ -614,13 +610,12 @@ mapReduce( {
 
 //-- test co-group (from storageQueries.txt)
 
-mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'}, 
+stRead(mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'}, 
                             {type: 'hbase', location: 'jaqlTesttest9'}],
-                   map: [ fn($) ( $ -> transform [ $.g, 1 ] ),
-                          fn($) ( $ -> transform [ $.g, 1 ] ) ],
+                   map: [ fn($i) [ [ $i.g, 1 ] ],
+                          fn($i) [ [ $i.g, 1 ] ] ],
                    reduce: fn($key, $aVals, $bVals) [ { g: $key, as: count($aVals), bs: count($bVals) } ],
-                   output: {type: 'hdfs', location: 'jaqlTest/test10out.dat'}})
--> read();##
+                   output: {type: 'hdfs', location: 'jaqlTest/test10out.dat'}}));##
 [
   {
     "as": 3,
@@ -636,8 +631,7 @@ mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'},
 
 
 // (from storageQueries.txt)
-[{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]
--> write({type:'hbase', location:'jaqlTesttest13a.dat'});##
+write('hbase', 'jaqlTesttest13a.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);##
 {
   "location": "jaqlTesttest13a.dat",
   "type": "hbase"
@@ -645,7 +639,7 @@ mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'},
 
 
 // (from storageQueries.txt)
-read({type:'hbase', location:'jaqlTesttest13a.dat'});##
+read('hbase', 'jaqlTesttest13a.dat');##
 [
   {
     "a": "foo",
@@ -659,8 +653,7 @@ read({type:'hbase', location:'jaqlTesttest13a.dat'});##
 
 
 // (from storageQueries.txt)                   
-[{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]
--> hbaseWrite('jaqlTesttest13b.dat');##
+hbaseWrite('jaqlTesttest13b.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);##
 {
   "location": "jaqlTesttest13b.dat",
   "type": "hbase"
@@ -682,9 +675,10 @@ hbaseRead('jaqlTesttest13b.dat');##
 
 
 // group by over hbase read (from storageQueries.txt)
-read({type: 'hbase', location: 'jaqlTesttest7'}) 
--> group by $a = ($.g)
-    into { g:$a, i:count($) };##
+group( $i in stRead({type: 'hbase', location: 'jaqlTesttest7'}) 
+       by $a = $i.g
+       into $is )
+ [ { g:$a, i:count($is) } ];##
 [
   {
     "g": 0,
@@ -698,8 +692,8 @@ read({type: 'hbase', location: 'jaqlTesttest7'})
 
 
 // for loop over hbase read (from storageQueries.txt)
-read({type: 'hbase', location: 'jaqlTesttest7'})
--> transform $.key;##
+for( $r in stRead({type: 'hbase', location: 'jaqlTesttest7'}) )
+  [ $r.key ];##
 [
   "0",
   "1",
@@ -714,12 +708,14 @@ read({type: 'hbase', location: 'jaqlTesttest7'})
 
 
 // co-group (from storageQueries.txt)
-group
-  read({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
-     by $g = ($.g) as $i,
-  read({type: 'hbase', location: 'jaqlTesttest9'}) 
-     by $g = ($.g) as $j
- into { g: $g, as: count($i), bs: count($j) };##
+group(
+  $i in stRead({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
+     by $g = $i.g
+     into $as,
+  $j in stRead({type: 'hbase', location: 'jaqlTesttest9'}) 
+     by $g = $j.g
+     into $bs )
+ [ { g: $g, as: count($as), bs: count($bs) } ];##
 [
   {
     "as": 3,
@@ -732,4 +728,3 @@ group
     "g": 1
   }
 ]
-

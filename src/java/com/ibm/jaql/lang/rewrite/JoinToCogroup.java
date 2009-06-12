@@ -15,20 +15,19 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import java.util.ArrayList;
+
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.array.MergeFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.IfExpr;
 import com.ibm.jaql.lang.expr.core.JoinExpr;
 import com.ibm.jaql.lang.expr.core.NotExpr;
-import com.ibm.jaql.lang.expr.core.OrExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
-import com.ibm.jaql.lang.expr.nil.IsnullExpr;
+import com.ibm.jaql.lang.expr.nil.IsnullFn;
 import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 
 /**
@@ -57,136 +56,60 @@ public class JoinToCogroup extends Rewrite
     //       ...
     // return er($i,$j)
     //
-    // group each $ in
-    //     ei1 by $tg=ei2($) as $is
-    //     ej2 by     ej2($) as $js,
-    //     ...
-    // expand
-    //    for $i in $is | nullElementOnEmpty($is)
-    //        $j in $js | nullElementOnEmpty($js),
+    // group $i in ei1 by $tg = ei2($i) into $ti,
+    //       $j in ej1 by $tg = ej2($j) into $tj,
+    //       ...
+    // collect
+    //    for $ui in $ti | nullElementOnEmpty($ti)
+    //        $uj in $tj | nullElementOnEmpty($tj),
     //        ...
     //    where not(isnull($tg))
     //    return er($ui, $uj)
     JoinExpr join = (JoinExpr) expr;
 
+    ArrayList<BindingExpr> bindings = new ArrayList<BindingExpr>();
+
     int n = join.numBindings();
     assert n > 1;
 
     Env env = engine.env;
-    Var inVar = env.makeVar("$join_in");
     Var byVar = env.makeVar("$join_on");
-    Expr[] inputs = new Expr[n];
-    Expr[] bys = new Expr[n];
-    Var[] asVars = new Var[n];
-
-    for (int i = 0; i < n; i++)
-    {
-      BindingExpr b = join.binding(i);
-      asVars[i] = env.makeVar("$as_" + i);
-      inputs[i] = b.inExpr();
-      bys[i] = join.onExpr(i);
-      bys[i].replaceVar(b.var, inVar);      
-    }
-    
+    BindingExpr byBinding = new BindingExpr(BindingExpr.Type.EQ, byVar, null,
+        new Expr[n]);
+    bindings.add(byBinding);
     Expr joinCollect = join.collectExpr();
 
-    int numPreserved = 0;
+    // Expr groupCollect = new ArrayExpr(joinCollect);
+    Expr groupCollect = joinCollect;
     for (int i = 0; i < n; i++)
     {
       BindingExpr joinBinding = join.binding(i);
-      if (joinBinding.preserve)
+      Var intoVar = env.makeVar("$join_into_" + i);
+      Var iterVar = env.makeVar("$join_iter_" + i);
+      Expr inExpr = joinBinding.inExpr();
+      BindingExpr groupBinding = new BindingExpr(BindingExpr.Type.IN,
+          joinBinding.var, intoVar, inExpr);
+      bindings.add(groupBinding);
+      byBinding.setChild(i, joinBinding.onExpr());
+      joinCollect.replaceVar(joinBinding.var, iterVar);
+      inExpr = new VarExpr(intoVar);
+      if (joinBinding.optional)
       {
-        numPreserved++;
-      }
-    }
-    
-    // The null-key group requires special handling:
-    //   We return the union of all the preserved inputs (not the cross)
-    //   We drop all the non-preserved inputs (this should be pused below the join/group).
-    Expr onNullKey = null;
-    if( numPreserved > 0 )
-    {
-      Expr[] toMerge = new Expr[numPreserved];
-      Expr nilExpr = new ConstExpr(null);
-      int k = 0;
-      for (int i = 0; i < n; i++)
-      {
-        BindingExpr b = join.binding(i);
-        if( b.preserve )
-        {
-          Var v = env.makeVar(b.var.name());
-          Expr e = cloneExpr(joinCollect);
-          e.replaceVar(b.var, v);
-          for (int j = 0; j < n; j++)
-          {
-            if( i != j )
-            {
-              BindingExpr b2 = join.binding(j);
-              e = e.replaceVarUses(b2.var, nilExpr, engine.varMap);
-            }
-          }
-          e = new ForExpr(v, new VarExpr(asVars[i]), e);
-          toMerge[k++] = e;
-        }
-      }
-      if( numPreserved == 1 )
-      {
-        onNullKey = toMerge[0];
-      }
-      else
-      {
-        onNullKey = new MergeFn(toMerge);
-      }
-    }
-    
-    // Expr groupCollect = new ArrayExpr(joinCollect); // <<-- this is if join...expand is not support
-    Expr groupCollect = joinCollect;
-    Expr preservePlace = groupCollect;
-    Expr preserveTest = null;
-    for (int i = 0; i < n; i++)
-    {
-      BindingExpr b = join.binding(i);
-      Expr inExpr = new VarExpr(asVars[i]);
-      if( numPreserved > 0 ) 
-      {
-        if( numPreserved > 1 || !b.preserve )
-        {
-          inExpr = new NullElementOnEmptyFn(inExpr);
-        }
-        if( numPreserved > 1 && b.preserve )
-        {
-          Expr test = new NotExpr(new IsnullExpr(new VarExpr(b.var)));
-          if( preserveTest == null )
-          {
-            preserveTest = test;
-          }
-          else
-          {
-            preserveTest = new OrExpr(preserveTest, test);
-          }
-        }
+        inExpr = new NullElementOnEmptyFn(inExpr);
       }
 
       // groupRet = new ForExpr(i != 0, iterVar, null, inExpr, null, groupRet);
-      groupCollect = new ForExpr(b.var, inExpr, groupCollect);
+      groupCollect = new ForExpr(iterVar, inExpr, groupCollect);
     }
 
-    // drop the non-preserved results // TODO: can this be avoided if we order the preserved inputs first?
-    if( numPreserved > 1 )
-    {
-      new IfExpr(preserveTest, preservePlace.injectAbove());
-    }
-    
-    groupCollect = new IfExpr(new NotExpr(new IsnullExpr(new VarExpr(byVar))),
-        groupCollect, onNullKey);
+    // drop the null keys
+    groupCollect = new IfExpr(new NotExpr(new IsnullFn(new VarExpr(byVar))),
+        groupCollect);
 
-    BindingExpr inBinding = new BindingExpr(BindingExpr.Type.IN, inVar, null, inputs);
-    BindingExpr byBinding = new BindingExpr(BindingExpr.Type.EQ, byVar, null, bys);
-    Expr using = null; // TODO: take using from join
-    Expr groupBy = new GroupByExpr(inBinding, byBinding, asVars, using, groupCollect);
+    Expr groupBy = new GroupByExpr(bindings, groupCollect);
     // groupBy = new UnnestExpr( groupBy );
 
-    join.replaceInParent(groupBy);
+    expr.replaceInParent(groupBy);
 
     return true;
   }

@@ -15,146 +15,208 @@
  */
 package com.ibm.jaql.lang.core;
 
-import java.io.Closeable;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.Pair;
+import com.ibm.jaql.util.IntArray;
+import com.ibm.jaql.util.PagedFile;
+import com.ibm.jaql.util.SpillFile;
 
-/** Run-time context, i.e., values for the variables in the environment.
+/**
  * 
  */
 public class Context
 {
-  // protected HashMap<Var,Object> varValues = new HashMap<Var,Object>();
-  // protected HashMap<Expr,Item>  tempArrays = new HashMap<Expr,Item>(); // TODO: we could use one hashmap
-  protected HashMap<Pair<Expr,JaqlFunction>,JaqlFunction> fnMap = new HashMap<Pair<Expr,JaqlFunction>,JaqlFunction>(); // TODO: this will be a compiled expr soon 
-  protected Pair<Expr,JaqlFunction> exprFnPair = new Pair<Expr, JaqlFunction>();
-  protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
-  // PyModule pyModule;
+  Item[]   stack    = new Item[16];
+  //  Item[] temps = new Item[2];
+  int      basep    = 0;
+  IntArray frames   = new IntArray();
+  int      topIndex = 0;
 
   /**
-   * Create a new root context.
+   * 
    */
   public Context()
   {
-    // TODO: come up with a really reliable way to cleanup temp files, etc.
-    
-    //    final Context me = this;
-    //    Runtime.getRuntime().addShutdownHook(new Thread() {
-    //      @Override public void run() { me.reset(); };
-    //    });
-//  if( JaqlUtil.getSessionContext() == null )
-//  {
-//    PySystemState systemState = Py.getSystemState();
-//    if (systemState == null)
-//    {
-//      systemState = new PySystemState();
-//    }
-//    Py.setSystemState(systemState);
-//    pyModule = new PyModule("jaqlMain", new PyStringMap());
-//  }
   }
-  
-  // public PyModule getPyModule() { return JaqlUtil.getSessionContext().pyModule; }
-  
-  /** 
-   * Clears the context.
+
+  /**
+   * @param var
+   * @param value
+   */
+  public void setVar(Var var, Item value)
+  {
+    //System.out.print("set var "+var.name+": ");
+    //Util.print(System.out, value, 0);
+    //System.out.println();
+
+    int i = basep + var.index;
+    if (i >= stack.length)
+    {
+      Item[] newStk = new Item[i + 16];
+      System.arraycopy(stack, 0, newStk, 0, stack.length);
+      stack = newStk;
+    }
+    if (var.index >= topIndex) // TODO: the stack management needs improvement
+    {
+      topIndex = var.index + 1;
+    }
+    stack[i] = value;
+  }
+
+  //  public void setVar(Var var, Iter iter) throws Exception
+  //  {
+  //    setVar(var, temp(var, iter));
+  //  }
+
+  /**
+   * @param var
+   * @return
+   * @throws Exception
+   */
+  public Item getValue(Var var) throws Exception
+  {
+    if (var.expr != null) // global var
+    {
+      if (var.value != null)
+      {
+        return var.value;
+      }
+      Context gctx = JaqlUtil.getSessionContext();
+      Item value = var.expr.eval(gctx);
+      return value;
+    }
+    // local var
+    Item x = stack[basep + var.index];
+    return x;
+  }
+
+  /**
+   * @param var
+   * @return
+   * @throws Exception
+   */
+  public Iter getIter(Var var) throws Exception
+  {
+    if (var.expr != null && var.value == null)
+    {
+      Context gctx = JaqlUtil.getSessionContext();
+      return var.expr.iter(gctx);
+    }
+
+    Item x = getValue(var);
+    // cast error intentionally possible
+    JArray array = (JArray) x.get();
+    if (array == null)
+    {
+      return Iter.nil;
+    }
+    return array.iter();
+  }
+
+  //  // This always returns an Array Item
+  //  public Item getTempTable(Var var)
+  //  {
+  //    int i = basep + var.index;
+  //    if( i >= temps.length )
+  //    {
+  //      Item[] temps2 = new Item[i + 10];
+  //      System.arraycopy(temps, 0, temps2, 0, temps.length);
+  //      temps = temps2;
+  //    }
+  //    Item item = temps[basep + var.index];
+  //    if( temps == null )
+  //    {
+  //      ByteJArray table = new ByteJArray();
+  //      item = new Item(table);
+  //      temps[basep + var.index] = item;
+  //    }
+  //    return item;
+  //  }
+
+  //  protected Item temp(Var var, Iter iter) throws Exception
+  //  {
+  //    Item item = getTempTable(var);
+  //    ByteJArray table = (ByteJArray)item.get();
+  //    table.set(iter);
+  //    return item;
+  //  }
+
+  /**
+   * 
    */
   public void reset()
   {
-    // varValues.clear();
-    // tempArrays.clear();
-    fnMap.clear(); 
-    exprFnPair.a = null;
-    exprFnPair.b = null;
-    for(Runnable task: resetTasks)
+    basep = 0;
+    for (int i = 0; i < stack.length; i++)
     {
-      try
-      {
-        task.run();
-      }
-      catch(Throwable e)
-      {
-        e.printStackTrace(); // TODO: log
-      }
+      stack[i] = null;
     }
-    resetTasks.clear();
     JaqlUtil.getQueryPageFile().clear();
   }
 
-
-  public void doAtReset(Runnable task)
-  {
-    resetTasks.add(task);
-  }
-  
   /**
-   * In case a context gets lost, we will close it when garbage collected.
-   * This can happen when exceptions occur or because functions that return an Iter
-   * might not be run until completion (which is when they close their context).
+   * 
    */
-  protected void finalize() throws Throwable 
+  public void push()
   {
-    try
-    {
-      reset();
-    }
-    finally
-    {
-      super.finalize();
-    }
+    frames.add(basep);
+    basep += topIndex;
   }
 
-  public void closeAtQueryEnd(final Closeable resource)
+  /**
+   * 
+   */
+  public void pop()
   {
-    doAtReset(new Runnable() {
-      @Override
-      public void run()
-      {
-        try
-        {
-          resource.close();
-        }
-        catch (IOException e)
-        {
-          throw new UndeclaredThrowableException(e);
-        }
-      }
-    });
+    basep = frames.pop();
   }
 
-  public JaqlFunction getCallable(Expr callSite, JaqlFunction fn) throws Exception
+  /**
+   * 
+   */
+  protected HashMap<Expr, Item> tempItems = new HashMap<Expr, Item>();
+  // TODO: use this or temp vars or something else?
+  /**
+   * @param expr
+   * @return
+   */
+  public Item getTemp(Expr expr)
   {
-    exprFnPair.a = callSite;
-    exprFnPair.b = fn;
-    JaqlFunction fn2 = fnMap.get(exprFnPair);
-    if( fn2 == null )
+    // FIXME: this needs to be fixed for recursion
+    Item item = tempItems.get(expr);
+    if (item == null)
     {
-      fn2 = new JaqlFunction();
-      fn2.setCopy(fn);
-      Pair<Expr,JaqlFunction> p = new Pair<Expr, JaqlFunction>(callSite, fn);
-      fnMap.put(p, fn2);
+      item = new Item();
+      tempItems.put(expr, item);
     }
-    return fn2;
+    return item;
   }
 
-  public File createTempFile(String prefix, String suffix) throws IOException
+  /**
+   * @param item
+   * @return
+   * @throws Exception
+   */
+  public Item makeSessionGlobal(Item item) throws Exception
   {
-    final File f = File.createTempFile(prefix, suffix);
-    f.deleteOnExit();
-    doAtReset( new Runnable() {
-      @Override 
-      public void run()
-      {
-        f.delete();
-      }
-    });
-    return f;
+    Item global = new Item();
+    if (item.isAtom())
+    {
+      global.copy(item);
+    }
+    else
+    {
+      PagedFile pf = JaqlUtil.getSessionPageFile();
+      SpillFile sf = new SpillFile(pf);
+      item.write(sf);
+      global.readFields(sf.getInput());
+    }
+    return global;
   }
+
 }

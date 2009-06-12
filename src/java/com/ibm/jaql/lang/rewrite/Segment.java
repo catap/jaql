@@ -24,16 +24,12 @@ public class Segment
 {
   static enum Type
   {
-    SEQUENTIAL, 
-    MAP, 
-    INLINE_MAP,        // included with a parent GROUP or COMBINE
-    GROUP, 
-    COMBINE, 
-    MAPREDUCE,
-    MAP_GROUP,         // per group item: no children
-    COMBINE_GROUP,     // combine of map group items: exactly one map_group child
-    FINAL_GROUP,       // reduce of combines: 1 or more combine_group children
-    SEQUENTIAL_GROUP   // run each group holisticly: no children
+    SEQUENTIAL, MAP, INLINE_MAP, // included with a parent GROUP or COMBINE
+    GROUP, COMBINE, MAPREDUCE, MAP_GROUP, // per group item: no children
+    COMBINE_GROUP, // combine of map group items: exactly one map_group child
+    FINAL_GROUP, // reduce of combines: 1 or more combine_group children
+    SEQUENTIAL_GROUP
+    // run each group holisticly: no children
   };
 
   Type        type = Type.SEQUENTIAL;

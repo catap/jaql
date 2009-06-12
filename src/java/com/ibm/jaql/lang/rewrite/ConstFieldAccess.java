@@ -15,16 +15,17 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
-import com.ibm.jaql.lang.expr.core.CopyField;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FieldExpr;
 import com.ibm.jaql.lang.expr.core.FieldValueExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
+import com.ibm.jaql.lang.expr.core.ProjPattern;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -62,7 +63,7 @@ public class ConstFieldAccess extends Rewrite
     }
 
     ConstExpr c = (ConstExpr) nameExpr;
-    JsonString name = (JsonString) c.value;
+    JString name = (JString) c.value.get();
     Expr replaceBy = null;
     if (name == null)
     {
@@ -71,26 +72,27 @@ public class ConstFieldAccess extends Rewrite
     else if (recExpr instanceof ConstExpr)
     {
       c = (ConstExpr) recExpr;
-      if (!(c.value instanceof JsonRecord))
+      if (!(c.value.get() instanceof JRecord))
       {
         return false;
       }
-      JsonRecord rec = (JsonRecord) c.value;
-      JsonValue value = rec.getValue(name);
-      c.value = value;
+      JRecord rec = (JRecord) c.value.get();
+      Item item = rec.getValue(name);
+      c.value = item;
       replaceBy = c;
     }
-    else  // recExpr instanceof RecordExpr
+    else
+    // recExpr instanceof RecordExpr
     {
       RecordExpr re = (RecordExpr) recExpr;
       for (int i = 0; i < re.numFields(); i++)
       {
-        FieldExpr f = re.field(i);
-        if (f instanceof NameValueBinding)
+        FieldExpr e = re.field(i);
+        if (e instanceof NameValueBinding)
         {
           // TODO: we could do some analysis on ProjPatterns too.
-          NameValueBinding b = (NameValueBinding) f;
-          if ( b.staticNameMatches(name).always() )
+          NameValueBinding b = (NameValueBinding) e;
+          if (b.staticNameMatches(name) == Bool3.TRUE)
           {
             if (replaceBy != null)
             {
@@ -99,27 +101,24 @@ public class ConstFieldAccess extends Rewrite
             replaceBy = b.valueExpr();
           }
         }
-        else if (f instanceof CopyField)
+        else if (e instanceof ProjPattern)
         {
           // If a ProjPattern could match, then we won't do this rewrite (improve this?)
-          CopyField p = (CopyField) f;
-          if (p.staticNameMatches(name).always())
+          ProjPattern p = (ProjPattern) e;
+          if (p.staticNameMatches(name) != Bool3.FALSE)
           {
-            if (replaceBy != null)
-            {
-              throw new RuntimeException("duplicate field in record:" + name);
-            }
-            replaceBy = p.toPathExpr();
+            return false;
           }
         }
         else
+        // unknown FieldExpr type (shouldn't happen)
         {
           return false;
         }
       }
       if (replaceBy == null)
       {
-        replaceBy = new ConstExpr(null);
+        replaceBy = new ConstExpr(Item.nil);
       }
     }
     expr.replaceInParent(replaceBy);

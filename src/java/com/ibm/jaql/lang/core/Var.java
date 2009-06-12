@@ -15,42 +15,41 @@
  */
 package com.ibm.jaql.lang.core;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
+import java.lang.reflect.UndeclaredThrowableException;
+
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
  * 
  */
-public class Var extends Object
+public class Var
 {
-  public enum Usage
-  {
-    EVAL(),    // Variable may be referenced multiple times (value must be stored) 
-    STREAM(),  // Variable is an array that is only referenced once (value may be streamed)
-    UNUSED()   // Variable is never referenced
-  };
-  
   public static final Var[] NO_VARS = new Var[0];
-  public static final Var UNUSED = new Var("$__unused__");
 
   public String             name;
-  public boolean            hidden  = false;     // variable not accessible in current parse context (this could reuse Usage)
-  public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
+  public boolean            hidden  = false;
+  public Var                varStack;            // Used during parsing for vars of the same name
+  public int                index;               // -1 for global variables; stack index for local variables 
   public Expr               expr;                // only for global variables
-  public Usage              usage = Usage.EVAL;
-  
-  public boolean            isDefined = false;   // variable defined?
-  public Object             value;               // Runtime value: JsonValue (null allowed) or JsonIterator(null disallowed)
+  public Item               value;               // only for global variables
 
   /**
    * @param name
+   * @param index
    */
-  public Var(String name)
+  public Var(String name, int index)
   {
     this.name = name;
+    this.index = index;
+  }
+
+  /**
+   * @return
+   */
+  public boolean isGlobal()
+  {
+    return expr != null;
   }
 
   /**
@@ -62,189 +61,32 @@ public class Var extends Object
   }
 
   /**
-   * @return
-   */
-  public boolean isGlobal()
-  {
-    return expr != null;
-  }
-
-  /*** Returns the name of this variable without the leading character, which is
-   * assumed to equal $.
-   */
-  public String nameAsField()
-  {
-    return name.substring(1);
-  }
-
-  /**
    * @param varMap
    * @return
    */
   public Var clone(VarMap varMap)
   {
-    Var v = new Var(name);
-    v.usage = usage;
-    // Cloning a Var does NOT clone its value!
-    // It is NOT safe to share an iter unless one var is never evaluated.
+    Var v = varMap.env().makeVar(name);
+    v.hidden = hidden;
+    v.varStack = varStack;
+    varStack = v;
     if (expr != null)
     {
-      // TODO: do we need to clone a Var with an expr? Do we need to clone the Expr?
-      throw new RuntimeException("cannot clone variable with Expr");
-      // v.expr = expr.clone(varMap); // TODO: could we share the expr? 
+      v.expr = expr.clone(varMap);
+    }
+    if (value != null)
+    {
+      v.value = new Item();
+      try
+      {
+        v.value.copy(value);
+      }
+      catch (Exception e)
+      {
+        throw new UndeclaredThrowableException(e);
+      }
     }
     return v;
   }
-
-  @Override
-  public String toString()
-  {
-    return name + " @" + System.identityHashCode(this);
-  }
-
-  /**
-   * Unset the runtime value
-   */
-  public void undefine()
-  {
-    this.value = null;
-    isDefined = false;
-  }
-  
-  /**
-   * Set the runtime value.
-   * 
-   * @param value
-   */
-  public void setValue(JsonValue value)
-  {
-    this.value = value;
-    isDefined = true;
-  }
-
-  /**
-   * Set the runtime value.
-   * 
-   * @param var
-   * @param value
-   */
-  public void setIter(JsonIterator iter)
-  {
-    assert iter != null;
-    value = iter;
-    isDefined = true;
-  }
-
-  /**
-   * Set the variable's value to the result of the expression.
-   * If the variable is unused, the expression is not evaluated.
-   * If the variable is streamable and the expression is known to produce an array,
-   *   the expr is evaluated lazily using an Iter. 
-   * 
-   * @param expr
-   * @param context
-   * @throws Exception
-   */
-  public void setEval(Expr expr, Context context) throws Exception
-  {
-    if( usage == Usage.STREAM && expr.isArray().always() ) 
-    {
-      setIter(expr.iter(context));
-    }
-    else if( usage != Usage.UNUSED )
-    {
-      setValue(expr.eval(context));
-    }
-  }
-  
-  /**
-   * 
-   * @param var
-   * @param value
-   * @throws Exception
-   */
-  public void setGeneral(Object value, Context context) throws Exception
-  {
-    if( value instanceof JsonValue )
-    {
-      setValue((JsonValue)value);
-    }
-    else if( value instanceof JsonIterator )
-    {
-      setIter((JsonIterator)value);
-    }
-    else if( value instanceof Expr )
-    {
-      setEval((Expr)value, context);
-    }
-    else
-    {
-      throw new InternalError("invalid variable value: "+value);
-    }
-  }
-
-  
-  /**
-   * Get the runtime value of the variable.
-   * 
-   * @return
-   * @throws Exception
-   */
-  public JsonValue getValue(Context context) throws Exception
-  {
-    if (!isDefined)
-    {
-      throw new NullPointerException("undefined variable: "+name());
-    }
-    
-    if( value instanceof JsonValue )
-    {
-      return (JsonValue)value;
-    }
-    else if( value instanceof JsonIterator )
-    {
-      SpilledJsonArray arr = new SpilledJsonArray();
-      arr.setCopy((JsonIterator)value);
-      value = arr;
-      return arr;
-    }
-    else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
-    {
-      JsonValue v = expr.eval(context);
-      expr = null;
-      value = v;
-      return v;
-    }
-    else if( value == null ) // value has been set to null explicitly 
-    {
-      return null;
-    }
-    throw new InternalError("bad variable value: "+name()+"="+value);
-  }
-  
-  /**
-   * Return an iterator over the (array) value.
-   * If the value is not an array, an exception is raised.
-   * If this variable has STREAM usage, it is NOT safe to request the value multiple times.
-   * 
-   * @return
-   * @throws Exception
-   */
-  public JsonIterator iter(Context context) throws Exception
-  {
-    if( usage == Usage.STREAM && value instanceof JsonIterator )
-    {
-      JsonIterator iter = (JsonIterator)value;
-      value = null; // set undefined
-      return iter;
-    }
-    JsonArray arr = (JsonArray) getValue(context); // cast error intentionally possible
-    if( arr == null )
-    {
-      return JsonIterator.NULL;
-    }
-    return arr.iter();
-  }
-
 
 }

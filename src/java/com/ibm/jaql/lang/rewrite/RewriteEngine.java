@@ -21,7 +21,6 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
-import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.OneExprWalker;
@@ -33,7 +32,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[7];
+  protected RewritePhase[] phases      = new RewritePhase[6];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter 
 
@@ -41,7 +40,7 @@ public class RewriteEngine
   public Env               env;
   public ExprWalker        walker      = new PostOrderExprWalker();
   public ExprFlow          flow        = new ExprFlow();
-  public VarMap            varMap      = new VarMap();
+  public VarMap            varMap      = new VarMap(null);
   public ArrayList<Expr>   exprList    = new ArrayList<Expr>();
 
   /**
@@ -72,11 +71,9 @@ public class RewriteEngine
     // new DechainFor(phase);
     new FunctionInline(phase);
     new TrivialForElimination(phase);
-    new TrivialTransformElimination(phase);
-    new TransformMerge(phase);
     new ForToLet(phase);
     new AsArrayElimination(phase);
-    // new GlobalInline(phase);
+    new GlobalInline(phase);
     new DoInlinePragma(phase);
     new ConstArrayAccess(phase);
     new ConstFieldAccess(phase);
@@ -85,12 +82,6 @@ public class RewriteEngine
     new TrivialCombineElmination(phase);
     new CombineInputSimplification(phase);
     new DoConstPragma(phase);
-    new PathArrayToFor(phase);
-    new PathIndexToFn(phase);
-    new ToArrayElimination(phase);
-    new EmptyOnNullElimination(phase);
-    new InjectAggregate(phase);
-    new UnnestFor(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
 
@@ -107,10 +98,6 @@ public class RewriteEngine
     phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
     new ToMapReduce(phase);
 
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
-    new GroupElimination(phase);
-    new PerPartitionElimination(phase);
-    
     phases[++phaseId] = basicPhase; // run basic rewrites once more to clean things up
 
     // This phase is REQUIRED to run to completion if the expr has been
@@ -126,19 +113,18 @@ public class RewriteEngine
    * @param query
    * @throws Exception
    */
-  public Expr run(Env env, Expr query) throws Exception
+  public void run(Env env, Expr query) throws Exception
   {
     // We don't rewrite def expressions until they are actually evaluated.
     if (query instanceof AssignExpr)
     {
-      return query;
+      return;
     }
-    Expr dummy = new QueryExpr(query);
     this.env = env;
+    this.varMap.reset(env);
     for (RewritePhase phase : phases)
     {
-      phase.run(dummy);
+      phase.run(query);
     }
-    return dummy.child(0);
   }
 }

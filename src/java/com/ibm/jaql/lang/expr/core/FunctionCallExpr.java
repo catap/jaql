@@ -19,12 +19,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.util.Bool3;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -32,8 +30,18 @@ import com.ibm.jaql.util.Bool3;
  */
 public class FunctionCallExpr extends Expr
 {
-  // protected Item[] args;
-  protected Expr[] args;
+  Item[] args;
+
+  /**
+   * exprs[0](exprs[1:*])
+   * 
+   * @param exprs
+   */
+  public FunctionCallExpr(Expr[] exprs)
+  {
+    super(exprs);
+    args = new Item[exprs.length - 1];
+  }
 
   /**
    * @param fn
@@ -52,45 +60,12 @@ public class FunctionCallExpr extends Expr
   }
 
   /**
-   * exprs[0](exprs[1:*])
-   * 
-   * @param exprs
-   */
-  public FunctionCallExpr(Expr[] exprs)
-  {
-    super(exprs);
-    // args = new Item[exprs.length - 1];
-    args = new Expr[exprs.length - 1];
-  }
-  
-  /**
    * @param fn
    * @param args
    */
   public FunctionCallExpr(Expr fn, ArrayList<Expr> args)
   {
     this(makeExprs(fn, args));
-  }
-
-  /**
-   * 
-   * @param fn
-   * @param arg0
-   */
-  public FunctionCallExpr(Expr fn, Expr arg1)
-  {
-    super(fn,arg1);
-  }
-
-  /**
-   * 
-   * @param fn
-   * @param arg1
-   * @param arg2
-   */
-  public FunctionCallExpr(Expr fn, Expr arg1, Expr arg2)
-  {
-    super(fn,arg1,arg2);
   }
 
   /**
@@ -118,34 +93,6 @@ public class FunctionCallExpr extends Expr
     return exprs[i + 1];
   }
 
-  @Override
-  public Bool3 isArray()
-  {
-    Expr fn = fnExpr();
-    DefineFunctionExpr def = null;
-    if( fn instanceof DoExpr )
-    {
-      fn = ((DoExpr)fn).returnExpr();
-    }
-    if( fn instanceof DefineFunctionExpr )
-    {
-      def = (DefineFunctionExpr)fn;
-    }
-    else if( fn instanceof ConstExpr )
-    {
-      JaqlFunction jf = (JaqlFunction)((ConstExpr)fn).value;
-      if( fn != null )
-      {
-        def = jf.getFunction();
-      }
-    }
-    if( def != null )
-    {
-      return def.body().isArray();
-    }
-    return Bool3.UNKNOWN;
-  }
-  
   /*
    * (non-Javadoc)
    * 
@@ -178,106 +125,18 @@ public class FunctionCallExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue fnVal = exprs[0].eval(context);
-    if( fnVal == null )
+    JFunction fn = (JFunction) exprs[0].eval(context).get();
+    if (fn == null)
     {
-      return null;
+      return Item.nil;
     }
-    // if( fnVal instanceof JaqlFunction  )
+    for (int i = 1; i < exprs.length; i++)
     {
-      JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
-      return fn.eval(context, exprs, 1, exprs.length - 1);
+      args[i - 1] = exprs[i].eval(context);
     }
-//    else if( fnVal instanceof JString )
-//    {
-//      //PythonInterpreter interp = new PythonInterpreter();
-//      CompilerFlags cflags = new CompilerFlags();
-//      String kind = "eval"; // eval, exec, single
-//      String filename = "<jaql>";
-//
-//      String fnName = fnVal.toString().intern();
-//      PyModule module = context.getPyModule();
-//      PyObject locals = module.__dict__;
-//      PyObject fnObj = locals.__finditem__(fnName);
-//      if( fnObj == null )
-//      {
-//        // __builtin__.getattr(__builtin__.globals(), new PyString(fnName));
-//        // TODO: there has to be a better way to find functions...
-//        PyObject code = Py.compile_flags(fnName, filename, kind, cflags);
-//        fnObj = Py.runCode((PyCode)code, locals, locals);
-//        if( fnObj == null )
-//        { 
-//          throw new RuntimeException("function not found: "+fnName);
-//        }
-//      }
-//      if( !( fnObj instanceof PyFunction ) &&
-//          !( fnObj instanceof PyBuiltinFunction ) &&
-//          !( fnObj instanceof PyType ) ) // generator
-//      {
-//        throw new RuntimeException("not a function: "+fnName);
-//      }
-//      int n = exprs.length-1;
-//      PyObject[] pyArgs = new PyObject[n];
-//
-//      for (int i = 0 ; i < n ; i++)
-//      {
-//        Item item = exprs[i+1].eval(context);
-//        String json = item.toJSON();
-//        PyObject code = Py.compile_flags(json, filename, kind, cflags);
-//        pyArgs[i] = Py.runCode((PyCode)code, locals, locals);
-//        // pyArgs[i] = interp.eval(json); // TODO: make a faster conversion between python and jaql; and do Decimals; null<->None; sequence<->array; long suffix
-//      }
-//      // interp.cleanup();
-//
-//      PyObject result;
-//      if( fnObj instanceof PyFunction )
-//      {
-//        PyFunction fn = (PyFunction)fnObj;
-//        result = fn.__call__(pyArgs);
-//      }
-//      else if( fnObj instanceof PyBuiltinFunction )
-//      {
-//        PyBuiltinFunction fn = (PyBuiltinFunction)fnObj;
-//        result = fn.__call__(pyArgs);
-//      }
-//      else // PyType = generator
-//      {
-//        PyType pyType = (PyType)fnObj;
-//        PyObject obj = pyType.__call__(pyArgs);
-//        // TODO: what if the result is not iterable?
-//        PyObject iter = obj.__iter__();
-//        JsonParser parser = new JsonParser();
-//        SpillJArray arr = new SpillJArray();
-//        while( (result = iter.__iternext__()) != null )
-//        {
-//          Item item = parser.parse(result.toString()); // TODO: make a faster conversion between python and jaql
-//          iter.__iternext__();
-//          arr.add(item);
-//        }
-//        return new Item(arr);
-//      }
-//      
-//      JsonParser parser = new JsonParser();
-//      Item item = parser.parse(result.toString()); // TODO: make a faster conversion between python and jaql
-//      return item;
-//    }
-//    else
-//    {
-//      throw new RuntimeException("unknown function: "+fnVal);
-//    }
+    return fn.eval(context, args);
   }
 
-  @Override
-  public JsonIterator iter(Context context) throws Exception
-  {
-    JsonValue fnVal = exprs[0].eval(context);
-    if (fnVal == null)
-    {
-      return JsonIterator.NULL;
-    }
-    JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
-    return fn.iter(context, exprs, 1, exprs.length - 1);
-  }
 }

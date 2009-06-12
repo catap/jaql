@@ -16,17 +16,17 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.io.hbase.HBaseStore;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * hbaseFetch( tableExpr, keyExpr, |columnExpr, {timestamp:timestampExpr,
@@ -69,25 +69,26 @@ public class HBaseFetchExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     //  get the table name
-    JsonString tableName = JaqlUtil.enforceNonNull((JsonString) exprs[0].eval(context));
+    JString tableName = (JString) exprs[0].eval(context).getNonNull();
 
-    JsonArray jcolumns = null;
-    JsonRecord args = JsonRecord.EMPTY;
+    JArray jcolumns = null;
+    JRecord args = JRecord.empty;
     if (exprs.length == 3)
     {
-      JsonValue w = exprs[2].eval(context);
+      Item tmp = exprs[2].eval(context);
+      JValue w = tmp.get();
       if (w != null)
       {
-        if (w instanceof JsonRecord)
+        if (w instanceof JRecord)
         {
-          args = (JsonRecord) w;
+          args = (JRecord) w;
         }
-        else if (w instanceof JsonArray)
+        else if (w instanceof JArray)
         {
-          jcolumns = (JsonArray) w;
+          jcolumns = (JArray) w;
         }
         else
         {
@@ -99,15 +100,15 @@ public class HBaseFetchExpr extends IterExpr
     }
     else if (exprs.length == 4)
     {
-      jcolumns = (JsonArray) exprs[2].eval(context);
-      args = (JsonRecord) exprs[3].eval(context);
+      jcolumns = (JArray) exprs[2].eval(context).get();
+      args = (JRecord) exprs[3].eval(context).get();
     }
     // get the arguments
-    JsonLong timestampValue = (JsonLong) args.getValue("timestamp");
-    JsonLong numVersionsValue = (JsonLong) args.getValue("numversions");
+    JLong timestampValue = (JLong) args.getValue("timestamp").get();
+    JLong numVersionsValue = (JLong) args.getValue("numversions").get();
 
     // the iterator for record keys
-    JsonIterator rows = exprs[1].iter(context);
+    Iter rows = exprs[1].iter(context);
 
     // fetch the record(s)
     return HBaseStore.Util.fetchRecords(tableName, jcolumns, timestampValue,

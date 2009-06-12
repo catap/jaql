@@ -19,26 +19,56 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
-import com.ibm.jaql.io.converter.FromJson;
-import com.ibm.jaql.io.hadoop.converter.JsonToHadoopRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord;
+import com.ibm.jaql.io.hadoop.converter.ItemToWritable;
+import com.ibm.jaql.io.hadoop.converter.ItemToWritableComparable;
+import com.ibm.jaql.json.type.Item;
 
 /**
  * 
  */
-public class ToJSONSeqConverter extends JsonToHadoopRecord
+public class ToJSONSeqConverter extends ItemToHadoopRecord
 {
+
+  /**
+   * 
+   */
+  class FromItem implements ItemToWritable
+  {
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
+     *      java.lang.Object)
+     */
+    public void convert(Item src, Writable tgt)
+    {
+      convertItemToText(src, (Text) tgt);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see com.ibm.jaql.io.converter.ToItem#createTarget()
+     */
+    public Writable createTarget()
+    {
+      return new Text();
+    }
+  }
+
   /**
    * @param i
    * @param t
    */
-  private void convertItemToText(JsonValue val, Text t)
+  private void convertItemToText(Item i, Text t)
   {
-    if (val == null || t == null) return;
+    if (i == null || t == null) return;
 
     try
     {
-      String s = convertItemToString(val);
+      String s = convertItemToString(i);
       t.set(s.getBytes());
     }
     catch (Exception e)
@@ -52,27 +82,18 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
    * @return
    * @throws Exception
    */
-  protected String convertItemToString(JsonValue val) throws Exception
+  protected String convertItemToString(Item i) throws Exception
   {
-    return JsonValue.printToString(val);
+    return i.toJSON();
   }
 
   /*
    * (non-Javadoc)
    * 
-   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
-   */
-  @Override
-  protected FromJson<WritableComparable> createKeyConverter()
-  {
-    return null;//new FromItemComp();
-  }
-  
-  /* (non-Javadoc)
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyTarget()
    */
   @Override
-  public WritableComparable createKeyTarget() 
+  public WritableComparable createKeyTarget()
   {
     return new Text();
   };
@@ -80,35 +101,22 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
   /*
    * (non-Javadoc)
    * 
+   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
+   */
+  @Override
+  protected ItemToWritableComparable createKeyConverter()
+  {
+    return null;//new FromItemComp();
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
    * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createValConverter()
    */
   @Override
-  protected FromJson<Writable> createValueConverter()
+  protected ItemToWritable createValConverter()
   {
-    return new FromJson<Writable>()
-    {
-
-      /*
-       * (non-Javadoc)
-       * 
-       * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
-       *      java.lang.Object)
-       */
-      public Writable convert(JsonValue src, Writable tgt)
-      {
-        convertItemToText(src, (Text) tgt);
-        return tgt;
-      }
-
-      /*
-       * (non-Javadoc)
-       * 
-       * @see com.ibm.jaql.io.converter.ToItem#createTarget()
-       */
-      public Writable createInitialTarget()
-      {
-        return new Text();
-      }
-    };
+    return new FromItem();
   }
 }
