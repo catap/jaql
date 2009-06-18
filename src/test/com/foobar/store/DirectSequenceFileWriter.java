@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 
 public class DirectSequenceFileWriter {
   
-  public static void writeItemsUsingAdapter(Iterable<JsonValue> values, String fileName) throws Exception {
+  public static void writeJSONUsingAdapter(Iterable<JsonValue> values, String fileName) throws Exception {
     
     // TODO: API needs to be cleaned up to make this easier to use! In addition, this will produce
     // a "_temporary" directory and will nest "fileName" under a directory named "fileName" making the
@@ -61,7 +61,7 @@ public class DirectSequenceFileWriter {
     adapter.close();
   }
   
-  public static void writeItemsUsingSequenceFile(Iterable<JsonValue> values, String fileName) throws Exception {
+  public static void writeJSONUsingSequenceFile(Iterable<JsonValue> values, String fileName) throws Exception {
     
     // interrogate the environment
     JobConf conf = new JobConf();
@@ -96,7 +96,7 @@ public class DirectSequenceFileWriter {
     r.add("c", new JsonString("back to string"));
     v.add(r);
     
-    DirectSequenceFileWriter.writeItemsUsingAdapter(v, "fileUsingAdapter");
-    DirectSequenceFileWriter.writeItemsUsingSequenceFile(v, "fileUsingSequenceFile");
+    DirectSequenceFileWriter.writeJSONUsingAdapter(v, "fileUsingAdapter");
+    DirectSequenceFileWriter.writeJSONUsingSequenceFile(v, "fileUsingSequenceFile");
   }
 }
