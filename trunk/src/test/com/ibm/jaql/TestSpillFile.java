@@ -42,7 +42,7 @@ import org.junit.Test;
  */
 public class TestSpillFile
 {
-  String           filename = "c:/temp/spillfile.dat";
+  String           filename = System.getProperty("test.cache.data") + File.separator + "spillfile.dat";
   RandomAccessFile file;
   PagedFile        pfile;
   SpillFile        spill;
