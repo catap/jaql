@@ -1,0 +1,179 @@
+/*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+package com.ibm.jaql.lang.expr.core;
+
+import java.io.PrintStream;
+import java.util.HashSet;
+
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.core.VarMap;
+
+/**
+ * 
+ */
+public class CompareExpr extends Expr
+{
+  public static final int      EQ = 0;
+  public static final int      NE = 1;
+  public static final int      LT = 2;
+  public static final int      LE = 3;
+  public static final int      GT = 4;
+  public static final int      GE = 5;
+
+  public static final String[] OP = {"==", "!=", "<", "<=", ">", ">="};
+
+  int                          op;
+
+  /**
+   * @param op
+   * @param exprs
+   */
+  public CompareExpr(int op, Expr[] exprs)
+  {
+    super(exprs);
+    this.op = op;
+  }
+
+  /**
+   * @param op
+   * @param expr1
+   * @param expr2
+   */
+  public CompareExpr(int op, Expr expr1, Expr expr2)
+  {
+    this(op, new Expr[]{expr1, expr2});
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
+   */
+  public CompareExpr clone(VarMap varMap)
+  {
+    return new CompareExpr(op, cloneChildren(varMap));
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
+   *      java.util.HashSet)
+   */
+  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+      throws Exception
+  {
+    exprText.print("(");
+    exprs[0].decompile(exprText, capturedVars);
+    exprText.print(") ");
+    exprText.print(OP[op]);
+    exprText.print(" (");
+    exprs[1].decompile(exprText, capturedVars);
+    exprText.print(")");
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
+   */
+  public Item eval(final Context context) throws Exception
+  {
+    Item item1 = exprs[0].eval(context);
+    if (item1.isNull())
+    {
+      return Item.nil;
+    }
+    Item item2 = exprs[1].eval(context);
+    if (item2.isNull())
+    {
+      return Item.nil;
+    }
+    int c = Item.typeCompare(item1, item2);
+    if (c != 0)
+    {
+      return Item.nil;
+    }
+
+    // FIXME: arrays are reporting true/false when the should return null, eg: ['5'] < [5];
+    boolean b;
+    c = item1.compareTo(item2);
+
+    if (item1.getType() == Item.Type.RECORD)
+    {
+      // FIXME: record inside arrays are still compared, also need to fix sort
+      b = (c == 0);
+
+      switch (op)
+      {
+        case EQ :
+          break;
+        case NE :
+          b = !b;
+          break;
+        case LT :
+        case GT :
+          // not( null or a = b ) => a=b ? false : null;
+          if (!b)
+          {
+            return Item.nil;
+          }
+          b = false;
+          break;
+        case LE :
+        case GE :
+          // (null or a = b) => a=b ? true : null;
+          if (!b)
+          {
+            return Item.nil;
+          }
+          break;
+        default :
+          throw new RuntimeException("should not get here!");
+      }
+    }
+    else
+    {
+      switch (op)
+      {
+        case EQ :
+          b = (c == 0);
+          break;
+        case NE :
+          b = (c != 0);
+          break;
+        case LT :
+          b = (c < 0);
+          break;
+        case LE :
+          b = (c <= 0);
+          break;
+        case GT :
+          b = (c > 0);
+          break;
+        case GE :
+          b = (c >= 0);
+          break;
+        default :
+          throw new RuntimeException("should not get here!");
+      }
+    }
+    return JBool.make(b);
+  }
+}
