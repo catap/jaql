@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -26,7 +26,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "min", minArgs = 1, maxArgs = 1)
 public final class MinAgg extends AlgebraicAggregate
 {
-  private JsonValue min;
+  private Item min;
   
   /**
    * @param exprs
@@ -47,40 +47,41 @@ public final class MinAgg extends AlgebraicAggregate
   @Override
   public void initInitial(Context context) throws Exception
   {
-    min = null;
+    min = Item.nil;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void addInitial(Item item) throws Exception
   {
-    if( value == null  )
+    if( item.isNull() )
     {
       return;
     }
-    if( min == null )
+    if( min == Item.nil )
     {
-      min = value.getCopy(null);
+      min = new Item();
+      min.copy(item);
     }
-    else if( value.compareTo(min) < 0 )
+    else if( item.compareTo(min) < 0 )
     {
-      min.setCopy(value);
+      min.copy(item);
     }
   }
 
   @Override
-  public JsonValue getPartial() throws Exception
+  public Item getPartial() throws Exception
   {
     return min;
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void addPartial(Item item) throws Exception
   {
-    addInitial(value);
+    addInitial(item);
   }
 
   @Override
-  public JsonValue getFinal() throws Exception
+  public Item getFinal() throws Exception
   {
     return min;
   }

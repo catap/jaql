@@ -18,10 +18,11 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.json.util.SingleJsonValueIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.ScalarIter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -74,52 +75,56 @@ public class PathExpand extends PathArray
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonIterator outer;
-    JsonValue val = input;
+    final Iter outer;
+    JValue val = input.get();
     if( val == null )
     {
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
-    else if( val instanceof JsonArray )
+    else if( val instanceof JArray )
     {
-      JsonArray arr = (JsonArray)input;
+      JArray arr = (JArray)input.get();
       outer = arr.iter();
     }
     else
     {
-      outer = new SingleJsonValueIterator(input);
+      outer = new ScalarIter(input);
     }
-    return new JsonIterator()
+    return new Iter()
     {
-      JsonIterator inner = JsonIterator.EMPTY;
+      Iter inner = Iter.empty;
       
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         while( true )
         {
-          if (inner.moveNext())
+          Item item;
+          item = inner.next();
+          if( item != null )
           {
-            currentValue = inner.current();
-            return true;
+            return item;
           }
-          if (!outer.moveNext()) {
-            return false;
+          item = outer.next();
+          if( item == null )
+          {
+            return null;
           }
-          JsonValue val = nextStep(context, outer.current());;
+          item = nextStep(context, item);
+          JValue val = item.get();
           if( val == null )
           {
-            inner = JsonIterator.EMPTY;
+            inner = Iter.empty;
           }
-          else if( val instanceof JsonArray )
+          else if( val instanceof JArray )
           {
-            inner = ((JsonArray)val).iter();
+            inner = ((JArray)val).iter();
           }
           else
           {
-            inner = new SingleJsonValueIterator(val);
+            inner = new ScalarIter(item);
           }
         }
       }

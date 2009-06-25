@@ -22,12 +22,12 @@ import java.io.PrintStream;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JRecord;
 
-/** Provides static methods that serializes and deserializes {@link JsonRecord}s and 
- * {@link JsonArray}s to and from the Hadoop configuration file */
+/** Provides static methods that serializes and deserializes {@link JRecord}s and 
+ * {@link JArray}s to and from the Hadoop configuration file */
 public class ConfUtil
 {
   /**
@@ -38,14 +38,14 @@ public class ConfUtil
    * @param args
    * @throws Exception
    */
-  public static void writeConf(JobConf conf, String name, JsonRecord args)
+  public static void writeConf(JobConf conf, String name, JRecord args)
       throws Exception
   {
     if (args == null) return;
 
     ByteArrayOutputStream bstr = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(bstr);
-    JsonValue.print(out, args);
+    args.print(out, 0);
     out.flush();
     out.close();
     conf.set(name, bstr.toString()); // FIXME: memory and strings...
@@ -59,15 +59,15 @@ public class ConfUtil
    * @return
    * @throws Exception
    */
-  public static JsonRecord readConf(JobConf conf, String name) throws Exception
+  public static JRecord readConf(JobConf conf, String name) throws Exception
   {
     String jsonTxt = conf.get(name);
     if (jsonTxt == null) return null;
     ByteArrayInputStream input = new ByteArrayInputStream(jsonTxt.getBytes());
     JsonParser parser = new JsonParser(input);
-    JsonValue data = parser.TopVal();
+    Item data = parser.TopVal();
 
-    return (JsonRecord) data;
+    return (JRecord) data.get();
   }
 
   /**
@@ -76,7 +76,7 @@ public class ConfUtil
    * @return
    * @throws Exception
    */
-  public static JsonArray readConfArray(JobConf conf, String name)
+  public static JArray readConfArray(JobConf conf, String name)
       throws Exception
   {
     String jsonTxt = conf.get(name);
@@ -84,8 +84,8 @@ public class ConfUtil
     ByteArrayInputStream input = new ByteArrayInputStream(jsonTxt.getBytes());
     JsonParser parser = new JsonParser(input);
 
-    JsonValue data = parser.TopVal();
-    return (JsonArray) data;
+    Item data = parser.TopVal();
+    return (JArray) data.get();
   }
 
   /**
@@ -94,15 +94,15 @@ public class ConfUtil
    * @param data
    * @throws Exception
    */
-  public static void writeConfArray(JobConf conf, String name, JsonArray data)
+  public static void writeConfArray(JobConf conf, String name, JArray data)
       throws Exception
   {
     if (data == null) return;
 
     ByteArrayOutputStream bstr = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(bstr);
-    JsonArray mdata = (JsonArray) data; // FIXME: don't depend on this...
-    JsonValue.print(out, mdata);
+    JArray mdata = (JArray) data; // FIXME: don't depend on this...
+    mdata.print(out);
     out.flush();
     out.close();
     conf.set(name, bstr.toString());

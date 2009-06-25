@@ -18,13 +18,13 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
-import com.ibm.jaql.lang.core.JsonComparator;
+import com.ibm.jaql.lang.core.JComparator;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.util.JsonSorter;
+import com.ibm.jaql.lang.util.ItemSorter;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -103,29 +103,71 @@ public class SortExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JaqlFunction cmpFn = (JaqlFunction)cmpExpr().eval(context);
+    JFunction cmpFn = (JFunction)cmpExpr().eval(context).get();
     if( cmpFn.getNumParameters() != 1 || !(cmpFn.getBody() instanceof CmpExpr) )
     {
       throw new RuntimeException("invalid comparator function");
     }
     Var cmpVar = cmpFn.param(0);
     CmpExpr cmp = (CmpExpr)cmpFn.getBody();
-    JsonComparator comparator = cmp.getComparator(context);
+    JComparator comparator = cmp.getComparator(context);
+//    FixedJArray byArray = null;
+//    Item byItem = null;
+//    final int nby = exprs.length - 1;
+//    if (nby == 1)
+//    {
+//      CmpSpec o = (CmpSpec) exprs[1];
+//      if (o.order == CmpSpec.Order.ASC)
+//      {
+//        comparator = new ItemComparator();
+//      }
+//      else
+//      {
+//        comparator = new ReverseItemComparator();
+//      }
+//    }
+//    else  // if( nby > 1 )
+//    {
+//      boolean[] order = new boolean[nby];
+//      for (int i = 1; i < exprs.length; i++)
+//      {
+//        CmpSpec o = (CmpSpec) exprs[i];
+//        order[i - 1] = (o.order == CmpSpec.Order.ASC);
+//      }
+//      byArray = new FixedJArray(exprs.length - 1); // TODO: memory
+//      byItem = new Item(byArray); // TODO: memory 
+//      comparator = new AscDescItemComparator(order);
+//    }
 
-    final JsonSorter temp = new JsonSorter(comparator);
+    final ItemSorter temp = new ItemSorter(comparator);
 
-    JsonIterator iter = exprs[0].iter(context);
+    Item item;
+    Iter iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    for (JsonValue value : iter)
+    while ((item = iter.next()) != null)
     {
-      cmpVar.setValue(value);
-      JsonValue byValue = cmp.eval(context);
-      temp.add(byValue, value);
+      cmpVar.set(item);
+      Item byItem = cmp.eval(context);
+//      if (nby == 1)
+//      {
+//        CmpSpec o = (CmpSpec) exprs[1];
+//        byItem = o.orderExpr().eval(context);
+//      }
+//      else
+//      {
+//        for (int i = 1; i < exprs.length; i++)
+//        {
+//          CmpSpec o = (CmpSpec) exprs[i];
+//          Item col = o.orderExpr().eval(context);
+//          byArray.set(i - 1, col);
+//        }
+//      }
+      temp.add(byItem, item);
     }
 
     temp.sort();
@@ -136,6 +178,12 @@ public class SortExpr extends IterExpr
 //      byItems[i] = new Item();
 //    }
 
-    return temp.iter();
+    return new Iter() {
+      public Item next() throws Exception
+      {
+        return temp.nextValue();
+      }
+    };
   }
+
 }

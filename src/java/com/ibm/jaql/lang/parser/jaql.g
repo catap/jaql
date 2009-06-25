@@ -23,7 +23,6 @@ import com.ibm.jaql.lang.core.*;
 import com.ibm.jaql.lang.expr.core.*;
 import com.ibm.jaql.lang.expr.top.*;
 import com.ibm.jaql.lang.expr.path.*;
-import com.ibm.jaql.lang.expr.schema.*;
 
 import com.ibm.jaql.lang.expr.io.*;
 import com.ibm.jaql.lang.expr.udf.*;
@@ -31,7 +30,6 @@ import com.ibm.jaql.lang.expr.record.IsdefinedExpr;
 import com.ibm.jaql.lang.expr.array.ExistsFn;
 import com.ibm.jaql.lang.expr.nil.IsnullExpr;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
-import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 import com.ibm.jaql.json.type.*;
 import com.ibm.jaql.json.schema.*;
@@ -45,6 +43,7 @@ import com.ibm.jaql.util.*;
 options {
   language="Java";
 }
+
 
 
 class JaqlParser extends Parser;
@@ -62,38 +61,6 @@ options {
     public void oops(String msg) throws RecognitionException, TokenStreamException
     { 
       throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
-    }
-    
-    public static final JsonLong parseLong(String v, boolean isNegative) 
-    {
-       if (isNegative) {
-         return new JsonLong("-" + v); // handles that case i==Long.MIN
-       } 
-       else
-       {
-         return new JsonLong(v);
-       } 
-    }
-    
-    public static final JsonDouble parseDouble(String v, boolean isNegative) 
-    {
-       JsonDouble d = new JsonDouble(v);
-       if (isNegative)
-       {
-       	 d.value = -d.value;
-       }
-       return d;
-    }
-
-    public static final JsonDecimal parseDecimal(String v, boolean isNegative) 
-    {
-       if (isNegative) {
-         return new JsonDecimal("-" + v);
-       } 
-       else
-       {
-         return new JsonDecimal(v);
-       } 
     }
 }
 
@@ -159,12 +126,6 @@ block returns [Expr r=null]
         	// r = new ParallelDoExpr(es); // TODO: parallel
         }
       )?
-      {
-      	if( r instanceof BindingExpr )
-      	{
-      	  r = new DoExpr(r);
-      	}
-      }
     ;
 
 
@@ -172,7 +133,6 @@ pipe returns [Expr r=null]
     { String n = "$"; } // TODO: should var source define name? eg, $x -> filter $x.y > 3
     : r=expr ( "->" r=op[r] )*
     | r=pipeFn
-    | r=function
     ;
     
   
@@ -247,54 +207,9 @@ vpipe returns [BindingExpr r=null]
 //    ;
 
 aggregate[Expr in] returns [Expr r=null]
-    { String v="$"; BindingExpr b; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
-//    : ("aggregate" | "agg") b=each[in] r=expr
-//       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
-    : ("aggregate" | "agg") ("as" v=var)?
-         {
-           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in); 
-         }
-      ( "into" r=expr { r = AggregateFullExpr.make(env, b, r, false); }
-      | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
-      | "initial" aa=algAggList { r = new AggregateInitialExpr(b, aa); }
-      | "partial" aa=algAggList { r = new AggregatePartialExpr(b, aa); }
-      | "final"   aa=algAggList { r = new AggregateFinalExpr(b, aa); }
-      )
-      { env.unscope(b.var); }
-    ;
-
-aggList returns [ArrayList<Aggregate> r = new ArrayList<Aggregate>()]
-    { Aggregate a; }
-    : "[" ( a=aggFn { r.add(a); } ("," a=aggFn { r.add(a); } )* )? "]"
-    ;
-
-aggFn returns [Aggregate agg]
-    { Expr e; }
-    : e = expr
-      {
-      	if( !( e instanceof Aggregate ) )
-      	{
-          oops("Aggregate required");
-      	}
-        agg = (Aggregate)e;
-      }
-    ;
-
-algAggList returns [ArrayList<AlgebraicAggregate> r = new ArrayList<AlgebraicAggregate>()]
-    { AlgebraicAggregate a; }
-    : "[" ( a=algAggFn { r.add(a); } ("," a=algAggFn { r.add(a); } )* )? "]"
-    ;
-
-algAggFn returns [AlgebraicAggregate agg]
-    { Expr e; }
-    : e = expr
-      {
-        if( !( e instanceof AlgebraicAggregate ) )
-        {
-          oops("Aggregate required");
-        }
-        agg = (AlgebraicAggregate)e;
-      }
+    { BindingExpr b; }
+    : ("aggregate" | "agg") b=each[in] r=expr
+       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
     ;
 
 group returns [Expr r=null]
@@ -310,7 +225,7 @@ group returns [Expr r=null]
 	      in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
 	    }
 	  by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
-		{ if( by.var != Var.UNUSED ) env.scope(by.var); } 
+		{ if( by.var != Var.unused ) env.scope(by.var); } 
 	  ( "using" c=comparator { oops("comparators on group by NYI"); } )?
         {
           for( Var av: as )
@@ -320,7 +235,7 @@ group returns [Expr r=null]
 	    }
 	  r=groupReturn
 	    {
-	      if( by.var != Var.UNUSED ) env.unscope(by.var);
+	      if( by.var != Var.unused ) env.unscope(by.var);
 	      for( Var av: as )
           {
             env.scope(av);
@@ -363,14 +278,14 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
     {
       if( e == null )
       {
-        e = new ConstExpr(null);
+        e = new ConstExpr(Item.nil);
       }
       if( by == null )
       {
         Var var;
         if( v == null )
         {
-            var = Var.UNUSED;
+            var = Var.unused;
         }
         else
         {
@@ -378,7 +293,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
         }
         b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
       }
-      else if( v == null || (by.var != Var.UNUSED && by.var.name.equals(v)) )
+      else if( v == null || (by.var != Var.unused && by.var.name.equals(v)) )
       {
         by.addChild(e);
         b = by;
@@ -443,7 +358,7 @@ groupReturn returns [Expr r=null]
 //       env.unscope(v);
 //       if( key == null )
 //       {
-//         key = new ConstExpr(Item.NIL);
+//         key = new ConstExpr(Item.nil);
 //       }
 //       if( r == null )
 //       {
@@ -478,12 +393,12 @@ groupPipe[Expr in] returns [Expr r=null]
       String v="$"; Var asVar; 
     }
     : "group" b=each[in] 
-      by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
+      by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.unused ) env.scope(by.var); }
       ( "as" v=var )?        { asVar=env.scope(v); }
       ( "using" c=comparator { oops("comparators on group by NYI"); } )?
       r=groupReturn
         {
-          if( by.var != Var.UNUSED ) env.unscope(by.var);
+          if( by.var != Var.unused ) env.unscope(by.var);
           env.unscope(asVar);
           r = new GroupByExpr(b,by,asVar,null,r);
         }
@@ -559,7 +474,7 @@ cmpSpec[ArrayList<CmpSpec> keys]
 //    {
 //      if( b == null )
 //      {
-//        b = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, new ConstExpr(Item.NIL));
+//        b = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, new ConstExpr(Item.nil));
 //      }
 //      if( by == null )
 //      {
@@ -575,7 +490,7 @@ cmpSpec[ArrayList<CmpSpec> keys]
 //      }
 ////      if( e == null )
 ////      {
-////          e = new ConstExpr(Item.NIL);
+////          e = new ConstExpr(Item.nil);
 ////      }
 //      b.type = BindingExpr.Type.EQ;
 //      by.addChild(b);
@@ -838,14 +753,14 @@ split[Expr in] returns [Expr r=null]
     }
 //    : "split" b=each[in] "("  { es.add( b ); } 
 //         ( "if"  p=expr e=subpipe[b.var]  { es.add(new IfExpr(p,e)); } )*
-//         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JsonBool.trueItem), e) ); } )?
+//         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JBool.trueItem), e) ); } )?
 //       ")"
     : "split" b=each[in]     { es.add( b ); } 
          ( "if"              { b.var.hidden=false; } 
               "(" p=expr ")" { b.var.hidden=true; }
                 e=expr       { es.add(new IfExpr(p,e)); } )*
          ( "else"            { b.var.hidden=true; } 
-                e=expr       { es.add(new IfExpr(new ConstExpr(JsonBool.TRUE), e) ); } )?
+                e=expr       { es.add(new IfExpr(new ConstExpr(JBool.trueItem), e) ); } )?
       {
         r = new SplitExpr(es);
         env.unscope(b.var);
@@ -922,7 +837,7 @@ top[Expr in] returns [Expr r=null]
       	{
           in = new SortExpr(in, by);
       	}
-      	r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JsonLong.ONE))));
+      	r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JLong.ONE_ITEM))));
       }
     ;
 
@@ -1070,7 +985,7 @@ extern returns [Expr r = null]
       
 function returns [Expr r = null]
     { ArrayList<Var> p; }
-    : "fn" p=params r=pipe
+    : "fn" p=params r=expr
     { 
       r = new DefineFunctionExpr(p, r);
       for( Var v: p )
@@ -1107,7 +1022,7 @@ functionDef returns [Expr r=null]
 	| "import" lang=name s=name e=expr (SEMI|EOF)
 	  {
 	  	if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
-	  	r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
+	  	r = new RegisterFunctionExpr(new ConstExpr(new JString(s)), e);
 	  }
 	;
 	
@@ -1202,17 +1117,16 @@ sortCmp returns [Expr r=null]
 //    : e=expr c=cmpSpec    { by.add( new OrderExpr(e,c) ); }
 //    ;
     
-record returns [Expr r = null]
+record returns [RecordExpr r = null]
 	{ ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
 	  FieldExpr f; }
 	: "{" ( f=field  { args.add(f); } )? ( "," ( f=field  { args.add(f); } )? )*  "}"
-    //    { r = new RecordExpr(args.toArray(new Expr[args.size()])); }
-    { r = RecordExpr.make(env, args.toArray(new Expr[args.size()])); }
+	{ r = new RecordExpr(args.toArray(new Expr[args.size()])); }
     ;
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	{ Expr e = null; Expr v=null; boolean required = true; }
-    : e=fname ( "?" { required = false; } )?  v=fieldValue  
+    : e=fname ( "?" { required = false; } )?  ":" v=expr  
       { 
       	f = new NameValueBinding(e, v, required); 
       }
@@ -1221,7 +1135,7 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	           	 f = new CopyRecord(e);
 	           }
 	         | ( "?" { required = false; } )?
-	           ( ":" v=pipe )?
+	           ( ":" v=expr )?
 	           {
 	           	 if( v != null )
 	           	 {
@@ -1256,18 +1170,6 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 	;    
 
 
-fieldValue returns [Expr r=null]
-    { boolean flat = false; }
-    : ":" ("flatten" {flat=true;})? r=pipe
-      {
-      	if( flat )
-      	{
-      	  r = new FlattenExpr(r);
-      	}
-      }
-    ;
-
-
 expr returns [Expr r]
     : r=group
     | r=join
@@ -1277,7 +1179,7 @@ expr returns [Expr r]
     | r=ifExpr
     | r=unroll
     // | r=combineExpr
-   // | r=function
+    | r=function
     | r=orExpr
     ;
 
@@ -1331,7 +1233,7 @@ compare returns [Expr r = null]
     { int c; Expr s; Expr t; }
     : r=instanceOfExpr 
           ( c=compareOp  s=instanceOfExpr  { r = new CompareExpr(c,r,s); }
-               ( c=compareOp       { s = s.clone(new VarMap()); }  // TODO: introduce a variable?
+               ( c=compareOp       { s = s.clone(new VarMap(env)); }  // TODO: introduce a variable?
                  t=instanceOfExpr  { r = new AndExpr( r, new CompareExpr(c,s,t) ); s=t; } 
                )*
           )? 
@@ -1381,7 +1283,7 @@ unaryAdd returns [Expr r = null]
 	
 typeExpr returns [Expr r = null]
     { Schema s; }
-    : "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
+    : "type" s=type   { r = new ConstExpr(new JSchema(s)); }
     | r=path
     ;	
 
@@ -1546,15 +1448,16 @@ fnArgs returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     			oops("Call by name NYI");
     		}
     	}
-    }    
+    }
+    
     ;
 
 exprList returns [ArrayList<Expr> r = new ArrayList<Expr>()]
-    { Expr e; }
-    : ( e=pipe      { r.add(e); }
-        ("," e=pipe    { r.add(e); } )*
-      )?
-    ;
+	{ Expr e; }
+	: ( e=pipe 	    { r.add(e); }
+	    ("," e=pipe    { r.add(e); } )*
+	  )?
+	;
 
 // An exprList that allows ignores empty exprs
 exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
@@ -1562,109 +1465,25 @@ exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     : ( e=pipe  { r.add(e); } )? ("," ( e=pipe  { r.add(e); } )? )*
     ;
 
-args[Parameters descriptor] returns [ ArgumentExpr r=null ]
-    { ArrayList<Expr> a = new ArrayList<Expr>(); }
-    : "(" ( arg[a] ("," arg[a])* )? ")" { r=new ArgumentExpr(descriptor, a); }
-    ;
-
-arg[ArrayList<Expr> r]
-    { Expr name = null; Expr value; String v; }
-    : ( (id:AID { name = new ConstExpr(new JsonString(id.getText())); } "=")? value=pipe )
-      { if (name==null) r.add(value); else r.add(new NameValueBinding(name, value)); }
-      // not using AssignExpr because argument name might be computed (later)
-    ;
-
 constant returns [Expr r=null]
-	{ String s; JsonNumeric n; JsonBool b;}
-    : s=str		 { r = new ConstExpr(new JsonString(s)); }
-    | n=numericLit { r = new ConstExpr(n); }
-    | h:HEXSTR   { r = new ConstExpr(new JsonBinary(h.getText())); }
-    | t:DATETIME { r = new ConstExpr(new JsonDate(t.getText())); }
-    | b=boolLit  { r = new ConstExpr(b); }
+	{ String s; }
+    : s=str		 { r = new ConstExpr(new JString(s)); }
+    | i:INT      { r = new ConstExpr(new JLong(i.getText())); }
+    | n:DEC      { r = new ConstExpr(new JDecimal(n.getText())); }
+    | d:DOUBLE   { r = new ConstExpr(new JDouble(d.getText())); }
+    | h:HEXSTR   { r = new ConstExpr(new JBinary(h.getText())); }
+    | t:DATETIME { r = new ConstExpr(new JDate(t.getText())); }
+    | r=boolLit
     | r=nullExpr
     ;
 
-numericLit returns [JsonNumeric v=null]
-    : v=intLit
-    | v=doubleLit
-    | v=decLit
-    ;
-
-    
-intLit returns [ JsonLong v=null]
-    : i:INT      { v = new JsonLong(i.getText()); }
-    ;
-
-doubleLit returns [ JsonDouble v=null]
-    : d:DOUBLE   { v = new JsonDouble(d.getText()); }
-    ;
-
-decLit returns [ JsonDecimal v=null]
-    : n:DEC      { v = new JsonDecimal(n.getText()); }
-    ;
-
-
-// not to be used in terms!    
-signedNumericLit returns [ JsonNumeric v = null ]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      ( i:INT    { v = parseLong(i.getText(), isNegative); }
-      | j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
-      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
-      )
-    ;
-
-// not to be used in terms!    
-signedNumberLit returns [ JsonNumeric v = null ]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      ( i:INT    { v = parseLong(i.getText(), isNegative); }
-      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
-      )
-    ;
-// not to be used in terms!
-signedIntLit returns [ JsonLong v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      i:INT    { v = parseLong(i.getText(), isNegative); } 
-    ;
-
-// not to be used in terms! 
-signedDoubleLit returns [ JsonDouble v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
-    ;
-     
-// not to be used in terms!     
-signedDecLit returns [ JsonDecimal v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      k:DEC    { v = parseDecimal(k.getText(), isNegative); }       
-    ;     
-    
-strLit returns [ JsonString v=null]
-    { String s; }
-    : s=str      { v = new JsonString(s); }
-    ;
-    
-boolLit returns [JsonBool b=null]
-    : "true"     { b = JsonBool.TRUE; }
-    | "false"    { b = JsonBool.FALSE; }
+boolLit returns [Expr r=null]
+    : "true"     { r = new ConstExpr(JBool.trueItem); }
+    | "false"    { r = new ConstExpr(JBool.falseItem); }
     ;
     
 nullExpr returns [Expr r=null]
-    : "null"     { r = new ConstExpr(null); }
+    : "null"     { r = new ConstExpr(Item.nil); }
     ;
     
 str returns [String r=null]
@@ -1672,160 +1491,103 @@ str returns [String r=null]
 	| h:HERE_STRING     { r = h.getText(); }
 	| b:BLOCK_STRING    { r = b.getText(); }
 	;
+
 	
 avar returns [String r=null]: n:AVAR { r = n.getText(); }; //  TODO: move to ID
 var returns [String r=null]: n:VAR { r = n.getText(); }; // TODO: move to ID
 name returns [String r=null]: n:ID { r = n.getText(); };
 dotName returns [Expr r = null]
-    : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
+    : i:DOT_ID     { r = new ConstExpr(new JString(i.getText())); }
     ;
 
 fname returns [Expr r=null] 
-    : i:FNAME     { r = new ConstExpr(new JsonString(i.getText())); }
+    : i:FNAME     { r = new ConstExpr(new JString(i.getText())); }
     ;
 
 simpleField returns [Expr f=null]
     : ( f=fname | "(" f=pipe ")" ) ":"
     ;
 
-schema returns [Schema s = null]
-    { List<Schema> alternatives = new ArrayList<Schema>(); Schema s2; }
-    : (
-        s = schemaTerm       { alternatives.add(s); }     
-        ( "|"              
-          s2 = schemaTerm     { alternatives.add(s2); } 
-        )*
-      ) {
-      	  if (alternatives.size()>1) { // if there are alternatives, wrap into OrSchema
-            Schema[] schemata = alternatives.toArray(new Schema[alternatives.size()]); 
-      	    s = new OrSchema(schemata);
-          }
-        }
+type returns [Schema s = null]
+    { Schema s2 = null; SchemaOr os = null; }
+    : s = typeTerm 
+    ( "|"              { s2 = s; s = os = new SchemaOr(); os.addSchema(s2); }
+      s2 = typeTerm    { os.addSchema(s2); } 
+    )*
     ;
     
-schemaTerm returns [Schema s = null]
-    : "*"           { s = AnySchema.getInstance(); }
-    | s=aSchema
-       ( "?"        { s = new OrSchema(s, NullSchema.getInstance()); } // TODO: good notation?
+typeTerm returns [Schema s = null]
+    : "*"           { s = new SchemaAny(); }
+    | s=oneType
+       ( "?"        { s = new SchemaOr(s, new SchemaAtom("null")); } 
        )?
     ;
 
-aSchema returns [Schema s = null]
-    : s=atomSchema
-    | s=arraySchema
-    | s=recordSchema
+oneType returns [Schema s = null]
+    : s=atomType
+    | s=arrayType
+    | s=recordType
     ;
 
-atomSchema returns [Schema s = null]
-    { JsonRecord args; }
-    : "null"       { s = NullSchema.getInstance(); }
-    | ( "function" args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.FUNCTION, args); } )
-    | ( "boolean"  args=atomSchemaArgs[BooleanSchema.getParameters()] { s = new BooleanSchema(args); } )
-    | ( "date"     args=atomSchemaArgs[DateSchema.getParameters()] { s = new DateSchema(args); } )
-    | ( "schema"   args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.SCHEMA, args); } )    
-    | ( "binary"   args=atomSchemaArgs[BinarySchema.getParameters()] { s = new BinarySchema(args); } )
-    | ( "long"     args=atomSchemaArgs[LongSchema.getParameters()] { s = new LongSchema(args); } )
-    | ( "double"   args=atomSchemaArgs[DoubleSchema.getParameters()] { s = new DoubleSchema(args); } )
-    | ( "decfloat" args=atomSchemaArgs[DecimalSchema.getParameters()] { s = new DecimalSchema(args); } )
-    | ( "string"   args=atomSchemaArgs[StringSchema.getParameters()] { s = new StringSchema(args); } )
+atomType returns [SchemaAtom s = null]
+    : i:ID    { s = new SchemaAtom(i.getText()); }
+    | "null"  { s = new SchemaAtom("null"); }
+    | "type"  { s = new SchemaAtom("type"); }
     ;
 
-atomSchemaArgs[Parameters d] returns [ JsonRecord args=null ]
-    { ArgumentExpr argsExpr; }
-    : ( argsExpr=args[d] { args = argsExpr.constEval(); 
-                           if (args==null) 
-                           {
-                           	 throw new RuntimeException("schema arguments have to be constants");
-                           }; 
-                         } )?
-    ;
-    	   
-arraySchema returns [ArraySchema s = null]
-    { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
-      Schema p; 
-      Schema rest = null;
-      Pair<JsonLong, JsonLong> repeat = null; 
-    }
+arrayType returns [SchemaArray s = new SchemaArray()]
+    { Schema head = null; Schema p; Schema q; }
     : "["
-        ( p=schema           { rest = p; }
-          ( "," p=schema     { schemata.add(rest); rest = p; }
+        ( p=type          { head = p; }
+          ( "," q=type    { p = p.nextSchema = q; }
           )*
-          repeat=arraySchemaRepeat
+          arrayRepeat[head,s]
         )?
-      "]" { 
-            Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
-      	    s = rest != null ? new ArraySchema(schemaArray, rest, repeat.a, repeat.b)
-      	                     : new ArraySchema(schemaArray); // empty array
-          }
+      "]"
     ;
 
-arraySchemaRepeat returns [Pair<JsonLong, JsonLong> p = null; ]
-    { JsonLong minRest = null; JsonLong maxRest = null; }
-    : ( /*empty*/                     { minRest = JsonLong.ONE; maxRest = JsonLong.ONE; }
-      | ( "*"                         
-        | "+"                         { minRest = JsonLong.ONE; }
-        | "<" 
-            ( "*"                     
-            | minRest=signedIntLit
-            ) 
-            ( /*empty*/               { maxRest = minRest; }
-            | "," ( "*"             
-                    | maxRest=signedIntLit 
+arrayRepeat[Schema typeList, SchemaArray s]
+    { long lo = 0; long hi = 0; }
+    : /*empty*/           { s.noRepeat(typeList); }
+    | ( "*"                 { lo = 0; hi = SchemaArray.UNLIMITED; }
+      | "+"                 { lo = 1; hi = SchemaArray.UNLIMITED; }
+      | "<" 
+          ( "*"             { lo = 0; hi = SchemaArray.UNLIMITED; }
+          | i1:INT          { lo = Long.parseLong(i1.getText()); }
+            ( /*empty*/     { hi = lo; }
+            | "," ( "*"     { hi = SchemaArray.UNLIMITED; }
+                  | i2:INT  { hi = Long.parseLong(i2.getText()); }
                   )
             )
-          ">"
-        )
-      ) { p = new Pair<JsonLong, JsonLong>(minRest, maxRest); }
+          )
+        ">" 
+      ) { s.setRepeat(typeList, lo, hi); }
     ;
 
-recordSchema returns [RecordSchema s = null]
-    { 
-   	  List<RecordSchema.Field> fields = new ArrayList<RecordSchema.Field>(); 
-   	  Schema rest = null;
-   	  RecordSchema.Field f = null;    
-  	}
-    : "{" ( ( f=recordSchemaField                { fields.add(f); }
-            | rest=recordSchemaRest[rest] 
-            )
-            ( "," ( f=recordSchemaField          { fields.add(f); } 
-                  | rest=recordSchemaRest[rest] 
-                  ) 
-            )*
-          )? 
-      "}" { 
-      	    RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
-      	    s = new RecordSchema(fieldsArray, rest);
-          }
+recordType returns [SchemaRecord s = new SchemaRecord()]
+    { SchemaField f; }
+    : "{"
+        ( f=fieldType        { s.addField(f); }
+          ( "," f=fieldType  { s.addField(f); }
+          )*
+        )?
+      "}"
     ;
 
-recordSchemaRest[Schema currentRest] returns [Schema s = null]
-    : "*" s=recordSchemaFieldSchema
-      { 
-      	if( currentRest != null ) 
-      	{
-      	  oops("only one wildcard field is allowed in a record schema");
-      	}
-      }
+fieldType returns [SchemaField f = new SchemaField()]
+    { String n; Schema t; }
+    : (  n=constFieldName   { f.name = new JString(n); }
+         ( "*"              { f.wildcard = true; }
+         | "?"              { f.optional = true; }
+         )?
+      | "*"               { f.name = new JString(""); 
+                            f.wildcard = true;     }
+      )
+      ":" t=type        { f.schema = t; }
     ;
 
-recordSchemaField returns [RecordSchema.Field s = null]
-    { String n; boolean optional = false; Schema t; }
-    : n=recordSchemaFieldName
-      ( "?" { optional = true; } )?
-      t=recordSchemaFieldSchema
-      {
-      	s = new RecordSchema.Field(new JsonString(n), t, optional);
-      }
-    ;
-    
-recordSchemaFieldSchema returns [Schema s]
-    : /*empty*/   { s = AnySchema.getInstance(); }
-    | ":" s=schema
-    ;
-
-recordSchemaFieldName returns [String s=null]
-    : i:ID      { s = i.getText(); }
-    | j:FNAME   { s = j.getText(); }
+constFieldName returns [String s=null]
+    : i:FNAME   { s = i.getText(); }
     | s=str
     ;
 
@@ -2113,11 +1875,9 @@ protected IDWORD
 ID
 	options { ignore=WS; }
     : (IDWORD ('?')? ':') => IDWORD {$setType(FNAME);}
-    | (IDWORD '=') => IDWORD {$setType(AID);}
-    // | (IDWORD '*') => IDWORD
+    | (IDWORD '*') => IDWORD
 	// | (IDWORD '=') => IDWORD {$setType(AVAR);}
 	| IDWORD { _ttype = testLiteralsTable(_ttype); }
-	
 	;
 
 protected DOT_ID

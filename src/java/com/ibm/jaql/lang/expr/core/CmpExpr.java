@@ -3,7 +3,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.util.ArrayList;
 
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JsonComparator;
+import com.ibm.jaql.lang.core.JComparator;
 
 public abstract class CmpExpr extends Expr
 {
@@ -38,5 +38,5 @@ public abstract class CmpExpr extends Expr
    * @param context
    * @return
    */
-  public abstract JsonComparator getComparator(Context context);
+  public abstract JComparator getComparator(Context context);
 }

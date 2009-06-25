@@ -15,10 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.io.ClosableJsonWriter;
+import com.ibm.jaql.io.Adapter;
+import com.ibm.jaql.io.ItemWriter;
 import com.ibm.jaql.io.OutputAdapter;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -58,26 +61,28 @@ public abstract class AbstractWriteExpr extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     //  evaluate the arguments
-    JsonValue args = descriptor().eval(context);
+    Item argsItem = descriptor().eval(context);
     
     // get the OutputAdapter according to the type
-    OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(args);
+    OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(argsItem);
   
     adapter.open();
-    ClosableJsonWriter writer = adapter.getJsonWriter();
-    JsonIterator iter = dataExpr().iter(context);
+    ItemWriter writer = adapter.getItemWriter();
+    Iter iter = dataExpr().iter(context);
     if (iter != null)
     {
-      for (JsonValue value : iter) 
+      Item item;
+      //Item key = Item.nil; // the key is not used
+      while ((item = iter.next()) != null)
       {
-        writer.write(value);
+        writer.write(item);
       }
     }
     adapter.close();
   
-    return args;
+    return argsItem;
   }
 }

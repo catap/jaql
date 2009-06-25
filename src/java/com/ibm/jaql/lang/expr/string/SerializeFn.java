@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.expr.string;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -45,17 +45,18 @@ public class SerializeFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonString eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     // TODO: memory!!
-    JsonValue value = exprs[0].eval(context);
+    Item value = exprs[0].eval(context);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(baos);
-    JsonString text = new JsonString();
+    JString text = new JString();
+    Item result = new Item(text);
     // baos.reset();
-    JsonValue.print(out, value, 0);
+    value.print(out, 0);
     out.flush();
     text.set(baos.toByteArray());
-    return text;
+    return result;
   }
 }

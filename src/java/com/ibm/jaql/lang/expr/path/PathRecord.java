@@ -19,10 +19,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -81,28 +81,28 @@ public class PathRecord extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonRecord oldRec = (JsonRecord)input;
+    JRecord oldRec = (JRecord)input.get();
     if( oldRec == null )
     {
-      return null;
+      return Item.nil;
     }
     // TODO: this can be made much faster when "*" is not used.
     // TODO: this can be made much faster when only "*" is used, without inclusion/exclusion
-    BufferedJsonRecord newRec = new BufferedJsonRecord(); // TODO: memory
+    MemoryJRecord newRec = new MemoryJRecord(); // TODO: memory
     final int n = oldRec.arity();
     final int m = exprs.length - 1;
     for( int i = 0 ; i < n ; i++ )
     {
-      JsonString name = oldRec.getName(i);
+      JString name = oldRec.getName(i);
       int j;
       for( j = 0 ; j < m ; j++ )
       {
         PathFields f = (PathFields)exprs[j];
         if( f.matches(context, name) )
         {
-          JsonValue value = oldRec.getValue(i);
+          Item value = oldRec.getValue(i);
           value = f.nextStep(context, value);
           value = nextStep(context, value);
           newRec.add(name, value);
@@ -119,6 +119,6 @@ public class PathRecord extends PathStep
         }
       }
     }
-    return newRec;
+    return new Item(newRec); // TODO: memory
   }
 }

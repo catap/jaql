@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.date;
 
-import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -56,8 +57,8 @@ public class NowFn extends Expr
    * @return
    * @throws Exception
    */
-  public JsonDate eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    return new JsonDate(System.currentTimeMillis()); // TODO: memory
+    return new Item(new JDate(System.currentTimeMillis())); // TODO: memory
   }
 }

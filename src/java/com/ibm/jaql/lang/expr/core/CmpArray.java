@@ -19,11 +19,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.AscDescJsonComparator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.AscDescItemComparator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JsonComparator;
+import com.ibm.jaql.lang.core.JComparator;
 import com.ibm.jaql.lang.core.Var;
 
 
@@ -68,28 +68,30 @@ public class CmpArray extends CmpExpr
     exprText.print(" ]");
   }
 
-  protected BufferedJsonArray array; 
+  protected FixedJArray array; 
+  protected Item arrayItem;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    if( array == null )
+    if( arrayItem == null )
     {
-      array = new BufferedJsonArray(exprs.length);
+      array = new FixedJArray(exprs.length);
+      arrayItem = new Item(array);
     }
     for(int i = 0 ; i < exprs.length ; i++)
     {
-      JsonValue value = exprs[i].eval(context);
-      array.set(i, value);
+      Item item = exprs[i].eval(context);
+      array.set(i, item);
     }
-    return array;
+    return arrayItem;
   }
   
-  public JsonComparator getComparator(Context context)
+  public JComparator getComparator(Context context)
   {
     int n = exprs.length;
     boolean[] asc = new boolean[n];
@@ -99,6 +101,6 @@ public class CmpArray extends CmpExpr
       // TODO: should use o.getComparator(context)
       asc[i] = (o.order == CmpSpec.Order.ASC);
     }
-    return new AscDescJsonComparator(asc);
+    return new AscDescItemComparator(asc);
   }
 }

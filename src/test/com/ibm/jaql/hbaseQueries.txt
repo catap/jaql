@@ -108,13 +108,13 @@ $books = [
 $books
 -> write({type:'hdfs', location:'example.jql', 
           outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                      converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});
+                      converter : 'com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter'}});
                               
 // (from exampleQueries)
 registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter',
                              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
 
 // (from exampleQueries)       

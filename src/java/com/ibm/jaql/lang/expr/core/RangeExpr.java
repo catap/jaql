@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.util.Bool3;
 
@@ -85,8 +85,8 @@ public class RangeExpr extends IterExpr
     // TODO: what is the right size?
     if (exprs[0] instanceof ConstExpr && exprs[1] instanceof ConstExpr)
     {
-      long start = ((JsonLong) ((ConstExpr) exprs[0]).value).value;
-      long end = ((JsonLong) ((ConstExpr) exprs[1]).value).value;
+      long start = ((JLong) ((ConstExpr) exprs[0]).value.get()).value;
+      long end = ((JLong) ((ConstExpr) exprs[1]).value.get()).value;
       if (end - start < 10)
       {
         return true;
@@ -100,31 +100,33 @@ public class RangeExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonNumeric v1 = (JsonNumeric) exprs[0].eval(context);
+    JLong v1 = (JLong) exprs[0].eval(context).get();
     if (v1 == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    JsonNumeric v2 = (JsonNumeric) exprs[1].eval(context);
+    JLong v2 = (JLong) exprs[1].eval(context).get();
     if (v2 == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    final long start = v1.longValueExact();
-    final long end = v2.longValueExact();
+    final long start = v1.value;
+    final long end = v2.value;
 
-    return new JsonIterator(new JsonLong(start - 1)) {
-      public boolean moveNext()
+    return new Iter() {
+      final JLong num  = new JLong(start - 1);
+      final Item  item = new Item(num);
+
+      public Item next()
       {
-        JsonLong num = (JsonLong)currentValue;
         if (num.value + 1 <= end)
         {
           num.value++;
-          return true;
+          return item;
         }
-        return false;
+        return null;
       }
     };
   }

@@ -21,10 +21,11 @@ import java.io.InputStream;
 
 import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
+
 import antlr.collections.impl.BitSet;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
@@ -97,8 +98,7 @@ public class Jaql
     main(in);
   }
   
-  public static void main(InputStream in) throws Exception
-  {
+  public static void main(InputStream in) throws Exception {
     JaqlLexer lexer = new JaqlLexer(in);
     JaqlParser parser = new JaqlParser(lexer);
     Context context = new Context();
@@ -125,26 +125,25 @@ public class Jaql
           continue;
         }
         expr = rewriter.run(parser.env, expr);
-//        System.out.println(expr.getClass());
         context.reset();
         // TODO: enable push style?
         // expr.write(context, writer);
         if (expr instanceof ExplainExpr) // TODO: statement.eval
         {
-          JsonValue value = expr.eval(context);
-          System.out.println(value);
+          Item item = expr.eval(context);
+          System.out.println(item.get());
         }
         else if (expr.isArray().always())
         {
-          JsonIterator iter = expr.iter(context);
+          Iter iter = expr.iter(context);
           iter.print(System.out);
         }
         else
         {
-          JsonValue value = expr.eval(context);
-          JsonValue.print(System.out, value);
+          Item item = expr.eval(context);
+          item.print(System.out);
         }
-        context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+        context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
       }
       catch (Exception ex)
       {

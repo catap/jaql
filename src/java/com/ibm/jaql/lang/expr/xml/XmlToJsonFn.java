@@ -28,10 +28,11 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -61,7 +62,7 @@ public class XmlToJsonFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     if( parser == null )
     {
@@ -69,11 +70,11 @@ public class XmlToJsonFn extends Expr
       factory.setNamespaceAware(true);
       parser = factory.newSAXParser().getXMLReader();
       handler = new XmlToJsonHandler2();
-//      handler = new XmlToJsonHandler1();
       parser.setContentHandler( handler );
     }
 
-    JsonString s = (JsonString)exprs[0].eval(context);
+    Item item = exprs[0].eval(context);
+    JString s = (JString)item.get();
     parser.parse( new InputSource(new StringReader(s.toString())) );    
     return handler.result;
   }
@@ -81,7 +82,7 @@ public class XmlToJsonFn extends Expr
 
 class XmlToJsonHandler extends DefaultHandler  // TODO: move, make much faster
 {
-  public JsonValue result;  
+  public Item result;  
 }
 
 /**
@@ -94,11 +95,11 @@ class XmlToJsonHandler extends DefaultHandler  // TODO: move, make much faster
  */
 class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faster, add schema support
 {
-  public static final JsonString S_XML   = new JsonString("xml");
-  public static final JsonString S_XMLNS = new JsonString("xmlns");
-  public static final JsonString S_TEXT  = new JsonString("text()");
+  public static final JString xmlName   = new JString("xml");
+  public static final JString xmlnsName = new JString("xmlns");
+  public static final JString textName  = new JString("text()");
   
-  protected Stack<SpilledJsonArray> stack = new Stack<SpilledJsonArray>();
+  protected Stack<SpillJArray> stack = new Stack<SpillJArray>();
   protected StringBuffer text = new StringBuffer();
   
   @Override
@@ -106,18 +107,18 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
   {
     result = null;
     stack.clear();
-    stack.push(new SpilledJsonArray());
+    stack.push(new SpillJArray());
     text.setLength(0);
   }
   
   @Override
   public void endDocument() throws SAXException
   {
-    SpilledJsonArray a = stack.pop();
+    SpillJArray a = stack.pop();
     assert stack.empty();
-    BufferedJsonRecord r = new BufferedJsonRecord();
-    r.add(S_XML, a);
-    result = r;
+    MemoryJRecord r = new MemoryJRecord();
+    r.add(xmlName, a);
+    result = new Item(r);
   }
   
   @Override
@@ -126,20 +127,20 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
   {
     try
     {
-      SpilledJsonArray ca = new SpilledJsonArray();
+      SpillJArray ca = new SpillJArray();
       int n = attrs.getLength();
       for( int i = 0 ; i < n ; i++ )
       {
         name = "@" + attrs.getLocalName(i);
         uri = attrs.getURI(i);
         String v = attrs.getValue(i);
-        BufferedJsonRecord r = new BufferedJsonRecord();
+        MemoryJRecord r = new MemoryJRecord();
         if( uri != null && uri.length() > 0 )
         {
-          r.add(S_XMLNS, new JsonString(uri));
+          r.add(xmlnsName, new JString(uri));
         }
-        r.add(name, new JsonString(v));
-        ca.addCopy(r);
+        r.add(name, new JString(v));
+        ca.add(r);
       }
       stack.push(ca);
     }
@@ -156,15 +157,15 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
     try
     {
       endText();
-      SpilledJsonArray ca = (SpilledJsonArray)stack.pop();
-      BufferedJsonRecord r = new BufferedJsonRecord();
+      SpillJArray ca = (SpillJArray)stack.pop();
+      MemoryJRecord r = new MemoryJRecord();
       if( uri != null && uri.length() > 0 )
       {
-        r.add("xmlns", new JsonString(uri));
+        r.add("xmlns", new JString(uri));
       }
       r.add(localName, ca);
-      SpilledJsonArray pa = (SpilledJsonArray)stack.peek();
-      pa.addCopy(r);
+      SpillJArray pa = (SpillJArray)stack.peek();
+      pa.add(r);
     }
     catch(IOException e)
     {
@@ -182,10 +183,10 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
   {
     if( text.length() > 0 )
     {
-      BufferedJsonRecord r = new BufferedJsonRecord();
-      r.add(S_TEXT, new JsonString(text.toString()));
-      SpilledJsonArray pa = (SpilledJsonArray)stack.peek();
-      pa.addCopy(r);
+      MemoryJRecord r = new MemoryJRecord();
+      r.add(textName, new JString(text.toString()));
+      SpillJArray pa = (SpillJArray)stack.peek();
+      pa.add(r);
       text.setLength(0);
     }
   }  
@@ -224,9 +225,9 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
  */
 class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faster, add schema support
 {
-  public static final JsonString textName  = new JsonString("text()");
+  public static final JString textName  = new JString("text()");
 
-  protected Stack<BufferedJsonRecord> stack = new Stack<BufferedJsonRecord>();
+  protected Stack<MemoryJRecord> stack = new Stack<MemoryJRecord>();
   protected StringBuffer text = new StringBuffer();
   protected IntArray lengths = new IntArray();
   
@@ -236,25 +237,25 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
     result = null;
     text.setLength(0);
     stack.clear();
-    stack.push(new BufferedJsonRecord());
+    stack.push(new MemoryJRecord());
     lengths.add(0);
   }
   
   @Override
   public void endDocument() throws SAXException
   {
-    BufferedJsonRecord r = stack.pop();
+    MemoryJRecord r = stack.pop();
     assert stack.empty();
     lengths.pop();
     assert lengths.empty();
-    result = r;
+    result = new Item(r);
   }
   
   @Override
   public void startElement(String uri, String localName, String name, Attributes attrs)
     throws SAXException
   {
-    BufferedJsonRecord r = new BufferedJsonRecord();
+    MemoryJRecord r = new MemoryJRecord();
     stack.push(r);
     lengths.add(text.length());
     int n = attrs.getLength();
@@ -263,21 +264,28 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
       uri = attrs.getURI(i);
       if( uri != null && uri.length() > 0 )
       {
-        BufferedJsonRecord ur = (BufferedJsonRecord) r.getValue(uri, null);
-        if( ur == null )
+        Item item = r.getValue(uri, null);
+        MemoryJRecord ur;
+        if( item != null )
         {
-          ur = new BufferedJsonRecord();
-          r.add(uri, ur);
+          ur = (MemoryJRecord)item.get();
+        }
+        else
+        {
+          ur = new MemoryJRecord();
+          item = new Item(ur);
+          r.add(uri, item);
         }
         r = ur;
       }
       name = "@" + attrs.getLocalName(i);
       String v = attrs.getValue(i);
-      if( r.findName(name) < 0 )
+      Item item = r.getValue(name, null);
+      if( item != null )
       {
         throw new RuntimeException("duplicate attribute name: "+name);
       }
-      r.add(name, new JsonString(v));
+      r.add(name, new JString(v));
     }
   }
 
@@ -287,13 +295,13 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
   {
     try
     {
-      BufferedJsonRecord r = stack.pop();
+      MemoryJRecord r = stack.pop();
       int textEnd = text.length();
       int textStart = lengths.pop();
-      JsonValue me = r;
+      JValue me = r;
       if( textStart < textEnd )
       {
-        JsonString s = new JsonString(text.substring(textStart, textEnd));
+        JString s = new JString(text.substring(textStart, textEnd));
         text.setLength(textStart);
         if( r.arity() == 0 )
         {
@@ -304,37 +312,43 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
           r.add(textName, s);
         }
       }
-      BufferedJsonRecord parent = stack.peek();
+      MemoryJRecord parent = stack.peek();
       if( uri != null && uri.length() > 0 )
       {
-        BufferedJsonRecord ur = (BufferedJsonRecord)parent.getValue(uri, null);
-        if( ur == null )
+        Item item = parent.getValue(uri, null);
+        MemoryJRecord ur;
+        if( item != null )
         {
-          ur = new BufferedJsonRecord();
-          parent.add(uri, ur);
+          ur = (MemoryJRecord)item.get();
+        }
+        else
+        {
+          ur = new MemoryJRecord();
+          item = new Item(ur);
+          parent.add(uri, item);
         }
         parent = ur;
       }
-      int index = parent.findName(localName); 
-      if( index < 0 )
+      Item item = parent.getValue(localName, null);
+      if( item == null )
       {
         parent.add(localName, me);
       }
       else
       {
-        JsonValue v = parent.getValue(index);
-        SpilledJsonArray a;
-        if( v instanceof SpilledJsonArray )
+        JValue v = item.get();
+        SpillJArray a;
+        if( v instanceof SpillJArray )
         {
-          a = (SpilledJsonArray)v;
+          a = (SpillJArray)v;
         }
         else
         {
-          a = new SpilledJsonArray();
-          a.addCopy(v);
+          a = new SpillJArray();
+          a.add(item);
           parent.set(localName, a);
         }
-        a.addCopy(me);
+        a.add(me);
       }
     }
     catch(IOException e)

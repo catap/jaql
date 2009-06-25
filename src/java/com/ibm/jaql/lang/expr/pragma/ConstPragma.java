@@ -15,8 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.pragma;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -27,8 +26,6 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "const", minArgs = 1, maxArgs = 1)
 public class ConstPragma extends Pragma
 {
-  protected boolean evaluated = false;
-  protected JsonValue value;
 
   /**
    * @param exprs
@@ -48,24 +45,14 @@ public class ConstPragma extends Pragma
   {
     return true;
   }
-  
-  public Schema getSchema()
-  {
-    return exprs[0].getSchema();
-  }
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    if( !evaluated )
-    {
-      value = exprs[0].eval(context);
-      evaluated = true;
-    }
-    return value;
+    return exprs[0].eval(context);
   }
 }

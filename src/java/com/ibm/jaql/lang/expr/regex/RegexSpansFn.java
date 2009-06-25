@@ -17,10 +17,11 @@ package com.ibm.jaql.lang.expr.regex;
 
 import java.util.regex.Matcher;
 
-import com.ibm.jaql.json.type.JsonRegex;
-import com.ibm.jaql.json.type.JsonSpan;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRegex;
+import com.ibm.jaql.json.type.JSpan;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -45,43 +46,43 @@ public class RegexSpansFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonRegex regex = (JsonRegex) exprs[0].eval(context);
+    final JRegex regex = (JRegex) exprs[0].eval(context).get();
     if (regex == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    JsonString text = (JsonString) exprs[1].eval(context);
+    JString text = (JString) exprs[1].eval(context).get();
     if (text == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());
     if (!matcher.find())
     {
       regex.returnMatcher(matcher);
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
-    
-    final JsonSpan span = new JsonSpan();   // TODO: remove docid from span?
-    return new JsonIterator(span) {
+    return new Iter() {
       boolean done = false;
+      JSpan   span = new JSpan();   // TODO: remove docid from span?
+      Item    item = new Item(span);
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         if (done)
         {
           regex.returnMatcher(matcher);
-          return false;
+          return null;
         }
 
         span.begin = matcher.start();
         int end = matcher.end();
         span.end = end - 1;
         done = !regex.isGlobal() || !matcher.find(end);
-        return true; // currentValue == span
+        return item;
       }
     };
   }

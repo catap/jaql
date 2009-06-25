@@ -19,7 +19,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -60,13 +60,10 @@ public class PathNotFields extends PathFields
   throws Exception
   {
     exprText.print("* -");
-    String sep = " ";
-    int n = exprs.length - 1;
-    for(int i = 0 ; i < n ; i++)
+    for(int i = 0 ; i < exprs.length ; i++)
     {
-      exprText.print(sep);
+      exprText.print(' ');
       exprs[i].decompile(exprText, capturedVars);
-      sep = ", ";
     }
   }
 
@@ -74,9 +71,8 @@ public class PathNotFields extends PathFields
    * @see com.ibm.jaql.lang.expr.core.PathFields#matches(com.ibm.jaql.lang.core.Context, com.ibm.jaql.json.type.JString)
    */
   @Override
-  public boolean matches(Context context, JsonString name) throws Exception
+  public boolean matches(Context context, JString name) throws Exception
   {
-    
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)
     {

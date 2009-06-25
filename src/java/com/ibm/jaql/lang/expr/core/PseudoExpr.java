@@ -15,13 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Var;
 
 
 public class PseudoExpr extends Expr
@@ -53,25 +50,7 @@ public class PseudoExpr extends Expr
   }
 
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
-  {
-    exprText.print("<<");
-    exprText.print(getClass().getSimpleName());
-    exprText.print(">>");
-    exprText.print("(");
-    String sep = "";
-    for (Expr e : exprs)
-    {
-      exprText.print(sep);
-      e.decompile(exprText, capturedVars);
-      sep = ", ";
-    }
-    exprText.print(")");
-  }
-
-  @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     throw new RuntimeException("PseudoExpr "+this.getClass().getName()+" cannot be evaluated!");
   }

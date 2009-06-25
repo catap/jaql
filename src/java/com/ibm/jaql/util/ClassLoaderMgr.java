@@ -21,7 +21,7 @@ import java.net.URLClassLoader;
 
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -118,7 +118,7 @@ public class ClassLoaderMgr
       urls[i] = new URL("file:" + paths[i]);
     }
     ClassLoader parent = (classLoader == null)
-        ? JsonValue.class.getClassLoader()
+        ? Item.class.getClassLoader()
         : classLoader;
     return new URLClassLoader(urls, parent);
   }

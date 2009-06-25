@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -54,26 +54,29 @@ public class ReplaceFieldsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonRecord oldRec = (JsonRecord)exprs[0].eval(context);
-    JsonRecord newRec = (JsonRecord)exprs[1].eval(context);
+    Item oldItem = exprs[0].eval(context);
+    Item newItem = exprs[1].eval(context);
+    JRecord oldRec = (JRecord) oldItem.get();
+    JRecord newRec = (JRecord) newItem.get();
     if (oldRec == null)
     {
-      return null;
+      return Item.nil;
     }
     if (newRec == null)
     {
-      return oldRec;
+      return oldItem;
     }
 
-    BufferedJsonRecord outRec = new BufferedJsonRecord(); // TODO: memory
+    MemoryJRecord outRec = new MemoryJRecord(); // TODO: memory
+    Item result = new Item(outRec); // TODO: memory
 
     int n = oldRec.arity();
     for (int i = 0; i < n; i++)
     {
-      JsonString nm = oldRec.getName(i);
-      JsonValue value = newRec.getValue(nm);
+      JString nm = oldRec.getName(i);
+      Item value = newRec.getValue(nm, null);
       if( value == null )
       {
         value = oldRec.getValue(i);
@@ -81,6 +84,6 @@ public class ReplaceFieldsFn extends Expr
       outRec.add(nm, value);
     }
     
-    return outRec;
+    return result;
   }
 }

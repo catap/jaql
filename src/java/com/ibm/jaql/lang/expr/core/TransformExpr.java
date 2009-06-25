@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -104,14 +105,6 @@ public final class TransformExpr extends IterExpr
     return Bool3.FALSE;
   }
 
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  @Override
-  public boolean isMappable(int i)
-  {
-    return i == 0;
-  }
 
   /*
    * (non-Javadoc)
@@ -137,20 +130,22 @@ public final class TransformExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr proj = projection();
-    final JsonIterator inIter = inBinding.iter(context);
+    final Iter inIter = inBinding.iter(context);
 
-    return new JsonIterator() {
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      public Item next() throws Exception
       {
-        if (inIter.moveNext()) { // sets inBinding.var
-          currentValue = proj.eval(context);
-          return true;
+        Item item = inIter.next();
+        if( item == null )
+        {
+          return null;
         }
-        return false;
+        item = proj.eval(context);
+        return item;
       }
     };
   }

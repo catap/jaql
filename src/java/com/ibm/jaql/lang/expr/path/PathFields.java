@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -58,10 +58,10 @@ public abstract class PathFields extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     throw new RuntimeException("PathFields should not be evaluated!");
   }
 
-  public abstract boolean matches(Context context, JsonString name) throws Exception;
+  public abstract boolean matches(Context context, JString name) throws Exception;
 }

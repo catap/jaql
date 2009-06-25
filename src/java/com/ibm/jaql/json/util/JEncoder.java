@@ -15,14 +15,11 @@
  */
 package com.ibm.jaql.json.util;
 
-import com.ibm.jaql.json.type.JsonEncoding;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonAtom;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-
-// TODO: appears to be unused
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JAtom;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 
 /**
  * 
@@ -32,22 +29,22 @@ public abstract class JEncoder
   /**
    * @param item
    */
-  public abstract void write(JsonValue value);
+  public abstract void write(Item item);
 
   /**
    * @param options
    */
-  public abstract void setOptions(JsonRecord options);
+  public abstract void setOptions(JRecord options);
 
   /**
    * @param atom
    */
-  public abstract void writeAtom(JsonAtom atom);
+  public abstract void writeAtom(JAtom atom);
 
   /**
    * @param array
    */
-  public abstract void writeArrayBegin(JsonArray array);
+  public abstract void writeArrayBegin(JArray array);
 
   /**
    * 
@@ -57,7 +54,7 @@ public abstract class JEncoder
   /**
    * @param record
    */
-  public abstract void writeRecordBegin(JsonRecord record);
+  public abstract void writeRecordBegin(JRecord record);
 
   /**
    * 
@@ -67,7 +64,7 @@ public abstract class JEncoder
   /**
    * @param name
    */
-  public abstract void writeFieldBegin(JsonString name);
+  public abstract void writeFieldBegin(JString name);
 
   /**
    * 
@@ -87,7 +84,7 @@ abstract class JDecoder
     EOF, NULL, ATOM, ARRAY, END_ARRAY, RECORD, END_RECORD, FIELD_NAME,
   };
 
-  public abstract JsonRecord getOptions();
+  public abstract JRecord getOptions();
 
   public abstract DecodeType next();
 
@@ -96,7 +93,7 @@ abstract class JDecoder
    * 
    * @return
    */
-  public abstract JsonAtom getAtom();
+  public abstract JAtom getAtom();
 
   /**
    * Get the current field name. Only valid when next() just returned
@@ -104,23 +101,23 @@ abstract class JDecoder
    * 
    * @return
    */
-  public abstract JsonString getName();
+  public abstract JString getName();
 
   public abstract void close();
 }
 
 abstract class JInput
 {
-  public abstract JsonRecord getOptions();
+  public abstract JRecord getOptions();
   public abstract JDecoder getDecoder();
-  public abstract JsonEncoding getEncoding(int encodingId);
-  public abstract JsonString getString(int stringId);
+  public abstract Item.Encoding getEncoding(int encodingId);
+  public abstract JString getString(int stringId);
 }
 
 abstract class JOutput
 {
-  public abstract void setOptions(JsonRecord options);
+  public abstract void setOptions(JRecord options);
   public abstract void setDecoder(JDecoder decoder);
-  public abstract int getEncodingId(JsonEncoding encoding);
-  public abstract long getStringId(JsonString string);
+  public abstract int getEncodingId(Item.Encoding encoding);
+  public abstract long getStringId(JString string);
 }

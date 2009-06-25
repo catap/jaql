@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 
@@ -38,7 +38,7 @@ public abstract class MacroExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public final JsonValue eval(final Context context) throws Exception
+  public final Item eval(final Context context) throws Exception
   {
     throw new RuntimeException("macro must be expanded before evaluation");
   }
@@ -48,7 +48,7 @@ public abstract class MacroExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public final JsonIterator iter(final Context context) throws Exception
+  public final Iter iter(final Context context) throws Exception
   {
     throw new RuntimeException("macro must be expanded before evaluation");
   }

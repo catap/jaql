@@ -15,10 +15,12 @@
  */
 package com.ibm.jaql.io;
 
+import com.ibm.jaql.json.type.Item;
+
 /**
  * An interface for accessing a data source.
  */
-public interface Adapter extends Initializable
+public interface Adapter
 {
   static String TYPE_NAME       = "type";
 
@@ -33,6 +35,15 @@ public interface Adapter extends Initializable
   static String ADAPTER_NAME    = "adapter";
 
   static String FORMAT_NAME     = "format";
+
+  /**
+   * Used to initialize an adapter given an item of arguments. This method must
+   * be called prior to any other methods.
+   * 
+   * @param r
+   * @throws Exception
+   */
+  void initializeFrom(Item arg) throws Exception;
 
   /**
    * Once an adapter has been initialized, you can take whatever steps that are

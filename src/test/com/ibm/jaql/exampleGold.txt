@@ -485,7 +485,7 @@ mapReduce(
     { input:  {type: 'hdfs', location: 'sample.dat'}, 
       output: {type: 'hdfs', location: 'results.dat'}, 
       map:    fn($v) ( $v -> transform [$.x, 1] ),
-      reduce: fn($x, $v) ( $v -> aggregate into {x: $x, num: count($)} )
+      reduce: fn($x, $v) ( $v -> aggregate {x: $x, num: count($)} )
     });##
 {
   "location": "results.dat",
@@ -2191,13 +2191,13 @@ read(hdfs('books.jqlb'));##
 
 // DIFF: not in docs
 $books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
+                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter'}});##
 {
   "location": "example.jql",
   "outoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
   "type": "hdfs"
@@ -2211,7 +2211,7 @@ read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.ha
 
 // DIFF
 read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter'}});##
 [
   {
     "author": "J. K. Rowling",
@@ -2282,7 +2282,7 @@ read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.ha
 
 $myRead = fn($path) read({type:'hdfs', location:$path, 
                           inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
-                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter'}});##
 "$myRead"
 
                                 
@@ -2359,13 +2359,13 @@ $myRead('example.jql');##
 registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
-                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter',
                              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
 {
   "inoptions": {
     "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter",
     "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter",
+    "converter": "com.ibm.jaql.io.hadoop.converter.FromJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextInputFormat"
   },
   "type": "myHDFSFile"
@@ -2476,7 +2476,7 @@ read({type:'myHDFSFile', location:'example.jql'})
 // (see hbaseQueries.txt)
 // hbaseWrite('example', $q);
 
-read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
+read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JSONTextInputStream'}});##
 [
   {
     "author": "J. K. Rowling",

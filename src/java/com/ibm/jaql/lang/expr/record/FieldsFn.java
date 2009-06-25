@@ -15,9 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -64,28 +65,31 @@ public final class FieldsFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonRecord rec = (JsonRecord) exprs[0].eval(context);
+    final JRecord rec = (JRecord) exprs[0].eval(context).get();
     if (rec == null)
     {
-      return JsonIterator.NULL; // TODO: should this be []?
+      return Iter.nil; // TODO: should this be []?
     }
-    
-    final BufferedJsonArray pair = new BufferedJsonArray(2);
-    return new JsonIterator(pair) {
+    final FixedJArray pair = new FixedJArray(2);
+    final Item nameItem = new Item();
+    pair.set(0, nameItem);
+    final Item result = new Item(pair);
+
+    return new Iter() {
       int slot = 0;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         if (slot >= rec.arity())
         {
-          return false;
+          return null;
         }
-        pair.set(0, rec.getName(slot));
+        nameItem.set(rec.getName(slot));
         pair.set(1, rec.getValue(slot));
         slot++;
-        return true; // currentValue == pair
+        return result;
       }
     };
   }

@@ -15,8 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
@@ -26,7 +28,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName="hdfs", minArgs=1, maxArgs=2)
 public class HdfsFn extends AbstractHandleFn
 {
-  private final static JsonValue TYPE = new JsonString("hdfs");
+  private final static Item TYPE = new Item(new JString("hdfs"));
   /**
    * exprs[0]: path
    * exprs[1]: options 
@@ -42,7 +44,7 @@ public class HdfsFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#getType()
    */
   @Override
-  protected JsonValue getType()
+  protected Item getType()
   {
     return TYPE;
   }

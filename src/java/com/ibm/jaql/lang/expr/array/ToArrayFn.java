@@ -15,10 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.json.util.SingleJsonValueIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.ScalarIter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -68,20 +69,21 @@ public class ToArrayFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonValue val = exprs[0].eval(context);
+    Item item = exprs[0].eval(context);
+    JValue val = item.get();
     if( val == null )
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    else if( val instanceof JsonArray )
+    else if( val instanceof JArray )
     {
-      return ((JsonArray)val).iter();
+      return ((JArray)val).iter();
     }
     else
     {
-      return new SingleJsonValueIterator(val);
+      return new ScalarIter(item);
     }
   }
 }

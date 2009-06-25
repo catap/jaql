@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -62,13 +63,13 @@ public class NotExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonBool b = (JsonBool) exprs[0].eval(context);
+    JBool b = (JBool) exprs[0].eval(context).get();
     if (b == null)
     {
-      return b;
+      return Item.nil;
     }
-    return JsonBool.make(!b.getValue());
+    return JBool.make(!b.getValue());
   }
 }

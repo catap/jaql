@@ -15,9 +15,9 @@
  */
 package com.acme.extensions.expr;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.SpillJArray;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -42,42 +42,42 @@ public class SplitExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     // evaluate this expression's input.
-    JsonValue sValue = exprs[0].eval(context);
-    JsonValue dValue = exprs[1].eval(context);
+    Item sItem = exprs[0].eval(context);
+    Item dItem = exprs[1].eval(context);
 
     // if there is nothing to split, return nil
-    if (sValue == null)
+    if (sItem == null)
     {
-      return null;
+      return Item.nil;
     }
 
     // if there is no delimter, return nil
-    if (dValue == null)
+    if (dItem == null)
     {
-      return null;
+      return Item.nil;
     }
 
     // get the input string  
-    String s = ((JsonString) sValue).toString();
+    String s = ((JString) sItem.get()).toString();
 
     // get the delimter
-    String d = ((JsonString) dValue).toString();
+    String d = ((JString) dItem.get()).toString();
 
     // split the string
     String[] splits = s.split(d);
 
     // create an array to return the result
     int numSplits = splits.length;
-    SpilledJsonArray rArr = new SpilledJsonArray();
+    SpillJArray rArr = new SpillJArray();
     for (int i = 0; i < numSplits; i++)
-      rArr.addCopy(new JsonString(splits[i]));
+      rArr.add(new Item(new JString(splits[i])));
     // tell the array no more items will be added (this API will change...)
     rArr.freeze();
 
     // return the array as an Item
-    return rArr;
+    return new Item(rArr);
   }
 }

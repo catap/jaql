@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -138,22 +139,12 @@ public final class ForExpr extends IterExpr // TODO: rename
     return Bool3.FALSE;
   }
 
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  @Override
-  public boolean isMappable(int i)
-  {
-    return i == 0;
-  }
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
@@ -187,34 +178,34 @@ public final class ForExpr extends IterExpr // TODO: rename
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr collectExpr = collectExpr();
 
-    final JsonIterator inIter = inBinding.iter(context);
+    final Iter inIter = inBinding.iter(context);
 
-    return new JsonIterator() 
+    return new Iter() 
     {
-      JsonIterator inner = JsonIterator.EMPTY;
+      Iter inner = Iter.empty;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (inner.moveNext()) {
-            currentValue = inner.current();
-            return true;
+          Item item;
+          while ((item = inner.next()) != null)
+          {
+            return item;
           }
 
-          if (inIter.moveNext()) 
+          item = inIter.next();
+          if (item == null)
           {
-            inner = collectExpr.iter(context); 
+            return null;
           }
-          else
-          {
-            return false;
-          }
+
+          inner = collectExpr.iter(context);
         }
       }
     };

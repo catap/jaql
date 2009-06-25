@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 
 /**
  * 
@@ -44,9 +44,9 @@ public final class BooleanMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonBool makeValue()
+  public Item makeItem()
   {
-    return new JsonBool();
+    return new Item(new JBool());
   }
 
   /*
@@ -56,12 +56,11 @@ public final class BooleanMetaGetter extends MetaGetter
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
+  public void get(Object obj, Item target) throws IllegalArgumentException,
       IllegalAccessException, InvocationTargetException
   {
     boolean x = (Boolean) getter.invoke(obj);
-    ((JsonBool) target).value = x;
-    return target;
+    ((JBool) target.get()).value = x;
   }
 
   /*

@@ -18,13 +18,12 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -64,53 +63,54 @@ public class UnrollIndex extends UnrollStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonHolder expand(Context context, JsonHolder toExpand) throws Exception
+  public Item expand(Context context, Item toExpand) throws Exception
   {
-    JsonArray arr = (JsonArray)toExpand.value;
+    JArray arr = (JArray)toExpand.get();
     if( arr == null )
     {
       return null;
     }
-    JsonNumber index = (JsonNumber)exprs[0].eval(context);
+    JNumber index = (JNumber)exprs[0].eval(context).get();
     if( index == null )
     {
       return null;
     }
     long k = index.longValueExact();
-    JsonIterator iter = arr.iter();
-    JsonHolder hole = null;
-    JsonArray out;
-    if( arr instanceof BufferedJsonArray )
+    Iter iter = arr.iter();
+    Item item;
+    Item hole = null;
+    JArray out;
+    if( arr instanceof FixedJArray )
     {
-      BufferedJsonArray fixed = new BufferedJsonArray((int)arr.count()); // TODO: memory
+      FixedJArray fixed = new FixedJArray((int)arr.count()); // TODO: memory
       out = fixed;
       long i = 0;
-      for (JsonValue value : iter)
+      while( (item = iter.next()) != null )
       {
         if( i == k )
         {
-          hole = new JsonHolder(value); // TODO: memory
+          item = hole = new Item(item.get()); // TODO: memory
         }
-        fixed.set((int)i, value); // TODO: shouldn't add() be used here? 
+        fixed.set((int)i,item); // TODO: shouldn't add() be used here? 
         i++;
       }
     }
     else
     {
-      SpilledJsonArray spill = new SpilledJsonArray(); // TODO: memory
+      SpillJArray spill = new SpillJArray(); // TODO: memory
       out = spill;
       long i = 0;
-      for (JsonValue value : iter)
+      while( (item = iter.next()) != null )
       {
         if( i == k )
         {
-          hole = new JsonHolder(value); // TODO: memory
+          item = hole = new Item(item.get()); // TODO: memory
         }
-        spill.addCopy(value);
+        spill.add(item);
         i++;
       }
     }
-    toExpand.value = out;
+    toExpand.set(out);
     return hole;
   }
 }

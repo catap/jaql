@@ -21,10 +21,14 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.IterJIterator;
+import com.ibm.jaql.json.util.JIterator;
+import com.ibm.jaql.json.util.JIteratorIter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -41,7 +45,8 @@ public class JavaFnExpr extends Expr
   private Method      method;
   private Class<?>[]  paramTypes;
   private Object[]    args;
-  private SpilledJsonArray resultArray;            // FIXME: this doesn't work in recursion
+  private SpillJArray resultArray;            // FIXME: this doesn't work in recursion
+  private Item        resultItem = new Item(); // FIXME: this doesn't work in recursion
 
   /**
    * java("com.acme.Split", ...) --> new com.acme.Split().eval(...)
@@ -129,7 +134,9 @@ public class JavaFnExpr extends Expr
     for (int i = 0; i < n; i++)
     {
       Class<?> p = paramTypes[i];
-      if (!(JsonValue.class.isAssignableFrom(p) || JsonIterator.class.isAssignableFrom(p)))
+      if (!(JValue.class.isAssignableFrom(p) || Iter.class.isAssignableFrom(p)
+          || Item.class.isAssignableFrom(p) || JIterator.class
+          .isAssignableFrom(p)))
       {
         throw new RuntimeException("illegal argument to java method: "
             + cls.getName() + ": " + p.getName());
@@ -137,10 +144,17 @@ public class JavaFnExpr extends Expr
       // TODO: we can add some typechecking here when we have type inference
     }
     Class<?> rt = method.getReturnType();
-    if (JsonValue.class.isAssignableFrom(rt))
+    if (JValue.class.isAssignableFrom(rt))
+    {
+      resultItem = new Item();
+    }
+    else if (Iter.class.isAssignableFrom(rt))
     {
     }
-    else if (JsonIterator.class.isAssignableFrom(rt))
+    else if (Item.class.isAssignableFrom(rt))
+    {
+    }
+    else if (JIterator.class.isAssignableFrom(rt))
     {
     }
     else
@@ -192,7 +206,8 @@ public class JavaFnExpr extends Expr
   public Bool3 isArray()
   {
     Class<?> c = method.getReturnType();
-    if (JsonArray.class.isAssignableFrom(c) || JsonIterator.class.isAssignableFrom(c))
+    if (JIterator.class.isAssignableFrom(c) || JArray.class.isAssignableFrom(c)
+        || Iter.class.isAssignableFrom(c))
     {
       return Bool3.TRUE;
     }
@@ -230,13 +245,25 @@ public class JavaFnExpr extends Expr
     for (int i = 0; i < n; i++)
     {
       Class<?> p = paramTypes[i];
-      if (JsonValue.class.isAssignableFrom(p))
+      if (JValue.class.isAssignableFrom(p))
       {
-        args[i] = exprs[i].eval(context);
+        args[i] = exprs[i].eval(context).get();
       }
-      else if (JsonIterator.class.isAssignableFrom(p))
+      else if (JIterator.class.isAssignableFrom(p))
       {
-        JsonIterator iter = exprs[i].iter(context);
+        Iter iter = exprs[i].iter(context);
+        if (iter.isNull())
+        {
+          args[i] = null;
+        }
+        else
+        {
+          args[i] = new IterJIterator(iter);
+        }
+      }
+      else if (Iter.class.isAssignableFrom(p))
+      {
+        Iter iter = exprs[i].iter(context);
         if (iter.isNull())
         {
           args[i] = null;
@@ -245,6 +272,10 @@ public class JavaFnExpr extends Expr
         {
           args[i] = iter;
         }
+      }
+      else if (Item.class.isAssignableFrom(p))
+      {
+        args[i] = exprs[i].eval(context);
       }
       else
       {
@@ -262,30 +293,47 @@ public class JavaFnExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     Object result = makeCall(context);
     if (result == null)
     {
-      return null;
+      return Item.nil;
     }
-    else if (result instanceof JsonValue)
+    else if (result instanceof JValue)
     {
-      return (JsonValue)result;
+      resultItem.set((JValue) result);
+      return resultItem;
     }
-    else if (result instanceof JsonIterator)
+    else if (result instanceof Item)
     {
-      JsonIterator iter = (JsonIterator) result;
+      return (Item) result;
+    }
+    else if (result instanceof JIterator)
+    {
+      if (resultArray == null)
+      {
+        resultArray = new SpillJArray();
+      }
+      JIterator iter = (JIterator) result;
+      resultArray.set(iter);
+      resultItem.set(resultArray);
+      return resultItem;
+    }
+    else if (result instanceof Iter)
+    {
+      Iter iter = (Iter) result;
       if (iter.isNull())
       {
-        return null;
+        return Item.nil;
       }
       if (resultArray == null)
       {
-        resultArray = new SpilledJsonArray();
+        resultArray = new SpillJArray();
+        resultItem.set(resultArray);
       }
-      resultArray.setCopy(iter);
-      return resultArray;
+      resultArray.set(iter);
+      return resultItem;
     }
     else
     {
@@ -299,21 +347,29 @@ public class JavaFnExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     Object result = makeCall(context);
 
     if (result == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    else if (result instanceof JsonIterator)
+    else if (result instanceof JIterator)
     {
-      return (JsonIterator) result;
+      return new JIteratorIter((JIterator) result);
+    }
+    else if (result instanceof Iter)
+    {
+      return (Iter) result;
     }
     else
     {
-      JsonArray arr = (JsonArray) result; // cast error possible
+      if (result instanceof Item)
+      {
+        result = ((Item) result).get();
+      }
+      JArray arr = (JArray) result; // cast error possible
       return arr.iter();
     }
   }

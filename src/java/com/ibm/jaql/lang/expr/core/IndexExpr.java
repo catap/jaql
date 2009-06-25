@@ -15,20 +15,22 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import java.io.PrintStream;
+import java.util.HashSet;
+
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Var;
 
 /**
- * element(array, index) is the same as array[index], but it captures a simpler 
- * case that doesn't use path expressions. array[index] is transformed to use the
- * element function for better performance.
+ * 
  */
-@JaqlFn(fnName="index", minArgs=2, maxArgs=2)
-public class IndexExpr extends Expr // TODO: rename to IndexFn
+public class IndexExpr extends Expr
 {
   public IndexExpr(Expr[] exprs)
   {
@@ -52,7 +54,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
    */
   public IndexExpr(Expr expr, int i)
   {
-    this(expr, new ConstExpr(JsonLong.sharedLong(i)));
+    this(expr, new ConstExpr(JLong.sharedLongItem(i)));
   }
 
   /**
@@ -71,56 +73,56 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
     return exprs[1];
   }
 
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-//   *      java.util.HashSet)
-//   */
-//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-//      throws Exception
-//  {
-//    // TODO: use proper function?
-//    exprText.print("(");
-//    exprs[0].decompile(exprText, capturedVars);
-//    exprText.print(")[");
-//    exprs[1].decompile(exprText, capturedVars);
-//    exprText.print("]");
-//  }
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
+   *      java.util.HashSet)
+   */
+  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+      throws Exception
+  {
+    // TODO: use proper function?
+    exprText.print("(");
+    exprs[0].decompile(exprText, capturedVars);
+    exprText.print(")[");
+    exprs[1].decompile(exprText, capturedVars);
+    exprText.print("]");
+  }
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     // TODO: support multiple indexes? $a[3 to 7], $a[ [3,4,5,6,7] ]
     // TODO: support array slices?  $a[3:7]
-    JsonValue value;
-    JsonValue w = exprs[1].eval(context);
+    Item item = exprs[1].eval(context);
+    JValue w = item.get();
     if (w == null)
     {
-      return null;
+      return Item.nil;
     }
-    long i = ((JsonNumber) w).longValueExact();
+    long i = ((JNumber) w).longValueExact();
     Expr arrayExpr = exprs[0];
     if (arrayExpr.isArray().always())
     {
-      JsonIterator iter = arrayExpr.iter(context);
-      boolean hasNext = iter.moveN(i+1);
-      value = hasNext ? iter.current() : null;
+      Iter iter = arrayExpr.iter(context);
+      item = iter.nth(i);
     }
     else
     {
-      value = arrayExpr.eval(context);
-      JsonArray array = (JsonArray) value;
+      item = arrayExpr.eval(context);
+      // BUG: before was getNonNull, which is inconsistent with check.
+      JArray array = (JArray) item.get();
       if (array == null)
       {
-        return null;
+        return Item.nil;
       }
-      value = array.nth(i);
+      item = array.nth(i);
     }
-    return value;
+    return item;
   }
 }

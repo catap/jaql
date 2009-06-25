@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.util;
 
-import com.ibm.jaql.json.type.JsonSpan;
+import com.ibm.jaql.json.type.JSpan;
 
 /**
  * 
@@ -25,7 +25,7 @@ public class SimpleTokenizer
   protected byte[] buffer;
   protected int    pos;
   protected int    end;
-  protected JsonSpan  span = new JsonSpan();
+  protected JSpan  span = new JSpan();
 
   /**
    * 
@@ -61,7 +61,7 @@ public class SimpleTokenizer
    * 
    * @return
    */
-  public JsonSpan getSpan()
+  public JSpan getSpan()
   {
     return span;
   }
@@ -69,7 +69,7 @@ public class SimpleTokenizer
   /**
    * @return
    */
-  public JsonSpan next()
+  public JSpan next()
   {
     while (pos < end && !Character.isLetterOrDigit(buffer[pos]))
     {

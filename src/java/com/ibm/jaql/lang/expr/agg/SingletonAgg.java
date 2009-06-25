@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -32,7 +32,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "singleton", minArgs = 1, maxArgs = 1)
 public final class SingletonAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {
-  protected JsonValue saved;
+  protected Item saved = new Item();
   
   /**
    * @param exprs
@@ -53,45 +53,45 @@ public final class SingletonAgg extends AlgebraicAggregate // TODO: should this 
   @Override
   public void initInitial(Context context) throws Exception
   {
-    saved = null;
+    saved.set(null);
   }
 
   /**
    * This aggregate keeps nested arrays as a single item, but it does discard nulls.
    */
-  public void processInitial(Context context, JsonValue value) throws Exception
+  public void processInitial(Context context, Item item) throws Exception
   {
-    value = exprs[0].eval(context);
-    if( value != null )
+    item = exprs[0].eval(context);
+    if( ! item.isNull() )
     {
-      addInitial(value);
+      addInitial(item);
     }
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void addInitial(Item item) throws Exception
   {
-    if( saved != null )
+    if( saved.get() != null )
     {
       throw new RuntimeException("multiple items passed to singleton");
     }
-    saved = value.getCopy(null);
+    saved.copy(item);
   }
 
   @Override
-  public JsonValue getPartial() throws Exception
+  public Item getPartial() throws Exception
   {
     return saved;
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void addPartial(Item item) throws Exception
   {
-    addInitial(value);
+    addInitial(item);
   }
 
   @Override
-  public JsonValue getFinal() throws Exception
+  public Item getFinal() throws Exception
   {
     return saved;
   }

@@ -21,9 +21,9 @@ import antlr.collections.impl.BitSet;
 
 import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.util.JIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
@@ -65,10 +65,10 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
         if (expr == null) continue;
 
         // expect a JArray of JRecord
-        JsonArray arr = (JsonArray) expr.eval(ctx);
-        for (JsonValue value : arr)
+        JArray arr = (JArray) expr.eval(ctx).get();
+        for (JIterator iter = arr.jiterator(); iter.moveNext();)
         {
-          JsonRecord r = (JsonRecord) value;
+          JRecord r = (JRecord) iter.current();
           K kVal = convertKey(r);
           V vVal = convertVal(r);
           registry.register(kVal, vVal);
@@ -90,7 +90,7 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
     }
     finally
     {
-      ctx.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+      ctx.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     }
   }
 

@@ -23,11 +23,11 @@ import java.net.URLConnection;
 
 import com.ibm.jaql.io.AbstractOutputAdapter;
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.ClosableJsonWriter;
-import com.ibm.jaql.io.converter.JsonToStream;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.io.ItemWriter;
+import com.ibm.jaql.io.converter.ItemToStream;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JRecord;
 
 /** Output adapter that writes {@link Item}s to a URL, using a {@link ItemToStream} 
  * converter in the process.
@@ -36,32 +36,31 @@ import com.ibm.jaql.json.type.JsonValue;
 public class StreamOutputAdapter extends AbstractOutputAdapter
 {
 
-  protected JsonToStream<JsonValue> formatter;
+  protected ItemToStream formatter;
 
-  private ClosableJsonWriter     writer;
+  private ItemWriter     writer;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.AbstractOutputAdapter#initializeFrom(com.ibm.jaql.json.type.JRecord)
    */
-  @SuppressWarnings("unchecked")
   @Override
-  public void init(JsonValue args) throws Exception
+  protected void initializeFrom(JRecord args) throws Exception
   {
-    super.init(args);
+    super.initializeFrom(args);
 
-    JsonRecord outputArgs = AdapterStore.getStore().output.getOption((JsonRecord)args);
+    JRecord outputArgs = AdapterStore.getStore().output.getOption(args);
     // setup the formatter
     Class<?> fclass = AdapterStore.getStore().getClassFromRecord(outputArgs,
         FORMAT_NAME, null);
     if (fclass == null) throw new Exception("formatter must be specified");
-    if (!JsonToStream.class.isAssignableFrom(fclass))
+    if (!ItemToStream.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemOutputStream");
-    formatter = (JsonToStream) fclass.newInstance();
-    JsonValue arrAcc = outputArgs.getValue(StreamInputAdapter.ARR_NAME);
-    if(arrAcc != null) {
-      formatter.setArrayAccessor( ((JsonBool)arrAcc).value);
+    formatter = (ItemToStream) fclass.newInstance();
+    Item arrAcc = outputArgs.getValue(StreamInputAdapter.ARR_NAME);
+    if(!arrAcc.isNull()) {
+      formatter.setArrayAccessor( ((JBool)arrAcc.get()).value);
     }
   }
 
@@ -70,18 +69,18 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
    * 
    * @see com.ibm.jaql.io.OutputAdapter#getItemWriter()
    */
-  public ClosableJsonWriter getJsonWriter() throws Exception
+  public ItemWriter getItemWriter() throws Exception
   {
     final OutputStream output = openStream(location);
     this.formatter.setOutputStream(output);
-    this.writer = new ClosableJsonWriter() {
-      
+    this.writer = new ItemWriter() {
+
       public void close() throws IOException
       {
         formatter.close();
       }
 
-      public void write(JsonValue value) throws IOException
+      public void write(Item value) throws IOException
       {
         formatter.write(value);
       }

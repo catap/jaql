@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.path;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -26,7 +26,7 @@ public abstract class PathStep extends Expr
   /**
    * This value is set by the parent PathStep/PathExpr before eval()/iter() is called.
    */
-  protected JsonValue input;
+  protected Item input;
   
   /**
    * @param exprs
@@ -119,7 +119,7 @@ public abstract class PathStep extends Expr
    * @return
    * @throws Exception
    */
-  protected JsonValue nextStep(Context context, JsonValue input) throws Exception
+  protected Item nextStep(Context context, Item input) throws Exception
   {
     PathStep s = nextStep();
     s.input = input;

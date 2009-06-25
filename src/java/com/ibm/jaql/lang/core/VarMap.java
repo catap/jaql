@@ -16,22 +16,21 @@
 package com.ibm.jaql.lang.core;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * 
  */
-public class VarMap implements Iterable<Map.Entry<Var, Var>>
+public class VarMap
 {
+  private Env               env;
   private HashMap<Var, Var> map = new HashMap<Var, Var>();
 
   /**
    * @param env
    */
-  public VarMap()
+  public VarMap(Env env)
   {
+    this.env = env;
   }
 
   /**
@@ -80,14 +79,19 @@ public class VarMap implements Iterable<Map.Entry<Var, Var>>
     return v;
   }
 
-  @Override
-  public Iterator<Entry<Var, Var>> iterator()
+  /**
+   * @return
+   */
+  public Env env()
   {
-    return map.entrySet().iterator();
+    return env;
   }
 
-  public int size()
+  /**
+   * @param env
+   */
+  public void reset(Env env)
   {
-    return map.size();
+    this.env = env;
   }
 }

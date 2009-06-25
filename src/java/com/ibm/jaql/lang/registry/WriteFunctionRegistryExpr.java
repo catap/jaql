@@ -16,8 +16,8 @@
 package com.ibm.jaql.lang.registry;
 
 import com.ibm.jaql.io.registry.RegistryUtil;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -43,12 +43,13 @@ public class WriteFunctionRegistryExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonString fileName = JaqlUtil.enforceNonNull((JsonString) exprs[0].eval(context));
+    Item fileItem = exprs[0].eval(context);
+    JString fileName = (JString) fileItem.getNonNull();
 
     RegistryUtil.writeFile(fileName.toString(), JaqlUtil.getFunctionStore()); // FIXME: memory
 
-    return fileName;
+    return fileItem;
   }
 }

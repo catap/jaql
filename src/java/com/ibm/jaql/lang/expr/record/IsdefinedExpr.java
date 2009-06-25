@@ -15,12 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import java.io.PrintStream;
-import java.util.HashSet;
-
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
@@ -55,7 +53,7 @@ public final class IsdefinedExpr extends Expr
 
   public IsdefinedExpr(Var recVar, String name)
   {
-    super(new VarExpr(recVar), new ConstExpr(new JsonString(name)));
+    super(new VarExpr(recVar), new ConstExpr(new JString(name)));
   }
 
   /*
@@ -69,35 +67,24 @@ public final class IsdefinedExpr extends Expr
     return exprs[0].isNull().or(exprs[1].isNull());
   }
 
-  @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
-  {
-    exprText.print("isdefined (");
-    exprs[0].decompile(exprText, capturedVars);
-    exprText.print(").(");
-    exprs[1].decompile(exprText, capturedVars);
-    exprText.print(")");
-  }
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonRecord rec = (JsonRecord) exprs[0].eval(context);
+    JRecord rec = (JRecord) exprs[0].eval(context).get();
     if (rec == null)
     {
-      return null;
+      return Item.nil;
     }
-    JsonString name = (JsonString) exprs[1].eval(context);
+    JString name = (JString) exprs[1].eval(context).get();
     if (name == null)
     {
-      return null;
+      return Item.nil;
     }
-    return JsonBool.make(rec.findName(name) >= 0);
+    return JBool.make(rec.findName(name) >= 0);
   }
 
 }

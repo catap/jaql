@@ -17,17 +17,18 @@ package com.ibm.jaql.io;
 
 import org.apache.log4j.Logger;
 
-import com.ibm.jaql.io.converter.FromJson;
-import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.io.converter.ToItem;
 import com.ibm.jaql.io.hadoop.CompositeInputAdapter;
 import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
 import com.ibm.jaql.io.registry.RegistryUtil;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
 /**
@@ -35,7 +36,7 @@ import com.ibm.jaql.util.ClassLoaderMgr;
  * options.
  */
 public class AdapterStore
-    extends Registry<JsonString, AdapterStore.AdapterRegistry>
+    extends Registry<JString, AdapterStore.AdapterRegistry>
 {
 
   static final Logger  LOG                        = Logger.getLogger(AdapterStore.class.getName());
@@ -47,8 +48,8 @@ public class AdapterStore
    */
   public static class AdapterRegistry
   {
-    private JsonRecord input;
-    private JsonRecord output;
+    private JRecord input;
+    private JRecord output;
 
     /**
      * Empty adapter registry
@@ -64,28 +65,28 @@ public class AdapterStore
      * @param input
      * @param output
      */
-    public AdapterRegistry(JsonRecord input, JsonRecord output)
+    public AdapterRegistry(JRecord input, JRecord output)
     {
       this.input = input;
       this.output = output;
     }
 
-    public void setInput(JsonRecord r)
+    public void setInput(JRecord r)
     {
       this.input = r;
     }
 
-    public JsonRecord getInput()
+    public JRecord getInput()
     {
       return this.input;
     }
 
-    public void setOutput(JsonRecord r)
+    public void setOutput(JRecord r)
     {
       this.output = r;
     }
 
-    public JsonRecord getOutput()
+    public JRecord getOutput()
     {
       return this.output;
     }
@@ -93,7 +94,7 @@ public class AdapterStore
 
   public static class DefaultRegistryFormat
       extends
-        JsonRegistryFormat<JsonString, AdapterStore.AdapterRegistry>
+        JsonRegistryFormat<JString, AdapterStore.AdapterRegistry>
   {
 
     public DefaultRegistryFormat()
@@ -102,39 +103,49 @@ public class AdapterStore
     }
 
     @Override
-    protected FromJson<JsonString> createFromKeyConverter()
+    protected ToItem<JString> createFromKeyConverter()
     {
-      return new FromJson<JsonString>() {
+      return new ToItem<JString>() {
 
-        public JsonString convert(JsonValue src, JsonString target)
+        public void convert(Item src, JString tgt)
         {
-          target.set(src.toString());
-          return target;
+          tgt.set(src.get().toString());
         }
 
-        public JsonString createInitialTarget()
+        public JString createTarget()
         {
-          return new JsonString();
+          return new JString();
         }
+
       };
     }
 
     @Override
-    protected FromJson<AdapterRegistry> createFromValConverter()
+    protected ToItem<AdapterRegistry> createFromValConverter()
     {
-      return new FromJson<AdapterRegistry>() {
+      return new ToItem<AdapterRegistry>() {
 
-        public AdapterRegistry convert(JsonValue src, AdapterRegistry tgt)
+        public void convert(Item src, AdapterRegistry tgt)
         {
-          JsonRecord r = (JsonRecord) src;
-          JsonRecord iR = (JsonRecord)r.getValue(Adapter.INOPTIONS_NAME);
-          JsonRecord oR = (JsonRecord)r.getValue(Adapter.OUTOPTIONS_NAME);
+          JRecord r = (JRecord) src.get();
+          JRecord iR = null;
+          JRecord oR = null;
+          Item id = r.getValue(Adapter.INOPTIONS_NAME);
+
+          if (id != null)
+          {
+            iR = (JRecord) id.get();
+          }
+          Item od = r.getValue(Adapter.OUTOPTIONS_NAME);
+          if (od != null)
+          {
+            oR = (JRecord) od.get();
+          }
           tgt.setInput(iR);
           tgt.setOutput(oR);
-          return tgt;
         }
 
-        public AdapterRegistry createInitialTarget()
+        public AdapterRegistry createTarget()
         {
           return new AdapterRegistry();
         }
@@ -143,43 +154,45 @@ public class AdapterStore
     }
 
     @Override
-    protected ToJson<JsonString> createToKeyConverter()
+    protected FromItem<JString> createToKeyConverter()
     {
-      return new ToJson<JsonString>() {
+      return new FromItem<JString>() {
 
-        public JsonValue convert(JsonString src, JsonValue target)
+        public void convert(JString src, Item tgt)
         {
-          ((JsonString) target).set(src.toString());
-          return target;
+          ((JString) tgt.get()).set(src.toString());
         }
 
-        public JsonValue createInitialTarget()
+        public Item createTarget()
         {
-          return new JsonString();
+          Item d = new Item();
+          d.set(new JString());
+          return d;
         }
 
       };
     }
 
     @Override
-    protected ToJson<AdapterRegistry> createToValConverter()
+    protected FromItem<AdapterRegistry> createToValConverter()
     {
-      return new ToJson<AdapterRegistry>() {
+      return new FromItem<AdapterRegistry>() {
 
-        public JsonValue convert(AdapterRegistry src, JsonValue tgt)
+        public void convert(AdapterRegistry src, Item tgt)
         {
-          JsonRecord iR = src.getInput();
-          JsonRecord oR = src.getOutput();
-          BufferedJsonRecord tR = (BufferedJsonRecord) tgt;
+          JRecord iR = src.getInput();
+          JRecord oR = src.getOutput();
+          MemoryJRecord tR = (MemoryJRecord) tgt.get();
           tR.clear();
           if (iR != null) tR.add(Adapter.INOPTIONS_NAME, iR);
           if (oR != null) tR.add(Adapter.OUTOPTIONS_NAME, oR);
-          return tgt;
         }
 
-        public JsonValue createInitialTarget()
+        public Item createTarget()
         {
-          return new BufferedJsonRecord();
+          Item d = new Item();
+          d.set(new MemoryJRecord());
+          return d;
         }
 
       };
@@ -195,7 +208,7 @@ public class AdapterStore
   }
 
   public static AdapterStore initStore(
-      RegistryFormat<JsonString, AdapterStore.AdapterRegistry, ? extends JsonValue> fmt)
+      RegistryFormat<JString, AdapterStore.AdapterRegistry, ? extends JValue> fmt)
   {
     store = new AdapterStore(fmt);
     try
@@ -217,7 +230,7 @@ public class AdapterStore
   }
 
   public AdapterStore(
-      RegistryFormat<JsonString, AdapterStore.AdapterRegistry, ? extends JsonValue> fmt)
+      RegistryFormat<JString, AdapterStore.AdapterRegistry, ? extends JValue> fmt)
   {
     super(fmt);
   }
@@ -225,30 +238,30 @@ public class AdapterStore
   protected abstract class OptionHandler
   {
 
-    public abstract JsonRecord getOption(String name);
+    public abstract JRecord getOption(String name);
 
-    public abstract JsonRecord getOverride(JsonRecord args);
+    public abstract JRecord getOverride(JRecord args);
 
-    public abstract void replaceOption(BufferedJsonRecord args, JsonRecord options);
+    public abstract void replaceOption(MemoryJRecord args, JRecord options);
 
-    public BufferedJsonRecord getOption(JsonRecord args)
+    public MemoryJRecord getOption(JRecord args)
     {
-      JsonValue tValue = args.getValue(Adapter.TYPE_NAME);
-      JsonRecord defaultOptions = null;
-      if (tValue != null)
+      Item tItem = args.getValue(Adapter.TYPE_NAME);
+      JRecord defaultOptions = null;
+      if (tItem != null && tItem.get() != null)
       {
-        defaultOptions = getOption(tValue.toString()); // FIXME: memory
+        defaultOptions = getOption(tItem.get().toString()); // FIXME: memory
       }
-      BufferedJsonRecord overrideOptions = (BufferedJsonRecord) getOverride(args);
+      MemoryJRecord overrideOptions = (MemoryJRecord) getOverride(args);
       overrideOptions = unionOptions(defaultOptions, overrideOptions);
       return overrideOptions;
     }
 
-    public BufferedJsonRecord unionOptions(JsonRecord src, BufferedJsonRecord tgt)
+    public MemoryJRecord unionOptions(JRecord src, MemoryJRecord tgt)
     {
       if (tgt == null)
       {
-        tgt = new BufferedJsonRecord();
+        tgt = new MemoryJRecord();
       }
 
       if (src == null)
@@ -259,7 +272,7 @@ public class AdapterStore
       int numFields = src.arity();
       for (int i = 0; i < numFields; i++)
       {
-        JsonString name = src.getName(i);
+        JString name = src.getName(i);
         int aIdx = tgt.findName(name);
         if (aIdx < 0)
         {
@@ -276,20 +289,20 @@ public class AdapterStore
 
     public Class<?> getAdapterClass(String name) throws Exception
     {
-      JsonRecord r = getOption(name);
+      JRecord r = getOption(name);
       if (r == null) return null;
 
       return getClassFromRecord(r, Adapter.ADAPTER_NAME, null);
     }
 
-    public Adapter getAdapter(JsonValue value) throws Exception
+    public Adapter getAdapter(Item item) throws Exception
     {
-      JsonRecord args = (JsonRecord) value;
-      JsonRecord options = getOption(args);
+      JRecord args = (JRecord) item.get();
+      JRecord options = getOption(args);
       Class<?> adapterClass = getClassFromRecord(options, Adapter.ADAPTER_NAME,
           null);
       Adapter adapter = (Adapter) adapterClass.newInstance();
-      adapter.init(value);
+      adapter.initializeFrom(item);
       return adapter;
     }
   }
@@ -297,53 +310,53 @@ public class AdapterStore
   public class InputHandler extends OptionHandler
   {
 
-    public JsonRecord getOption(String name)
+    public JRecord getOption(String name)
     {
-      AdapterRegistry a = get(new JsonString(name));
+      AdapterRegistry a = get(new JString(name));
       if (a == null) return null;
       return a.getInput();
     }
 
-    public JsonRecord getOverride(JsonRecord args)
+    public JRecord getOverride(JRecord args)
     {
-      JsonValue i = args.getValue(Adapter.INOPTIONS_NAME);
-      if (i == null) {
+      Item i = args.getValue(Adapter.INOPTIONS_NAME);
+      if (i == Item.nil) {
         // handle the case where OPTIONS_NAME is used instead
         i = args.getValue(Adapter.OPTIONS_NAME);
-        // can still be null
+        if (i == Item.nil) 
+          return null;
       }
-      return (JsonRecord) i;
+      return (JRecord) i.get();
     }
 
-    public void replaceOption(BufferedJsonRecord args, JsonRecord options)
+    public void replaceOption(MemoryJRecord args, JRecord options)
     {
-      args.set(Adapter.INOPTIONS_NAME, options);
-//      Item tmp = args.getValue(Adapter.INOPTIONS_NAME);
-//
-//      if (tmp != Item.NIL)
-//      {
-//        tmp.set(options);
-//      }
-//      else
-//      {
-//        tmp = new Item(options);
-//        args.add(Adapter.INOPTIONS_NAME, tmp);
-//      }
+      Item tmp = args.getValue(Adapter.INOPTIONS_NAME);
+
+      if (tmp != Item.nil)
+      {
+        tmp.set(options);
+      }
+      else
+      {
+        tmp = new Item(options);
+        args.add(Adapter.INOPTIONS_NAME, tmp);
+      }
     }
 
     @Override
-    public Adapter getAdapter(JsonValue value) throws Exception
+    public Adapter getAdapter(Item item) throws Exception
     {
-      if (value instanceof JsonRecord)
+      if (item.get() instanceof JRecord)
       {
-        return super.getAdapter(value);
+        return super.getAdapter(item);
       }
       else
       {
         // Assume its an array which can only be handled by a CompositeInputAdapter
         // TODO: abstract this to let other array handler plug-ins
         CompositeInputAdapter adapter = new CompositeInputAdapter();
-        adapter.init(value);
+        adapter.initializeFrom(item);
         return adapter;
       }
     }
@@ -352,39 +365,39 @@ public class AdapterStore
   public class OutputHandler extends OptionHandler
   {
 
-    public JsonRecord getOption(String name)
+    public JRecord getOption(String name)
     {
-      AdapterRegistry a = get(new JsonString(name));
+      AdapterRegistry a = get(new JString(name));
       if (a == null) return null;
       return a.getOutput();
     }
 
-    public JsonRecord getOverride(JsonRecord args)
+    public JRecord getOverride(JRecord args)
     {
-      JsonValue i = args.getValue(Adapter.OUTOPTIONS_NAME);
-      if (i == null) {
+      Item i = args.getValue(Adapter.OUTOPTIONS_NAME);
+      if (i == Item.nil) {
         // handle the case where OPTIONS_NAME is used instead
         i = args.getValue(Adapter.OPTIONS_NAME);
-        // can still be null
+        if (i == Item.nil) 
+          return null;
       }
-      return (JsonRecord) i;
+      return (JRecord) i.get();
     }
 
-    public void replaceOption(BufferedJsonRecord args, JsonRecord options)
+    public void replaceOption(MemoryJRecord args, JRecord options)
     {
-      args.set(Adapter.OUTOPTIONS_NAME, options);
-//      Item tmp = args.getValue(Adapter.OUTOPTIONS_NAME);
-//
-//      if (tmp != Item.NIL)
-//      {
-//        tmp.set(options);
-//      }
-//      else
-//      {
-//        tmp = new Item(options);
-//        args.add(Adapter.OUTOPTIONS_NAME, tmp);
-//
-//      }
+      Item tmp = args.getValue(Adapter.OUTOPTIONS_NAME);
+
+      if (tmp != Item.nil)
+      {
+        tmp.set(options);
+      }
+      else
+      {
+        tmp = new Item(options);
+        args.add(Adapter.OUTOPTIONS_NAME, tmp);
+
+      }
     }
   }
 
@@ -401,14 +414,14 @@ public class AdapterStore
    * @return
    * @throws Exception
    */
-  public Class<?> getClassFromRecord(JsonRecord options, String name,
+  public Class<?> getClassFromRecord(JRecord options, String name,
       Class<?> defaultValue) throws Exception
   {
     Class<?> c = defaultValue;
     if (options != null && name != null)
     {
-      JsonValue wName = options.getValue(name);
-      if (wName != null && wName instanceof JsonString)
+      JValue wName = options.getValue(name).get();
+      if (wName != null && wName instanceof JString)
       {
         c = ClassLoaderMgr.resolveClass(wName.toString());
       }
@@ -425,11 +438,11 @@ public class AdapterStore
    * @return
    * @throws Exception
    */
-  public String getLocation(JsonRecord args) throws Exception
+  public String getLocation(JRecord args) throws Exception
   {
-    JsonValue lValue = args.getValue(Adapter.LOCATION_NAME);
-    if (lValue == null || "".equals(lValue.toString()))
+    Item lItem = args.getValue(Adapter.LOCATION_NAME);
+    if (lItem == null || lItem.isNull() || "".equals(lItem.get().toString()))
       return null;
-    return lValue.toString();
+    return lItem.get().toString();
   }
 }

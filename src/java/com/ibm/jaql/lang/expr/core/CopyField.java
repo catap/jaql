@@ -18,10 +18,10 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -69,7 +69,7 @@ public class CopyField extends FieldExpr
    */
   public CopyField(Expr recExpr, String name, When when)
   {
-    this(recExpr, new ConstExpr(new JsonString(name)), when);
+    this(recExpr, new ConstExpr(name), when);
   }
 
   /**
@@ -77,7 +77,7 @@ public class CopyField extends FieldExpr
    * @param recExpr
    * @param name
    */
-  public CopyField(Expr recExpr, JsonString name, When when)
+  public CopyField(Expr recExpr, JString name, When when)
   {
     this(recExpr, new ConstExpr(name), when);
   }
@@ -89,7 +89,7 @@ public class CopyField extends FieldExpr
    */
   public CopyField(Var recVar, String name, When when)
   {
-    this(new VarExpr(recVar), new ConstExpr(new JsonString(name)), when);
+    this(new VarExpr(recVar), new ConstExpr(name), when);
   }
 
   public final Expr recExpr()
@@ -121,17 +121,17 @@ public class CopyField extends FieldExpr
    * 
    */
   @Override
-  public void eval(Context context, BufferedJsonRecord outrec) throws Exception
+  public void eval(Context context, MemoryJRecord outrec) throws Exception
   {
-    JsonString name = (JsonString) nameExpr().eval(context);
+    JString name = (JString) nameExpr().eval(context).get();
     if( name == null )
     {
       return;
     }
-    JsonRecord inrec = (JsonRecord) recExpr().eval(context);
+    JRecord inrec = (JRecord) recExpr().eval(context).get();
     if (inrec != null)
     {
-      JsonValue value = inrec.getValue(name, null);
+      Item value = inrec.getValue(name, null);
       if( when == When.DEFINED )
       {
         if( value != null )
@@ -141,20 +141,23 @@ public class CopyField extends FieldExpr
       }
       else if( when == When.NONNULL )
       {
-        if( value != null )
+        if( value != null && ! value.isNull() )
         {
           outrec.add(name, value);
         }
       }
-      else
+      else // if( when == When.ALWAYS )
       {
-        assert when == When.ALWAYS;
+        if( value == null )
+        {
+          value = Item.nil;
+        }
         outrec.add(name, value);
       }
     }
-    else if( when == When.ALWAYS ) // inrec==null
+    else if( when == When.ALWAYS )
     {
-      outrec.add(name, null);   // TODO: should this create the field?
+      outrec.add(name, Item.nil);   // TODO: should this create the field?
     }
   }
 
@@ -162,12 +165,13 @@ public class CopyField extends FieldExpr
    * 
    */
   @Override
-  public Bool3 staticNameMatches(JsonString name)
+  public Bool3 staticNameMatches(JString name)
   {
     if (exprs[1] instanceof ConstExpr)
     {
       ConstExpr c = (ConstExpr) exprs[1];
-      JsonString text = (JsonString) c.value;
+      Item value = c.value;
+      JString text = (JString) value.get();
       if (text == null)
       {
         return Bool3.FALSE;
