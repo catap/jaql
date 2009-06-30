@@ -22,6 +22,7 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
@@ -73,6 +74,20 @@ public class ToNumberFn extends Expr
       {
         BigDecimal x = new BigDecimal(s, MathContext.DECIMAL128);
         jdec.setValue(x);
+        num = jdec;
+      }
+    }
+    if (w instanceof JsonNumeric)
+    {
+      JsonNumeric n = (JsonNumeric)w;
+      try
+      {
+        jlong.setValue(n.longValueExact());
+        num = jlong;
+      }
+      catch(Exception ex)
+      {
+        jdec.setValue(n.decimalValue());
         num = jdec;
       }
     }

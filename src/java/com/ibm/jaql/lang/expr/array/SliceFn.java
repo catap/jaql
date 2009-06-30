@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -55,8 +55,8 @@ public class SliceFn extends IterExpr
   @Override
   public JsonIterator iter(final Context context) throws Exception
   {
-    JsonNumber jlow  = (JsonNumber)exprs[1].eval(context);
-    JsonNumber jhigh = (JsonNumber)exprs[2].eval(context);
+    JsonNumeric jlow  = (JsonNumeric)exprs[1].eval(context);
+    JsonNumeric jhigh = (JsonNumeric)exprs[2].eval(context);
     
     final long low  = (jlow == null) ? 0 : jlow.longValueExact();
     final long high = (jhigh == null) ? Long.MAX_VALUE : jhigh.longValueExact();

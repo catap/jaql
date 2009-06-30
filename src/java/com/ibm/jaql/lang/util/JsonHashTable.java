@@ -110,7 +110,7 @@ public class JsonHashTable
    */
   public void add(int tag, JsonValue key, JsonValue value) throws IOException
   {
-    int h = key.hashCode();
+    int h = (key == null) ? 0 : key.hashCode();
     int i = (h & 0x7fffffff) % table.length; // TODO: use fast mod (pow 2?)
     Entry e;
     for (e = table[i]; e != null; e = e.next)

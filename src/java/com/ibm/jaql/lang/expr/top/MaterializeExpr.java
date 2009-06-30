@@ -15,10 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
+import java.io.PrintStream;
+import java.util.HashSet;
+
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -30,24 +34,28 @@ public class MaterializeExpr extends TopExpr
   private Var var;
 
   /**
-   * materialize()
+   * materialize var = expr;
    * 
-   * @param exprs
+   * @param var
+   * @param expr
    */
-  public MaterializeExpr(Expr[] exprs)
+  public MaterializeExpr(Var var, Expr expr)
   {
-    super(NO_EXPRS);
+    super(new Expr[]{expr.clone(new VarMap())});
+    this.var = var;
+    var.expr = expr;
   }
 
   /**
-   * materialize var
+   * materialize var;  
+   * 
+   * ie, materialize var = var.expr
    * 
    * @param var
    */
   public MaterializeExpr(Var var)
   {
-    super(NO_EXPRS);
-    this.var = var;
+    this(var, var.expr);
   }
 
   /*
@@ -61,6 +69,21 @@ public class MaterializeExpr extends TopExpr
     return false;
   }
 
+  @Override
+  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
+  {
+    exprText.print("materialize ");
+    exprText.print(var.name());
+    exprText.print(" = ");
+    exprs[0].decompile(exprText, capturedVars);
+  }
+  
+  @Override
+  public Expr clone(VarMap varMap)
+  {
+    return new MaterializeExpr(var, exprs[0].clone(varMap));
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -69,11 +92,11 @@ public class MaterializeExpr extends TopExpr
   public JsonBool eval(Context context) throws Exception
   {
     JsonBool result = JsonBool.FALSE;
-    if (var.expr != null && var.value == null )
+    if( var.value == null )
     {
       result = JsonBool.TRUE;
       Context gctx = JaqlUtil.getSessionContext();
-      JsonValue value = var.expr.eval(gctx);
+      JsonValue value = exprs[0].eval(gctx);
       var.setValue(value);
     }
     return result;

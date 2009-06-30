@@ -559,7 +559,10 @@ public class ToMapReduce extends Rewrite
           // -> the for loop will run sequentially, 
           // -> use the same segment
           // try to parallelize the return
-          seg.addChild(segment(expr.child(1)));
+          for(int i = 1 ; i < expr.numChildren() ; i++)
+          {
+            seg.addChild(segment(expr.child(i)));
+          }
           break;
         case MAP :
         case GROUP :

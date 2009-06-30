@@ -27,7 +27,7 @@ import com.ibm.jaql.util.Bool3;
 
 
 /**
- * splitAt(string src, string sep, int n) ==> [string1, string2, ..., stringn]
+ * strSplitN(string src, string sep, int n) ==> [string1, string2, ..., stringn]
  * sep is a string of one charater.
  */
 @JaqlFn(fnName = "strSplitN", minArgs = 3, maxArgs = 3)
