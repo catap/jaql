@@ -42,6 +42,10 @@ public class DoConstPragma extends Rewrite
   @Override
   public boolean rewrite(Expr expr) throws Exception
   {
+    if( ! expr.getCapturedVars().isEmpty() )
+    {
+      return false;
+    }
     Context context = new Context();
     JsonValue value = expr.eval(context);
     ConstExpr c = new ConstExpr(value);

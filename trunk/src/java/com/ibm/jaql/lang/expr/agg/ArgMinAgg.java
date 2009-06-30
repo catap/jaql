@@ -27,6 +27,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "argmin", minArgs = 2, maxArgs = 2)
 public final class ArgMinAgg extends AlgebraicAggregate
 {
+  private boolean noMin;
   private JsonValue min;
   private JsonValue arg;
   private JaqlFunction keyFn;
@@ -46,8 +47,7 @@ public final class ArgMinAgg extends AlgebraicAggregate
   public void initInitial(Context context) throws Exception
   {
     this.context = context;
-    min = null;
-    arg = null;
+    noMin = true;
     keyFn = (JaqlFunction)exprs[1].eval(context);
   }
 
@@ -60,22 +60,18 @@ public final class ArgMinAgg extends AlgebraicAggregate
     }
     fnArgs[0] = value;
     JsonValue key = keyFn.eval(context,fnArgs);
-    if( min == null )
+    if( noMin || key.compareTo(min) < 0 )
     {
-      min = key.getCopy(null);
-      arg = value.getCopy(null);
-    }
-    else if( key.compareTo(min) < 0 )
-    {
-      min.setCopy(key);
-      arg.setCopy(value);
+      noMin = false;
+      min = key.getCopy(min);
+      arg = value.getCopy(arg);
     }
   }
 
   @Override
   public JsonValue getPartial() throws Exception
   {
-    return arg;
+    return noMin ? null : arg;
   }
 
   @Override

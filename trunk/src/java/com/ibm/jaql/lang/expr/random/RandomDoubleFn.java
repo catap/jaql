@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.random;
 
 import java.util.Random;
 
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -26,18 +26,18 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "randomLong", minArgs = 0, maxArgs = 1)
-public class RandomLongFn extends Expr
+@JaqlFn(fnName = "randomDouble", minArgs = 0, maxArgs = 1)
+public class RandomDoubleFn extends Expr
 {
   private Random rng;
-  private JsonLong  longType = new JsonLong();
+  private JsonDouble jdouble = new JsonDouble();
 
   /**
    * long randomLong(number seed)
    * 
    * @param exprs
    */
-  public RandomLongFn(Expr[] exprs)
+  public RandomDoubleFn(Expr[] exprs)
   {
     super(exprs);
   }
@@ -45,9 +45,17 @@ public class RandomLongFn extends Expr
   /**
    * @param seed
    */
-  public RandomLongFn(Expr seed)
+  public RandomDoubleFn()
   {
-    super(new Expr[]{seed});
+    super(NO_EXPRS);
+  }
+
+  /**
+   * @param seed
+   */
+  public RandomDoubleFn(Expr seed)
+  {
+    super(seed);
   }
 
   /*
@@ -66,9 +74,8 @@ public class RandomLongFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonLong eval(final Context context) throws Exception
+  public JsonDouble eval(final Context context) throws Exception
   {
-    // FIXME: This class does not work in recursion...
     if (rng == null)
     {
       if( exprs.length == 0 )
@@ -82,7 +89,7 @@ public class RandomLongFn extends Expr
         rng = new Random(seed);
       }
     }
-    longType.value = rng.nextLong() & 0x7FFFFFFFFFFFFFFFL;
-    return longType;
+    jdouble.value = rng.nextDouble();
+    return jdouble;
   }
 }

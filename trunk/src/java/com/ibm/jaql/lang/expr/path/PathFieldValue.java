@@ -58,6 +58,15 @@ public class PathFieldValue extends PathStep
   {
     super(name, next);
   }
+  
+  /**
+   * The name of the field to return.
+   * @return
+   */
+  public Expr nameExpr()
+  {
+    return exprs[0];
+  }
 
   /**
    * 

@@ -286,8 +286,11 @@ public class AdapterStore
     {
       JsonRecord args = (JsonRecord) value;
       JsonRecord options = getOption(args);
-      Class<?> adapterClass = getClassFromRecord(options, Adapter.ADAPTER_NAME,
-          null);
+      Class<?> adapterClass = getClassFromRecord(options, Adapter.ADAPTER_NAME, null);
+      if( adapterClass == null )
+      {
+        throw new RuntimeException("adapter not found for i/o descriptor: "+args);
+      }
       Adapter adapter = (Adapter) adapterClass.newInstance();
       adapter.init(value);
       return adapter;
