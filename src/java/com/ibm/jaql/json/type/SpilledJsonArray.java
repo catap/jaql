@@ -438,12 +438,12 @@ public class SpilledJsonArray extends JsonArray
       value = serializer.read(input, value);
       setCache(i, value);
     } else {
+      ensureSpillFile();
       if (serializer.equals(spillSerializer)) {
     	ensureSpillFile();
         spillSerializer.copy(input, spillFile); 
       } else {
         tempValue = serializer.read(input, tempValue);
-        ensureSpillFile();
         spillSerializer.write(spillFile, tempValue);
         // value in tempValue is free to use
       }

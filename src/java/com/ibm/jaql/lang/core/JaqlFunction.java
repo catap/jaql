@@ -225,6 +225,21 @@ public class JaqlFunction extends JsonAtom
   }
 
   /**
+   * Evaluate function of one parameter
+   * 
+   * @param context
+   * @param v
+   * @return
+   * @throws Exception
+   */
+  public JsonValue eval(Context context, JsonValue arg) throws Exception
+  {
+    checkArgs(1);
+    fn.param(0).var.setValue(arg);
+    return fn.body().eval(context);
+  }
+  
+  /**
    * @param context
    * @param args
    * @param start index of first args to use
@@ -291,6 +306,21 @@ public class JaqlFunction extends JsonAtom
   }
 
   /**
+   * Evaluate function of one parameter
+   * 
+   * @param context
+   * @param v
+   * @return
+   * @throws Exception
+   */
+  public JsonIterator iter(Context context, JsonValue arg) throws Exception
+  {
+    checkArgs(1);
+    fn.param(0).var.setValue(arg);
+    return fn.body().iter(context);
+  }
+  
+  /**
    *
    * @param context
    * @param arg0
@@ -349,4 +379,5 @@ public class JaqlFunction extends JsonAtom
     this.ownFn = true;
     this.fnText = f.fnText;
   }
+
 }

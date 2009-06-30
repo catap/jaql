@@ -69,12 +69,11 @@ public class Var extends Object
     return expr != null;
   }
 
-  /*** Returns the name of this variable without the leading character, which is
-   * assumed to equal $.
+  /*** Returns the name of this variable without the leading $, if present.
    */
   public String nameAsField()
   {
-    return name.substring(1);
+    return name.charAt(0) == '$' ? name.substring(1) : name;
   }
 
   /**

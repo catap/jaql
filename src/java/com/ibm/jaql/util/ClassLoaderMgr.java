@@ -173,4 +173,31 @@ public class ClassLoaderMgr
     }
     return c;
   }
+  
+  /**
+   * 
+   * @param name
+   * @return
+   */
+  public static URL getResource(String name)
+  {
+    ClassLoader cl = getClassLoader();
+    URL loc = cl.getResource(name);
+    if( loc == null )
+    {
+      cl = ClassLoader.getSystemClassLoader();
+      loc = cl.getResource(name);
+    }
+    return loc;
+  }
+
+  public static ClassLoader getClassLoader()
+  {
+    ClassLoader cl = classLoader;
+    if( cl == null )
+    {
+      cl = ClassLoaderMgr.class.getClassLoader();
+    }
+    return cl;
+  }
 }

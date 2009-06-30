@@ -19,6 +19,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMaxAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMinAgg;
 import com.ibm.jaql.lang.expr.agg.ArrayAgg;
@@ -27,7 +28,6 @@ import com.ibm.jaql.lang.expr.agg.CountAgg;
 import com.ibm.jaql.lang.expr.agg.CovStatsAgg;
 import com.ibm.jaql.lang.expr.agg.MaxAgg;
 import com.ibm.jaql.lang.expr.agg.MinAgg;
-import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.PickNAgg;
 import com.ibm.jaql.lang.expr.agg.SingletonAgg;
 import com.ibm.jaql.lang.expr.agg.SumAgg;
@@ -110,9 +110,11 @@ import com.ibm.jaql.lang.expr.numeric.IntFn;
 import com.ibm.jaql.lang.expr.numeric.LnFn;
 import com.ibm.jaql.lang.expr.numeric.ModFn;
 import com.ibm.jaql.lang.expr.numeric.NumberFn;
+import com.ibm.jaql.lang.expr.numeric.PowFn;
 import com.ibm.jaql.lang.expr.numeric.ToNumberFn;
 import com.ibm.jaql.lang.expr.pragma.ConstPragma;
 import com.ibm.jaql.lang.expr.pragma.InlinePragma;
+import com.ibm.jaql.lang.expr.random.RandomDoubleFn;
 import com.ibm.jaql.lang.expr.random.RandomLongFn;
 import com.ibm.jaql.lang.expr.random.RegisterRNGExpr;
 import com.ibm.jaql.lang.expr.random.SampleRNGExpr;
@@ -292,7 +294,9 @@ public class FunctionLib
     add(PairFn.class);
     add(ExpFn.class);
     add(LnFn.class);
+    add(PowFn.class);
     add(RandomLongFn.class);
+    add(RandomDoubleFn.class);
     add(DistinctFn.class);
     // data access expressions
     add(ReadFn.class);
