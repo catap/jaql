@@ -439,7 +439,7 @@ $x = schema date(d'2000-01-01T12:00:00Z');##
 "$x"
 
 $x;##
-schema date(min=d'2000-01-01T12:00:00Z')
+schema date(min=date('2000-01-01T12:00:00Z'))
 
 d'2000-01-01T11:59:59Z' instanceof $x;##
 false
@@ -455,7 +455,7 @@ $x = schema date(max=d'2000-01-01T12:00:00Z');##
 "$x"
 
 $x;##
-schema date(max=d'2000-01-01T12:00:00Z')
+schema date(max=date('2000-01-01T12:00:00Z'))
 
 d'2000-01-01T11:59:59Z' instanceof $x;##
 true
@@ -471,7 +471,7 @@ $x = schema date(d'2000-01-01T12:00:00Z', d'2000-02-01T12:00:00Z');##
 "$x"
 
 $x;##
-schema date(min=d'2000-01-01T12:00:00Z', max=d'2000-02-01T12:00:00Z')
+schema date(min=date('2000-01-01T12:00:00Z'), max=date('2000-02-01T12:00:00Z'))
 
 d'2000-01-01T11:59:59Z' instanceof $x;##
 false
@@ -493,7 +493,7 @@ $x = schema date(value=d'2000-01-01T12:00:00Z');##
 "$x"
 
 $x;##
-schema date(value=d'2000-01-01T12:00:00Z')
+schema date(value=date('2000-01-01T12:00:00Z'))
 
 d'2000-01-01T11:59:59Z' instanceof $x;##
 false
@@ -1292,7 +1292,7 @@ schemaof("a string");##
 schema string(value="a string")
 
 schemaof(d'2001-07-04T12:08:56Z');##
-schema date(value=d'2001-07-04T12:08:56Z')
+schema date(value=date('2001-07-04T12:08:56Z'))
 
 schemaof({ a: 1, b: "2" });##
 schema *

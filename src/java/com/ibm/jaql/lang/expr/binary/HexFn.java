@@ -13,38 +13,48 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.date;
+package com.ibm.jaql.lang.expr.binary;
 
-import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
-@JaqlFn(fnName="date", minArgs=1, maxArgs=2)
-public class DateFn extends Expr
+/**
+ *  Convert a hexadecimal string into a binary string
+ */
+@JaqlFn(fnName="hex", minArgs=1, maxArgs=1)
+public class HexFn extends Expr
 {
-  protected JsonDate date = new JsonDate();
-  
-  public DateFn(Expr[] exprs)
+
+  /**
+   * @param exprs
+   */
+  public HexFn(Expr[] exprs)
   {
     super(exprs);
   }
 
-  @Override
-  public JsonDate eval(Context context) throws Exception
+  /**
+   * @param expr0
+   */
+  public HexFn(Expr expr0)
   {
-    JsonString dateStr = (JsonString)exprs[0].eval(context);
-    if( exprs.length == 1 )
-    {
-      date.set(dateStr.toString());
-    }
-    else
-    {
-      JsonString formatStr = (JsonString)exprs[1].eval(context);
-      date.set(dateStr.toString(), JsonDate.getFormat(formatStr.toString()));
-    }
-    return date;
+    super(expr0);
   }
 
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
+   */
+  @Override
+  public JsonBinary eval(Context context) throws Exception
+  {
+    JsonString hexString = (JsonString)exprs[0].eval(context);
+    if( hexString == null )
+    {
+      return null;
+    }
+    return new JsonBinary(hexString.toString());
+  }
 }

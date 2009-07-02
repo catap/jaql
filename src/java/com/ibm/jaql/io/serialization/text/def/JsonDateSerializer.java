@@ -25,8 +25,8 @@ public class JsonDateSerializer extends TextBasicSerializer<JsonDate>
   @Override
   public void write(PrintStream out, JsonDate value, int indent)
   {
-    out.print("d'");
+    out.print("date('");
     out.print(value.toString());
-    out.print("'");
+    out.print("')");
   }
 }
