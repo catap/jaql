@@ -22,9 +22,12 @@ import java.lang.reflect.UndeclaredThrowableException;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 
+import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.core.Parameters;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.util.Bool3;
@@ -90,5 +93,93 @@ public abstract class Schema
     {
       throw new IOException(e);
     }
-  } 
+  }
+  
+  /**
+   * @param typeConstructorName
+   * @return The paramater descriptor for the constructor function with the specified type name.
+   */
+  public static Parameters getParameters(String typeConstructorName)
+  {
+    // TODO: this code should be table-driven. It requires Parameter factory classes.
+    if( typeConstructorName.equals("string") )
+    {
+      return StringSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("long") )
+    {
+      return LongSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("double") )
+    {
+      return DoubleSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("decfloat") )
+    {
+      return DecimalSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("date") )
+    {
+      return DateSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("boolean") )
+    {
+      return BooleanSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("binary") )
+    {
+      return BinarySchema.getParameters();
+    }
+    else if( typeConstructorName.equals("function") )
+    {
+      return GenericSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("schema") )
+    {
+      return GenericSchema.getParameters();
+    }
+    throw new RuntimeException("undefined type: "+typeConstructorName);
+  }
+
+  public static Schema make(String typeConstructorName, JsonRecord args)
+  {
+    // TODO: this code should be table-driven. It requires factory classes.
+    if( typeConstructorName.equals("string") )
+    {
+      return new StringSchema(args);
+    }
+    else if( typeConstructorName.equals("long") )
+    {
+      return new LongSchema(args);
+    }
+    else if( typeConstructorName.equals("double") )
+    {
+      return new DoubleSchema(args);
+    }
+    else if( typeConstructorName.equals("decfloat") )
+    {
+      return new DecimalSchema(args);
+    }
+    else if( typeConstructorName.equals("date") )
+    {
+      return new DateSchema(args);
+    }
+    else if( typeConstructorName.equals("boolean") )
+    {
+      return new BooleanSchema(args);
+    }
+    else if( typeConstructorName.equals("binary") )
+    {
+      return new BinarySchema(args);
+    }
+    else if( typeConstructorName.equals("function") )
+    {
+      return new GenericSchema(JsonType.FUNCTION, args);
+    }
+    else if( typeConstructorName.equals("schema") )
+    {
+      return new GenericSchema(JsonType.SCHEMA, args);
+    }
+    throw new RuntimeException("undefined type: "+typeConstructorName);
+  }
 }

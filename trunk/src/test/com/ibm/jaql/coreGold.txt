@@ -32,7 +32,7 @@ typeof(1);##
 
 
 d'2001-07-04T12:08:56Z';##
-d'2001-07-04T12:08:56Z'
+date('2001-07-04T12:08:56Z')
 
 
 // an invalid date format
@@ -86,7 +86,7 @@ null
 // this one caused a bug with int/long serialization
 [d'2007-12-31T16:00:10Z'];##
 [
-  d'2007-12-31T16:00:10Z'
+  date('2007-12-31T16:00:10Z')
 ]
 
 

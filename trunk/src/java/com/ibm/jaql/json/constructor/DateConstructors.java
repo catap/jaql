@@ -31,6 +31,4 @@ public class DateConstructors
   {
     return new JsonDate(iso8601);
   }
-  
-  
 }

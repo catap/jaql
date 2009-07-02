@@ -71,8 +71,8 @@ public class JsonBinary extends JsonAtom
     for (int i = 0; i < len; i++)
     {
       char c = hexString.charAt(i);
-      if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
-          || (c >= 'a' && c <= 'z') || Character.isWhitespace(c))
+      if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')
+          || (c >= 'a' && c <= 'f') || Character.isWhitespace(c))
       {
         n++;
       }
@@ -104,8 +104,7 @@ public class JsonBinary extends JsonAtom
         {
           b2 = (byte) (c - 'A' + 10);
         }
-        else
-        // if( (c >= 'a' && c <= 'f') )
+        else // if( (c >= 'a' && c <= 'f') )
         {
           b2 = (byte) (c - 'a' + 10);
         }

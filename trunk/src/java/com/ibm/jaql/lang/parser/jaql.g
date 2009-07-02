@@ -50,13 +50,13 @@ options {
 class JaqlParser extends Parser;
 options {
     k = 1;                           // number of tokens to lookahead
-	exportVocab=Jaql;               // Call its vocabulary "Jaql"
+    exportVocab=Jaql;               // Call its vocabulary "Jaql"
     defaultErrorHandler = false;     // Don't generate parser error handlers
 }
 
 {
-	public boolean done = false;
-	public Env env = new Env();
+    public boolean done = false;
+    public Env env = new Env();
     // static abstract class ExpandMapper { public abstract Expr remap(Expr ctx); } 
 
     public void oops(String msg) throws RecognitionException, TokenStreamException
@@ -80,7 +80,7 @@ options {
        JsonDouble d = new JsonDouble(v);
        if (isNegative)
        {
-       	 d.value = -d.value;
+         d.value = -d.value;
        }
        return d;
     }
@@ -100,15 +100,15 @@ options {
 parse returns [Expr r=null]
     : r=stmtOrFn
     | EOF { done = true; }
-	;
-	
+    ;
+    
 
 stmtOrFn returns [Expr r=null]
-	: r=stmt (SEMI|EOF)
-	| SEMI
-	| r=functionDef
-	;
-	
+    : r=stmt (SEMI|EOF)
+    | SEMI
+    | r=functionDef
+    ;
+    
 stmt returns [Expr r=null]
     { String v; }
     : r=topAssign
@@ -130,11 +130,11 @@ stmt returns [Expr r=null]
 //          BindingExpr b = (BindingExpr)r; 
 //          if( "$".equals(b.var.name) )
 //          {
-//          	r = b.inExpr();
+//              r = b.inExpr();
 //          }
 //          else
 //          {
-//          	r = new AssignExpr( env.sessionEnv().scopeGlobal(b.var.name),  b.inExpr());
+//              r = new AssignExpr( env.sessionEnv().scopeGlobal(b.var.name),  b.inExpr());
 //          }
 //        }
 //      ( "=>" v=var { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = pipe, do-block scope
@@ -148,22 +148,22 @@ block returns [Expr r=null]
          r=optAssign       { es.add(r); }
         ("," r=optAssign   { es.add(r); } )*
         { 
-        	for(Expr e: es)
-        	{
-        		if( e instanceof BindingExpr )
-        		{
-        			env.unscope(((BindingExpr)e).var);
-        		}
-        	}
-        	r = new DoExpr(es);
-        	// r = new ParallelDoExpr(es); // TODO: parallel
+            for(Expr e: es)
+            {
+                if( e instanceof BindingExpr )
+                {
+                    env.unscope(((BindingExpr)e).var);
+                }
+            }
+            r = new DoExpr(es);
+            // r = new ParallelDoExpr(es); // TODO: parallel
         }
       )?
       {
-      	if( r instanceof BindingExpr )
-      	{
-      	  r = new DoExpr(r);
-      	}
+        if( r instanceof BindingExpr )
+        {
+          r = new DoExpr(r);
+        }
       }
     ;
 
@@ -178,7 +178,7 @@ pipe returns [Expr r=null]
   
 subpipe[Var inVar] returns [Expr r=null]
     {
-    	inVar.hidden = true;
+        inVar.hidden = true;
         r= new VarExpr(inVar);
     }
     : ( "->" r=op[r] )+
@@ -208,11 +208,11 @@ vpipe returns [BindingExpr r=null]
 //vpipe returns [BindingExpr r=null]
 //    : v=var ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
 //      {
-//      	if( !( e instanceof BindingExpr ) )
-//      	{
-//      	  throw new NoViableAltException(LT(1), getFilename()); // binding required in this context
-//      	}
-//      	r = (BindingExpr)e;
+//          if( !( e instanceof BindingExpr ) )
+//          {
+//            throw new NoViableAltException(LT(1), getFilename()); // binding required in this context
+//          }
+//          r = (BindingExpr)e;
 //      }
 //    ;
 
@@ -272,10 +272,10 @@ aggFn returns [Aggregate agg]
     { Expr e; }
     : e = expr
       {
-      	if( !( e instanceof Aggregate ) )
-      	{
+        if( !( e instanceof Aggregate ) )
+        {
           oops("Aggregate required");
-      	}
+        }
         agg = (Aggregate)e;
       }
     ;
@@ -298,41 +298,41 @@ algAggFn returns [AlgebraicAggregate agg]
     ;
 
 group returns [Expr r=null]
-	{ 
-	  BindingExpr in;
-	  BindingExpr by = null;
-	  Expr c=null;
-	  String v = "$";
-	  ArrayList<Var> as = new ArrayList<Var>();
-	}
-	: "group" ("each" v=var "in")? 
-	    { 
-	      in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
-	    }
-	  by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
-		{ if( by.var != Var.UNUSED ) env.scope(by.var); } 
-	  ( "using" c=comparator { oops("comparators on group by NYI"); } )?
+    { 
+      BindingExpr in;
+      BindingExpr by = null;
+      Expr c=null;
+      String v = "$";
+      ArrayList<Var> as = new ArrayList<Var>();
+    }
+    : "group" ("each" v=var "in")? 
+        { 
+          in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
+        }
+      by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
+        { if( by.var != Var.UNUSED ) env.scope(by.var); } 
+      ( "using" c=comparator { oops("comparators on group by NYI"); } )?
         {
           for( Var av: as )
           {
             env.scope(av);
           }
-	    }
-	  r=groupReturn
-	    {
-	      if( by.var != Var.UNUSED ) env.unscope(by.var);
-	      for( Var av: as )
+        }
+      r=groupReturn
+        {
+          if( by.var != Var.UNUSED ) env.unscope(by.var);
+          for( Var av: as )
           {
             env.scope(av);
           }
           r = new GroupByExpr(in, by, as, c, r); // .expand(env);
-	    }
-	;
+        }
+    ;
 
 groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [BindingExpr by]
     { Expr e; String v=null; }
-	: e=expr { env.scope(in.var); } by=groupBy[prevBy] ( "as" v=var )?    
-	    {
+    : e=expr { env.scope(in.var); } by=groupBy[prevBy] ( "as" v=var )?    
+        {
           if( v == null )
           {
             if( e instanceof VarExpr )
@@ -351,11 +351,11 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
               oops("duplicate group \"as\" variable: "+v);
             }
           }
-	      in.addChild(e); 
+          in.addChild(e); 
           env.unscope(in.var); // TODO: unscope or hide?
           asVars.add(env.makeVar(v));
         }
-	;
+    ;
 
 groupBy[BindingExpr by] returns [BindingExpr b=null]
     { String v = null; Expr e=null; }
@@ -407,7 +407,7 @@ groupReturn returns [Expr r=null]
 //    : "group" "(" groupIn[inputs, keys, intos] ( "," groupIn[inputs, keys, intos] )* ")" 
 //      {
 //        int n = keys.size();
-//      	Var keyVar = env.makeVar("$key");
+//          Var keyVar = env.makeVar("$key");
 //        Expr[] args = new Expr[n];
 //        inputs.set(0, new BindingExpr(BindingExpr.Type.EQ, keyVar, null, keys.toArray(args)));
 //        args = new Expr[n+1];
@@ -447,21 +447,21 @@ groupReturn returns [Expr r=null]
 //       }
 //       if( r == null )
 //       {
-//       	 r = new ArrayAgg(new VarExpr(v));
-//       	 if( f == null )
-//       	 {
-//       	   r = new ArrayExpr(r);
-//       	 }
-//       	 else
+//           r = new ArrayAgg(new VarExpr(v));
+//           if( f == null )
+//           {
+//             r = new ArrayExpr(r);
+//           }
+//           else
 //         {
 //           r = new RecordExpr(new NameValueBinding(f, r, false));
 //         }
 //       }
 //       else if( f != null )
 //       {
-//       	 // TODO: just ignore this?
-//       	 throw new RecognitionException("warning: field label cannot be used with 'into' clause: "+f,
-//       	    getFilename(), LT(1).getColumn(), LT(1).getLine());
+//           // TODO: just ignore this?
+//           throw new RecognitionException("warning: field label cannot be used with 'into' clause: "+f,
+//              getFilename(), LT(1).getColumn(), LT(1).getLine());
 //       }
 //       
 //       BindingExpr in = new BindingExpr(BindingExpr.Type.IN, v, null, e);
@@ -541,14 +541,14 @@ cmpSpec[ArrayList<CmpSpec> keys]
 //    { Expr e; }
 //    : e=pipe
 //    {
-//    	if( e instanceof BindingExpr )
-//    	{
-//    		b=(BindingExpr)e;
-//    	}
-//    	else
-//    	{
-//    		b = new BindingExpr(BindingExpr.Type.IN, env.scope(name), null, e);
-//    	} 
+//      if( e instanceof BindingExpr )
+//      {
+//          b=(BindingExpr)e;
+//      }
+//      else
+//      {
+//          b = new BindingExpr(BindingExpr.Type.IN, env.scope(name), null, e);
+//      } 
 //    }
 //    ;
     
@@ -639,8 +639,8 @@ cmpSpec[ArrayList<CmpSpec> keys]
 //
 //windowVars
 //    { 
-//    	String c, a, p, n; 
-//    	Var v;
+//      String c, a, p, n; 
+//      Var v;
 //    }
 //    : (c=var) // ("at" a=var)? ("previous" p=var)? ("next" n=var)?
 //    ;
@@ -690,7 +690,7 @@ equijoin returns [Expr r=null]
     : "equijoin" ejoinIn[in,on] ( "," ejoinIn[in,on] )+ 
       ( "using" c=comparator { oops("comparators on joins are NYI"); } )?
       {
-      	for( BindingExpr b: in )
+        for( BindingExpr b: in )
         {
           b.var.hidden = false;
         }
@@ -701,7 +701,7 @@ equijoin returns [Expr r=null]
       r = new JoinExpr(in,on,r); // TODO: add comparator
       for( BindingExpr b: in )
       {
-      	env.unscope(b.var);
+        env.unscope(b.var);
       }
     }
     ;
@@ -733,35 +733,35 @@ ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
 //    ;
 //
 //joinIn[HashMap<String,Var> keys, ArrayList<BindingExpr> bindings]
-//	{ 
-//		boolean p = false; 
-//		BindingExpr b; 
-//		ArrayList<BindingExpr> on = new ArrayList<BindingExpr>(); 
-//	}
-//	: ( "preserve" { p = true; })? b=vpipe "on" "(" joinOn[keys,on] ("," joinOn[keys,on])* ")"  // TODO: define $ = b.var during on
-//		{
-//	  	  b.var.hidden = true;
-//	      b.preserve = p;
-//	      b.addChildren(on);
-//	      bindings.add( b );
-//	    }
-//	;
+//  { 
+//      boolean p = false; 
+//      BindingExpr b; 
+//      ArrayList<BindingExpr> on = new ArrayList<BindingExpr>(); 
+//  }
+//  : ( "preserve" { p = true; })? b=vpipe "on" "(" joinOn[keys,on] ("," joinOn[keys,on])* ")"  // TODO: define $ = b.var during on
+//      {
+//        b.var.hidden = true;
+//        b.preserve = p;
+//        b.addChildren(on);
+//        bindings.add( b );
+//      }
+//  ;
 //
 //joinOn[HashMap<String,Var> keys, ArrayList<BindingExpr> on]
 //    { String k = "$__key__"; Expr e; } // TODO: define $ has current input so $ or $input can be used
 //    : (k=avar "=")? e=expr 
 //      {
-//      	Var var = keys.get(k);
-//      	if( var == null )
-//      	{
-//    	  var = env.scope(k);
+//          Var var = keys.get(k);
+//          if( var == null )
+//          {
+//        var = env.scope(k);
 //          var.hidden = true;
 //          keys.put(k,var);
-//      	}
-//      	on.add(new BindingExpr(BindingExpr.Type.EQ, var, null, e)); 
+//          }
+//          on.add(new BindingExpr(BindingExpr.Type.EQ, var, null, e)); 
 //      }
 //    ;
-	
+    
 //joinReturn[ArrayList<BindingExpr> in] returns [Expr r=null]
 //    : "into" r=expr { r = new ArrayExpr(r); } 
   //  | /* empty */
@@ -777,7 +777,7 @@ ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
 //        }
 //    ;
 
-	
+    
 // Introduce uncorrelated expand operator?
 // 
 //cross returns [Expr r=null]
@@ -825,7 +825,7 @@ ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
 //                ("," r=subpipe[var] { es.add(r); } )*
 //            ")"
 //      {
-//     	r = new TeeExpr(es);
+//      r = new TeeExpr(es);
 //      }
 //    ;
 
@@ -854,8 +854,8 @@ split[Expr in] returns [Expr r=null]
 
 
 op[Expr in] returns [Expr r=null]
-	{ BindingExpr b=null; } 
-	: "filter" b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
+    { BindingExpr b=null; } 
+    : "filter" b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
     | "transform" b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
     | "expand"  b=each[in] ( r=expr
                            | /*empty*/ { r = new VarExpr(b.var); } )
@@ -870,7 +870,7 @@ op[Expr in] returns [Expr r=null]
     // | r=partition[in]
     // TODO: add rename path
     // | r=window[in]
-	;
+    ;
 
 each[Expr in] returns [BindingExpr b=null]
     { String v = "$"; }
@@ -917,12 +917,12 @@ top[Expr in] returns [Expr r=null]
     { Expr n; Expr by=null; }
     : "top" n=expr (by=sortCmp)?
       {
-      	// TODO: add heap-based top operator
-      	if( by != null )
-      	{
+        // TODO: add heap-based top operator
+        if( by != null )
+        {
           in = new SortExpr(in, by);
-      	}
-      	r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JsonLong.ONE))));
+        }
+        r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JsonLong.ONE))));
       }
     ;
 
@@ -950,8 +950,8 @@ top[Expr in] returns [Expr r=null]
 //           byVar.hidden = false;
 //           for( BindingExpr b: inputs )
 //           {
-//          	 // TODO: should copart introduce multiple streams?? 
-//          	 // b.var.hidden = false;
+//               // TODO: should copart introduce multiple streams?? 
+//               // b.var.hidden = false;
 //           }
 //         }
 //      "|-" r=opPipe[partVar] "-|" // r=srcPipe "-|" 
@@ -959,7 +959,7 @@ top[Expr in] returns [Expr r=null]
 //           env.unscope( byVar );
 //           for( BindingExpr b: inputs )
 //           {
-//           	 env.unscope(b.var);
+//               env.unscope(b.var);
 //           }
 //           r = PartitionExpr.makeCopartition(env, inputs, partVar, r);
 //         }
@@ -985,11 +985,11 @@ top[Expr in] returns [Expr r=null]
 //          }
 //          else 
 //          {
-//          	byVar = inputs.get(0).var2;
-//          	if( bn != null && ! byVar.name().equals(bn) )
-//          	{
-//          	  throw new RuntimeException("must use same name for all key expressions: "+bn+" != "+byVar.name());
-//          	}
+//              byVar = inputs.get(0).var2;
+//              if( bn != null && ! byVar.name().equals(bn) )
+//              {
+//                throw new RuntimeException("must use same name for all key expressions: "+bn+" != "+byVar.name());
+//              }
 //          }
 //          in.var.hidden = true;
 //          in.var2 = byVar;
@@ -1025,13 +1025,13 @@ estep returns [Expr r = null] // TOD: Unify step expressions
     | "[" r=expr "]"   { r = new UnrollIndex(r); }
     // TODO: add [*], .*
     ;
-	
+    
 
 assign returns [Expr r=null]
-	{ String v; }
+    { String v; }
     : v=avar "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
     | r=pipe "=>" v=var    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
-	;
+    ;
 
 optAssign returns [Expr r=null]
     { String v; }
@@ -1056,11 +1056,11 @@ rvalue returns [Expr r = null]
     // | r=function
     | r=extern
     ;
-	
+    
 //collection returns [Expr r = null]
-//	: "collection" r=expr { r = new FileExpr(r); } // TODO: rename to CollectionExpr
-//	// TODO: this expression is evaluated immediately and replaced with a constant; file is registered, dups detected, type found. read and write get constant.
-//	;
+//  : "collection" r=expr { r = new FileExpr(r); } // TODO: rename to CollectionExpr
+//  // TODO: this expression is evaluated immediately and replaced with a constant; file is registered, dups detected, type found. read and write get constant.
+//  ;
 
 extern returns [Expr r = null]
     { String lang; }
@@ -1090,30 +1090,30 @@ params returns [ArrayList<Var> p = new ArrayList<Var>()]
     ;
 
 //exceptions
-//	: "exceptions" "to" str ("limit" expr)?
-//	;
+//  : "exceptions" "to" str ("limit" expr)?
+//  ;
 
 //returnStmt returns [Expr r=null]
-//	: "return" ( r=topExpr )? // ("," var)* )?
-//	;
-	
+//  : "return" ( r=topExpr )? // ("," var)* )?
+//  ;
+    
 functionDef returns [Expr r=null]
-	{ String lang; String s; String body; Expr e; }
-	// : "function" name "(" (var ("," var)*)? ")" block
-	: "script" lang=name body=str
-	  {
-	  	r = new ScriptBlock(lang, body);
-	  }
-	| "import" lang=name s=name e=expr (SEMI|EOF)
-	  {
-	  	if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
-	  	r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
-	  }
-	;
-	
+    { String lang; String s; String body; Expr e; }
+    // : "function" name "(" (var ("," var)*)? ")" block
+    : "script" lang=name body=str
+      {
+        r = new ScriptBlock(lang, body);
+      }
+    | "import" lang=name s=name e=expr (SEMI|EOF)
+      {
+        if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
+        r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
+      }
+    ;
+    
 forExpr returns [Expr r = null]
     { 
-    	ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
+        ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
     }
     : "for" "(" forDef[bs] ("," forDef[bs])* ")" r=expr
 //    : "for" forDef[bs] ("," forDef[bs])* 
@@ -1135,7 +1135,7 @@ forDef[ArrayList<BindingExpr> bindings]
     { String v; Expr e; String v2 = null; BindingExpr.Type t = null; BindingExpr b; }
 //    : b=vpipe
 //    {
-//    	bindings.add(b);
+//      bindings.add(b);
 //    }
     : v=var ( /*( "at" v2=var )?*/  "in" e=pipe { t = BindingExpr.Type.IN; }
             // | ":" v2=var "in" e=pipe        { t = BindingExpr.Type.INREC; }
@@ -1154,14 +1154,14 @@ forDef[ArrayList<BindingExpr> bindings]
 
 
 ifExpr returns [Expr r=null]
-	{ Expr p=null; Expr s=null; }
-	: "if" "(" p=expr ")" r=expr 
-	  ( options {greedy=true;} : 
+    { Expr p=null; Expr s=null; }
+    : "if" "(" p=expr ")" r=expr 
+      ( options {greedy=true;} : 
         "else" s=expr )?
-	{
-		r = new IfExpr(p, r, s);
-	}
-	;
+    {
+        r = new IfExpr(p, r, s);
+    }
+    ;
 
 //combineExpr returns [CombineExpr r = null]
 //    { String v1, v2; Var var1 = null; Var var2 = null; Expr in; Expr use; }
@@ -1203,30 +1203,30 @@ sortCmp returns [Expr r=null]
 //    ;
     
 record returns [Expr r = null]
-	{ ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
-	  FieldExpr f; }
-	: "{" ( f=field  { args.add(f); } )? ( "," ( f=field  { args.add(f); } )? )*  "}"
+    { ArrayList<FieldExpr> args = new ArrayList<FieldExpr>();
+      FieldExpr f; }
+    : "{" ( f=field  { args.add(f); } )? ( "," ( f=field  { args.add(f); } )? )*  "}"
     //    { r = new RecordExpr(args.toArray(new Expr[args.size()])); }
     { r = RecordExpr.make(env, args.toArray(new Expr[args.size()])); }
     ;
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
-	{ Expr e = null; Expr v=null; boolean required = true; }
+    { Expr e = null; Expr v=null; boolean required = true; }
     : e=fname ( "?" { required = false; } )?  v=fieldValue  
       { 
-      	f = new NameValueBinding(e, v, required); 
+        f = new NameValueBinding(e, v, required); 
       }
-	| e=path ( DOT_STAR    
-	           { 
-	           	 f = new CopyRecord(e);
-	           }
-	         | ( "?" { required = false; } )?
-	           ( ":" v=pipe )?
-	           {
-	           	 if( v != null )
-	           	 {
-	           	    f = new NameValueBinding(e, v, required); 
-	           	 }
+    | e=path ( DOT_STAR    
+               { 
+                 f = new CopyRecord(e);
+               }
+             | ( "?" { required = false; } )?
+               ( ":" v=pipe )?
+               {
+                 if( v != null )
+                 {
+                    f = new NameValueBinding(e, v, required); 
+                 }
                  else if( e instanceof VarExpr )
                  {
                    f = new NameValueBinding( ((VarExpr)e).var(), required );
@@ -1238,8 +1238,8 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
                    Expr step = ret.parent();
                    if( step instanceof PathFieldValue )
                    {
-                   	 step.replaceInParent(ret);
-                   	 f = new CopyField(e, step.child(0), required ? CopyField.When.DEFINED : CopyField.When.NONNULL );
+                     step.replaceInParent(ret);
+                     f = new CopyField(e, step.child(0), required ? CopyField.When.DEFINED : CopyField.When.NONNULL );
                    }
                    else
                    {
@@ -1251,19 +1251,19 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
                  {
                    oops("field name required, or use (expr).* to copy records");
                  }
-	           }
-	         )
-	;    
+               }
+             )
+    ;    
 
 
 fieldValue returns [Expr r=null]
     { boolean flat = false; }
     : ":" ("flatten" {flat=true;})? r=pipe
       {
-      	if( flat )
-      	{
-      	  r = new FlattenExpr(r);
-      	}
+        if( flat )
+        {
+          r = new FlattenExpr(r);
+        }
       }
     ;
 
@@ -1283,19 +1283,19 @@ expr returns [Expr r]
 
 
 orExpr returns [Expr r]
-	{ Expr s; }
-	: r=andExpr ( "or" s=andExpr { r = new OrExpr(r,s); } )*
-	;
+    { Expr s; }
+    : r=andExpr ( "or" s=andExpr { r = new OrExpr(r,s); } )*
+    ;
 
 andExpr returns [Expr r]
-	{ Expr s; }
-	: r=notExpr ( "and" s=notExpr { r = new AndExpr(r,s); } )*
-	;
+    { Expr s; }
+    : r=notExpr ( "and" s=notExpr { r = new AndExpr(r,s); } )*
+    ;
 
 notExpr returns [Expr r]
-	: "not" r=notExpr  { r = new NotExpr(r); }
-	| r=kwTest
-	;
+    : "not" r=notExpr  { r = new NotExpr(r); }
+    | r=kwTest
+    ;
 
 kwTest returns [Expr r]
     : r=inExpr
@@ -1323,9 +1323,9 @@ isdefinedExpr returns [Expr r]
 
     
 inExpr returns [Expr r = null]
-	{ Expr s; }
-	: r=compare ( "in" s=compare  { r = new InExpr(r,s); } )?
-	;
+    { Expr s; }
+    : r=compare ( "in" s=compare  { r = new InExpr(r,s); } )?
+    ;
 
 compare returns [Expr r = null]
     { int c; Expr s; Expr t; }
@@ -1353,37 +1353,37 @@ instanceOfExpr returns [Expr r = null]
     ;
 
 addExpr returns [Expr r = null]
-	{ Expr s; int op; }
+    { Expr s; int op; }
     : r=multExpr ( op=addOp s=multExpr  { r = new MathExpr(op,r,s); } )*
     ;
 
 addOp returns [int op=0]
-	: "+" { op=MathExpr.PLUS; }
-	| "-" { op=MathExpr.MINUS; }
-	;
+    : "+" { op=MathExpr.PLUS; }
+    | "-" { op=MathExpr.MINUS; }
+    ;
 
 multExpr returns [Expr r = null]
-	{ Expr s; int op; }
+    { Expr s; int op; }
     : r=unaryAdd ( op=multOp s=unaryAdd  { r = new MathExpr(op,r,s); } )*
     ;
 
 multOp returns [int op=0]
-	: "*" { op=MathExpr.MULTIPLY; }
-	| "/" { op=MathExpr.DIVIDE; }
-	;
+    : "*" { op=MathExpr.MULTIPLY; }
+    | "/" { op=MathExpr.DIVIDE; }
+    ;
 
 // TODO: there is a bug handling negative numbers minLong (= -maxLong -1) doesn't parse
 // TODO: there is a bug parsing large integers that can fit into a decimal
 unaryAdd returns [Expr r = null]
-	: "-" r=typeExpr { r = MathExpr.negate(r); } 
-	| ("+")? r=typeExpr	
-	;
-	
+    : "-" r=typeExpr { r = MathExpr.negate(r); } 
+    | ("+")? r=typeExpr 
+    ;
+    
 typeExpr returns [Expr r = null]
     { Schema s; }
     : "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
     | r=path
-    ;	
+    ;   
 
 path returns [Expr r=null]
     { PathStep s=null; }
@@ -1460,8 +1460,8 @@ fnCall returns [Expr r=null]
     { String s; ArrayList<Expr> args; }
     : ( r=basic 
       | r=builtinCall )
-	     ( args=fnArgs    { r = new FunctionCallExpr(r, args); } )*
-	;
+         ( args=fnArgs    { r = new FunctionCallExpr(r, args); } )*
+    ;
 
 builtinCall returns [Expr r=null]
     { String s; ArrayList<Expr> args; }
@@ -1479,29 +1479,29 @@ basic returns [Expr r=null]
     | r=cmpExpr
     | r=parenExpr
     ;
-	
+    
 parenExpr returns [Expr r=null]
 //    : "(" r=letExpr ")"
     : "(" r=block ")"
-	;
+    ;
 
 //letExpr returns [Expr r=null]
-//	{ String v; Var var=null; Expr s; }
-//	: v=avar "=" s=expr ";"
-//	  {
-//	  	var = env.scope(v); 
-//	  } 
-//	  r=letExpr
-//	  {
-//	  	env.unscope(var);
-//	  	r = new LetExpr(var, s, r);
-//	  }
-//	| r=expr
-//	;
+//  { String v; Var var=null; Expr s; }
+//  : v=avar "=" s=expr ";"
+//    {
+//      var = env.scope(v); 
+//    } 
+//    r=letExpr
+//    {
+//      env.unscope(var);
+//      r = new LetExpr(var, s, r);
+//    }
+//  | r=expr
+//  ;
 
 //nameUse returns [Expr r=null] // TODO: eliminate this if var keeps $
-//	: r=fnCall
-//	: r=varExpr 
+//  : r=fnCall
+//  : r=varExpr 
 //    ;
     
 //nameUse2[BindingExpr b] returns [Expr r=null]
@@ -1511,10 +1511,10 @@ parenExpr returns [Expr r=null]
 //    ;
     
 //fnCall returns [Expr r=null]
-//	{ String s; ArrayList<Expr> args; }
+//  { String s; ArrayList<Expr> args; }
 //    : s=name "(" args=exprList ")" { r = FunctionLib.lookup(env, s, args); }
 //    | s=var "(" args=exprList ")"  { r = new FunctionCallExpr(new VarExpr(env.inscope(s)), args); }
-//	;	
+//  ;   
 
 //fnCall returns [Expr r=null]
 //    { String s; Expr e; ArrayList<Expr> args; }
@@ -1530,22 +1530,22 @@ varExpr returns [Expr r = null]
 
 
 array returns [Expr r=null]
-	{ ArrayList<Expr> a; }
-	: "[" a=exprList2 "]"
-	{ r = new ArrayExpr(a); }
-	;
+    { ArrayList<Expr> a; }
+    : "[" a=exprList2 "]"
+    { r = new ArrayExpr(a); }
+    ;
 
 
 fnArgs returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     : "(" r=exprList ")"
     { 
-    	for(Expr e: r)
-    	{
-    		if( e instanceof AssignExpr )
-    		{
-    			oops("Call by name NYI");
-    		}
-    	}
+        for(Expr e: r)
+        {
+            if( e instanceof AssignExpr )
+            {
+                oops("Call by name NYI");
+            }
+        }
     }    
     ;
 
@@ -1575,8 +1575,8 @@ arg[ArrayList<Expr> r]
     ;
 
 constant returns [Expr r=null]
-	{ String s; JsonNumeric n; JsonBool b;}
-    : s=str		 { r = new ConstExpr(new JsonString(s)); }
+    { String s; JsonNumeric n; JsonBool b;}
+    : s=str      { r = new ConstExpr(new JsonString(s)); }
     | n=numericLit { r = new ConstExpr(n); }
     | h:HEXSTR   { r = new ConstExpr(new JsonBinary(h.getText())); }
     | t:DATETIME { r = new ConstExpr(new JsonDate(t.getText())); }
@@ -1668,11 +1668,10 @@ nullExpr returns [Expr r=null]
     ;
     
 str returns [String r=null]
-	: s:STR 			{ r = s.getText(); }
-	| h:HERE_STRING     { r = h.getText(); }
-	| b:BLOCK_STRING    { r = b.getText(); }
-	;
-	
+    : s:STR             { r = s.getText(); }
+    | h:HERE_STRING     { r = h.getText(); }
+    ;
+    
 avar returns [String r=null]: n:AVAR { r = n.getText(); }; //  TODO: move to ID
 var returns [String r=null]: n:VAR { r = n.getText(); }; // TODO: move to ID
 name returns [String r=null]: n:ID { r = n.getText(); };
@@ -1696,9 +1695,9 @@ schema returns [Schema s = null]
           s2 = schemaTerm     { alternatives.add(s2); } 
         )*
       ) {
-      	  if (alternatives.size()>1) { // if there are alternatives, wrap into OrSchema
+          if (alternatives.size()>1) { // if there are alternatives, wrap into OrSchema
             Schema[] schemata = alternatives.toArray(new Schema[alternatives.size()]); 
-      	    s = new OrSchema(schemata);
+            s = new OrSchema(schemata);
           }
         }
     ;
@@ -1717,29 +1716,20 @@ aSchema returns [Schema s = null]
     ;
 
 atomSchema returns [Schema s = null]
-    { JsonRecord args; }
+    { JsonRecord args; Parameters p; }
     : "null"       { s = NullSchema.getInstance(); }
-    | ( "function" args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.FUNCTION, args); } )
-    | ( "boolean"  args=atomSchemaArgs[BooleanSchema.getParameters()] { s = new BooleanSchema(args); } )
-    | ( "date"     args=atomSchemaArgs[DateSchema.getParameters()] { s = new DateSchema(args); } )
-    | ( "schema"   args=atomSchemaArgs[GenericSchema.getParameters()] { s = new GenericSchema(JsonType.SCHEMA, args); } )    
-    | ( "binary"   args=atomSchemaArgs[BinarySchema.getParameters()] { s = new BinarySchema(args); } )
-    | ( "long"     args=atomSchemaArgs[LongSchema.getParameters()] { s = new LongSchema(args); } )
-    | ( "double"   args=atomSchemaArgs[DoubleSchema.getParameters()] { s = new DoubleSchema(args); } )
-    | ( "decfloat" args=atomSchemaArgs[DecimalSchema.getParameters()] { s = new DecimalSchema(args); } )
-    | ( "string"   args=atomSchemaArgs[StringSchema.getParameters()] { s = new StringSchema(args); } )
+    | i:ID         { p=Schema.getParameters(i.getText()); }
+        args=atomSchemaArgs[p]
+                   { s = Schema.make(i.getText(), args); }
     ;
 
 atomSchemaArgs[Parameters d] returns [ JsonRecord args=null ]
     { ArgumentExpr argsExpr; }
-    : ( argsExpr=args[d] { args = argsExpr.constEval(); 
-                           if (args==null) 
-                           {
-                           	 throw new RuntimeException("schema arguments have to be constants");
-                           }; 
-                         } )?
+    : ( argsExpr=args[d]
+        { args = argsExpr.constEval(); }
+      )?
     ;
-    	   
+
 arraySchema returns [ArraySchema s = null]
     { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
       Schema p; 
@@ -1754,8 +1744,8 @@ arraySchema returns [ArraySchema s = null]
         )?
       "]" { 
             Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
-      	    s = rest != null ? new ArraySchema(schemaArray, rest, repeat.a, repeat.b)
-      	                     : new ArraySchema(schemaArray); // empty array
+            s = rest != null ? new ArraySchema(schemaArray, rest, repeat.a, repeat.b)
+                             : new ArraySchema(schemaArray); // empty array
           }
     ;
 
@@ -1780,10 +1770,10 @@ arraySchemaRepeat returns [Pair<JsonLong, JsonLong> p = null; ]
 
 recordSchema returns [RecordSchema s = null]
     { 
-   	  List<RecordSchema.Field> fields = new ArrayList<RecordSchema.Field>(); 
-   	  Schema rest = null;
-   	  RecordSchema.Field f = null;    
-  	}
+      List<RecordSchema.Field> fields = new ArrayList<RecordSchema.Field>(); 
+      Schema rest = null;
+      RecordSchema.Field f = null;    
+    }
     : "{" ( ( f=recordSchemaField                { fields.add(f); }
             | rest=recordSchemaRest[rest] 
             )
@@ -1793,18 +1783,18 @@ recordSchema returns [RecordSchema s = null]
             )*
           )? 
       "}" { 
-      	    RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
-      	    s = new RecordSchema(fieldsArray, rest);
+            RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
+            s = new RecordSchema(fieldsArray, rest);
           }
     ;
 
 recordSchemaRest[Schema currentRest] returns [Schema s = null]
     : "*" s=recordSchemaFieldSchema
       { 
-      	if( currentRest != null ) 
-      	{
-      	  oops("only one wildcard field is allowed in a record schema");
-      	}
+        if( currentRest != null ) 
+        {
+          oops("only one wildcard field is allowed in a record schema");
+        }
       }
     ;
 
@@ -1814,7 +1804,7 @@ recordSchemaField returns [RecordSchema.Field s = null]
       ( "?" { optional = true; } )?
       t=recordSchemaFieldSchema
       {
-      	s = new RecordSchema.Field(new JsonString(n), t, optional);
+        s = new RecordSchema.Field(new JsonString(n), t, optional);
       }
     ;
     
@@ -1838,9 +1828,9 @@ options {
 }
 
 {
-	private int indent;
-	private int blockIndent;
-	private String blockTag;
+    private int indent;
+    private int blockIndent;
+    private String blockTag;
 }
 
 protected DIGIT
@@ -1856,7 +1846,7 @@ protected LETTER
   ;
 
 WS
-	: ( ' ' 
+    : ( ' ' 
       | '\t'
       | '\f'
       | ( options { generateAmbigWarnings=false; }
@@ -1865,136 +1855,130 @@ WS
         | '\n'
         ) { newline(); }
       )+
-		{ $setType(Token.SKIP); }
-	;
+        { $setType(Token.SKIP); }
+    ;
 
 COMMENT
-	: "//" (~('\n'|'\r'))* 
-		{$setType(Token.SKIP);}
+    : "//" (~('\n'|'\r'))* 
+        {$setType(Token.SKIP);}
     ;
     
 protected NL
-	options { generateAmbigWarnings=false; }
-  	: "\r\n" | '\r' | '\n' { newline(); }
-  	;
-  	
+    options { generateAmbigWarnings=false; }
+    : "\r\n" | '\r' | '\n' { newline(); }
+    ;
+    
 ML_COMMENT
-	:	"/*"
-		( ~('*'|'\n'|'\r')
+    :   "/*"
+        ( ~('*'|'\n'|'\r')
         | '*' ~('/')
         | NL
-		)*
-		"*/"
-		{$setType(Token.SKIP);}
-	;
+        )*
+        "*/"
+        {$setType(Token.SKIP);}
+    ;
 
 
-	
+    
 protected BLOCK_LINE1
-	: (' '! (~('\n'|'\r'))*)? NL
-	{
-		for( indent = 1; indent < blockIndent && LA(1) == ' ' ; indent++)
-		{
-			_saveIndex=text.length();
-			match(' ');
-			text.setLength(_saveIndex);
-		}
-	}
-	;
-	
+    : (' '! (~('\n'|'\r'))*)? NL
+    {
+        for( indent = 1; indent < blockIndent && LA(1) == ' ' ; indent++)
+        {
+            _saveIndex=text.length();
+            match(' ');
+            text.setLength(_saveIndex);
+        }
+    }
+    ;
+    
 
 //protected BLOCK_STRING1 // options { generateAmbigWarnings=false; }
-//	{ blockIndent = 0; }
-//	: "|"! (' '! | '\t'!)* NL! (' '! {blockIndent++;})+ (~(' '|'\t'|'\n'|'\r'))* NL (BLOCK_LINE)*
-//	{ System.out.println("here: ["+new String(text.getBuffer(), _begin, text.length()-_begin)+"]"); }
-//	;
+//  { blockIndent = 0; }
+//  : "|"! (' '! | '\t'!)* NL! (' '! {blockIndent++;})+ (~(' '|'\t'|'\n'|'\r'))* NL (BLOCK_LINE)*
+//  { System.out.println("here: ["+new String(text.getBuffer(), _begin, text.length()-_begin)+"]"); }
+//  ;
 //
 //protected BLOCK_LINE
-//	: '|'! (' '! (~('\n'|'\r'))*)? NL
-//	;
+//  : '|'! (' '! (~('\n'|'\r'))*)? NL
+//  ;
 //
 //BLOCK_STRING
-//	: (BLOCK_LINE (' '! | '\t'!)* )+
-//	;
+//  : (BLOCK_LINE (' '! | '\t'!)* )+
+//  ;
 
 protected HERE_TAG
-	{ int start = text.length(); }
-	: (' '|'\t')*           { text.setLength(start); } // ignore leading whitespace 
-	  ~(' '|'\t'|'\n'|'\r'|'\f') (~('\n'|'\r'))*
-	  { 
-	  	blockTag = new String(text.getBuffer(), start, text.length());
-	  	text.setLength(start);
-	  }
-	;
+    { int start = text.length(); }
+    : (' '|'\t')*           { text.setLength(start); } // ignore leading whitespace 
+      ~(' '|'\t'|'\n'|'\r'|'\f') (~('\n'|'\r'))*
+      { 
+        blockTag = new String(text.getBuffer(), start, text.length());
+        text.setLength(start);
+      }
+    ;
 
 protected HERE_LINE
-	{ 
-		boolean firstLine = text.length() == 0; 
-	}
-	: NL 
-	{
-		newline();
-		if( firstLine ) // don't put the first newline in the token
-		{
-			text.setLength(0);
-		}
-		int start = text.length();
-		int i;
-		char c;
-		int n = blockTag.length();
-		boolean done = false;
-		for( i = 0 ; i < n && (c = LA(1)) == blockTag.charAt(i) ; i++ )
-		{
-			match(c);
-		}
-		if( i == n )
-		{
-			// We matched the tag; look for whitespace then newline
-			while( (c = LA(1)) == ' ' || c == '\t' )
-			{
-				match(c);
-			}
-			if( (c = LA(1)) == '\n' || c == '\r' )
-			{
-				// We found the end; consume until we find a non-newline to signal end of string
-				while( (c = LA(1)) == '\n' || c == '\r' )
-				{
-					match(c);
-				}
-				// Erase the tag
-				text.setLength(start);
-				done = true;
-			}
-		}
-		if( !done )
-		{
-			while( (c = LA(1)) != '\n' && c != '\r' )
-			{
-				match(c);
-			}
-		}
-	}
-	;
-
-protected HERE_END
-	{ int start = text.length(); }
-	: (~('\r'|'\n'))
-	{ text.setLength(start); } 
-	;
+    { 
+        boolean firstLine = text.length() == 0; 
+    }
+    : NL 
+    {
+        newline();
+        if( firstLine ) // don't put the first newline in the token
+        {
+            text.setLength(0);
+        }
+        int start = text.length();
+        int i;
+        char c;
+        int n = blockTag.length();
+        boolean done = false;
+        for( i = 0 ; i < n && (c = LA(1)) == blockTag.charAt(i) ; i++ )
+        {
+            match(c);
+        }
+        if( i == n )
+        {
+            // We matched the tag; look for whitespace then newline
+            while( (c = LA(1)) == ' ' || c == '\t' )
+            {
+                match(c);
+            }
+            if( (c = LA(1)) == '\n' || c == '\r' )
+            {
+                // We found the end; consume until we find a non-newline to signal end of string
+                while( (c = LA(1)) == '\n' || c == '\r' )
+                {
+                    match(c);
+                }
+                // Erase the tag
+                text.setLength(start);
+                done = true;
+            }
+        }
+        if( !done )
+        {
+            while( (c = LA(1)) != '\n' && c != '\r' )
+            {
+                match(c);
+            }
+        }
+    }
+    ;
 
 HERE_STRING
-	: '<'! '<'! HERE_TAG (HERE_LINE)+ HERE_END
-	;
+    : '<'! '<'! HERE_TAG (HERE_LINE)+
+    ;
 
 protected VAR1
-	: '$' ('_'|LETTER|DIGIT)*
+    : '$' ('_'|LETTER|DIGIT)*
     ;
 
 VAR
-	options { ignore=WS; }
+    options { ignore=WS; }
     : (VAR1 '=' ('='|'>')) => VAR1
     | (VAR1 '=') => VAR1     { $setType(AVAR); }
-	| VAR1 
+    | VAR1 
     ;
 
 SYM
@@ -2037,17 +2021,17 @@ protected STRCHAR
             | 't'   { $setText("\t"); }
             | ('x'|'X') x1:HEX x2:HEX
                 { byte b = BaseUtil.parseHexByte(x1.getText().charAt(0),
-                	                             x2.getText().charAt(0));
+                                                 x2.getText().charAt(0));
                   String s = Character.toString((char)b);
                   $setText( s ); }
             | ('u'|'U') u1:HEX u2:HEX u3:HEX u4:HEX  
                 { char c = BaseUtil.parseUnicode(u1.getText().charAt(0),
-                	                             u2.getText().charAt(0),
-                	                             u3.getText().charAt(0),
-                	                             u4.getText().charAt(0));
+                                                 u2.getText().charAt(0),
+                                                 u3.getText().charAt(0),
+                                                 u4.getText().charAt(0));
                   String s = Character.toString(c);
                   $setText( s ); }
-	        )
+            )
      ;
 
 STR
@@ -2055,7 +2039,7 @@ STR
     | '\''! ( STRCHAR | '\"' )* '\''!
     ;
 
-// TODO: this is going away
+// TODO: this is going away! use hex('str') instead
 HEXSTR
     : ('x'!|'X'!) '\"'! (~('\"'))* '\"'!
     | ('x'!|'X'!) '\''! (~('\''))* '\''!
@@ -2065,17 +2049,17 @@ HEXSTR
 //     : (~( '/' | '\\' ))
 //     | '\\' ( '/'  { System.out.println("hi"); $setText("/"); }
 //            | .
-//	        )
+//          )
 //    ;
 //
 //REGEX
-//	: '/' ( REGEX_CHAR )* '/' ('g'|'i'|'m')*
-//	;
+//  : '/' ( REGEX_CHAR )* '/' ('g'|'i'|'m')*
+//  ;
 
 protected INT
-	: (DIGIT)+
-	;
-	
+    : (DIGIT)+
+    ;
+    
 protected DEC
     : INT ( ( '.' INT ( ('e'|'E') ('+' | '-')? INT )? )
           | ( ('e'|'E') ('+' | '-')? INT ) )
@@ -2089,14 +2073,14 @@ protected DEC
     
 DOTTY
     options { testLiterals=false; }
- 	: (DEC) => 
- 	     DEC   		
- 	       ( /*empty*/       {$setType(DEC);} // TODO: flag to control default decimal/double
- 	       | "m"!            {$setType(DEC);}
- 	       | "d"!            {$setType(DOUBLE);}
- 	       )
+    : (DEC) => 
+         DEC        
+           ( /*empty*/       {$setType(DEC);} // TODO: flag to control default decimal/double
+           | "m"!            {$setType(DEC);}
+           | "d"!            {$setType(DOUBLE);}
+           )
     |  INT
-        ( /*empty*/    		 {$setType(INT);} // TODO: flag to control default decimal/double
+        ( /*empty*/          {$setType(INT);} // TODO: flag to control default decimal/double
         | "m"!               {$setType(INT);}
         | "d"!               {$setType(DOUBLE);}
         )
@@ -2111,23 +2095,24 @@ protected IDWORD
     ;
 
 ID
-	options { ignore=WS; }
+    options { ignore=WS; }
     : (IDWORD ('?')? ':') => IDWORD {$setType(FNAME);}
     | (IDWORD '=') => IDWORD {$setType(AID);}
     // | (IDWORD '*') => IDWORD
-	// | (IDWORD '=') => IDWORD {$setType(AVAR);}
-	| IDWORD { _ttype = testLiteralsTable(_ttype); }
-	
-	;
+    // | (IDWORD '=') => IDWORD {$setType(AVAR);}
+    | IDWORD { _ttype = testLiteralsTable(_ttype); }
+    
+    ;
 
 protected DOT_ID
-	: '.'! IDWORD
-	;
+    : '.'! IDWORD
+    ;
 
 protected DOT_STAR
     : '.' '*'
     ;
-	    
+
+// TODO: this is going away! use date('...') instead
 DATETIME
     : ('d'!|'D'!) '\"'! (~('\"'))* '\"'!
     | ('d'!|'D'!) '\''! (~('\''))* '\''!
