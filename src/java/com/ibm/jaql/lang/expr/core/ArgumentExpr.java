@@ -89,44 +89,66 @@ public class ArgumentExpr extends Expr
   
   public JsonRecord constEval() 
   {
-    // check that everything is const
-    for (int i=0; i<names.length; i++) 
+    if( ! isConst() )
     {
-      if (names[i] == null)
-      {
-        // this name is not constant
-        return null;
-      }
-      
-      Expr value;
-      if (exprs[i] instanceof NameValueBinding)
-      {
-        value = ((NameValueBinding)exprs[i]).valueExpr();
-      }
-      else
-      {
-        value = exprs[i];
-      }
-      
-      if (!(value instanceof ConstExpr))
-      {
-        // this value is not constant
-        return null;
-      }
+      throw new RuntimeException("arguments have to be constants");
     }
-    
-    // then evaluate
     try
     {
-      return eval(null); // context not needed
-    } catch (RuntimeException e)
-    {
-      throw e;
+      // FIXME: We require a context here! The context should be passed in to this function.
+      // The context cannot be reset after this call because parts of the result may be in the context
+      // temp space.  The temp space needs to live as long as the expression tree lives.  (This is true of
+      // all constants in the tree.)  As a temporary HACK, we are using a null context.  If there is a expr that
+      // reports isConst and requires the context, we will get a null pointer exception, which is a bug on our part.
+      // Either we need to pass a context around during parsing, or we need to defer this evaluation to after parsing.
+      return eval(null);
     }
-    catch (Exception e)
+    catch (RuntimeException ex)
     {
-      throw new UndeclaredThrowableException(e);
-    }    
+      throw ex;
+    }
+    catch( Exception ex )
+    {
+      throw new UndeclaredThrowableException(ex);
+    }
+//    // check that everything is const
+//    for (int i=0; i<names.length; i++) 
+//    {
+//      if (names[i] == null)
+//      {
+//        // this name is not constant
+//        return null;
+//      }
+//      
+//      Expr value;
+//      if (exprs[i] instanceof NameValueBinding)
+//      {
+//        value = ((NameValueBinding)exprs[i]).valueExpr();
+//      }
+//      else
+//      {
+//        value = exprs[i];
+//      }
+//      
+//      if (!(value instanceof ConstExpr))
+//      {
+//        // this value is not constant
+//        return null;
+//      }
+//    }
+//    
+//    // then evaluate
+//    try
+//    {
+//      return eval(null); // context not needed
+//    } catch (RuntimeException e)
+//    {
+//      throw e;
+//    }
+//    catch (Exception e)
+//    {
+//      throw new UndeclaredThrowableException(e);
+//    }    
   }
   
   private void checkArg(int i, JsonValue nameValue)

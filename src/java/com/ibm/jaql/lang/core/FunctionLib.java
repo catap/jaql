@@ -19,6 +19,7 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMaxAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMinAgg;
@@ -50,8 +51,11 @@ import com.ibm.jaql.lang.expr.array.RowwiseFn;
 import com.ibm.jaql.lang.expr.array.ShiftFn;
 import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
+import com.ibm.jaql.lang.expr.binary.Base64Fn;
+import com.ibm.jaql.lang.expr.binary.HexFn;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
@@ -204,6 +208,8 @@ public class FunctionLib
     add(DateFn.class);
     add(DateMillisFn.class);
     add(DatePartsFn.class);
+    add(HexFn.class);
+    add(Base64Fn.class);
     add(CountAgg.class);
     add(SumAgg.class);
     add(MinAgg.class);
@@ -380,6 +386,17 @@ public class FunctionLib
       {
         MacroExpr macro = (MacroExpr) expr;
         expr = macro.expand(env);
+      }
+      
+      // FIXME: This a a MAJOR HACK to get d'...' and date('...') or x'...' and hex('...') to behave the same.
+      // FIXME: We need to unify JSON constructors and our functions.
+      if( ( expr instanceof DateFn || 
+            expr instanceof HexFn ||
+            expr instanceof Base64Fn ) &&
+          expr.isConst() )
+      {
+        JsonValue val = expr.eval(null); // more HACKS: context not required for these functions
+        expr = new ConstExpr(val);
       }
 
       return expr;

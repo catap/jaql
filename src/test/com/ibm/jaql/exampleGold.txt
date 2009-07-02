@@ -2093,12 +2093,12 @@ null
     38.9
   ],
   [
-    x'ABADDEEDADEADFAD',
-    x'ADEADFAD'
+    hex('ABADDEEDADEADFAD'),
+    hex('ADEADFAD')
   ],
   [
-    d'2008-03-14T13:15:00Z',
-    d'2008-03-14T12:15:00Z'
+    date('2008-03-14T13:15:00Z'),
+    date('2008-03-14T12:15:00Z')
   ],
   [
     fn($x) ( ($x)+(1) )
