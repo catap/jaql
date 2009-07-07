@@ -68,12 +68,12 @@ public class ForInSimpleIf extends Rewrite
     IfExpr ifExpr = (IfExpr) bind.inExpr();
     Expr falseExpr = ifExpr.falseExpr();
 
-    if (falseExpr.isEmpty().maybeNot())
+    if (falseExpr.getSchema().isEmptyArrayOrNull().maybeNot())
     {
       return false;
     }
 
-    if (falseExpr.isNull().maybe())
+    if (falseExpr.getSchema().isNull().maybe())
     {
       falseExpr.replaceInParent(new ArrayExpr());
     }

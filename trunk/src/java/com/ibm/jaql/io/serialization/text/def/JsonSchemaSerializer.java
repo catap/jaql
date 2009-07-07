@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.schema.AnySchema;
+import com.ibm.jaql.json.schema.AnyNonNullSchema;
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.schema.BooleanSchema;
@@ -59,8 +59,8 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   {
     switch (schema.getSchemaType())
     {
-    case ANY:
-      writeAny(out, (AnySchema)schema, indent);
+    case ANY_NON_NULL:
+      writeAny(out, (AnyNonNullSchema)schema, indent);
       break;
     case ARRAY:
       writeArray(out, (ArraySchema)schema, indent);
@@ -105,9 +105,9 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   
   // -- write methods for each schema type --------------------------------------------------------
   
-  private static void writeAny(PrintStream out, AnySchema schema, int indent) throws IOException
+  private static void writeAny(PrintStream out, AnyNonNullSchema schema, int indent) throws IOException
   {
-    out.print('*');
+    out.print("any");
   }
   
   private static void writeArray(PrintStream out, ArraySchema schema, int indent) throws IOException
@@ -149,20 +149,20 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       JsonLong maxRest = schema.getMaxRest();
       if (!(JsonValue.equals(minRest, JsonLong.ONE) && JsonValue.equals(maxRest, JsonLong.ONE))) // == default
       {
-        if (JsonValue.equals(minRest, JsonLong.ZERO) && maxRest==null)
-        {
-          out.print("*");
-        }
-        else if (JsonValue.equals(minRest, JsonLong.ONE) && maxRest==null)
-        {
-          out.print("+");
-        }
-        else
-        {
+//        if (JsonValue.equals(minRest, JsonLong.ZERO) && maxRest==null)
+//        {
+//          out.print("*");
+//        }
+//        else if (JsonValue.equals(minRest, JsonLong.ONE) && maxRest==null)
+//        {
+//          out.print("+");
+//        }
+//        else
+//        {
           out.print('<');
           writeLengthArgs(out, minRest, maxRest, indent, "");
           out.print('>');
-        }        
+//        }        
       }
     }
     
@@ -370,7 +370,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       int indent, String sep) throws IOException
   {
     out.print(sep);
-    sep=", ";
+    sep=",";
     if (min==null)
     {
       out.print('*');

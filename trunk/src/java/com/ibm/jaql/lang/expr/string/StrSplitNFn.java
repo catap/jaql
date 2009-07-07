@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonNumeric;
@@ -23,7 +25,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.Bool3;
 
 
 /**
@@ -45,9 +46,9 @@ public class StrSplitNFn extends Expr
   }
 
   @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return Bool3.TRUE;
+    return SchemaFactory.arrayOrNullSchema();
   }
 
   /*

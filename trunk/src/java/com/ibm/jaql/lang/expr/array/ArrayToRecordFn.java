@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -22,7 +24,6 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 
 /**
@@ -40,9 +41,9 @@ public class ArrayToRecordFn extends Expr
   }
 
   @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    return SchemaFactory.recordSchema();
   }
 
   /*

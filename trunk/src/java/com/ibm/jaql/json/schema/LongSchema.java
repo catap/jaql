@@ -54,7 +54,7 @@ public class LongSchema extends RangeSchema<JsonLong>
         (JsonNumeric)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  public LongSchema()
+  LongSchema()
   {
   }
   
@@ -130,5 +130,20 @@ public class LongSchema extends RangeSchema<JsonLong>
     }
     
     return true;
+  }
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof LongSchema)
+    {
+      LongSchema o = (LongSchema)other;
+      JsonLong min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
+      JsonLong max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);      
+      return new LongSchema(min, max, null);
+    }
+    return null;
   }
 }

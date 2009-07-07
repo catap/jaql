@@ -17,12 +17,14 @@ package com.ibm.jaql.lang.expr.top;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 /**
  * 
@@ -41,15 +43,11 @@ public class AssignExpr extends TopExpr
     this.var = var;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
-  @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+    result.put(ExprProperty.HAS_CAPTURES, true);
+    return result;
   }
 
   /*

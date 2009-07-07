@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Map;
 
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapRunnable;
@@ -47,6 +48,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -90,15 +92,11 @@ public abstract class MapReduceBaseExpr extends Expr
     this(new Expr[]{args});
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
-  @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.READS_EXTERNAL_DATA, true);
+    return result;
   }
 
   /**

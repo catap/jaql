@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.json.schema;
 
+import java.util.List;
+
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
@@ -22,31 +25,40 @@ import com.ibm.jaql.util.Bool3;
 /** Schema that matches if at least one of the provided schemata matches. */
 public class OrSchema extends Schema
 {
-  protected Schema[] schemata;    // list of alternatives, never null
+  protected Schema[] schemata;    // list of alternatives, never null, does not contain OrSchema
 
   // -- construction ------------------------------------------------------------------------------
   
-  public OrSchema(Schema[] schemata)
+  OrSchema(Schema[] schemata)
   {
     if (schemata.length == 0)
     {
       throw new IllegalArgumentException("at least one schema has to be provided");
     }
     JaqlUtil.enforceNonNull(schemata);
+    for (int i=0; i<schemata.length; i++)
+    {
+      if (schemata[i] instanceof OrSchema)
+      {
+        throw new IllegalArgumentException("Schema alternatives cannot be nested");
+      }
+    }
     this.schemata = schemata;
   }
-  
-  public OrSchema(Schema s1, Schema s2)
+
+  OrSchema(List<Schema> schemata)
   {
-    this(new Schema[] { s1, s2 });
+    this(schemata.toArray(new Schema[schemata.size()]));
   }
   
-  /**
-   * 
-   */
-  public OrSchema()
+  OrSchema(Schema s1, Schema s2, Schema s3)
   {
-    this(new Schema[0]);
+    this(new Schema[] { s1, s2, s3 });
+  }
+
+  OrSchema(Schema s1, Schema s2)
+  {
+    this(new Schema[] { s1, s2 });
   }
 
   // -- Schema methods ----------------------------------------------------------------------------
@@ -86,6 +98,7 @@ public class OrSchema extends Schema
       return Bool3.FALSE;      
     
     case UNKNOWN:
+      /// otherwise we don't know
       return Bool3.UNKNOWN;
     
     default:
@@ -94,25 +107,83 @@ public class OrSchema extends Schema
   }
   
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
   {
-    Bool3 result = Bool3.FALSE;
-    for (Schema s : schemata)
+    Bool3 result = schemata[0].isArrayOrNull();
+    switch (result)
     {
-      result = result.or(s.isArray());
+    case TRUE:
+      // check whether all are true
+      for (int i=1; i<schemata.length; i++) 
+      {
+        if (!schemata[i].isArrayOrNull().always()) 
+        {
+          return Bool3.UNKNOWN;
+        }
+      }
+      return Bool3.TRUE;
+    
+    case FALSE:
+      // check whether all are false
+      for (int i=1; i<schemata.length; i++) 
+      {
+        if (!schemata[i].isArrayOrNull().never()) 
+        {
+          return Bool3.UNKNOWN;
+        }
+      }
+      return Bool3.FALSE;      
+    
+    case UNKNOWN:
+      /// otherwise we don't know
+      return Bool3.UNKNOWN;
+    
+    default:
+      throw new IllegalStateException();
     }
-    return result;
+  }
+  
+  @Override
+  public Bool3 isEmptyArrayOrNull()
+  {
+    Bool3 result = schemata[0].isEmptyArrayOrNull();
+    switch (result)
+    {
+    case TRUE:
+      // check whether all are true
+      for (int i=1; i<schemata.length; i++) 
+      {
+        if (!schemata[i].isEmptyArrayOrNull().always()) 
+        {
+          return Bool3.UNKNOWN;
+        }
+      }
+      return Bool3.TRUE;
+    
+    case FALSE:
+      // check whether all are false
+      for (int i=1; i<schemata.length; i++) 
+      {
+        if (!schemata[i].isEmptyArrayOrNull().never()) 
+        {
+          return Bool3.UNKNOWN;
+        }
+      }
+      return Bool3.FALSE;      
+    
+    case UNKNOWN:
+      /// otherwise we don't know
+      return Bool3.UNKNOWN;
+    
+    default:
+      throw new IllegalStateException();
+    }
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
-    Bool3 result = Bool3.TRUE;
-    for (Schema s : schemata)
-    {
-      result = result.and(s.isConst());
-    }
-    return result;
+    return schemata.length == 1 && schemata[0].isConstant(); 
   }
 
   @Override
@@ -134,5 +205,138 @@ public class OrSchema extends Schema
   public Schema[] getInternal()
   {
     return schemata;
+  }
+  
+
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof OrSchema)
+    {
+      // inefficient; O(n^2)
+      Schema result = this;
+      for (Schema schema : ((OrSchema)other).schemata)
+      {
+        result = result.merge(schema); // result is orschema: never returns null and will not nest
+      }
+      return result;
+    }
+    else
+    {
+      // try to merge it into: O(n)
+      for(int i=0; i<schemata.length; i++)
+      {
+        Schema mergedSchema = schemata[i].merge(other);
+        if (mergedSchema != null)
+        {
+          Schema[] newSchemata = new Schema[schemata.length];
+          System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
+          newSchemata[i] = mergedSchema;
+          return new OrSchema(newSchemata);
+        }
+      }
+      
+      // not possible, add it as new alternative
+      Schema[] newSchemata = new Schema[schemata.length+1];
+      System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
+      newSchemata[schemata.length] = other;
+      return new OrSchema(newSchemata);
+    }
+  }
+
+  // -- introspection -----------------------------------------------------------------------------
+
+  @Override
+  public Bool3 hasElement(JsonValue which)
+  {
+    Bool3 result = schemata[0].hasElement(which);
+    switch (result)
+    {
+    case TRUE:
+      // check whether all are true
+      for (int i=1; i<schemata.length; i++) 
+      {
+        if (schemata[i].hasElement(which).maybeNot()) 
+        {
+          return Bool3.UNKNOWN;
+        }
+      }
+      return Bool3.TRUE;
+    
+    case FALSE:
+      // check whether all are false
+      for (int i=1; i<schemata.length; i++) 
+      {
+        if (schemata[i].isNull().maybe()) 
+        {
+          return Bool3.UNKNOWN;
+        }
+      }
+      return Bool3.FALSE;      
+    
+    case UNKNOWN:
+      /// otherwise we don't know
+      return Bool3.UNKNOWN;
+    
+    default:
+      throw new IllegalStateException();
+    }
+  }
+  
+  @Override
+  public Schema elements()
+  {
+    Schema result = null;
+    for (int i=0; i<schemata.length; i++)
+    {
+      Schema s = schemata[i].elements();
+      if (s!=null)
+      {
+        result = result == null ? s : SchemaTransformation.merge(result, s);
+      }
+    }
+    return result; 
+  }
+  
+  @Override
+  public JsonLong minElements()
+  {
+    JsonLong result = schemata[0].minElements();
+    for (int i=1; i<schemata.length && result != null; i++)
+    {
+      JsonLong l = schemata[i].minElements();
+      if (l == null)
+      {
+        result = null;
+      }
+      else
+      {
+        result.value = Math.min(result.value, l.value);
+      }
+      
+    }
+    return result;
+  }
+
+  @Override
+  public JsonLong maxElements()
+  {
+    JsonLong result = schemata[0].maxElements();
+    for (int i=1; i<schemata.length && result != null; i++)
+    {
+      JsonLong l = schemata[i].maxElements();
+      if (l == null)
+      {
+        result = null;
+      }
+      else
+      {
+        result.value = Math.max(result.value, l.value);
+      }
+      
+    }
+    return result;
   }
 }

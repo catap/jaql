@@ -65,7 +65,7 @@ public class IsnullExpr extends Expr
   {
     Expr expr = exprs[0];
     boolean b;
-    if (expr.isArray().always())
+    if (expr.getSchema().isArrayOrNull().always())
     {
       JsonIterator iter = expr.iter(context);
       b = iter.isNull();

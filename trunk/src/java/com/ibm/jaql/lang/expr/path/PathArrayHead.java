@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -118,4 +119,9 @@ public class PathArrayHead extends PathArray
     };
   }
 
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    // TODO: improve
+    return getSchemaAll(inputSchema);
+  }
 }

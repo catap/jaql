@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -30,7 +31,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -54,28 +54,13 @@ public final class ConstExpr extends Expr
     this(new JsonLong(v));
   }
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+  public Map<ExprProperty, Boolean> getProperties() 
   {
-    return Bool3.valueOf(value == null);
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
-  @Override
-  public Bool3 isArray()
-  {
-    return Bool3.valueOf(value == null || value instanceof JsonArray);
-  }
-
+  
   /*
    * (non-Javadoc)
    * 

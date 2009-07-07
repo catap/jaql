@@ -70,13 +70,19 @@ public class GenericSchema extends Schema
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
-    return Bool3.UNKNOWN;
+    return false;
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
+  {
+    return Bool3.FALSE;
+  }
+
+  @Override
+  public Bool3 isEmptyArrayOrNull()
   {
     return Bool3.FALSE;
   }
@@ -93,5 +99,25 @@ public class GenericSchema extends Schema
   public JsonType getType()
   {
     return type;  
+  }
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof GenericSchema)
+    {
+      GenericSchema o = (GenericSchema)other;
+      if (this.type.equals(o.type))
+      {
+        return this;
+      }
+      else
+      {
+        return null; // cannot be merged
+      }
+    }
+    return null;
   }
 }

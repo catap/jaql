@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.net;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Map;
 
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -26,6 +27,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
@@ -42,16 +44,13 @@ public class JaqlGetFn extends Expr
     super(exprs);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
-  @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.READS_EXTERNAL_DATA, true);
+    return result;
   }
+
 
   /**
    * @param context

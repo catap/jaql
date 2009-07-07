@@ -18,11 +18,17 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.Bool3;
 
 
 public class PathArrayAll extends PathArray
@@ -87,5 +93,54 @@ public class PathArrayAll extends PathArray
         return false;
       }
     };
+  }
+  
+  // -- schema ------------------------------------------------------------------------------------
+  
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    PathStepSchema elements = null;
+    boolean inputMaybeNull = false;
+    JsonLong minLength = null;
+    JsonLong maxLength = null;
+    if (inputSchema.isArray().never())
+    {
+      // TODO: this indicates a compile-time error but unless error handling is implemented, 
+      // we are silent here
+      return new PathStepSchema(null, Bool3.FALSE);
+    }
+    else if (inputSchema.isArray().always())
+    {
+      minLength = inputSchema.minElements();
+      maxLength = inputSchema.maxElements();
+      elements = nextStep().getSchema(inputSchema.elements());
+    }
+    else
+    {
+      Schema s = SchemaTransformation.restrictToArrayOrNull(inputSchema);
+      if (s==null)  return new PathStepSchema(null, Bool3.FALSE); // TODO: friendly here as well
+      inputMaybeNull = s.isNull().maybe();
+      s = SchemaTransformation.removeNullability(s);
+      minLength = s.minElements();
+      maxLength = s.maxElements();
+      elements = nextStep().getSchema(inputSchema.elements());
+    }
+
+    Schema result; 
+    if (elements.hasData.always() && !inputMaybeNull)
+    {
+      result = new ArraySchema(null, elements.schema, minLength, maxLength);
+    }
+    else if (elements.hasData.never())
+    {
+      result = SchemaFactory.emptyArraySchema();
+    }
+    else
+    {
+      result = SchemaTransformation.merge(new ArraySchema(null, elements.schema, minLength, maxLength), 
+          SchemaFactory.emptyArraySchema());
+    }
+      
+    return new PathStepSchema(result, Bool3.TRUE);
   }
 }

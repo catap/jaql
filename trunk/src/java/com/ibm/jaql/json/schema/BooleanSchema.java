@@ -57,7 +57,7 @@ public class BooleanSchema extends Schema
     this.value = value;
   }
   
-  public BooleanSchema()
+  BooleanSchema()
   {
   }
   
@@ -76,13 +76,19 @@ public class BooleanSchema extends Schema
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
-    return value == null ? Bool3.UNKNOWN : Bool3.TRUE;
+    return value != null;
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
+  {
+    return Bool3.FALSE;
+  }
+  
+  @Override
+  public Bool3 isEmptyArrayOrNull()
   {
     return Bool3.FALSE;
   }
@@ -110,4 +116,33 @@ public class BooleanSchema extends Schema
   {
     return value;
   }
+  
+  @Override
+  // -- merge -------------------------------------------------------------------------------------
+
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof BooleanSchema)
+    {
+      BooleanSchema o = (BooleanSchema)other;
+      if (this.value==null)
+      {
+        return this;
+      }
+      else if (o.value==null)
+      {
+        return o;
+      }
+      else if (this.value.equals(o.value)) // both non null
+      {
+        return this;
+      }
+      else // one is true, one is false 
+      {
+        return new BooleanSchema();
+      }
+    }
+    return null;
+  }
+ 
 }

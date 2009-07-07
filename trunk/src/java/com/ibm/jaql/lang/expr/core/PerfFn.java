@@ -37,7 +37,7 @@ public class PerfFn extends Expr
     Expr e = exprs[0];
     long start = System.currentTimeMillis();
     long n = 0;
-    if( e.isArray().always() )
+    if( e.getSchema().isArrayOrNull().always() )
     {
       JsonIterator iter = e.iter(context);
       while (iter.moveNext()) 

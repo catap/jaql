@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -41,6 +43,19 @@ public class NotExpr extends Expr
   public NotExpr(Expr expr)
   {
     super(new Expr[]{expr});
+  }
+
+  @Override
+  public Schema getSchema()
+  {
+    if (exprs[0].getSchema().isNull().maybe() || exprs[1].getSchema().isNull().maybe())
+    {
+      return SchemaFactory.booleanOrNullSchema();
+    }
+    else
+    {
+      return SchemaFactory.booleanSchema();
+    }
   }
 
   /*

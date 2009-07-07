@@ -18,6 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -26,11 +29,10 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.util.Bool3;
 
-/**
- * @author kbeyer
- *
- */
+
+/** e.g., .a */
 public class PathFieldValue extends PathStep
 {
 
@@ -68,6 +70,7 @@ public class PathFieldValue extends PathStep
     return exprs[0];
   }
 
+  
   /**
    * 
    */
@@ -123,5 +126,23 @@ public class PathFieldValue extends PathStep
   public static Expr byVarName(Var recVar, Var fieldNameVar)
   {
     return byName(recVar, fieldNameVar.nameAsField());
+  }
+  
+  // -- schema ------------------------------------------------------------------------------------
+  
+  @Override
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    PathStepSchema s = staticResolveField(inputSchema, exprs[0], nextStep());
+    switch (s.hasData)
+    {
+    case TRUE:
+      return new PathStepSchema(s.schema, Bool3.TRUE);
+    case FALSE:
+      return new PathStepSchema(SchemaFactory.nullSchema(), Bool3.TRUE);
+    case UNKNOWN:
+    default:
+      return new PathStepSchema(SchemaTransformation.addNullability(s.schema), Bool3.TRUE);
+    }
   }
 }

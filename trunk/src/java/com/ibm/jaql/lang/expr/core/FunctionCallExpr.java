@@ -19,12 +19,13 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.util.Bool3;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -93,6 +94,7 @@ public class FunctionCallExpr extends Expr
     super(fn,arg1,arg2);
   }
 
+  
   /**
    * @return
    */
@@ -119,7 +121,7 @@ public class FunctionCallExpr extends Expr
   }
 
   @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
     Expr fn = fnExpr();
     DefineFunctionExpr def = null;
@@ -141,9 +143,9 @@ public class FunctionCallExpr extends Expr
     }
     if( def != null )
     {
-      return def.body().isArray();
+      return def.body().getSchema();
     }
-    return Bool3.UNKNOWN;
+    return SchemaFactory.anyOrNullSchema();
   }
   
   /*

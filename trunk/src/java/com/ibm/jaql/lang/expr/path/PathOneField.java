@@ -18,16 +18,14 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 
-/**
- * @author kbeyer
- *
- */
+/** e.g. .a as used is ${.a,.b} */;
 public class PathOneField extends PathFields
 {
 
@@ -71,5 +69,13 @@ public class PathOneField extends PathFields
       return false;
     }
     return n.equals(name);
+  }
+  
+  // -- schema ------------------------------------------------------------------------------------
+  
+  @Override
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    return staticResolveField(inputSchema, exprs[0], nextStep());
   }
 }

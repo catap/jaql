@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
@@ -55,6 +58,28 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
     this(expr, new ConstExpr(JsonLong.sharedLong(i)));
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    if (exprs[1] instanceof ConstExpr)
+    {
+      ConstExpr c = (ConstExpr) exprs[1];
+      JsonLong i = new JsonLong(((JsonNumber)c.value).longValueExact());
+      Schema inputSchema = exprs[0].getSchema();
+      Schema result = exprs[0].getSchema().element(i);
+      if (result == null) 
+      {
+        result = SchemaFactory.anyOrNullSchema();
+      }
+      else if (inputSchema.hasElement(i).maybeNot()) 
+      {
+        result = SchemaTransformation.addNullability(result);
+      }
+      return result;
+    }
+    return SchemaFactory.anyOrNullSchema();
+  }
+  
   /**
    * @return
    */
@@ -70,7 +95,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
   {
     return exprs[1];
   }
-
+  
 //  /*
 //   * (non-Javadoc)
 //   * 
@@ -105,7 +130,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
     }
     long i = ((JsonNumber) w).longValueExact();
     Expr arrayExpr = exprs[0];
-    if (arrayExpr.isArray().always())
+    if (arrayExpr.getSchema().isArrayOrNull().always())
     {
       JsonIterator iter = arrayExpr.iter(context);
       boolean hasNext = iter.moveN(i+1);

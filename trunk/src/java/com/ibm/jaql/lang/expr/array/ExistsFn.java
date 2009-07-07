@@ -61,7 +61,7 @@ public class ExistsFn extends Expr
   {
     JsonIterator iter;
     Expr expr = exprs[0];
-    if (expr.isArray().always())
+    if (expr.getSchema().isArrayOrNull().always())
     {
       iter = expr.iter(context);
       if (iter.isNull())

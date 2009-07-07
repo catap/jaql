@@ -116,7 +116,7 @@ public class MultiJoinExpr extends MacroExpr
   {
     super(makeExprs(bindings, where, expand));
   }
-
+  
   /**
    * @return
    */

@@ -142,13 +142,19 @@ public class StringSchema extends Schema
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
-    return Bool3.UNKNOWN;
+    return value != null;
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
+  {
+    return Bool3.FALSE;
+  }
+
+  @Override
+  public Bool3 isEmptyArrayOrNull()
   {
     return Bool3.FALSE;
   }
@@ -201,5 +207,27 @@ public class StringSchema extends Schema
   public JsonLong getMaxLength()
   {
     return maxLength;
+  }
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof StringSchema)
+    {
+      StringSchema o = (StringSchema)other;
+      if (this.value != null && o.value != null && this.value.equals(o.value))
+      {
+        return this; // both represent the same constant
+      }
+      
+      // simple first cut; more sophisticated methods possible (not sure if needed)
+      // currently information in value/pattern is ignored
+      JsonLong minLength = SchemaUtil.min(this.minLength, o.minLength);
+      JsonLong maxLength = SchemaUtil.max(this.maxLength, o.maxLength);
+      return new StringSchema(minLength, maxLength, null, null);
+    }
+    return null;
   }
 }

@@ -22,6 +22,8 @@ import java.util.PriorityQueue;
 
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -69,16 +71,12 @@ public class GroupCombineFn extends IterExpr
     super(new Expr[]{input, initialFn, partialFn, finalFn});
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    return SchemaFactory.arraySchema();
   }
+
 
   /**
    * 

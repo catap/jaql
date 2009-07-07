@@ -15,11 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import java.util.Map;
+
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -45,16 +48,10 @@ public class RangeExpr extends IterExpr
   {
     super(new Expr[]{expr0, expr1});
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+  
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    return SchemaFactory.arraySchema();
   }
 
 //  /*
@@ -73,26 +70,21 @@ public class RangeExpr extends IterExpr
 //    exprText.print(") ");
 //  }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
   @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties() 
   {
-    // We only consider small ranges as a constant.
-    // TODO: what is the right size?
+    Map<ExprProperty, Boolean> result = super.getProperties();
     if (exprs[0] instanceof ConstExpr && exprs[1] instanceof ConstExpr)
     {
+      // We only consider small ranges as a constant.
       long start = ((JsonLong) ((ConstExpr) exprs[0]).value).value;
       long end = ((JsonLong) ((ConstExpr) exprs[1]).value).value;
       if (end - start < 10)
       {
-        return true;
+        result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
       }
     }
-    return false;
+    return result;
   }
 
   /*

@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -89,6 +91,7 @@ public final class ForExpr extends IterExpr // TODO: rename
         collectExpr);
   }
 
+  
   /**
    * @return
    */
@@ -113,16 +116,9 @@ public final class ForExpr extends IterExpr // TODO: rename
     return exprs[1];
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
-    // return binding().inExpr().isNull().or(collectExpr().isNull());
+    return new ArraySchema(null, collectExpr().getSchema().elements(), null, null);
   }
 
   /**

@@ -17,6 +17,9 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -24,7 +27,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
@@ -49,49 +51,16 @@ public class MergeContainersFn extends Expr
   {
     super(expr0, expr1);
   }
-
-  /**
-   * This is an array if all inputs produce an array.
-   */
-  @Override
-  public Bool3 isArray()
-  {
-    Bool3 rc = Bool3.TRUE;
-    for(Expr e: exprs)
-    {
-      rc = rc.and( e.isArray() );
-    }
-    return rc;
-  }
-
-  /**
-   * This is empty if all inputs produce are empty.
-   */
-  @Override
-  public Bool3 isEmpty()
-  {
-    Bool3 rc = Bool3.TRUE;
-    for(Expr e: exprs)
-    {
-      rc = rc.and( e.isEmpty() );
-    }
-    return rc;
-  }
-
-  /**
-   * This is null if all inputs produce null.
-   */
-  @Override
-  public Bool3 isNull()
-  {
-    Bool3 rc = Bool3.TRUE;
-    for(Expr e: exprs)
-    {
-      rc = rc.and( e.isNull() );
-    }
-    return rc;
-  }
   
+  public Schema getSchema()
+  {
+    // TODO: refine
+    return SchemaTransformation.or(
+        SchemaFactory.nullSchema(), 
+        SchemaFactory.arraySchema(), 
+        SchemaFactory.recordSchema());
+  }
+
   @Override
   public JsonValue eval(Context context) throws Exception
   {

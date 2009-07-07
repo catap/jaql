@@ -18,9 +18,11 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.JsonType;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -69,6 +71,12 @@ public class CompareExpr extends Expr
   public CompareExpr clone(VarMap varMap)
   {
     return new CompareExpr(op, cloneChildren(varMap));
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.booleanOrNullSchema();
   }
 
   /*
