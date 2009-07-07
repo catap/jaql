@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -22,7 +24,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -48,16 +49,10 @@ public final class EnumerateExpr extends IterExpr
     this(new Expr[]{arrayExpr});
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
   @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
-    // return exprs[0].isNull();
+    return SchemaFactory.arraySchema();
   }
 
   /*

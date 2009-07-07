@@ -19,13 +19,13 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.path.PathFieldValue;
-import com.ibm.jaql.util.Bool3;
 
 /** A variable.
  * 
@@ -33,75 +33,34 @@ import com.ibm.jaql.util.Bool3;
 public class VarExpr extends Expr
 {
   Var var;
-
-  /**
-   * @param var
-   */
+  
   public VarExpr(Var var)
   {
     super(NO_EXPRS);
-    this.var = var;
+    this.var=var;
   }
+  
+  
+//  /*
+//   * (non-Javadoc)
+//   * 
+//   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+//   */
+//  @Override
+//  public boolean isConst()
+//  {
+//    // TODO: do this?
+//    //    if( var.value != null )
+//    //    {
+//    //      return true;
+//    //    }
+//    return false;
+//  }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
   @Override
-  public boolean isConst()
+  public Schema getSchema()
   {
-    // TODO: do this?
-    //    if( var.value != null )
-    //    {
-    //      return true;
-    //    }
-    return false;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
-  {
-    if (var.expr == null)
-    {
-      return Bool3.UNKNOWN;
-    }
-//    if (var.value != null)
-//    {
-//      return Bool3.valueOf(var.value == null);
-//    }
-//    else
-    {
-      return var.expr.isNull();
-    }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
-  @Override
-  public Bool3 isArray()
-  {
-    if (var.expr == null)
-    {
-      return Bool3.UNKNOWN;
-    }
-//    if (var.value != null)
-//    {
-//      JsonValue v = var.value;
-//      return Bool3.valueOf(v == null || v instanceof JsonArray);
-//    }
-//    else
-    {
-      return var.expr.isArray();
-    }
+    return var.getSchema();
   }
 
   //  public VarExpr(Env env, String varName)
@@ -140,7 +99,8 @@ public class VarExpr extends Expr
    */
   public JsonValue eval(Context context) throws Exception
   {
-    return var.getValue(context);
+    JsonValue result = var.getValue(context); 
+    return result;
   }
 
   /*

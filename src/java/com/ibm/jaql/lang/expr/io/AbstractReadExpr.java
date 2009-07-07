@@ -15,15 +15,19 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.io.InputAdapter;
+import java.util.Map;
+
 import com.ibm.jaql.io.ClosableJsonIterator;
+import com.ibm.jaql.io.InputAdapter;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.Bool3;
 
 public abstract class AbstractReadExpr extends IterExpr
 {
@@ -46,16 +50,17 @@ public abstract class AbstractReadExpr extends IterExpr
     return exprs[0];
   }
 
-  @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.READS_EXTERNAL_DATA, true);
+    return result;
   }
-
+  
   @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    return SchemaFactory.arraySchema();
   }
 
   @Override

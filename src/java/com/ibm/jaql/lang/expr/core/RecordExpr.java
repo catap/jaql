@@ -18,7 +18,13 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -130,7 +136,7 @@ public class RecordExpr extends Expr
         vars[n] = env.makeVar("$_flat_"+n);
         ins[n] = new VarExpr(letVar);
         Expr e = flatten.child(0);
-        if( e.isEmpty().maybe() )
+        if( e.getSchema().isEmptyArrayOrNull().maybe() )
         {
           e = new NullElementOnEmptyFn(e);
         }
@@ -149,27 +155,93 @@ public class RecordExpr extends Expr
     return e;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
   @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    List<RecordSchema.Field> fields = new LinkedList<RecordSchema.Field>();
+    Schema unresolved = null; // schema of all fields that could not be matched
+
+    for (Expr e : exprs)
+    {
+      FieldExpr fe = (FieldExpr)e;
+      if (fe instanceof NameValueBinding) // name: value
+      {
+        NameValueBinding ne = (NameValueBinding)fe;
+        JsonString name = ne.staticName();
+        if (name != null)
+        {
+          fields.add(new RecordSchema.Field(name, ne.valueExpr().getSchema(), !ne.required));
+        }
+        else
+        {
+          if (unresolved == null)
+          {
+            unresolved = ne.valueExpr().getSchema();
+          }
+          else
+          {
+            unresolved = SchemaTransformation.merge(unresolved, ne.valueExpr().getSchema());
+          }          
+        }
+      } 
+      else if (fe instanceof CopyField) // $.a
+      {
+        CopyField ce = (CopyField)fe;
+        JsonString name = ce.staticName();
+        Schema recordSchema = ce.recExpr().getSchema();
+        if (name != null)
+        {
+          Bool3 hasElement = recordSchema.hasElement(name);
+          if (hasElement.maybe())
+          {
+            Schema valueSchema = recordSchema.element(name);
+            if (valueSchema==null) valueSchema = SchemaFactory.anyOrNullSchema(); // don't know better
+            fields.add(new RecordSchema.Field(name, valueSchema, hasElement.always() ? false : true));
+          }
+        }
+        else
+        {
+          if (unresolved == null)
+          {
+            unresolved = ce.recExpr().getSchema().elements();
+          }
+          else
+          {
+            unresolved = SchemaTransformation.merge(unresolved, ce.recExpr().getSchema().elements());
+          }
+        }
+      }
+      else if (fe instanceof CopyRecord) // $.*
+      {
+        CopyRecord ce = (CopyRecord)fe;
+        Schema copySchema = ce.exprs[0].getSchema();
+        if (copySchema instanceof RecordSchema)
+        {
+          for (RecordSchema.Field f : ((RecordSchema)copySchema).getFields())
+          {
+            fields.add(f);
+          }
+          Schema rest = ((RecordSchema)copySchema).getRest();
+          if (rest!=null)
+          {
+            unresolved = unresolved==null ? rest : SchemaTransformation.merge(unresolved, rest);
+          }
+        }
+        else
+        {
+          unresolved = SchemaFactory.anyOrNullSchema();
+        }
+      }
+      else // unknown FieldExpr
+      {
+        unresolved = SchemaFactory.anyOrNullSchema();
+      }
+    }
+    
+    RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
+    return new RecordSchema(fieldsArray, unresolved);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
 
   /**
    * 

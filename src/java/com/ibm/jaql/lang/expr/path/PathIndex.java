@@ -18,14 +18,19 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-
+/** e.g., [0] */
 public class PathIndex extends PathStep
 {
   /**
@@ -92,5 +97,26 @@ public class PathIndex extends PathStep
     }
     JsonValue value = arr.nth(index.longValueExact());
     return nextStep(context, value);
+  }
+  
+  @Override
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    Schema result = null;
+    if (indexExpr() instanceof ConstExpr)
+    {
+      ConstExpr c = (ConstExpr) indexExpr();
+      JsonLong i = new JsonLong(((JsonNumber)c.value).longValueExact());
+      result = inputSchema.element(i);
+      if (result != null && inputSchema.hasElement(i).maybeNot()) 
+      {
+        result = SchemaTransformation.addNullability(result);
+      }
+    }
+    if (result == null) 
+    {
+      result = SchemaFactory.anyOrNullSchema();
+    }
+    return nextStep().getSchema(result);
   }
 }

@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -22,7 +24,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -48,15 +49,16 @@ public final class FieldsFn extends IterExpr
     this(new Expr[]{recExpr});
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return exprs[0].isNull();
+    if (exprs[0].getSchema().isNull().maybe())
+    {
+      return SchemaFactory.arrayOrNullSchema();
+    }
+    else
+    {
+      return SchemaFactory.arraySchema();
+    }
   }
 
   /*

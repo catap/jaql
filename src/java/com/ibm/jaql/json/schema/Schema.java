@@ -22,22 +22,23 @@ import java.lang.reflect.UndeclaredThrowableException;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 
-import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.util.Bool3;
 
-/** Superclass for schemata of JSON values. */
+/** Superclass for schemata of JSON values. Commonly used schemata can be created using the
+ * {@link SchemaFactory} class. Schemata can be modified or combined using the 
+ * {@link SchemaTransformation} class. */
 public abstract class Schema
 {
   public enum SchemaType
   {
-    ANY, ARRAY, BINARY, BOOLEAN, DATE, DECFLOAT, DOUBLE, GENERIC, LONG, NULL, NUMERIC, OR, RECORD, STRING
+    ANY_NON_NULL, ARRAY, BINARY, BOOLEAN, DATE, DECFLOAT, DOUBLE, GENERIC, LONG, NULL, NUMERIC, 
+    OR, RECORD, STRING
   }
   
   // -- common argument names ---------------------------------------------------------------------
@@ -48,21 +49,135 @@ public abstract class Schema
   public static final JsonString PAR_MAX_LENGTH = new JsonString("maxLength");
   public static final JsonString PAR_VALUE = new JsonString("value");
 
-  // -- abstract methods --------------------------------------------------------------------------
+
+  // -- schema description ------------------------------------------------------------------------
 
   public abstract SchemaType getSchemaType();
 
+  /** Checks whether this schema represents a null value.
+   *  
+   * Returns <code>Bool3.TRUE</code> if the schema matches null values only. 
+   * Returns <code>Bool3.UNKNOWN</code> if the schema matches null values and other values.
+   * Returns <code>Bool3.FALSE</code> if the schema does not match null values.
+   */
   public abstract Bool3 isNull();
+
+  /** Checks whether this schema represents a constant value. 
+   *  
+   * Returns <code>true</code> if the schema matches only a single value.  
+   * Returns <code>false</code> if the schema matches more than one value.
+   */
+  public abstract boolean isConstant();
+
+  /** Checks whether this schema represents an array value.
+   *  
+   * Returns <code>Bool3.TRUE</code> if the schema matches array values only. 
+   * Returns <code>Bool3.UNKNOWN</code> if the schema matches array values and other values.
+   * Returns <code>Bool3.FALSE</code> if the schema does not match array values.
+   */
+  public Bool3 isArray()
+  {
+    return isArrayOrNull().and(isNull().not());
+  }
+
+  /** Checks whether this schema represents an array value and/or null.
+   *  
+   * Returns <code>Bool3.TRUE</code> if the schema matches null and/or array values only. 
+   * Returns <code>Bool3.UNKNOWN</code> if the schema matches null and/or array values, and other values.
+   * Returns <code>Bool3.FALSE</code> if the schema matches neither array nor null values.
+   */
+  public abstract Bool3 isArrayOrNull();
+
+  /** Checks whether this schema represents an empty array.
+   *  
+   * Returns <code>Bool3.TRUE</code> if the schema matches empty arrays only. 
+   * Returns <code>Bool3.UNKNOWN</code> if the schema matches empty arrays and other values.
+   * Returns <code>Bool3.FALSE</code> if the schema does not match empty arrays.
+   */
+  public Bool3 isEmptyArray() 
+  {
+    return isEmptyArrayOrNull().and(isNull().not());
+  }
   
-  public abstract Bool3 isConst();
+  /** Checks whether this schema represents an empty array and/or null.
+   *  
+   * Returns <code>Bool3.TRUE</code> if the schema matches null and/or empty arrays only. 
+   * Returns <code>Bool3.UNKNOWN</code> if the schema matches null and/or empty arrays, and other values.
+   * Returns <code>Bool3.FALSE</code> if the schema matches neither empty arrays nor null values.
+   */
+  public abstract Bool3 isEmptyArrayOrNull();
   
-  public abstract Bool3 isArray();
   
+  // -- schema matching ---------------------------------------------------------------------------
+  
+  /** Checks whether this schema matches the specified value or throws an exception if an
+   * error occurs */
   public abstract boolean matches(JsonValue value) throws Exception;
   
+  /** Checks whether this schema matches the specified value or returns false if an error 
+   * occurs. */
+  public boolean matchesUnsafe(JsonValue value) 
+  {
+    try {
+      return matches(value);
+    }
+    catch (Exception e)
+    {
+     return false;    
+    }
+  }
+  
+  
+  // -- schema combination ------------------------------------------------------------------------
+  
+  /** Merges this schema with the given schema or return <code>null</code> if such a merge is
+   * not possible / desired / implemented. Most schemes will only accept arguments of their own
+   * type.  
+   */
+  protected abstract Schema merge(Schema other);
+
+  
+  
+  // -- introspection -----------------------------------------------------------------------------
+
+  /** Returns the schema of the elements of this schema or null if this schema does not have
+   * elements. Examples: (1) common schema of all elements of an array, (2) common schema
+   * of all values in a record. */
+  public Schema elements()
+  {
+    return null;
+  }
+
+  /** Checks whether this schema has the specified element. Examples: (1) index of array, 
+   * (2) field name of record */ 
+  public Bool3 hasElement(JsonValue which)
+  {
+    return Bool3.FALSE; // unsafe default!
+  }
+  
+  /** Returns the schema of the specified element of this schema or null if this schema does not 
+   * have elements. Examples: (1) schema for index of array, (2) schema for field of record */
+  public Schema element(JsonValue which)
+  {
+    return null;
+  }
+
+  /** Returns the minimum number of elements of this schema or <code>null</code> if no minimum
+   * can be determined. */
+  public JsonLong minElements()
+  {
+    return null;
+  }
+
+  /** Returns the maximum number of elements of this schema or <code>null</code> if no maximum
+   * can be determined. */
+  public JsonLong maxElements()
+  {
+    return null; 
+  }
+
   
   // -- printing and parsing ----------------------------------------------------------------------
-  
   
   public String toString()
   {
@@ -93,93 +208,5 @@ public abstract class Schema
     {
       throw new IOException(e);
     }
-  }
-  
-  /**
-   * @param typeConstructorName
-   * @return The paramater descriptor for the constructor function with the specified type name.
-   */
-  public static Parameters getParameters(String typeConstructorName)
-  {
-    // TODO: this code should be table-driven. It requires Parameter factory classes.
-    if( typeConstructorName.equals("string") )
-    {
-      return StringSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("long") )
-    {
-      return LongSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("double") )
-    {
-      return DoubleSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("decfloat") )
-    {
-      return DecimalSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("date") )
-    {
-      return DateSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("boolean") )
-    {
-      return BooleanSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("binary") )
-    {
-      return BinarySchema.getParameters();
-    }
-    else if( typeConstructorName.equals("function") )
-    {
-      return GenericSchema.getParameters();
-    }
-    else if( typeConstructorName.equals("schema") )
-    {
-      return GenericSchema.getParameters();
-    }
-    throw new RuntimeException("undefined type: "+typeConstructorName);
-  }
-
-  public static Schema make(String typeConstructorName, JsonRecord args)
-  {
-    // TODO: this code should be table-driven. It requires factory classes.
-    if( typeConstructorName.equals("string") )
-    {
-      return new StringSchema(args);
-    }
-    else if( typeConstructorName.equals("long") )
-    {
-      return new LongSchema(args);
-    }
-    else if( typeConstructorName.equals("double") )
-    {
-      return new DoubleSchema(args);
-    }
-    else if( typeConstructorName.equals("decfloat") )
-    {
-      return new DecimalSchema(args);
-    }
-    else if( typeConstructorName.equals("date") )
-    {
-      return new DateSchema(args);
-    }
-    else if( typeConstructorName.equals("boolean") )
-    {
-      return new BooleanSchema(args);
-    }
-    else if( typeConstructorName.equals("binary") )
-    {
-      return new BinarySchema(args);
-    }
-    else if( typeConstructorName.equals("function") )
-    {
-      return new GenericSchema(JsonType.FUNCTION, args);
-    }
-    else if( typeConstructorName.equals("schema") )
-    {
-      return new GenericSchema(JsonType.SCHEMA, args);
-    }
-    throw new RuntimeException("undefined type: "+typeConstructorName);
   }
 }

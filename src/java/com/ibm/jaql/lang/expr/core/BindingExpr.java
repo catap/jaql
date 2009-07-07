@@ -17,7 +17,9 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -130,6 +132,20 @@ public class BindingExpr extends Expr
     this(type, var, var2, false, new Expr[]{expr0, expr1});
   }
 
+  public Bool3 getProperty(ExprProperty prop, boolean deep)
+  {
+    Map<ExprProperty, Boolean> props = getProperties();
+    if (deep)
+    {
+      return getProperty(props, prop, new Expr[] { exprs[0] });
+    }
+    else
+    {
+      return getProperty(props, prop, null);
+    }    
+  }
+  
+  
   /**
    * 
    */
@@ -201,30 +217,11 @@ public class BindingExpr extends Expr
     };
   }
   
-  @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return exprs[0].isArray();
+    return exprs[0].getSchema();
   }
-
-  @Override
-  public boolean isConst()
-  {
-    return exprs[0].isConst();
-  }
-
-  @Override
-  public Bool3 isEmpty()
-  {
-    return exprs[0].isEmpty();
-  }
-
-  @Override
-  public Bool3 isNull()
-  {
-    return exprs[0].isNull();
-  }
-
+  
   /*
    * (non-Javadoc)
    * 

@@ -18,13 +18,14 @@ package com.ibm.jaql.lang.expr.array;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * This expression will stream out an Iterator<Item> values.
@@ -55,15 +56,10 @@ public class StashIterExpr extends IterExpr
     this.iter = iter;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
   @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    return SchemaFactory.arraySchema();
   }
 
   @Override

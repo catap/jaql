@@ -18,6 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -81,17 +84,12 @@ public final class FilterExpr extends IterExpr
     return exprs[1];
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    Schema inSchema = binding().getSchema();
+    return new ArraySchema(inSchema.elements(), JsonLong.ZERO, inSchema.maxElements());
   }
-
+  
   /**
    * 
    */

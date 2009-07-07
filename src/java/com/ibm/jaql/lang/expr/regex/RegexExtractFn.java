@@ -17,6 +17,8 @@ package com.ibm.jaql.lang.expr.regex;
 
 import java.util.regex.Matcher;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRegex;
@@ -24,7 +26,6 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 // TODO: RegexExec: support regex () submatch  captures a la http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Guide:Working_with_Regular_Expressions:Using_Parenthesized_Substring_Matches
 
@@ -43,9 +44,9 @@ public class RegexExtractFn extends Expr
   }
 
   @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return Bool3.TRUE;
+    return SchemaFactory.arrayOrNullSchema();
   }
 
   /*

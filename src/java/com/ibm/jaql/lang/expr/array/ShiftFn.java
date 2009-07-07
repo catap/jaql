@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
@@ -23,7 +25,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 @JaqlFn(fnName="shift",minArgs=2,maxArgs=3)
 public class ShiftFn extends IterExpr
@@ -51,15 +52,10 @@ public class ShiftFn extends IterExpr
     return exprs[1];
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
   @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return Bool3.FALSE;
+    return SchemaFactory.arraySchema();
   }
 
   /*

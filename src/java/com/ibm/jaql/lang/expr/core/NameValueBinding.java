@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -29,6 +30,7 @@ import com.ibm.jaql.util.Bool3;
 /**
  * 
  */
+//e.g., a: 1
 public class NameValueBinding extends FieldExpr
 {
 
@@ -103,6 +105,16 @@ public class NameValueBinding extends FieldExpr
   public NameValueBinding clone(VarMap varMap)
   {
     return new NameValueBinding(required, cloneChildren(varMap));
+  }
+
+  public JsonString staticName()
+  {
+    if (exprs[0] instanceof ConstExpr)
+    {
+      ConstExpr c = (ConstExpr) exprs[0];
+      return (JsonString) c.value;
+    }
+    return null;
   }
 
   /*
@@ -190,5 +202,13 @@ public class NameValueBinding extends FieldExpr
       }
       rec.add(name, value);
     }
+  }
+  
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
   }
 }

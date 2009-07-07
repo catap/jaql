@@ -5,7 +5,12 @@ $x;
 null instanceof $x;
 1 instanceof $x;   // incompatible
 
-$x = schema *;
+$x = schema any;
+$x;
+null instanceof $x;
+1 instanceof $x;
+
+$x = schema any?;
 $x;
 null instanceof $x;
 1 instanceof $x;
@@ -76,7 +81,7 @@ $x;
 // TODO: uncomment next line when parser is fixed to accept Long.MIN
 // schema long(-9223372036854775808, 9223372036854775807); // should work: long range
 schema long(max=9223372036854775808); // must fail: too large argument
-schema long(min=-9223372036854775809, *); // must fail: too large argument
+schema long(min=-9223372036854775809); // must fail: too large argument
 schema long(5,3); // must fail: invalid interval
 schema long(5d); // must fail: invalid argument
 schema long(5.0); // should be ok
@@ -172,37 +177,37 @@ schema decfloat(5, value=4d); // must fail: invalid argument
 
 $x = schema date;
 $x;
-d'2000-01-01T12:00:00Z' instanceof $x;
+date('2000-01-01T12:00:00Z') instanceof $x;
 '2000-01-01T12:00:00Z' instanceof $x; // incompatible, that's a string
 
-$x = schema date(d'2000-01-01T12:00:00Z');
+$x = schema date(date('2000-01-01T12:00:00Z'));
 $x;
-d'2000-01-01T11:59:59Z' instanceof $x;  // incompatible
-d'2000-01-01T12:00:00Z' instanceof $x;
-d'2000-01-01T12:00:01Z' instanceof $x;
+date('2000-01-01T11:59:59Z') instanceof $x;  // incompatible
+date('2000-01-01T12:00:00Z') instanceof $x;
+date('2000-01-01T12:00:01Z') instanceof $x;
 
-$x = schema date(max=d'2000-01-01T12:00:00Z');
+$x = schema date(max=date('2000-01-01T12:00:00Z'));
 $x;
-d'2000-01-01T11:59:59Z' instanceof $x;  
-d'2000-01-01T12:00:00Z' instanceof $x;
-d'2000-01-01T12:00:01Z' instanceof $x;   // incompatible
+date('2000-01-01T11:59:59Z') instanceof $x;  
+date('2000-01-01T12:00:00Z') instanceof $x;
+date('2000-01-01T12:00:01Z') instanceof $x;   // incompatible
 
-$x = schema date(d'2000-01-01T12:00:00Z', d'2000-02-01T12:00:00Z');
+$x = schema date(date('2000-01-01T12:00:00Z'), date('2000-02-01T12:00:00Z'));
 $x;
-d'2000-01-01T11:59:59Z' instanceof $x;  // incompatible
-d'2000-01-01T12:00:00Z' instanceof $x;
-d'2000-01-02T13:00:00Z' instanceof $x;
-d'2000-02-01T12:00:00Z' instanceof $x;
-d'2000-02-01T12:00:01Z' instanceof $x;   // incompatible
+date('2000-01-01T11:59:59Z') instanceof $x;  // incompatible
+date('2000-01-01T12:00:00Z') instanceof $x;
+date('2000-01-02T13:00:00Z') instanceof $x;
+date('2000-02-01T12:00:00Z') instanceof $x;
+date('2000-02-01T12:00:01Z') instanceof $x;   // incompatible
 
-$x = schema date(value=d'2000-01-01T12:00:00Z');
+$x = schema date(value=date('2000-01-01T12:00:00Z'));
 $x;
-d'2000-01-01T11:59:59Z' instanceof $x;   // incompatible
-d'2000-01-01T12:00:00Z' instanceof $x;
-d'2000-01-01T12:00:01Z' instanceof $x;   // incompatible
+date('2000-01-01T11:59:59Z') instanceof $x;   // incompatible
+date('2000-01-01T12:00:00Z') instanceof $x;
+date('2000-01-01T12:00:01Z') instanceof $x;   // incompatible
 
-schema date(d'2000-01-01T12:00:00Z', d'2000-01-01T11:00:00Z'); // must fail: invalid interval
-schema date(d'2000-01-01T12:00:00Z', value=d'2000-01-01T11:00:00Z'); // must fail: invalid argument
+schema date(date('2000-01-01T12:00:00Z'), date('2000-01-01T11:00:00Z')); // must fail: invalid interval
+schema date(date('2000-01-01T12:00:00Z'), value=date('2000-01-01T11:00:00Z')); // must fail: invalid argument
 
 
 // -- parsing and matching: string ----------------------------------------------------------------
@@ -383,7 +388,7 @@ $x;
 { a: 1 } instanceof $x;
 { a: "1" } instanceof $x;       // incompatible
 
-$x = schema { a: * };
+$x = schema { a: any };
 $x;
 { a: 1 } instanceof $x;
 { a: "1" } instanceof $x;
@@ -422,13 +427,13 @@ $x;
 
 // keyword checks
 // schema { for }; // does not work currently 
-schema { for: * };
+schema { for: any };
 schema { "for" };
 // schema { null }; // does not work currently
-schema { null: * }; // treated as "null"
+schema { null: any }; // treated as "null"
 
 schema { "1" };
-schema { 1: * }; // must fail: invalid field name (numbers must be quoted)
+schema { 1: any }; // must fail: invalid field name (numbers must be quoted)
 schema { *, * }; // must fail: wildcard field occurs twice
 schema { a, b, c, a, * }; // must fail: field name occurs twice
 
@@ -478,9 +483,179 @@ schemaof(1);
 schemaof(1d);
 schemaof(1.0);
 schemaof("a string");
-schemaof(d'2001-07-04T12:08:56Z');
+schemaof(date('2001-07-04T12:08:56Z'));
 schemaof({ a: 1, b: "2" });
 schemaof([ 1, "2" ]);
+
+
+// -- schema merging ------------------------------------------------------------------------------
+
+registerFunction('mergeSchemata', 'com.ibm.jaql.udf.MergeSchemataUDF');
+
+mergeSchemata(schema binary, schema binary);
+mergeSchemata(schema binary(minLength=5,maxLength=10), schema binary);
+mergeSchemata(schema binary(minLength=5,maxLength=11), schema binary(minLength=4,maxLength=10));
+
+mergeSchemata(schema boolean, schema boolean);
+mergeSchemata(schema boolean, schema boolean(false));
+mergeSchemata(schema boolean, schema boolean(true));
+mergeSchemata(schema boolean(false), schema boolean(true));
+mergeSchemata(schema boolean(false), schema boolean(false));
+mergeSchemata(schema boolean(true), schema boolean(true));
+
+mergeSchemata(schema date, schema date);
+mergeSchemata(schema date, schema date(value=date('2001-07-04T12:08:56Z')));
+mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
+              schema date(min=date('2001-08-04T12:08:56Z'), max=date('2002-08-04T12:08:56Z')));
+mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
+              schema date(min=date('2001-06-04T12:08:56Z'), max=date('2002-06-04T12:08:56Z')));
+mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
+              schema date(value=date('2001-06-04T12:08:56Z')));
+
+mergeSchemata(schema decfloat, schema decfloat);
+mergeSchemata(schema decfloat, schema decfloat(value=1.0));
+mergeSchemata(schema decfloat(min=1.0, max=5.0),
+              schema decfloat(min=2.0, max=6.0));
+mergeSchemata(schema decfloat(min=1.0, max=5.0),
+              schema decfloat(min=0.0, max=4.0));
+mergeSchemata(schema decfloat(min=1.0, max=5.0),
+              schema decfloat(value=0.0));
+
+mergeSchemata(schema double, schema double);
+mergeSchemata(schema double, schema double(value=1.0d));
+mergeSchemata(schema double(min=1.0d, max=5.0d),
+              schema double(min=2.0d, max=6.0d));
+mergeSchemata(schema double(min=1.0d, max=5.0d),
+              schema double(min=0.0d, max=4.0d));
+mergeSchemata(schema double(min=1.0d, max=5.0d),
+              schema double(value=0.0d));
+
+mergeSchemata(schema long, schema long);
+mergeSchemata(schema long, schema long(value=1));
+mergeSchemata(schema long(min=1, max=5),
+              schema long(min=2, max=6));
+mergeSchemata(schema long(min=1, max=5),
+              schema long(min=0, max=4));
+mergeSchemata(schema long(min=1, max=5),
+              schema long(value=0));
+
+mergeSchemata(schema null, schema null);
+
+mergeSchemata(schema string, schema string);
+mergeSchemata(schema string(minLength=5,maxLength=10), schema string);
+mergeSchemata(schema string(minLength=5,maxLength=11), schema string(minLength=4,maxLength=10));
+mergeSchemata(schema string(value="a"), schema string);
+mergeSchemata(schema string(pattern="a"), schema string);
+
+mergeSchemata(schema null, schema string);
+mergeSchemata(schema null, schema string|long);
+mergeSchemata(schema null, schema string|null);
+mergeSchemata(schema long(min=1)|string(maxLength=8)|null, schema date|long(min=2)|string(maxLength=5));
+
+mergeSchemata(schema any, schema any);
+mergeSchemata(schema any, schema long);
+mergeSchemata(schema any, schema long|date);
+mergeSchemata(schema any, schema null);
+mergeSchemata(schema any, schema long|null);
+
+
+mergeSchemata(schema [], schema []);
+mergeSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
+mergeSchemata(schema [ long, decfloat ], schema [ long ]);
+mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long ]);
+mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, date ]);
+mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, decfloat<4,7> ]);
+mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, date<4,7> ]);
+mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, null, date<4,7> ]);
+
+mergeSchemata(schema {}, schema {});
+mergeSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });
+mergeSchemata(schema { a: long, b:long, c:null, e?: date }, schema { a: long, b:string, d:null, e:date });
+mergeSchemata(schema { a: long, *:date }, schema { a: long });
+mergeSchemata(schema { a: long, *:date }, schema { a: long, *:null });
+
+
+// -- path expressions and schemata --------------------------------------------------------------
+
+// records
+schemaof ({ a: "yes", b: 0 }.a);
+schemaof ({ a: "yes", b: 0 }.c);
+schemaof ({ a: { c: "yes" }, b: 0 }.a.c) ;
+schemaof ({ a: "yes", b: 0 }{*});
+schemaof ({ a: "yes", b: 0 }{*-.b});
+schemaof ({ a: "yes", b: 0, c:2 }{*-.b,.c});
+schemaof ({ a:"yes", { b: 0, c: 2 }.*});
+
+// arrays
+schemaof ([ "yes", 0, 1][0]);
+schemaof ([ "yes", 0, 1][1]);
+schemaof ([ "yes", 0, 1][4]);
+schemaof ([ "yes", 0, 1][0:1]);
+schemaof ([ "yes", 0, 1][1:*]);
+schemaof ([ "yes", 0, 1][*:1]);
+schemaof ([ "yes", 0, 1][*:*]);
+
+// arrays: nulls
+schemaof ([ "yes", [ 0 ], 1, null] [?]);
+schemaof ([ "yes", [ 0 ], 1, [ null ]] [?]);
+schemaof ([ null ] [?]);
+
+// arrays: expanding
+schemaof ([ "yes", [ 0 ], 1, null] []);
+schemaof ([ "yes", [ 0 ], 1, [ null ]] []);
+schemaof ([ null ] []);
+
+
+// -- transforms ---------------------------------------------------------------------------------
+
+// records
+schemaof ([{ a: "yes", b: 0 }] -> transform $.a) ;
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform $.a) ;
+schemaof ([{ a: "yes", b: 0}] -> transform { $.a });
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform { $.a }) ;
+schemaof ([{ a: "yes", b: 0 }] -> transform { b: $.a }) ;
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform { b: $.a }) ;
+schemaof ([{ a: "yes", b: 0}] -> transform ${.a});
+schemaof ([{ a: "yes", b: 0 }, {b:1} ] -> transform ${.a});
+
+// records with copying
+schemaof ([{ a: "yes", b: 0 }] -> transform { $.* }) ;
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform  { $.* }) ;
+schemaof ([{ a: "yes", b: 0 }] -> transform { c:1, $.* });
+schemaof ([{ a: "yes", b: 0 }] -> transform ${*});
+schemaof ([{ a: "yes", b: 0 }] -> transform ${*-.a});
+schemaof ([{ a: "yes", b: 0, c:2 }] -> transform ${*-.a,.c});
+
+// arrays
+schemaof ([ [ 0, "yes" ] ] -> transform $[1]);
+schemaof ([ [ 0, "yes" ], [ 1 ] ] -> transform $[1]);
+schemaof ([ [ true, "a", 1 ] ] -> transform $[0:1]);
+schemaof ([ [ true, "a", 1 ] ] -> transform $[1:*]);
+schemaof ([ [ true, "a", 1 ] ] -> transform $[*:1]);
+schemaof ([ [ true, "a", 1 ] ] -> transform $[*:*]);
+
+// records and arrays
+schemaof ([ { a: { a: "no", b: [ {c: "yes"}, 2], c: "no"}, c: "no"}  ] -> transform $.a.b[0]{.a,.c});
+
+schemaof([ [ {a: 1 } ] ] -> transform $[*]);
+schemaof([ [ {a: 1 } ] ] -> transform $[*].a);
+schemaof([ [ {a: 1 } ] ] -> transform $[*].b);
+schemaof([ [ {a: 1 }, {b: 2} ] ] -> transform $[*].a);
+
+schemaof([ [ {a: 1 } ], {a: 2}, null ] -> transform $[?]);
+schemaof([ [ {a: 1 } ], {a: 2}, null ] -> transform $[?].a);
+
+schemaof([ [ {a: [1, 2, "a", null] } ], null, 1 ] -> transform $[]);
+schemaof([ [ {a: [1, 2, "a", null] } ], null ] -> transform $[].a);
+
+
+// -- other expressions --------------------------------------------------------------------------
+
+schemaof(read("anything"));
+schemaof ([1,2,3] -> filter $>1);
+schemaof ([1,2,3] -> transform compare($, 1));
+
+
 
 //-------------------------- QUIT ---------------------------------
 

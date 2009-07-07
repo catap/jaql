@@ -1,23 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/java"/>
-	<classpathentry kind="src" path="src/test"/>
-	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/java"/>
-	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/test"/>
 	<classpathentry kind="src" path="vendor/hbase/0.18.1/src/jaql/java"/>
-	<classpathentry kind="src" path="vendor/hbase/0.18.1/src/jaql/test"/>
+	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/test"/>
+	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/java"/>
+	<classpathentry kind="src" path="src/test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/antlr.jar"/>
-	<classpathentry kind="lib" path="lib/junit-4.1.jar"/>
 	<classpathentry kind="lib" path="lib/jline-0.9.94.jar"/>
-	<classpathentry kind="lib" path="lib/nutch-1.0.jar"/>
-	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-core.jar" sourcepath="/Hadoop-0.18.3/src/mapred"/>
-	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-examples.jar"/>
-	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-test.jar"/>
-	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-tools.jar"/>
-	<classpathentry kind="lib" path="vendor/hbase/0.18.1/hbase-0.18.1.jar"/>
-	<classpathentry kind="lib" path="vendor/hbase/0.18.1/hbase-0.18.1-test.jar"/>
-	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/lucene-core-2.2.0.jar"/>
+	<classpathentry kind="lib" path="lib/junit-4.1.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/lib/jetty-ext/commons-el.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/lib/jetty-ext/jasper-compiler.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/lib/jetty-ext/jasper-runtime.jar"/>
@@ -38,6 +29,28 @@
 	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/lib/slf4j-api-1.4.3.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/lib/slf4j-log4j12-1.4.3.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/lib/xmlenc-0.52.jar"/>
-	<classpathentry kind="var" path="ANTLR_HOME/antlr.jar" sourcepath="ANTLR_HOME/antlrsrc.zip"/>
-	<classpathentry kind="output" path="eclipseBuild"/>
+	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-core.jar" sourcepath="/hadoop-0.18.3"/>
+	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-examples.jar"/>
+	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-test.jar" sourcepath="/hadoop-0.18.3"/>
+	<classpathentry kind="lib" path="vendor/hadoop/0.18.3/hadoop-0.18.3-tools.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/hbase-0.18.1.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/hbase-0.18.1-test.jar"/>
+	<classpathentry kind="lib" path="lib/nutch-1.0.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/commons-cli-2.0-SNAPSHOT.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/commons-collections-3.2.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/commons-httpclient-3.0.1.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/commons-logging-1.0.4.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/commons-logging-api-1.0.4.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/commons-math-1.1.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/hadoop-0.18.1-core.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/hadoop-0.18.1-test.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/jetty-5.1.4.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/jruby-complete-1.1.2.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/junit-3.8.1.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/libthrift-20080411p1.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/log4j-1.2.13.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/lucene-core-2.2.0.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/servlet-api.jar"/>
+	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/xmlenc-0.52.jar"/>
+	<classpathentry kind="output" path="buildEclipse"/>
 </classpath>

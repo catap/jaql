@@ -15,6 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -47,6 +51,30 @@ public class SliceFn extends IterExpr
     super(input, firstIndex, lastIndex);
   }
 
+  public Schema getSchema()
+  {
+    // only array or null inputs are accepted; ignore other types
+    Schema inputSchema = exprs[0].getSchema();
+    Schema outputSchema = SchemaTransformation.restrictToArrayOrNull(inputSchema);
+    if (outputSchema == null)
+    {
+      // compile time error, be graceful for now
+      return SchemaFactory.emptyArraySchema();
+    }
+    
+    // we could try to statically evaluate the slice parameters to improve the result schema
+    // but for now keep it simple
+    outputSchema = SchemaTransformation.removeNullability(outputSchema); // nulls become empty arrays
+    if (outputSchema == null)
+    {
+      return SchemaFactory.emptyArraySchema();
+    }
+    else
+    {
+      return new ArraySchema(null, outputSchema.elements(), null, null);
+    }
+  }
+  
   /*
    * (non-Javadoc)
    * 

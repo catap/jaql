@@ -208,7 +208,8 @@ public final class BufferedJsonArray extends JsonArray
     resize(n);
     for (int i = 0; i < n; i++)
     {
-      values[i] = arr.values[i].getCopy(values[i]);
+      JsonValue v = arr.values[i]; 
+      values[i] = v==null ? null : v.getCopy(values[i]);
     }
   }
 

@@ -27,7 +27,7 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
 
   // -- construction ------------------------------------------------------------------------------
 
-  public RangeSchema()
+  RangeSchema()
   {
   }
   
@@ -73,17 +73,19 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
-    if (min != null && max != null && min.equals(max))
-    {
-      return Bool3.TRUE;
-    }
-    return Bool3.UNKNOWN;
+    return value != null || (min != null && max != null && min.equals(max));
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
+  {
+    return Bool3.FALSE;
+  }
+  
+  @Override
+  public Bool3 isEmptyArrayOrNull()
   {
     return Bool3.FALSE;
   }

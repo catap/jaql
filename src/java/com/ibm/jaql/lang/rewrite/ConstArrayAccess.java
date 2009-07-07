@@ -46,7 +46,7 @@ public class ConstArrayAccess extends Rewrite
 
     Expr array = ie.arrayExpr();
     
-    if( array.isNull().always() )
+    if( array.getSchema().isNull().always() )
     {
       ie.replaceInParent(new ConstExpr(null));
       return true;

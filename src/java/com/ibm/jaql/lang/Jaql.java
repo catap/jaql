@@ -348,7 +348,7 @@ public class Jaql
     }
     context.reset();
     JsonIterator iter;
-    if( expr.isArray().always() )
+    if( expr.getSchema().isArrayOrNull().always() )
     {
       iter = expr.iter(context);
     }
@@ -397,7 +397,7 @@ public class Jaql
     {
       try
       {
-        if (expr.isArray().always())
+        if (expr.getSchema().isArrayOrNull().always())
         {
           JsonIterator iter = expr.iter(context);
           iter.print(output);

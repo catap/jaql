@@ -61,6 +61,7 @@ public class JaqlTableInputFormat
 
   private JsonString         lowKey      = null;
 
+  @SuppressWarnings("unused")
   private JsonString         highKey     = null;
 
   private long         timeStamp   = -1;
@@ -213,9 +214,7 @@ public class JaqlTableInputFormat
    *      org.apache.hadoop.mapred.JobConf, org.apache.hadoop.mapred.Reporter)
    */
   public RecordReader<JsonHolder, JsonHolder> getRecordReader(InputSplit split,
-      @SuppressWarnings("unused")
-      JobConf job, @SuppressWarnings("unused")
-      Reporter reporter) throws IOException
+      JobConf job, Reporter reporter) throws IOException
   {
 
     TableSplit tSplit = (TableSplit) split;
@@ -228,7 +227,6 @@ public class JaqlTableInputFormat
    * @see org.apache.hadoop.mapred.InputFormat#getSplits(org.apache.hadoop.mapred.JobConf,
    *      int)
    */
-  @SuppressWarnings("unused")
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException
   {
     byte[][] startKeys = table.getStartKeys();

@@ -20,7 +20,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
@@ -29,7 +32,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 /** Wrapper for functions implemented in Java.
  * 
@@ -172,32 +175,20 @@ public class JavaFnExpr extends Expr
     exprText.print(" )");
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
-  @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    return ExprProperty.createSafeDefaults();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
   @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
     Class<?> c = method.getReturnType();
     if (JsonArray.class.isAssignableFrom(c) || JsonIterator.class.isAssignableFrom(c))
     {
-      return Bool3.TRUE;
+      return SchemaFactory.arrayOrNullSchema();
     }
-    // Null can always be returned.
-    return Bool3.UNKNOWN;
+    return SchemaFactory.anyOrNullSchema();
   }
 
   /*

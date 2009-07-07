@@ -18,7 +18,13 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -28,10 +34,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 
-/**
- * @author kbeyer
- *
- */
+/** e.g. ${.a,.b} */;
 public class PathRecord extends PathStep
 {
   /**
@@ -120,5 +123,59 @@ public class PathRecord extends PathStep
       }
     }
     return newRec;
+  }
+  
+  
+  // -- schema ------------------------------------------------------------------------------------
+  
+  @Override
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    List<RecordSchema.Field> fields = new LinkedList<RecordSchema.Field>();
+    Schema rest = null;
+    for (int i=0; i<exprs.length-1; i++  )
+    {
+      PathFields f = (PathFields)exprs[i];
+      PathStepSchema s = f.getSchema(inputSchema);
+      if (s.hasData.maybe())
+      {
+        if (s.name != null)
+        {
+          RecordSchema.Field field = 
+            new RecordSchema.Field(s.name, s.schema, s.hasData.always() ? false : true);
+          fields.add(field);
+        }
+        else
+        {
+          if (f instanceof PathAllFields || f instanceof PathNotFields) 
+          {
+            // special case: nested record
+            RecordSchema innerSchema = (RecordSchema)s.schema;
+            for (RecordSchema.Field field : innerSchema.getFields())
+            {
+              fields.add(field);
+            }
+            rest = rest==null ? innerSchema.getRest() : SchemaTransformation.merge(rest, innerSchema.getRest());
+          }
+          else
+          {
+            // that's the usual case 
+            rest = rest==null ? s.schema : SchemaTransformation.merge(rest, s.schema);
+          }
+        }
+      }
+    } // if it doesn't have data, ignore
+    
+    if (fields.size() > 0 || rest != null)
+    {
+      RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]); 
+      Schema mySchema = new RecordSchema(fieldsArray, rest); // always has data (maybe empty record)
+      PathStepSchema nextSchema = nextStep().getSchema(mySchema);
+      return nextSchema;
+    }
+    else
+    {
+      return nextStep().getSchema(SchemaFactory.emptyRecordSchema());
+    }
   }
 }

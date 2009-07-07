@@ -17,9 +17,12 @@ package com.ibm.jaql.json.schema;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -84,7 +87,7 @@ public class RecordSchema extends Schema
       }
       
       JsonString name2;
-      if (o1 instanceof Field)
+      if (o2 instanceof Field)
       {
         name2 = ((Field)o2).getName();
       }
@@ -101,7 +104,7 @@ public class RecordSchema extends Schema
   // -- construction ------------------------------------------------------------------------------
   
   /**
-   * 
+   * rest==null is closed
    */
   public RecordSchema(Field[] fields, Schema rest)
   {
@@ -115,6 +118,17 @@ public class RecordSchema extends Schema
     // set
     this.fields = fields;
     this.rest = rest;
+  }
+  
+  public RecordSchema(List<Field> fields, Schema rest)
+  {
+    this(fields.toArray(new Field[fields.size()]), rest);
+  }
+  
+  /** Matches any record */
+  RecordSchema()
+  {
+    this((Field[])null, SchemaFactory.anyOrNullSchema());
   }
 
   /** Checks whether all fields are valid. If not, throws an exception */
@@ -147,27 +161,31 @@ public class RecordSchema extends Schema
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
+  {
+    return Bool3.FALSE;
+  }
+  
+  @Override
+  public Bool3 isEmptyArrayOrNull()
   {
     return Bool3.FALSE;
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
     if (rest != null) {
-      return Bool3.UNKNOWN;
+      return false;
     }
-    Bool3 result = Bool3.TRUE;
     for (Field f : fields)
     {
-      if (f.isOptional)
+      if (f.isOptional || !f.schema.isConstant())
       {
-        return Bool3.UNKNOWN;
+        return false;
       }
-      result = result.and(f.schema.isConst());
     }
-    return result;
+    return true;
   }
 
   @Override
@@ -267,4 +285,196 @@ public class RecordSchema extends Schema
   {
     return fields.length==0 && rest==null;
   }
+
+  public Field getField(JsonString name)
+  {
+    int index = Arrays.binarySearch(fields, name, FIELD_BY_NAME_COMPARATOR);
+    if (index >= 0)
+    {
+      return fields[index];
+    }
+    return null;
+  }
+  
+  @Override
+  // -- merge -------------------------------------------------------------------------------------
+
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof RecordSchema)
+    {
+      RecordSchema o = (RecordSchema)other;
+      
+      Field[] myFields = this.fields;
+      Field[] otherFields = o.fields;
+     
+      // assumption: field names are sorted
+      int myN = myFields.length;
+      int otherN = otherFields.length;
+      int myPos = 0;
+      int otherPos = 0;
+      
+      // zip join
+      List<Field> newFields = new LinkedList<Field>();
+      while (myPos<myN && otherPos<otherN)
+      {
+        Field myField = myFields[myPos];
+        Field otherField = otherFields[otherPos];
+        
+        // compare
+        int cmp = myField.getName().compareTo(otherField.getName());
+        
+        if (cmp < 0) 
+        {
+          // I have the field, but other has not --> make it optional
+          newFields.add(new Field(myField.name, myField.schema, true));
+          myPos++;
+        }
+        else if (cmp == 0)
+        {
+          // both have field --> keep
+          newFields.add(new Field(myField.name, SchemaTransformation.merge(myField.schema, otherField.schema), 
+              myField.isOptional || otherField.isOptional));
+          myPos++; otherPos++;
+        }
+        else
+        {
+          // I don't have the field, but other has --> make it optional
+          newFields.add(new Field(otherField.name, otherField.schema, true));
+          otherPos++;
+        }
+      }
+      
+      // only one of them still has fields, i.e., the while loops are exclusive
+      while (myPos < myN)
+      {
+        Field myField = myFields[myPos];
+        newFields.add(new Field(myField.name, myField.schema, true));
+        myPos++;
+      }
+      while (otherPos < otherN)
+      {
+        Field otherField = otherFields[otherPos];
+        newFields.add(new Field(otherField.name, otherField.schema, true));
+        otherPos++;
+      }
+      
+      // deal with rest
+      Schema newRest = null;
+      if (this.rest != null)
+      {
+        if (o.rest != null) 
+        {
+          newRest = SchemaTransformation.merge(this.rest, o.rest);
+        }
+        else
+        {
+          newRest = rest;
+        }
+      }
+      else if (o.rest != null)
+      {
+        newRest = o.rest;
+      }
+
+      // done
+      return new RecordSchema(newFields.toArray(new Field[newFields.size()]), newRest);
+    }
+    return null;
+  }
+  
+  @Override
+  public Schema elements()
+  {
+    Schema result = null;
+    for (int i=0; i<fields.length; i++)
+    {
+      Schema s = fields[i].getSchema();
+      if (result == null)
+      {
+        result = s;
+      }
+      else
+      {
+        result = SchemaTransformation.merge(result, s);
+      }
+    }
+    if (rest != null)
+    {
+      if (result == null)
+      {
+        result = rest;
+      }
+      else
+      {
+        result = SchemaTransformation.merge(result, rest);
+      }
+    }
+    return result; 
+  }
+  
+  // -- introspection -----------------------------------------------------------------------------
+
+  @Override
+  public Bool3 hasElement(JsonValue which)
+  {
+    if (which instanceof JsonString)
+    {
+      Field field = getField((JsonString)which);
+      if (field==null)
+      {
+        return rest==null ? Bool3.FALSE : Bool3.UNKNOWN;
+      }
+      else
+      {
+        return field.isOptional ? Bool3.UNKNOWN : Bool3.TRUE;
+      }
+    }
+    return Bool3.FALSE;
+  }
+  
+  @Override
+  public Schema element(JsonValue which)
+  {
+    if (which instanceof JsonString)
+    {
+      Field field = getField((JsonString)which);
+      if (field == null)
+      {
+        return rest;
+      }
+      else
+      {
+        return field.getSchema(); // TODO: add nullability when optional?
+      }
+    }
+    return null; 
+  }
+  
+  @Override
+  public JsonLong minElements()
+  {
+    long l = 0;
+    for (Field f : fields)
+    {
+      if (!f.isOptional) 
+      {
+        l++;
+      }
+    }
+    return new JsonLong(l);
+  }
+
+  @Override
+  public JsonLong maxElements()
+  {
+    if (rest != null) 
+    {
+      return null;
+    }
+    else
+    {
+      return new JsonLong(fields.length);
+    }    
+  } 
 }

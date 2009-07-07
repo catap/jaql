@@ -21,10 +21,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 
-/**
- * @author kbeyer
- *
- */
+/** A referenced field in a path step for records */
 public abstract class PathFields extends PathStep
 {
 
@@ -64,4 +61,6 @@ public abstract class PathFields extends PathStep
   }
 
   public abstract boolean matches(Context context, JsonString name) throws Exception;
+  
+
 }

@@ -2029,7 +2029,6 @@ read(hdfs('/temp/nums'))
 null
 
 
-
     pairwise(everyType( $data ), $data);##
 [
   [
@@ -2206,7 +2205,7 @@ $books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'o
 
 // DIFF
 read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}});##
-[FAILURE
+FAILURE
 
 
 // DIFF

@@ -56,8 +56,7 @@ public class TrivialForElimination extends Rewrite
 
     // for $i in ([] | null) collect e => []
     // for $i in e collect ([] | null) => []
-    if (inExpr.isNull().always() || inExpr.isEmpty().always()
-        || c.isNull().always() || c.isEmpty().always())
+    if (inExpr.getSchema().isEmptyArrayOrNull().always() || c.getSchema().isEmptyArrayOrNull().always())
     {
       fe.replaceInParent(new ArrayExpr());
       return true;
@@ -76,7 +75,7 @@ public class TrivialForElimination extends Rewrite
       VarExpr ve = (VarExpr) c;
       if (ve.var() == fe.var())
       {
-        if (inExpr.isArray().maybeNot() || inExpr.isNull().maybe())
+        if (inExpr.getSchema().isArrayOrNull().maybeNot() || inExpr.getSchema().isNull().maybe())
         {
           inExpr = new AsArrayFn(inExpr);
         }

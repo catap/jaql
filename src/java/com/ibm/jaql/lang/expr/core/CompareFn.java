@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import com.ibm.jaql.json.schema.LongSchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
@@ -31,6 +33,12 @@ class CompareFn extends Expr
   public CompareFn(Expr[] exprs)
   {
     super(exprs);
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    return new LongSchema(JsonLong.MINUS_ONE, JsonLong.ONE, null);
   }
 
   /*

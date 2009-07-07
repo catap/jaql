@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.record;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -26,7 +28,6 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -58,17 +59,18 @@ public final class IsdefinedExpr extends Expr
     super(new VarExpr(recVar), new ConstExpr(new JsonString(name)));
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return exprs[0].isNull().or(exprs[1].isNull());
+    if (exprs[0].getSchema().isNull().or(exprs[1].getSchema().isNull()).maybe())
+    {
+      return SchemaFactory.booleanOrNullSchema();
+    }
+    else
+    {
+      return SchemaFactory.booleanSchema();
+    }
   }
-
+  
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception

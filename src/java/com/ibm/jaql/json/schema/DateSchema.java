@@ -52,7 +52,7 @@ public class DateSchema extends RangeSchema<JsonDate>
         (JsonDate)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  public DateSchema()
+  DateSchema()
   {
   }
   
@@ -89,5 +89,20 @@ public class DateSchema extends RangeSchema<JsonDate>
     }
     
     return true;
+  }
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof DateSchema)
+    {
+      DateSchema o = (DateSchema)other;
+      JsonDate min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
+      JsonDate max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);
+      return new DateSchema(min, max, null);
+    }
+    return null;
   }
 }

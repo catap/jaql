@@ -46,7 +46,7 @@ public class TypeOfExpr extends Expr
   {
     Expr expr = exprs[0];
     // FIXME: the Item created here should be cached.
-    if (expr.isArray().always())
+    if (expr.getSchema().isArrayOrNull().always())
     {
       JsonIterator iter = expr.iter(context);
       if (iter.isNull())

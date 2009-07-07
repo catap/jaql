@@ -36,7 +36,7 @@ public class JaqlStage extends Stage
   public void runStage() throws Exception
   {
     // The result is discarded; it is most likely just a variable name or file handle
-    if( expr.isArray().always() )
+    if( expr.getSchema().isArrayOrNull().always() )
     {
       JsonIterator iter = expr.iter(context);
       while (iter.moveNext())

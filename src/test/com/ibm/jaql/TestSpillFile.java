@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,17 +26,16 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
-import java.io.IOException;
 import java.io.RandomAccessFile;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.util.PagedFile;
 import com.ibm.jaql.util.SpillFile;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * 

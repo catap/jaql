@@ -252,7 +252,7 @@ aggregate[Expr in] returns [Expr r=null]
 //       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
     : ("aggregate" | "agg") ("as" v=var)?
          {
-           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in); 
+           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
          }
       ( "into" r=expr { r = AggregateFullExpr.make(env, b, r, false); }
       | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
@@ -875,7 +875,7 @@ op[Expr in] returns [Expr r=null]
 each[Expr in] returns [BindingExpr b=null]
     { String v = "$"; }
     : ( "each" v=var )?
-    { b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in); }
+    { b = new BindingExpr(BindingExpr.Type.IN, env.scope(v, in.getSchema().elements()), null, in); }
     ;
 
 //assignOrCall[Expr in] returns [Expr r]
@@ -1029,24 +1029,24 @@ estep returns [Expr r = null] // TOD: Unify step expressions
 
 assign returns [Expr r=null]
     { String v; }
-    : v=avar "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
-    | r=pipe "=>" v=var    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
+    : v=avar "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
+    | r=pipe "=>" v=var    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
     ;
 
 optAssign returns [Expr r=null]
     { String v; }
-    : v=avar "=" r=rvalue  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, r); } 
+    : v=avar "=" r=rvalue  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
     | r=pipe 
-         ( "=>" v=var      { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, r); } )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
+         ( "=>" v=var      { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
     ;
 
 // Same as optAssign but creates global variables on assigment, and inlines referenced globals
 topAssign returns [Expr r=null]
     { String v; }
-    : ( v=avar "=" r=rvalue  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } // TODO: expr name should reflect global var
+    : ( v=avar "=" r=rvalue  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: expr name should reflect global var
       | r=pipe
          ( /*empty*/         { r = env.importGlobals(r); } 
-         | "=>" v=var        { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } )
+         | "=>" v=var        { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } )
       )
     ;
 
@@ -1142,7 +1142,7 @@ forDef[ArrayList<BindingExpr> bindings]
             // | "="  e=expr                { t = BindingExpr.Type.EQ; }
             )
     { 
-      Var var = env.scope(v);
+      Var var = env.scope(v, e.getSchema().elements());
 //      Var var2 = null;
 //      if( v2 != null )
 //      {
@@ -1695,18 +1695,14 @@ schema returns [Schema s = null]
           s2 = schemaTerm     { alternatives.add(s2); } 
         )*
       ) {
-          if (alternatives.size()>1) { // if there are alternatives, wrap into OrSchema
-            Schema[] schemata = alternatives.toArray(new Schema[alternatives.size()]); 
-            s = new OrSchema(schemata);
-          }
+      	  s = SchemaTransformation.or(alternatives);
         }
     ;
     
 schemaTerm returns [Schema s = null]
-    : "*"           { s = AnySchema.getInstance(); }
-    | s=aSchema
-       ( "?"        { s = new OrSchema(s, NullSchema.getInstance()); } // TODO: good notation?
-       )?
+    : s=aSchema
+      ( "?"        { s = SchemaTransformation.addNullability(s); }
+      )?
     ;
 
 aSchema returns [Schema s = null]
@@ -1717,10 +1713,10 @@ aSchema returns [Schema s = null]
 
 atomSchema returns [Schema s = null]
     { JsonRecord args; Parameters p; }
-    : "null"       { s = NullSchema.getInstance(); }
-    | i:ID         { p=Schema.getParameters(i.getText()); }
+    : "null"       { s = SchemaFactory.nullSchema(); }
+    | i:ID         { p=SchemaFactory.getParameters(i.getText()); }
         args=atomSchemaArgs[p]
-                   { s = Schema.make(i.getText(), args); }
+                   { s = SchemaFactory.make(i.getText(), args); }
     ;
 
 atomSchemaArgs[Parameters d] returns [ JsonRecord args=null ]
@@ -1809,7 +1805,7 @@ recordSchemaField returns [RecordSchema.Field s = null]
     ;
     
 recordSchemaFieldSchema returns [Schema s]
-    : /*empty*/   { s = AnySchema.getInstance(); }
+    : /*empty*/   { s = SchemaFactory.anyOrNullSchema(); }
     | ":" s=schema
     ;
 

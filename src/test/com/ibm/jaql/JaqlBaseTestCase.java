@@ -15,6 +15,27 @@
  */
 package com.ibm.jaql;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.HashSet;
+
+import junit.framework.TestCase;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import antlr.TokenStreamException;
+import antlr.collections.impl.BitSet;
+
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -28,26 +49,6 @@ import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.TeeInputStream;
 import com.ibm.jaql.util.UtilForTest;
-
-import junit.framework.TestCase;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.HashSet;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import antlr.TokenStreamException;
-import antlr.collections.impl.BitSet;
 
 /**
  * 
@@ -227,15 +228,27 @@ public abstract class JaqlBaseTestCase extends TestCase
     printHeader(str);
     try
     {
-      if (expr.isArray().always())
+      Schema schema = expr.getSchema();
+      if (schema.isArrayOrNull().always())
       {
-        JsonIterator iter = expr.iter(context);
-        iter.print(str);
+//        JsonIterator iter = expr.iter(context);
+//        iter.print(str);
+
+        JsonValue value = expr.eval(context);
+        JsonValue.print(str, value);
+        if (!schema.matches(value))
+        {
+          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH SCHEMA\n" + schema);        
+        }
       }
       else
       {
         JsonValue value = expr.eval(context);
         JsonValue.print(str, value);
+        if (!schema.matches(value))
+        {
+          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH SCHEMA\n" + schema);        
+        }
       }
     }
     catch (Exception e)

@@ -21,20 +21,7 @@ import com.ibm.jaql.util.Bool3;
 /** Schema for the null value */
 public class NullSchema extends Schema
 {
-  // -- singleton ---------------------------------------------------------------------------------
-
-  private static NullSchema theInstance = null;
-  
-  public static NullSchema getInstance()
-  {
-    if (theInstance == null)
-    {
-      theInstance = new NullSchema();
-    }
-    return theInstance;
-  }
-  
-  private NullSchema()
+  NullSchema()
   {    
   }
 
@@ -54,20 +41,39 @@ public class NullSchema extends Schema
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
+  {
+    return true;
+  }
+
+  @Override
+  public Bool3 isArrayOrNull()
   {
     return Bool3.TRUE;
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isEmptyArrayOrNull()
   {
-    return Bool3.FALSE;
+    return Bool3.TRUE;
   }
 
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
     return value == null;
+  }
+  
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof NullSchema)
+    {
+      return this;
+    }
+    return null;
   }
 }

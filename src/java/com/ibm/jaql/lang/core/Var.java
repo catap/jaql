@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.core;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
@@ -44,13 +46,19 @@ public class Var extends Object
   
   public boolean            isDefined = false;   // variable defined?
   public Object             value;               // Runtime value: JsonValue (null allowed) or JsonIterator(null disallowed)
-
+  private Schema       schema;             // schema of the variable; not to be changed at runtime
+  
+  public Var(String name, final Schema schema)
+  {
+    this.name = name;
+    this.schema = schema;
+  }
   /**
    * @param name
    */
   public Var(String name)
   {
-    this.name = name;
+    this(name, SchemaFactory.anyOrNullSchema());
   }
 
   /**
@@ -60,7 +68,7 @@ public class Var extends Object
   {
     return name;
   }
-
+  
   /**
    * @return
    */
@@ -117,6 +125,7 @@ public class Var extends Object
    */
   public void setValue(JsonValue value)
   {
+    assert schema.matchesUnsafe(value) : name + " has invalid schema: " + "found " + value + ", expected " + schema;
     this.value = value;
     isDefined = true;
   }
@@ -130,6 +139,7 @@ public class Var extends Object
   public void setIter(JsonIterator iter)
   {
     assert iter != null;
+    assert schema.isArray().maybe();
     value = iter;
     isDefined = true;
   }
@@ -146,7 +156,7 @@ public class Var extends Object
    */
   public void setEval(Expr expr, Context context) throws Exception
   {
-    if( usage == Usage.STREAM && expr.isArray().always() ) 
+    if( usage == Usage.STREAM && expr.getSchema().isArrayOrNull().always() ) 
     {
       setIter(expr.iter(context));
     }
@@ -198,13 +208,16 @@ public class Var extends Object
     
     if( value instanceof JsonValue )
     {
-      return (JsonValue)value;
+      // assert schema.matchesUnsafe(v); // already checked
+      return (JsonValue)value; 
     }
     else if( value instanceof JsonIterator )
     {
       SpilledJsonArray arr = new SpilledJsonArray();
       arr.setCopy((JsonIterator)value);
       value = arr;
+      // TODO: remove assertion? check can be expensive when large arrays are put in var's
+      assert schema.matchesUnsafe(arr); 
       return arr;
     }
     else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
@@ -212,6 +225,7 @@ public class Var extends Object
       JsonValue v = expr.eval(context);
       expr = null;
       value = v;
+      assert schema.matchesUnsafe(v);
       return v;
     }
     else if( value == null ) // value has been set to null explicitly 
@@ -245,5 +259,14 @@ public class Var extends Object
     return arr.iter();
   }
 
-
+  public Schema getSchema()
+  {
+    return schema;
+  }
+  
+  /** Don't use at runtime! */
+  public void setSchema(Schema schema)
+  {
+    this.schema = schema;
+  }
 }

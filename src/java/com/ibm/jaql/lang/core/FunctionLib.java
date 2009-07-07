@@ -150,6 +150,7 @@ import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.system.RFn;
+import com.ibm.jaql.lang.expr.top.ExprTreeExpr;
 import com.ibm.jaql.lang.expr.udf.JavaFnExpr;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
@@ -342,6 +343,8 @@ public class FunctionLib
     add(ProbeLuceneFn.class); // TODO: TEMPORARY
     add(BuildJIndexFn.class);
     add(ProbeJIndexFn.class);
+    // internal
+    add(ExprTreeExpr.class);
   }
 
   /** Creates an instance of the function represented by the given class, passing the 
@@ -393,7 +396,7 @@ public class FunctionLib
       if( ( expr instanceof DateFn || 
             expr instanceof HexFn ||
             expr instanceof Base64Fn ) &&
-          expr.isConst() )
+          expr.isCompileTimeComputable().always() )
       {
         JsonValue val = expr.eval(null); // more HACKS: context not required for these functions
         expr = new ConstExpr(val);
