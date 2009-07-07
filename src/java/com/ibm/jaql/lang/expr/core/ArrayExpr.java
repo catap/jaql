@@ -79,17 +79,6 @@ public class ArrayExpr extends IterExpr
     super(exprs.toArray(new Expr[exprs.size()]));
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-  
   public Schema getSchema()
   {
     // TODO: cache?
@@ -108,17 +97,6 @@ public class ArrayExpr extends IterExpr
   public Bool3 evaluatesChildOnce(int i)
   {
     return Bool3.TRUE;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isEmpty()
-   */
-  @Override
-  public Bool3 isEmpty()
-  {
-    return Bool3.valueOf(this.numChildren() == 0);
   }
 
   /*

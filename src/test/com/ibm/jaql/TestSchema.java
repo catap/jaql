@@ -17,12 +17,12 @@ package com.ibm.jaql;
 
 import java.io.IOException;
 
+
 /**
  * 
  */
 public class TestSchema extends JaqlBaseTestCase
 {
-
   /*
    * (non-Javadoc)
    * 

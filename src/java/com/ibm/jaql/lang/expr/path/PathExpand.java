@@ -18,6 +18,10 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -25,6 +29,7 @@ import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -124,5 +129,50 @@ public class PathExpand extends PathArray
         }
       }
     };
+  }
+
+  // -- schema ------------------------------------------------------------------------------------
+  
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    // expand input arrays and remove nulls
+    boolean mayReturnEmpty = inputSchema.isEmptyArrayOrNull().maybe();
+    Schema nextInput = SchemaTransformation.expandArrays(inputSchema);
+    if (nextInput != null)
+    {
+      nextInput = SchemaTransformation.removeNullability(nextInput);
+    }
+    
+    // expand arrays that result after next path step
+    Schema nextResult = null;
+    if (nextInput != null)
+    {
+      PathStepSchema next = nextStep().getSchema(nextInput);
+      if (next.hasData.maybe())
+      {
+        mayReturnEmpty = mayReturnEmpty || next.hasData.maybeNot() 
+            || next.schema.isEmptyArrayOrNull().maybe();
+        nextResult = SchemaTransformation.removeNullability(next.schema);
+        if (nextResult != null)
+        {
+          nextResult = SchemaTransformation.expandArrays(nextResult); // null may come back in, but that's ok
+        }
+      }
+    }
+    
+    // return result
+    if (nextResult == null)
+    {
+      return new PathStepSchema(SchemaFactory.emptyArraySchema(), Bool3.TRUE);
+    }
+    else 
+    {
+      Schema arraySchema = new ArraySchema(null, nextResult, null, null);
+      if (mayReturnEmpty)
+      {
+        arraySchema = SchemaTransformation.merge(arraySchema, SchemaFactory.emptyArraySchema());
+      }
+      return new PathStepSchema(arraySchema, Bool3.TRUE);
+    }
   }
 }

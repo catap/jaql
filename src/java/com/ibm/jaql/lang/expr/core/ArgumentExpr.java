@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -87,9 +88,10 @@ public class ArgumentExpr extends Expr
     this(descriptor, args.toArray(new Expr[args.size()]));
   }
   
+  
   public JsonRecord constEval() 
   {
-    if( ! isConst() )
+    if( ! isCompileTimeComputable().always() )
     {
       throw new RuntimeException("arguments have to be constants");
     }
@@ -229,5 +231,13 @@ public class ArgumentExpr extends Expr
    }
    
    return r;    
+  }
+  
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
   }
 }

@@ -30,6 +30,7 @@ import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.util.Bool3;
 
+// e.g., $.a
 public class CopyField extends FieldExpr
 {
   public static enum When
@@ -156,6 +157,16 @@ public class CopyField extends FieldExpr
     {
       outrec.add(name, null);   // TODO: should this create the field?
     }
+  }
+  
+  public JsonString staticName()
+  {
+    if (exprs[1] instanceof ConstExpr)
+    {
+      ConstExpr c = (ConstExpr) exprs[1];
+      return (JsonString) c.value;
+    }
+    return null;
   }
 
   /**

@@ -11,6 +11,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
 
 
+// $.*
 public class CopyRecord extends FieldExpr
 {
 

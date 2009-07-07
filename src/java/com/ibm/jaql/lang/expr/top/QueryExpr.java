@@ -18,12 +18,12 @@ package com.ibm.jaql.lang.expr.top;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -59,26 +59,10 @@ public class QueryExpr extends Expr
     exprs[0].decompile(exprText, capturedVars);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-   */
   @Override
-  public boolean isConst()
+  public Schema getSchema()
   {
-    return false;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
-  @Override
-  public Bool3 isArray()
-  {
-    return exprs[0].isArray();
+    return exprs[0].getSchema();
   }
 
   /*

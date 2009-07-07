@@ -15,12 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.random;
 
+import java.util.Map;
 import java.util.Random;
 
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
@@ -64,9 +66,11 @@ public class RandomDoubleFn extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
    */
   @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+    result.put(ExprProperty.IS_NONDETERMINISTIC, true);
+    return result;
   }
 
   /*

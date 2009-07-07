@@ -17,11 +17,12 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -81,15 +82,9 @@ public abstract class IterExpr extends Expr
    */
   public abstract JsonIterator iter(Context context) throws Exception;
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
-  @Override
-  public final Bool3 isArray()
+  public Schema getSchema()
   {
-    return Bool3.TRUE;
+    return SchemaFactory.arrayOrNullSchema();
   }
 
   /*

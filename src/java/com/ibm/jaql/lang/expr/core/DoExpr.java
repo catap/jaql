@@ -19,11 +19,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * Run a list of pipes, perserving order as required.  Return the last pipe.
@@ -67,37 +67,11 @@ public class DoExpr extends Expr
     return exprs[exprs.length-1];
   }
 
-  @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return exprs[exprs.length-1].isArray();
+    return exprs[exprs.length-1].getSchema();
   }
-
-  @Override
-  public boolean isConst()
-  {
-    for(Expr e: exprs)
-    {
-      if( ! e.isConst() )
-      {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  @Override
-  public Bool3 isEmpty()
-  {
-    return exprs[exprs.length-1].isEmpty();
-  }
-
-  @Override
-  public Bool3 isNull()
-  {
-    return exprs[exprs.length-1].isNull();
-  }
-
+  
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception

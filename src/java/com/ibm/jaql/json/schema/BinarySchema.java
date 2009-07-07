@@ -74,7 +74,7 @@ public class BinarySchema extends Schema
     }
   }
   
-  public BinarySchema()
+  BinarySchema()
   {
   }
   
@@ -93,13 +93,19 @@ public class BinarySchema extends Schema
   }
 
   @Override
-  public Bool3 isConst()
+  public boolean isConstant()
   {
-    return Bool3.UNKNOWN;
+    return false;
   }
 
   @Override
-  public Bool3 isArray()
+  public Bool3 isArrayOrNull()
+  {
+    return Bool3.FALSE;
+  }
+  
+  @Override
+  public Bool3 isEmptyArrayOrNull()
   {
     return Bool3.FALSE;
   }
@@ -134,4 +140,19 @@ public class BinarySchema extends Schema
     return maxLength;
   }
 
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof BinarySchema)
+    {
+      BinarySchema o = (BinarySchema)other;
+      JsonLong minLength = SchemaUtil.min(this.minLength, o.minLength);
+      JsonLong maxLength = SchemaUtil.max(this.maxLength, o.maxLength);
+      return new BinarySchema(minLength, maxLength);
+    }
+    return null;
+  }
 }

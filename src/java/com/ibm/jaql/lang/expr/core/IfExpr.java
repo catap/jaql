@@ -18,12 +18,13 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -74,26 +75,9 @@ public final class IfExpr extends Expr
     super(makeArgs(testExpr, trueExpr, null));
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
-   */
-  @Override
-  public Bool3 isArray()
+  public Schema getSchema()
   {
-    return exprs[1].isArray().both(exprs[2].isArray());
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
-  @Override
-  public Bool3 isNull()
-  {
-    return exprs[1].isNull().both(exprs[2].isNull());
+    return SchemaTransformation.or(exprs[1].getSchema(), exprs[2].getSchema());
   }
 
   /**
@@ -133,7 +117,7 @@ public final class IfExpr extends Expr
     testExpr().decompile(exprText, capturedVars);
     exprText.print(" )\n( ");
     trueExpr().decompile(exprText, capturedVars);
-    if (falseExpr().isNull().maybeNot())
+    if (falseExpr().getSchema().isNull().maybeNot())
     {
       exprText.print(" )\nelse ( ");
       falseExpr().decompile(exprText, capturedVars);

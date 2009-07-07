@@ -26,7 +26,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "double", minArgs = 1, maxArgs = 1)
+@JaqlFn(fnName = "toDouble", minArgs = 1, maxArgs = 1)
 public class DoubleFn extends Expr
 {
   /**

@@ -15,12 +15,15 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import java.util.Map;
+
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 public abstract class AbstractWriteExpr extends Expr
@@ -51,12 +54,13 @@ public abstract class AbstractWriteExpr extends Expr
     return exprs[1];
   }
 
-  @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties()
   {
-    return false;
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
+    return result;
   }
-
+  
   @Override
   public JsonValue eval(Context context) throws Exception
   {

@@ -15,10 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import java.util.Map;
+
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -43,6 +46,13 @@ public abstract class Aggregate extends Expr
     super(arg);
   }  
 
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+    return result;
+  }
+  
   /**
    * 
    */

@@ -15,6 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -79,5 +83,24 @@ public final class AnyAgg extends AlgebraicAggregate
   public JsonValue getFinal() throws Exception
   {
     return result;
+  }
+  
+  public Schema getSchema()
+  {
+    Schema inSchema = exprs[0].getSchema();
+    if (inSchema instanceof ArraySchema)
+    {
+      ArraySchema arraySchema = (ArraySchema)inSchema;
+      Schema valueSchema = arraySchema.elements();
+      if (arraySchema.isEmptyArray().maybe())
+      {
+        return SchemaTransformation.addNullability(valueSchema);
+      }
+      else
+      {
+        return valueSchema;
+      }
+    }
+    return SchemaFactory.anyOrNullSchema();
   }
 }

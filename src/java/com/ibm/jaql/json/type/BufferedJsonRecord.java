@@ -316,7 +316,8 @@ public class BufferedJsonRecord extends JsonRecord {
     for (int i = 0; i < n; i++)
     {
       names[i].setCopy(r.getName(i));
-      values[i] = r.getValue(i).getCopy(values[i]);
+      JsonValue v = r.getValue(i); 
+      values[i] = v==null ? null : v.getCopy(values[i]);
     }
     reorg(); 		
 	} 

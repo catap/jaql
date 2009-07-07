@@ -53,7 +53,7 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
         (JsonNumeric)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  public DoubleSchema()
+  DoubleSchema()
   {
   }
   
@@ -106,4 +106,19 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
     
     return true;
   }  
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof DoubleSchema)
+    {
+      DoubleSchema o = (DoubleSchema)other;
+      JsonDouble min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
+      JsonDouble max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);      
+      return new DoubleSchema(min, max, null);
+    }
+    return null;
+  }
 }

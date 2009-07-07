@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -50,6 +51,12 @@ public class PipeInput extends IterExpr
     assert exprs[0] instanceof VarExpr;
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    return exprs[0].getSchema();
+  }
+  
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception

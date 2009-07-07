@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.jaql.json.schema.AnySchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -122,7 +122,7 @@ public class Parameters
         }
         if (schemata[i]==null) // be friendly with emtpy schemata
         {
-          schemata[i] = AnySchema.getInstance();
+          schemata[i] = SchemaFactory.anyOrNullSchema();
         }
       }
     

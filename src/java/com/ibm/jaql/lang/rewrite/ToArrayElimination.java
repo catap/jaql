@@ -50,6 +50,7 @@ public class ToArrayElimination extends Rewrite
     assert expr instanceof ToArrayFn;
     Expr input = expr.child(0);
     
+    // TODO: remove this block
     if( input instanceof VarExpr )  
     {
       // TODO: A Var should know it's schema properties instead of looking for certain definitions. 
@@ -80,13 +81,13 @@ public class ToArrayElimination extends Rewrite
       }
     }
     
-    Bool3 isArray = input.isArray();
-    if( isArray.always() )
+    Bool3 isArrayOrNull = input.getSchema().isArrayOrNull();
+    if( isArrayOrNull.always() )
     {
       expr.replaceInParent(input);
       return true;
     }
-    else if( isArray.never() )
+    else if( isArrayOrNull.never() )
     {
       expr.replaceInParent(new ArrayExpr(input));
       return true;

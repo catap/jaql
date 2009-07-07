@@ -54,7 +54,7 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
         (JsonNumeric)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  public DecimalSchema()
+  DecimalSchema()
   {
   }
   
@@ -109,5 +109,20 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
     }
     
     return true;
-  }  
+  }
+  
+  // -- merge -------------------------------------------------------------------------------------
+
+  @Override
+  protected Schema merge(Schema other)
+  {
+    if (other instanceof DecimalSchema)
+    {
+      DecimalSchema o = (DecimalSchema)other;
+      JsonDecimal min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
+      JsonDecimal max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);
+      return new DecimalSchema(min, max, null);
+    }
+    return null;
+  }
 }

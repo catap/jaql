@@ -18,15 +18,21 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.Bool3;
 
-
+/** [?] retains nulls */
 public class PathToArray extends PathArray
 {
   /**
@@ -94,4 +100,38 @@ public class PathToArray extends PathArray
     };
   }
 
+  // -- schema ------------------------------------------------------------------------------------
+  
+  public PathStepSchema getSchema(Schema inputSchema)
+  {
+    Schema s = SchemaTransformation.wrapIntoArrayOrNull(inputSchema);
+    boolean inputMaybeNull =  s.isNull().maybe();
+    s = SchemaTransformation.removeNullability(s);
+    if (s == null)
+    {
+      return new PathStepSchema(SchemaFactory.nullSchema(), Bool3.TRUE);
+    }
+    JsonLong minLength = inputSchema.minElements();
+    JsonLong maxLength = inputSchema.maxElements();
+    PathStepSchema elements = nextStep().getSchema(s.elements());
+
+    Schema result;
+    switch(elements.hasData)
+    {
+    case TRUE:
+      result = new ArraySchema(null, elements.schema, minLength, maxLength);
+      break;
+    case FALSE:
+      result = SchemaFactory.emptyArraySchema();
+      break;
+    default:
+      result = SchemaTransformation.merge(
+          new ArraySchema(null, elements.schema, minLength, maxLength), 
+          SchemaFactory.emptyArraySchema());
+    }
+    if (inputMaybeNull) {
+      result = SchemaTransformation.addNullability(result);
+    }
+    return new PathStepSchema(result, Bool3.TRUE);
+  }
 }

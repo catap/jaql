@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
@@ -65,14 +66,16 @@ public class PathArrayToFor extends Rewrite
     PathExpr pe = (PathExpr)expr.parent();
     PathStep nextStep = ((PathArray)expr).nextStep();
     Expr outer = pe.input();
-    Var v = engine.env.makeVar("$");
+    Schema outerSchema = outer.getSchema();
+    if (outerSchema.isArray().maybeNot()) return false; // otherwise problems with schema inference
+    Var v = engine.env.makeVar("$", outerSchema.elements());
     Expr inner = new VarExpr(v);
     
     if( expr instanceof PathArrayAll ||
         expr instanceof PathToArray ||
         expr instanceof PathExpand )
     {
-      if( ! outer.isArray().always() &&
+      if( ! outerSchema.isArrayOrNull().always() &&
           ( expr instanceof PathToArray ||
             expr instanceof PathExpand ) )
       {
@@ -89,7 +92,7 @@ public class PathArrayToFor extends Rewrite
       {
         inner = new ArrayExpr(inner);
       }
-      else if( ! nextStep.isArray().always() )
+      else if( ! nextStep.getSchema().isArrayOrNull().always() )
       {
         assert expr instanceof PathExpand;
         inner = new ToArrayFn(inner);

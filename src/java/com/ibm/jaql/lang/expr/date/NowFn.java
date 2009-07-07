@@ -15,9 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.date;
 
+import java.util.Map;
+
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
@@ -42,15 +45,14 @@ public class NowFn extends Expr
     super(NO_EXPRS);
   }
 
-  /**
-   * @return
-   */
   @Override
-  public boolean isConst()
+  public Map<ExprProperty, Boolean> getProperties() 
   {
-    return false;
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.IS_NONDETERMINISTIC, true);
+    return result;
   }
-
+  
   /**
    * @param context
    * @return

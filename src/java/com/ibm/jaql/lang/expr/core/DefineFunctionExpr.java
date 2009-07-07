@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
@@ -112,13 +113,20 @@ public final class DefineFunctionExpr extends Expr
     return exprs[exprs.length-1];
   }
 
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    if (hasCaptures()) {
+      result.put(ExprProperty.HAS_CAPTURES, true);
+    }
+    return result;
+  }
+  
   /*
    * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
    */
-  @Override
-  public boolean isConst()
+  private boolean hasCaptures()
   {
     // TODO: make more efficient
     HashSet<Var> capturedVars = new HashSet<Var>();
@@ -127,8 +135,8 @@ public final class DefineFunctionExpr extends Expr
     try
     {
       this.decompile(exprText, capturedVars);
-      boolean noCaptures = capturedVars.isEmpty();
-      return noCaptures;
+      boolean hasCaptures = !capturedVars.isEmpty();
+      return hasCaptures;
     }
     catch (Exception ex)
     {

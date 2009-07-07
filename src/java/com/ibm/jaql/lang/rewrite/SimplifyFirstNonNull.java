@@ -71,7 +71,7 @@ public class SimplifyFirstNonNull extends Rewrite
     // find the first non-nullable child that is not the last child
     for (i = 0; i < last; i++)
     {
-      if (fnn.child(i).isNull().never())
+      if (fnn.child(i).getSchema().isNull().never())
       {
         break;
       }

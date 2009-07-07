@@ -45,8 +45,7 @@ public class GroupElimination extends Rewrite
   public boolean rewrite(Expr expr)
   {
     GroupByExpr ge = (GroupByExpr) expr;
-    if( ge.numInputs() != 1 ||
-        ! ge.byBinding().isConst() )
+    if( ge.numInputs() != 1 || ge.byBinding().isCompileTimeComputable().maybeNot() )
     {
       return false;
     }

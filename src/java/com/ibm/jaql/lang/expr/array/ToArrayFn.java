@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -23,7 +25,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * If the input is an array or null, return it; else wrap in an array.
@@ -51,17 +52,13 @@ public class ToArrayFn extends IterExpr
     super(new Expr[]{expr});
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
-   */
   @Override
-  public Bool3 isNull()
+  public Schema getSchema()
   {
-    return exprs[0].isNull();
+    Schema inSchema = exprs[0].getSchema();
+    return SchemaTransformation.wrapIntoArrayOrNull(inSchema);    
   }
-
+  
   /*
    * (non-Javadoc)
    * 

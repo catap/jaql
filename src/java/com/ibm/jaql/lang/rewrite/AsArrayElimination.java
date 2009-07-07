@@ -54,14 +54,14 @@ public class AsArrayElimination extends Rewrite
     Expr input = expr.child(0);
 
     // asArray(null) -> []
-    if (input.isNull().always())
+    if (input.getSchema().isNull().always())
     {
       expr.replaceInParent(new ArrayExpr());
       return true;
     }
 
     // asArray( non-nullable array expr ) -> expr
-    if (input.isArray().always() && input.isNull().never())
+    if (input.getSchema().isArray().always())
     {
       expr.replaceInParent(input);
       return true;
@@ -93,9 +93,9 @@ public class AsArrayElimination extends Rewrite
       return true;
     }
 
-    if (input.isArray().always() )
+    if (input.getSchema().isArrayOrNull().always() )
     {
-      if( input.isNull().never() )  // asArray( nonnull array expr ) -> expr   
+      if( input.getSchema().isNull().never() )  // asArray( nonnull array expr ) -> expr   
       {
         expr.replaceInParent(input);
       }
@@ -113,21 +113,21 @@ public class AsArrayElimination extends Rewrite
       expr.replaceInParent(ifExpr); // remove asArray
 
       Expr e = ifExpr.trueExpr();
-      if (e.isNull().always())
+      if (e.getSchema().isNull().always())
       {
         e.replaceInParent(new ArrayExpr());
       }
-      else if (!(e.isArray().always() && e.isNull().never()))
+      else if (!(e.getSchema().isArray().always()))
       {
         ifExpr.setChild(1, new AsArrayFn(e));
       }
 
       e = ifExpr.falseExpr();
-      if (e.isNull().always())
+      if (e.getSchema().isNull().always())
       {
         e.replaceInParent(new ArrayExpr());
       }
-      else if (!(e.isArray().always() && e.isNull().never()))
+      else if (!(e.getSchema().isArray().always()))
       {
         ifExpr.setChild(2, new AsArrayFn(e));
       }

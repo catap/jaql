@@ -46,7 +46,7 @@ public class ConstEval extends Rewrite
     // TODO: we need to be careful computing small functions that produce large results.
     // For now such functions mark themselves as non-constant. Is that the best way?
     if (expr instanceof ConstExpr || expr instanceof BindingExpr
-        || expr instanceof FieldExpr || !expr.isConst())
+        || expr instanceof FieldExpr || expr.isCompileTimeComputable().maybeNot())
     {
       return false;
     }

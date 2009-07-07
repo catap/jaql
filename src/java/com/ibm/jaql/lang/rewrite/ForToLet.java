@@ -55,11 +55,11 @@ public class ForToLet extends Rewrite
 
     Expr elem = inExpr.child(0);
     Expr ret = fe.collectExpr();
-    if (ret.isArray().maybeNot())
+    if (ret.getSchema().isArrayOrNull().maybeNot())
     {
       ret = new AsArrayFn(ret);
     }
-    else if (ret.isNull().maybe())
+    else if (ret.getSchema().isNull().maybe())
     {
       ret = new EmptyOnNullFn(ret);
     }
