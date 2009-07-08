@@ -272,7 +272,7 @@ public class MathExpr extends Expr
       return null;
     }
     
-    if( x instanceof JsonDouble )
+    if( x instanceof JsonDouble && y instanceof JsonDouble)
     {
       JsonDouble dx = (JsonDouble)x;
       JsonDouble dy = (JsonDouble)y;
@@ -281,8 +281,8 @@ public class MathExpr extends Expr
     }
     else
     {
-      BigDecimal dx = ((JsonNumber)x).decimalValue();
-      BigDecimal dy = ((JsonNumber)y).decimalValue();
+      BigDecimal dx = ((JsonNumeric)x).decimalValue();
+      BigDecimal dy = ((JsonNumeric)y).decimalValue();
       try
       {
         // dz = dx / dy
