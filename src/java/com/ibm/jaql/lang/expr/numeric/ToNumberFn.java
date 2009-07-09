@@ -77,7 +77,7 @@ public class ToNumberFn extends Expr
         num = jdec;
       }
     }
-    if (w instanceof JsonNumeric)
+    else if (w instanceof JsonNumeric)
     {
       JsonNumeric n = (JsonNumeric)w;
       try
@@ -93,7 +93,7 @@ public class ToNumberFn extends Expr
     }
     else if (w instanceof JsonBool)
     {
-      if (((JsonBool) w).getValue())
+      if (((JsonBool) w).get())
       {
         return JsonLong.ONE;
       }
