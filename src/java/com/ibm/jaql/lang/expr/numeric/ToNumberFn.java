@@ -93,7 +93,7 @@ public class ToNumberFn extends Expr
     }
     else if (w instanceof JsonBool)
     {
-      if (((JsonBool) w).get())
+      if (((JsonBool) w).getValue())
       {
         return JsonLong.ONE;
       }
