@@ -52,7 +52,7 @@ public class JdbcInputAdapter extends AbstractInputAdapter
   public void open() throws Exception
   {
 
-    String driver = ((JsonString) options.getValue("driver")).toString();
+    String driver = ((JsonString) options.get(new JsonString("driver"))).toString();
     String url = location;
 
     String s = driver.toString();
@@ -94,7 +94,7 @@ public class JdbcInputAdapter extends AbstractInputAdapter
   {
     Statement stmt = conn.createStatement();
 
-    String query = ((JsonString) options.getValue("query")).toString();
+    String query = ((JsonString) options.get(new JsonString("query"))).toString();
     final ResultSet rs = stmt.executeQuery(query);
     final ResultSetMetaData meta = rs.getMetaData();
 
@@ -146,7 +146,7 @@ public class JdbcInputAdapter extends AbstractInputAdapter
       {
         name = name.toLowerCase();
       }
-      rec.add(name, writables[i]);
+      rec.add(new JsonString(name), writables[i]);
     }
 
     return new ClosableJsonIterator(rec) {
@@ -175,12 +175,12 @@ public class JdbcInputAdapter extends AbstractInputAdapter
                 case Types.INTEGER :
                 case Types.TINYINT :
                 case Types.SMALLINT :
-                  ((JsonLong) writables[i]).value = rs.getLong(i + 1);
+                  ((JsonLong) writables[i]).set(rs.getLong(i + 1));
                   break;
                 case Types.DECIMAL :
                 case Types.DOUBLE :
                 case Types.FLOAT :
-                  ((JsonDecimal) writables[i]).value = rs.getBigDecimal(i + 1);
+                  ((JsonDecimal) writables[i]).set(rs.getBigDecimal(i + 1));
                   break;
                 case Types.CHAR :
                 case Types.VARCHAR :
@@ -192,14 +192,13 @@ public class JdbcInputAdapter extends AbstractInputAdapter
                   break;
                 case Types.DATE :
                   // TODO: all these need null handling...
-                  ((JsonDate) writables[i]).millis = rs.getDate(i + 1).getTime();
+                  ((JsonDate) writables[i]).setMillis(rs.getDate(i + 1).getTime());
                   break;
                 case Types.TIME :
-                  ((JsonDate) writables[i]).millis = rs.getTime(i + 1).getTime();
+                  ((JsonDate) writables[i]).setMillis(rs.getTime(i + 1).getTime());
                   break;
                 case Types.TIMESTAMP :
-                  ((JsonDate) writables[i]).millis = rs.getTimestamp(i + 1)
-                      .getTime();
+                  ((JsonDate) writables[i]).setMillis(rs.getTimestamp(i + 1).getTime());
                   break;
                 case Types.BINARY :
                   ((JsonBinary) writables[i]).setBytes(rs.getBytes(i + 1));

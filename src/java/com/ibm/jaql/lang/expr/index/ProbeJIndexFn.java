@@ -46,7 +46,7 @@ public class ProbeJIndexFn extends IterExpr
       {
         return JsonIterator.NULL;
       }
-      JsonString jloc = (JsonString)fd.getValue("location");
+      JsonString jloc = (JsonString)fd.get(new JsonString("location"));
       if( jloc == null )
       {
         return JsonIterator.NULL;
@@ -56,8 +56,8 @@ public class ProbeJIndexFn extends IterExpr
     }
     
     JsonRecord jrange = (JsonRecord)exprs[1].eval(context);
-    JsonValue low = jrange.getValue("low", null);
-    JsonValue high = jrange.getValue("high", null);
+    JsonValue low = jrange.get(new JsonString("low"), null);
+    JsonValue high = jrange.get(new JsonString("high"), null);
     return index.rangeScan(low, high);
   }
 }

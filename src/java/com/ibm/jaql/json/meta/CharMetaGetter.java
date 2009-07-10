@@ -61,7 +61,7 @@ public final class CharMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     char x = (Character) getter.invoke(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

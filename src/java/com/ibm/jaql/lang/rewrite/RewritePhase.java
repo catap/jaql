@@ -117,11 +117,11 @@ public class RewritePhase
           for (int i = 0; i < n; i++)
           {
             Rewrite r = myRules.get(i);
-            if (false)
-            {
-              System.err.println("trying rewrite: "
-                  + r.getClass().getSimpleName());
-            }
+//            if (false)
+//            {
+//              System.err.println("trying rewrite: "
+//                  + r.getClass().getSimpleName());
+//            }
             if (r.rewrite(expr))
             {
               if (engine.traceFire)

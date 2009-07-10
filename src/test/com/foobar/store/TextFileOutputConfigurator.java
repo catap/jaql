@@ -19,7 +19,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.hadoop.FileOutputConfigurator;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 
 /**
  * 

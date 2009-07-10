@@ -55,7 +55,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
    */
   public IndexExpr(Expr expr, int i)
   {
-    this(expr, new ConstExpr(JsonLong.sharedLong(i)));
+    this(expr, new ConstExpr(JsonLong.makeShared(i)));
   }
 
   @Override

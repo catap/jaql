@@ -38,9 +38,11 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
     META("meta");
     
     public final String name;
+    public final JsonString jsonName;
     
     Field(String n) {
       this.name = n;
+      this.jsonName = new JsonString(name);
     }
   };
   
@@ -70,13 +72,13 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
         Metadata meta = c.getMetadata();
         
         // set the fixed fields
-        ((JsonString)r.getValue(Field.URL.name)).setCopy(c.getUrl().getBytes());
-        ((JsonString)r.getValue(Field.BASEURL.name)).setCopy(c.getBaseUrl().getBytes());
-        ((JsonString)r.getValue(Field.TYPE.name)).setCopy(c.getContentType().getBytes());
+        ((JsonString)r.get(Field.URL.jsonName)).setCopy(c.getUrl().getBytes());
+        ((JsonString)r.get(Field.BASEURL.jsonName)).setCopy(c.getBaseUrl().getBytes());
+        ((JsonString)r.get(Field.TYPE.jsonName)).setCopy(c.getContentType().getBytes());
         
         String cTypeFromMeta = meta.get(Response.CONTENT_TYPE);
         String cTypeFromTop  = c.getContentType();
-        JsonValue cValue = r.getValue(Field.CONTENT.name);
+        JsonValue cValue = r.get(Field.CONTENT.jsonName);
         if( (cTypeFromMeta != null && cTypeFromMeta.indexOf("text") >= 0 ) ||
             (cTypeFromTop  != null && cTypeFromTop.indexOf("text") >= 0 ) ){
           sVal.setCopy(c.getContent());
@@ -89,11 +91,11 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
         }
         
         // set the dynamic metadata
-        BufferedJsonRecord mr = (BufferedJsonRecord)r.getValue(Field.META.name);
+        BufferedJsonRecord mr = (BufferedJsonRecord)r.get(Field.META.jsonName);
         mr.clear();
         String[] names = meta.names();
         for(int i = 0; i < names.length; i++) {
-          mr.add(names[i], new JsonString(meta.get(names[i])));
+          mr.add(new JsonString(names[i]), new JsonString(meta.get(names[i])));
         }
         
         return r;
@@ -103,11 +105,11 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
       {
         int n = Field.values().length;
         BufferedJsonRecord r = new BufferedJsonRecord(n);
-        r.add(Field.URL.name, new JsonString());
-        r.add(Field.BASEURL.name, new JsonString());
-        r.add(Field.TYPE.name, new JsonString());
-        r.add(Field.CONTENT.name, sVal);
-        r.add(Field.META.name, new BufferedJsonRecord());
+        r.add(Field.URL.jsonName, new JsonString());
+        r.add(Field.BASEURL.jsonName, new JsonString());
+        r.add(Field.TYPE.jsonName, new JsonString());
+        r.add(Field.CONTENT.jsonName, sVal);
+        r.add(Field.META.jsonName, new BufferedJsonRecord());
         
         return r;
       }

@@ -61,7 +61,7 @@ public final class DoubleMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     double x = (Double) getter.invoke(obj);
-    ((JsonDouble) target).value = x;
+    ((JsonDouble) target).set(x);
     return target;
   }
 

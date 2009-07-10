@@ -60,7 +60,7 @@ public final class BooleanMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     boolean x = (Boolean) getter.invoke(obj);
-    ((JsonBool) target).value = x;
+    ((JsonBool) target).set(x);
     return target;
   }
 

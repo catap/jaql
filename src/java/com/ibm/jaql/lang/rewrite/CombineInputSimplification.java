@@ -15,12 +15,8 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.expr.array.AsArrayFn;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
-import com.ibm.jaql.lang.expr.nil.NullOnEmptyFn;
 
 /**
  * combine $a,$b in f(e1) using e2 ==> combine $a, $b in e1 using e2 where f in {
@@ -44,20 +40,20 @@ public class CombineInputSimplification extends Rewrite
   @Override
   public boolean rewrite(Expr expr)
   {
-    if(true) return false; // TODO: reenable with function api?
-    CombineExpr ce = (CombineExpr) expr;
-    BindingExpr bind = null; // ce.binding();
-    expr = bind.inExpr();
-    while (expr instanceof EmptyOnNullFn || expr instanceof NullOnEmptyFn
-        || expr instanceof AsArrayFn)
-    {
-      expr = expr.child(0);
-    }
-    if (expr != bind.inExpr())
-    {
-      bind.setChild(0, expr);
-      return true;
-    }
+    // TODO: reenable with function api?
+//    CombineExpr ce = (CombineExpr) expr;
+//    BindingExpr bind = null; // ce.binding();
+//    expr = bind.inExpr();
+//    while (expr instanceof EmptyOnNullFn || expr instanceof NullOnEmptyFn
+//        || expr instanceof AsArrayFn)
+//    {
+//      expr = expr.child(0);
+//    }
+//    if (expr != bind.inExpr())
+//    {
+//      bind.setChild(0, expr);
+//      return true;
+//    }
     return false;
   }
 }

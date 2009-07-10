@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.io;
 
+import java.util.Map.Entry;
+
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.converter.FromJson;
@@ -127,8 +129,8 @@ public class AdapterStore
         public AdapterRegistry convert(JsonValue src, AdapterRegistry tgt)
         {
           JsonRecord r = (JsonRecord) src;
-          JsonRecord iR = (JsonRecord)r.getValue(Adapter.INOPTIONS_NAME);
-          JsonRecord oR = (JsonRecord)r.getValue(Adapter.OUTOPTIONS_NAME);
+          JsonRecord iR = (JsonRecord)r.get(Adapter.INOPTIONS_NAME);
+          JsonRecord oR = (JsonRecord)r.get(Adapter.OUTOPTIONS_NAME);
           tgt.setInput(iR);
           tgt.setOutput(oR);
           return tgt;
@@ -233,7 +235,7 @@ public class AdapterStore
 
     public BufferedJsonRecord getOption(JsonRecord args)
     {
-      JsonValue tValue = args.getValue(Adapter.TYPE_NAME);
+      JsonValue tValue = args.get(Adapter.TYPE_NAME);
       JsonRecord defaultOptions = null;
       if (tValue != null)
       {
@@ -256,14 +258,12 @@ public class AdapterStore
         return tgt;
       }
 
-      int numFields = src.arity();
-      for (int i = 0; i < numFields; i++)
+      for (Entry<JsonString, JsonValue> e : src)
       {
-        JsonString name = src.getName(i);
-        int aIdx = tgt.findName(name);
-        if (aIdx < 0)
+        JsonString name = e.getKey();
+        if (!tgt.containsKey(name))
         {
-          tgt.add(name, src.getValue(i));
+          tgt.add(name, e.getValue());
         }
       }
       return tgt;
@@ -309,10 +309,10 @@ public class AdapterStore
 
     public JsonRecord getOverride(JsonRecord args)
     {
-      JsonValue i = args.getValue(Adapter.INOPTIONS_NAME);
+      JsonValue i = args.get(Adapter.INOPTIONS_NAME);
       if (i == null) {
         // handle the case where OPTIONS_NAME is used instead
-        i = args.getValue(Adapter.OPTIONS_NAME);
+        i = args.get(Adapter.OPTIONS_NAME);
         // can still be null
       }
       return (JsonRecord) i;
@@ -364,10 +364,10 @@ public class AdapterStore
 
     public JsonRecord getOverride(JsonRecord args)
     {
-      JsonValue i = args.getValue(Adapter.OUTOPTIONS_NAME);
+      JsonValue i = args.get(Adapter.OUTOPTIONS_NAME);
       if (i == null) {
         // handle the case where OPTIONS_NAME is used instead
-        i = args.getValue(Adapter.OPTIONS_NAME);
+        i = args.get(Adapter.OPTIONS_NAME);
         // can still be null
       }
       return (JsonRecord) i;
@@ -404,13 +404,13 @@ public class AdapterStore
    * @return
    * @throws Exception
    */
-  public Class<?> getClassFromRecord(JsonRecord options, String name,
+  public Class<?> getClassFromRecord(JsonRecord options, JsonString name,
       Class<?> defaultValue) throws Exception
   {
     Class<?> c = defaultValue;
     if (options != null && name != null)
     {
-      JsonValue wName = options.getValue(name);
+      JsonValue wName = options.get(name);
       if (wName != null && wName instanceof JsonString)
       {
         c = ClassLoaderMgr.resolveClass(wName.toString());
@@ -430,7 +430,7 @@ public class AdapterStore
    */
   public String getLocation(JsonRecord args) throws Exception
   {
-    JsonValue lValue = args.getValue(Adapter.LOCATION_NAME);
+    JsonValue lValue = args.get(Adapter.LOCATION_NAME);
     if (lValue == null || "".equals(lValue.toString()))
       return null;
     return lValue.toString();

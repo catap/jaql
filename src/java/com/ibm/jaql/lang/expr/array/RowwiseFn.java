@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.array;
 
 import java.util.ArrayList;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
@@ -62,15 +63,16 @@ public class RowwiseFn extends IterExpr
       return JsonIterator.NULL;
     }
     JsonRecord inrec = (JsonRecord)value;
-    int n = inrec.arity();
+    int n = inrec.size();
     final ArrayList<JsonString> names = new ArrayList<JsonString>(n);
     final ArrayList<JsonIterator> values = new ArrayList<JsonIterator>(n);
-    for(int i = 0 ; i < n ; i++)
+    for (Entry<JsonString, JsonValue> e : inrec)
     {
-      JsonArray val = (JsonArray)inrec.getValue(i);
+      JsonString name = e.getKey();
+      JsonArray val = (JsonArray)e.getValue();
       if( val != null && ! val.isEmpty() )
       {
-        names.add(inrec.getName(i));
+        names.add(name);
         values.add(val.iter());
       }
     }

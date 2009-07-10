@@ -17,11 +17,14 @@ package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
 public class JsonRecordSerializer extends TextBasicSerializer<JsonRecord>
 {
@@ -42,15 +45,17 @@ public class JsonRecordSerializer extends TextBasicSerializer<JsonRecord>
     out.print("{");
     
     indent += 2;
-    final int arity = value.arity();
+    final int arity = value.size();
     String sep = "";
+    Iterator<Entry<JsonString, JsonValue>> it = value.iterator();
     for (int i = 0; i < arity; i++)
     {
+      Entry<JsonString, JsonValue> e = it.next();
       out.println(sep);
       indent(out, indent);
-      nameSerializer.write(out, value.getName(i), indent);
+      nameSerializer.write(out, e.getKey(), indent);
       out.print(": ");
-      valueSerializer.write(out, value.getValue(i), indent);
+      valueSerializer.write(out, e.getValue(), indent);
       sep = ",";
     }
     indent -= 2;

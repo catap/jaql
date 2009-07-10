@@ -17,10 +17,12 @@ package com.ibm.jaql.json.schema;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -198,16 +200,19 @@ public class RecordSchema extends Schema
     JsonRecord rec = (JsonRecord) value;
 
     // assumption: field names are sorted
-    int nr = rec.arity();
-    int ns = fields.length;
-    int pr = 0;
-    int ps = 0;
+    int nr = rec.size();          // number of fields in record
+    int ns = fields.length;       // number of fields in schema
+    int pr = 0;                   // current field in record
+    int ps = 0;                   // current field in schema
     
     // zip join
+    Iterator<Entry<JsonString, JsonValue>> recIt = rec.iterator();
+    Entry<JsonString, JsonValue> recEntry = null;
+    if (nr > 0) recEntry = recIt.next();
     while (pr<nr && ps<ns)
     {
       Field schemaField = fields[ps];
-      JsonString recordFieldName = rec.getName(pr);
+      JsonString recordFieldName = recEntry.getKey();
       
       // compare
       int cmp = schemaField.getName().compareTo(recordFieldName);
@@ -224,20 +229,30 @@ public class RecordSchema extends Schema
       else if (cmp == 0)
       {
         // field is schema and in record
-        if (!schemaField.getSchema().matches(rec.getValue(pr)))
+        if (!schemaField.getSchema().matches(recEntry.getValue()))
         {
           return false;
         }
-        ps++; pr++;
+        ps++; pr++; 
+        if (pr < nr)
+        {
+          assert recIt.hasNext();
+          recEntry = recIt.next();
+        }
       }
       else
       {
         // field is not in schema but in record
-        if (rest == null || !rest.matches(rec.getValue(pr)))
+        if (rest == null || !rest.matches(recEntry.getValue()))
         {
           return false;
         }
-        pr++;
+        pr++; 
+        if (pr < nr)
+        {
+          assert recIt.hasNext();
+          recEntry = recIt.next();
+        }
       }
     }
     
@@ -245,12 +260,18 @@ public class RecordSchema extends Schema
     while (pr < nr)
     {
       // there are fields left in the record
-      if (rest == null || !rest.matches(rec.getValue(pr)))
+      if (rest == null || !rest.matches(recEntry.getValue()))
       {
         return false;
       }
-      pr++;
+      pr++; 
+      if (pr < nr)
+      {
+        assert recIt.hasNext();
+        recEntry = recIt.next();
+      }
     }
+    assert !recIt.hasNext();
     while (ps < ns)
     {
       // therea are fields left in the schema

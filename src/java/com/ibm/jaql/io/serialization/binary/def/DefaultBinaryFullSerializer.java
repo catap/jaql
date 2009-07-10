@@ -91,7 +91,7 @@ public final class DefaultBinaryFullSerializer extends BinaryFullSerializer
   public JsonValue read(DataInput in, JsonValue target) throws IOException
   {
     int encodingId = BaseUtil.readVUInt(in);
-    JsonEncoding encoding = JsonEncoding.valueOf(encodingId);
+    JsonEncoding encoding = JsonEncoding.getEncoding(encodingId);
     BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     return serializer.read(in, target);
   }
@@ -115,7 +115,7 @@ public final class DefaultBinaryFullSerializer extends BinaryFullSerializer
   @Override
   public void skip(DataInput in) throws IOException {
     int encodingId = BaseUtil.readVUInt(in);
-    JsonEncoding encoding = JsonEncoding.valueOf(encodingId);
+    JsonEncoding encoding = JsonEncoding.getEncoding(encodingId);
     BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     serializer.skip(in);
   }
@@ -127,8 +127,8 @@ public final class DefaultBinaryFullSerializer extends BinaryFullSerializer
     int code1 = BaseUtil.readVUInt(in1);
     int code2 = BaseUtil.readVUInt(in2);
     assert code1>0 && code2>0;
-    JsonEncoding encoding1 = JsonEncoding.valueOf(code1);
-    JsonEncoding encoding2 = JsonEncoding.valueOf(code2);
+    JsonEncoding encoding1 = JsonEncoding.getEncoding(code1);
+    JsonEncoding encoding2 = JsonEncoding.getEncoding(code2);
     if (encoding1 != encoding2) {
       JsonType type1 = encoding1.getType();
       JsonType type2 = encoding2.getType();
@@ -148,7 +148,7 @@ public final class DefaultBinaryFullSerializer extends BinaryFullSerializer
   @Override
   public void copy(DataInput in, DataOutput out) throws IOException {
     int encodingId = BaseUtil.readVUInt(in);
-    JsonEncoding encoding = JsonEncoding.valueOf(encodingId);
+    JsonEncoding encoding = JsonEncoding.getEncoding(encodingId);
     BinaryBasicSerializer<?> serializer = serializers.get(encoding);
     
     BaseUtil.writeVUInt(out, encodingId);

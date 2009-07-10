@@ -61,7 +61,7 @@ public final class LongMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     long x = (Long) getter.invoke(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

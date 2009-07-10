@@ -155,18 +155,18 @@ public final class ForExpr extends IterExpr // TODO: rename
   {
     // TODO: decompile as "for" or "expand"?
     BindingExpr b = binding();
-    if( false )
-    {
-      exprText.print("\nfor( ");
-      exprText.print(b.var.name);
-      exprText.print(" in ");
-      b.inExpr().decompile(exprText, capturedVars);
-      exprText.print(" ) ( ");
-      collectExpr().decompile(exprText, capturedVars);
-      exprText.println(" )");
-      capturedVars.remove(b.var);
-    }
-    else
+//    if( false )
+//    {
+//      exprText.print("\nfor( ");
+//      exprText.print(b.var.name);
+//      exprText.print(" in ");
+//      b.inExpr().decompile(exprText, capturedVars);
+//      exprText.print(" ) ( ");
+//      collectExpr().decompile(exprText, capturedVars);
+//      exprText.println(" )");
+//      capturedVars.remove(b.var);
+//    }
+//    else
     {
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(" -> expand each ");

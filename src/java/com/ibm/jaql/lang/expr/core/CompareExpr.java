@@ -183,6 +183,6 @@ public class CompareExpr extends Expr
           throw new RuntimeException("should not get here!");
       }
     }
-    return JsonBool.make(b);
+    return JsonBool.makeShared(b);
   }
 }

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.io.AbstractInputAdapter;
 import com.ibm.jaql.io.AdapterStore;
@@ -39,8 +40,8 @@ import com.ibm.jaql.json.type.JsonValue;
 public class StreamInputAdapter extends AbstractInputAdapter
 {
 
-  public static String   ARGS_NAME = "args";
-  public static String   ARR_NAME  = "asArray"; // @see com.ibm.jaql.io.converter.StreamToItem
+  public static final JsonString   ARGS_NAME = new JsonString("args");
+  public static final JsonString   ARR_NAME  = new JsonString("asArray"); // @see com.ibm.jaql.io.converter.StreamToItem
 
   protected StreamToJson<JsonValue> formatter;
 
@@ -66,13 +67,13 @@ public class StreamInputAdapter extends AbstractInputAdapter
     if (!StreamToJson.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemInputStream");
     formatter = (StreamToJson<JsonValue>) fclass.newInstance();
-    JsonValue arrAcc = inputArgs.getValue(ARR_NAME);
+    JsonValue arrAcc = inputArgs.get(ARR_NAME);
     if(arrAcc != null) {
-      formatter.setArrayAccessor( ((JsonBool)arrAcc).value);
+      formatter.setArrayAccessor( ((JsonBool)arrAcc).get());
     }
 
     // setup the args
-    JsonValue value = inputArgs.getValue(ARGS_NAME);
+    JsonValue value = inputArgs.get(ARGS_NAME);
     if (value != null) strArgs = (JsonRecord) value;
   }
 
@@ -124,10 +125,10 @@ public class StreamInputAdapter extends AbstractInputAdapter
     if (args != null)
     {
       String sep = "?";
-      for (int i = 0; i < args.arity(); i++)
+      for (Entry<JsonString, JsonValue> e : args)
       {
-        JsonString name = args.getName(i);
-        JsonValue w = args.getValue(i);
+        JsonString name = e.getKey();
+        JsonValue w = e.getValue();        
         if (w != null)
         {
           String s = w.toString();

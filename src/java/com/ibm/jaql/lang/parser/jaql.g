@@ -67,7 +67,7 @@ options {
     public static final JsonLong parseLong(String v, boolean isNegative) 
     {
        if (isNegative) {
-         return new JsonLong("-" + v); // handles that case i==Long.MIN
+         return new JsonLong("-" + v); // handles the case i==Long.MIN
        } 
        else
        {
@@ -80,7 +80,7 @@ options {
        JsonDouble d = new JsonDouble(v);
        if (isNegative)
        {
-         d.value = -d.value;
+         d.set(-d.get());
        }
        return d;
     }

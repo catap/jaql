@@ -17,6 +17,7 @@ package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.Bool3;
@@ -60,8 +61,8 @@ public class ArraySchema extends Schema
     }
     
     // move rest to head if occuring precisely once
-    if (this.rest!= null && JsonValue.equals(this.minRest, JsonLong.ONE) 
-        && JsonValue.equals(this.maxRest, JsonLong.ONE))
+    if (this.rest!= null && JsonUtil.equals(this.minRest, JsonLong.ONE) 
+        && JsonUtil.equals(this.maxRest, JsonLong.ONE))
     {
       Schema[] newHead = new Schema[this.head.length+1];
       System.arraycopy(this.head, 0, newHead, 0, this.head.length);
@@ -138,13 +139,13 @@ public class ArraySchema extends Schema
   {
     if ( head.length==0 )
     {
-      if ( rest == null || JsonValue.equals(maxRest, JsonLong.ZERO) )
+      if ( rest == null || JsonUtil.equals(maxRest, JsonLong.ZERO) )
       {
         return Bool3.TRUE;
       }
       else
       {
-        return minRest==null || JsonValue.equals(minRest, JsonLong.ZERO) ? Bool3.UNKNOWN : Bool3.FALSE;
+        return minRest==null || JsonUtil.equals(minRest, JsonLong.ZERO) ? Bool3.UNKNOWN : Bool3.FALSE;
       }
     }
     else
@@ -178,7 +179,7 @@ public class ArraySchema extends Schema
     
     // check min rest
     long i = 0;
-    for (; i<minRest.value; i++)
+    for (; i<minRest.get(); i++)
     {
       if (!iter.moveNext() || !rest.matches(iter.current()))
       {
@@ -187,14 +188,14 @@ public class ArraySchema extends Schema
     }
 
     // check remaining rest
-    assert i==minRest.value;
+    assert i==minRest.get();
     for (; ; i++)
     {
       if (!iter.moveNext())
       {
         return true;
       }
-      if (maxRest != null && i>=maxRest.value)
+      if (maxRest != null && i>=maxRest.get())
       { 
         return false;
       }
@@ -221,7 +222,7 @@ public class ArraySchema extends Schema
   
   public boolean hasRest() 
   {
-    return rest != null && (maxRest == null || maxRest.value > 0);    
+    return rest != null && (maxRest == null || maxRest.get() > 0);    
   }
   
   public boolean isEmpty()
@@ -256,8 +257,8 @@ public class ArraySchema extends Schema
       }
       
       // determine number of first elements with explicit schema
-      long minLength = Math.min(this.head.length + (this.minRest!=null ? this.minRest.value : 0),
-          o.head.length + (o.minRest!=null ? o.minRest.value : 0));
+      long minLength = Math.min(this.head.length + (this.minRest!=null ? this.minRest.get() : 0),
+          o.head.length + (o.minRest!=null ? o.minRest.get() : 0));
       int newHeadLength = Math.max(this.head.length, o.head.length);
       if (newHeadLength > minLength) newHeadLength = (int)minLength;
       
@@ -292,7 +293,7 @@ public class ArraySchema extends Schema
         }
         else
         {
-          maxRestMe += this.maxRest.value;
+          maxRestMe += this.maxRest.get();
         }      
       }
 
@@ -305,7 +306,7 @@ public class ArraySchema extends Schema
         }
         else
         {
-          maxRestOther += o.maxRest.value;
+          maxRestOther += o.maxRest.get();
         }      
       }
       
@@ -320,17 +321,17 @@ public class ArraySchema extends Schema
       }
       
       // if no rest is allowed, we are done
-      if (JsonValue.equals(newMaxRest, JsonLong.ZERO))
+      if (JsonUtil.equals(newMaxRest, JsonLong.ZERO))
       {
         return new ArraySchema(newHead);
       }
       
       // there is a rest: determine minRest
-      long minRestMe =  Math.max(0, this.head.length-newHeadLength + (this.minRest!=null ? this.minRest.value : 0L));
-      long minRestOther = Math.max(0, o.head.length-newHeadLength + (o.minRest!=null ? o.minRest.value : 0L)); 
+      long minRestMe =  Math.max(0, this.head.length-newHeadLength + (this.minRest!=null ? this.minRest.get() : 0L));
+      long minRestOther = Math.max(0, o.head.length-newHeadLength + (o.minRest!=null ? o.minRest.get() : 0L)); 
       JsonLong newMinRest = new JsonLong(Math.min(minRestMe, minRestOther));
       
-      assert newMaxRest==null || newMinRest.value<=newMaxRest.value;
+      assert newMaxRest==null || newMinRest.get()<=newMaxRest.get();
       
       // finally, determine schema of rest from remaining heads
       Schema newRest = null;
@@ -390,7 +391,7 @@ public class ArraySchema extends Schema
   {
     if (which instanceof JsonLong)
     {
-      long index = ((JsonLong)which).value;
+      long index = ((JsonLong)which).get();
       if (index < head.length)
       {
         return Bool3.TRUE;
@@ -398,9 +399,9 @@ public class ArraySchema extends Schema
       else
       {
         index -= head.length;
-        if (maxRest==null || index < maxRest.value)
+        if (maxRest==null || index < maxRest.get())
         {
-          if (minRest!=null && index<minRest.value)
+          if (minRest!=null && index<minRest.get())
           {
             return Bool3.TRUE;
           }
@@ -417,7 +418,7 @@ public class ArraySchema extends Schema
   {
     if (which instanceof JsonLong)
     {
-      long index = ((JsonLong)which).value;
+      long index = ((JsonLong)which).get();
       if (index < head.length)
       {
         return head[(int)index];
@@ -425,7 +426,7 @@ public class ArraySchema extends Schema
       else 
       {
         index -= head.length;
-        if (maxRest==null || index < maxRest.value)
+        if (maxRest==null || index < maxRest.get())
         {
           return rest;
         }
@@ -438,13 +439,13 @@ public class ArraySchema extends Schema
   @Override
   public JsonLong minElements()
   {
-    return new JsonLong(head.length + (rest!=null && minRest!=null ? minRest.value : 0));
+    return new JsonLong(head.length + (rest!=null && minRest!=null ? minRest.get() : 0));
   }
 
   @Override
   public JsonLong maxElements()
   {
     if (rest != null && maxRest == null) return null;
-    return new JsonLong(head.length + (rest!=null ? maxRest.value : 0));
+    return new JsonLong(head.length + (rest!=null ? maxRest.get() : 0));
   }  
 }

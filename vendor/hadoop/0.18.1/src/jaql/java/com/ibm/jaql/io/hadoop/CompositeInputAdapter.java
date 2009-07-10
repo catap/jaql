@@ -37,18 +37,13 @@ import com.ibm.jaql.json.type.JsonValue;
 
 // TODO: look into factoring some of this code with DefaultHadoopInputAdapter
 /** Takes an array of HadoopInputAdapters and operates on the union of their inputs. */
-public class CompositeInputAdapter implements HadoopInputAdapter<JsonValue>
+public class CompositeInputAdapter implements HadoopInputAdapter
 {
   public static String         CURRENT_IDX_NAME = "com.ibm.jaql.lang.CompositeinputAdapter.currentIdx";
 
   private JsonArray               args;
 
-  private HadoopInputAdapter<?>[] adapters;
-
-  @Override
-  public void init(JsonValue val) throws Exception {
-    initializeFrom(val);
-  }
+  private HadoopInputAdapter[] adapters;
   
   /*
    * (non-Javadoc)
@@ -56,14 +51,14 @@ public class CompositeInputAdapter implements HadoopInputAdapter<JsonValue>
    * @see com.ibm.jaql.io.Adapter#initializeFrom(com.ibm.jaql.json.type.Item)
    */
   @Override
-  public void initializeFrom(JsonValue val) throws Exception
+  public void init(JsonValue val) throws Exception
   {
     if(val instanceof JsonArray)
       initializeFrom((JsonArray) val);
     else if(val instanceof JsonRecord) {
       // dig the location out
       JsonRecord rval = (JsonRecord)val;
-      JsonArray loc = (JsonArray)rval.getValue(Adapter.LOCATION_NAME);
+      JsonArray loc = (JsonArray)rval.get(Adapter.LOCATION_NAME);
       initializeFrom(loc);
     }
   }
@@ -86,7 +81,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<JsonValue>
       JsonValue value = this.args.nth(i);
       // adapters[i] = AdapterStore.getInputAdapter((JRecord) item.getNonNull(),
       // item);
-      adapters[i] = (HadoopInputAdapter<?>) AdapterStore.getStore().input
+      adapters[i] = (HadoopInputAdapter) AdapterStore.getStore().input
           .getAdapter(value);
     }
   }
@@ -180,7 +175,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<JsonValue>
       writeCurrentIndex(job, idx);
 
       // 3. insantiate and initialize the adapter
-      HadoopInputAdapter<?> adapter = (HadoopInputAdapter<?>) AdapterStore.getStore().input
+      HadoopInputAdapter adapter = (HadoopInputAdapter) AdapterStore.getStore().input
           .getAdapter(/** baseArgs, */
           value);
 
@@ -256,7 +251,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter<JsonValue>
       }
       // TODO: is this needed?
       // ((DefaultHadoopInputAdapter)adapters[i]).configure(jTmp);
-      ((HadoopInputAdapter<?>) adapters[i]).configure(jTmp);
+      adapters[i].configure(jTmp);
 
       // get its splits
       InputSplit[] splits = ((InputFormat<?,?>) adapters[i]).getSplits(jTmp,

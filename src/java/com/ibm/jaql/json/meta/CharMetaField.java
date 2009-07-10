@@ -59,7 +59,7 @@ public class CharMetaField extends MetaField
       IllegalAccessException
   {
     char x = field.getChar(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

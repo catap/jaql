@@ -56,9 +56,19 @@ public class MathExpr extends Expr
     {
       ConstExpr ce = (ConstExpr) expr;
       JsonValue t = ce.value;
-      if (t instanceof JsonNumeric)
+      if (t instanceof JsonLong)
       {
-        ((JsonNumeric) t).negate();
+        ((JsonLong) t).negate();
+        return expr;
+      }
+      if (t instanceof JsonDouble)
+      {
+        ((JsonDouble) t).negate();
+        return expr;
+      }
+      if (t instanceof JsonDecimal)
+      {
+        ((JsonDecimal) t).negate();
         return expr;
       }
     }
@@ -121,14 +131,14 @@ public class MathExpr extends Expr
     }
     if (value1 instanceof JsonLong && value2 instanceof JsonLong)
     {
-      long n1 = ((JsonLong) value1).value;
-      long n2 = ((JsonLong) value2).value;
+      long n1 = ((JsonLong) value1).get();
+      long n2 = ((JsonLong) value2).get();
       return longEval(n1, n2);
     }
     else if (value1 instanceof JsonDate && value2 instanceof JsonDate)
     {
-      long n1 = ((JsonDate) value1).millis;
-      long n2 = ((JsonDate) value2).millis;
+      long n1 = ((JsonDate) value1).getMillis();
+      long n2 = ((JsonDate) value2).getMillis();
       return longEval(n1, n2);
     }
     else if (value1 instanceof JsonString || value2 instanceof JsonString)
@@ -140,10 +150,10 @@ public class MathExpr extends Expr
       // TODO: memory
       JsonString text1 = (JsonString) value1;
       JsonString text2 = (JsonString) value2;
-      byte[] buf = new byte[text1.getLength() + text2.getLength()];
-      System.arraycopy(text1.getInternalBytes(), 0, buf, 0, text1.getLength());
-      System.arraycopy(text2.getInternalBytes(), 0, buf, text1.getLength(), text2
-          .getLength());
+      byte[] buf = new byte[text1.lengthUtf8() + text2.lengthUtf8()];
+      System.arraycopy(text1.getInternalBytes(), 0, buf, 0, text1.lengthUtf8());
+      System.arraycopy(text2.getInternalBytes(), 0, buf, text1.lengthUtf8(), text2
+          .lengthUtf8());
       return new JsonString(buf);
     }
     else if (value1 instanceof JsonDouble || value2 instanceof JsonDouble)
@@ -276,7 +286,7 @@ public class MathExpr extends Expr
     {
       JsonDouble dx = (JsonDouble)x;
       JsonDouble dy = (JsonDouble)y;
-      double div = dx.value / dy.value;
+      double div = dx.get() / dy.get();
       return new JsonDouble(div);
     }
     else

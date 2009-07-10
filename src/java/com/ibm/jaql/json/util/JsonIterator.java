@@ -19,6 +19,7 @@ import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Iterator over a list of {@link JsonValue}s. This iterator is meant to be accessed either 
@@ -211,7 +212,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
         {
           out.print(' ');
         }
-        JsonValue.print(out, value, indent);
+        JsonUtil.print(out, value, indent);
         sep = ",";
       }
       if (sep.length() > 0) // if not empty array

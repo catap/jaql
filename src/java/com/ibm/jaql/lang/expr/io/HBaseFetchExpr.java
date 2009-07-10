@@ -102,8 +102,8 @@ public class HBaseFetchExpr extends IterExpr
       args = (JsonRecord) exprs[3].eval(context);
     }
     // get the arguments
-    JsonLong timestampValue = (JsonLong) args.getValue("timestamp");
-    JsonLong numVersionsValue = (JsonLong) args.getValue("numversions");
+    JsonLong timestampValue = (JsonLong) args.get(new JsonString("timestamp"));
+    JsonLong numVersionsValue = (JsonLong) args.get(new JsonString("numversions"));
 
     // the iterator for record keys
     JsonIterator rows = exprs[1].iter(context);

@@ -15,24 +15,26 @@
  */
 package com.ibm.jaql.io;
 
+import com.ibm.jaql.json.type.JsonString;
+
 /**
  * An interface for accessing a data source.
  */
 public interface Adapter extends Initializable
 {
-  static String TYPE_NAME       = "type";
+  static JsonString TYPE_NAME       = new JsonString("type");
 
-  static String LOCATION_NAME   = "location";
+  static JsonString LOCATION_NAME   = new JsonString("location");
 
-  static String INOPTIONS_NAME  = "inoptions";
+  static JsonString INOPTIONS_NAME  = new JsonString("inoptions");
 
-  static String OUTOPTIONS_NAME = "outoptions";
+  static JsonString OUTOPTIONS_NAME = new JsonString("outoptions");
 
-  static String OPTIONS_NAME    = "options";
+  static JsonString OPTIONS_NAME    = new JsonString("options");
   
-  static String ADAPTER_NAME    = "adapter";
+  static JsonString ADAPTER_NAME    = new JsonString("adapter");
 
-  static String FORMAT_NAME     = "format";
+  static JsonString FORMAT_NAME     = new JsonString("format");
 
   /**
    * Once an adapter has been initialized, you can take whatever steps that are

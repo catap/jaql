@@ -49,9 +49,9 @@ public class RegisterAdapterExpr extends Expr
     JsonValue rValue = exprs[0].eval(context);
     JsonRecord registry = (JsonRecord) rValue;
 
-    String type = JaqlUtil.enforceNonNull(registry.getValue(Adapter.TYPE_NAME)).toString();
-    JsonValue inValue = registry.getValue(Adapter.INOPTIONS_NAME);
-    JsonValue outValue = registry.getValue(Adapter.OUTOPTIONS_NAME);
+    String type = JaqlUtil.enforceNonNull(registry.get(Adapter.TYPE_NAME)).toString();
+    JsonValue inValue = registry.get(Adapter.INOPTIONS_NAME);
+    JsonValue outValue = registry.get(Adapter.OUTOPTIONS_NAME);
     if (inValue == null && outValue == null)
       throw new RuntimeException("Both input and output options cannot be null");
 

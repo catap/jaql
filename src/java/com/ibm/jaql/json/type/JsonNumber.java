@@ -15,9 +15,7 @@
  */
 package com.ibm.jaql.json.type;
 
-/**
- * 
- */
+/** Base class for all number JSON values. */
 public abstract class JsonNumber extends JsonNumeric
 {
   // TODO: these should be immutable

@@ -88,7 +88,7 @@ public class CovStatsAgg extends AlgebraicAggregate
         }
       }
     }
-    arr.getValues(tuple);
+    arr.getAll(tuple);
     for(int i = 0 ; i < tuple.length ; i++)
     {
       JsonNumeric num = (JsonNumeric)tuple[i];

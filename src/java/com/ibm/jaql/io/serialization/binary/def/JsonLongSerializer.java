@@ -41,7 +41,7 @@ public class JsonLongSerializer extends BinaryBasicSerializer<JsonLong>
       return new JsonLong(value);
     } else {
       JsonLong t = (JsonLong)target;
-      t.setValue(value);
+      t.set(value);
       return t;
     }
   }
@@ -50,7 +50,7 @@ public class JsonLongSerializer extends BinaryBasicSerializer<JsonLong>
   @Override
   public void write(DataOutput out, JsonLong value) throws IOException
   {
-    BaseUtil.writeVSLong(out, value.value);
+    BaseUtil.writeVSLong(out, value.get());
   }
   
   

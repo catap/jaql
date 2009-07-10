@@ -61,7 +61,7 @@ public final class ByteMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     byte x = (Byte) getter.invoke(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

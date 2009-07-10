@@ -25,6 +25,7 @@ import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -114,7 +115,7 @@ public class GroupCombineFn extends IterExpr
     for (JsonValue value : iter)
     {
       JsonArray pairArr = (JsonArray)JaqlUtil.enforceNonNull(value);
-      pairArr.getValues(pair);
+      pairArr.getAll(pair);
       initialHT.add(0, pair[0], pair[1]);
       if( initialHT.getMemoryUsage() >= memoryLimit || initialHT.numKeys() >= keyLimit )
       {
@@ -361,7 +362,7 @@ public class GroupCombineFn extends IterExpr
     {
       Chunk chunk = queue.remove();
       Chunk chunk2 = queue.peek();
-      boolean same = chunk2 != null && JsonValue.equals(chunk.key, chunk2.key); 
+      boolean same = chunk2 != null && JsonUtil.equals(chunk.key, chunk2.key); 
       advanceChunk(chunk);
       if( same )
       {

@@ -66,9 +66,18 @@ public class NameValueBinding extends FieldExpr
    */
   public NameValueBinding(String name, Expr value, boolean required)
   {
-    this(required, new Expr[]{new ConstExpr(new JsonString(name)), value});
+    this(new JsonString(name), value, required);
   }
 
+  /**
+   * @param name
+   * @param value
+   * @param required
+   */
+  public NameValueBinding(JsonString name, Expr value, boolean required)
+  {
+    this(required, new Expr[]{new ConstExpr(name), value});
+  }
   /**
    * @param name
    * @param value
@@ -86,7 +95,16 @@ public class NameValueBinding extends FieldExpr
   {
     this(name, value, true);
   }
-
+  
+  /**
+   * @param name
+   * @param value
+   */
+  public NameValueBinding(JsonString name, Expr value)
+  {
+    this(name, value, true);
+  }
+  
   /**
    * 
    * @param var var name is name, var value is value

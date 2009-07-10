@@ -60,7 +60,7 @@ public class Base64Fn extends Expr
       return null;
     }
     byte[] utf8 = jstr.getInternalBytes();
-    int len = jstr.getLength();
+    int len = jstr.lengthUtf8();
     if( utf8.length != len )
     {
       // TODO: use a better codec that allows us to pass in the length,

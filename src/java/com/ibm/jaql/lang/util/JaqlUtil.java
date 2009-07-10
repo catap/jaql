@@ -52,7 +52,7 @@ public class JaqlUtil
     JsonBool b = (JsonBool) value;
     if (b != null)
     {
-      return b.value;
+      return b.get();
     }
     return false;
   }

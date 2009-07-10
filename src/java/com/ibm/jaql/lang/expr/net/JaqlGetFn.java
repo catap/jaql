@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -68,10 +69,10 @@ public class JaqlGetFn extends Expr
       if (args != null)
       {
         String sep = "?";
-        for (int i = 0; i < args.arity(); i++)
+        for (Entry<JsonString, JsonValue> e : args)
         {
-          JsonString name = args.getName(i);          
-          JsonValue w = args.getValue(i);
+          JsonString name = e.getKey();          
+          JsonValue w = e.getValue();
           if (w != null)
           {
             String s = w.toString();

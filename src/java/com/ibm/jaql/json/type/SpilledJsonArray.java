@@ -254,9 +254,8 @@ public class SpilledJsonArray extends JsonArray
     }
     if (n < cacheSize) {     // read from cache
       JsonValue value = getCache((int)n);
-      JsonValue copiedValue = value.getEncoding().newInstance();
-      copiedValue.setCopy(value);
-      return copiedValue;
+      return value; // TODO: copying needed?
+//      return value.getCopy(null);
     } else {                  // read from file
       JsonIterator iter = iter();
       boolean valid = iter.moveN(n-cacheSize);
@@ -273,7 +272,7 @@ public class SpilledJsonArray extends JsonArray
    * @throws Exception
    */
   @Override
-  public void getValues(JsonValue[] values) throws Exception // TODO: optimize
+  public void getAll(JsonValue[] values) throws Exception // TODO: optimize
   {
     assert values.length == count();
     
@@ -312,37 +311,44 @@ public class SpilledJsonArray extends JsonArray
     freeze();
   }
 
-  /* @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue) */
   @SuppressWarnings("static-access")
   @Override
-  public void setCopy(JsonValue value) throws Exception
+  public SpilledJsonArray getCopy(JsonValue target) throws Exception
   {
-    assert value != this;
+    if (target == this) target = null;
     
-    clear();
-    SpilledJsonArray other = (SpilledJsonArray) value; 
-    long newCount = other.count;
+    SpilledJsonArray t;
+    if (target instanceof SpilledJsonArray)
+    {
+      t = (SpilledJsonArray)target;
+      t.clear();
+    }
+    else
+    {
+      t = new SpilledJsonArray(this.pagedFile, this.cacheSize);
+    }
 
     // copy cache
-    if (cacheSize != other.cacheSize) {
-      cacheSize = other.cacheSize;
-      cache = new JsonValue[cacheSize];
+    if (t.cacheSize != this.cacheSize) {
+      t.cacheSize = this.cacheSize;
+      t.cache = new JsonValue[this.cacheSize];
     }
-    int m = newCount < cacheSize ? (int)newCount : cacheSize;
+    int m = this.count < cacheSize ? (int)this.count : cacheSize;
     for (int i=0; i<m; i++) {
-      addCopy(other.cache[i]);
+      t.addCopy(cache[i]);
     }
-    assert count == m;
+    assert t.count == m;
     
     // copy spill file
-    assert spillSerializer.equals(other.spillSerializer); // trivally true at the moment
-    if (other.spillFile != null) {
-      ensureSpillFile();
-      spillFile.copy(other.spillFile);
-      count = newCount;
+    assert spillSerializer.equals(t.spillSerializer); // trivally true at the moment
+    if (spillFile != null) {
+      t.ensureSpillFile();
+      t.spillFile.copy(spillFile);
+      t.count = this.count;
     }
     
-    assert count == newCount;
+    assert t.count == this.count;
+    return t;
   }
   
   /** Clears this array. New elements can be added using {@link #addCopy(Item)} or 

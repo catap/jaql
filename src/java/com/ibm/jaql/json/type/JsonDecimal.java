@@ -18,153 +18,127 @@ package com.ibm.jaql.json.type;
 import java.math.BigDecimal;
 
 
-/**
- * 
- */
+/** A decfloat JSON value (128-bit base-10 floating point value). */
 public class JsonDecimal extends JsonNumber
 {
-  public BigDecimal value;
+  protected BigDecimal value;
 
-  /**
-   * 
-   */
+  // -- construction ------------------------------------------------------------------------------
+
+  /** Constructs a new <code>JsonDecimal</code> representing an undefined value. */
   public JsonDecimal()
   {
   }
 
-  /**
-   * @param value
-   */
+  /** Constructs a new <code>JsonDecimal</code> representing the specified value. */
   public JsonDecimal(BigDecimal value)
   {
     this.value = value;
   }
 
-  /**
-   * @param value
+  /** Constructs a new <code>JsonDecimal</code> representing the specified value.
+   *
+   * @throws NumberFormatException when the specified value cannot be parsed
    */
-  public JsonDecimal(String value)
+  public JsonDecimal(String value) throws NumberFormatException
   {
     this.value = new BigDecimal(value);
   }
 
-  /**
-   * @param value
-   */
+  /** Constructs a new <code>JsonDecimal</code> representing the specified value. */
   public JsonDecimal(long value)
   {
     this.value = new BigDecimal(value);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
-  @Override
-  public JsonEncoding getEncoding()
-  {
-    return JsonEncoding.DECIMAL;
-  }
+  // -- getters -----------------------------------------------------------------------------------
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#intValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#intValue() */
   @Override
   public int intValue()
   {
     return value.intValue();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#intValueExact()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#intValueExact() */
   @Override
-  public int intValueExact()
+  public int intValueExact() throws ArithmeticException
   {
     return value.intValueExact();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#longValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#longValue() */
   @Override
   public long longValue()
   {
     return value.longValue();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#longValueExact()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#longValueExact() */
   @Override
-  public long longValueExact()
+  public long longValueExact() throws ArithmeticException
   {
     return value.longValueExact();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#decimalValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#decimalValue() */
   @Override
   public BigDecimal decimalValue()
   {
     return value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#doubleValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValue() */
   @Override
   public double doubleValue()
   {
     return value.doubleValue();
   }
 
-  /**
-   * @param value
-   */
-  public void setValue(BigDecimal value)
+  /** Returns {@link #decimalValue()}. */
+  public BigDecimal get()
+  {
+    return value;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  @Override
+  public JsonDecimal getCopy(JsonValue target) throws Exception
+  {
+    if (target == this) target = null;
+    
+    if (target instanceof JsonDecimal)
+    {
+      JsonDecimal t = (JsonDecimal)target;
+      t.value = this.value; // BigDecimal is immutable --> can share
+      return t;
+    }
+    return new JsonDecimal(value);
+  }
+  
+  // -- mutation ----------------------------------------------------------------------------------
+  
+  /** Sets the value of this <code>JsonDecimal</code> to the specified value. */
+  public void set(BigDecimal value)
   {
     this.value = value;
   }
 
-  /**
-   * @param value
-   */
-  public void setValue(long value)
+  /** Sets the value of this <code>JsonDecimal</code> to the specified value. */
+  public void set(long value)
   {
     this.value = new BigDecimal(value);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#negate()
-   */
-  @Override
+  /** Negates this value. */
   public void negate()
   {
     value = value.negate();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+  // -- comparison/hashing ------------------------------------------------------------------------
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   @Override
   public int compareTo(Object x)
   {
@@ -180,11 +154,7 @@ public class JsonDecimal extends JsonNumber
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
@@ -206,16 +176,14 @@ public class JsonDecimal extends JsonNumber
       return canonical.hashCode();
     }
   }
+  
+  
+  // -- misc --------------------------------------------------------------------------------------
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
   @Override
-  public void setCopy(JsonValue jvalue)
+  public JsonEncoding getEncoding()
   {
-    JsonDecimal d = (JsonDecimal) jvalue;
-    value = d.value; // shared because it is immutable
+    return JsonEncoding.DECIMAL;
   }
 }

@@ -30,6 +30,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Properties;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -46,6 +47,7 @@ import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
@@ -87,12 +89,11 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
       {
         JsonParser parser = new JsonParser(new StringReader(jsonRec));
         JsonRecord jrec = (JsonRecord)parser.JsonVal();
-        int n = jrec.arity();
-        for( int i = 0 ; i < n ; i++ )
+        for (Entry<JsonString, JsonValue> f : jrec)
         {
-          JsonString key = jrec.getName(i);
-          JsonValue value = jrec.getValue(i);
-          props.setProperty(key.toString(), JsonValue.printToString(value));
+          JsonString key = f.getKey();
+          JsonValue value = f.getValue();
+          props.setProperty(key.toString(), JsonUtil.printToString(value));
         }
       }
       catch(ParseException pe)
@@ -462,12 +463,12 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
             case Types.INTEGER:
             case Types.TINYINT:
             case Types.SMALLINT:
-              ((JsonLong)values[i]).value = resultSet.getLong(i+1);
+              ((JsonLong)values[i]).set(resultSet.getLong(i+1));
               break;
             case Types.DECIMAL: 
             case Types.DOUBLE: 
             case Types.FLOAT: 
-              ((JsonDecimal)values[i]).value = resultSet.getBigDecimal(i+1);
+              ((JsonDecimal)values[i]).set(resultSet.getBigDecimal(i+1));
               break;
             case Types.CHAR:
             case Types.VARCHAR:
@@ -479,13 +480,13 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
               break;
             case Types.DATE:
               // TODO: all these need null handling...
-              ((JsonDate)values[i]).millis = resultSet.getDate(i+1).getTime();
+              ((JsonDate)values[i]).setMillis(resultSet.getDate(i+1).getTime());
               break;
             case Types.TIME:
-              ((JsonDate)values[i]).millis = resultSet.getTime(i+1).getTime();
+              ((JsonDate)values[i]).setMillis(resultSet.getTime(i+1).getTime());
               break;
             case Types.TIMESTAMP:
-              ((JsonDate)values[i]).millis = resultSet.getTimestamp(i+1).getTime();
+              ((JsonDate)values[i]).setMillis(resultSet.getTimestamp(i+1).getTime());
               break;
             case Types.BINARY:
               ((JsonBinary)values[i]).setBytes(resultSet.getBytes(i+1));

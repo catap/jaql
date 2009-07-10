@@ -41,7 +41,7 @@ public class JsonDateSerializer extends BinaryBasicSerializer<JsonDate>
       return new JsonDate(millis);
     } else {
       JsonDate t = (JsonDate)target;
-      t.millis = millis;
+      t.setMillis(millis);
       return t;
     }
   }
@@ -50,7 +50,7 @@ public class JsonDateSerializer extends BinaryBasicSerializer<JsonDate>
   @Override
   public void write(DataOutput out, JsonDate value) throws IOException
   {
-    out.writeLong(value.millis);
+    out.writeLong(value.getMillis());
   }
   
   

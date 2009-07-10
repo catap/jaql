@@ -28,6 +28,6 @@ public class JsonDecimalSerializer extends TextBasicSerializer<JsonDecimal>
   public void write(PrintStream out, JsonDecimal value, int indent)
       throws IOException
   {
-    out.print(value.value.toString());
+    out.print(value.get().toString());
   }
 }

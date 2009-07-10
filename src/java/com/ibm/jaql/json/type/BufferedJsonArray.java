@@ -17,235 +17,147 @@ package com.ibm.jaql.json.type;
 
 import com.ibm.jaql.json.util.JsonIterator;
 
-/*
- * This is a fixed-sized array (i.e., a tuple). It is used when the length of
- * the array is known at in advance and does not vary. It does NOT copy the
- * items placed inside of it.
+/** An in-memory array.
  * 
- * This array class does NOT copy items added to it; the items are referenced.
- * Therefore, it is crucial that the items remain valid for the lifetime of this
- * array.
+ * Although this class provides basic operations for mutation, it is meant to be a fixed-sized 
+ * array (i.e., a tuple). It should be used when the length of the array is known at in advance 
+ * and does not vary. 
  * 
+ * This array class does NOT copy the values added to it; they are referenced. Therefore, it is 
+ * crucial that the values remain valid for the lifetime of this array. 
  */
 public final class BufferedJsonArray extends JsonArray
 {
-  public final static JsonValue[] NO_VALUES = new JsonValue[0];
+  private final static JsonValue[] NO_VALUES = new JsonValue[0];
+  
+  /** number of values in the array */
+  private int count;
 
-  protected JsonValue[] values;
-  protected int    count;
-
-  /**
-   * @param values
-   */
+  /** buffer that stores the content of the array */
+  private JsonValue[] values;
+  
+  
+  // -- construction ------------------------------------------------------------------------------
+  
+  /** Construct a new in-memory array containing the specified values. */
   public BufferedJsonArray(JsonValue[] values)
   {
     this.values = values;
     this.count = values.length;
   }
 
-  /**
-   * @param size
-   */
+  /** Construct a new in-memory array of the specified size. The array is initially filled with
+   * <code>null</code> values. */
   public BufferedJsonArray(int size)
   {
     this(new JsonValue[size]);
   }
 
-  /**
-   * 
-   */
+  /** Construct an empty in-memory array */
   public BufferedJsonArray()
   {
     this(NO_VALUES);
   }
 
-  /**
-   * 
-   */
-  public void clear()
-  {
-    count = 0;
-  }
-
-  /**
-   * @param size
-   */
-  public final void ensureCapacity(int size)
-  {
-    if (size > values.length)
-    {
-      JsonValue[] newValues = new JsonValue[size];
-      System.arraycopy(this.values, 0, newValues, 0, values.length);
-      this.values = newValues;
-    }
-  }
-
-  /**
-   * @param size
-   */
-  public void resize(int size)
-  {
-    ensureCapacity(size);
-    this.count = size;
-  }
-
-  /**
-   * @param size
-   */
-  public void resize(long size)
-  {
-    resize((int) size);
-  }
-
-  /**
-   * Same as count() except that it returns an int.
-   * 
-   * @return
-   */
-  public final int size()
-  {
-    return count;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#count()
-   */
-  public final long count()
-  {
-    return count;
-  }
-
-  /**
-   * @param i
-   * @return
-   */
-  public JsonValue get(int i)
-  {
-    assert i < count;
-    return values[i];
-  }
-
-  /**
-   * @param i
-   * @param item
-   */
-  public void set(int i, JsonValue value)
-  {
-    assert i < count;
-    values[i] = value;
-  }
-
-  /**
-   * @param item
-   */
+  
+  // -- mutation ----------------------------------------------------------------------------------
+  
+  /** Appends the specified value to this array */
   public void add(JsonValue value)
   {
     ensureCapacity(count + 1);
     values[count] = value;
     count++;
   }
-
-    /**
-   * @param x
-   * @return
-   */
-  public final int compareTo(BufferedJsonArray x)
+  
+  /** Sets the i-th element of this array to the specified value without boundary checking. 
+   * Correctly sets the desired element whenever 0&le;<code>i</code>&le;<code>count()</code>. 
+   * Otherwise, the behaviour is unspecified. */
+  public void set(int i, JsonValue value)
   {
-    int n = count;
-    if (x.count < n)
+    assert i < count;
+    values[i] = value;
+  }
+
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  @Override
+  public BufferedJsonArray getCopy(JsonValue target) throws Exception
+  {
+    if (target == this) target = null;
+    
+    BufferedJsonArray t;
+    if (target instanceof BufferedJsonArray)
     {
-      n = x.count;
-    }
-    for (int i = 0; i < n; i++)
-    {
-      int c = values[i].compareTo(x.values[i]);
-      if (c != 0)
-      {
-        return c;
-      }
-    }
-    if (count == x.count)
-    {
-      return 0;
-    }
-    else if (count < x.count)
-    {
-      return +1;
+      t = (BufferedJsonArray)target;
+      t.resize(count);
     }
     else
     {
-      return -1;
+      t = new BufferedJsonArray(count);
     }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#compareTo(java.lang.Object)
-   */
-  @Override
-  public int compareTo(Object x)
-  {
-    if (x instanceof BufferedJsonArray)
-    {
-      return compareTo((BufferedJsonArray) x);
-    }
-    return super.compareTo(x);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue)
-   */
-  @Override
-  public void setCopy(JsonValue value) throws Exception
-  {
-    BufferedJsonArray arr = (BufferedJsonArray) value;
-    int n = arr.count;
-    resize(n);
-    for (int i = 0; i < n; i++)
-    {
-      JsonValue v = arr.values[i]; 
-      values[i] = v==null ? null : v.getCopy(values[i]);
-    }
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#getTuple(com.ibm.jaql.json.type.JValue[])
-   */
-  @Override
-  public void getValues(JsonValue[] values) throws Exception
-  {
-    assert values.length == count;
-    System.arraycopy(this.values, 0, values, 0, count);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#longHashCode()
-   */
-  @Override
-  public long longHashCode()
-  {
-    long h = initLongHash();
+    
     for (int i = 0; i < count; i++)
     {
-      h = longHashValue(h, values[i]);
+      JsonValue v = values[i]; 
+      t.values[i] = v==null ? null : v.getCopy(values[i]);
     }
-    return h;
+    return t;
+  }
+  
+  /** Ensures that the array can store up to <code>capacity</code> elements but does not change
+   * the actual size or content of the array. */
+  public final void ensureCapacity(int capacity)
+  {
+    if (capacity > values.length)
+    {
+      JsonValue[] newValues = new JsonValue[capacity];
+      System.arraycopy(this.values, 0, newValues, 0, values.length);
+      this.values = newValues;
+    }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#iter()
-   */
+  /** Resizes this array to the specified size. If <code>newSize<count()</code>, the tail of
+   * the array will be truncated. If <code>newSize>count()</code>, new elements are appended to
+   * the end of the array; their content is undefined. */
+  public void resize(int newSize)
+  {
+    // NOTE: shrinking an array and then growing it again makes the values that have been 
+    // truncated reappear: e.g., [1,2,3] --resize(2)--> [1,2] --resize(3)--> [1,2,3]  
+    ensureCapacity(newSize);
+    this.count = newSize;
+  }
+
+  /** Resizes this array to the specified size when interpreted as an <code>int</code>. See
+   * {@link #resize(int)}. */
+  public void resize(long newSize)
+  {
+    resize((int) newSize);
+  }
+
+  /** Clears this array, i.e., sets its size to zero. */
+  public void clear()
+  {
+    count = 0;
+  }
+  
+  
+  // -- getters -----------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonArray#count() */
+  @Override
+  public final long count()
+  {
+    return count;
+  }
+
+  /** Returns the size of this array. Same as {@link #count()} except that it returns an int. */
+  public final int size()
+  {
+    return count;
+  }
+
+  /* @see com.ibm.jaql.json.type.JArray#iter() */
   @Override
   public JsonIterator iter() throws Exception
   {
@@ -269,11 +181,7 @@ public final class BufferedJsonArray extends JsonArray
     };
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#nth(long)
-   */
+  /* @see com.ibm.jaql.json.type.JArray#nth(long) */
   @Override
   public JsonValue nth(long n) throws Exception
   {
@@ -284,11 +192,72 @@ public final class BufferedJsonArray extends JsonArray
     return null;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
+  /** Returns the i-th element of this array without boundary checking. Produces the desired
+   * element whenever 0&le;<code>i</code>&le;<code>count()</code>. Otherwise, the behaviour is
+   * unspecified. */
+  public JsonValue get(int i)
+  {
+    assert i < count;
+    return values[i];
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonArray#getAll(com.ibm.jaql.json.type.JsonValue[]) */
+  @Override
+  public void getAll(JsonValue[] target) throws Exception
+  {
+    assert target.length == count;
+    System.arraycopy(this.values, 0, target, 0, count);
+  }
+
+
+
+  // -- comparison/hashing ------------------------------------------------------------------------
+  
+  /** Compares this array with the specified array (deep). */
+  public int compareTo(BufferedJsonArray x)
+  {
+    int n = count;
+    if (x.count < n)
+    {
+      n = x.count;
+    }
+    for (int i = 0; i < n; i++)
+    {
+      int c = JsonUtil.compare(values[i], x.values[i]);
+      if (c != 0)
+      {
+        return c;
+      }
+    }
+    if (count == x.count)
+    {
+      return 0;
+    }
+    else if (count < x.count)
+    {
+      return +1;
+    }
+    else
+    {
+      return -1;
+    }
+  }
+
+  /* @see com.ibm.jaql.json.type.JsonArray#compareTo(java.lang.Object) */
+  @Override
+  public int compareTo(Object x)
+  {
+    if (x instanceof BufferedJsonArray)
+    {
+      return compareTo((BufferedJsonArray) x);
+    }
+    return super.compareTo(x);
+  }
+  
+
+  // -- misc --------------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
   public JsonEncoding getEncoding()
   {
     return JsonEncoding.ARRAY_FIXED;

@@ -24,6 +24,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.JsonStringSerializer;
 import com.ibm.jaql.json.type.JsonEncoding;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.JsonComparator;
 
@@ -70,7 +71,7 @@ public class DefaultJsonComparator implements JsonComparator
   @Override
   public int compare(JsonHolder a, JsonHolder b)
   {
-    return JsonValue.compare(a.value, b.value);
+    return JsonUtil.compare(a.value, b.value);
   }
 
   
@@ -81,13 +82,13 @@ public class DefaultJsonComparator implements JsonComparator
   {
     buffer.reset(bytes, offset, length);
     key1 = serializer.read(buffer, key1);
-    return JsonValue.longHashCode(key1);
+    return JsonUtil.longHashCode(key1);
   }
 
   @Override
   public long longHash(JsonHolder key)
   {
-    return JsonValue.longHashCode(key.value);
+    return JsonUtil.longHashCode(key.value);
   }
 
 }

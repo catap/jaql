@@ -63,16 +63,16 @@ public class ModFn extends Expr
     long mod;
     if (long1 && long2)
     {
-      mod = ((JsonLong) w1).value % ((JsonLong) w2).value;
+      mod = ((JsonLong) w1).get() % ((JsonLong) w2).get();
     }
     else
     {
       BigDecimal x1 = long1
-          ? new BigDecimal(((JsonLong) w1).value)
-          : ((JsonDecimal) w1).value;
+          ? new BigDecimal(((JsonLong) w1).get())
+          : ((JsonDecimal) w1).get();
       BigDecimal x2 = long2
-          ? new BigDecimal(((JsonLong) w2).value)
-          : ((JsonDecimal) w2).value;
+          ? new BigDecimal(((JsonLong) w2).get())
+          : ((JsonDecimal) w2).get();
       mod = x1.remainder(x2, MathContext.DECIMAL128).longValue();
     }
     return new JsonLong(mod); // TODO: memory

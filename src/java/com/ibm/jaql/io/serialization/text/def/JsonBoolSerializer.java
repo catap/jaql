@@ -25,6 +25,6 @@ public class JsonBoolSerializer extends TextBasicSerializer<JsonBool>
   @Override
   public void write(PrintStream out, JsonBool value, int indent)
   {
-    out.print(value.getValue() ? "true" : "false");
+    out.print(value.get() ? "true" : "false");
   }
 }

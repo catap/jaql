@@ -17,85 +17,80 @@ package com.ibm.jaql.json.type;
 
 import com.ibm.jaql.json.schema.Schema;
 
-/**
- * 
- */
+/** A JSON value that stores a JSON schema. */
 public class JsonSchema extends JsonAtom
 {
   protected Schema schema; // This value is shared, so don't mutate it.
 
-  /**
-   * 
-   */
+  // -- construction ------------------------------------------------------------------------------
+
+  /** Constructs a new <code>JsonSchema</code> representing an invalid schema. */
   public JsonSchema()
   {
   }
 
-  /**
-   * @param schema
-   */
+  /** Constructs a new <code>JsonSchema</code> representing the specified schema. */
   public JsonSchema(Schema schema)
   {
     this.schema = schema;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
-  @Override
-  public JsonEncoding getEncoding()
+
+  // -- getters -----------------------------------------------------------------------------------
+
+  /** Returns the schema represented by this value. */
+  public Schema get()
   {
-    return JsonEncoding.SCHEMA;
+    return schema;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  @Override
+  public JsonSchema getCopy(JsonValue target) throws Exception
+  {
+    if (target == this) target = null;
+    
+    if (target instanceof JsonSchema)
+    {
+      JsonSchema t = (JsonSchema)target;
+      t.schema = this.schema; // immutable
+      return t;
+    }
+    return new JsonSchema(schema);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+
+  // -- mutation ----------------------------------------------------------------------------------
+
+  /** Sets the schema represented by this value. */
+  public void set(Schema schema)
+  {
+    this.schema = schema;
+  }
+  
+
+  // -- comparison/hashing ------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   public int compareTo(Object x)
   {
     throw new RuntimeException("schema are not comparable");
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
     throw new RuntimeException("schema are not hashable");
   }
+  
+  
+  // -- misc --------------------------------------------------------------------------------------
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
   @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  public JsonEncoding getEncoding()
   {
-    JsonSchema s = (JsonSchema) jvalue;
-    schema = s.schema;
-  }
-
-  /**
-   * @return
-   */
-  public Schema getSchema()
-  {
-    return schema;
-  }
-
-  /**
-   * @param schema
-   */
-  public void setSchema(Schema schema)
-  {
-    this.schema = schema;
+    return JsonEncoding.SCHEMA;
   }
 }

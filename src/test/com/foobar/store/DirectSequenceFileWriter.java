@@ -88,12 +88,12 @@ public class DirectSequenceFileWriter {
     // sample data
     Vector<JsonValue> v = new Vector<JsonValue>();
     BufferedJsonRecord r = new BufferedJsonRecord();
-    r.add("a", new JsonString("sample"));
-    r.add("b", new JsonString("something else"));
+    r.add(new JsonString("a"), new JsonString("sample"));
+    r.add(new JsonString("b"), new JsonString("something else"));
     v.add(r);
     r = new BufferedJsonRecord();
-    r.add("a", new JsonLong(123));
-    r.add("c", new JsonString("back to string"));
+    r.add(new JsonString("a"), new JsonLong(123));
+    r.add(new JsonString("c"), new JsonString("back to string"));
     v.add(r);
     
     DirectSequenceFileWriter.writeJSONUsingAdapter(v, "fileUsingAdapter");

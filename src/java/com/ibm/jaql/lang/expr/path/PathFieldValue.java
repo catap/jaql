@@ -99,7 +99,7 @@ public class PathFieldValue extends PathStep
     {
       return null;
     }
-    JsonValue value = rec.getValue(name);
+    JsonValue value = rec.get(name);
     return nextStep(context, value);
   }
 
