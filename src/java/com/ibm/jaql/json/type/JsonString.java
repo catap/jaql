@@ -147,6 +147,28 @@ public class JsonString extends JsonAtom
     return true;
   }
 
+  /** Returns true if this JSON string ends with the given string. This method currently compares
+   * the UTF-8 codes (not characters) of both strings. */
+  public boolean endsWith(JsonString suffix)
+  {
+    // TODO: this does UTF-8 comparision; not character comparison
+    int n = suffix.length;
+    if (length < n)
+    {
+      return false;
+    }
+    byte[] myBytes = bytes;
+    byte[] suffixBytes = suffix.bytes;
+    for (int i = 0; i < n; i++)
+    {
+      if (myBytes[length-n+i] != suffixBytes[i])
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+  
   /** Returns the internal byte buffer that backs this JSON string. The bytes should not be modified
    * (or methods like {@link toString()} or {@link #hashCode()} might not work). */
   public byte[] getInternalBytes()
