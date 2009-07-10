@@ -42,7 +42,7 @@ public class JsonParser implements JsonParserConstants {
     }
 
     @Override
-    public void setCopy(JsonValue jvalue) throws Exception
+    public JsonValue getCopy(JsonValue target) throws Exception
     {
       throw new UnsupportedOperationException();
     }
@@ -234,7 +234,7 @@ public class JsonParser implements JsonParserConstants {
     name = Name();
     jj_consume_token(COLON);
     value = JsonVal();
-          jRecord.add(name, value);
+          jRecord.add(new JsonString(name), value);
   }
 
   final public String Name() throws ParseException {
