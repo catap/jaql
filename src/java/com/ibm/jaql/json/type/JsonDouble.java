@@ -18,76 +18,59 @@ package com.ibm.jaql.json.type;
 import java.math.BigDecimal;
 
 
-/**
- * 
- */
+/** A double JSON value (64-bit base-2 floating point value). */
 public class JsonDouble extends JsonNumeric
 {
-  public double value;
+  protected double value = 0;
 
-  /**
-   * 
-   */
+  // -- construction ------------------------------------------------------------------------------
+
+  /** Constructs a new <code>JsonDouble</code> having value 0. */
   public JsonDouble()
   {
   }
 
-  /**
-   * @param value
-   */
+  /** Constructs a new <code>JsonDouble</code> with the specified value. */
   public JsonDouble(double value)
   {
     this.value = value;
   }
 
-  /**
-   * @param str
-   */
-  public JsonDouble(String str)
+  /** Constructs a new <code>JsonDouble</code> from the specified value. 
+  *
+  * @throws NumberFormatException when <code>value</code> does not represent a valid double
+  */
+  public JsonDouble(String value) throws NumberFormatException
   {
-    value = Double.parseDouble(str);
+    this.value = Double.parseDouble(value);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#decimalValue()
-   */
+  // -- getters -----------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonNumeric#decimalValue() */
   @Override
   public BigDecimal decimalValue()
   {
     return new BigDecimal(value);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#doubleValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValue() */
   @Override
   public double doubleValue()
   {
     return value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#intValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#intValue() */
   @Override
   public int intValue()
   {
     return (int) value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#intValueExact()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#intValueExact() */
   @Override
-  public int intValueExact()
+  public int intValueExact() throws ArithmeticException
   {
     int x = (int) value;
     if (x != value) // TODO: is this the best way to determine exactness?
@@ -97,24 +80,16 @@ public class JsonDouble extends JsonNumeric
     return x;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#longValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#longValue() */
   @Override
   public long longValue()
   {
     return (long) value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#longValueExact()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#longValueExact() */
   @Override
-  public long longValueExact()
+  public long longValueExact() throws ArithmeticException
   {
     long x = (long) value;
     if (x != value) // TODO: is this the best way to determine exactness?
@@ -124,45 +99,44 @@ public class JsonDouble extends JsonNumeric
     return x;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#negate()
-   */
+  /** Returns {@link #doubleValue()}. */
+  public double get()
+  {
+    return value;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
+  public JsonDouble getCopy(JsonValue target) throws Exception
+  {
+    if (target == this) target = null;
+    
+    if (target instanceof JsonDouble)
+    {
+      JsonDouble t = (JsonDouble)target;
+      t.value = this.value;
+      return t;
+    }
+    return new JsonDouble(value);
+  }
+  
+  // -- mutation ----------------------------------------------------------------------------------
+
+  /** Negates this value */ 
   public void negate()
   {
     value = -value;
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
-  @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  
+  /** Sets the value of this <code>JsonDouble</code> to the specified value. */
+  public void set(double value)
   {
-    JsonDouble x = (JsonDouble) jvalue;
-    value = x.value;
+    this.value = value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
-  @Override
-  public JsonEncoding getEncoding()
-  {
-    return JsonEncoding.DOUBLE;
-  }
+  // -- comparison/hashing ------------------------------------------------------------------------
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   @Override
   public int compareTo(Object obj)
   {
@@ -181,15 +155,20 @@ public class JsonDouble extends JsonNumeric
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
     long x = Double.doubleToLongBits(value);
     return JsonLong.longHashCode(x);
+  }
+  
+  // -- misc --------------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
+  @Override
+  public JsonEncoding getEncoding()
+  {
+    return JsonEncoding.DOUBLE;
   }
 }

@@ -61,7 +61,7 @@ public final class SumAgg extends AlgebraicAggregate
           throw new RuntimeException("cannot sum doubles and decimals");
         }
         sawLong = true;
-        lsum += ((JsonLong)value).value;
+        lsum += ((JsonLong)value).get();
       }
       else if( value instanceof JsonDouble )
       {
@@ -70,18 +70,18 @@ public final class SumAgg extends AlgebraicAggregate
           throw new RuntimeException("cannot sum doubles and decimals");
         }
         sawDouble = true;
-        dblSum += ((JsonDouble)value).value;
+        dblSum += ((JsonDouble)value).get();
       }
       else
       {
         JsonDecimal n = (JsonDecimal)value;      // TODO: need a mutable BigDecimal...
         if( decSum == null )
         {
-          decSum = n.value;
+          decSum = n.get();
         }
         else
         {
-          decSum = decSum.add(n.value);
+          decSum = decSum.add(n.get());
         }
       }
     }

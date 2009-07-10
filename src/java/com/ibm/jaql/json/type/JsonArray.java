@@ -24,7 +24,8 @@ import com.ibm.jaql.util.BaseUtil;
 /** A JSON array. */
 public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
 {
-  public final static JsonArray EMPTY = new BufferedJsonArray(new JsonValue[0]); // TODO: should be immutable
+  public final static JsonArray EMPTY 
+      = new BufferedJsonArray(new JsonValue[0]); // TODO: should be immutable
 
   
   // -- abstract methods --------------------------------------------------------------------------
@@ -35,14 +36,15 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
    */
   public abstract long count();
 
-  /** Returns an <code>Iter</code> over the elements in this array.
+  /** Returns an {@link JsonIterator} over the elements in this array.
    *   
-   * @return an <code>Iter</code> over the elements in this array
+   * @return an iterator over the elements in this array
    * @throws Exception
    */
   public abstract JsonIterator iter() throws Exception;
 
   /** Returns the value at position <code>n</code> or <code>null<code> if there is no such value.
+   * This method is expensive in some implementations. 
    * 
    * @param n a position (0-based)
    * @return the value at position <code>n</code> or <code>null<code>
@@ -50,17 +52,14 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
    */
   public abstract JsonValue nth(long n) throws Exception;
 
-  /** Copies the elements of this array into <code>values</code>. The length of <code>values</code>
-   * has to be identical to the length of this array as produced by {@link #count()}.
+  /** Fills the specified array with the elements of this array (without necessarily copying the 
+   * elements themselves). The length of <code>target</code> has to be identical to the length of 
+   * this array as produced by {@link #count()}.
    * 
-   * @param values an array
+   * @param target an array
    * @throws Exception
    */
-  public abstract void getValues(JsonValue[] values) throws Exception;
-
-  /* @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue) */
-  @Override
-  public abstract void setCopy(JsonValue value) throws Exception;
+  public abstract void getAll(JsonValue[] target) throws Exception;
 
 
   // -- business methods --------------------------------------------------------------------------
@@ -71,9 +70,9 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
     return count() == 0;
   }
 
-  /** This is a convenience method that allows using <code>JsonArray</code>s in 
-   * <code>foreach</code> statements. It as implemented by a call to {@link #iter()}; all
-   * exceptions are rethrown as runtime exceptions. */ 
+  /** Returns an iterator over this array. This is a convenience method that allows 
+   * using <code>JsonArray</code>s in <code>foreach</code> statements. It as implemented by a 
+   * call to {@link #iter()}; all exceptions are rethrown as runtime exceptions. */ 
   @Override
   public JsonIterator iterator() {
     try 
@@ -85,7 +84,7 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
       throw new UndeclaredThrowableException(e);
     }    
   }
-  
+
   /* @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object) */
   @Override
   public final boolean equals(Object x)
@@ -168,4 +167,5 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
     long v = value==null ? 1 : value.longHashCode();
     return (h ^ v) * BaseUtil.GOLDEN_RATIO_64;
   }
+ 
 }

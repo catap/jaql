@@ -21,7 +21,8 @@ import com.ibm.jaql.json.util.JsonIterator;
 /**
  * 
  */
-public class JavaJsonArray extends JsonArray
+//TODO: cleanup
+public class JavaJsonArray extends JsonArray 
 {
   protected MetaArray metaArray;
   protected Object    value;
@@ -101,7 +102,7 @@ public class JavaJsonArray extends JsonArray
    * @see com.ibm.jaql.json.type.JArray#getTuple(com.ibm.jaql.json.type.Item[])
    */
   @Override
-  public void getValues(JsonValue[] values) throws Exception
+  public void getAll(JsonValue[] values) throws Exception
   {
     JsonIterator iter = metaArray.iter(value);
     for (int i = 0; i < values.length; i++)
@@ -112,7 +113,7 @@ public class JavaJsonArray extends JsonArray
             + " but found less");
       }
       JsonValue value = iter.current();
-      values[i] = JsonValue.getCopy(value, values[i]);
+      values[i] = JsonUtil.getCopy(value, values[i]);
     }
     if (iter.moveNext())
     {
@@ -145,16 +146,24 @@ public class JavaJsonArray extends JsonArray
   }
 
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JArray#copy(com.ibm.jaql.json.type.JValue)
-   */
   @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  public JavaJsonArray getCopy(JsonValue target) throws Exception
   {
-    JavaJsonRecord that = (JavaJsonRecord) jvalue;
-    this.value = metaArray.copy(this.value, that.value);
+    if (target == this) target = null;
+    
+    JavaJsonArray t;
+    if (target instanceof JavaJsonArray)
+    {
+      t = (JavaJsonArray) target;
+    }
+    else
+    {
+      t = new JavaJsonArray();
+    }
+    
+    t.metaArray = this.metaArray;
+    t.buffer = metaArray.makeValue();
+    t.value = metaArray.copy(t.value, this.value);
+    return t;  
   }
-
 }

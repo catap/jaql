@@ -63,7 +63,7 @@ public final class MinAgg extends AlgebraicAggregate
     }
     else if( value.compareTo(min) < 0 )
     {
-      min.setCopy(value);
+      min = value.getCopy(min);
     }
   }
 

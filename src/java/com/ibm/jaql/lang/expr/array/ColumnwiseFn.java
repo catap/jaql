@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.array;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -73,11 +74,10 @@ public class ColumnwiseFn extends Expr
       {
         continue;
       }
-      int n = r.arity();
-      for( int i = 0 ; i < n ; i++ )
+      for (Entry<JsonString, JsonValue> e : r)
       {
-        JsonString name = r.getName(i);
-        JsonValue val = r.getValue(i);
+        JsonString name = e.getKey();
+        JsonValue val = e.getValue();
         SpilledJsonArray arr = temp.get(name);
         if( arr == null )
         {
@@ -95,7 +95,7 @@ public class ColumnwiseFn extends Expr
       }
       count++;
       // add null for any column that wasn't in this record
-      n = arrays.size();
+      int n = arrays.size();
       for(int i = 0 ; i < n ; i++)
       {
         SpilledJsonArray arr = arrays.get(i);

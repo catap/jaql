@@ -31,6 +31,8 @@ import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -186,7 +188,7 @@ class ArrayRecordReader implements RecordReader<JsonHolder, JsonHolder>
     {
       try
       {
-        value.value = JsonValue.getCopy(splitValue, value.value);
+        value.value = JsonUtil.getCopy(splitValue, value.value);
         seen = true;
         return true;
       }
@@ -321,7 +323,7 @@ class ArrayInputConfigurator implements InitializableConfSetter
    */
   protected void set(JobConf conf) throws Exception
   {
-    JsonArray data = (JsonArray) options.getValue(ArrayInputFormat.ARRAY_NAME);
+    JsonArray data = (JsonArray) options.get(new JsonString(ArrayInputFormat.ARRAY_NAME));
     ConfUtil.writeConfArray(conf, ArrayInputFormat.JOB_ARRAY_NAME, data);
   }
 

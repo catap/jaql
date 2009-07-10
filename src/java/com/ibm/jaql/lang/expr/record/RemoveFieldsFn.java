@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.record;
 
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -66,13 +67,12 @@ public class RemoveFieldsFn extends Expr
 
     BufferedJsonRecord outRec = new BufferedJsonRecord(); // TODO: memory
 
-    int n = rec.arity();
-    for (int i = 0; i < n; i++)
+    for (Entry<JsonString, JsonValue> e : rec)
     {
-      JsonString nm = rec.getName(i);
+      JsonString nm = e.getKey();
       if (!removeNames.contains(nm))
       {
-        outRec.add(nm, rec.getValue(i));
+        outRec.add(nm, e.getValue());
       }
     }
 

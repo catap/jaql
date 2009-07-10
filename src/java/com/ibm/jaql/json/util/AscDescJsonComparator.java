@@ -59,8 +59,8 @@ public class AscDescJsonComparator extends DefaultJsonComparator
     int code1 = BaseUtil.readVUInt(input1);
     int code2 = BaseUtil.readVUInt(input2);
     assert code1>0 && code2>0;
-    JsonEncoding encoding1 = JsonEncoding.valueOf(code1);
-    JsonEncoding encoding2 = JsonEncoding.valueOf(code2);
+    JsonEncoding encoding1 = JsonEncoding.getEncoding(code1);
+    JsonEncoding encoding2 = JsonEncoding.getEncoding(code2);
 
     // check that we have arrays and read their length
     long l1 = 0;

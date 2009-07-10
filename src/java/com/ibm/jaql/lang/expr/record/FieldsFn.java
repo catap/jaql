@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.expr.record;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -74,22 +73,7 @@ public final class FieldsFn extends IterExpr
       return JsonIterator.NULL; // TODO: should this be []?
     }
     
-    final BufferedJsonArray pair = new BufferedJsonArray(2);
-    return new JsonIterator(pair) {
-      int slot = 0;
-
-      public boolean moveNext() throws Exception
-      {
-        if (slot >= rec.arity())
-        {
-          return false;
-        }
-        pair.set(0, rec.getName(slot));
-        pair.set(1, rec.getValue(slot));
-        slot++;
-        return true; // currentValue == pair
-      }
-    };
+    return rec.keyValueIter();
   }
 
 }

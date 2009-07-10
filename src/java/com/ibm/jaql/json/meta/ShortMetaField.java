@@ -59,7 +59,7 @@ public class ShortMetaField extends MetaField
       IllegalAccessException
   {
     short x = field.getShort(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

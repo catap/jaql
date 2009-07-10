@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 import com.ibm.jaql.lang.core.JaqlFunction;
 
+/** Enumeration of all JSON types. */
 public enum JsonType
 {
   UNKNOWN(null, ""), // bogus item type used as an indicator

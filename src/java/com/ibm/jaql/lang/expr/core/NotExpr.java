@@ -84,6 +84,6 @@ public class NotExpr extends Expr
     {
       return b;
     }
-    return JsonBool.make(!b.getValue());
+    return JsonBool.makeShared(!b.get());
   }
 }

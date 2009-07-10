@@ -72,7 +72,7 @@ public class ConstArrayAccess extends Rewrite
     }
     else
     {
-      long i = li.value;
+      long i = li.get();
       if (i < 0 || i >= array.numChildren())
       {
         replaceBy = new ConstExpr(null);

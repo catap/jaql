@@ -67,13 +67,13 @@ public class ToNumberFn extends Expr
       try
       {
         long x = Long.parseLong(s);
-        jlong.setValue(x);
+        jlong.set(x);
         num = jlong;
       }
       catch(Exception e)
       {
         BigDecimal x = new BigDecimal(s, MathContext.DECIMAL128);
-        jdec.setValue(x);
+        jdec.set(x);
         num = jdec;
       }
     }
@@ -82,18 +82,18 @@ public class ToNumberFn extends Expr
       JsonNumeric n = (JsonNumeric)w;
       try
       {
-        jlong.setValue(n.longValueExact());
+        jlong.set(n.longValueExact());
         num = jlong;
       }
       catch(Exception ex)
       {
-        jdec.setValue(n.decimalValue());
+        jdec.set(n.decimalValue());
         num = jdec;
       }
     }
     else if (w instanceof JsonBool)
     {
-      if (((JsonBool) w).getValue())
+      if (((JsonBool) w).get())
       {
         return JsonLong.ONE;
       }

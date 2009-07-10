@@ -67,8 +67,8 @@ public final class ArgMaxAgg extends AlgebraicAggregate
     }
     else if( key.compareTo(max) > 0 )
     {
-      max.setCopy(key);
-      arg.setCopy(value);
+      max = key.getCopy(max);
+      arg = value.getCopy(arg);
     }
   }
 

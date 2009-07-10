@@ -63,11 +63,11 @@ public class ExpFn extends Expr
     BigDecimal n1, n2;
     if (value1 instanceof JsonLong)
     {
-      n1 = new BigDecimal(((JsonLong) value1).value);
+      n1 = new BigDecimal(((JsonLong) value1).get());
     }
     else
     {
-      n1 = ((JsonDecimal) value1).value;
+      n1 = ((JsonDecimal) value1).get();
     }
     // TODO: How I hate Java's decimal support... get better decimal exp
     n2 = new BigDecimal(Math.exp(n1.doubleValue()), MathContext.DECIMAL128);

@@ -59,7 +59,7 @@ public class FloatMetaField extends MetaField
       IllegalAccessException
   {
     float x = field.getFloat(obj);
-    ((JsonDouble) target).value = x;
+    ((JsonDouble) target).set(x);
     return target;
   }
 

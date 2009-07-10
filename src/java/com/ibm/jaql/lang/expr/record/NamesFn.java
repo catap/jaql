@@ -59,19 +59,6 @@ public class NamesFn extends IterExpr
     {
       return JsonIterator.EMPTY; // TODO: should this return null? If so, then not the same as fields($rec)[*][0]
     }
-    return new JsonIterator() {
-      int  i    = 0;
-
-      public boolean moveNext() throws Exception
-      {
-        if (i < rec.arity())
-        {
-          currentValue = rec.getName(i);
-          i++;
-          return true;
-        }
-        return false;
-      }
-    };
+    return rec.keyIter();
   }
 }

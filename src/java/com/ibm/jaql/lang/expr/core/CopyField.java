@@ -132,7 +132,7 @@ public class CopyField extends FieldExpr
     JsonRecord inrec = (JsonRecord) recExpr().eval(context);
     if (inrec != null)
     {
-      JsonValue value = inrec.getValue(name, null);
+      JsonValue value = inrec.get(name, null);
       if( when == When.DEFINED )
       {
         if( value != null )

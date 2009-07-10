@@ -17,38 +17,32 @@ package com.ibm.jaql.json.type;
 
 import java.math.BigDecimal;
 
-/**
- * The base of all numeric types. Not all numeric types are the jaql type
- * "number", and therefore are not derived from JNumber (eg. JDouble).
- */
+/** The base of all numeric types. Not all numeric types are also of type number and therefore 
+ * are not derived from {@link JsonNumber} (eg. {@link JsonDouble}. */
 public abstract class JsonNumeric extends JsonAtom
 {
-  /**
-   * @return
-   */
+  // -- getters -----------------------------------------------------------------------------------
+  
+  /** If this numeric value is representable as an integer (after rounding), returns it as an 
+   * integer value. Otherwise the result is undefined. */
   public abstract int intValue();
-  /**
-   * @return
-   */
-  public abstract int intValueExact();
-  /**
-   * @return
-   */
+
+  /** If this numeric value is representable as an integer (after rounding), returns it as an 
+   * integer value. Otherwise throws an {@link ArithmeticException}. */
+  public abstract int intValueExact() throws ArithmeticException;
+
+  /** If this numeric value is representable as a long (after rounding), returns it as a 
+   * long value. Otherwise the result is undefined. */
   public abstract long longValue();
-  /**
-   * @return
-   */
-  public abstract long longValueExact();
-  /**
-   * @return
-   */
+
+  /** If this numeric value is representable as a long (after rounding), returns it as a 
+   * long value. Otherwise throws an {@link ArithmeticException}. */
+  public abstract long longValueExact() throws ArithmeticException;
+  
+  /** Returns this numeric value as 128-bit decimal floating point number. */
   public abstract BigDecimal decimalValue();
-  /**
-   * @return
-   */
+  
+  /** If this numeric value is representable as an double value, returns it as an double value. 
+   * Otherwise, returns some "close" double value. */
   public abstract double doubleValue();
-  /**
-   * 
-   */
-  public abstract void negate();
 }

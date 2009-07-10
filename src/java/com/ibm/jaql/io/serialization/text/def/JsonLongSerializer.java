@@ -28,6 +28,6 @@ public class JsonLongSerializer extends TextBasicSerializer<JsonLong>
   public void write(PrintStream out, JsonLong value, int indent)
       throws IOException
   {
-    out.print(value.value);
+    out.print(value.get());
   }
 }

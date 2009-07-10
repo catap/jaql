@@ -59,7 +59,7 @@ public class DoubleMetaField extends MetaField
       IllegalAccessException
   {
     double x = field.getDouble(obj);
-    ((JsonDouble) target).value = x;
+    ((JsonDouble) target).set(x);
     return target;
   }
 

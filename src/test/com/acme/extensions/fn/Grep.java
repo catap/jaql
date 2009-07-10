@@ -57,7 +57,7 @@ public class Grep
     if (flags != null)
     {
       String s = flags.toString();
-      for (int i = 0; i < flags.getLength(); i++)
+      for (int i = 0; i < flags.lengthUtf8(); i++)
       {
         switch (s.charAt(i))
         {

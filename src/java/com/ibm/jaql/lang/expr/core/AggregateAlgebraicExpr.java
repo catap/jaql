@@ -93,7 +93,7 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
     {
       hadInput = true;
       JsonArray arr = (JsonArray)value;
-      arr.getValues(tempAggs);
+      arr.getAll(tempAggs);
       for(int i = 0 ; i < aggs.length ; i++)
       {
         aggs[i].addPartial(tempAggs[i]);

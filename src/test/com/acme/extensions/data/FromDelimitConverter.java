@@ -43,8 +43,8 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
   
   private static final Log LOG             = LogFactory.getLog(FromDelimitConverter.class.getName());
   
-  public static final String DELIMITER_NAME = "delimiter";
-  public static final String HEADER_NAME = "header";
+  public static final JsonString DELIMITER_NAME = new JsonString("delimiter");
+  public static final JsonString HEADER_NAME = new JsonString("header");
   
   private String delimitter = ",";
   private JsonArray header = null;
@@ -54,13 +54,13 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
   {
     if(options != null) {
       // 1. check for delimiter override
-      JsonValue arg = options.getValue(DELIMITER_NAME);
+      JsonValue arg = options.get(DELIMITER_NAME);
       if(arg != null) {
         delimitter = arg.toString();
       }
       
       // 2. check for header
-      arg = options.getValue(HEADER_NAME);
+      arg = options.get(HEADER_NAME);
       if(arg != null) {
         try {
           header = (JsonArray) arg;
@@ -125,7 +125,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
         
         for(int i = 0; i < n; i++) {
           JsonString name = (JsonString) names.nth(i);
-          ((JsonString)tgt.getRequired(name.toString())).set(vals[i]);
+          ((JsonString)tgt.getRequired(name)).set(vals[i]);
         }
       }
       

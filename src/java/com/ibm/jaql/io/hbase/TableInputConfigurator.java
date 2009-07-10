@@ -79,7 +79,7 @@ public class TableInputConfigurator implements InitializableConfSetter
     JsonArray columnNames = null;
     if (options != null)
     {
-      columnNames = (JsonArray) options.getValue("columns");
+      columnNames = (JsonArray) options.get(new JsonString("columns"));
     }
     if (columnNames == null)
     {
@@ -108,22 +108,22 @@ public class TableInputConfigurator implements InitializableConfSetter
     if (options != null)
     {
       // set timestamp
-      JsonLong timestampValue = (JsonLong) options.getValue("timestamp");
+      JsonLong timestampValue = (JsonLong) options.get(new JsonString("timestamp"));
       if (timestampValue != null)
       {
         conf.set(JaqlTableInputFormat.JOB_TS, String
-            .valueOf(timestampValue.value));
+            .valueOf(timestampValue.get()));
       }
 
       // set start key
-      JsonString lowKeyArg = (JsonString) options.getValue("lowKey");
+      JsonString lowKeyArg = (JsonString) options.get(new JsonString("lowKey"));
       if (lowKeyArg != null)
       {
         conf.set(JaqlTableInputFormat.JOB_LOWKEY, lowKeyArg.toString());
       }
 
       // set the end key
-      JsonString highKeyArg = (JsonString) options.getValue("highKey");
+      JsonString highKeyArg = (JsonString) options.get(new JsonString("highKey"));
       if (highKeyArg != null)
       {
         conf.set(JaqlTableInputFormat.JOB_HIGHKEY, highKeyArg.toString());

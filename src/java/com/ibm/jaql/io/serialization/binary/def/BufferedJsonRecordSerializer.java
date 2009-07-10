@@ -65,7 +65,7 @@ public class BufferedJsonRecordSerializer extends BinaryBasicSerializer<Buffered
       values[i] = valueSerializer.read(in, values[i]);
     }
     
-    t.set(names, values, arity);    
+    t.setInternal(names, values, arity);    
     return t;
   }
 
@@ -73,12 +73,12 @@ public class BufferedJsonRecordSerializer extends BinaryBasicSerializer<Buffered
   @Override
   public void write(DataOutput out, BufferedJsonRecord value) throws IOException
   {
-    int arity = value.arity();
+    int arity = value.size();
     BaseUtil.writeVUInt(out, arity);
     for (int i = 0; i < arity; i++)
     {
-      nameSerializer.write(out, value.getName(i));
-      valueSerializer.write(out, value.getValue(i));
+      nameSerializer.write(out, value.nameOf(i));
+      valueSerializer.write(out, value.valueOf(i));
     }    
   }
   

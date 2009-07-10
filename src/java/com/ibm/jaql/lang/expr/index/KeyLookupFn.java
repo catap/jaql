@@ -19,6 +19,7 @@ import java.util.HashMap;
 
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -72,9 +73,9 @@ public class KeyLookupFn extends IterExpr
     for (JsonValue av : iter)
     {
       JsonArray a = JaqlUtil.enforceNonNull((JsonArray)av);
-      a.getValues(keyval);
-      JsonValue key = JsonValue.getCopy(keyval[0], null);
-      JsonValue val = JsonValue.getCopy(keyval[1], null);
+      a.getAll(keyval);
+      JsonValue key = JsonUtil.getCopy(keyval[0], null);
+      JsonValue val = JsonUtil.getCopy(keyval[1], null);
       inner.put(key, val);
     }
     
@@ -92,7 +93,7 @@ public class KeyLookupFn extends IterExpr
           return false;
         }
         JsonArray a = JaqlUtil.enforceNonNull((JsonArray)iter.current());
-        a.getValues(keyval);
+        a.getAll(keyval);
         JsonValue val = inner.get(keyval[0]);
         resultArray.set(0, keyval[0]);
         resultArray.set(1, keyval[1]);

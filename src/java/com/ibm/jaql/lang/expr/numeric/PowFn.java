@@ -79,7 +79,7 @@ public class PowFn extends Expr
     // TODO: How I hate Java's decimal support... get better decimal pow...
     if( value2 instanceof JsonLong )
     {
-      long y = ((JsonLong)value2).longValue();
+      long y = ((JsonLong)value2).get();
       if( y >= Integer.MIN_VALUE && y <= Integer.MAX_VALUE )
       {
         BigDecimal x = ((JsonNumber)value1).decimalValue();

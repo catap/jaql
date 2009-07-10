@@ -36,8 +36,8 @@ import antlr.TokenStreamException;
 import antlr.collections.impl.BitSet;
 
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -235,19 +235,19 @@ public abstract class JaqlBaseTestCase extends TestCase
 //        iter.print(str);
 
         JsonValue value = expr.eval(context);
-        JsonValue.print(str, value);
+        JsonUtil.print(str, value);
         if (!schema.matches(value))
         {
-          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH SCHEMA\n" + schema);        
+          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH\n" + schema);        
         }
       }
       else
       {
         JsonValue value = expr.eval(context);
-        JsonValue.print(str, value);
+        JsonUtil.print(str, value);
         if (!schema.matches(value))
         {
-          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH SCHEMA\n" + schema);        
+          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH\n" + schema);        
         }
       }
     }

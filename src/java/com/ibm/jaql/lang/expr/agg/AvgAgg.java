@@ -79,10 +79,10 @@ public class AvgAgg extends AlgebraicAggregate
   {
     JsonArray arr = (JsonArray)value;
     JsonValue[] pair = new JsonValue[2];
-    arr.getValues(pair);
+    arr.getAll(pair);
     summer.add(pair[0]);
     JsonLong jlong = (JsonLong)pair[1];
-    count += jlong.value;
+    count += jlong.get();
   }
 
   @Override

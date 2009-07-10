@@ -77,7 +77,7 @@ public class BooleanMetaArray extends MetaArray
       {
         if (i < arr.length)
         {
-          jbool.value = arr[i++];
+          jbool.set(arr[i++]);
           return true; // currentValue == jbool
         }
         return false;
@@ -97,7 +97,7 @@ public class BooleanMetaArray extends MetaArray
     boolean[] arr = (boolean[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonBool) target).value = arr[(int) n];
+      ((JsonBool) target).set(arr[(int) n]);
       return target;
     }
     else

@@ -120,8 +120,8 @@ public class BinarySchema extends Schema
     JsonBinary b = (JsonBinary)value;
     
     // check length
-    if (!(minLength==null || b.getLength()>=minLength.value)) return false;
-    if (!(maxLength==null || b.getLength()<=maxLength.value)) return false;
+    if (!(minLength==null || b.length()>=minLength.get())) return false;
+    if (!(maxLength==null || b.length()<=maxLength.get())) return false;
 
     // everything ok
     return true;

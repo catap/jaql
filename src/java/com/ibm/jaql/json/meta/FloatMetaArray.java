@@ -80,7 +80,7 @@ public class FloatMetaArray extends MetaArray
       {
         if (i < arr.length)
         {
-          jdouble.value = arr[i++];
+          jdouble.set(arr[i++]);
           return true; // currentValue == jdouble
         }
         return false;
@@ -100,7 +100,7 @@ public class FloatMetaArray extends MetaArray
     float[] arr = (float[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonDouble) target).value = arr[(int) n];
+      ((JsonDouble) target).set(arr[(int) n]);
       return target;
     }
     else

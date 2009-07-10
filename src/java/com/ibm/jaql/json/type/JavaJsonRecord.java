@@ -15,11 +15,15 @@
  */
 package com.ibm.jaql.json.type;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import com.ibm.jaql.json.meta.MetaRecord;
 
-/**
+/** 
  * 
  */
+// TODO: cleanup
 public class JavaJsonRecord extends JsonRecord
 {
   protected MetaRecord meta;
@@ -68,7 +72,7 @@ public class JavaJsonRecord extends JsonRecord
    * @see com.ibm.jaql.json.type.JRecord#arity()
    */
   @Override
-  public int arity()
+  public int size()
   {
     return fieldBuffers.length;
   }
@@ -78,8 +82,7 @@ public class JavaJsonRecord extends JsonRecord
    * 
    * @see com.ibm.jaql.json.type.JRecord#findName(com.ibm.jaql.json.type.JString)
    */
-  @Override
-  public int findName(JsonString name)
+  public int indexOf(JsonString name)
   {
     return meta.findField(name);
   }
@@ -89,7 +92,6 @@ public class JavaJsonRecord extends JsonRecord
    * 
    * @see com.ibm.jaql.json.type.JRecord#findName(java.lang.String)
    */
-  @Override
   public int findName(String name)
   {
     return meta.findField(name);
@@ -100,8 +102,7 @@ public class JavaJsonRecord extends JsonRecord
    * 
    * @see com.ibm.jaql.json.type.JRecord#getName(int)
    */
-  @Override
-  public JsonString getName(int i)
+  public JsonString nameOf(int i)
   {
     return meta.getName(i);
   }
@@ -111,24 +112,32 @@ public class JavaJsonRecord extends JsonRecord
    * 
    * @see com.ibm.jaql.json.type.JRecord#getValue(int)
    */
-  @Override
-  public JsonValue getValue(int i)
+  public JsonValue valueOf(int i)
   {
     return fieldBuffers[i] = meta.getValue(value, i, fieldBuffers[i]);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
   @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  public JavaJsonRecord getCopy(JsonValue target) throws Exception
   {
-    JavaJsonRecord that = (JavaJsonRecord) jvalue;
-    meta.copy(this.value, that.value);
+    if (target == this) target = null;
+    
+    JavaJsonRecord t;
+    if (target instanceof JavaJsonRecord)
+    {
+      t = (JavaJsonRecord) target;
+    }
+    else
+    {
+      t = new JavaJsonRecord();
+    }
+    
+    t.meta= this.meta;
+    t.fieldBuffers = meta.makeValues();
+    meta.copy(t.value, this.value);
+    return t;  
   }
-
+  
   /*
    * (non-Javadoc)
    * 
@@ -290,5 +299,57 @@ public class JavaJsonRecord extends JsonRecord
     Test test = new Test(n.longValue());
     test.nested = new Test(n.longValue() + 1);
     return new JavaJsonRecord(test);
+  }
+
+  @Override
+  public boolean containsKey(JsonString key)
+  {
+    return indexOf(key)>=0;
+  }
+
+  @Override
+  public JsonValue get(JsonString key, JsonValue defaultValue)
+  {
+    int index = indexOf(key);
+    return index >= 0 ? valueOf(index) : defaultValue;
+  }
+
+  @Override
+  public JsonValue getRequired(JsonString key)
+  {
+    int index = indexOf(key);
+    if (index < 0) throw new IllegalArgumentException("invalid field name " + key);
+    return valueOf(index);
+  }
+
+  @Override
+  public Iterator<Entry<JsonString, JsonValue>> iterator()
+  {
+    return new Iterator<Entry<JsonString, JsonValue>>()
+    {
+      int i = 0;
+      RecordEntry entry = new RecordEntry(); // reused
+      
+      @Override
+      public boolean hasNext()
+      {
+        return i < size();
+      }
+
+      @Override
+      public Entry<JsonString, JsonValue> next()
+      {
+        entry.name = nameOf(i);
+        entry.value = valueOf(i);
+        i++;
+        return entry;
+      }
+
+      @Override
+      public void remove()
+      {
+        throw new UnsupportedOperationException();        
+      }      
+    };
   }
 }

@@ -31,6 +31,7 @@ import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -75,9 +76,9 @@ public class MRAggregate extends MapReduceBaseExpr
   public JsonValue eval(final Context context) throws Exception
   {
     JsonRecord args = baseSetup(context);
-    JsonValue map = args.getRequired("map");
-    JsonValue agg = args.getRequired("aggregate");
-    JsonValue finl = args.getRequired("final");
+    JsonValue map = args.getRequired(new JsonString("map"));
+    JsonValue agg = args.getRequired(new JsonString("aggregate"));
+    JsonValue finl = args.getRequired(new JsonString("final"));
 
     // use default: conf.setNumMapTasks(10); // TODO: need a way to specify options
     // use default: conf.setNumReduceTasks(2); // TODO: get from options
@@ -170,7 +171,7 @@ public class MRAggregate extends MapReduceBaseExpr
           JsonArray pair = (JsonArray) value;
           if (pair != null)
           {
-            pair.getValues(mappedKeyValue);
+            pair.getAll(mappedKeyValue);
             keyVar.setValue(mappedKeyValue[0]);
             tmpArray.set(0, mappedKeyValue[1]);
             valVar.setValue(tmpArray);

@@ -26,7 +26,7 @@ import com.ibm.jaql.json.type.JsonValue;
  * A configurator that specifically writes the JobConf for a given
  * FileInputFormat
  */
-public class FileInputConfigurator implements JsonConfSetter
+public class FileInputConfigurator implements InitializableConfSetter
 {
   protected String location;
 

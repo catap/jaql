@@ -57,7 +57,7 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
     return new JsonIterator(tokText) {
 
       final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getInternalBytes(), 0,
-                                          text.getLength()); // TODO: reuse
+                                          text.lengthUtf8()); // TODO: reuse
       public boolean moveNext() throws Exception
       {
         JsonSpan span = tokenizer.next();

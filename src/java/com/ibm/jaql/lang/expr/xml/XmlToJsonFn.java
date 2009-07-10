@@ -138,7 +138,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
         {
           r.add(S_XMLNS, new JsonString(uri));
         }
-        r.add(name, new JsonString(v));
+        r.add(new JsonString(name), new JsonString(v));
         ca.addCopy(r);
       }
       stack.push(ca);
@@ -160,9 +160,9 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
       BufferedJsonRecord r = new BufferedJsonRecord();
       if( uri != null && uri.length() > 0 )
       {
-        r.add("xmlns", new JsonString(uri));
+        r.add(new JsonString("xmlns"), new JsonString(uri));
       }
-      r.add(localName, ca);
+      r.add(new JsonString(localName), ca);
       SpilledJsonArray pa = (SpilledJsonArray)stack.peek();
       pa.addCopy(r);
     }
@@ -263,21 +263,23 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
       uri = attrs.getURI(i);
       if( uri != null && uri.length() > 0 )
       {
-        BufferedJsonRecord ur = (BufferedJsonRecord) r.getValue(uri, null);
+        JsonString jUri = new JsonString(uri);
+        BufferedJsonRecord ur = (BufferedJsonRecord) r.get(jUri);
         if( ur == null )
         {
           ur = new BufferedJsonRecord();
-          r.add(uri, ur);
+          r.add(jUri, ur);
         }
         r = ur;
       }
       name = "@" + attrs.getLocalName(i);
+      JsonString jName = new JsonString(name);
       String v = attrs.getValue(i);
-      if( r.findName(name) < 0 )
+      if( r.containsKey(jName) )
       {
         throw new RuntimeException("duplicate attribute name: "+name);
       }
-      r.add(name, new JsonString(v));
+      r.add(jName, new JsonString(v));
     }
   }
 
@@ -295,7 +297,7 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
       {
         JsonString s = new JsonString(text.substring(textStart, textEnd));
         text.setLength(textStart);
-        if( r.arity() == 0 )
+        if( r.size() == 0 )
         {
           me = s;
         }
@@ -307,22 +309,23 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
       BufferedJsonRecord parent = stack.peek();
       if( uri != null && uri.length() > 0 )
       {
-        BufferedJsonRecord ur = (BufferedJsonRecord)parent.getValue(uri, null);
+        JsonString jUri = new JsonString(uri);
+        BufferedJsonRecord ur = (BufferedJsonRecord)parent.get(jUri, null);
         if( ur == null )
         {
           ur = new BufferedJsonRecord();
-          parent.add(uri, ur);
+          parent.add(jUri, ur);
         }
         parent = ur;
       }
-      int index = parent.findName(localName); 
-      if( index < 0 )
+      JsonString jLocalName = new JsonString(localName);
+      if( parent.containsKey(jLocalName) )
       {
-        parent.add(localName, me);
+        parent.add(jLocalName, me);
       }
       else
       {
-        JsonValue v = parent.getValue(index);
+        JsonValue v = parent.get(jLocalName);
         SpilledJsonArray a;
         if( v instanceof SpilledJsonArray )
         {
@@ -332,7 +335,7 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
         {
           a = new SpilledJsonArray();
           a.addCopy(v);
-          parent.set(localName, a);
+          parent.set(jLocalName, a);
         }
         a.addCopy(me);
       }

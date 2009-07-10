@@ -59,7 +59,7 @@ public class LongMetaField extends MetaField
       IllegalAccessException
   {
     long x = field.getLong(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

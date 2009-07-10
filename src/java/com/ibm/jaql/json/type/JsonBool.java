@@ -15,72 +15,73 @@
  */
 package com.ibm.jaql.json.type;
 
-/**
- * 
- */
+/** A boolean JSON value. */
 public class JsonBool extends JsonAtom
 {
   // TODO: should be immutable
   public final static JsonBool TRUE  = new JsonBool(true);
   public final static JsonBool FALSE = new JsonBool(false);
 
-  /**
-   * @param tf
-   * @return
-   */
-  public static JsonBool make(boolean tf)
-  {
-    return tf ? TRUE : FALSE;
-  }
+  protected boolean value;
 
-  public boolean value;
-
-  /**
-   * 
-   */
+  
+  // -- construction ------------------------------------------------------------------------------
+  
+  /** Constructs a new JsonBool with an undefined value. */
   public JsonBool()
   {
   }
 
-  /**
-   * @param value
-   */
+  /** Constructs a new JsonBool representing the given value */
   public JsonBool(boolean value)
   {
     this.value = value;
   }
 
-  /**
-   * @return
-   */
-  public boolean getValue()
+  /** Returns a {@link JsonBool} for the given value. The returned value must not be changed;
+   * is mutation is required, use one of the constructors instead. */
+  public static JsonBool makeShared(boolean value)
+  {
+    return value ? TRUE : FALSE;
+  }
+
+  
+  // -- getters -----------------------------------------------------------------------------------
+  
+  /** Returns the boolean value */
+  public boolean get()
   {
     return value;
   }
 
-  /**
-   * @param value
-   */
-  public void setValue(boolean value)
+  /* @see JsonValue#getCopy(JsonValue) */
+  @Override
+  public JsonBool getCopy(JsonValue target) throws Exception
+  {
+    if (target == this) target = null;
+    
+    if (target instanceof JsonBool)
+    {
+      JsonBool t = (JsonBool)target;
+      t.value = value;
+      return t;
+    }
+    return new JsonBool(value);
+  }
+
+
+  // -- setters -----------------------------------------------------------------------------------
+  
+  /** Sets the boolean value */
+  public void set(boolean value)
   {
     this.value = value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
-  public JsonEncoding getEncoding()
-  {
-    return JsonEncoding.BOOLEAN;
-  }
+  
+  // -- comparison/hashing ------------------------------------------------------------------------
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   public int compareTo(Object x)
   {
     //    int c = Util.typeCompare(this, (Writable)x);
@@ -92,27 +93,20 @@ public class JsonBool extends JsonAtom
     return (value == value2) ? 0 : (value2 ? -1 : +1);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
-    return value ? 1 : 0;
+    return value ? JsonLong.longHashCode(1) : JsonLong.longHashCode(0);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
-  @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  
+  // -- misc --------------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
+  public JsonEncoding getEncoding()
   {
-    JsonBool b = (JsonBool) jvalue;
-    value = b.value;
+    return JsonEncoding.BOOLEAN;
   }
 
 

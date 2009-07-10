@@ -26,6 +26,7 @@ import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
 import antlr.collections.impl.BitSet;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
@@ -405,7 +406,7 @@ public class Jaql
         else
         {
           JsonValue value = expr.eval(context);
-          JsonValue.print(output, value);
+          JsonUtil.print(output, value);
         }
         output.println();
         output.flush();

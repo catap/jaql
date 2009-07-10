@@ -313,7 +313,7 @@ public class OrSchema extends Schema
       }
       else
       {
-        result.value = Math.min(result.value, l.value);
+        result.set(Math.min(result.get(), l.get()));
       }
       
     }
@@ -333,7 +333,7 @@ public class OrSchema extends Schema
       }
       else
       {
-        result.value = Math.max(result.value, l.value);
+        result.set(Math.max(result.get(), l.get()));
       }
       
     }

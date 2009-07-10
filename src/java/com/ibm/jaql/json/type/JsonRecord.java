@@ -18,304 +18,204 @@ package com.ibm.jaql.json.type;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
-/**
- * 
- */
-public abstract class JsonRecord extends JsonValue implements Iterable<Entry<JsonString, JsonValue>>
+/** A JSON record, i.e., a set of fields = (key, value)-pairs. */
+public abstract class JsonRecord extends JsonValue 
+implements Iterable<Entry<JsonString, JsonValue>>
 {
   public static final JsonRecord EMPTY = new BufferedJsonRecord(); // TODO: should be immutable
 
-  /**
-   * @return
-   */
-  public abstract int arity();
-  /**
-   * @param name
-   * @return
-   */
-  public abstract int findName(JsonString name);
-  /**
-   * @param name
-   * @return
-   */
-  public abstract int findName(String name);
-  /**
-   * @param i
-   * @return
-   */
-  public abstract JsonString getName(int i);
   
-  /**
-   * @param i
-   * @return
-   */
-  public abstract JsonValue getValue(int i);
+  // -- abstract methods --------------------------------------------------------------------------
 
+  /** Returns the number of fields present in this record. */
+  public abstract int size();
   
-  /**
-   * @param name
-   * @param dfault
-   * @return
-   */
-  public JsonValue getValue(JsonString name, JsonValue defaultValue)
+  /** Checks whether this record contains the specified key (i.e., field name) */
+  public abstract boolean containsKey(JsonString key);
+  
+  /** Returns the value for the specified key (i.e., field name) or <code>defaultValue</code> 
+   * if the key doesn't exist. */
+  public abstract JsonValue get(JsonString key, JsonValue defaultValue);
+
+  /** Returns the value for the specified key (i.e., field name) or throws an 
+   * {@link IllegalArgumentException} if the key doesn't exist. */
+  public abstract JsonValue getRequired(JsonString key);
+
+  /** Returns an iterator over the fields in this record. Entries returned by the iterator are
+   * valid only until the next call to the {@link Iterator#next()} method. The fields are produced
+   * in ascending order of their field name. */
+  public abstract Iterator<Entry<JsonString, JsonValue>> iterator();
+
+  /* Overrides return type of {@link JsonValue#getCopy(JsonValue)}. */
+  public abstract JsonRecord getCopy(JsonValue target) throws Exception;
+  
+  // -- default implementations -------------------------------------------------------------------
+  
+  /** Returns the value for the specified key (i.e., field name) or <code>null</code> if the
+   * key doesn't exist. */
+  public JsonValue get(JsonString key)
   {
-    int i = findName(name);
-    if (i < 0)
-    {
-      return defaultValue;
-    }
-    return getValue(i);
+    return get(key, null);
   }
 
-  /**
-   * @param name
-   * @param dfault
-   * @return
-   */
-  public JsonValue getValue(String name, JsonValue defaultValue)
+  /** Returns an iterator over the field names in this record (in ascending order). */
+  public JsonIterator keyIter()
   {
-    int i = findName(name);
-    if (i < 0)
-    {
-      return defaultValue;
-    }
-    return getValue(i);
+    final Iterator<Entry<JsonString, JsonValue>> entries = iterator();
+    return new JsonIterator() {
+      public boolean moveNext() throws Exception
+      {
+        if (!entries.hasNext())
+        {
+          return false;
+        }
+        Entry<JsonString, JsonValue> e = entries.next();
+        currentValue = e.getKey();
+        return true; 
+      }
+    };
   }
-
-  /**
-   * @param name
-   * @return
-   */
-  public final JsonValue getValue(JsonString name)
+  
+  /** Returns an iterator over the field values in this record (in ascending order of 
+   * field names). */
+  public JsonIterator valueIter()
   {
-    return getValue(name, null);
+    final Iterator<Entry<JsonString, JsonValue>> entries = iterator();
+    return new JsonIterator() {
+      public boolean moveNext() throws Exception
+      {
+        if (!entries.hasNext())
+        {
+          return false;
+        }
+        Entry<JsonString, JsonValue> e = entries.next();
+        currentValue = e.getValue();
+        return true; 
+      }
+    };
   }
-
-  /**
-   * @param name
-   * @return
-   */
-  public final JsonValue getValue(String name)
+  
+  /** Returns an iterator over the fields in this record (in ascending order of field names),
+   * represented as arrays of form [key, value].*/
+  public JsonIterator keyValueIter()
   {
-    return getValue(name, null);
+    final Iterator<Entry<JsonString, JsonValue>> entries = iterator();
+    final BufferedJsonArray pair = new BufferedJsonArray(2);
+    return new JsonIterator(pair) {
+      public boolean moveNext() throws Exception
+      {
+        if (!entries.hasNext())
+        {
+          return false;
+        }
+        Entry<JsonString, JsonValue> e = entries.next();
+        pair.set(0, e.getKey());
+        pair.set(1, e.getValue());
+        return true; // currentValue == pair
+      }
+    };
   }
+  
+  // -- hashing/comparison ------------------------------------------------------------------------
 
-  /**
-   * @param name
-   * @return
-   */
-  public final JsonValue getRequired(String name)
-  {
-    JsonValue value = getValue(name, null);
-    if (value == null)
-    {
-      throw new RuntimeException("field '" + name + "' required");
-    }
-    return value;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   public final int compareTo(Object arg0)
   {
     // TODO: this should be order-independent
     JsonRecord t = (JsonRecord) arg0;
     int cmp;
-    int a1 = arity();
-    int a2 = t.arity();
-    int end = Math.min(a1, a2);
-    for (int i = 0; i < end; i++)
+    Iterator<Entry<JsonString, JsonValue>> i1 = this.iterator();
+    Iterator<Entry<JsonString, JsonValue>> i2 = t.iterator();
+    int s1 = size();
+    int s2 = t.size();
+    int size = Math.min(s1, s2);
+    for (int i = 0; i < size; i++)
     {
-      JsonString n1 = getName(i);
-      JsonString n2 = t.getName(i);
-      cmp = n1.compareTo(n2);
+      assert i1.hasNext(); 
+      Entry<JsonString, JsonValue> e1 = i1.next();
+      assert i2.hasNext(); 
+      Entry<JsonString, JsonValue> e2 = i2.next();
+      
+      cmp = JsonUtil.compare(e1.getKey(), e2.getKey());
       if (cmp != 0)
       {
         return cmp;
       }
-      JsonValue v1 = getValue(i);
-      JsonValue v2 = t.getValue(i);
-      cmp = v1.compareTo(v2);
+
+      cmp = JsonUtil.compare(e1.getValue(), e2.getValue());
       if (cmp != 0)
       {
         return cmp;
       }
     }
-    if (a1 == a2)
+    if (s1 == s2)
     {
       return 0;
     }
-    else if (a1 < a2)
+    else if (s1 < s2)
     {
       return -1;
     }
     else
-    // a1 > a2
     {
+      assert s1>s2;
       return 1;
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#hashCode() */
+  @Override
+  public int hashCode()
+  {
+    int h = BaseUtil.GOLDEN_RATIO_32;
+    for (Entry<JsonString, JsonValue> entry : this)
+    {
+      h |= JsonUtil.hashCode(entry.getKey());
+      h *= BaseUtil.GOLDEN_RATIO_32;
+      h |= JsonUtil.hashCode(entry.getValue());
+      h *= BaseUtil.GOLDEN_RATIO_32;
+    }
+    return (int) (h >> 32);
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
     long h = BaseUtil.GOLDEN_RATIO_64;
-    int arity = arity();
-    for (int i = 0; i < arity; i++)
+    for (Entry<JsonString, JsonValue> entry : this)
     {
-      h |= getName(i).hashCode();
+      h |= JsonUtil.longHashCode(entry.getKey());
       h *= BaseUtil.GOLDEN_RATIO_64;
-      h |= getValue(i).hashCode();
+      h |= JsonUtil.longHashCode(entry.getValue());
       h *= BaseUtil.GOLDEN_RATIO_64;
     }
     return (int) (h >> 32);
   }
   
-  public Iterator<Entry<JsonString, JsonValue>> iterator()
+
+  // -- Iterable interface ------------------------------------------------------------------------
+
+  /** A class that holds record entries. Can be used by subclasses of JsonRecord to implement
+   * the {@link #iterator()} method. */
+  protected class RecordEntry implements Entry<JsonString, JsonValue>
   {
-    return new Iterator<Entry<JsonString, JsonValue>>()
-    {
-      int i = 0;
-      
-      @Override
-      public boolean hasNext()
-      {
-        return i < arity();
-      }
-
-      @Override
-      public Entry<JsonString, JsonValue> next()
-      {
-        Entry<JsonString, JsonValue> result = 
-          new RecordEntry(getName(i), getValue(i));
-        i++;
-        return result;
-      }
-
-      @Override
-      public void remove()
-      {
-        throw new UnsupportedOperationException();        
-      }      
-    };
-  }
-
-  //  public boolean containsKey(JString key)
-  //  {
-  //    return getValue(key, null) != null;
-  //  }
-  //
-  //  public boolean containsKey(Object x)
-  //  {
-  //    return containsKey((JString)x);
-  //  }
-  //
-  //  public boolean containsValue(Item value)
-  //  {
-  //    for( int i = 0 ; i < arity ; i++ )
-  //    {
-  //      if( entries[i].value.equals(value) )
-  //      {
-  //        return true;
-  //      }
-  //    }
-  //    return false;
-  //  }
-  //
-  //  public boolean containsValue(Object x)
-  //  {
-  //    return containsValue((Item)x);
-  //  }
-  //
-  //  public Item get(Object name)
-  //  {
-  //    return get((JString)name);
-  //  }
-  //
-  //  public boolean isEmpty()
-  //  {
-  //    return arity == 0;
-  //  }
-  //
-  //  public Item put(JString name, Item value)
-  //  {
-  //    return null;
-  //  }
-  //
-  //  public void putAll(Map<? extends JString, ? extends Item> arg0)
-  //  {
-  //    // TODO Auto-generated method stub
-  //    
-  //  }
-  //
-  //  public Item remove(JString key)
-  //  {
-  //    int i = findName(key);
-  //    if( i < 0 )
-  //    {
-  //      return null;
-  //    }
-  //    Entry e = entries[i];
-  //    arity--;
-  //    entries[i] = entries[arity];
-  //    entries[arity] = e;
-  //    return e.value;
-  //  }
-  //  
-  //  public Item remove(Object x)
-  //  {
-  //    return remove((JString)x);
-  //  }
-  //
-  //  public int size()
-  //  {
-  //    return arity;
-  //  }
-  //
-  //  public Set<JString> keySet()
-  //  {
-  //    // TODO Auto-generated method stub
-  //    return null;
-  //  }
-  //
-  //  public Collection<Item> values()
-  //  {
-  //    // TODO Auto-generated method stub
-  //    return null;
-  //  }
-  //
-  //  public Set<Map.Entry<JString, Item>> entrySet()
-  //  {
-  //    
-  //    return null;
-  //  }
-
-  //  public void setVisible(int i, boolean visible)
-  //  {
-  //    entries[i].visible = visible;
-  //  }
-  
-  private class RecordEntry implements Entry<JsonString, JsonValue>
-  {
-    private JsonString name;
-    private JsonValue value;
+    protected JsonString name; // can be set by subclasses of JsonRecord
+    protected JsonValue value; // can be set by subclasses of JsonRecord
     
-    public RecordEntry(JsonString name, JsonValue value)
+    RecordEntry(JsonString name, JsonValue value)
     {
       this.name = name;
       this.value = value;
     }
     
+    RecordEntry()
+    {
+    }
+
     @Override
     public JsonString getKey()
     {
@@ -333,5 +233,5 @@ public abstract class JsonRecord extends JsonValue implements Iterable<Entry<Jso
     {
       throw new UnsupportedOperationException();
     }    
-  }
+  } 
 }

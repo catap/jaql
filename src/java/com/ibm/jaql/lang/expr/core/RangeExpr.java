@@ -77,8 +77,8 @@ public class RangeExpr extends IterExpr
     if (exprs[0] instanceof ConstExpr && exprs[1] instanceof ConstExpr)
     {
       // We only consider small ranges as a constant.
-      long start = ((JsonLong) ((ConstExpr) exprs[0]).value).value;
-      long end = ((JsonLong) ((ConstExpr) exprs[1]).value).value;
+      long start = ((JsonLong) ((ConstExpr) exprs[0]).value).get();
+      long end = ((JsonLong) ((ConstExpr) exprs[1]).value).get();
       if (end - start < 10)
       {
         result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
@@ -111,9 +111,9 @@ public class RangeExpr extends IterExpr
       public boolean moveNext()
       {
         JsonLong num = (JsonLong)currentValue;
-        if (num.value + 1 <= end)
+        if (num.get() + 1 <= end)
         {
-          num.value++;
+          num.set(num.get()+1);
           return true;
         }
         return false;

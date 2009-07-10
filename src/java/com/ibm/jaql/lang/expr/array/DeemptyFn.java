@@ -64,7 +64,7 @@ public class DeemptyFn extends IterExpr
           {
             if (w instanceof JsonRecord)
             {
-              if (((JsonRecord) w).arity() > 0)
+              if (((JsonRecord) w).size() > 0)
               {
                 currentValue = w;
                 return true;

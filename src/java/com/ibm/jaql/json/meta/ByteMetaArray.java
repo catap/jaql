@@ -79,7 +79,7 @@ public class ByteMetaArray extends MetaArray
       {
         if (i < arr.length)
         {
-          jlong.value = arr[i++];
+          jlong.set(arr[i++]);
           return true; // currentValue == jlong
         }
         return false;
@@ -99,7 +99,7 @@ public class ByteMetaArray extends MetaArray
     byte[] arr = (byte[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonLong) result).value = arr[(int) n];
+      ((JsonLong) result).set(arr[(int) n]);
       return result;
     }
     else

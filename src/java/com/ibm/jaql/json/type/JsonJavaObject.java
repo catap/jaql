@@ -55,9 +55,7 @@ public class JsonJavaObject extends JsonAtom
   {
     try
     {
-      JsonJavaObject ji = new JsonJavaObject();
-      ji.setCopy(this);
-      return ji;
+      return getCopy(null);
     }
     catch (Exception e)
     {
@@ -97,28 +95,43 @@ public class JsonJavaObject extends JsonAtom
     this.value = o;
   }
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
   @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  public JsonJavaObject getCopy(JsonValue target) throws Exception
   {
-    JsonJavaObject ji = (JsonJavaObject) jvalue;
-    if (value == null || value.getClass() != ji.value.getClass())
+    if (target == this) target = null;
+    
+    JsonJavaObject t;
+    if (target instanceof JsonJavaObject)
     {
-      value = ji.value.getClass().newInstance();
+      t = (JsonJavaObject) target;
     }
+    else
+    {
+      t = new JsonJavaObject();
+    }
+    
+    if (value == null)
+    {
+      t.value = null;
+    }
+    else
+    {
+      if (t.value == null || t.value.getClass() != this.value.getClass())
+      {
+        t.value = this.value.getClass().newInstance();
+      }
+      
+      RandomAccessBuffer copyBuffer = new RandomAccessBuffer();
+      DataOutputStream copyOutput = new DataOutputStream(copyBuffer);
+      this.value.write(copyOutput);
+      copyOutput.flush();
 
-    RandomAccessBuffer copyBuffer = new RandomAccessBuffer();
-    DataOutputStream copyOutput = new DataOutputStream(copyBuffer);
-    ji.value.write(copyOutput);
-    copyOutput.flush();
-
-    DataInputBuffer copyInput = new DataInputBuffer(); // TODO: cache
-    copyInput.reset(copyBuffer.getBuffer(), 0, copyBuffer.size());
-    value.readFields(copyInput);
+      DataInputBuffer copyInput = new DataInputBuffer(); // TODO: cache
+      copyInput.reset(copyBuffer.getBuffer(), 0, copyBuffer.size());
+      t.value.readFields(copyInput);
+    }
+    
+    return t;  
   }
 
   /*

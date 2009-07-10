@@ -75,6 +75,6 @@ public class IsnullExpr extends Expr
       JsonValue value = expr.eval(context);
       b = value == null;
     }
-    return JsonBool.make(b);
+    return JsonBool.makeShared(b);
   }
 }

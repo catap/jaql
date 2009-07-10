@@ -58,7 +58,7 @@ public class ByteMetaField extends MetaField
       IllegalAccessException
   {
     byte x = field.getByte(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;  
   }
 

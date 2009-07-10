@@ -117,6 +117,6 @@ public class FieldValueExpr extends Expr
     {
       return null;
     }
-    return record.getValue(name);
+    return record.get(name);
   }
 }

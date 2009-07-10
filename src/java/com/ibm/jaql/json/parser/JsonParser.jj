@@ -68,7 +68,7 @@ public class JsonParser
     }
 
     @Override
-    public void setCopy(JsonValue jvalue) throws Exception
+    public JsonValue getCopy(JsonValue target) throws Exception
     {
       throw new UnsupportedOperationException();
     }
@@ -336,7 +336,7 @@ void MapField(BufferedJsonRecord jRecord) :
 }
 {
 	name=Name() <COLON> value=JsonVal()
-	{ jRecord.add(name, value); }
+	{ jRecord.add(new JsonString(name), value); }
 }
 
 

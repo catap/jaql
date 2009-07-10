@@ -25,6 +25,7 @@ import java.util.ArrayList;
 
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -107,7 +108,7 @@ public final class JIndexWriter implements Closeable
         baseItems = 0;
       }
     }
-    prevKey.setCopy(key);
+    prevKey = JsonUtil.getCopy(key, prevKey);
     serializer.write(base, key);
     serializer.write(base, value);
     totalItems++;

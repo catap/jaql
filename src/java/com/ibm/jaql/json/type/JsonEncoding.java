@@ -7,6 +7,7 @@ import java.util.HashMap;
 
 import com.ibm.jaql.lang.core.JaqlFunction;
 
+/** Enumeration of all JSON encodings. */
 public enum JsonEncoding
 {
   // UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
@@ -56,7 +57,7 @@ public enum JsonEncoding
     // classMap.put(clazz, this);
   }
 
-  public static JsonEncoding valueOf(int id)
+  public static JsonEncoding getEncoding(int id)
   {
     return idToEncoding[id];
   }

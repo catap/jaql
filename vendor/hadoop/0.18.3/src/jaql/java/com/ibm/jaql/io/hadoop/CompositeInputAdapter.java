@@ -58,7 +58,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     else if(val instanceof JsonRecord) {
       // dig the location out
       JsonRecord rval = (JsonRecord)val;
-      JsonArray loc = (JsonArray)rval.getValue(Adapter.LOCATION_NAME);
+      JsonArray loc = (JsonArray)rval.get(Adapter.LOCATION_NAME);
       initializeFrom(loc);
     }
   }

@@ -63,7 +63,7 @@ public final class MaxAgg extends AlgebraicAggregate
     }
     else if( value.compareTo(max) > 0 )
     {
-      max.setCopy(value);
+      max = value.getCopy(max);
     }
   }
 
