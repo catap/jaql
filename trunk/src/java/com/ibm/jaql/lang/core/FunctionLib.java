@@ -142,6 +142,7 @@ import com.ibm.jaql.lang.expr.span.SpanContainsFn;
 import com.ibm.jaql.lang.expr.span.SpanFn;
 import com.ibm.jaql.lang.expr.span.SpanOverlapsFn;
 import com.ibm.jaql.lang.expr.span.TokenizeFn;
+import com.ibm.jaql.lang.expr.string.EndsWithFn;
 import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.StrJoinFn;
@@ -256,6 +257,7 @@ public class FunctionLib
     add(DenullFn.class);
     add(DeemptyFn.class);
     add(StartsWithFn.class);
+    add(EndsWithFn.class);
     add(SubstringFn.class);
     add(SerializeFn.class);
     add(StrcatFn.class);
