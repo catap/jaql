@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
@@ -204,7 +205,7 @@ public final class DefineFunctionExpr extends Expr
       int i = 0;
       for( Var v: capturedVars )
       {
-        JsonValue val = JsonValue.getCopy(v.getValue(context), null);
+        JsonValue val = JsonUtil.getCopy(v.getValue(context), null);
         es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
       }
       es[n] = f.body().injectAbove();

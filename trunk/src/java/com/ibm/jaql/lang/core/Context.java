@@ -22,6 +22,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Pair;
@@ -136,8 +137,7 @@ public class Context
     JaqlFunction fn2 = fnMap.get(exprFnPair);
     if( fn2 == null )
     {
-      fn2 = new JaqlFunction();
-      fn2.setCopy(fn);
+      fn2 = JsonUtil.getCopy(fn, null); 
       Pair<Expr,JaqlFunction> p = new Pair<Expr, JaqlFunction>(callSite, fn);
       fnMap.put(p, fn2);
     }

@@ -48,6 +48,6 @@ public class SpanFn extends Expr
     {
       return null;
     }
-    return new JsonSpan(begin.value, end.value); // TODO: reuse
+    return new JsonSpan(begin.get(), end.get()); // TODO: reuse
   }
 }

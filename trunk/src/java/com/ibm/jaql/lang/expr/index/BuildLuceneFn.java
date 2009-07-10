@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.index;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.util.Map.Entry;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -61,7 +62,7 @@ public class BuildLuceneFn extends Expr
     {
       return null;
     }
-    JsonString loc = (JsonString)fd.getValue("location");
+    JsonString loc = (JsonString)fd.get(new JsonString("location"));
     if( loc == null )
     {
       return null;
@@ -107,11 +108,10 @@ public class BuildLuceneFn extends Expr
           for (JsonValue val : valIter)
           {
             JsonRecord jrec = (JsonRecord)val;
-            int n = jrec.arity();
-            for( int i = 0 ; i < n ; i++ )
+            for (Entry<JsonString, JsonValue> e : jrec)
             {
-              JsonString name = jrec.getName(i);
-              JsonValue fval = jrec.getValue(i);
+              JsonString name = e.getKey();
+              JsonValue fval = e.getValue();
               buf.reset();
               serializer.write(out, fval);
               out.flush();

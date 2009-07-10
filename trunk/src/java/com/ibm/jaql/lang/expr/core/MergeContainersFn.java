@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -23,6 +24,7 @@ import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -106,9 +108,9 @@ public class MergeContainersFn extends Expr
         if( value != null )
         {
           JsonRecord rec = (JsonRecord)value;
-          for(int j = 0 ; j < rec.arity() ; j++)
+          for (Entry<JsonString, JsonValue> e : rec)
           {
-            resultRec.add(rec.getName(j), rec.getValue(j));
+            resultRec.add(e.getKey(), e.getValue());
           }
         }
         i++;

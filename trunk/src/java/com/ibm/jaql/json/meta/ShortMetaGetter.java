@@ -61,7 +61,7 @@ public final class ShortMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     short x = (Short) getter.invoke(obj);
-    ((JsonLong) target).value = x;
+    ((JsonLong) target).set(x);
     return target;
   }
 

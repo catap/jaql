@@ -35,13 +35,13 @@ import com.ibm.jaql.json.type.JsonValue;
 /**
  * The default class for reading Items from Hadoop into jaql
  */
-public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<JsonValue>
+public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
 {
   static final Logger          LOG = Logger.getLogger(DefaultHadoopInputAdapter.class.getName());
 
   protected InputFormat<K,V>        iFormat;
 
-  protected JsonConfSetter     configurator;
+  protected InitializableConfSetter     configurator;
 
   protected KeyValueImport<K, V> converter;
 
@@ -54,11 +54,6 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<JsonVa
   protected String             location;
 
   protected BufferedJsonRecord      options;
-
-  public void initializeFrom(JsonValue args) throws Exception
-  {
-    initializeFrom((JsonRecord)args);
-  }
   
   public void init(JsonValue args) throws Exception {
     initializeFrom((JsonRecord)args);
@@ -88,7 +83,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter<JsonVa
         options, CONFIGURATOR_NAME, null);
     if (configuratorClass != null)
     {
-      this.configurator = (JsonConfSetter) configuratorClass.newInstance();
+      this.configurator = (InitializableConfSetter) configuratorClass.newInstance();
       this.configurator.init(args); // FIXME: no need to "new"
     }
 

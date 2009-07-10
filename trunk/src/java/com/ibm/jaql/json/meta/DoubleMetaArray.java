@@ -79,7 +79,7 @@ public class DoubleMetaArray extends MetaArray
       {
         if (i < arr.length)
         {
-          jdouble.value = arr[i++];
+          jdouble.set(arr[i++]);
           return true; // currentValue == jdouble
         }
         return false;
@@ -99,7 +99,7 @@ public class DoubleMetaArray extends MetaArray
     double[] arr = (double[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonDouble) target).value = arr[(int) n];
+      ((JsonDouble) target).set(arr[(int) n]);
       return target;
     }
     else

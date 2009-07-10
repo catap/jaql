@@ -85,6 +85,6 @@ public class ExistsFn extends Expr
         return JsonBool.TRUE;
       }
     }
-    return JsonBool.make(iter.moveNext());
+    return JsonBool.makeShared(iter.moveNext());
   }
 }

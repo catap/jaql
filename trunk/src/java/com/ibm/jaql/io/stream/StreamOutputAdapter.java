@@ -59,9 +59,9 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
     if (!JsonToStream.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemOutputStream");
     formatter = (JsonToStream) fclass.newInstance();
-    JsonValue arrAcc = outputArgs.getValue(StreamInputAdapter.ARR_NAME);
+    JsonValue arrAcc = outputArgs.get(StreamInputAdapter.ARR_NAME);
     if(arrAcc != null) {
-      formatter.setArrayAccessor( ((JsonBool)arrAcc).value);
+      formatter.setArrayAccessor( ((JsonBool)arrAcc).get());
     }
   }
 

@@ -28,7 +28,7 @@ public class JsonDoubleSerializer extends TextBasicSerializer<JsonDouble>
   public void write(PrintStream out, JsonDouble value, int indent)
       throws IOException
   {
-    out.print(value.value);
+    out.print(value.get());
     out.print('d'); // TODO: flag to disable suffix for JSON compatibility
   }
 }

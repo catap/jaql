@@ -73,7 +73,7 @@ public final class EnumerateExpr extends IterExpr
         if (!iter.moveNext()) {
           return false;
         }
-        counter.value++;
+        counter.set(counter.get()+1);
         pair.set(1, iter.current());
         return true;
       }

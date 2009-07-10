@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.json.schema;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.Bool3;
 
@@ -51,7 +52,7 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
       this.min = this.max = null;
       this.value = value;
     }
-    else if (JsonValue.equals(min, max))
+    else if (JsonUtil.equals(min, max))
     {
       this.value = min;
       // this.min and this.max stay null

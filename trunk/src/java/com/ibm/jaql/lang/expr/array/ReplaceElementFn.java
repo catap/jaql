@@ -53,13 +53,13 @@ public class ReplaceElementFn extends IterExpr
   {
     final JsonIterator tmpIter = exprs[0].iter(context);
     final JsonLong replaceIndexLong = (JsonLong) exprs[1].eval(context);
-    if (replaceIndexLong == null || replaceIndexLong.value < 0)
+    if (replaceIndexLong == null || replaceIndexLong.get() < 0)
     {
       return tmpIter;
     }
     return new JsonIterator() {
       long index        = 0;
-      long replaceIndex = replaceIndexLong.value;
+      long replaceIndex = replaceIndexLong.get();
       JsonIterator iter         = tmpIter;
 
       public boolean moveNext() throws Exception

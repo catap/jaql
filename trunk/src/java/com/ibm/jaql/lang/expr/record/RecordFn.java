@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -62,14 +64,13 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
       JsonRecord inrec = (JsonRecord)v;
       if (inrec != null)
       {
-        int n = inrec.arity();
-        rec.ensureCapacity(rec.getCapacity() + n);
-        for (int i = 0; i < n; i++)
+        rec.ensureCapacity(rec.size() + inrec.size());
+        for (Entry<JsonString, JsonValue> e : inrec)
         {
-          JsonString name = rec.getName(rec.arity());
-          JsonValue value = rec.getValue(rec.arity());
-          name.setCopy(inrec.getName(i));
-          value = inrec.getValue(i).getCopy(value);
+          JsonString name = rec.nameOf(rec.size()); // reuse
+          JsonValue value = rec.valueOf(rec.size()); // reuse
+          name = e.getKey().getCopy(name);
+          value = e.getValue().getCopy(value);
           rec.add(name, value);
         }
       }

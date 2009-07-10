@@ -27,6 +27,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -94,12 +95,12 @@ public class RFn extends Expr
         else if( value instanceof JsonNumeric ) // hack around fromJSON('number') doesn't work, but fromJSON('[number]') gives number
         {
           stdin.print('[');
-          JsonValue.print(stdin, value);
+          JsonUtil.print(stdin, value);
           stdin.print(']');
         }
         else
         {
-          JsonValue.print(stdin, value);
+          JsonUtil.print(stdin, value);
         }
         stdin.print("')");
         sep = ",";

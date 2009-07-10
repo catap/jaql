@@ -38,6 +38,7 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
@@ -49,7 +50,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       throws IOException
   {
     out.print("schema ");
-    Schema schema = value.getSchema();
+    Schema schema = value.get();
     write(out, schema, indent+7);
   }
 
@@ -147,7 +148,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       
       JsonLong minRest = schema.getMinRest();
       JsonLong maxRest = schema.getMaxRest();
-      if (!(JsonValue.equals(minRest, JsonLong.ONE) && JsonValue.equals(maxRest, JsonLong.ONE))) // == default
+      if (!(JsonUtil.equals(minRest, JsonLong.ONE) && JsonUtil.equals(maxRest, JsonLong.ONE))) // == default
       {
 //        if (JsonValue.equals(minRest, JsonLong.ZERO) && maxRest==null)
 //        {
@@ -279,7 +280,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       out.println(sep);
       sep = ",";
       indent(out, indent);
-      String name = JsonValue.printToString(f.getName());
+      String name = JsonUtil.printToString(f.getName());
       out.print(name);
       int o = name.length();
       if (f.isOptional())
@@ -336,16 +337,16 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       if (i<parameters.noRequiredParamters())
       {
         out.print(sep);
-        JsonValue.print(out, values[i], indent);
+        JsonUtil.print(out, values[i], indent);
         printed = true;
         sep = ", ";
       }
-      else if (!JsonValue.equals(values[i], parameters.defaultOf(i)))
+      else if (!JsonUtil.equals(values[i], parameters.defaultOf(i)))
       {
         out.print(sep);
         out.print(parameters.nameOf(i).toString()); // no quotes
         out.print("=");
-        JsonValue.print(out, values[i], indent);
+        JsonUtil.print(out, values[i], indent);
         printed = true;
         sep = ", ";
       }
@@ -377,10 +378,10 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     }
     else
     {
-      JsonValue.print(out, min, indent);
+      JsonUtil.print(out, min, indent);
     }
 
-    if (!JsonValue.equals(min, max))
+    if (!JsonUtil.equals(min, max))
     {
       out.print(sep);
       if (max==null)
@@ -389,7 +390,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       }
       else
       {
-        JsonValue.print(out, max, indent);
+        JsonUtil.print(out, max, indent);
       }
     }
   }

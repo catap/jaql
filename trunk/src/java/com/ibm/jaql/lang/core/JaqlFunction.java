@@ -366,18 +366,21 @@ public class JaqlFunction extends JsonAtom
     return iter(context);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
   @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  public JaqlFunction getCopy(JsonValue target) throws Exception
   {
-    JaqlFunction f = (JaqlFunction) jvalue;
-    this.fn = (DefineFunctionExpr)f.fn.clone(new VarMap());
-    this.ownFn = true;
-    this.fnText = f.fnText;
+    JaqlFunction t;
+    if (target instanceof JaqlFunction)
+    {
+      t = (JaqlFunction)target;
+    }
+    else
+    {
+      t = new JaqlFunction();
+    }
+    t.fn = (DefineFunctionExpr)this.fn.clone(new VarMap());
+    t.ownFn = true;
+    t.fnText = this.fnText;
+    return t;
   }
-
 }

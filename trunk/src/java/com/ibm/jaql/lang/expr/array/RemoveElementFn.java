@@ -48,13 +48,13 @@ public class RemoveElementFn extends IterExpr
   {
     final JsonIterator tmpIter = exprs[0].iter(context);
     final JsonLong indexLong = (JsonLong) exprs[1].eval(context);
-    if (indexLong == null || indexLong.value < 0)
+    if (indexLong == null || indexLong.get() < 0)
     {
       return tmpIter;
     }
     return new JsonIterator() {
       long index    = 0;
-      long toDelete = indexLong.value;
+      long toDelete = indexLong.get();
 
       public boolean moveNext() throws Exception
       {

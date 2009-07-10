@@ -20,288 +20,118 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.util.BaseUtil;
 
-/**
- * 
- */
+/** A string JSON value. This class stores all strings in UTF-8 encoding. */
 public class JsonString extends JsonAtom
 {
   protected final static byte[] NO_BYTES = new byte[0];
-
+  
   protected byte[]              bytes    = NO_BYTES;
-  protected int                 len;
-  protected String              stringCache;
+  protected int                 length = 0;
+  protected String              cachedString = null;
+  protected Long                cachedLongHashCode = null;
 
-  /**
-   * 
-   */
+  // -- construction ------------------------------------------------------------------------------
+  
+  /** Constructs an empty <code>JsonString</code>. */
   public JsonString()
   {
   }
 
-  /**
-   * Construct from a string.
+  /** Constructs a <code>JsonString</code> representing the provided string. 
+   * 
+   * @see #set(String) 
    */
   public JsonString(String string)
   {
     set(string);
   }
 
-  /**
-   * Construct from another JString.
-   * 
-   * @param string
-   */
+  /** Constructs a copy of the provided <code>JsonString</code>. */
   public JsonString(JsonString string)
   {
-    setCopy(string);
+    setCopy(string.bytes, string.length);
+    this.cachedString = string.cachedString;
+    this.cachedLongHashCode = string.cachedLongHashCode;
   }
 
-  /**
-   * Construct from a byte array.
+  /** Constructs a <code>JsonString</code> representing the specified value without copying. 
+   * A reference to the provided byte array is stored within the constructed instance.    
    * 
-   * @param utf8
+   * @param utf8 a byte array containing a UTF-8 encoded string 
    */
   public JsonString(byte[] utf8)
   {
     set(utf8, utf8.length);
   }
 
-  /**
-   * @param utf8
-   * @param len
+  /** Constructs a <code>JsonString</code> representing the specified value without copying. 
+   * A reference to the provided byte array is stored within the constructed instance.    
+   *
+   * @param utf8 a byte array containing a UTF-8 encoded string
+   * @param len number of bytes (not characters!) to use
    */
   public JsonString(byte[] utf8, int len)
   {
     set(utf8, len);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
+
+  // -- getters -----------------------------------------------------------------------------------
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
-  public JsonEncoding getEncoding()
+  public JsonString getCopy(JsonValue target) throws Exception
   {
-    return JsonEncoding.STRING;
-  }
-
-  /**
-   * @param maxlen
-   */
-  public void setCapacity(int maxlen)
-  {
-    if (maxlen > bytes.length)
+    if (target == this) target = null;
+    
+    JsonString t;
+    if (target instanceof JsonString)
     {
-      byte[] b = new byte[maxlen];
-      System.arraycopy(bytes, 0, b, 0, len);
-      bytes = b;
+      t = (JsonString)target;
     }
-  }
-
-  /**
-   * array now belongs to this class
-   * 
-   * @param utf8
-   * @param len
-   */
-  public void set(byte[] utf8, int len)
-  {
-    this.bytes = utf8;
-    this.len = len;
-    this.stringCache = null;
-  }
-
-  /**
-   * array now belongs to this class
-   * 
-   * @param utf8
-   */
-  public void set(byte[] utf8)
-  {
-    set(utf8, utf8.length);
-  }
-
-  /**
-   * @param string
-   */
-  public void set(String string)
-  {
-    try
+    else
     {
-      this.stringCache = string;
-      bytes = string.getBytes("UTF8");
-      len = bytes.length;
+      t = new JsonString();
     }
-    catch (UnsupportedEncodingException e)
-    {
-      throw new UndeclaredThrowableException(e);
-    }
-  }
-
-  /**
-   * @param string
-   */
-  public void setCopy(JsonString string)
-  {
-    if (bytes.length < string.len)
-    {
-      bytes = new byte[string.len];
-    }
-    System.arraycopy(string.bytes, 0, bytes, 0, string.len);
-    len = string.len;
-    stringCache = string.stringCache;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
-  @Override
-  public void setCopy(JsonValue value) throws Exception
-  {
-    setCopy((JsonString) value);
-  }
-
-  /**
-   * The utf8 bytes are copied.
-   * 
-   * @param utf8
-   * @param offset
-   * @param len
-   */
-  public void setCopy(byte[] utf8, int offset, int len)
-  {
-    if (bytes.length < len)
-    {
-      bytes = new byte[len];
-    }
-    System.arraycopy(utf8, offset, bytes, 0, len);
-    this.len = len;
-    this.stringCache = null;
-  }
-
-  /**
-   * The utf8 bytes are copied.
-   * 
-   * @param utf8
-   * @param len
-   */
-  public void setCopy(byte[] utf8, int len)
-  {
-    setCopy(utf8, 0, len);
-  }
-
-  /**
-   * The utf8 bytes are copied.
-   * 
-   * @param utf8
-   */
-  public void setCopy(byte[] utf8)
-  {
-    setCopy(utf8, 0, utf8.length);
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
-  @Override
-  public int compareTo(Object x)
-  {
-    JsonString s = (JsonString) x;
-    int len = this.len;
-    if (s.len < len)
-    {
-      len = s.len;
-    }
-    for (int i = 0; i < len; i++)
-    {
-      int c = (int) (bytes[i] & 0xff) - (int) (s.bytes[i] & 0xff);
-      if (c != 0)
-      {
-        return c;
-      }
-    }
-    int c = this.len - s.len;
-    return c;
+    
+    t.setCopy(bytes, length);
+    t.cachedString = cachedString;
+    t.cachedLongHashCode = cachedLongHashCode;
+    return t;
   }
   
-  public int hashCode() {
-  	try {
-  		return toString().hashCode(); // this way, hash code is cached in stringCache
-  	}	catch (UndeclaredThrowableException e) {
-  		// standard hash code
-  		int result = 1;
-  		for (byte element : bytes) {
-  			result = 31 * result + element;
-  		}
-  		return result;
-  	}
-  }
-  
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
-  @Override
-  public long longHashCode()
-  {
-    // TODO: inefficient; use caching similar to java.lang.String
-  	byte[] bs = bytes;
-    int n = len;
-    long h = BaseUtil.GOLDEN_RATIO_64;
-    for (int i = 0; i < n; i++)
-    {
-      h |= bs[i];
-      h *= BaseUtil.GOLDEN_RATIO_64;
-    }
-    return h;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#toString()
-   */
+  /** Converts this string to a Java string. This method internally uses caching; the conversion
+   * cost is thus paid only once. */
   @Override
   public String toString()
   {
     try
     {
-      if (stringCache == null)
+      if (cachedString == null)
       {
-        stringCache = new String(bytes, 0, len, "UTF8");
+        cachedString = new String(bytes, 0, length, "UTF8");
       }
-      return stringCache;
+      return cachedString;
     }
     catch (UnsupportedEncodingException e)
     {
       throw new UndeclaredThrowableException(e);
     }
   }
-
-
-  /**
-   * 
-   * @return the number of utf8 bytes (not number of characters!)
-   */
-  public int getLength()
+  
+  /** Returns the number of UTF-8 bytes (not characters!). */
+  public int lengthUtf8()
   {
-    return len;
+    return length;
   }
 
-  /**
-   * @param prefix
-   * @return
-   */
+  /** Returns true if this JSON string starts with the given string. This method currently compares
+   * the UTF-8 codes (not characters) of both strings. */
   public boolean startsWith(JsonString prefix)
   {
-    int n = prefix.len;
-    if (len < n)
+    // TODO: this does UTF-8 comparision; not character comparison
+    int n = prefix.length;
+    if (length < n)
     {
       return false;
     }
@@ -317,54 +147,58 @@ public class JsonString extends JsonAtom
     return true;
   }
 
-  /**
-   * You should not modify the bytes (or toString() might not work). The bytes
-   * still belong to this class.
-   * 
-   * @return
-   */
+  /** Returns the internal byte buffer that backs this JSON string. The bytes should not be modified
+   * (or methods like {@link toString()} or {@link #hashCode()} might not work). */
   public byte[] getInternalBytes()
   {
     return bytes;
   }
 
-  /**
-   * @param offset
-   * @param length
-   */
+  /** Find the first occurence of character <code>c</code>. If found, return the byte index else 
+   * return -1. This only works on 7-bit ascii values right now! */
+  public int indexOf(char c)
+  {
+    for (int i = 0; i < length; i++)
+    {
+      if (bytes[i] == c)
+      {
+        return i;
+      }
+    }
+    return -1;
+  }
+  
+  /** Removes <code>length</code>the bytes starting at <code>offset</code> from the UTF-8 
+   * representation of this string. This method will silently ignore invalid arguments. */
   public void removeBytes(int offset, int length)
   {
-    final int n = this.len;
+    final int n = this.length;
     if (offset < 0 || offset >= n || length <= 0)
     {
       // out of range
       return;
     }
     int i = offset + length;
-    if (i >= n || i < 0)
+    assert i>=0;
+    if (i >= n)
     {
       // removing the tail
-      len = offset;
+      this.length = offset;
       return;
     }
-    for (; i < len; offset++, i++)
+    for (; i < this.length; offset++, i++)
     {
       bytes[offset] = bytes[i];
     }
-    len -= length;
-    stringCache = null;
+    this.length -= length;
+    clearCache();
   }
 
-  /**
-   * Replace the first occurence of oldc with newc. This only works on 7-bit
-   * ascii values right now!
-   * 
-   * @param oldc
-   * @param newc
-   */
+  /** Find the first occurence of character <code>oldc</code> by <code>newc</code>. This only 
+   * works on 7-bit ascii values right now! */
   public void replace(char oldc, char newc)
   {
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < length; i++)
     {
       if (bytes[i] == oldc)
       {
@@ -374,24 +208,154 @@ public class JsonString extends JsonAtom
     }
   }
 
-  /**
-   * Find the first occurence of c. If found, return the byte index else return
-   * -1. This only works on 7-bit ascii values right now!
-   * 
-   * @param c
-   * @return
-   */
-  public int indexOf(char c)
+  // -- mutation ----------------------------------------------------------------------------------
+
+  /** Sets this <code>JsonString</code> to the provided string. */
+  public void set(String string)
   {
-    for (int i = 0; i < len; i++)
+    try
     {
-      if (bytes[i] == c)
-      {
-        return i;
-      }
+      clearCache();
+      this.cachedString = string;
+      bytes = string.getBytes("UTF8");
+      this.length = bytes.length;
     }
-    return -1;
+    catch (UnsupportedEncodingException e)
+    {
+      throw new UndeclaredThrowableException(e);
+    }
+  }
+  
+  /** Sets this <code>JsonString</code> to the specified value without copying.
+   * A reference to the provided byte array is stored within this <code>JsonString</code>.    
+   * 
+   * @param utf8 a byte array containing a UTF-8 encoded string
+   */
+  public void set(byte[] utf8)
+  {
+    set(utf8, utf8.length);
   }
 
+  /** Sets this <code>JsonString</code> to the specified value without copying.
+   * A reference to the provided byte array is stored within this <code>JsonString</code>.    
+   *
+   * @param utf8 a byte array containing a UTF-8 encoded string
+   * @param length number of bytes (not characters!) to use
+   */
+  public void set(byte[] utf8, int length)
+  {
+    this.bytes = utf8;
+    this.length = length;
+    clearCache();
+  }
+
+
+  /** Sets this <code>JsonString</code> to the specified value with copying.
+  *
+  * @param utf8 a byte array containing a UTF-8 encoded string
+  */
+  public void setCopy(byte[] utf8)
+  {
+    setCopy(utf8, 0, utf8.length);
+  }
+
+  /** Sets this <code>JsonString</code> to the specified value with copying.
+  *
+  * @param utf8 a byte array containing a UTF-8 encoded string
+  * @param length number of bytes (not characters!) to use
+  */
+  public void setCopy(byte[] utf8, int length)
+  {
+    setCopy(utf8, 0, length);
+  }
+
+  /** Sets this <code>JsonString</code> to the specified value with copying.
+   *
+   * @param utf8 a byte array containing a UTF-8 encoded string
+   * @param offset in <code>utf8</code> at which to start copying
+   * @param length number of bytes (not characters!) to use
+   */
+  public void setCopy(byte[] utf8, int offset, int length)
+  {
+    if (bytes.length < length)
+    {
+      bytes = new byte[length];
+    }
+    System.arraycopy(utf8, offset, bytes, 0, length);
+    this.length = length;
+    clearCache();
+  }
   
+
+  // -- comparison/hashing ------------------------------------------------------------------------
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
+  @Override
+  public int compareTo(Object x)
+  {
+    JsonString s = (JsonString) x;
+    int len = this.length;
+    if (s.length < len)
+    {
+      len = s.length;
+    }
+    for (int i = 0; i < len; i++)
+    {
+      int c = (int) (bytes[i] & 0xff) - (int) (s.bytes[i] & 0xff);
+      if (c != 0)
+      {
+        return c;
+      }
+    }
+    int c = this.length - s.length;
+    return c;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#hashCode() */
+  public int hashCode() {
+  	try {
+  		return toString().hashCode(); // this way, hash code is cached in the String's cache
+  	}	catch (UndeclaredThrowableException e) {
+  		// standard hash code
+  		int result = 1;
+  		for (byte element : bytes) {
+  			result = 31 * result + element;
+  		}
+  		return result;
+  	}
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
+  @Override
+  public long longHashCode()
+  {
+    if (cachedLongHashCode != null) return cachedLongHashCode;
+
+    byte[] bs = bytes;
+    int n = length;
+    long h = BaseUtil.GOLDEN_RATIO_64;
+    for (int i = 0; i < n; i++)
+    {
+      h |= bs[i];
+      h *= BaseUtil.GOLDEN_RATIO_64;
+    }
+    cachedLongHashCode = h; // remember it
+    return h;
+  }
+
+
+  // -- misc --------------------------------------------------------------------------------------
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
+  @Override
+  public JsonEncoding getEncoding()
+  {
+    return JsonEncoding.STRING;
+  }
+
+  protected void clearCache()
+  {
+    this.cachedString = null;
+    this.cachedLongHashCode = null;
+  }  
 }

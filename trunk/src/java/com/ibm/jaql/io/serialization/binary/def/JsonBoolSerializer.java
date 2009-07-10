@@ -40,7 +40,7 @@ public class JsonBoolSerializer extends BinaryBasicSerializer<JsonBool>
       return new JsonBool(value);
     } else {
       JsonBool t = (JsonBool)target;
-      t.setValue(value);
+      t.set(value);
       return t;
     }
   }
@@ -48,7 +48,7 @@ public class JsonBoolSerializer extends BinaryBasicSerializer<JsonBool>
   @Override
   public void write(DataOutput out, JsonBool value) throws IOException
   {
-    out.writeByte(value.getValue() ? 1 : 0);
+    out.writeByte(value.get() ? 1 : 0);
   }
   
   

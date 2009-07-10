@@ -99,7 +99,7 @@ public final class IsdefinedExpr extends Expr
     {
       return null;
     }
-    return JsonBool.make(rec.findName(name) >= 0);
+    return JsonBool.makeShared(rec.containsKey(name));
   }
 
 }

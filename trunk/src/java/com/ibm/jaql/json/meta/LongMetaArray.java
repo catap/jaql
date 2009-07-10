@@ -79,7 +79,7 @@ public class LongMetaArray extends MetaArray
       {
         if (i < arr.length)
         {
-          jlong.value = arr[i++];
+          jlong.set(arr[i++]);
           return true; // currentValue == jbool
         }
         return false;
@@ -99,7 +99,7 @@ public class LongMetaArray extends MetaArray
     long[] arr = (long[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonLong) target).value = arr[(int) n];
+      ((JsonLong) target).set(arr[(int) n]);
       return target;
     }
     else

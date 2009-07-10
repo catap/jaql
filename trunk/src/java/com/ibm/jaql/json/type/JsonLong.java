@@ -19,32 +19,29 @@ import java.math.BigDecimal;
 
 import com.ibm.jaql.util.BaseUtil;
 
-/**
- * 
- */
+/** A long JSON value (64-bit signed integer). */
 public class JsonLong extends JsonNumber
 {
-  public long value;
+  protected long value = 0;
 
-  /**
-   * 
-   */
+  // -- construction ------------------------------------------------------------------------------
+  
+  /** Constructs a new <code>JsonLong</code> having value 0. */
   public JsonLong()
   {
   }
 
-  /**
-   * @param value
-   */
+  /** Constructs a new <code>JsonLong</code> with the specified value. */
   public JsonLong(long value)
   {
     this.value = value;
   }
 
-  /**
-   * @param value
+  /** Constructs a new <code>JsonLong</code> from the specified value. 
+   *
+   * @throws NumberFormatException when <code>value</code> does not represent a valid long
    */
-  public JsonLong(String value)
+  public JsonLong(String value) throws NumberFormatException
   {
     if (value.startsWith("0x") || value.startsWith("0X"))
     {
@@ -85,35 +82,38 @@ public class JsonLong extends JsonNumber
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
-  @Override
-  public JsonEncoding getEncoding()
+  /** Returns a {@link JsonLong} for the given value. The returned value must not be changed;
+   * is mutation is required, use one of the constructors instead. */
+  public static JsonValue makeShared(long i)
   {
-    return JsonEncoding.LONG;
+    if (i == -1)
+    {
+      return JsonLong.MINUS_ONE;
+    }
+    if (i == 0)
+    {
+      return JsonLong.ZERO;
+    }
+    if (i == 1)
+    {
+      return JsonLong.ONE;
+    }
+    return new JsonLong(i);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#intValue()
-   */
+  
+  // -- getters -----------------------------------------------------------------------------------
+  
+  /* @see com.ibm.jaql.json.type.JsonNumeric#intValue() */
   @Override
   public int intValue()
   {
     return (int) value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#intValueExact()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#intValueExact() */
   @Override
-  public int intValueExact()
+  public int intValueExact() throws ArithmeticException
   {
     int x = (int) value;
     if (x != value)
@@ -123,74 +123,75 @@ public class JsonLong extends JsonNumber
     return x;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#longValue()
-   */
+  /** @see {@link #longValue()} */
   @Override
   public long longValue()
   {
     return value;
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#longValueExact()
-   */
+  
+  /* @see com.ibm.jaql.json.type.JsonNumeric#longValueExact() */
   @Override
   public long longValueExact()
   {
     return value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#decimalValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#decimalValue() */
   @Override
   public BigDecimal decimalValue()
   {
     return new BigDecimal(value);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#doubleValue()
-   */
+  /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValue() */
   @Override
   public double doubleValue()
   {
     return value;
   }
+  
+  /** Returns {@link #longValue()}. */
+  public long get()
+  {
+    return value;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  @Override
+  public JsonLong getCopy(JsonValue target) throws Exception
+  {
+    if (target == this) target = null;
+    
+    if (target instanceof JsonLong)
+    {
+      JsonLong t = (JsonLong)target;
+      t.value = this.value;
+      return t;
+    }
+    return new JsonLong(value);
+  }
+  
 
-  /**
-   * @param value
-   */
-  public void setValue(long value)
+  // -- setters -----------------------------------------------------------------------------------
+
+  /** Sets the value of this <code>JsonLong</code> to the specified value. */
+  public void set(long value)
   {
     this.value = value;
   }
+  
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JNumeric#negate()
-   */
-  @Override
+  /** Negates this JsonLong. This method does not produce meaningful results when it represents
+   * {@link Long#MAX_VALUE}. */
   public void negate()
   {
     value = -value;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object)
-   */
+  // -- comparison/hashing ------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   @Override
   public int compareTo(Object x)
   {
@@ -210,54 +211,27 @@ public class JsonLong extends JsonNumber
     }
   }
 
-  /**
-   * @param value
-   * @return
-   */
-  public static long longHashCode(long value)
-  {
-    return value * BaseUtil.GOLDEN_RATIO_64;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#longHashCode()
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
     return longHashCode(this.value);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
-  @Override
-  public void setCopy(JsonValue jvalue) throws Exception
+  /** Static utility methods for determining the long hash code of a long value. */
+  public static long longHashCode(long value)
   {
-    JsonLong num = (JsonLong) jvalue;
-    value = num.value;
+    return value * BaseUtil.GOLDEN_RATIO_64;
   }
 
-  /**
-   * @param i
-   * @return
-   */
-  public static JsonValue sharedLong(int i)
+  
+  // -- misc --------------------------------------------------------------------------------------
+  
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
+  @Override
+  public JsonEncoding getEncoding()
   {
-    switch (i)
-    {
-      case -1 :
-        return JsonLong.MINUS_ONE;
-      case 0 :
-        return JsonLong.ZERO;
-      case 1 :
-        return JsonLong.ONE;
-      default :
-        return new JsonLong(i);
-    }
+    return JsonEncoding.LONG;
   }
+
 }

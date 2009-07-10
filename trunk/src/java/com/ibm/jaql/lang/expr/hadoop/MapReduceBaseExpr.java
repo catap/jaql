@@ -42,6 +42,8 @@ import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.DefaultJsonComparator;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -107,9 +109,9 @@ public abstract class MapReduceBaseExpr extends Expr
   protected final JsonRecord baseSetup(Context context) throws Exception
   {
     JsonRecord args = JaqlUtil.enforceNonNull((JsonRecord) exprs[0].eval(context));    
-    JsonValue inArgs = args.getRequired("input");
-    outArgs = args.getRequired("output");
-    JsonRecord options = (JsonRecord) args.getValue("options");
+    JsonValue inArgs = args.getRequired(new JsonString("input"));
+    outArgs = args.getRequired(new JsonString("output"));
+    JsonRecord options = (JsonRecord) args.get(new JsonString("options"));
 
     conf = new JobConf();
     File extensions = ClassLoaderMgr.getExtensionJar();
@@ -126,7 +128,7 @@ public abstract class MapReduceBaseExpr extends Expr
     String jobName = "jaql job";
     if (options != null)
     {
-      JsonValue nameValue = options.getValue("jobname");
+      JsonValue nameValue = options.get(new JsonString("jobname"));
       if (nameValue != null)
       {
         jobName = nameValue.toString();
@@ -210,7 +212,7 @@ public abstract class MapReduceBaseExpr extends Expr
     }
     try
     {
-      JsonValue.print(ps, fn);
+      JsonUtil.print(ps, fn);
     } catch (IOException e)
     {
       throw new UndeclaredThrowableException(e);

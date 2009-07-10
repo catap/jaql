@@ -61,7 +61,7 @@ public final class FloatMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     float x = (Float) getter.invoke(obj);
-    ((JsonDouble) target).value = x;
+    ((JsonDouble) target).set(x);
     return target;
   }
 

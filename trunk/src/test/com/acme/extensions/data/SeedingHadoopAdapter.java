@@ -26,6 +26,7 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -46,7 +47,7 @@ public class SeedingHadoopAdapter extends DefaultHadoopInputAdapter
   public void init(JsonValue value) throws Exception
   {
     super.init(value);
-    seed = ((JsonLong) options.getValue("seed")).value;
+    seed = ((JsonLong) options.get(new JsonString("seed"))).get();
     rng = new Random(seed);
   }
 

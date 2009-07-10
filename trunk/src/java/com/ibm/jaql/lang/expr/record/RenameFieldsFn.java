@@ -15,9 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -52,23 +55,23 @@ public class RenameFieldsFn extends Expr
     }
 
     JsonRecord map = (JsonRecord) exprs[1].eval(context);
-    if (map == null || map.arity() == 0)
+    if (map == null || map.size() == 0)
     {
       return oldRec;
     }
 
-    int n = oldRec.arity();
-    BufferedJsonRecord newRec = new BufferedJsonRecord(n); // TODO: memory
+    
+    BufferedJsonRecord newRec = new BufferedJsonRecord(oldRec.size()); // TODO: memory
     // TODO: create a JRecord that references another JRecord and overrides fields 
-    for (int i = 0; i < n; i++)
+    for (Entry<JsonString, JsonValue> e : oldRec)
     {
-      JsonString name = oldRec.getName(i);
-      JsonString name2 = (JsonString) map.getValue(name);
+      JsonString name = e.getKey();
+      JsonString name2 = (JsonString) map.get(name);
       if (name2 != null)
       {
         name = name2;
       }
-      newRec.add(name, oldRec.getValue(i));
+      newRec.add(name, e.getValue());
     }
 
     return newRec;

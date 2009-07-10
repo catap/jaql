@@ -58,7 +58,7 @@ public class BooleanMetaField extends MetaField
       IllegalAccessException
   {
     boolean x = field.getBoolean(obj);
-    ((JsonBool) target).value = x;
+    ((JsonBool) target).set(x);
     return target;
   }
 

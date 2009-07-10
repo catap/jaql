@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.json.schema;
 
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Package-private helper methods */
@@ -43,7 +43,7 @@ class SchemaUtil
     
     if (start!=null && end!=null) 
     {
-      return JsonNumeric.compare(start, end) <= 0; 
+      return JsonUtil.compare(start, end) <= 0; 
     }
     return true;    
   }

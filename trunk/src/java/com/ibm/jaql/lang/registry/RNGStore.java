@@ -21,6 +21,7 @@ import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.converter.FromJson;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.JaqlFunction;
 
@@ -108,7 +109,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
         {
           try
           {
-            return JsonValue.getCopy(src, tgt);
+            return JsonUtil.getCopy(src, tgt);
           }
           catch (Exception e)
           {
@@ -185,7 +186,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
             }
             else
             {
-              return JsonValue.getCopy(src, tgt);
+              return JsonUtil.getCopy(src, tgt);
             }
           }
           catch (Exception e)
@@ -247,7 +248,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
     JsonValue nkey;
     try
     {
-      nkey = JsonValue.getCopy(key, null);
+      nkey = JsonUtil.getCopy(key, null);
     }
     catch (Exception e)
     {

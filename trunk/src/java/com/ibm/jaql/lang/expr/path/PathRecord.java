@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
@@ -94,18 +95,17 @@ public class PathRecord extends PathStep
     // TODO: this can be made much faster when "*" is not used.
     // TODO: this can be made much faster when only "*" is used, without inclusion/exclusion
     BufferedJsonRecord newRec = new BufferedJsonRecord(); // TODO: memory
-    final int n = oldRec.arity();
     final int m = exprs.length - 1;
-    for( int i = 0 ; i < n ; i++ )
+    for (Entry<JsonString, JsonValue> e : oldRec)
     {
-      JsonString name = oldRec.getName(i);
+      JsonString name = e.getKey();
       int j;
       for( j = 0 ; j < m ; j++ )
       {
         PathFields f = (PathFields)exprs[j];
         if( f.matches(context, name) )
         {
-          JsonValue value = oldRec.getValue(i);
+          JsonValue value = e.getValue();
           value = f.nextStep(context, value);
           value = nextStep(context, value);
           newRec.add(name, value);

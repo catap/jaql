@@ -239,17 +239,25 @@ public class JsonRegex extends JsonAtom
     return (flags & MULTILINE) != 0;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
-  public void setCopy(JsonValue jvalue) throws Exception
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  @Override
+  public JsonRegex getCopy(JsonValue target) throws Exception
   {
-    JsonRegex r = (JsonRegex) jvalue;
-    this.regex.setCopy(r.regex);
-    this.flags = r.flags;
-    this.matcher = null;
+    if (target == this) target = null;
+    
+    JsonRegex t;
+    if (target instanceof JsonSchema)
+    {
+      t = (JsonRegex)target;
+    }
+    else
+    {
+      t = new JsonRegex();
+    }
+    t.regex = JsonUtil.getCopy(this.regex, t.regex);
+    t.flags = this.flags;
+    t.matcher = this.matcher; // can be shared
+    return t;
   }
   
   public JsonString getInternalRegex() {

@@ -41,7 +41,7 @@ public class JsonDoubleSerializer extends BinaryBasicSerializer<JsonDouble>
       return new JsonDouble(value);
     } else {
       JsonDouble t = (JsonDouble)target;
-      t.value = value;
+      t.set(value);
       return t;
     }
   }
@@ -50,7 +50,7 @@ public class JsonDoubleSerializer extends BinaryBasicSerializer<JsonDouble>
   @Override
   public void write(DataOutput out, JsonDouble value) throws IOException
   {
-    out.writeDouble(value.value);
+    out.writeDouble(value.get());
   }
   
   

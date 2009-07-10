@@ -30,6 +30,7 @@ import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
@@ -73,9 +74,9 @@ public class MapReduceFn extends MapReduceBaseExpr
   public JsonValue eval(final Context context) throws Exception
   {
     JsonRecord args = baseSetup(context);
-    JsonValue map = JaqlUtil.enforceNonNull(args.getRequired("map"));
-    JsonValue combine = args.getValue("combine", null);
-    JsonValue reduce = args.getValue("reduce", null);
+    JsonValue map = JaqlUtil.enforceNonNull(args.getRequired(new JsonString("map")));
+    JsonValue combine = args.get(new JsonString("combine"), null);
+    JsonValue reduce = args.get(new JsonString("reduce"), null);
 
     //conf.setMapperClass(MapEval.class);
     conf.setMapRunnerClass(MapEval.class);
@@ -192,7 +193,7 @@ public class MapReduceFn extends MapReduceBaseExpr
         {
           BufferedJsonArray valRec = (BufferedJsonArray) value;
           JsonLong id = (JsonLong) JaqlUtil.enforceNonNull(valRec.get(0));
-          i = (int) id.value;
+          i = (int) id.get();
           value = valRec.get(1);
         }
         valArrays[i].addCopy(value);
@@ -271,7 +272,7 @@ public class MapReduceFn extends MapReduceBaseExpr
             JsonIterator iter = combineFns[i].iter(context, fnArgs);
             for (JsonValue value : iter) 
             {
-              outId.value = i;
+              outId.set(i);
               outPair.set(1, value);
               output.collect(key, valueHolder);
             }

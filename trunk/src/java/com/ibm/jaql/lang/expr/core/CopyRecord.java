@@ -2,10 +2,12 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -55,10 +57,9 @@ public class CopyRecord extends FieldExpr
     JsonRecord inrec = (JsonRecord) exprs[0].eval(context);
     if (inrec != null)
     {
-      int m = inrec.arity();
-      for (int j = 0; j < m; j++)
+      for (Entry<JsonString, JsonValue> e : inrec)
       {
-        outrec.add(inrec.getName(j), inrec.getValue(j));
+        outrec.add(e.getKey(), e.getValue());
       }
     }
   }

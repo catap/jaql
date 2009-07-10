@@ -19,14 +19,9 @@ package com.ibm.jaql.json.type;
 /** Superclass for all atomic JSON values. */
 public abstract class JsonAtom extends JsonValue
 {
-  /** Returns <code>true</code>.
-   * @return<code>true</code>
-   */
+  /** Returns <code>true</code>. */
   public final boolean isAtom()
   {
     return true;
   }
-
-  // TODO: eliminate clone() from JAtoms; can use JaqlType.copy() or Item.copy() instead.
-  // public abstract JAtom clone();
 }

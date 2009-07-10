@@ -55,7 +55,7 @@ public class JsonBinarySerializer extends BinaryBasicSerializer<JsonBinary>
   @Override
   public void write(DataOutput out, JsonBinary value) throws IOException
   {
-    int length = value.getLength();
+    int length = value.length();
     BaseUtil.writeVUInt(out, length);
     out.write(value.getInternalBytes(), 0, length);
   }

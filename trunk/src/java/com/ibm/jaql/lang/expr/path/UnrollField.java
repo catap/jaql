@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.path;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -73,13 +74,13 @@ public class UnrollField extends UnrollStep
     {
       return null;
     }
-    int n = rec.arity();
+    int n = rec.size();
     BufferedJsonRecord out = new BufferedJsonRecord(n); // TODO: memory
     JsonHolder hole = null;
-    for(int i = 0 ; i < n ; i++)
+    for (Entry<JsonString, JsonValue> e : rec)
     {
-      JsonString name = rec.getName(i);
-      JsonValue value = rec.getValue(i);
+      JsonString name = e.getKey();
+      JsonValue value = e.getValue();
       if( name.equals(ename) )
       {
         hole = new JsonHolder(value); // TODO: memory

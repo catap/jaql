@@ -25,6 +25,7 @@ import antlr.TokenStreamException;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -184,7 +185,7 @@ public abstract class Schema
     JsonSchema s = new JsonSchema(this);
     try
     {
-      return JsonValue.printToString(s);
+      return JsonUtil.printToString(s);
     } catch (IOException e)
     {
       throw new UndeclaredThrowableException(e);

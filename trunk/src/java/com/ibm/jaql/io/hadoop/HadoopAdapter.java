@@ -18,6 +18,7 @@ package com.ibm.jaql.io.hadoop;
 import org.apache.hadoop.mapred.JobConfigurable;
 
 import com.ibm.jaql.io.Adapter;
+import com.ibm.jaql.json.type.JsonString;
 
 /**
  * An adapter that is specific for Hadoop Input and Output formats.
@@ -29,7 +30,7 @@ public interface HadoopAdapter
 
   public final static String storeRegistryVarName = IMP + ".sRegistry";
 
-  static String              CONVERTER_NAME       = "converter";
+  static JsonString              CONVERTER_NAME       = new JsonString("converter");
 
-  static String              CONFIGURATOR_NAME    = "configurator";
+  static JsonString              CONFIGURATOR_NAME    = new JsonString("configurator");
 }

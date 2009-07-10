@@ -27,6 +27,8 @@ import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 
@@ -41,9 +43,9 @@ public abstract class JsonRegistryFormat<K, V>
     implements RegistryFormat<K, V, JsonRecord>
 {
 
-  public static final String KEY_NAME = "key";
+  public static final JsonString KEY_NAME = new JsonString("key");
 
-  public static final String VAL_NAME = "val";
+  public static final JsonString VAL_NAME = new JsonString("val");
 
   private ToJson<K>        toKeyConverter;
 
@@ -109,7 +111,7 @@ public abstract class JsonRegistryFormat<K, V>
    */
   public K convertKey(JsonRecord external)
   {
-    JsonValue kValue = external.getValue(KEY_NAME);
+    JsonValue kValue = external.get(KEY_NAME);
     K kTgt = fromKeyConverter.createInitialTarget();
     kTgt = fromKeyConverter.convert(kValue, kTgt);
     return kTgt;
@@ -122,7 +124,7 @@ public abstract class JsonRegistryFormat<K, V>
    */
   public V convertVal(JsonRecord external)
   {
-    JsonValue vValue= external.getValue(VAL_NAME);
+    JsonValue vValue= external.get(VAL_NAME);
     V vTgt = fromValConverter.createInitialTarget();
     vTgt = fromValConverter.convert(vValue, vTgt);
     return vTgt;
@@ -168,7 +170,7 @@ public abstract class JsonRegistryFormat<K, V>
       JsonRecord r = convert(entry.getKey(), entry.getValue());
       arr.addCopy(r);
     }
-    JsonValue.print(pout, arr);
+    JsonUtil.print(pout, arr);
     pout.flush();
   }
 

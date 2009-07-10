@@ -368,7 +368,7 @@ public class SchemaFactory
 
     case BINARY:
       JsonBinary jb = (JsonBinary)v;
-      length = new JsonLong(jb.getLength());
+      length = new JsonLong(jb.length());
       return new BinarySchema(length, length);
       
     case DATE:

@@ -68,9 +68,9 @@ public class JdbcExpr extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     JsonRecord args = JaqlUtil.enforceNonNull((JsonRecord) exprs[0].eval(context));
-    String driver = (JaqlUtil.enforceNonNull((JsonString) args.getValue("driver"))).toString();
-    String url = (JaqlUtil.enforceNonNull((JsonString) args.getValue("url"))).toString();
-    String query = (JaqlUtil.enforceNonNull((JsonString) args.getValue("query"))).toString();
+    String driver = (JaqlUtil.enforceNonNull((JsonString) args.get(new JsonString("driver")))).toString();
+    String url = (JaqlUtil.enforceNonNull((JsonString) args.get(new JsonString("url")))).toString();
+    String query = (JaqlUtil.enforceNonNull((JsonString) args.get(new JsonString("query")))).toString();
 
     String s = driver.toString();
     try
@@ -164,12 +164,12 @@ public class JdbcExpr extends IterExpr
             case Types.INTEGER :
             case Types.TINYINT :
             case Types.SMALLINT :
-              ((JsonLong) values[i]).value = rs.getLong(i + 1);
+              ((JsonLong) values[i]).set(rs.getLong(i + 1));
               break;
             case Types.DECIMAL :
             case Types.DOUBLE :
             case Types.FLOAT :
-              ((JsonDecimal) values[i]).value = rs.getBigDecimal(i + 1);
+              ((JsonDecimal) values[i]).set(rs.getBigDecimal(i + 1));
               break;
             case Types.CHAR :
             case Types.VARCHAR :
@@ -181,13 +181,13 @@ public class JdbcExpr extends IterExpr
               break;
             case Types.DATE :
               // TODO: all these need null handling...
-              ((JsonDate) values[i]).millis = rs.getDate(i + 1).getTime();
+              ((JsonDate) values[i]).setMillis(rs.getDate(i + 1).getTime());
               break;
             case Types.TIME :
-              ((JsonDate) values[i]).millis = rs.getTime(i + 1).getTime();
+              ((JsonDate) values[i]).setMillis(rs.getTime(i + 1).getTime());
               break;
             case Types.TIMESTAMP :
-              ((JsonDate) values[i]).millis = rs.getTimestamp(i + 1).getTime();
+              ((JsonDate) values[i]).setMillis(rs.getTimestamp(i + 1).getTime());
               break;
             case Types.BINARY :
               ((JsonBinary) values[i]).setBytes(rs.getBytes(i + 1));

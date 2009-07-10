@@ -83,7 +83,7 @@ public class AndExpr extends Expr
   public JsonBool eval(final Context context) throws Exception
   {
     JsonBool b1 = (JsonBool)exprs[0].eval(context);
-    if (b1 != null && b1.getValue() == false)
+    if (b1 != null && b1.get() == false)
     {
       return JsonBool.FALSE;
     }
@@ -93,7 +93,7 @@ public class AndExpr extends Expr
     {
       return null;
     }
-    if (b2.getValue() == false)
+    if (b2.get() == false)
     {
       return JsonBool.FALSE;
     }

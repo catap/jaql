@@ -196,10 +196,9 @@ public class Parameters
    * (or throws an exception, if this parameter does not have a default value). */
   public JsonValue argumentOrDefault(JsonString parName, JsonRecord args)
   {
-    int index = args == null ? -1 : args.findName(parName); 
-    if (index >= 0)
+    if (args!=null && args.containsKey(parName))
     {
-      return args.getValue(index);
+      return args.get(parName);
     }
     else
     {

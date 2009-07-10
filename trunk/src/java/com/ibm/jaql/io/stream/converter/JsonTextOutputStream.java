@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.converter.JsonToStream;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Writes serialized {@link Item}s to a binary output stream.
@@ -74,7 +75,7 @@ public class JsonTextOutputStream implements JsonToStream<JsonValue>
         output.print(ARR_SEP);
       else
         seenFirst = true;
-      JsonValue.print(output, i);
+      JsonUtil.print(output, i);
     } catch(Exception e) {
       throw new RuntimeException(e);
     }

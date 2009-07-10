@@ -42,7 +42,7 @@ public class BuildJIndexFn extends Expr
     {
       return null;
     }
-    JsonString jloc = (JsonString)fd.getRequired("location");
+    JsonString jloc = (JsonString)fd.getRequired(new JsonString("location"));
     if( jloc == null )
     {
       return null;
@@ -56,7 +56,7 @@ public class BuildJIndexFn extends Expr
     for (JsonValue value : iter)
     {
       JsonArray arr = (JsonArray)value;
-      arr.getValues(kvpair);
+      arr.getAll(kvpair);
       JsonValue key = kvpair[0];
       JsonValue val = kvpair[1];
       index.add(key,val);

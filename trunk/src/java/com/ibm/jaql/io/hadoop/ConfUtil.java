@@ -24,6 +24,7 @@ import org.apache.hadoop.mapred.JobConf;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Provides static methods that serializes and deserializes {@link JsonRecord}s and 
@@ -45,7 +46,7 @@ public class ConfUtil
 
     ByteArrayOutputStream bstr = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(bstr);
-    JsonValue.print(out, args);
+    JsonUtil.print(out, args);
     out.flush();
     out.close();
     conf.set(name, bstr.toString()); // FIXME: memory and strings...
@@ -102,7 +103,7 @@ public class ConfUtil
     ByteArrayOutputStream bstr = new ByteArrayOutputStream();
     PrintStream out = new PrintStream(bstr);
     JsonArray mdata = (JsonArray) data; // FIXME: don't depend on this...
-    JsonValue.print(out, mdata);
+    JsonUtil.print(out, mdata);
     out.flush();
     out.close();
     conf.set(name, bstr.toString());

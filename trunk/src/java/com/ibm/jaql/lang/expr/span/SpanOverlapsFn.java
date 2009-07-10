@@ -52,6 +52,6 @@ public class SpanOverlapsFn extends Expr
     {
       return null;
     }
-    return JsonBool.make(JsonSpan.overlaps(x, y));
+    return JsonBool.makeShared(JsonSpan.overlaps(x, y));
   }
 }

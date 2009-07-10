@@ -17,179 +17,183 @@
 package com.ibm.jaql.json.type;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
-import com.ibm.jaql.util.BaseUtil;
 
-
-/** An in-memory {@link JsonRecord}. */
+/** An in-memory {@link JsonRecord}. 
+ * 
+ * In addition to name-based record access, this class provides functionality to access record
+ * fields by index. This is possible because this record is implemented using two parallel arrays:
+ * one storing the field names and one storing the actual values. (The field-name array is kept 
+ * sorted for efficiency reasons.) Thus, as long as the record's fields are not modified, field 
+ * indexes are stable and can be used to avoid the look-up cost of name-based access.
+ */
 public class BufferedJsonRecord extends JsonRecord {
-
 	protected final static JsonString[] NO_NAMES  = new JsonString[0];
   protected final static JsonValue[]  NO_VALUES = new JsonValue[0];        
   
   // names and values are parallel arrays with names being kept in sorted order
-  protected JsonString[] 					 names      = NO_NAMES;			 
-  protected JsonValue[] 						 values     = NO_VALUES;		   
-  protected int                  arity      = 0;
+  protected JsonString[]     names   = NO_NAMES;			 
+  protected JsonValue[]      values  = NO_VALUES;		   
+  protected int              size    = 0;
 
+
+  // -- construction ------------------------------------------------------------------------------
   
-  /**
-   * 
-   */
+  /** Constructs an empty in-memory JSON record */
   public BufferedJsonRecord()
   {
   }
 
-  /**
-   * @param capacity
-   */
+  /** Constructs an empty in-memory JSON record and allocates space for the specified number of
+   * entries */
   public BufferedJsonRecord(int capacity)
   {
     ensureCapacity(capacity);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
+
+  // -- reading -----------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonRecord#size() */
   @Override
-  public JsonEncoding getEncoding()
+  public int size()
   {
-    return JsonEncoding.MEMORY_RECORD;
+    return size;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#arity()
-   */
+  /* @see com.ibm.jaql.json.type.JsonRecord#get(com.ibm.jaql.json.type.JsonString,
+   *      com.ibm.jaql.json.type.JsonValue) */
   @Override
-  public int arity()
+  public JsonValue get(JsonString name, JsonValue defaultValue)
   {
-    return this.arity;
+    int index = indexOf(name);
+    return index >= 0 ? values[index] : defaultValue;
   }
 
-  /**
-   * @param arity
-   */
-  protected void setArity(int arity)
+  /* @see com.ibm.jaql.json.type.JsonRecord#get(com.ibm.jaql.json.type.JsonString) */
+  @Override
+  public JsonValue getRequired(JsonString key)
   {
-    ensureCapacity(arity);
-    this.arity = arity;
+    int index = indexOf(key);
+    if (index < 0) throw new IllegalArgumentException("invalid field name " + key);
+    return values[index];
   }
+  
+  /* @see com.ibm.jaql.json.type.JsonRecord#containsKey(com.ibm.jaql.json.type.JsonString) */
+  @Override
+  public boolean containsKey(JsonString key)
+  {
+    return indexOf(key) >= 0;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonRecord#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  @Override
+  public BufferedJsonRecord getCopy(JsonValue target) throws Exception {
+    if (target == this) target = null;
+    
+    // determine target record
+    BufferedJsonRecord t;
+    if (target instanceof BufferedJsonRecord)
+    {
+      t = (BufferedJsonRecord)target;
+    }
+    else
+    {
+      t = new BufferedJsonRecord(this.size);
+    }
+    t.resize(this.size);
+    
+    // and copy
+    for (int i = 0; i < size; i++)
+    {
+      t.names[i] = JsonUtil.getCopy(names[i], t.names[i]); 
+      t.values[i] = JsonUtil.getCopy(values[i], t.values[i]);
+    }
+    t.reorg();    
+    return t;
+  } 
 
-	/** @see Arrays#binarySearch(Object[], int, int, Object) */
+
+  // -- index-based access ------------------------------------------------------------------------
+
+  /** @see Arrays#binarySearch(Object[], int, int, Object) */
   protected int binarySearch(JsonString name) {
-  	return arity > 0 ? Arrays.binarySearch(names, 0, arity, name) : -1;
+    return size > 0 ? Arrays.binarySearch(names, 0, size, name) : -1;
   }
 
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#findName(com.ibm.jaql.json.type.JString)
-   */
-  @Override
-  public int findName(JsonString name)
+  /** Searches this record for the specified field and returns its index. Returns a negative
+   * number when the field name has not been found. */
+  public int indexOf(JsonString name)
   {
   	return binarySearch(name);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#findName(java.lang.String)
-   */
-  @Override
-  public int findName(String name)
-  {
-    // TODO: conversion from String to JString ok?
-    return findName(new JsonString(name));
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#getName(int)
-   */
-  @Override
-  public JsonString getName(int i)
+  /** Returns the field located at the specified index without boundary checking. This
+   * method suceeds when 0&le;<code>i</code>&lt;<code>size()</code>. Otherwise, the result is either 
+   * undefined or an exception is thrown. */
+  public JsonString nameOf(int i)
   {
     return names[i];
   }
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#getValue(int)
-   */
-  @Override
-  public JsonValue getValue(int i)
+  /** Returns the value of the field located at the specified index without boundary checking. 
+   * This method suceeds when 0&le;<code>i</code>&lt;<code>size()</code>. Otherwise, the result 
+   * is either undefined or an exception is thrown. */
+  public JsonValue valueOf(int i)
   {
     return values[i];
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#getValue(com.ibm.jaql.json.type.JString,
-   *      com.ibm.jaql.json.type.Item)
-   */
-  @Override
-  public JsonValue getValue(JsonString name, JsonValue defaultValue)
-  {
-  	int index = findName(name);
-  	return index >= 0 ? values[index] : defaultValue;
+  /** Returns the internal array used to store field names. Do not modify! Field names might 
+   * be sorted or indexed. */ 
+  public JsonString[] getInternalNamesArray() {
+    return names;
+  }
+  
+  /** Returns the internal array used to store values */
+  public JsonValue[] getInternalValuesArray() {
+    return values;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JRecord#getValue(java.lang.String,
-   *      com.ibm.jaql.json.type.Item)
-   */
-  @Override
-  public JsonValue getValue(String name, JsonValue defaultValue)
-  {
-  	int index = findName(name);
-  	return index >= 0 ? values[index] : defaultValue;
-  }
 
-  /**
-   * 
-   */
-  public void clear()
-  {
-    this.arity = 0;
-  }
+  // -- mutation ----------------------------------------------------------------------------------
 
-  /**
-   * name and value now belong to this record.
-   * 
-   * @param name
-   * @param value
-   */
+
+  /** Adds the specified (name, value) pair to this record (without copying). Throws an expection if 
+   * a field of the specified name exists already.*/
   public void add(JsonString name, JsonValue value)
   {
   	addOrSet(name, value, true);
   }
 
-  /**
-   * name and value now belong to this record.
-   * 
-   * @param name
-   * @param value
-   */
-  public void addOrSet(JsonString name, JsonValue value) {
-  	addOrSet(name, value, false);
+  /** Adds or updates the specified (name, value) pair (without copying). */
+  public void set(JsonString name, JsonValue value)
+  {
+    addOrSet(name, value, false);
   }
-
-  /**
-   * name and value now belong to this record.
+  
+  /** Sets the value of the field with the specified index. without boundary checking. 
+   * This method suceeds when 0&le;<code>i</code>&lt;<code>size()</code>. Otherwise, the result 
+   * is either undefined or an exception is thrown. */
+  public void set(int i, JsonValue value)
+  {
+    values[i] = value; // TODO: unsafe to call readfields now because we don't own this value
+  }
+  
+  /** Sets the internal arrays to new values. The names have to be sorted; no consistency
+   * checks are performed. The arguments are not copied. Use with caution! */
+  public void setInternal(JsonString[] names, JsonValue[] values, int arity) {
+    assert names.length >= arity;
+    assert values.length >= arity;
+    this.names = names;
+    this.values = values;
+    this.size = arity;
+  }
+  
+  /** Adds or updates the specified (name, value) pair (without copying).
    * 
-   * @param name
-   * @param cachedValue
    * @param exceptionOnSet throw RuntimeException when field already present?
    */
   protected void addOrSet(JsonString name, JsonValue value, boolean exceptionOnSet) {
@@ -201,77 +205,38 @@ public class BufferedJsonRecord extends JsonRecord {
   			set(index, value);
   		}
   	}	else {
-  		setArity(arity+1);
+  		resize(size+1);
   		index = -index-1;
-  		if (index < arity-1) {
-  			System.arraycopy(names, index, names, index+1, (arity-1)-index);
-  			System.arraycopy(values, index, values, index+1, (arity-1)-index);
+  		if (index < size-1) {
+  			System.arraycopy(names, index, names, index+1, (size-1)-index);
+  			System.arraycopy(values, index, values, index+1, (size-1)-index);
   		}
   		names[index] = name;
   		set(index, value);
   		reorg();
   	}
   }
-  
-  /**
-   * @param name
-   * @param value
-   */
-  public void add(String name, JsonValue value)
+
+  /** Clears this record, i.e., removes all its fields. */
+  public void clear()
   {
-    add(new JsonString(name), value); // TODO: memory
+    this.size = 0;
   }
 
-  /**
-   * @param i
-   * @param value
-   */
-  public void set(int i, JsonValue value)
+  /** Increases the capacity of this record so that it can hold more fields, but does not change
+   * its actual size. */
+  public void ensureCapacity(int capacity)
   {
-    values[i] = value; // TODO: unsafe to call readfields now because we don't own this value
-  }
-
-    /** Adds or sets
-   * @param name
-   * @param value
-   */
-  public void set(JsonString name, JsonValue value)
-  {
-  	addOrSet(name, value);
-  }
-
-  /**
-   * @param name
-   * @param value
-   */
-  public void set(String name, JsonValue value)
-  {
-    set(new JsonString(name), value); // TODO: memory
-  }
-
-  /**
-   * @return
-   */
-  public int getCapacity()
-  {
-    return names.length;
-  }
-
-  /**
-   * @param minCapacity
-   */
-  public void ensureCapacity(int minCapacity)
-  {
-  	int curCapacity = getCapacity();
-  	if (curCapacity  < minCapacity)
+    int curCapacity = names.length;
+    if (curCapacity  < capacity)
     {
-      JsonString[] newNames = new JsonString[minCapacity];
+      JsonString[] newNames = new JsonString[capacity];
       System.arraycopy(names, 0, newNames, 0, curCapacity);
       names = newNames;
-      JsonValue[] newValues = new JsonValue[minCapacity];
+      JsonValue[] newValues = new JsonValue[capacity];
       System.arraycopy(values, 0, newValues, 0, curCapacity);
       values = newValues;
-      for (int i = curCapacity; i < minCapacity; i++) {
+      for (int i = curCapacity; i < capacity; i++) {
         names[i] = new JsonString();
         //values[i] = null;
       }
@@ -279,48 +244,14 @@ public class BufferedJsonRecord extends JsonRecord {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#hashCode()
-   */
-  public int hashCode()
+  /** Resizes this record to the specified size. If <code>newSize<size()</code> the field names
+   * with the largest index are truncated. Otherwise, undefined names/values are appended; the 
+   * calling method has to make sure that the record stays valid. */
+  protected void resize(int newSize)
   {
-  	long h = BaseUtil.GOLDEN_RATIO_64;
-    for (int i = 0; i < arity; i++)
-    {
-      h |= names[i].hashCode();
-      h *= BaseUtil.GOLDEN_RATIO_64;
-      h |= values[i].hashCode();
-      h *= BaseUtil.GOLDEN_RATIO_64;
-    }
-    return (int) (h >> 32);
+    ensureCapacity(newSize);
+    this.size = newSize;
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object)
-   */
-  public boolean equals(Object x)
-  {
-    return this.compareTo(x) == 0; // goes to JRecord
-  }
-
-  @Override
-	public void setCopy(JsonValue value) throws Exception {
-		JsonRecord r = (JsonRecord) value;
-    int n = r.arity();
-    ensureCapacity(n);
-    arity = n;
-    for (int i = 0; i < n; i++)
-    {
-      names[i].setCopy(r.getName(i));
-      JsonValue v = r.getValue(i); 
-      values[i] = v==null ? null : v.getCopy(values[i]);
-    }
-    reorg(); 		
-	} 
 
   /** Called whenever names have changed positions. Used by subclasses. */
   protected void reorg() {
@@ -329,23 +260,64 @@ public class BufferedJsonRecord extends JsonRecord {
     //       (an isSorted flag might be kept)
   }
   
-  /** Returns the internal array used to store field names */ 
-  public JsonString[] getInternalNamesArray() {
-    return names;
+  /** Copies the content of the given record into this record. */
+  public void setCopy(JsonRecord other) throws Exception
+  {
+    clear();
+    resize(other.size());
+    int i=0;
+    for (Entry<JsonString, JsonValue> e : other)
+    {
+      names[i] = e.getKey().getCopy(names[i]);
+      values[i] = e.getValue().getCopy(values[i]);
+      i++;
+    }
+    reorg();    
   }
   
-  /** Returns the internal array used to store values */
-  public JsonValue[] getInternalValuesArray() {
-    return values;
+  
+  // -- Iterable interface ------------------------------------------------------------------------
+  
+  /** Returns an iterator over the fields in this record */
+  @Override
+  public Iterator<Entry<JsonString, JsonValue>> iterator()
+  {
+    return new Iterator<Entry<JsonString, JsonValue>>()
+    {
+      int i = 0;
+      RecordEntry entry = new RecordEntry(); // reused
+      
+      @Override
+      public boolean hasNext()
+      {
+        return i < size();
+      }
+
+      @Override
+      public Entry<JsonString, JsonValue> next()
+      {
+        entry.name = nameOf(i);
+        entry.value = valueOf(i);
+        i++;
+        return entry;
+      }
+
+      @Override
+      public void remove()
+      {
+        throw new UnsupportedOperationException();        
+      }      
+    };
   }
   
-  /** Sets the internal arrays to new values. The names have to be sorted; no consistency
-   * checks are performed. The arguments are not copied. */
-  public void set(JsonString[] names, JsonValue[] values, int arity) {
-    assert names.length >= arity;
-    assert values.length >= arity;
-    this.names = names;
-    this.values = values;
-    this.arity = arity;
+  
+  // -- misc --------------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
+  @Override
+  public JsonEncoding getEncoding()
+  {
+    return JsonEncoding.MEMORY_RECORD;
   }
+
 }

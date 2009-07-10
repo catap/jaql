@@ -82,7 +82,7 @@ public final class CountAgg extends AlgebraicAggregate
   public void addPartial(JsonValue value) throws Exception
   {
     JsonLong n = (JsonLong)value;
-    count += n.value;
+    count += n.get();
   }
 
   @Override

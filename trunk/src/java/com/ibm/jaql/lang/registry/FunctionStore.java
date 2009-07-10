@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.registry;
 
+import java.lang.reflect.UndeclaredThrowableException;
+
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.converter.FromJson;
@@ -23,6 +25,7 @@ import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.FunctionLib;
 import com.ibm.jaql.util.ClassLoaderMgr;
@@ -62,8 +65,13 @@ public class FunctionStore extends Registry<JsonString, JsonString>
                                          public JsonValue convert(JsonString src,
                                              JsonValue tgt)
                                          {
-                                           ((JsonString) tgt).setCopy(src);
-                                           return tgt;
+                                           try
+                                          {
+                                            return JsonUtil.getCopy(src, tgt);
+                                          } catch (Exception e)
+                                          {
+                                            throw new UndeclaredThrowableException(e);
+                                          }
                                          }
 
                                          public JsonValue createInitialTarget()

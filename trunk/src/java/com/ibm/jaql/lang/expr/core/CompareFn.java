@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import com.ibm.jaql.json.schema.LongSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 
@@ -50,7 +51,7 @@ class CompareFn extends Expr
   {
     JsonValue value1 = exprs[0].eval(context);
     JsonValue value2 = exprs[1].eval(context);
-    int cmp = JsonValue.compare(value1, value2);
+    int cmp = JsonUtil.compare(value1, value2);
     if (cmp < 0)
     {
       return JsonLong.MINUS_ONE;

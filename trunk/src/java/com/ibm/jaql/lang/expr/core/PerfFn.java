@@ -19,6 +19,7 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -59,10 +60,10 @@ public class PerfFn extends Expr
     }
     long end = System.currentTimeMillis();
     BufferedJsonRecord rec = new BufferedJsonRecord();
-    rec.add("start", new JsonDate(start));
-    rec.add("end", new JsonDate(end));
-    rec.add("millis", new JsonLong(end - start));
-    rec.add("count", new JsonLong(n));
+    rec.add(new JsonString("start"), new JsonDate(start));
+    rec.add(new JsonString("end"), new JsonDate(end));
+    rec.add(new JsonString("millis"), new JsonLong(end - start));
+    rec.add(new JsonString("count"), new JsonLong(n));
     return rec;
   }
 }

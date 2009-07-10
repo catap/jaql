@@ -74,7 +74,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
   @SuppressWarnings("unchecked")
   private void init(JsonRecord args) throws Exception
   {
-    this.args = new BufferedJsonRecord(args.arity());
+    this.args = new BufferedJsonRecord(args.size());
     this.args.setCopy(args);
 
     // set the location

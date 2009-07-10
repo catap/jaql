@@ -63,8 +63,8 @@ public class StringSchema extends Schema
   public StringSchema(JsonRecord args) 
   { 
     this(
-        args != null && args.findName(PAR_MIN_LENGTH)>=0 // to distingush whether minlENGTH IS SPECIFIED OR NOT 
-          ? (JsonLong)args.getValue(PAR_MIN_LENGTH) 
+        args != null && args.containsKey(PAR_MIN_LENGTH) // to distingush whether minlENGTH IS SPECIFIED OR NOT 
+          ? (JsonLong)args.get(PAR_MIN_LENGTH) 
           : null, 
         (JsonLong)getParameters().argumentOrDefault(PAR_MAX_LENGTH, args),
         (JsonString)getParameters().argumentOrDefault(PAR_PATTERN, args),
@@ -176,8 +176,8 @@ public class StringSchema extends Schema
     
     // check string length
     // TODO: currently uses UTF8 representation
-    if (!(minLength==null || s.getLength()>=minLength.value)) return false;
-    if (!(maxLength==null || s.getLength()<=maxLength.value)) return false;
+    if (!(minLength==null || s.lengthUtf8()>=minLength.get())) return false;
+    if (!(maxLength==null || s.lengthUtf8()<=maxLength.get())) return false;
 
     // check regexp pattern
     if (!(pattern == null || compiledPattern.matcher(s.toString()).matches())) return false;

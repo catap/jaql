@@ -19,6 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -53,7 +54,7 @@ public class SerializeFn extends Expr
     PrintStream out = new PrintStream(baos);
     JsonString text = new JsonString();
     // baos.reset();
-    JsonValue.print(out, value, 0);
+    JsonUtil.print(out, value, 0);
     out.flush();
     text.set(baos.toByteArray());
     return text;

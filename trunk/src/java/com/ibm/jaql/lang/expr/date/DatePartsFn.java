@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -47,18 +48,19 @@ public class DatePartsFn extends Expr
       return null;
     }
     BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: mucho memory
-    cal.setTimeInMillis(d.millis);
-    rec.add("millis", new JsonLong(d.millis));
-    rec.add("year", new JsonLong(cal.get(Calendar.YEAR)));
-    rec.add("month", new JsonLong(cal.get(Calendar.MONTH)+1));
-    rec.add("day", new JsonLong(cal.get(Calendar.DAY_OF_MONTH)));
-    rec.add("hour", new JsonLong(cal.get(Calendar.HOUR_OF_DAY)));
-    rec.add("minute", new JsonLong(cal.get(Calendar.MINUTE)));
+    cal.setTimeInMillis(d.getMillis());
+    // TODO: muchissimo memory; make static JsonStrings?
+    rec.add(new JsonString("millis"), new JsonLong(d.getMillis()));
+    rec.add(new JsonString("year"), new JsonLong(cal.get(Calendar.YEAR)));
+    rec.add(new JsonString("month"), new JsonLong(cal.get(Calendar.MONTH)+1));
+    rec.add(new JsonString("day"), new JsonLong(cal.get(Calendar.DAY_OF_MONTH)));
+    rec.add(new JsonString("hour"), new JsonLong(cal.get(Calendar.HOUR_OF_DAY)));
+    rec.add(new JsonString("minute"), new JsonLong(cal.get(Calendar.MINUTE)));
     BigDecimal dec = 
       new BigDecimal( cal.get(Calendar.SECOND) * 1000 + cal.get(Calendar.MILLISECOND))
        .divide(new BigDecimal(1000));
-    rec.add("second", new JsonDecimal(dec));
-    rec.add("offset", new JsonLong(cal.get(Calendar.ZONE_OFFSET) / 1000));
+    rec.add(new JsonString("second"), new JsonDecimal(dec));
+    rec.add(new JsonString("offset"), new JsonLong(cal.get(Calendar.ZONE_OFFSET) / 1000));
     // TODO: add timezone to JDate
     
     return rec;

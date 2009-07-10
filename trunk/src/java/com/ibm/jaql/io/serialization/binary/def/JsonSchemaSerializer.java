@@ -46,7 +46,7 @@ public class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema>
       return new JsonSchema(schema);
     } else {
       JsonSchema t = (JsonSchema)target;
-      t.setSchema(schema);
+      t.set(schema);
       return t;
     }
   }
@@ -56,7 +56,7 @@ public class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema>
   {
     ByteArrayOutputStream bout = new ByteArrayOutputStream();
     PrintStream pout = new PrintStream(bout);
-    com.ibm.jaql.io.serialization.text.def.JsonSchemaSerializer.write(pout, value.getSchema(), 0);
+    com.ibm.jaql.io.serialization.text.def.JsonSchemaSerializer.write(pout, value.get(), 0);
     pout.flush();
     String s = bout.toString();
     out.writeUTF(s);

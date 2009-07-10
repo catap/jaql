@@ -67,7 +67,7 @@ public class ProbeLuceneFn extends IterExpr
     {
       return JsonIterator.NULL;
     }
-    JsonString loc = (JsonString)fd.getValue("location");
+    JsonString loc = (JsonString)fd.get(new JsonString("location"));
     if( loc == null )
     {
       return JsonIterator.NULL;
@@ -120,7 +120,7 @@ public class ProbeLuceneFn extends IterExpr
         }
         rec.clear();
         int i = scorer.doc();
-        jdocid.setValue(i);
+        jdocid.set(i);
         rec.add(jdoc, jdocid);
         if( fieldSelector != null )
         {
@@ -133,7 +133,7 @@ public class ProbeLuceneFn extends IterExpr
             ByteArrayInputStream bais = new ByteArrayInputStream(val); // TODO: reuse
             DataInputStream in = new DataInputStream(bais); // TODO: reuse
             JsonValue ival = serializer.read(in, null);
-            rec.add(name, ival);
+            rec.add(new JsonString(name), ival);
           }
         }
         return true; // currentValue == rec

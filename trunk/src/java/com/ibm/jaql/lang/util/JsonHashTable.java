@@ -22,6 +22,7 @@ import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
 
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.util.BaseUtil;
@@ -119,7 +120,7 @@ public class JsonHashTable
       {
         inbuf.reset(outbuf.getData(), (int) e.keyOffset, outbuf.getLength());
         key2 = SERIALIZER.read(inbuf, key2);
-        if (JsonValue.equals(key, key2)) // TODO: use RawComparator or keep deserialized
+        if (JsonUtil.equals(key, key2)) // TODO: use RawComparator or keep deserialized
         {
           break;
         }

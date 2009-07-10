@@ -52,6 +52,6 @@ public class SpanContainsFn extends Expr
     {
       return null;
     }
-    return JsonBool.make(JsonSpan.contains(x, y));
+    return JsonBool.makeShared(JsonSpan.contains(x, y));
   }
 }

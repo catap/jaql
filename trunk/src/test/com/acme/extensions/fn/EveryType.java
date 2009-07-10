@@ -15,6 +15,8 @@
  */
 package com.acme.extensions.fn;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonBool;
@@ -110,12 +112,12 @@ public class EveryType
           // Add "my_" before all the names of the record
           JsonRecord r = (JsonRecord) v;
           rec.clear();
-          for (int i = 0; i < r.arity(); i++)
+          for(Entry<JsonString, JsonValue> e : r)
           {
-            JsonString oldName = r.getName(i);
-            v = r.getValue(i);
+            JsonString oldName = e.getKey();
+            v = e.getValue();
             String nm = "my_" + oldName;
-            rec.add(nm, v);
+            rec.add(new JsonString(nm), v);
           }
           currentValue = rec;
         }
@@ -123,7 +125,7 @@ public class EveryType
         {
           // Negate bools
           JsonBool b = (JsonBool) v;
-          bool.setValue(!b.getValue());
+          bool.set(!b.get());
           currentValue = bool;
         }
         else if (v instanceof JsonString)
@@ -139,12 +141,12 @@ public class EveryType
           JsonNumber n = (JsonNumber) v;
           if (n instanceof JsonDecimal)
           {
-            lng.setValue(n.longValue());
+            lng.set(n.longValue());
             currentValue = lng;
           }
           else if (n instanceof JsonLong)
           {
-            dec.setValue(-n.longValue());
+            dec.set(-n.longValue());
             currentValue = dec;
           }
         }
@@ -153,7 +155,7 @@ public class EveryType
           // Add 0xABADDEED before JBinary
           JsonBinary b = (JsonBinary) v;
           byte[] bytes1 = b.getInternalBytes(); // Don't modify this!  v, b, bytes1 are not ours!
-          int n = b.getLength();
+          int n = b.length();
           bin.ensureCapacity(n + 4);
           byte[] bytes2 = bin.getInternalBytes(); // This can be modifed because bin is ours.
           bytes2[0] = (byte) 0xAB;
@@ -175,7 +177,7 @@ public class EveryType
         {
           // TODO: Java functions need the context to be evaluated, and take Item arguments...
           JaqlFunction f = (JaqlFunction) v;
-          fn.setCopy(f);
+          fn = f.getCopy(fn);
           currentValue = f;
         }
         else

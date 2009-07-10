@@ -22,6 +22,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.FromJson;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -63,7 +64,7 @@ public class ToJsonTextConverter extends JsonToHadoopRecord<WritableComparable<?
         try
         {
           //JsonUtil.printQuoted(out, src.toJSON());
-          JsonValue.print(out, src);
+          JsonUtil.print(out, src);
           out.flush();
           out.close();
           bstr.close();

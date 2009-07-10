@@ -93,7 +93,7 @@ public class RandomDoubleFn extends Expr
         rng = new Random(seed);
       }
     }
-    jdouble.value = rng.nextDouble();
+    jdouble.set(rng.nextDouble());
     return jdouble;
   }
 }

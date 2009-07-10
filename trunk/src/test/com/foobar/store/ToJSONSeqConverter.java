@@ -21,6 +21,7 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.FromJson;
 import com.ibm.jaql.io.hadoop.converter.JsonToHadoopRecord;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -54,7 +55,7 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
    */
   protected String convertItemToString(JsonValue val) throws Exception
   {
-    return JsonValue.printToString(val);
+    return JsonUtil.printToString(val);
   }
 
   /*

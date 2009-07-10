@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
@@ -89,7 +90,7 @@ public class HBaseStore
     public static Text makeText(JsonString s)
     {
       Text t = new Text();
-      t.set(s.getInternalBytes(), 0, s.getLength());
+      t.set(s.getInternalBytes(), 0, s.lengthUtf8());
       return t;
     }
 
@@ -156,13 +157,13 @@ public class HBaseStore
       // unpeel the column family only if its the default column family
       if (colName.startsWith(J_DEFAULT_HBASE_COLUMN_FAMILY_NAME))
       {
-        colName.removeBytes(0, J_DEFAULT_HBASE_COLUMN_FAMILY_NAME.getLength());
+        colName.removeBytes(0, J_DEFAULT_HBASE_COLUMN_FAMILY_NAME.lengthUtf8());
       }
       else
       {
         colName.replace(HBASE_CF_SEPARATOR_CHAR, JAQL_CF_SEPARATOR_CHAR);
       }
-      int idx = rec.findName(colName);
+      int idx = rec.indexOf(colName);
       if (idx < 0)
         rec.add(colName, value);
       else
@@ -247,7 +248,7 @@ public class HBaseStore
       rec.clear();
       rec.ensureCapacity(row.size() + 1);
       JsonString name = new JsonString(J_KEY);
-      JsonString value = new JsonString(key.getInternalBytes(), key.getLength());
+      JsonString value = new JsonString(key.getInternalBytes(), key.lengthUtf8());
       rec.add(name, value);
       JsonHolder valueHolder = new JsonHolder();
       for (Map.Entry<byte[], Cell> e : row.entrySet())
@@ -288,7 +289,7 @@ public class HBaseStore
       // convert key to hbaseKey
       if (extractKey)
       {
-        key = rec.getValue(J_KEY, null);
+        key = rec.get(J_KEY, null);
       }
       JsonString hbaseKey = JaqlUtil.enforceNonNull((JsonString) key);
       
@@ -296,10 +297,9 @@ public class HBaseStore
 
       // TODO: mismatch between Text and JString
       BatchUpdate xact = new BatchUpdate(hbaseKey.toString());
-      int arity = rec.arity();
-      for (int i = 0; i < arity; i++)
+      for (Entry<JsonString, JsonValue> e : rec)
       {
-        JsonString columnName = rec.getName(i);
+        JsonString columnName = e.getKey();
         if (columnName.equals(J_KEY)) continue; // skip the key
         // specify the default column family only when no column family is
         // specified
@@ -314,7 +314,7 @@ public class HBaseStore
           columnName = new JsonString(columnName);
           columnName.replace(JAQL_CF_SEPARATOR_CHAR, HBASE_CF_SEPARATOR_CHAR);
         }
-        JsonValue val = rec.getValue(i);
+        JsonValue val = e.getValue();
         byte[] valueBytes = convertToBytes(val);
         xact.put(columnName.toString(), valueBytes);
       }
@@ -420,7 +420,7 @@ public class HBaseStore
           if ( (row = scanner.next()) != null)
           {
             String key = new String(row.getRow());
-            if (stopKey == null || stopKey.getLength() == 0
+            if (stopKey == null || stopKey.lengthUtf8() == 0
                 || key.compareTo(stopKey.toString()) <= 0)
             {
               HBaseStore.Util.convertMap(new JsonString(key), row, current);
@@ -481,11 +481,11 @@ public class HBaseStore
       JsonString[] cols = HBaseStore.Util.convertColumns(columnNames);
 
       // setup the timestamp
-      long timestamp = (timestampValue != null) ? timestampValue.value : -1;
+      long timestamp = (timestampValue != null) ? timestampValue.get() : -1;
 
       // setup the number of versions
       int numVersions = (numVersionsValue != null)
-          ? (int) numVersionsValue.value
+          ? (int) numVersionsValue.get()
           : -1;
 
       JsonIterator result = null;
@@ -649,11 +649,11 @@ public class HBaseStore
         if (cell != null)
         {
           byte[] value = cell.getValue();
-          int idx = rec.findName(jcols[i]);
+          int idx = rec.indexOf(jcols[i]);
           if (idx < 0)
             valueHolder.value = null;
           else
-            valueHolder.value = rec.getValue(idx);
+            valueHolder.value = rec.valueOf(idx);
           HBaseStore.Util.convertFromBytes(value, valueHolder, rec);
           HBaseStore.Util.setMap(jcols[i], valueHolder.value, rec);
           hasValue = true;
@@ -710,7 +710,7 @@ public class HBaseStore
 
         if (value != null && value.length > 0)
         {
-          SpilledJsonArray tArr = JaqlUtil.enforceNonNull((SpilledJsonArray) rec.getValue(i + 1));
+          SpilledJsonArray tArr = JaqlUtil.enforceNonNull((SpilledJsonArray) rec.valueOf(i + 1));
           tArr.clear();
 
           for (int j = 0; j < value.length; j++)

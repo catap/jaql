@@ -113,17 +113,20 @@ public class JsonSpan extends JsonAtom
     outText.setCopy(inText.getInternalBytes(), (int) begin, (int) (end - begin));
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#copy(com.ibm.jaql.json.type.JValue)
-   */
+  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
-  public void setCopy(JsonValue jvalue)
+  public JsonSpan getCopy(JsonValue target) throws Exception
   {
-    JsonSpan s = (JsonSpan) jvalue;
-    this.begin = s.begin;
-    this.end = s.end;
+    if (target == this) target = null;
+    
+    if (target instanceof JsonSpan)
+    {
+      JsonSpan t = (JsonSpan)target;
+      t.begin = this.begin;
+      t.end = this.end;
+      return t;
+    }
+    return new JsonSpan(this.begin, this.end);
   }
 
   /**

@@ -81,7 +81,7 @@ public class RandomLongFn extends Expr
         rng = new Random(seed);
       }
     }
-    longType.value = rng.nextLong() & 0x7FFFFFFFFFFFFFFFL;
+    longType.set(rng.nextLong() & 0x7FFFFFFFFFFFFFFFL);
     return longType;
   }
 }

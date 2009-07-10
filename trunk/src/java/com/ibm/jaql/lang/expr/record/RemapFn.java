@@ -15,9 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -67,19 +70,17 @@ public class RemapFn extends Expr
 
     BufferedJsonRecord outRec = new BufferedJsonRecord(); // TODO: memory
 
-    int n = newRec.arity();
-    for (int i = 0; i < n; i++)
+    for (Entry<JsonString, JsonValue> e : newRec)
     {
-      outRec.add(newRec.getName(i), newRec.getValue(i));
+      outRec.add(e.getKey(), e.getValue());
     }
 
-    n = oldRec.arity();
-    for (int i = 0; i < n; i++)
+    for (Entry<JsonString, JsonValue> e : oldRec)
     {
-      JsonString nm = oldRec.getName(i);
-      if (newRec.getValue(nm, null) == null)
+      JsonString nm = e.getKey();
+      if (newRec.get(nm, null) == null) // TODO: null value overwrite intended?
       {
-        outRec.add(nm, oldRec.getValue(i));
+        outRec.add(nm, e.getValue());
       }
     }
 

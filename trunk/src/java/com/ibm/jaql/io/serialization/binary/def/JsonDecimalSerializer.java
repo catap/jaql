@@ -44,7 +44,7 @@ public class JsonDecimalSerializer extends BinaryBasicSerializer<JsonDecimal>
       return new JsonDecimal(value);
     } else {
       JsonDecimal t = (JsonDecimal)target;
-      t.setValue(value);
+      t.set(value);
       return t;
     }
   }
@@ -53,7 +53,7 @@ public class JsonDecimalSerializer extends BinaryBasicSerializer<JsonDecimal>
   @Override
   public void write(DataOutput out, JsonDecimal value) throws IOException
   {
-    String str = value.value.toString();
+    String str = value.get().toString();
     out.writeUTF(str);
   }
   

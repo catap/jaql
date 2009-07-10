@@ -47,6 +47,6 @@ public class ArityFn extends Expr
     {
       return null;
     }
-    return new JsonLong(rec.arity());
+    return new JsonLong(rec.size());
   }
 }

@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -69,14 +71,13 @@ public class ReplaceFieldsFn extends Expr
 
     BufferedJsonRecord outRec = new BufferedJsonRecord(); // TODO: memory
 
-    int n = oldRec.arity();
-    for (int i = 0; i < n; i++)
+    for (Entry<JsonString, JsonValue> e : oldRec)
     {
-      JsonString nm = oldRec.getName(i);
-      JsonValue value = newRec.getValue(nm);
+      JsonString nm = e.getKey();
+      JsonValue value = newRec.get(nm);
       if( value == null )
       {
-        value = oldRec.getValue(i);
+        value = e.getValue();
       }
       outRec.add(nm, value);
     }
