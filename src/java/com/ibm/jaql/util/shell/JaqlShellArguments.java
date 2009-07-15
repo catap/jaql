@@ -253,7 +253,10 @@ public class JaqlShellArguments {
     public int read() throws IOException
     {
       int b = in.read();
-      System.out.print((char)b);
+      if (b>0)
+      {
+        System.out.print((char)b);
+      }
       return b;
     }    
   }
