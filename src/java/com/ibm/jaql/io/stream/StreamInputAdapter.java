@@ -26,6 +26,8 @@ import com.ibm.jaql.io.AbstractInputAdapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.converter.StreamToJson;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -82,11 +84,11 @@ public class StreamInputAdapter extends AbstractInputAdapter
    * 
    * @see com.ibm.jaql.io.InputAdapter#getItemReader()
    */
-  public ClosableJsonIterator getJsonReader() throws Exception
+  public ClosableJsonIterator iter() throws Exception
   {
 
     final InputStream istr = openStream(location, strArgs);
-    formatter.setInputStream(istr);
+    formatter.setInput(istr);
 
     return new ClosableJsonIterator() { // TODO: temporary hack until interfaces are adapted
 //      boolean first = true;
@@ -110,6 +112,11 @@ public class StreamInputAdapter extends AbstractInputAdapter
     };
   }
 
+  public Schema getSchema()
+  {
+    return new ArraySchema(formatter.getSchema(), null, null);
+  }
+  
   /**
    * @param location
    * @param args

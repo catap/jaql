@@ -26,6 +26,9 @@ import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
 import com.ibm.jaql.io.registry.RegistryUtil;
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -114,7 +117,7 @@ public class AdapterStore
           return target;
         }
 
-        public JsonString createInitialTarget()
+        public JsonString createTarget()
         {
           return new JsonString();
         }
@@ -136,7 +139,7 @@ public class AdapterStore
           return tgt;
         }
 
-        public AdapterRegistry createInitialTarget()
+        public AdapterRegistry createTarget()
         {
           return new AdapterRegistry();
         }
@@ -155,11 +158,15 @@ public class AdapterStore
           return target;
         }
 
-        public JsonValue createInitialTarget()
+        public JsonValue createTarget()
         {
           return new JsonString();
         }
-
+        
+        public Schema getSchema()
+        {
+          return SchemaFactory.stringSchema();
+        }
       };
     }
 
@@ -179,11 +186,18 @@ public class AdapterStore
           return tgt;
         }
 
-        public JsonValue createInitialTarget()
+        public JsonValue createTarget()
         {
           return new BufferedJsonRecord();
         }
 
+        public Schema getSchema()
+        {
+          return new RecordSchema(new RecordSchema.Field[] {
+              new RecordSchema.Field(Adapter.INOPTIONS_NAME, SchemaFactory.recordSchema(), true),
+              new RecordSchema.Field(Adapter.OUTOPTIONS_NAME, SchemaFactory.recordSchema(), true)
+          }, null);
+        }
       };
     }
   }

@@ -15,9 +15,14 @@
  */
 package com.ibm.jaql.json.schema;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonBinary;
@@ -31,6 +36,8 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
 
 /** Constructs schemata for commonly used situations */
 public class SchemaFactory
@@ -45,6 +52,7 @@ public class SchemaFactory
   private static DateSchema dateSchema;
   private static DecimalSchema decimalSchema;
   private static DoubleSchema doubleSchema;
+  private static GenericSchema functionSchema;
   private static LongSchema longSchema;
   private static NullSchema nullSchema;
   private static RecordSchema recordSchema;
@@ -59,6 +67,7 @@ public class SchemaFactory
   private static Schema dateOrNullSchema;
   private static Schema decimalOrNullSchema;
   private static Schema doubleOrNullSchema;
+  private static Schema functionOrNullSchema;
   private static Schema longOrNullSchema;
   private static Schema recordOrNullSchema;
   private static Schema stringOrNullSchema;
@@ -114,7 +123,13 @@ public class SchemaFactory
     if (doubleSchema  == null) doubleSchema = new DoubleSchema();
     return doubleSchema;
   }
-  
+
+  public static Schema functionSchema()
+  {
+    if (functionSchema  == null) functionSchema = new GenericSchema(JsonType.FUNCTION);
+    return functionSchema;
+  }
+
   public static Schema longSchema()
   {
     if (longSchema  == null) longSchema = new LongSchema();
@@ -147,67 +162,72 @@ public class SchemaFactory
 
   public static Schema anyOrNullSchema()
   {
-    if (anyOrNullSchema  == null) anyOrNullSchema = new OrSchema(anyNonNullSchema(), nullSchema());
+    if (anyOrNullSchema  == null) anyOrNullSchema = SchemaTransformation.or(anyNonNullSchema(), nullSchema());
     return anyOrNullSchema;
   }
 
   public static Schema arrayOrNullSchema()
   {
-    if (arrayOrNullSchema  == null) arrayOrNullSchema = new OrSchema(arraySchema(), nullSchema());
+    if (arrayOrNullSchema  == null) arrayOrNullSchema = SchemaTransformation.or(arraySchema(), nullSchema());
     return arrayOrNullSchema;
   }
 
   public static Schema emptyArrayOrNullSchema()
   {
-    if (emptyArrayOrNullSchema  == null) emptyArrayOrNullSchema = new OrSchema(emptyArraySchema(), nullSchema());
+    if (emptyArrayOrNullSchema  == null) emptyArrayOrNullSchema = SchemaTransformation.or(emptyArraySchema(), nullSchema());
     return emptyArrayOrNullSchema;
   }
   
   public static Schema binaryOrNullSchema()
   {
-    if (binaryOrNullSchema  == null) binaryOrNullSchema = new OrSchema(binarySchema(), nullSchema());
+    if (binaryOrNullSchema  == null) binaryOrNullSchema = SchemaTransformation.or(binarySchema(), nullSchema());
     return binaryOrNullSchema;
   }
   
   public static Schema booleanOrNullSchema()
   {
-    if (booleanOrNullSchema  == null) booleanOrNullSchema = new OrSchema(booleanSchema(), nullSchema());
+    if (booleanOrNullSchema  == null) booleanOrNullSchema = SchemaTransformation.or(booleanSchema(), nullSchema());
     return booleanOrNullSchema;
   }
 
   public static Schema dateOrNullSchema()
   {
-    if (dateOrNullSchema  == null) dateOrNullSchema = new OrSchema(dateSchema(), nullSchema());
+    if (dateOrNullSchema  == null) dateOrNullSchema = SchemaTransformation.or(dateSchema(), nullSchema());
     return dateOrNullSchema;
   }
 
   public static Schema decimalOrNullSchema()
   {
-    if (decimalOrNullSchema  == null) decimalOrNullSchema = new OrSchema(decimalSchema(), nullSchema());
+    if (decimalOrNullSchema  == null) decimalOrNullSchema = SchemaTransformation.or(decimalSchema(), nullSchema());
     return decimalOrNullSchema;
   }
 
   public static Schema doubleOrNullSchema()
   {
-    if (doubleOrNullSchema  == null) doubleOrNullSchema = new OrSchema(doubleSchema(), nullSchema());
+    if (doubleOrNullSchema  == null) doubleOrNullSchema = SchemaTransformation.or(doubleSchema(), nullSchema());
     return doubleOrNullSchema;
   }
   
+  public static Schema functionOrNullSchema()
+  {
+    if (functionOrNullSchema  == null) functionOrNullSchema = SchemaTransformation.or(functionSchema(), nullSchema());
+    return functionOrNullSchema;
+  }
   public static Schema longOrNullSchema()
   {
-    if (longOrNullSchema  == null) longOrNullSchema = new OrSchema(longSchema(), nullSchema());
+    if (longOrNullSchema  == null) longOrNullSchema = SchemaTransformation.or(longSchema(), nullSchema());
     return longOrNullSchema;
   }
 
   public static Schema recordOrNullSchema()
   {
-    if (recordOrNullSchema  == null) recordOrNullSchema = new OrSchema(recordSchema(), nullSchema());
+    if (recordOrNullSchema  == null) recordOrNullSchema = SchemaTransformation.or(recordSchema(), nullSchema());
     return recordOrNullSchema;
   }
   
   public static Schema stringOrNullSchema()
   {
-    if (stringOrNullSchema  == null) stringOrNullSchema = new OrSchema(stringSchema(), nullSchema());
+    if (stringOrNullSchema  == null) stringOrNullSchema = SchemaTransformation.or(stringSchema(), nullSchema());
     return stringOrNullSchema;
   }
   
@@ -385,6 +405,25 @@ public class SchemaFactory
     case REGEX:
     default:
       return anyNonNullSchema();
+    }
+  }
+
+  /** Parse a schema from the specified string. The string must not contain the "schema" keyword
+   * of Jaql, e.g., <code>long</code> is valid but <code>schema long</code> is not. */
+  public static final Schema parse(String s) throws IOException
+  {
+    
+    JaqlLexer lexer = new JaqlLexer(new StringReader(s));
+    JaqlParser parser = new JaqlParser(lexer);
+    try
+    {
+      return parser.schema();
+    } catch (RecognitionException e)
+    {
+      throw new IOException(e);
+    } catch (TokenStreamException e)
+    {
+      throw new IOException(e);
     }
   }
 }

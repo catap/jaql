@@ -162,7 +162,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
    * 
    * @see com.ibm.jaql.lang.OutputAdapter#getRecordWriter()
    */
-  public ClosableJsonWriter getJsonWriter() throws Exception
+  public ClosableJsonWriter getWriter() throws Exception
   {
     Path lPath = new Path(location);
 

@@ -47,7 +47,7 @@ public class DirectSequenceFileWriter {
     adapter.open();
     
     // get record writer
-    ClosableJsonWriter writer = adapter.getJsonWriter();
+    ClosableJsonWriter writer = adapter.getWriter();
     
     // write items
     for(JsonValue v : values) {

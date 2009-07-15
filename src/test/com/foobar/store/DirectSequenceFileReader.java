@@ -39,7 +39,7 @@ public class DirectSequenceFileReader {
     adapter.open();
     
     // get record reader
-    return adapter.getJsonReader();
+    return adapter.iter();
   }
   
   public static final void main(String[] args) throws Exception {

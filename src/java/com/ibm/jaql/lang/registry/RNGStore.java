@@ -21,6 +21,8 @@ import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.converter.FromJson;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.JaqlFunction;
@@ -117,7 +119,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
           }
         }
 
-        public JsonValue createInitialTarget()
+        public JsonValue createTarget()
         {
           return null;
         }
@@ -158,7 +160,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
           }
         }
 
-        public RNGEntry createInitialTarget()
+        public RNGEntry createTarget()
         {
           return new RNGEntry();
         }
@@ -180,14 +182,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
         {
           try
           {
-            if ( src == null ) 
-            {
-              return null;
-            }
-            else
-            {
-              return JsonUtil.getCopy(src, tgt);
-            }
+            return JsonUtil.getCopy(src, tgt);
           }
           catch (Exception e)
           {
@@ -195,11 +190,15 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
           }
         }
 
-        public JsonValue createInitialTarget()
+        public JsonValue createTarget()
         {
           return null;
         }
 
+        public Schema getSchema()
+        {
+          return SchemaFactory.anyOrNullSchema();
+        }
       };
     }
 
@@ -222,11 +221,15 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
           return seed;
         }
 
-        public JsonValue createInitialTarget()
+        public JsonValue createTarget()
         {
           return null;
         }
 
+        public Schema getSchema()
+        {
+          return SchemaFactory.functionSchema();
+        }
       };
     }
   }

@@ -47,7 +47,7 @@ public abstract class JsonToHadoopRecord<K,V> implements KeyValueExport<K, V>
   public K createKeyTarget()
   {
     if (keyConverter == null) return null;
-    return keyConverter.createInitialTarget();
+    return keyConverter.createTarget();
   }
 
   /**
@@ -57,7 +57,7 @@ public abstract class JsonToHadoopRecord<K,V> implements KeyValueExport<K, V>
   public V createValueTarget()
   {
     if (valueConverter == null) return null;
-    return valueConverter.createInitialTarget();
+    return valueConverter.createTarget();
   }
 
   /**

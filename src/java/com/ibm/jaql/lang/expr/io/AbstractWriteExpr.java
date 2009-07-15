@@ -71,7 +71,7 @@ public abstract class AbstractWriteExpr extends Expr
     OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(args);
   
     adapter.open();
-    ClosableJsonWriter writer = adapter.getJsonWriter();
+    ClosableJsonWriter writer = adapter.getWriter();
     JsonIterator iter = dataExpr().iter(context);
     if (iter != null)
     {

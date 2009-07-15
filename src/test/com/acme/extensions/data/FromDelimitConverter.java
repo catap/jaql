@@ -23,6 +23,8 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
@@ -46,7 +48,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
   public static final JsonString DELIMITER_NAME = new JsonString("delimiter");
   public static final JsonString HEADER_NAME = new JsonString("header");
   
-  private String delimitter = ",";
+  private String delimiter = ",";
   private JsonArray header = null;
   
   @Override
@@ -56,7 +58,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
       // 1. check for delimiter override
       JsonValue arg = options.get(DELIMITER_NAME);
       if(arg != null) {
-        delimitter = arg.toString();
+        delimiter = arg.toString();
       }
       
       // 2. check for header
@@ -104,7 +106,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
           throw new RuntimeException("tried to convert from: " + src);
         }
         
-        String[] vals = new String(t.getBytes()).split(delimitter);
+        String[] vals = new String(t.getBytes()).split(delimiter);
         try {
           if(header == null) {
             setArray(vals, (BufferedJsonArray)tgt);
@@ -137,7 +139,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
         }
       }
       
-      public JsonValue createInitialTarget()
+      public JsonValue createTarget()
       {
         if(header == null)
           return new BufferedJsonArray();
@@ -151,6 +153,18 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
           } catch(Exception e) { throw new RuntimeException(e);}
 
           return r;
+        }
+      }
+      
+      public Schema getSchema()
+      {
+        if (header == null)
+        {
+          return SchemaFactory.arrayOrNullSchema();
+        }
+        else
+        {
+          return SchemaFactory.recordOrNullSchema();
         }
       }
     };

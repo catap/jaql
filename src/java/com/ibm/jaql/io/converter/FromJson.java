@@ -17,20 +17,24 @@ package com.ibm.jaql.io.converter;
 
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Interface for converters from JSON to T.
- * @param <T>
+/** Interface for converters from JSON to some type <code>T</code>.
+ * 
+ * @param <T> target type of the conversion
  */
 public interface FromJson<T>
 {
 
-  /**
-   * @return
-   */
-  T createInitialTarget();
+  /** Creates a target JSON value as expected by the {@link #convert} function. */
+  T createTarget();
 
-  /**
-   * @param src
-   * @param tgt
+  /** Converts <code>src</code> into type <code>T</code> and returns the result. Implementations 
+   * may reuse the <code>target</code> argument to improve efficiency. Callers to this method will 
+   * provide either a target value created by {@link #createTarget()} or the result of a previous 
+   * call to this method.
+   * 
+   * @param src the value to convert
+   * @param target target value that can be reused
+   * @returns the converted value
    */
-  T convert(JsonValue src, T tgt);
+  T convert(JsonValue src, T target);
 }

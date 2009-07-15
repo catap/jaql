@@ -70,7 +70,7 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
    * 
    * @see com.ibm.jaql.io.OutputAdapter#getItemWriter()
    */
-  public ClosableJsonWriter getJsonWriter() throws Exception
+  public ClosableJsonWriter getWriter() throws Exception
   {
     final OutputStream output = openStream(location);
     this.formatter.setOutputStream(output);

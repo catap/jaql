@@ -23,6 +23,8 @@ import org.apache.hadoop.io.WritableComparable;
 import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -72,9 +74,14 @@ public class FromJsonTextConverter extends HadoopRecordToJson<WritableComparable
         }
       }
 
-      public JsonValue createInitialTarget()
+      public JsonValue createTarget()
       {
         return null;
+      }
+      
+      public Schema getSchema()
+      {
+        return SchemaFactory.anyOrNullSchema();
       }
     };
   }

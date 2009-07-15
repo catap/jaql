@@ -281,4 +281,11 @@ public class Env
     return tempVarMap;
   }
 
+  /** Preliminary method. Used to obtain a context at compile time. */
+  private static Context compileTimeContext = new Context();
+  public static Context getCompileTimeContext()
+  {
+    // FIXME: this is just a quick hack to support compile time compilation
+    return compileTimeContext;
+  }
 }
