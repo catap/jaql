@@ -19,7 +19,6 @@ import java.util.List;
 
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema that matches if at least one of the provided schemata matches. */
@@ -35,7 +34,6 @@ public class OrSchema extends Schema
     {
       throw new IllegalArgumentException("at least one schema has to be provided");
     }
-    JaqlUtil.enforceNonNull(schemata);
     for (int i=0; i<schemata.length; i++)
     {
       if (schemata[i] instanceof OrSchema)
@@ -231,9 +229,22 @@ public class OrSchema extends Schema
         Schema mergedSchema = schemata[i].merge(other);
         if (mergedSchema != null)
         {
-          Schema[] newSchemata = new Schema[schemata.length];
-          System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
-          newSchemata[i] = mergedSchema;
+          Schema[] newSchemata;
+          if( mergedSchema instanceof OrSchema )
+          {
+            // Flatten nested OrSchemas
+            OrSchema orSchema = (OrSchema)mergedSchema;
+            newSchemata = new Schema[schemata.length + orSchema.schemata.length - 1];
+            System.arraycopy(schemata, 0, newSchemata, 0, i);
+            System.arraycopy(schemata, i+1, newSchemata, i, schemata.length - i - 1);
+            System.arraycopy(orSchema.schemata, 0, newSchemata, schemata.length - 1, orSchema.schemata.length);
+          }
+          else
+          {
+            newSchemata = new Schema[schemata.length];
+            System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
+            newSchemata[i] = mergedSchema;
+          }
           return new OrSchema(newSchemata);
         }
       }
