@@ -353,7 +353,7 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
           }
           in.addChild(e); 
           env.unscope(in.var); // TODO: unscope or hide?
-          asVars.add(env.makeVar(v));
+          asVars.add(env.makeVar(v, SchemaFactory.arrayOrNullSchema()));
         }
     ;
 
@@ -479,7 +479,7 @@ groupPipe[Expr in] returns [Expr r=null]
     }
     : "group" b=each[in] 
       by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
-      ( "as" v=var )?        { asVar=env.scope(v); }
+      ( "as" v=var )?        { asVar=env.scope(v, SchemaFactory.arraySchema()); }
       ( "using" c=comparator { oops("comparators on group by NYI"); } )?
       r=groupReturn
         {

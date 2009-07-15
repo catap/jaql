@@ -230,22 +230,10 @@ public class OrSchema extends Schema
         if (mergedSchema != null)
         {
           Schema[] newSchemata;
-          if( mergedSchema instanceof OrSchema )
-          {
-            // Flatten nested OrSchemas
-            OrSchema orSchema = (OrSchema)mergedSchema;
-            newSchemata = new Schema[schemata.length + orSchema.schemata.length - 1];
-            System.arraycopy(schemata, 0, newSchemata, 0, i);
-            System.arraycopy(schemata, i+1, newSchemata, i, schemata.length - i - 1);
-            System.arraycopy(orSchema.schemata, 0, newSchemata, schemata.length - 1, orSchema.schemata.length);
-          }
-          else
-          {
-            newSchemata = new Schema[schemata.length];
-            System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
-            newSchemata[i] = mergedSchema;
-          }
-          return new OrSchema(newSchemata);
+          newSchemata = new Schema[schemata.length];
+          System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
+          newSchemata[i] = mergedSchema;
+          return SchemaTransformation.or(newSchemata);
         }
       }
       
@@ -253,7 +241,7 @@ public class OrSchema extends Schema
       Schema[] newSchemata = new Schema[schemata.length+1];
       System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
       newSchemata[schemata.length] = other;
-      return new OrSchema(newSchemata);
+      return SchemaTransformation.or(newSchemata);
     }
   }
 

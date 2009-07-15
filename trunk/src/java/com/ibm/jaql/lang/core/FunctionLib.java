@@ -136,6 +136,7 @@ import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
 import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
 import com.ibm.jaql.lang.expr.regex.RegexTestFn;
+import com.ibm.jaql.lang.expr.schema.CheckFn;
 import com.ibm.jaql.lang.expr.schema.SchemaOfExpr;
 import com.ibm.jaql.lang.expr.schema.TypeOfExpr;
 import com.ibm.jaql.lang.expr.span.SpanContainsFn;
@@ -201,6 +202,7 @@ public class FunctionLib
     // schema
     add(TypeOfExpr.class);
     add(SchemaOfExpr.class);
+    add(CheckFn.class);
     //    
     add(CompareFn.class);
     add(ExistsFn.class);

@@ -19,22 +19,25 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** 
- * Concrete class for converters that convert a Hadoop record---i.e., 
- * a (key, value)-pair where the key is of type {@link WritableComparable} and the 
- * value is of type {@link Writable}---into an {@link Item}.
+/**
+ * Concrete class for converters that convert a Hadoop record---i.e., a (key,
+ * value)-pair where the key is of type {@link WritableComparable} and the value
+ * is of type {@link Writable}---into an {@link Item}.
  */
-public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//<WritableComparable, Writable>
+public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>// <WritableComparable,
+                                                                              // Writable>
 {
   /**
    * 
    */
   protected ToJson<K> keyConverter;
-  
+
   /**
    * 
    */
@@ -62,33 +65,49 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
       throw new RuntimeException("at least one converter must be specified");
   }
 
-  /* 
+  /*
    * Default implementation is to do nothing.
    * 
    * (non-Javadoc)
-   * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#init(com.ibm.jaql.json.type.JRecord)
+   * 
+   * @see
+   * com.ibm.jaql.io.hadoop.converter.KeyValueImport#init(com.ibm.jaql.json.
+   * type.JRecord)
    */
   public void init(JsonRecord options)
   {
-    // do nothing
   }
-  
-  /* (non-Javadoc)
+
+  /*
+   * (non-Javadoc)
+   * 
    * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#createTarget()
    */
-  public JsonValue createInitialTarget()
+  @Override
+  public JsonValue createTarget()
   {
     return converter.createTarget();
   }
 
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.io.hadoop.converter.KeyValueImport#convert(java.lang.Object, java.lang.Object, com.ibm.jaql.json.type.Item)
+  /*
+   * (non-Javadoc)
+   * 
+   * @see
+   * com.ibm.jaql.io.hadoop.converter.KeyValueImport#convert(java.lang.Object,
+   * java.lang.Object, com.ibm.jaql.json.type.Item)
    */
+  @Override
   public final JsonValue convert(K key, V val, JsonValue target)
   {
     return converter.convert(key, val, target);
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    return converter.getSchema();
+  }
+  
   /**
    * @return
    */
@@ -98,11 +117,12 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
    * @return
    */
   protected abstract ToJson<V> createValueConverter();
-  
+
   /**
    * @return
    */
-  protected Converter createPairConverter() {
+  protected Converter createPairConverter()
+  {
     return new PairConverter();
   }
 
@@ -117,11 +137,13 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
      * @param tgt
      */
     public abstract JsonValue convert(K key, V value, JsonValue target);
-    
+
     /**
      * @return
      */
     public abstract JsonValue createTarget();
+
+    public abstract Schema getSchema();
   }
 
   /**
@@ -129,20 +151,20 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
    */
   public final class KeyConverter extends Converter
   {
-	/* (non-Javadoc)
-	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
-	 */
-	public JsonValue convert(K key, V val, JsonValue target)
+    public JsonValue convert(K key, V val, JsonValue target)
     {
       return keyConverter.convert(key, target);
     }
-	
-	/* (non-Javadoc)
-	 * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#createTarget()
-	 */
-	public JsonValue createTarget() {
-	  return keyConverter.createInitialTarget();
-	}
+
+    public JsonValue createTarget()
+    {
+      return keyConverter.createTarget();
+    }
+    
+    public Schema getSchema()
+    {
+      return keyConverter.getSchema();
+    }
   }
 
   /**
@@ -150,19 +172,19 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
    */
   public final class ValueConverter extends Converter
   {
-    /* (non-Javadoc)
-     * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
-     */
     public JsonValue convert(K key, V value, JsonValue target)
     {
       return valueConverter.convert(value, target);
     }
-	
-    /* (non-Javadoc)
-     * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#createTarget()
-     */
-    public JsonValue createTarget() {
-      return valueConverter.createInitialTarget();
+
+    public JsonValue createTarget()
+    {
+      return valueConverter.createTarget();
+    }
+    
+    public Schema getSchema()
+    {
+      return valueConverter.getSchema();
     }
   }
 
@@ -171,9 +193,6 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
    */
   public class PairConverter extends Converter
   {
-    /* (non-Javadoc)
-	   * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#convert(org.apache.hadoop.io.WritableComparable, org.apache.hadoop.io.Writable, com.ibm.jaql.json.type.Item)
-	   */
     public JsonValue convert(K key, V value, JsonValue target)
     {
       BufferedJsonArray array = (BufferedJsonArray) target;
@@ -182,22 +201,25 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
         array.set(0, keyConverter.convert(key, array.nth(0)));
         array.set(1, valueConverter.convert(value, array.nth(1)));
         return array;
-      }
-      catch (Exception e)
+      } catch (Exception e)
       {
         throw new RuntimeException(e);
       }
     }
-  
-    /* (non-Javadoc)
-     * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem.Converter#createTarget()
-     */
-    public JsonValue createTarget() 
+
+    public JsonValue createTarget()
     {
       BufferedJsonArray array = new BufferedJsonArray(2);
-      array.set(0, keyConverter.createInitialTarget());
-      array.set(1, valueConverter.createInitialTarget());
+      array.set(0, keyConverter.createTarget());
+      array.set(1, valueConverter.createTarget());
       return array;
+    }
+    
+    public Schema getSchema()
+    {
+      return new ArraySchema(new Schema[] { 
+          keyConverter.getSchema(),
+          valueConverter.getSchema()});
     }
   }
 }

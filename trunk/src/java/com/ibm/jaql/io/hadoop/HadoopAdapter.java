@@ -31,6 +31,6 @@ public interface HadoopAdapter
   public final static String storeRegistryVarName = IMP + ".sRegistry";
 
   static JsonString              CONVERTER_NAME       = new JsonString("converter");
-
+  
   static JsonString              CONFIGURATOR_NAME    = new JsonString("configurator");
 }

@@ -35,7 +35,7 @@ public interface Adapter extends Initializable
   static JsonString ADAPTER_NAME    = new JsonString("adapter");
 
   static JsonString FORMAT_NAME     = new JsonString("format");
-
+  
   /**
    * Once an adapter has been initialized, you can take whatever steps that are
    * needed prior to accessing the data. This is called by expressions, but not

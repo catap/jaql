@@ -21,14 +21,16 @@ import org.apache.hadoop.io.WritableComparable;
 
 import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * Assumes that the "value" of a [key, value] pair is of type
- * o.a.h.io.Text. For each such value, this converter returns a JString.
+ * o.a.h.io.Text. For each such value, this converter returns a JsonString.
  */
-public class FromLineConverter extends HadoopRecordToJson<WritableComparable, Writable> {
+public class FromLineConverter extends HadoopRecordToJson<WritableComparable<?>, Writable> {
   
   /*
    * (non-Javadoc)
@@ -36,7 +38,7 @@ public class FromLineConverter extends HadoopRecordToJson<WritableComparable, Wr
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToJson<WritableComparable> createKeyConverter()
+  protected ToJson<WritableComparable<?>> createKeyConverter()
   {
     return null;
   }
@@ -66,11 +68,15 @@ public class FromLineConverter extends HadoopRecordToJson<WritableComparable, Wr
         return tgt;
       }
       
-      public JsonValue createInitialTarget()
+      public JsonValue createTarget()
       {
         return new JsonString();
       }
-
+      
+      public Schema getSchema()
+      {
+        return SchemaFactory.stringOrNullSchema();
+      }
     };
   }
 }

@@ -106,7 +106,7 @@ public class ToJSONSeqConverter extends JsonToHadoopRecord
        * 
        * @see com.ibm.jaql.io.converter.ToItem#createTarget()
        */
-      public Writable createInitialTarget()
+      public Writable createTarget()
       {
         return new Text();
       }

@@ -24,6 +24,8 @@ import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.registry.JsonRegistryFormat;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
@@ -40,46 +42,47 @@ public class FunctionStore extends Registry<JsonString, JsonString>
   /**
    * 
    */
-  public static class DefaultRegistryFormat
-      extends
-        JsonRegistryFormat<JsonString, JsonString>
+  public static class DefaultRegistryFormat extends JsonRegistryFormat<JsonString, JsonString>
   {
 
-    final static FromJson<JsonString>   tic = new FromJson<JsonString>() {
+    final static FromJson<JsonString> tic = new FromJson<JsonString>()
+    {
+      public JsonString convert(JsonValue src, JsonString tgt)
+      {
+        tgt.set(src.toString());
+        return tgt;
+      }
 
-                                         public JsonString convert(JsonValue src,
-                                             JsonString tgt)
-                                         {
-                                           tgt.set(src.toString());
-                                           return tgt;
-                                         }
+      public JsonString createTarget()
+      {
+        return new JsonString();
+      }
 
-                                         public JsonString createInitialTarget()
-                                         {
-                                           return new JsonString();
-                                         }
+    };
+    final static ToJson<JsonString> fic = new ToJson<JsonString>()
+    {
 
-                                       };
-    final static ToJson<JsonString> fic = new ToJson<JsonString>() {
+      public JsonString convert(JsonString src, JsonValue tgt)
+      {
+        try
+        {
+          return JsonUtil.getCopy(src, tgt);
+        } catch (Exception e)
+        {
+          throw new UndeclaredThrowableException(e);
+        }
+      }
 
-                                         public JsonValue convert(JsonString src,
-                                             JsonValue tgt)
-                                         {
-                                           try
-                                          {
-                                            return JsonUtil.getCopy(src, tgt);
-                                          } catch (Exception e)
-                                          {
-                                            throw new UndeclaredThrowableException(e);
-                                          }
-                                         }
-
-                                         public JsonValue createInitialTarget()
-                                         {
-                                           return new JsonString();
-                                         }
-
-                                       };
+      public JsonValue createTarget()
+      {
+        return new JsonString();
+      }
+      
+      public Schema getSchema()
+      {
+        return SchemaFactory.stringOrNullSchema();
+      }
+    };
 
     /**
      * 

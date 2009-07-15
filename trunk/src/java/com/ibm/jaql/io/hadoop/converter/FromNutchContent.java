@@ -22,6 +22,10 @@ import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.Content;
 
 import com.ibm.jaql.io.converter.ToJson;
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -101,7 +105,7 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
         return r;
       }
       
-      public JsonValue createInitialTarget()
+      public JsonValue createTarget()
       {
         int n = Field.values().length;
         BufferedJsonRecord r = new BufferedJsonRecord(n);
@@ -112,6 +116,19 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
         r.add(Field.META.jsonName, new BufferedJsonRecord());
         
         return r;
+      }
+      
+      public Schema getSchema()
+      {
+        return new RecordSchema(new RecordSchema.Field[] { 
+            new RecordSchema.Field(Field.URL.jsonName, SchemaFactory.stringSchema(), false),
+            new RecordSchema.Field(Field.BASEURL.jsonName, SchemaFactory.stringSchema(), false),
+            new RecordSchema.Field(Field.TYPE.jsonName, SchemaFactory.stringSchema(), false),
+            new RecordSchema.Field(Field.CONTENT.jsonName, 
+                SchemaTransformation.or(SchemaFactory.stringSchema(), SchemaFactory.binarySchema()), 
+                false),
+            new RecordSchema.Field(Field.META.jsonName, SchemaFactory.stringSchema(), false)
+        }, SchemaFactory.stringSchema());
       }
     };
   }
