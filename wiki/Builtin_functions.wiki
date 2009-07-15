@@ -1,0 +1,864 @@
+#summary List of JAQL built-in functions
+#labels generated
+#sidebar TableOfContents
+<wiki:toc max_depth="2" />
+=pragma=
+== const() ==
+
+  _*Description*_ This is a pragma function to force const evaluation.
+
+  _*Parameters*_ (1)
+
+== inline() ==
+
+  _*Description*_ This is a pragma function to force let/global inlining.
+
+  _*Parameters*_ (1)
+
+----
+=system=
+== exec() ==
+
+
+  _*Parameters*_ (2)
+
+== R() ==
+
+  _*Description*_ A very rough cut at calling R from Jaql.
+ 
+ R(string init, string fn, item arg1, ..., item argN)
+ 
+ A single R process is forked per RFn instance (i.e., call site in the query).
+ The R process is forked and the init string is passed to R only on the first invocation.
+ 
+ To configure R, add -DR.home=<path to R> to the VM arguments. // TODO: need jaql.conf
+
+  _*Parameters*_ (2 - ...)
+
+----
+=core=
+== combine() ==
+
+
+  _*Parameters*_ (2)
+
+== compare() ==
+
+
+  _*Parameters*_ (2)
+
+== groupCombine() ==
+
+  _*Description*_ groupCombine(input $X, initialFn, partialFn, finalFn) => $Y
+    initialFn = fn($k,$X) e1 => $P
+    partialFn = fn($k,$P) => $P
+    finalFn = fn($k,$P) => $Y
+
+  _*Parameters*_ (4)
+
+== help() ==
+
+
+  _*Parameters*_ (0 - 1)
+
+== index() ==
+
+  _*Description*_ element(array, index) is the same as array`[`index`]`, but it captures a simpler 
+ case that doesn't use path expressions. array`[`index`]` is transformed to use the
+ element function for better performance.
+
+  _*Parameters*_ (2)
+
+== listExtensions() ==
+
+
+  _*Parameters*_ (0 - 1)
+
+== mergeContainers() ==
+
+  _*Description*_ Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
+
+  _*Parameters*_ (1 - ...)
+
+== perf() ==
+
+
+  _*Parameters*_ (1)
+
+== perPartition() ==
+
+
+  _*Parameters*_ (2)
+
+== range() ==
+
+
+  _*Parameters*_ (2)
+
+== tee() ==
+
+
+  _*Parameters*_ (1 - ...)
+
+----
+=hadoop=
+== mapReduce() ==
+
+
+  _*Parameters*_ (1)
+
+== mrAggregate() ==
+
+
+  _*Parameters*_ (1)
+
+== readConf() ==
+
+
+  _*Parameters*_ (1 - 2)
+
+----
+=io=
+== arrayRead() ==
+
+
+  _*Parameters*_ (1)
+
+== file() ==
+
+  _*Description*_ An expression that constructs an I/O descriptor for local file access.
+
+  _*Parameters*_ (1 - 2)
+
+== hbaseDelete() ==
+
+  _*Description*_ hbaseDelete(tableExpr, keyExpr, columnExpr)
+ 
+ string tableName <- eval tableExpr JArray keyValue <- eval keyExpr JArray of
+ Texts <- eval columnExpr
+ 
+ Delete all column values for the given tuple identified by the keyExpr in the
+ table defined by tableExpr.
+
+  _*Parameters*_ (3)
+
+== hbaseFetch() ==
+
+  _*Description*_ hbaseFetch( tableExpr, keyExpr, |columnExpr, {timestamp:timestampExpr,
+ numversions:numversionsExpr}|)
+  - Text tableName <- evaluate tableExpr - JArray keysExpr <- evaluate keyExpr -
+ JArray columnExpr <- evaluate columnExpr - LongItem timestamp <- evaluate
+ timestamp - LongItem numVersions <- evaluate numversions
+ 
+ If only keyExpr is specified, a tuple is returned. If keyExpr and numversions
+ are specified, then multiple values may be returned for a column. In this
+ case, the result that is returned is as follows: {key: value, column: `[`v1,
+ v2, ...`]`, column: `[`...`]`}
+
+  _*Parameters*_ (2 - 4)
+
+== hbaseShell() ==
+
+
+  _*Parameters*_ (1)
+
+== hbaseWrite() ==
+
+
+  _*Parameters*_ (2 - 3)
+
+== hdfs() ==
+
+  _*Description*_ An expression that constructs an I/O descriptor for HDFS file access.
+
+  _*Parameters*_ (1 - 2)
+
+== hdfsRead() ==
+
+
+  _*Parameters*_ (1 - 2)
+
+== hdfsShell() ==
+
+
+  _*Parameters*_ (1)
+
+== hdfsWrite() ==
+
+
+  _*Parameters*_ (2 - 3)
+
+== http() ==
+
+  _*Description*_ An expression that constructs an I/O descriptor for local file access.
+
+  _*Parameters*_ (1 - 3)
+
+== httpGet() ==
+
+
+  _*Parameters*_ (1 - 3)
+
+== localRead() ==
+
+
+  _*Parameters*_ (1)
+
+== localWrite() ==
+
+
+  _*Parameters*_ (2)
+
+== read() ==
+
+  _*Description*_ An expression used for reading data into jaql. It is called as follows:
+ read({type: '...', location: '...', inoptions: {...}}) <br>
+ The type specifies which InputAdapter to use, the location specifies the
+ address from which the adapter will read. The optional inoptions further
+ parameterize the adapter's behavior. <br>
+ If inoptions are not specified, then default options that are registered for
+ the type at the AdapterStore will be used. If no options are specified and
+ there are no defaults registered, it is an error. If both options are
+ specified and default options are registered, then the union of option fields
+ will be used. If there are duplicate names, then the query options will be
+ used as an override.
+
+  _*Parameters*_ (1)
+
+== readAdapterRegistry() ==
+
+  _*Description*_ Load the registry from the given file
+ 
+ readAdapterRegistry(string filename) returns file name
+
+  _*Parameters*_ (1)
+
+== registerAdapter() ==
+
+  _*Description*_ Register a key, value pair.
+ 
+ registerAdapter({type: string, inOptions: {}, outOptions: {}})
+
+  _*Parameters*_ (1)
+
+== unregisterAdapter() ==
+
+  _*Description*_ Unregister a key, value pair.
+ 
+ unregisterAdapter(string key) returns key
+
+  _*Parameters*_ (1)
+
+== write() ==
+
+  _*Description*_ An expression used for writing external data. It is called as follows:
+ write({type: '...', location: '...', outoptions: '...', inoptions: '...'},
+ expr); <br>
+ The type specifies which OutputAdapter to use, the location specifies the
+ address to which the adapter will write. The optional outoptions further
+ parametrize the adapter's behavior. The optional inoptions can be used to
+ parametrize a read expression that takes as input a write expression (e.g.,
+ read(write({...}, expr)) ). <br>
+ If outoptions or inoptions are not specified, then default options that are
+ registered for the type at the AdapterStore will be used. If no options are
+ specified and there are no defaults registered, it is an error. If both
+ options are specified and default options are registered, then the union of
+ option fields will be used. If there are duplicate names, then the query
+ options will be used as an override.
+
+  _*Parameters*_ (2)
+
+== writeAdapterRegistry() ==
+
+  _*Description*_ Write the registry to a given file
+ 
+ writeAdapterRegistry(string filename) returns null
+
+  _*Parameters*_ (1)
+
+----
+=registry=
+== readFunctionRegistry() ==
+
+
+  _*Parameters*_ (1)
+
+== registerFunction() ==
+
+
+  _*Parameters*_ (2)
+
+== writeFunctionRegistry() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=array=
+== append() ==
+
+  _*Description*_ append($a, $b, ...) ==> unnest `[` $a, $b, ... `]` NOT when $a or $b are
+ non-array (and non-null), but that's probably an improvement. NOT when $a or
+ $b are null, but the change to unnest to remove nulls will fix that should
+ append(null, null) be null? it would break any unnest definition... Push
+ unnest into ListExpr?
+
+  _*Parameters*_ (1 - ...)
+
+== arrayToRecord() ==
+
+
+  _*Parameters*_ (2)
+
+== asArray() ==
+
+  _*Description*_ This function ensures that input returns an array.
+
+  _*Parameters*_ (1)
+
+== columnwise() ==
+
+
+  _*Parameters*_ (1)
+
+== deempty() ==
+
+
+  _*Parameters*_ (1)
+
+== distinct() ==
+
+
+  _*Parameters*_ (1)
+
+== enumerate() ==
+
+
+  _*Parameters*_ (1)
+
+== exists() ==
+
+  _*Description*_ exists(null) = null exists(`[``]`) = false exists(`[`...`]`) = true, when the array
+ has at least one element (even a null) exists(...) = true, when the argument
+ is not an array or a null
+
+  _*Parameters*_ (1)
+
+== merge() ==
+
+  _*Description*_ Merge multiple pipes into one pipe in arbitrary order (like SQL's UNION ALL)
+
+  _*Parameters*_ (1 - ...)
+
+== pair() ==
+
+  _*Description*_ pair(A,B) == `[`A,B`]`
+
+  _*Parameters*_ (2)
+
+== pairwise() ==
+
+
+  _*Parameters*_ (2 - ...)
+
+== removeElement() ==
+
+
+  _*Parameters*_ (2)
+
+== replaceElement() ==
+
+
+  _*Parameters*_ (3)
+
+== reverse() ==
+
+
+  _*Parameters*_ (1)
+
+== rowwise() ==
+
+
+  _*Parameters*_ (1)
+
+== shift() ==
+
+
+  _*Parameters*_ (2 - 3)
+
+== slice() ==
+
+
+  _*Parameters*_ (3)
+
+== toArray() ==
+
+  _*Description*_ If the input is an array or null, return it; else wrap in an array.
+ 
+ if( $x instanceof type `[``*`<`*`>`]`? ) $x else `[`$x`]`
+
+  _*Parameters*_ (1)
+
+----
+=index=
+== buildJIndex() ==
+
+
+  _*Parameters*_ (2)
+
+== buildLucene() ==
+
+
+  _*Parameters*_ (3 - 4)
+
+== keyLookup() ==
+
+  _*Description*_ `[` `[`key,value1`]` `]` -> keyLookup(`[` `[`key,value2`]` `]`) ==> `[` `[`key, value1, value2`]` `]`
+ 
+ Build a hash table on the inner key/value pairs (expr`[`1`]`).
+ For each key/value in the outer pairs (expr`[`0`]`)
+   return `[`key, value1, value2`]` tuples.
+   
+ The code assumes that the inner keys are unique (or an arbitrary value is kept)
+    //TODO: support duplicates?  raise error?
+ 
+ If the outer key does not exist in the inner set, 
+   null is returned for the inner value.
+   So this is preserving the outer input (left outer join)
+   // TODO: support full outer by finding inner values that didn't join?
+ 
+   // TODO:support spilling large inners?
+
+  _*Parameters*_ (2)
+
+== probeJIndex() ==
+
+
+  _*Parameters*_ (2)
+
+== probeLucene() ==
+
+
+  _*Parameters*_ (2 - 3)
+
+----
+=expr=
+== split() ==
+
+
+  _*Parameters*_ (2)
+
+== splitArr() ==
+
+
+  _*Parameters*_ (2)
+
+----
+=schema=
+== schemaof() ==
+
+
+  _*Parameters*_ (1)
+
+== typeof() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=xml=
+== xmlToJson() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=regex=
+== regex() ==
+
+
+  _*Parameters*_ (1 - 2)
+
+== regexExtract() ==
+
+
+  _*Parameters*_ (2)
+
+== regex_match() ==
+
+
+  _*Parameters*_ (2)
+
+== regex_spans() ==
+
+
+  _*Parameters*_ (2)
+
+== regex_test() ==
+
+
+  _*Parameters*_ (2)
+
+----
+=date=
+== date() ==
+
+
+  _*Parameters*_ (1 - 2)
+
+== dateMillis() ==
+
+
+  _*Parameters*_ (1)
+
+== dateParts() ==
+
+
+  _*Parameters*_ (1)
+
+== now() ==
+
+
+  _*Parameters*_ (0)
+
+----
+=nil=
+== denull() ==
+
+
+  _*Parameters*_ (1)
+
+== emptyOnNull() ==
+
+  _*Description*_ emptyOnNull(e) == firstNonNull(e, `[``]`)
+
+  _*Parameters*_ (1)
+
+== firstNonNull() ==
+
+
+  _*Parameters*_ (0 - ...)
+
+== nullElementOnEmpty() ==
+
+
+  _*Parameters*_ (1)
+
+== nullOnEmpty() ==
+
+
+  _*Parameters*_ (1)
+
+== onEmpty() ==
+
+
+  _*Parameters*_ (2)
+
+----
+=db=
+== jdbc() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=agg=
+== any() ==
+
+  _*Description*_ Picks any value. If there is at least one non-null values, picks a non-null value.
+
+  _*Parameters*_ (1)
+
+== argmax() ==
+
+
+  _*Parameters*_ (2)
+
+== argmin() ==
+
+
+  _*Parameters*_ (2)
+
+== array() ==
+
+
+  _*Parameters*_ (1)
+
+== avg() ==
+
+
+  _*Parameters*_ (1)
+
+== count() ==
+
+
+  _*Parameters*_ (1)
+
+== covStats() ==
+
+  _*Description*_ covStats(array x) = sum `[`1 x1 x2 ... xn`]` `*` `[`1 x1 x2 ... xn`]``^`T
+   = `[` count   sum(x1)    sum(x2)    ... sum(xn)    ,
+               sum(x1`*`x1) sum(x1`*`x2) ... sum(x1`*`xn) ,
+                          sum(x2`*`x2) ... sum(x2`*`xn) ,
+       ...                                          ,
+                                         sum(xn`*`xn) `]`
+
+  _*Parameters*_ (1)
+
+== max() ==
+
+
+  _*Parameters*_ (1)
+
+== min() ==
+
+
+  _*Parameters*_ (1)
+
+== pickN() ==
+
+
+  _*Parameters*_ (2)
+
+== singleton() ==
+
+  _*Description*_ Convert a pipe to a simple value:
+   If the pipe is empty then null
+   If the pipe has one item then that item
+   If the pipe has more than one item then error
+
+  _*Parameters*_ (1)
+
+== sum() ==
+
+
+  _*Parameters*_ (1)
+
+== vectorSum() ==
+
+  _*Description*_ vectorSum(array x) = `[`sum(x1), sum(x2), ..., sum(xn)`]`
+
+  _*Parameters*_ (1)
+
+----
+=top=
+== exprtree() ==
+
+  _*Description*_ An internal method that can be used to print the internal tree of expressions in JSON format.
+
+  _*Parameters*_ (1)
+
+----
+=span=
+== span() ==
+
+
+  _*Parameters*_ (2)
+
+== span_contains() ==
+
+
+  _*Parameters*_ (2)
+
+== span_overlaps() ==
+
+
+  _*Parameters*_ (2)
+
+== tokenize() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=numeric=
+== abs() ==
+
+  _*Description*_ This function accepts a numbers and returns its absolute value
+
+  _*Parameters*_ (1)
+
+  _*Examples*_ 
+{{{
+jaql> abs(-2);
+ 2
+
+jaql> abs(2-10);
+ 8
+
+}}}
+== div() ==
+
+  _*Description*_ this is a div function
+
+  _*Parameters*_ (2)
+
+== exp() ==
+
+  _*Description*_ raise base of natural log (e) to arg: e`^`a pow(x,y) = exp( y `*` ln(x) )
+
+  _*Parameters*_ (1)
+
+== int() ==
+
+
+  _*Parameters*_ (1)
+
+== ln() ==
+
+  _*Description*_ natural logarithm
+
+  _*Parameters*_ (1)
+
+== mod() ==
+
+
+  _*Parameters*_ (2)
+
+== number() ==
+
+
+  _*Parameters*_ (1)
+
+== number() ==
+
+
+  _*Parameters*_ (1)
+
+== pow() ==
+
+  _*Description*_ raise a number to power
+
+  _*Parameters*_ (2)
+
+== toDouble() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=string=
+== endsWith() ==
+
+
+  _*Parameters*_ (2)
+
+== serialize() ==
+
+
+  _*Parameters*_ (1)
+
+== startsWith() ==
+
+
+  _*Parameters*_ (2)
+
+== strcat() ==
+
+
+  _*Parameters*_ (0 - ...)
+
+== strJoin() ==
+
+  _*Description*_ string strJoin(array items, string sep) 
+ Build a string that concatentates all the items, adding sep between each item.
+ Nulls are removed, without any separator.
+ If you want nulls, use firstNonNull(e,'how nulls appear').
+
+  _*Parameters*_ (2)
+
+== strSplitN() ==
+
+  _*Description*_ strSplitN(string src, string sep, int n) ==> `[`string1, string2, ..., stringn`]`
+ sep is a string of one charater.
+
+  _*Parameters*_ (3)
+
+== substring() ==
+
+
+  _*Parameters*_ (2 - 3)
+
+----
+=random=
+== randomDouble() ==
+
+
+  _*Parameters*_ (0 - 1)
+
+== randomLong() ==
+
+  _*Description*_ Vivamus auctor, sapien eu pulvinar ultricies, ligula dolor blandit mauris, non egestas est mauris ac tellus. Vivamus semper consequat congue. Donec a odio eget nunc dapibus faucibus. Nam dictum massa sed quam congue vitae rutrum velit mattis. Donec pharetra augue sit amet elit porttitor tristique. Maecenas felis turpis, aliquet quis venenatis id, lobortis non enim. Integer sit amet sodales mi. Donec vitae erat metus, et feugiat tortor. Donec a mi augue, vel convallis nibh. Nulla sit amet convallis tortor. Suspendisse vel quam turpis, eget ornare tortor. Nullam eget sapien turpis. Ut leo justo, congue id adipiscing in, egestas in ipsum. Sed dignissim mi a metus rhoncus dictum.
+ Phasellus egestas aliquam eros, vel mollis lacus consequat consequat. Ut pulvinar, leo vitae bibendum dictum, velit nulla ultricies lacus, id vehicula ante nulla in est. Quisque risus ligula, consequat sit amet aliquam ut, dignissim id justo. Donec interdum velit sed arcu tempus mollis. Morbi diam nulla, auctor cursus sollicitudin nec, auctor quis lectus. Etiam ullamcorper fermentum massa, in commodo lectus auctor feugiat. Sed ac sapien ut sem hendrerit sollicitudin at ut nisi. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Integer nulla erat, mollis eget t
+
+  _*Parameters*_ (0 - 1)
+
+== registerRNG() ==
+
+
+  _*Parameters*_ (2)
+
+== sampleRNG() ==
+
+
+  _*Parameters*_ (1)
+
+----
+=net=
+== jaqlGet() ==
+
+
+  _*Parameters*_ (1 - 2)
+
+----
+=record=
+== arity() ==
+
+
+  _*Parameters*_ (1)
+
+== fields() ==
+
+
+  _*Parameters*_ (1)
+
+== names() ==
+
+  _*Description*_ names($rec) == for $k,$v in $rec return $k == fields($rec)`[``*``]``[`0`]`;
+
+  _*Parameters*_ (1)
+
+== record() ==
+
+
+  _*Parameters*_ (1)
+
+== remap() ==
+
+
+  _*Parameters*_ (2)
+
+== removeFields() ==
+
+
+  _*Parameters*_ (2)
+
+== renameFields() ==
+
+
+  _*Parameters*_ (2)
+
+== replaceFields() ==
+
+  _*Description*_ Replace fields in oldRec with fields in newRec only if the field name exists in oldRec.
+ Unlike remap, this only replaces existing fields.
+
+  _*Parameters*_ (2)
+
+== values() ==
+
+  _*Description*_ values($rec) == for $k,$v in $rec return $v == fields($rec)`[``*``]``[`1`]`;
+
+  _*Parameters*_ (1)
+
+----
