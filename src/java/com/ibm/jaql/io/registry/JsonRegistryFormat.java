@@ -95,8 +95,8 @@ public abstract class JsonRegistryFormat<K, V>
   public BufferedJsonRecord convert(K key, V value)
   {
     BufferedJsonRecord r = new BufferedJsonRecord();
-    JsonValue kTgt = toKeyConverter.createInitialTarget();
-    JsonValue vTgt = toValConverter.createInitialTarget();
+    JsonValue kTgt = toKeyConverter.createTarget();
+    JsonValue vTgt = toValConverter.createTarget();
     kTgt = toKeyConverter.convert(key, kTgt);
     vTgt = toValConverter.convert(value, vTgt);
     r.add(KEY_NAME, kTgt);
@@ -112,7 +112,7 @@ public abstract class JsonRegistryFormat<K, V>
   public K convertKey(JsonRecord external)
   {
     JsonValue kValue = external.get(KEY_NAME);
-    K kTgt = fromKeyConverter.createInitialTarget();
+    K kTgt = fromKeyConverter.createTarget();
     kTgt = fromKeyConverter.convert(kValue, kTgt);
     return kTgt;
   }
@@ -125,7 +125,7 @@ public abstract class JsonRegistryFormat<K, V>
   public V convertVal(JsonRecord external)
   {
     JsonValue vValue= external.get(VAL_NAME);
-    V vTgt = fromValConverter.createInitialTarget();
+    V vTgt = fromValConverter.createTarget();
     vTgt = fromValConverter.convert(vValue, vTgt);
     return vTgt;
   }

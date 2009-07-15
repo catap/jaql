@@ -24,6 +24,7 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -60,6 +61,21 @@ public abstract class AbstractReadExpr extends IterExpr
   @Override
   public Schema getSchema()
   {
+    // TODO: this is a quick hack to derive schema
+    try
+    {
+      if (exprs[0].isCompileTimeComputable().always())
+      {
+        JsonValue args = exprs[0].eval(Env.getCompileTimeContext()); // TODO should provide context
+        InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
+        Schema s = adapter.getSchema();
+        assert s.isArrayOrNull().always();
+        return s;
+      }
+    } catch (Exception e)
+    {
+      // ignore
+    }
     return SchemaFactory.arraySchema();
   }
 
@@ -73,7 +89,7 @@ public abstract class AbstractReadExpr extends IterExpr
     final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
     adapter.open();
     return new JsonIterator() {
-      ClosableJsonIterator reader = adapter.getJsonReader();
+      ClosableJsonIterator reader = adapter.iter();
   
       @Override
       public boolean moveNext() throws Exception

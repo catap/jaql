@@ -15,12 +15,15 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import java.util.Map;
+
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 
 /**
@@ -58,6 +61,13 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
   public Expr location() {
     return exprs[0];
   }
+  
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  }
 
   /* (non-Javadoc)
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
@@ -80,6 +90,5 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
       }
     }
     return rec;
-  }
-  
+  }  
 }

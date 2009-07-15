@@ -21,6 +21,8 @@ import java.io.InputStream;
 import com.ibm.jaql.io.converter.StreamToJson;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Parses a JSON file and returns its representation as {@link Item}s. 
@@ -37,7 +39,7 @@ public class JsonTextInputStream implements StreamToJson<JsonValue>
    * 
    * @see com.ibm.jaql.io.converter.StreamToItem#setInputStream(java.io.InputStream)
    */
-  public void setInputStream(InputStream in)
+  public void setInput(InputStream in)
   {
     parser = new JsonParser(in);
   }
@@ -86,5 +88,10 @@ public class JsonTextInputStream implements StreamToJson<JsonValue>
     {
       return null;
     }
+  }
+  
+  public Schema getSchema()
+  {
+    return SchemaFactory.anyOrNullSchema();
   }
 }

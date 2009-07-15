@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.schema;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
@@ -74,6 +76,12 @@ public class InstanceOfExpr extends Expr
     exprText.print(")");
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.booleanOrNullSchema();
+  }
+  
   /*
    * (non-Javadoc)
    * 

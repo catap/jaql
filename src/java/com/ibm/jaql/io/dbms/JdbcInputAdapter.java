@@ -26,6 +26,9 @@ import java.sql.Types;
 
 import com.ibm.jaql.io.AbstractInputAdapter;
 import com.ibm.jaql.io.ClosableJsonIterator;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonDate;
@@ -90,7 +93,7 @@ public class JdbcInputAdapter extends AbstractInputAdapter
    * 
    * @see com.ibm.jaql.io.InputAdapter#getItemReader()
    */
-  public ClosableJsonIterator getJsonReader() throws Exception
+  public ClosableJsonIterator iter() throws Exception
   {
     Statement stmt = conn.createStatement();
 
@@ -220,5 +223,12 @@ public class JdbcInputAdapter extends AbstractInputAdapter
         }
       }
     };
+  }
+
+  @Override
+  public Schema getSchema()
+  {
+    // TODO improve
+    return new ArraySchema(SchemaFactory.recordSchema(), null, null);
   }
 }

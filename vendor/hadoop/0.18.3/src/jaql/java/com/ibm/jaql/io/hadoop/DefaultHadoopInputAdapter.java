@@ -28,12 +28,15 @@ import org.apache.log4j.Logger;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.hadoop.converter.KeyValueImport;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * The default class for reading Items from Hadoop into jaql
+ * The default class for reading data from Hadoop into jaql
  */
 public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
 {
@@ -174,13 +177,13 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
    * 
    * @see com.ibm.jaql.lang.InputAdapter#getRecordReader()
    */
-  public ClosableJsonIterator getJsonReader() throws IOException
+  public ClosableJsonIterator iter() throws IOException
   {
     final SplitState state = new SplitState();
     final InputSplit[] splits = getSplits(conf, conf.getNumMapTasks());
 
     final JsonHolder valueHolder = new JsonHolder();
-    valueHolder.value = converter != null ? converter.createInitialTarget() : null;
+    valueHolder.value = converter != null ? converter.createTarget() : null;
     return new ClosableJsonIterator() {
       JsonHolder key;
       /*
@@ -263,7 +266,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
       public JsonHolder createValue()
       {
         JsonHolder holder = new JsonHolder();
-        holder.value = converter.createInitialTarget();
+        holder.value = converter.createTarget();
         return holder;
       }
 
@@ -375,5 +378,18 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
     configurator.setParallel(conf); // TODO: double-check what options the
     // configurator has at this point
     Globals.setJobConf(conf);
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    if (converter != null) // input file is already Json
+    {
+      return new ArraySchema(converter.getSchema(), null, null);
+    }
+    else
+    {
+      return SchemaFactory.arraySchema();      
+    }
   }
 }

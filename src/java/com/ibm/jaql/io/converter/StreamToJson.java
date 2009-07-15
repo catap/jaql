@@ -18,19 +18,17 @@ package com.ibm.jaql.io.converter;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** 
- * Interface for reading {@link JsonValue}s from an {@link InputStream}.
- */
+/** Interface for reading {@link JsonValue}s from an {@link InputStream}. <code>StreanToJson</code>
+ * converters can read the entire stream to produce a single JSON value or, alternatively, produce 
+ * an array by providing its elements one at a time. */
 public interface StreamToJson<T extends JsonValue>
 {
-  /**
-   * Set the input stream.
-   * 
-   * @param in
-   */
-  void setInputStream(InputStream in);
+  /** Sets the input stream to read from. */
+  void setInput(InputStream in);
   
   /**
    * If the converter is for array access, then it assumes the stream encodes a JSON array.
@@ -48,12 +46,24 @@ public interface StreamToJson<T extends JsonValue>
    */
   boolean isArrayAccessor();
 
-  /**
-   * Read from the stream into the Item.
+  // TODO: synchronize with ToJson API (i.e., add a createtarget method)
+  /** Read from the stream and return the result. Implementations may 
+   * reuse the <code>target</code> argument to improve efficiency. Callers to this method will 
+   * provide either <code>null</code> or the result of a previous call to this method.
    * 
-   * @param v
+   * @param target
    * @return
    * @throws IOException
    */
-  T read(T v) throws IOException;
+  T read(T target) throws IOException;
+  
+  /** Describes the schema of the value(s) produced by {@link #read(JsonValue)}}. If this class
+   * is configured for array access, this method should return the schema of each individual
+   * element of the array. Implementations should provide as much information as possible to 
+   * facilitate query optimization. If no information about the schema is known, return 
+   * {@link SchemaFactory#anyOrNullSchema()}.
+   * 
+   * @return a schema that all values produced by this converter adhere to
+   */
+  Schema getSchema();
 }

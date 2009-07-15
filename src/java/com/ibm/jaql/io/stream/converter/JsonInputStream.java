@@ -22,6 +22,8 @@ import java.io.InputStream;
 
 import com.ibm.jaql.io.converter.StreamToJson;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Generates {@link Item}s from a binary input stream containing serialized items.
@@ -39,7 +41,7 @@ public class JsonInputStream implements StreamToJson<JsonValue>
    * 
    * @see com.ibm.jaql.io.converter.StreamToItem#setInputStream(java.io.InputStream)
    */
-  public void setInputStream(InputStream in)
+  public void setInput(InputStream in)
   {
     this.input = new DataInputStream(in);
   }
@@ -78,5 +80,10 @@ public class JsonInputStream implements StreamToJson<JsonValue>
       return null;
     }
     return v;
+  }
+  
+  public Schema getSchema()
+  {
+    return SchemaFactory.anyOrNullSchema();
   }
 }

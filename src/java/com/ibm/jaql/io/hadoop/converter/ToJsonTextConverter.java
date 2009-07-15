@@ -85,7 +85,7 @@ public class ToJsonTextConverter extends JsonToHadoopRecord<WritableComparable<?
        * 
        * @see com.ibm.jaql.io.converter.ToItem#createTarget()
        */
-      public Text createInitialTarget()
+      public Text createTarget()
       {
         return new Text();
       }

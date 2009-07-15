@@ -72,7 +72,7 @@ public class Parameters
     {
       try
       {
-        s[i] = Schema.parse(schemata[i]);
+        s[i] = SchemaFactory.parse(schemata[i]);
       } catch (IOException e)
       {
         throw new RuntimeException(e);

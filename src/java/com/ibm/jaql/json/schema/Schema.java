@@ -16,19 +16,14 @@
 package com.ibm.jaql.json.schema;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
 
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.parser.JaqlLexer;
-import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.util.Bool3;
 
 /** Superclass for schemata of JSON values. Commonly used schemata can be created using the
@@ -178,7 +173,7 @@ public abstract class Schema
   }
 
   
-  // -- printing and parsing ----------------------------------------------------------------------
+  // -- printing ----------------------------------------------------------------------------------
   
   public String toString()
   {
@@ -189,25 +184,6 @@ public abstract class Schema
     } catch (IOException e)
     {
       throw new UndeclaredThrowableException(e);
-    }
-  }
-
-  /** Parse a schema from the specified string. The string must not contain the "schema" keyword
-   * of Jaql, e.g., <code>long</code> is valid but <code>schema long</code> is not. */
-  public static final Schema parse(String s) throws IOException
-  {
-    
-    JaqlLexer lexer = new JaqlLexer(new StringReader(s));
-    JaqlParser parser = new JaqlParser(lexer);
-    try
-    {
-      return parser.schema();
-    } catch (RecognitionException e)
-    {
-      throw new IOException(e);
-    } catch (TokenStreamException e)
-    {
-      throw new IOException(e);
     }
   }
 }

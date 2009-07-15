@@ -69,7 +69,7 @@ public class SchemaTransformation
     return new OrSchema(unnestedSchemata);
   }
 
-  /** Combines schemata <code>s1</code>, <code>s2</code> and <code>s3</code>. The resulting schema 
+  /** Combines schemata the provided schemata. The resulting schema 
    * will match precisely the values matched by any of the provided schemata. 
    * 
    * See {@link #merge(Schema, Schema)} for lossy merging. */
@@ -78,6 +78,27 @@ public class SchemaTransformation
     if (schemata.size() == 1)
     {
       return schemata.get(0);
+    }
+    else
+    {
+      List<Schema> unnestedSchemata = new LinkedList<Schema>();
+      for (Schema s : schemata)
+      {
+        unnestedSchemata.addAll(unnestOrs(s));
+      }
+      return new OrSchema(unnestedSchemata);
+    }
+  }
+  
+  /** Combines schemata the provided schemata. The resulting schema 
+   * will match precisely the values matched by any of the provided schemata. 
+   * 
+   * See {@link #merge(Schema, Schema)} for lossy merging. */
+  public static Schema or(Schema[] schemata)
+  {
+    if (schemata.length == 1)
+    {
+      return schemata[0];
     }
     else
     {

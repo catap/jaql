@@ -23,6 +23,7 @@ import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -41,7 +42,7 @@ public class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema>
   public JsonSchema read(DataInput in, JsonValue target) throws IOException
   {
     String s = in.readUTF();
-    Schema schema = Schema.parse(s);
+    Schema schema = SchemaFactory.parse(s);
     if (target == null || !(target instanceof JsonSchema)) {
       return new JsonSchema(schema);
     } else {

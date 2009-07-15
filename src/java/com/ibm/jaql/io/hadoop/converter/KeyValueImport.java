@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.io.hadoop.converter;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -38,7 +40,7 @@ public interface KeyValueImport<K,V> {
    * 
    * @return
    */
-  JsonValue createInitialTarget();
+  JsonValue createTarget();
   
   /**
    * Import a key K, value V into an Item target (assumed to be constructed using createTarget)
@@ -48,4 +50,14 @@ public interface KeyValueImport<K,V> {
    * @param tgt
    */
   JsonValue convert(K key, V val, JsonValue target);
+  
+  
+  /** Describes the schema of the values produced by {@link #convert(Object, Object, JsonValue)}. 
+   * Implementations should provide as much information as possible to facilitate query 
+   * optimization. If no information about the schema is known, return 
+   * {@link SchemaFactory#anyOrNullSchema()}.
+   * 
+   * @return a schema that all values produced by this converter adhere to
+   */
+  Schema getSchema();
 }
