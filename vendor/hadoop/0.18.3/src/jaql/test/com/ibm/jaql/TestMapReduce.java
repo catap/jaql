@@ -26,15 +26,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.dfs.MiniDFSCluster;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MiniMRCluster;
-import org.apache.hadoop.util.VersionInfo;
-
-import com.ibm.jaql.JaqlBaseTestCase;
-import com.ibm.jaql.TestMapReduce;
-import com.ibm.jaql.UtilForTest;
 
 /**
  * 

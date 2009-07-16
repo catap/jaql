@@ -159,6 +159,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
    */
   public InputSplit[] getSplits(JobConf job, int numSplits) throws IOException
   {
+    // return splits
     return iFormat.getSplits(job, numSplits);
   }
 
@@ -290,22 +291,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
     };
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see org.apache.hadoop.mapred.InputFormat#validateInput(org.apache.hadoop.mapred.JobConf)
-   */
-  public void validateInput(JobConf job) throws IOException
-  {
 
-    // check the input format
-    InputFormat<?,?> adapter = job.getInputFormat();
-    if (!(adapter instanceof HadoopInputAdapter))
-      throw new IOException("invalid input format: " + adapter);
-
-    // validate the input format
-    iFormat.validateInput(job);
-  }
 
   /*
    * (non-Javadoc)
@@ -391,5 +377,15 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
     {
       return SchemaFactory.arraySchema();      
     }
+  }
+
+  @Deprecated
+  @Override
+  public void validateInput(JobConf job) throws IOException
+  {
+    // check the input format
+    InputFormat<?,?> adapter = job.getInputFormat();
+    if (!(adapter instanceof HadoopInputAdapter))
+      throw new IOException("invalid input format: " + adapter);
   }
 }

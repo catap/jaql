@@ -22,9 +22,9 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.mapred.TableOutputFormat;
 import org.apache.hadoop.mapred.FileAlreadyExistsException;
+import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.InvalidJobConfException;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputFormatBase;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
@@ -37,7 +37,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 /**
  * 
  */
-public class JaqlTableOutputFormat extends OutputFormatBase<JsonHolder, JsonHolder>
+public class JaqlTableOutputFormat extends FileOutputFormat<JsonHolder, JsonHolder>
 {
 
   static final Logger LOG = Logger.getLogger(JaqlTableOutputFormat.class.getName());

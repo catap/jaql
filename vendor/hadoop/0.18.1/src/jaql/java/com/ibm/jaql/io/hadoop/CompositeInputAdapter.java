@@ -31,6 +31,8 @@ import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.registry.RegistryUtil;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
@@ -106,7 +108,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
    * 
    * @see com.ibm.jaql.io.InputAdapter#getItemReader()
    */
-  public ClosableJsonIterator getJsonReader() throws Exception
+  public ClosableJsonIterator iter() throws Exception
   {
     // Return a RecordReader that gets a RecordReader from all adapters.
     return new ClosableJsonIterator() { // TODO: temprory hack until input get updated
@@ -124,7 +126,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
           {
             try
             {
-              baseReader = adapters[idx++].getJsonReader();
+              baseReader = adapters[idx++].iter();
             }
             catch (Exception e)
             {
@@ -146,6 +148,16 @@ public class CompositeInputAdapter implements HadoopInputAdapter
       }
 
     };
+  }
+  
+  public Schema getSchema()
+  {
+    Schema[] inSchemata = new Schema[adapters.length];
+    for (int i=0; i<adapters.length; i++)
+    {
+      inSchemata[i] = adapters[i].getSchema();
+    }
+    return SchemaTransformation.or(inSchemata);
   }
 
   /*
@@ -270,6 +282,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
    * 
    * @see org.apache.hadoop.mapred.InputFormat#validateInput(org.apache.hadoop.mapred.JobConf)
    */
+  @Deprecated
   public void validateInput(JobConf job) throws IOException
   {
     // 1. read the args array and parse it

@@ -282,7 +282,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
    * 
    * @see org.apache.hadoop.mapred.InputFormat#validateInput(org.apache.hadoop.mapred.JobConf)
    */
-  @SuppressWarnings("deprecation")
+  @Deprecated
   public void validateInput(JobConf job) throws IOException
   {
     // 1. read the args array and parse it
