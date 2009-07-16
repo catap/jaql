@@ -17,6 +17,7 @@ package com.ibm.jaql.io.hadoop;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
@@ -55,9 +56,9 @@ public class FileOutputConfigurator implements InitializableConfSetter
     // must be the location's parent.
     Path outPath = new Path(location);
     FileSystem fs = outPath.getFileSystem(conf);
-    if (fs.exists(outPath) && fs.isFile(outPath)) fs.delete(outPath);
+    if (fs.exists(outPath) && fs.isFile(outPath)) fs.delete(outPath, true);
 
-    conf.setOutputPath(outPath.getParent());
+    FileOutputFormat.setOutputPath(conf, outPath.getParent());
     // HACK: copied from FileOutputFormat since it is package protected.
     Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath);
     conf.set("mapred.work.output.dir", workOutputDir.toString());
@@ -88,8 +89,8 @@ public class FileOutputConfigurator implements InitializableConfSetter
     // For map-reduce, multiple files can be produced, so the location is their
     // parent directory.
     Path outPath = new Path(location);
-    outPath.getFileSystem(conf).delete(outPath);
-    conf.setOutputPath(outPath);
+    outPath.getFileSystem(conf).delete(outPath, true);
+    FileOutputFormat.setOutputPath(conf, outPath);
     // HACK: copied from FileOutputFormat since it is package protected.
     Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath);
     conf.set("mapred.work.output.dir", workOutputDir.toString());

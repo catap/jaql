@@ -42,7 +42,7 @@ public class UtilForTest
       Path p = new Path(dir);
       if (fs.exists(p))
       {
-        fs.delete(p);
+        fs.delete(p, true);
       }
     }
   }
