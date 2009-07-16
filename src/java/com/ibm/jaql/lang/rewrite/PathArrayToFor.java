@@ -67,7 +67,8 @@ public class PathArrayToFor extends Rewrite
     PathStep nextStep = ((PathArray)expr).nextStep();
     Expr outer = pe.input();
     Schema outerSchema = outer.getSchema();
-    if (outerSchema.isArray().maybeNot()) return false; // otherwise problems with schema inference
+    // FIXME: (kbeyer) What is the problem here? It is preventing combiners in map/reduce jobs... 
+    // if (outerSchema.isArray().maybeNot()) return false; // otherwise problems with schema inference
     Var v = engine.env.makeVar("$", outerSchema.elements());
     Expr inner = new VarExpr(v);
     

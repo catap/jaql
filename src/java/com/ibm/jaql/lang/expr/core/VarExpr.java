@@ -172,4 +172,11 @@ public class VarExpr extends Expr
     }
   }
 
+  /**
+   * @return The ancestor Expr that defines the var used in this VarExpr.
+   */
+  public BindingExpr findVarDef()
+  {
+    return parent.findVarDef(var);
+  }
 }

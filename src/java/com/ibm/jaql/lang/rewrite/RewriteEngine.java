@@ -33,9 +33,10 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[7];
+  protected RewritePhase[] phases      = new RewritePhase[9];
   protected boolean        traceFire   = false;
-  protected boolean        explainFire = false;                    // traceFire must true for this to matter 
+  protected boolean        explainFire = false;                    // traceFire must true for this to matter
+  protected long           counter     = 0;
 
   // These are for use by rewrites.
   public Env               env;
@@ -69,6 +70,7 @@ public class RewriteEngine
     RewritePhase basicPhase = new RewritePhase(this, postOrderWalker, 10000);
     RewritePhase phase = phases[phaseId] = basicPhase;
     new LetInline(phase);
+    new DoMerge(phase);
     // new DechainFor(phase);
     new FunctionInline(phase);
     new TrivialForElimination(phase);
@@ -91,6 +93,7 @@ public class RewriteEngine
     new EmptyOnNullElimination(phase);
     new InjectAggregate(phase);
     new UnnestFor(phase);
+    new WriteAssignment(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
 
@@ -104,6 +107,9 @@ public class RewriteEngine
     new ConstEval(phase); // TODO: run bottom-up/post-order
     // new ConstFunction(phase);
 
+    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
+    new StrengthReduction(phase);
+    
     phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
     new ToMapReduce(phase);
 
@@ -111,7 +117,11 @@ public class RewriteEngine
     new GroupElimination(phase);
     new PerPartitionElimination(phase);
     
-    phases[++phaseId] = basicPhase; // run basic rewrites once more to clean things up
+    phases[++phaseId] = basicPhase;
+    
+    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 0);
+    new StrengthReduction(phase);
+
 
     // This phase is REQUIRED to run to completion if the expr has been
     // modified in a way that a variable could be hidden (ie, just about any rewrite)
@@ -135,10 +145,21 @@ public class RewriteEngine
     }
     Expr dummy = new QueryExpr(query);
     this.env = env;
+    counter = 0;
     for (RewritePhase phase : phases)
     {
       phase.run(dummy);
     }
     return dummy.child(0);
+  }
+
+  /**
+   * @return a unique number for this run of the engine
+   */
+  public long counter()
+  {
+    long n = counter;
+    counter++;
+    return n;
   }
 }

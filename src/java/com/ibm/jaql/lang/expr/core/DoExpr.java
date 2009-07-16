@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * Run a list of pipes, perserving order as required.  Return the last pipe.
@@ -72,6 +73,13 @@ public class DoExpr extends Expr
     return exprs[exprs.length-1].getSchema();
   }
   
+  
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
@@ -117,5 +125,4 @@ public class DoExpr extends Expr
     }
     return exprs[n].iter(context);
   }
-
 }

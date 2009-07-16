@@ -27,6 +27,7 @@ import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JsonHashTable;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -106,6 +107,17 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
   public Expr collectExpr()
   {
     return exprs[exprs.length - 1];
+  }
+
+  
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    if( i < numBindings() * 2 && i % 2 == 0 ) // i is an input binding
+    {
+      return Bool3.TRUE;
+    }
+    return Bool3.UNKNOWN;
   }
 
   /*

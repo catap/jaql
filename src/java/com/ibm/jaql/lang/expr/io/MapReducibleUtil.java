@@ -23,9 +23,11 @@ import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.ClassLoaderMgr;
@@ -46,6 +48,12 @@ public class MapReducibleUtil
    */
   public static boolean isMapReducible(boolean input, Expr e)
   {
+    if( e instanceof VarExpr )
+    {
+      VarExpr ve = (VarExpr)e;
+      BindingExpr def = ve.findVarDef();
+      e = def.eqExpr();
+    }
     if (e instanceof HadoopTempExpr || e instanceof MapReduceBaseExpr)
     {
       return true;

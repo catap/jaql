@@ -16,7 +16,6 @@
 package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
@@ -73,71 +72,6 @@ public abstract class Rewrite
     return expr.clone(engine.varMap);
   }
 
-  /**
-   * @param varExpr
-   * @return
-   */
-  protected Expr findVarDef(VarExpr varExpr)
-  {
-    Var var = varExpr.var();
-    if (var.isGlobal())
-    {
-      return var.expr;
-    }
-    for (Expr e = varExpr.parent(); e != null; e = e.parent())
-    {
-      for (Expr c : e.children())
-      {
-        if (c instanceof BindingExpr)
-        {
-          BindingExpr b = (BindingExpr) c;
-          if (b.var == var || b.var2 == var)
-          {
-            return b;
-          }
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * @param atExpr
-   * @param varName
-   * @return
-   */
-  protected Expr findVarDef(Expr atExpr, String varName)
-  {
-    Expr prev = atExpr;
-    for (Expr e = atExpr.parent(); e != null; e = e.parent())
-    {
-      int i = prev.getChildSlot();
-      // look for bindings as direct children before us
-      for (i = i - 1; i >= 0; i--)
-      {
-        Expr c = e.child(i);
-        if (c instanceof BindingExpr)
-        {
-          BindingExpr b = (BindingExpr) c;
-          if (varName.equals(b.var.name)
-              || (b.var2 != null && varName.equals(b.var2.name)))
-          {
-            return b;
-          }
-        }
-      }
-      prev = e;
-    }
-    // Look for globals:
-    Var var = engine.env.inscope(varName);
-    if( var != null )
-    {
-      assert var.isGlobal();
-      return var.expr;
-    }
-    // Var not found...
-    return null;
-  }
 
   // FIXME: There is a potential bug here when exprTree == VarExpr that gets replaced!
   /**
@@ -279,5 +213,25 @@ public abstract class Rewrite
       }
     }
     return null;
+  }
+  
+
+  /**
+   * @return true if expr and all its ancestors are evaluated at most once all the
+   * way up to ancestor.
+   * @throws NullPointerException if expr is not a decendant of ancestor.
+   */
+  protected boolean evaluatedOnceTo(Expr expr, Expr ancestor)
+  {
+    while( expr != ancestor )
+    {
+      int i = expr.getChildSlot();
+      if( expr.parent().evaluatesChildOnce(i).maybeNot() )
+      {
+        return false;
+      }
+      expr = expr.parent();
+    }
+    return true;
   }
 }
