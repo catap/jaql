@@ -18,7 +18,7 @@ We begin with an example of JSON data, then go on to several
 examples using the data to illustrate key features of Jaql
 and show how it can be used to process
 JSON data in parallel using Hadoop's map/reduce framework.
-Along the way, we will refer to Jaql's [CoreLanguage, core operators], 
+Along the way, we will refer to Jaql's [LanguageCore, core operators], 
 [Builtin_functions builtin functions] and show how Jaql's [Functions function]
 and [IO] libraries can be extended. To get started with the examples below,
 you can [http://jaql.googlecode.com/files/jaql-0.4_hadoop-0.18.3.tgz download] the most recent release of Jaql and fire up a Jaql interpreter following these [Running instructions].
