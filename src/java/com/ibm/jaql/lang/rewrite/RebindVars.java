@@ -47,13 +47,8 @@ public class RebindVars extends Rewrite
     // TODO: What happens when binding.var.name is the same as binding.var2.name? problem?
     VarExpr ve = (VarExpr) expr;
     Var var = ve.var();
-    Expr realDef = findVarDef(ve);
-    Expr nameDef = findVarDef(ve, var.name);
-    if( realDef == null || nameDef == null )
-    {
-      findVarDef(ve);
-      findVarDef(ve, var.name);
-    }
+    Expr realDef = ve.findVarDef();
+    Expr nameDef = ve.findVarDef(var.name);
     assert realDef != null && nameDef != null;
     if (realDef != nameDef)
     {

@@ -49,7 +49,7 @@ public class DoInlinePragma extends Rewrite
     {
       VarExpr varExpr = (VarExpr) c;
       Var var = varExpr.var();
-      Expr def = findVarDef(varExpr);
+      Expr def = varExpr.findVarDef();
 //    // TODO: I think this case is gone now; function parameters are in bindings that are found.
 //      if (def == null)
 //      {

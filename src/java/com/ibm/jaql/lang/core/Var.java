@@ -213,12 +213,22 @@ public class Var extends Object
     }
     else if( value instanceof JsonIterator )
     {
-      SpilledJsonArray arr = new SpilledJsonArray();
-      arr.setCopy((JsonIterator)value);
-      value = arr;
+      JsonIterator iter = (JsonIterator)value;
+      JsonValue result;
+      if( iter.isNull() )
+      {
+        result = null;
+      }
+      else
+      {
+        SpilledJsonArray arr = new SpilledJsonArray();
+        arr.setCopy(iter);
+        result = arr;
+      }
       // TODO: remove assertion? check can be expensive when large arrays are put in var's
-      assert schema.matchesUnsafe(arr); 
-      return arr;
+      assert schema.matchesUnsafe(result); 
+      value = result;
+      return result;
     }
     else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
     {

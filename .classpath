@@ -5,6 +5,7 @@
 	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/test"/>
 	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/java"/>
 	<classpathentry kind="src" path="src/test"/>
+	<classpathentry kind="src" path="conf"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/antlr.jar"/>
 	<classpathentry kind="lib" path="lib/jline-0.9.94.jar"/>
@@ -52,5 +53,6 @@
 	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/lucene-core-2.2.0.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/servlet-api.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.18.1/lib/xmlenc-0.52.jar"/>
+	<classpathentry kind="var" path="ANTLR_HOME/antlr.jar" sourcepath="ANTLR_HOME/antlrsrc.zip"/>
 	<classpathentry kind="output" path="buildEclipse"/>
 </classpath>
