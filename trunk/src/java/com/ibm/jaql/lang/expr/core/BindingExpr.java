@@ -137,7 +137,7 @@ public class BindingExpr extends Expr
     Map<ExprProperty, Boolean> props = getProperties();
     if (deep)
     {
-      return getProperty(props, prop, new Expr[] { exprs[0] });
+      return getProperty(props, prop, exprs);
     }
     else
     {

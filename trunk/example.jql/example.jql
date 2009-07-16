@@ -1,0 +1,5 @@
+{  "author": "J. K. Rowling",  "publisher": "Scholastic",  "title": "Deathly Hallows",  "year": 2007}
+{  "author": "J. K. Rowling",  "publisher": "Scholastic",  "reviews": [    {      "rating": 10,      "review": "The best ...",      "user": "joe"    },    {      "rating": 6,      "review": "Average ...",      "user": "mary"    }  ],  "title": "Chamber of Secrets",  "year": 1999}
+{  "author": "J. K. Rowling",  "publisher": "Scholastic",  "title": "Sorcerers Stone",  "year": 1998}
+{  "author": "R. L. Stine",  "publisher": "Scholastic",  "reviews": [    {      "rating": 8,      "review": "High on my list...",      "user": "rob"    },    {      "discussion": [        {          "text": "This is too harsh...",          "user": "ben"        },        {          "text": "I agree ...",          "user": "jill"        }      ],      "rating": 2,      "review": "Not worth the paper ...",      "user": "mike"    }  ],  "title": "Monster Blood IV",  "year": 1997}
+{  "author": "Carolyn Keene",  "publisher": "Grosset",  "title": "The Secret of Kane",  "year": 1930}

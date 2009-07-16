@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.random;
 
+import java.util.Map;
 import java.util.Random;
 
 import com.ibm.jaql.json.type.JsonEncoding;
@@ -25,6 +26,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -43,6 +45,16 @@ public class SampleRNGExpr extends Expr
     super(exprs);
   }
 
+  
+  @Override
+  public Map<ExprProperty, Boolean> getProperties()
+  {
+    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+    result.put(ExprProperty.IS_NONDETERMINISTIC, true);
+    return result;
+  }
+
+  
   /*
    * (non-Javadoc)
    * 

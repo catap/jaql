@@ -54,6 +54,7 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
 /**
@@ -94,12 +95,25 @@ public abstract class MapReduceBaseExpr extends Expr
     this(new Expr[]{args});
   }
 
+  @Override
   public Map<ExprProperty, Boolean> getProperties()
   {
     Map<ExprProperty, Boolean> result = super.getProperties();
     result.put(ExprProperty.READS_EXTERNAL_DATA, true);
+    result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
     return result;
   }
+  
+  /**
+   * This is a tricky question... The expression is evaluated once, but 
+   * it returns functions which are evaluated multiple times.
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+  
 
   /**
    * @param context

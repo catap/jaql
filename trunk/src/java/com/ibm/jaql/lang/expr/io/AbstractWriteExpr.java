@@ -25,6 +25,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 
 public abstract class AbstractWriteExpr extends Expr
 {
@@ -60,7 +61,13 @@ public abstract class AbstractWriteExpr extends Expr
     result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
     return result;
   }
-  
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   @Override
   public JsonValue eval(Context context) throws Exception
   {

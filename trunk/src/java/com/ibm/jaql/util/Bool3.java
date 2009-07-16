@@ -34,8 +34,11 @@ public enum Bool3
   }
 
   /**
-   * | F ? T | 00 01 11 x & y ---+------- ----+--------- F | F F F 00 | 00 00 00 ? |
-   * F ? ? 01 | 00 01 01 T | F ? T 11 | 00 01 11
+   *    | F ? T       | 00 01 11   x & y 
+   * ---+-------  ----+--------- 
+   *  F | F F F    00 | 00 00 00
+   *  ? | F ? ?    01 | 00 01 01
+   *  T | F ? T    11 | 00 01 11
    * 
    * @param that
    * @return
@@ -47,9 +50,11 @@ public enum Bool3
 
   /**
    * both(x,y) := if x == y then x else ?
-   *  | F ? T | 00 01 11 (x1 & y1)(x0 | y0) ---+------- ----+---------- (x & x) |
-   * ((x | y) & 0x1) F | F ? ? 00 | 00 01 01 ? | ? ? ? 01 | 01 01 01 T | ? ? T
-   * 11 | 01 01 11
+   *     | F ? T      | 00 01 11   (x1 & y1) (x0 | y0) 
+   *  ---+------- ----+----------  (x & x) | ((x | y) & 0x1)
+   *   F | F ? ?   00 | 00 01 01 
+   *   ? | ? ? ?   01 | 01 01 01
+   *   T | ? ? T   11 | 01 01 11
    * 
    * @param that
    * @return
@@ -61,8 +66,11 @@ public enum Bool3
   }
 
   /**
-   * | F ? T | 00 01 11 x | y ---+------- ----+--------- F | F ? T 00 | 00 01 11 ? | ? ?
-   * T 01 | 01 01 11 T | T T T 11 | 11 11 11
+   *    | F ? T        | 00 01 11    x | y 
+   * ---+-------   ----+--------- 
+   *  F | F ? T     00 | 00 01 11    
+   *  ? | ? ? T     01 | 01 01 11 
+   *  T | T T T     11 | 11 11 11
    * 
    * @param that
    * @return
@@ -73,8 +81,11 @@ public enum Bool3
   }
 
   /**
-   * x |!x x | !x x ^ 0x3 (ie, ~x on two bits) ---+---- ----+----- F | T 00 | 11 ? | ?
-   * 01 | 01 T | F 11 | 00
+   *  x |!x     x | !x     x ^ 0x3 (ie, ~x on two bits)
+   * ---+---- ----+-----
+   *  F | T    00 | 11
+   *  ? | ?    01 | 01
+   *  T | F    11 | 00
    * 
    * @param that
    * @return
@@ -85,7 +96,7 @@ public enum Bool3
   }
 
   /**
-   * @return
+   * @return this is always true
    */
   public boolean bool()
   {
@@ -93,7 +104,7 @@ public enum Bool3
   }
 
   /**
-   * @return
+   * @return this is always true (ie, this is TRUE)
    */
   public boolean always()
   {
@@ -101,7 +112,7 @@ public enum Bool3
   }
 
   /**
-   * @return
+   * @return this is never true (ie, this is FALSE)
    */
   public boolean never()
   {
@@ -109,7 +120,7 @@ public enum Bool3
   }
 
   /**
-   * @return
+   * @return this might be true (ie, this is TRUE or UNKNOWN)
    */
   public boolean maybe()
   {
@@ -117,7 +128,7 @@ public enum Bool3
   }
 
   /**
-   * @return
+   * @return this might not be true (ie, this is FALSE or UNKNOWN)
    */
   public boolean maybeNot()
   {

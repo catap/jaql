@@ -56,7 +56,7 @@ public class ToArrayElimination extends Rewrite
       // TODO: A Var should know it's schema properties instead of looking for certain definitions. 
       VarExpr ve = (VarExpr)input;
       Var v = ve.var();
-      Expr def = findVarDef(ve);
+      Expr def = ve.findVarDef();
       if( def instanceof BindingExpr )
       {
         Expr p = def.parent();

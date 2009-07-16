@@ -429,6 +429,48 @@ public abstract class Expr
     subtreeModified();
     // parent = null;
   }
+  
+  /** In the parent of this expression, replace this expression by the given expressions.
+   * @param replaceBy The list of expressions to add
+   * @param offset The start index in replaceBy
+   * @param length The number of elements to take from replaceBy
+   */
+  public void replaceInParent(Expr[] replaceBy, int offset, int length)
+  {
+    if( length <= 1 )
+    {
+      if( length == 1 )
+      {
+        replaceInParent(replaceBy[offset]);
+      }
+      return;
+    }
+    
+    Expr[] es = parent.exprs;
+    // This expr is expected to be found in its parent's children.
+    // This will throw an index exception if the tree is not proper.
+    int slot = 0;
+    while (es[slot] != this)
+    {
+      slot++;
+    }
+
+    es = new Expr[parent.exprs.length + length - 1];
+
+    System.arraycopy(parent.exprs, 0, es, 0, slot);
+    System.arraycopy(parent.exprs, slot + 1, es, slot + length, parent.exprs.length - slot - 1);
+    
+    for(int i = 0 ; i < length ; i++)
+    {
+      es[slot + i] = replaceBy[offset + i];
+      es[slot + i].parent = parent;
+    }
+    parent.exprs = es;
+    
+    subtreeModified();
+  }
+
+
 
   /** Returns the index of this expression in the parent's list of child expressions.
    * @return
@@ -675,5 +717,115 @@ public abstract class Expr
     }
     return this;
   }
+
+  /**
+   * @param scope
+   * @param var
+   * @return true iff var is defined by this Expr
+   */
+  public boolean definesVar(Var var)
+  {
+    for (Expr e : exprs)
+    {
+      if (e instanceof BindingExpr)
+      {
+        BindingExpr b = (BindingExpr) e;
+        if (b.var == var || b.var2 == var)
+        {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  
+  /**
+   * Find the BindingExpr that is an child of an ancestor (inclusive) of this Expr
+   * that defines var.
+   * 
+   * If no such ancestor can be found, null is returned.
+   *
+   * If var is global, then null is returned. 
+   * 
+   * @param var
+   * @return
+   */
+  public BindingExpr findVarDef(Var var)
+  {
+    for (Expr e = this ; e != null ; e = e.parent())
+    {
+      for (Expr c : e.children())
+      {
+        if (c instanceof BindingExpr)
+        {
+          BindingExpr b = (BindingExpr) c;
+          if (b.var == var || b.var2 == var)
+          {
+            return b;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Find the first expr that is a BindingExpr of an ancestor (exclusive) of this Expr
+   * that defines a variable with the name varName.  
+   * 
+   * If no such ancestor can be found, null is returned.
+   * 
+   * Global variables return null.
+   *
+   * @param atExpr
+   * @param varName
+   * @return
+   */
+  public BindingExpr findVarDef(String varName)
+  {
+    Expr prev = this;
+    for (Expr e = parent() ; e != null ; e = e.parent())
+    {
+      int i = prev.getChildSlot();
+      // look for bindings as direct children before us
+      for (i = i - 1; i >= 0; i--)
+      {
+        Expr c = e.child(i);
+        if (c instanceof BindingExpr)
+        {
+          BindingExpr b = (BindingExpr) c;
+          if (varName.equals(b.var.name)
+              || (b.var2 != null && varName.equals(b.var2.name)))
+          {
+            return b;
+          }
+        }
+      }
+      prev = e;
+    }
+    // Var not found...
+    return null;
+  }
+  
+//  /**
+//   * Return true iff var is defined above this Expr, including globally.
+//   * 
+//   * @param var
+//   * @param scope
+//   * @return
+//   */
+//  protected boolean isExternalVar(Var var)
+//  {
+//    if( var.isGlobal() )
+//    {
+//      return true;
+//    }
+//    Expr def = findVarDef(var);
+//    if( def == null )
+//    {
+//      return false;
+//    }
+//    return false;
+//  }
 
 }

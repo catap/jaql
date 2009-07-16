@@ -29,6 +29,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 
 public abstract class AbstractReadExpr extends IterExpr
 {
@@ -78,6 +79,13 @@ public abstract class AbstractReadExpr extends IterExpr
     }
     return SchemaFactory.arraySchema();
   }
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
 
   @Override
   public JsonIterator iter(Context context) throws Exception
