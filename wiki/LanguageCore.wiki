@@ -1,13 +1,283 @@
-#summary One-sentence summary of this page.
+#summary Description of the core functionality of jaql
+=Introduction=
+On this page, all core functions of jaql are explained. Each function's syntax is shown and clarified by an example. In these examples, lines starting with `>` are the output produced by jaql. All other lines are meant to be user input.
 
-= Introduction =
+_Item_ is used to refer to either an array element or a field of a record, if a function can be applied to both an array or a record.
 
-Add your content here.
+<wiki:toc max_depth="1" />
+
+=Filter=
+The filter keyword is used to limit the number of output items to those matching a given condition. It is jaql's equivalent to the SQL WHERE clause.
+
+==Syntax==
+`$input -> filter <boolean expression>;`
+
+ * In `<boolean expression>` the variable $ is bound to each item of the input.
+ * The `<boolean expression>` can be composed of the relations ==, !=, >, >=, <, <=.
+ * Complex expressions can be created with `not`, `and`, `or` which are evaluated in this order.
+ * If the `<boolean expression>` evaluates to `true`, the item from the input is included in the output.
+
+==Example==
+{{{
+$employees = [
+ {name: "Jon Doe", income: 20000, mgr: false},
+ {name: "Vince Wayne", income: 32500, mgr: false},
+ {name: "Jane Dean", income: 72000, mgr: true},
+ {name: "Alex Smith", income: 25000, mgr: false}
+];
+
+$employees -> filter $.mgr or $.income > 30000;
+
+>[
+>  {
+>    "income": 32500,
+>   "mgr": false,
+>    "name": "Vince Wayne"
+>  },
+>  {
+>    "income": 72000,
+>    "mgr": true,
+>    "name": "Jane Dean"
+>  }
+>]
+}}}
 
 
-= Details =
+=Transform=
+With the `transform` operator you can realize an projection or apply a function to all items of an input.
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+==Syntax==
+`$input -> transform <expression>;`
+The input will be processed item by item. The variable $ will be bound to each item the input, so you can access values from records with `$.key` or from arrays with `$[n]`. When copying a value from a record, you can omit the key. It will automatically be copied to the result.
+
+==Example==
+{{{
+$input = [
+  {a: 1, b: 4},
+  {a: 2, b: 5},
+  {a: -1, b: 4}
+];
+
+$input -> transform {sum: $.a + $.b};
+
+>[
+>  {
+>    "sum": 5
+>  },
+>  {
+>    "sum": 7
+>  },
+>  {
+>    "sum": 3
+>  }
+>]
+}}}
+
+=Group=
+
+With the group keyword, you can group items of an input together, depending on criteria you specify. It is also used to calculate aggregate functions.
+To group all items of an input together, skip the `by ... = ...` part.
+
+==Syntax==
+`$input -> group by <variable> = <grouping items> into <expression>;`
+
+  * `<variable>` is a jaql variable that will hold the `<grouping items>` while `<expression>` is evaluated.
+  * `<grouping items>` are the items of the input you want to group together. This can be a record or an array if you want to group by multiple items.
+  * the `by <variable> = <grouping items>` part is optional. If omitted, the whole input is grouped together into a single array.
+  * ` <expression> ` defines the output of the grouping. To include the items you grouped on, use `<variable>`. $ is bound to the grouped items. To get an array of all values for an item that are aggregated into one group, use `$[*].key` or `$[*][n]`, which returns an array of all those values. This is also the way to apply aggregate functions such as sum, avg, or count.
+
+==Example==
+{{{
+$employees = [
+  {id:1, dept: 1, income:12000},
+  {id:2, dept: 1, income:13000},
+  {id:3, dept: 2, income:15000},
+  {id:4, dept: 1, income:10000},
+  {id:5, dept: 3, income:8000},
+  {id:6, dept: 2, income:5000},
+  {id:7, dept: 1, income:24000}
+]
+
+$employees -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};
+
+>[
+>  {
+>    "dept_group": 1,
+>    "total": 59000
+>  },
+>  {
+>    "dept_group": 2,
+>    "total": 20000
+>  },
+>  {
+>    "dept_group": 3,
+>    "total": 8000
+>  }
+>]
+}}}
+
+=Join=
+
+The join operator is used to connect two or more data inputs that have (at least) one common attribute. The result is the cross product of both sources limited to those items for which the join condition evaluates to true. You can also include items from one or both inputs that don't have a "partner" in the other input. This is also known as *outer join* and performed in jaql using the `preserve` keyword. If you prefix an input with `preserve`, all items from this input will be contained in the output. See also equijoin.
+==Syntax==
+`join <variable list> where <join condition(s)> into <expression>;`
+  * ` <variable list> ` contains two or more variables that should share at least one attribute. Each can optionally be prefixed with `preserve` to indicate that items from this variable must be kept in the result even if there is no matching item in the outer input.
+  * ` <join condition(s)> ` are one or more conditions that limit the tuples that are stored in the resulting data. By now, only equality predicates are possible. You can use the boolean operator `and` to concatenate multiple equality predicates.
+  * ` <expression> ` will be applied to all items from the input that match the join condition. To copy all fields of an input, use ` $input.* ` . Care has to be taken when joining data that shares the same name for the common attribute, since key names have to be unique in the result record.
+
+==Example==
+{{{
+$users = [
+  {name: "Jon Doe", password: "asdf1234", id: 1},
+  {name: "Jane Doe", password: "qwertyui", id: 2},
+  {name: "Max Mustermann", password: "q1w2e3r4", id: 3}
+];
+$pages = [
+  {userid: 1, url:"code.google.com/p/jaql/"},
+  {userid: 2, url:"www.cnn.com"},
+  {userid: 1, url:"java.sun.com/javase/6/docs/api/"}
+];
+
+join $users, $pages where $users.id == $pages.userid into {$users.name, $pages.*};
+
+>[
+>  {
+>    "name": "Jon Doe",
+>    "url": "code.google.com/p/jaql/",
+>    "userid": 1
+>  },
+>  {
+>    "name": "Jon Doe",
+>    "url": "java.sun.com/javase/6/docs/api/",
+>    "userid": 1
+>  },
+>  {
+>    "name": "Jane Doe",
+>    "url": "www.cnn.com",
+>    "userid": 2
+>  }
+>]
+
+join preserve $users, $pages where $users.id==$pages.userid into {$users.name, $pages.url};
+>[
+>  {
+>    "name": "Jon Doe",
+>    "url": "code.google.com/p/jaql/"
+>  },
+>  {
+>    "name": "Jon Doe",
+>    "url": "java.sun.com/javase/6/docs/api/"
+>  },
+>  {
+>    "name": "Jane Doe",
+>    "url": "www.cnn.com"
+>  },
+>  {
+>    "name": "Max Mustermann"
+>  }
+>]
+}}}
+
+=Sort=
+The sort keyword is used to sort an input by one or more fields.
+
+==Syntax==
+`$input -> sort by [<fieldlist>];`
+
+`<fieldlist>` contains one or more fields from the input that shall be used for sorting. Each field can be followed by either `desc` or `asc` to indicate descending or ascending order. The default is ascending, so the `asc` keyword is optional. The input is sorted by all elements in the `<fieldlist>`, in the order they appear.
+
+==Example==
+{{{
+$unsorted = [[2,2,"first"],[1,2,"second"],[2,1,"third"],[1,1,"fourth"]];
+$unsorted -> sort by [$[0], $[1] desc];
+
+>[
+>  [
+>    1,
+>    2,
+>    "second"
+>  ],
+>  [
+>    1,
+>    1,
+>    "fourth"
+>  ],
+>  [
+>    2,
+>    2,
+>    "first"
+>  ],
+>  [
+>    2,
+>    1,
+>    "third"
+>  ]
+>]
+}}}
+
+=Expand=
+
+The `expand` keyword takes an array as input and places specified elements of this array in one resulting array.
+With the additional `unroll` keyword, all other elements than the array to be unrolled will be kept in the result, one copy for each element in the unrolled array.
+
+==Syntax==
+`$input -> expand [<items>];`
+
+In `[<items>]`, `$` is bound to each element of the input, so with `$.item` you can access fields of a record, while `$[n]` produces fields of an array.
+
+`$input -> expand unroll <item>`
+
+==Example==
+{{{
+$movies_owned = [{name:"Jon Doe", movie_ids:[3,65,8,72]}, {name:"Jane Dean", movie_ids:[5,98,2,65]}];
+
+$movies_owned -> expand $.movie_ids;
+
+>[
+>  3,
+>  65
+>  8,
+>  72
+>  5,
+>  98
+>  2,
+>  65
+>]
+
+$movies_owned -> expand unroll $.movie_ids;
+
+>[
+>  {
+>    "movie_ids": 3,
+>    "name": "Jon Doe"
+>  },
+>  {
+>    "movie_ids": 65,
+>    "name": "Jon Doe"
+> },
+>  {
+>    "movie_ids": 8,
+>    "name": "Jon Doe"
+>  },
+>  {
+>    "movie_ids": 72,
+>    "name": "Jon Doe"
+>  },
+>  {
+>    "movie_ids": 5,
+>    "name": "Jane Dean"
+>  },
+> {
+>    "movie_ids": 98,
+>   "name": "Jane Dean"
+>  },
+>  {
+>    "movie_ids": 2,
+>    "name": "Jane Dean"
+> },
+>  {
+>    "movie_ids": 65,
+>    "name": "Jane Dean"
+>  }
+>]
+}}}
