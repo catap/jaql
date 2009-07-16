@@ -16,6 +16,7 @@
 package com.ibm.jaql.io.hadoop;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
@@ -66,7 +67,7 @@ public class FileInputConfigurator implements InitializableConfSetter
    */
   protected void set(JobConf conf) throws Exception
   {
-    conf.setInputPath(new Path(location));
+    FileInputFormat.setInputPaths(conf, new Path(location));
     HadoopSerialization.register(conf);
   }
 }
