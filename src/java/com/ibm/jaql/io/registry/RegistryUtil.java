@@ -18,13 +18,11 @@ package com.ibm.jaql.io.registry;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.InputStream;
 import java.net.URL;
 
 import org.apache.hadoop.mapred.JobConf;
-
-import com.ibm.jaql.util.ClassLoaderMgr;
 
 /**
  * 
@@ -43,7 +41,8 @@ public class RegistryUtil
   public static <K, V> void readFile(String fileName, Registry<K, V> registry)
       throws Exception
   {
-    URL loc = ClassLoaderMgr.getResource(fileName);
+    ClassLoader cl = ClassLoader.getSystemClassLoader();
+    URL loc = cl.getResource(fileName);
 
     InputStream input = loc.openStream();
     registry.readRegistry(input);

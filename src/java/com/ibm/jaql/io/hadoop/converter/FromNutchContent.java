@@ -21,18 +21,13 @@ import org.apache.nutch.metadata.Metadata;
 import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.Content;
 
-import com.ibm.jaql.io.converter.ToJson;
-import com.ibm.jaql.json.schema.RecordSchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.JsonType;
+import com.ibm.jaql.io.converter.FromItem;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBinary;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 
-public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, Writable> {
+public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Writable> {
 
   public static enum Field {
     URL("url"),
@@ -42,93 +37,76 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
     META("meta");
     
     public final String name;
-    public final JsonString jsonName;
     
     Field(String n) {
       this.name = n;
-      this.jsonName = new JsonString(name);
     }
   };
   
   @Override
-  protected ToJson<WritableComparable<?>> createKeyConverter() {
+  protected FromItem<WritableComparable> createKeyConverter() {
     // TODO Auto-generated method stub
     return null;
   }
 
   // TODO: the generic should be any subclass of Writable
   @Override
-  protected ToJson<Writable> createValueConverter() {
-    return new ToJson<Writable> () {
+  protected FromItem<Writable> createValConverter() {
+    return new FromItem<Writable> () {
       
-      private JsonString sVal = new JsonString();
-      private JsonBinary bVal = new JsonBinary();
+      private JString sVal = new JString();
+      private JBinary bVal = new JBinary();
       
-      public JsonValue convert(Writable src, JsonValue tgt)
+      public void convert(Writable src, Item tgt)
       {
         // expect src to be Content
         Content c = (Content)src;
         
         // expect tgt's value to be MemoryJRecord 
-        BufferedJsonRecord r = (BufferedJsonRecord)tgt;
+        MemoryJRecord r = (MemoryJRecord)tgt.get();
         
         // the metadata
         Metadata meta = c.getMetadata();
         
         // set the fixed fields
-        ((JsonString)r.get(Field.URL.jsonName)).setCopy(c.getUrl().getBytes());
-        ((JsonString)r.get(Field.BASEURL.jsonName)).setCopy(c.getBaseUrl().getBytes());
-        ((JsonString)r.get(Field.TYPE.jsonName)).setCopy(c.getContentType().getBytes());
+        ((JString)r.getValue(Field.URL.name).get()).copy(c.getUrl().getBytes());
+        ((JString)r.getValue(Field.BASEURL.name).get()).copy(c.getBaseUrl().getBytes());
+        ((JString)r.getValue(Field.TYPE.name).get()).copy(c.getContentType().getBytes());
         
         String cTypeFromMeta = meta.get(Response.CONTENT_TYPE);
         String cTypeFromTop  = c.getContentType();
-        JsonValue cValue = r.get(Field.CONTENT.jsonName);
+        Item cItem = r.getValue(Field.CONTENT.name);
         if( (cTypeFromMeta != null && cTypeFromMeta.indexOf("text") >= 0 ) ||
             (cTypeFromTop  != null && cTypeFromTop.indexOf("text") >= 0 ) ){
-          sVal.setCopy(c.getContent());
-          if(cValue.getEncoding().getType() != JsonType.STRING) 
-            cValue = sVal;
+          sVal.copy(c.getContent());
+          if(cItem.getType() != Item.Type.STRING) 
+            cItem.set(sVal);
         } else {
           bVal.setBytes(c.getContent());
-          if(cValue.getEncoding().getType() != JsonType.BINARY)
-            cValue = bVal;
+          if(cItem.getType() != Item.Type.BINARY)
+            cItem.set(bVal);
         }
         
         // set the dynamic metadata
-        BufferedJsonRecord mr = (BufferedJsonRecord)r.get(Field.META.jsonName);
+        MemoryJRecord mr = (MemoryJRecord)r.getValue(Field.META.name).get();
         mr.clear();
         String[] names = meta.names();
         for(int i = 0; i < names.length; i++) {
-          mr.add(new JsonString(names[i]), new JsonString(meta.get(names[i])));
+          mr.add(names[i], new JString(meta.get(names[i])));
         }
-        
-        return r;
       }
       
-      public JsonValue createTarget()
+      public Item createTarget()
       {
         int n = Field.values().length;
-        BufferedJsonRecord r = new BufferedJsonRecord(n);
-        r.add(Field.URL.jsonName, new JsonString());
-        r.add(Field.BASEURL.jsonName, new JsonString());
-        r.add(Field.TYPE.jsonName, new JsonString());
-        r.add(Field.CONTENT.jsonName, sVal);
-        r.add(Field.META.jsonName, new BufferedJsonRecord());
+        MemoryJRecord r = new MemoryJRecord(n);
+        r.add(Field.URL.name, new JString());
+        r.add(Field.BASEURL.name, new JString());
+        r.add(Field.TYPE.name, new JString());
+        r.add(Field.CONTENT.name, sVal);
+        r.add(Field.META.name, new MemoryJRecord());
         
-        return r;
-      }
-      
-      public Schema getSchema()
-      {
-        return new RecordSchema(new RecordSchema.Field[] { 
-            new RecordSchema.Field(Field.URL.jsonName, SchemaFactory.stringSchema(), false),
-            new RecordSchema.Field(Field.BASEURL.jsonName, SchemaFactory.stringSchema(), false),
-            new RecordSchema.Field(Field.TYPE.jsonName, SchemaFactory.stringSchema(), false),
-            new RecordSchema.Field(Field.CONTENT.jsonName, 
-                SchemaTransformation.or(SchemaFactory.stringSchema(), SchemaFactory.binarySchema()), 
-                false),
-            new RecordSchema.Field(Field.META.jsonName, SchemaFactory.stringSchema(), false)
-        }, SchemaFactory.stringSchema());
+        return new Item(r);
       }
     };
   }

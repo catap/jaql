@@ -18,17 +18,12 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.path.PathStep.PathStepSchema;
 
-/** A path expression. Composed of individual {@link PathStep}s. */
 public final class PathExpr extends Expr
 {
   /**
@@ -98,7 +93,7 @@ public final class PathExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     PathStep s = firstStep();
     s.input = input().eval(context);
@@ -109,26 +104,11 @@ public final class PathExpr extends Expr
    * 
    */
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     PathStep s = firstStep();
     s.input = input().eval(context);
     return s.iter(context);
   }
-  
-  @Override
-  public Schema getSchema()
-  {
-    PathStepSchema s = firstStep().getSchema(input().getSchema()); 
-    switch (s.hasData)
-    {
-    case TRUE:
-     return s.schema;
-    case FALSE:
-      return SchemaFactory.nullSchema();
-    default:
-      return SchemaTransformation.addNullability(s.schema);
-    }
-    // TODO: currently returns any schema even though it is known that no data is produced    
-  }
+
 }

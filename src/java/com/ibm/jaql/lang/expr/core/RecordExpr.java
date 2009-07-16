@@ -18,21 +18,13 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
-import com.ibm.jaql.json.schema.RecordSchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 import com.ibm.jaql.util.Bool3;
 
 //TODO: add optimized RecordExpr when all cols are known at compile time
@@ -41,7 +33,8 @@ import com.ibm.jaql.util.Bool3;
  */
 public class RecordExpr extends Expr
 {
-  protected BufferedJsonRecord record;
+  protected MemoryJRecord rec;
+  protected Item result;
 
   /**
    * every exprs[i] is a FieldExpr
@@ -100,154 +93,26 @@ public class RecordExpr extends Expr
     super(fields);
   }
 
-  /**
-   * Either construct a RecordExpr or some for loops over a RecordExpr
-   * to handle flatten requests.
+  /*
+   * (non-Javadoc)
    * 
-   * @param args
-   * @return
+   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
    */
-  public static Expr make(Env env, Expr[] args)
-  {
-    int n = 0;
-    for(Expr e: args)
-    {
-      if( e instanceof NameValueBinding &&
-          e.child(1) instanceof FlattenExpr )
-      {
-        n++;
-      }
-    }
-    if( n == 0 )
-    {
-      return new RecordExpr(args);
-    }
-
-    Var[] vars = new Var[n];
-    Expr[] ins = new Expr[n];
-    Expr[] doargs = new Expr[n+1];
-    n = 0;
-    for(int i = 0 ; i < args.length ; i++)
-    {
-      if( args[i] instanceof NameValueBinding && 
-          args[i].child(1) instanceof FlattenExpr )
-      {
-        Expr flatten = args[i].child(1);
-        Var letVar = new Var("$_toflat_"+n);
-        vars[n] = env.makeVar("$_flat_"+n);
-        ins[n] = new VarExpr(letVar);
-        Expr e = flatten.child(0);
-        if( e.getSchema().isEmptyArrayOrNull().maybe() )
-        {
-          e = new NullElementOnEmptyFn(e);
-        }
-        doargs[n] = new BindingExpr(BindingExpr.Type.EQ, letVar, null, e);
-        flatten.replaceInParent(new VarExpr(vars[n]));
-        n++;
-      }
-    }
-    Expr e = new ArrayExpr(new RecordExpr(args));
-    for( n-- ; n >= 0 ; n-- )
-    {
-      e = new ForExpr(vars[n], ins[n], e);
-    }
-    doargs[doargs.length-1] = e;
-    e = new DoExpr(doargs);
-    return e;
-  }
-
   @Override
-  public Schema getSchema()
+  public Bool3 isArray()
   {
-    List<RecordSchema.Field> fields = new LinkedList<RecordSchema.Field>();
-    Schema unresolved = null; // schema of all fields that could not be matched
-
-    for (Expr e : exprs)
-    {
-      FieldExpr fe = (FieldExpr)e;
-      if (fe instanceof NameValueBinding) // name: value
-      {
-        NameValueBinding ne = (NameValueBinding)fe;
-        JsonString name = ne.staticName();
-        if (name != null)
-        {
-          fields.add(new RecordSchema.Field(name, ne.valueExpr().getSchema(), !ne.required));
-        }
-        else
-        {
-          if (unresolved == null)
-          {
-            unresolved = ne.valueExpr().getSchema();
-          }
-          else
-          {
-            unresolved = SchemaTransformation.merge(unresolved, ne.valueExpr().getSchema());
-          }          
-        }
-      } 
-      else if (fe instanceof CopyField) // $.a
-      {
-        CopyField ce = (CopyField)fe;
-        JsonString name = ce.staticName();
-        Schema recordSchema = ce.recExpr().getSchema();
-        if (name != null)
-        {
-          Bool3 hasElement = recordSchema.hasElement(name);
-          if (hasElement.maybe())
-          {
-            Schema valueSchema = recordSchema.element(name);
-            if (valueSchema==null) valueSchema = SchemaFactory.anyOrNullSchema(); // don't know better
-            fields.add(new RecordSchema.Field(name, valueSchema, hasElement.always() ? false : true));
-          }
-        }
-        else
-        {
-          if (unresolved == null)
-          {
-            unresolved = ce.recExpr().getSchema().elements();
-          }
-          else
-          {
-            unresolved = SchemaTransformation.merge(unresolved, ce.recExpr().getSchema().elements());
-          }
-        }
-      }
-      else if (fe instanceof CopyRecord) // $.*
-      {
-        CopyRecord ce = (CopyRecord)fe;
-        Schema copySchema = ce.exprs[0].getSchema();
-        if (copySchema instanceof RecordSchema)
-        {
-          for (RecordSchema.Field f : ((RecordSchema)copySchema).getFields())
-          {
-            fields.add(f);
-          }
-          Schema rest = ((RecordSchema)copySchema).getRest();
-          if (rest!=null)
-          {
-            unresolved = unresolved==null ? rest : SchemaTransformation.merge(unresolved, rest);
-          }
-        }
-        else
-        {
-          unresolved = SchemaFactory.anyOrNullSchema();
-        }
-      }
-      else // unknown FieldExpr
-      {
-        unresolved = SchemaFactory.anyOrNullSchema();
-      }
-    }
-    
-    RecordSchema.Field[] fieldsArray = fields.toArray(new RecordSchema.Field[fields.size()]);
-    return new RecordSchema(fieldsArray, unresolved);
+    return Bool3.FALSE;
   }
 
-  public Map<ExprProperty, Boolean> getProperties() 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
+  @Override
+  public Bool3 isNull()
   {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
-    return result;
+    return Bool3.FALSE;
   }
 
   /**
@@ -284,7 +149,7 @@ public class RecordExpr extends Expr
    * @param name
    * @return
    */
-  public Expr findStaticFieldValue(JsonString name)
+  public Expr findStaticFieldValue(JString name)
   {
     Expr valExpr = null;
     for (int i = 0; i < exprs.length; i++)
@@ -296,8 +161,8 @@ public class RecordExpr extends Expr
         if (nameExpr instanceof ConstExpr)
         {
           ConstExpr ce = (ConstExpr) nameExpr;
-          JsonValue t = ce.value;
-          if (t instanceof JsonString)
+          JValue t = ce.value.get();
+          if (t instanceof JString)
           {
             if (name.equals(t))
             {
@@ -321,9 +186,9 @@ public class RecordExpr extends Expr
    */
   public Expr findStaticFieldValue(String name) // TODO: migrate callers to JString version
   {
-    return findStaticFieldValue(new JsonString(name)); // TODO: memory
+    return findStaticFieldValue(new JString(name)); // TODO: memory
   }
-  
+
   /*
    * (non-Javadoc)
    * 
@@ -349,22 +214,23 @@ public class RecordExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    if (record == null)
+    if (rec == null)
     {
-      record = new BufferedJsonRecord();
+      rec = new MemoryJRecord();
+      result = new Item(rec);
     }
     else
     {
-      record.clear();
+      rec.clear();
     }
 
     for (int i = 0; i < exprs.length; i++)
     {
       FieldExpr f = (FieldExpr) exprs[i];
-      f.eval(context, record);
+      f.eval(context, rec);
     }
-    return record;
+    return result;
   }
 }

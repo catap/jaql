@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (C) IBM Corp. 2008.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
@@ -19,12 +19,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 
-import com.ibm.jaql.json.type.JsonUtil;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 
@@ -38,27 +36,25 @@ public final class DefineFunctionExpr extends Expr
 {
   protected static Expr[] makeArgs(Var[] params, Expr body)
   {
-//    HashSet<Var> cv = body.getCapturedVars();
-//    Expr[] args = new Expr[cv.size() + params.length + 1];
-//    int i = 0;
-//    for( Var oldVar: cv )
-//    {
-//      Var newVar = new Var(oldVar.name());
-//      args[i] = new BindingExpr(BindingExpr.Type.EQ, newVar, null, new VarExpr(oldVar));
-//      body.replaceVar(oldVar, newVar); // TODO: could replace all in one pass with a VarMap
-//    }
-    Expr[] args = new Expr[params.length + 1];
+    Expr[] args = new Expr[params.length+1];
     for(int i = 0 ; i < params.length ; i++)
     {
       args[i] = new BindingExpr(BindingExpr.Type.EQ, params[i], null, Expr.NO_EXPRS);
     }
-    args[args.length-1] = body;
+    args[params.length] = body;
     return args;
   }
 
   protected static Expr[] makeArgs(ArrayList<Var> params, Expr body)
   {
-    return makeArgs(params.toArray(new Var[params.size()]), body);
+    int p = params.size();
+    Expr[] args = new Expr[p+1];
+    for(int i = 0 ; i < p ; i++)
+    {
+      args[i] = new BindingExpr(BindingExpr.Type.EQ, params.get(i), null, Expr.NO_EXPRS);
+    }
+    args[p] = body;
+    return args;
   }
 
   /**
@@ -102,7 +98,6 @@ public final class DefineFunctionExpr extends Expr
    */
   public BindingExpr param(int i)
   {
-    assert i < numParams();
     return (BindingExpr)exprs[i];
   }
 
@@ -114,20 +109,13 @@ public final class DefineFunctionExpr extends Expr
     return exprs[exprs.length-1];
   }
 
-  @Override
-  public Map<ExprProperty, Boolean> getProperties() 
-  {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    if (hasCaptures()) {
-      result.put(ExprProperty.HAS_CAPTURES, true);
-    }
-    return result;
-  }
-  
   /*
    * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
    */
-  private boolean hasCaptures()
+  @Override
+  public boolean isConst()
   {
     // TODO: make more efficient
     HashSet<Var> capturedVars = new HashSet<Var>();
@@ -136,8 +124,8 @@ public final class DefineFunctionExpr extends Expr
     try
     {
       this.decompile(exprText, capturedVars);
-      boolean hasCaptures = !capturedVars.isEmpty();
-      return hasCaptures;
+      boolean noCaptures = capturedVars.isEmpty();
+      return noCaptures;
     }
     catch (Exception ex)
     {
@@ -182,7 +170,7 @@ public final class DefineFunctionExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     this.annotate(); // TODO: move to init call
     DefineFunctionExpr f = this;
@@ -194,7 +182,7 @@ public final class DefineFunctionExpr extends Expr
       // We do this by making new local variables in the function that store the captured values.
       // To add new local variables, we have to define a new function.
       // TODO: is it safe to share f when we don't have captures?
-      VarMap varMap = new VarMap();
+      VarMap varMap = new VarMap(null);
       for(Var oldVar: capturedVars)
       {
         Var newVar = new Var(oldVar.name());
@@ -205,14 +193,15 @@ public final class DefineFunctionExpr extends Expr
       int i = 0;
       for( Var v: capturedVars )
       {
-        JsonValue val = JsonUtil.getCopy(v.getValue(context), null);
+        Item val = new Item();
+        val.copy(v.getValue());
         es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
       }
       es[n] = f.body().injectAbove();
       new DoExpr(es);
     }
-    JaqlFunction fn = new JaqlFunction(f, n > 0);
-    return fn;
+    JFunction fn = new JFunction(f, n > 0);
+    return new Item(fn);
   }
 
   public void annotate()
@@ -253,5 +242,4 @@ public final class DefineFunctionExpr extends Expr
       }
     }
   }
-
 }

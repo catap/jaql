@@ -15,27 +15,36 @@
  */
 package com.ibm.jaql.io;
 
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
 
 /**
  * An interface for accessing a data source.
  */
-public interface Adapter extends Initializable
+public interface Adapter
 {
-  static JsonString TYPE_NAME       = new JsonString("type");
+  static String TYPE_NAME       = "type";
 
-  static JsonString LOCATION_NAME   = new JsonString("location");
+  static String LOCATION_NAME   = "location";
 
-  static JsonString INOPTIONS_NAME  = new JsonString("inoptions");
+  static String INOPTIONS_NAME  = "inoptions";
 
-  static JsonString OUTOPTIONS_NAME = new JsonString("outoptions");
+  static String OUTOPTIONS_NAME = "outoptions";
 
-  static JsonString OPTIONS_NAME    = new JsonString("options");
+  static String OPTIONS_NAME    = "options";
   
-  static JsonString ADAPTER_NAME    = new JsonString("adapter");
+  static String ADAPTER_NAME    = "adapter";
 
-  static JsonString FORMAT_NAME     = new JsonString("format");
-  
+  static String FORMAT_NAME     = "format";
+
+  /**
+   * Used to initialize an adapter given an item of arguments. This method must
+   * be called prior to any other methods.
+   * 
+   * @param r
+   * @throws Exception
+   */
+  void initializeFrom(Item arg) throws Exception;
+
   /**
    * Once an adapter has been initialized, you can take whatever steps that are
    * needed prior to accessing the data. This is called by expressions, but not

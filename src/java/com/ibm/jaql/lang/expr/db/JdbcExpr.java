@@ -21,23 +21,21 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.Map;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBinary;
+import com.ibm.jaql.json.type.JDate;
+import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -53,24 +51,28 @@ public class JdbcExpr extends IterExpr
     super(exprs);
   }
 
-  public Map<ExprProperty, Boolean> getProperties()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
+  @Override
+  public boolean isConst()
   {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.READS_EXTERNAL_DATA, true);
-    return result;
+    return false;
   }
-  
+
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonRecord args = JaqlUtil.enforceNonNull((JsonRecord) exprs[0].eval(context));
-    String driver = (JaqlUtil.enforceNonNull((JsonString) args.get(new JsonString("driver")))).toString();
-    String url = (JaqlUtil.enforceNonNull((JsonString) args.get(new JsonString("url")))).toString();
-    String query = (JaqlUtil.enforceNonNull((JsonString) args.get(new JsonString("query")))).toString();
+    JRecord args = (JRecord) exprs[0].eval(context).getNonNull();
+    String driver = ((JString) args.getValue("driver").getNonNull()).toString();
+    String url = ((JString) args.getValue("url").getNonNull()).toString();
+    String query = ((JString) args.getValue("query").getNonNull()).toString();
 
     String s = driver.toString();
     try
@@ -95,9 +97,9 @@ public class JdbcExpr extends IterExpr
     final ResultSetMetaData meta = rs.getMetaData();
 
     final int ncols = meta.getColumnCount();
-    final BufferedJsonRecord rec = new BufferedJsonRecord(ncols);
-    final JsonString[] names = new JsonString[ncols];
-    final JsonValue[] values = new JsonValue[ncols];
+    final MemoryJRecord rec = new MemoryJRecord(ncols);
+    final Item recItem = new Item(rec);
+    final JValue[] values = new JValue[ncols];
     for (int i = 0; i < ncols; i++)
     {
       switch (meta.getColumnType(i + 1))
@@ -106,25 +108,25 @@ public class JdbcExpr extends IterExpr
         case Types.INTEGER :
         case Types.TINYINT :
         case Types.SMALLINT :
-          values[i] = new JsonLong();
+          values[i] = new JLong();
           break;
         case Types.DECIMAL :
         case Types.DOUBLE :
         case Types.FLOAT :
-          values[i] = new JsonDecimal();
+          values[i] = new JDecimal();
           break;
         case Types.CHAR :
         case Types.VARCHAR :
         case Types.OTHER : // TODO: Types.XML, when jdbc gets there...
-          values[i] = new JsonString();
+          values[i] = new JString();
           break;
         case Types.DATE :
         case Types.TIME :
         case Types.TIMESTAMP :
-          values[i] = new JsonDate();
+          values[i] = new JDate();
           break;
         case Types.BINARY :
-          values[i] = new JsonBinary();
+          values[i] = new JBinary();
           break;
         default :
           throw new RuntimeException("Unsupported column type: "
@@ -143,17 +145,16 @@ public class JdbcExpr extends IterExpr
       {
         name = name.toLowerCase();
       }
-      names[i] = new JsonString(name);
-      rec.add(names[i], values[i]);
+      rec.add(name, new Item(values[i]));
     }
 
-    return new JsonIterator(rec) {
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      public Item next() throws Exception
       {
         if (!rs.next())
         {
           rs.close();
-          return false;
+          return null;
         }
 
         for (int i = 0; i < ncols; i++)
@@ -164,44 +165,44 @@ public class JdbcExpr extends IterExpr
             case Types.INTEGER :
             case Types.TINYINT :
             case Types.SMALLINT :
-              ((JsonLong) values[i]).set(rs.getLong(i + 1));
+              ((JLong) values[i]).value = rs.getLong(i + 1);
               break;
             case Types.DECIMAL :
             case Types.DOUBLE :
             case Types.FLOAT :
-              ((JsonDecimal) values[i]).set(rs.getBigDecimal(i + 1));
+              ((JDecimal) values[i]).value = rs.getBigDecimal(i + 1);
               break;
             case Types.CHAR :
             case Types.VARCHAR :
               String s = rs.getString(i + 1);
               if (s != null)
               {
-                ((JsonString) values[i]).set(s);
+                ((JString) values[i]).set(s);
               }
               break;
             case Types.DATE :
               // TODO: all these need null handling...
-              ((JsonDate) values[i]).setMillis(rs.getDate(i + 1).getTime());
+              ((JDate) values[i]).millis = rs.getDate(i + 1).getTime();
               break;
             case Types.TIME :
-              ((JsonDate) values[i]).setMillis(rs.getTime(i + 1).getTime());
+              ((JDate) values[i]).millis = rs.getTime(i + 1).getTime();
               break;
             case Types.TIMESTAMP :
-              ((JsonDate) values[i]).setMillis(rs.getTimestamp(i + 1).getTime());
+              ((JDate) values[i]).millis = rs.getTimestamp(i + 1).getTime();
               break;
             case Types.BINARY :
-              ((JsonBinary) values[i]).setBytes(rs.getBytes(i + 1));
+              ((JBinary) values[i]).setBytes(rs.getBytes(i + 1));
               break;
             default :
               throw new RuntimeException("Unsupported column type: "
                   + meta.getColumnTypeName(i + 1));
           } // end switch
 
-          rec.set(names[i], rs.wasNull() ? null : values[i]);
+          rec.getValue(i).set(rs.wasNull() ? null : values[i]);
 
         } // end for each column
 
-        return true; // currentValue == rec
+        return recItem;
       }
     }; // end Iter
   }

@@ -18,10 +18,11 @@ package com.ibm.jaql.lang.expr.agg;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDecimal;
+import com.ibm.jaql.json.type.JDouble;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -40,6 +41,7 @@ public final class SumAgg extends AlgebraicAggregate
     private long lsum;
     private double dblSum;
     private BigDecimal decSum;
+    private Item result = new Item();
 
     public void init()
     {
@@ -48,56 +50,57 @@ public final class SumAgg extends AlgebraicAggregate
       decSum = null;
     }
     
-    public void add(JsonValue value)
+    public void add(Item item)
     {
-      if( value == null )
+      if( item.isNull() )
       {
         return;
       }
-      if( value instanceof JsonLong )
+      JValue w = item.get();
+      if( w instanceof JLong )
       {
         if( sawDouble )
         {
           throw new RuntimeException("cannot sum doubles and decimals");
         }
         sawLong = true;
-        lsum += ((JsonLong)value).get();
+        lsum += ((JLong)w).value;
       }
-      else if( value instanceof JsonDouble )
+      else if( w instanceof JDouble )
       {
         if( sawLong || decSum != null )
         {
           throw new RuntimeException("cannot sum doubles and decimals");
         }
         sawDouble = true;
-        dblSum += ((JsonDouble)value).get();
+        dblSum += ((JDouble)w).value;
       }
       else
       {
-        JsonDecimal n = (JsonDecimal)value;      // TODO: need a mutable BigDecimal...
+        JDecimal n = (JDecimal)w;      // TODO: need a mutable BigDecimal...
         if( decSum == null )
         {
-          decSum = n.get();
+          decSum = n.value;
         }
         else
         {
-          decSum = decSum.add(n.get());
+          decSum = decSum.add(n.value);
         }
       }
     }
     
-    public JsonValue get()
+    public Item get()
     {
-      JsonValue v;
+      JValue v;
       if( sawDouble )
       {
-        v = new JsonDouble(dblSum); // TODO: memory
+        v = new JDouble(dblSum); // TODO: memory
       }
       else if( decSum == null )
       {
         if( sawLong )
         {
-          v = new JsonLong(lsum);  // TODO: memory
+          v = new JLong(lsum);  // TODO: memory
         }
         else
         {
@@ -110,9 +113,10 @@ public final class SumAgg extends AlgebraicAggregate
         {
           decSum = decSum.add(new BigDecimal(lsum), MathContext.DECIMAL128);
         }
-        v = new JsonDecimal(decSum); // TODO: memory
+        v = new JDecimal(decSum); // TODO: memory
       }
-      return v;
+      result.set(v);
+      return result;
     }
   }
   
@@ -141,25 +145,25 @@ public final class SumAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void addInitial(Item item) throws Exception
   {
-    summer.add(value);
+    summer.add(item);
   }
 
   @Override
-  public JsonValue getPartial() throws Exception
+  public Item getPartial() throws Exception
   {
     return summer.get();
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void addPartial(Item item) throws Exception
   {
-    summer.add(value);
+    summer.add(item);
   }
 
   @Override
-  public JsonValue getFinal() throws Exception
+  public Item getFinal() throws Exception
   {
     return summer.get();
   }

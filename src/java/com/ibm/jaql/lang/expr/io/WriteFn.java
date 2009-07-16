@@ -15,8 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
+import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.core.RecordExpr;
 
 /**
  * An expression used for writing external data. It is called as follows:

@@ -15,10 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.numeric;
 
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDouble;
+import com.ibm.jaql.json.type.JNumeric;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -26,7 +27,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "toDouble", minArgs = 1, maxArgs = 1)
+@JaqlFn(fnName = "double", minArgs = 1, maxArgs = 1)
 public class DoubleFn extends Expr
 {
   /**
@@ -52,31 +53,32 @@ public class DoubleFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonDouble eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonValue val = exprs[0].eval(context);
+    Item item = exprs[0].eval(context);
+    JValue val = item.get();
     if (val == null)
     {
-      return null;
+      return Item.nil;
     }
-    else if (val instanceof JsonDouble)
+    else if (val instanceof JDouble)
     {
-      return (JsonDouble)val;
+      return item;
     }
-    else if (val instanceof JsonNumeric)
+    else if (val instanceof JNumeric)
     {
-      JsonNumeric n = (JsonNumeric) val;
-      val = new JsonDouble(n.doubleValue()); // TODO: memory
+      JNumeric n = (JNumeric) val;
+      val = new JDouble(n.doubleValue()); // TODO: memory
     }
-    else if (val instanceof JsonString)
+    else if (val instanceof JString)
     {
-      val = new JsonDouble(val.toString()); // TODO: memory
+      val = new JDouble(val.toString()); // TODO: memory
     }
     else
     {
       throw new ClassCastException("cannot convert "
           + val.getEncoding().getType().name() + " to double");
     }
-    return (JsonDouble)val; // TODO: memory
+    return new Item(val); // TODO: memory
   }
 }

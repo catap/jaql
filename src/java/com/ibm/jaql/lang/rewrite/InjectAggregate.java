@@ -19,11 +19,13 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
-import com.ibm.jaql.lang.expr.core.AggregateFullExpr;
+import com.ibm.jaql.lang.expr.core.AggregateExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.ProxyExpr;
+import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
 
@@ -79,27 +81,25 @@ public class InjectAggregate extends Rewrite
     for( Expr e: engine.exprList )
     {
       assert e instanceof VarExpr;
-      int slot = e.getChildSlot();
       Expr p = e.parent();
       if( p instanceof ToArrayFn ||
           p instanceof AsArrayFn ||
           p instanceof EmptyOnNullFn )
       {
-        slot = p.getChildSlot();
         p = p.parent();
+      }
+      if( p instanceof BindingExpr )
+      {
+        p = p.parent();
+      }
+      if( !( p instanceof Aggregate ||
+             p instanceof ForExpr ||
+             p instanceof TransformExpr ) )
+      {
+        return false;
       }
       while( p != g && !(p instanceof Aggregate) )
       {
-        if( p instanceof BindingExpr )
-        {
-          slot = p.getChildSlot();
-          p = p.parent();
-        }
-        if( ! p.isMappable(slot) )
-        {
-          return false;
-        }
-        slot = p.getChildSlot();
         p = p.parent();
       }
       if( p == g )
@@ -118,8 +118,7 @@ public class InjectAggregate extends Rewrite
     // Inject the aggregate expr
     Expr proxy = new ProxyExpr();
     collect.replaceInParent(proxy);
-    BindingExpr b = new BindingExpr(BindingExpr.Type.EQ, aggVar, null, new VarExpr(groupVar));
-    Expr agg = AggregateFullExpr.make(engine.env, b, collect, true);
+    Expr agg = AggregateExpr.make(engine.env, aggVar, new VarExpr(groupVar), collect, true);
     proxy.replaceInParent(agg);
 
     return true;

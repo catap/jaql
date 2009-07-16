@@ -18,13 +18,12 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -41,7 +40,7 @@ public final class IfExpr extends Expr
   {
     if (falseExpr == null)
     {
-      falseExpr = new ConstExpr(null);
+      falseExpr = new ConstExpr(Item.nil);
     }
     return new Expr[]{testExpr, trueExpr, falseExpr};
   }
@@ -75,9 +74,26 @@ public final class IfExpr extends Expr
     super(makeArgs(testExpr, trueExpr, null));
   }
 
-  public Schema getSchema()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
+   */
+  @Override
+  public Bool3 isArray()
   {
-    return SchemaTransformation.or(exprs[1].getSchema(), exprs[2].getSchema());
+    return exprs[1].isArray().both(exprs[2].isArray());
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
+  @Override
+  public Bool3 isNull()
+  {
+    return exprs[1].isNull().both(exprs[2].isNull());
   }
 
   /**
@@ -117,7 +133,7 @@ public final class IfExpr extends Expr
     testExpr().decompile(exprText, capturedVars);
     exprText.print(" )\n( ");
     trueExpr().decompile(exprText, capturedVars);
-    if (falseExpr().getSchema().isNull().maybeNot())
+    if (falseExpr().isNull().maybeNot())
     {
       exprText.print(" )\nelse ( ");
       falseExpr().decompile(exprText, capturedVars);
@@ -130,19 +146,19 @@ public final class IfExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     boolean b = JaqlUtil.ebv(exprs[0].eval(context));
-    JsonValue value;
+    Item item;
     if (b)
     {
-      value = exprs[1].eval(context);
+      item = exprs[1].eval(context);
     }
     else
     {
-      value = exprs[2].eval(context);
+      item = exprs[2].eval(context);
     }
-    return value;
+    return item;
   }
 
   /*
@@ -150,10 +166,10 @@ public final class IfExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     boolean b = JaqlUtil.ebv(exprs[0].eval(context));
-    JsonIterator iter;
+    Iter iter;
     if (b)
     {
       iter = exprs[1].iter(context);

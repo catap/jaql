@@ -15,16 +15,15 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 @JaqlFn(fnName="shift",minArgs=2,maxArgs=3)
 public class ShiftFn extends IterExpr
@@ -52,10 +51,15 @@ public class ShiftFn extends IterExpr
     return exprs[1];
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
   @Override
-  public Schema getSchema()
+  public Bool3 isNull()
   {
-    return SchemaFactory.arraySchema();
+    return Bool3.FALSE;
   }
 
   /*
@@ -64,16 +68,16 @@ public class ShiftFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
-    final JsonIterator iter = exprs[0].iter(context);
+    final Iter iter = exprs[0].iter(context);
     if( iter.isNull() )
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
     
-    JsonNumber beforeNum = (JsonNumber)exprs[1].eval(context);
+    JNumber beforeNum = (JNumber)exprs[1].eval(context).get();
     final long before;
     if( beforeNum == null )
     {
@@ -95,7 +99,7 @@ public class ShiftFn extends IterExpr
     }
     else
     {
-      JsonNumber afterNum = (JsonNumber)exprs[2].eval(context);
+      JNumber afterNum = (JNumber)exprs[2].eval(context).get();
       if( afterNum == null )
       {
         after = 0;
@@ -116,85 +120,77 @@ public class ShiftFn extends IterExpr
     }
 
     final int size = (int)(before + after + 1);
-    final InMemoryCircularJsonBuffer buffer = new InMemoryCircularJsonBuffer(size);
-    final ResettableJsonIterator window = buffer.iter();
-    final BufferedJsonArray arr = new BufferedJsonArray(size);
+    final InMemoryCircularItemBuffer buffer = new InMemoryCircularItemBuffer(size);
+    final ResettableIter window = buffer.iter();
+    final FixedJArray arr = new FixedJArray(size);
+    final Item result = new Item(arr);
     
-    boolean eof = false;
-    JsonValue value = null;
+    Item item = Item.nil;
     for( long i = 0 ; i < after ; i++ )
     {
-      if (!eof && iter.moveNext()) { // Don't call moveNext() once we hit eof
-        value = iter.current();
-        eof = true;
-      } else {
-        value = null;
+      if( item != null ) // Don't call next() once we hit eof
+      {
+        item = iter.next();
       }
-      buffer.add(value);
+      buffer.add(item);
     }
 
-    return new JsonIterator(arr) 
+    final Item tmpItem = item;
+
+    return new Iter() 
     {
-      boolean eof = false;
       long tail = after;
+      Item item = tmpItem; 
       
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        if (!eof) {
-          eof = iter.moveNext();
+        if( item != null )
+        {
+          item = iter.next();
         }
-        if( eof )
+        if( item == null )
         {
           if( tail == 0 )
           {
-            return false;
+            return null;
           }
           tail--;
-          buffer.add(null);
-        } 
-        else 
-        {
-          buffer.add(iter.current());
         }
+        buffer.add(item);
         window.reset();
         for(int i = 0 ; i < size ; i++)
         {
-          boolean hasNext = window.moveNext();
-          assert hasNext;
-          arr.set(i, window.current());
+          arr.set(i, window.next());
         }
-        return true; // currentValue == arr
+        return result;
       }
     };
   }
 
   
-  public static abstract class ResettableJsonIterator extends JsonIterator // TODO: move out
+  public static abstract class ResettableIter extends Iter // TODO: move out
   {
     public abstract void reset();
   }
   
-  public static class InMemoryCircularJsonBuffer // TODO: move out
+  public static class InMemoryCircularItemBuffer // TODO: move out
   {
-    private JsonValue[] buffer;
+    private Item[] buffer;
     private int end;
     
-    public InMemoryCircularJsonBuffer(int size)
+    public InMemoryCircularItemBuffer(int size)
     {
-      buffer = new JsonValue[size+1];
+      buffer = new Item[size+1];
+      for(int i = 0 ; i < buffer.length ; i++)
+      {
+        buffer[i] = new Item();
+      }
       end = size;
     }
     
-    public void add(JsonValue value) throws Exception
+    public void add(Item item) throws Exception
     {
-      if (value == null) 
-      {
-        buffer[end] = null;
-      }
-      else
-      {
-        buffer[end] = value.getCopy(buffer[end]);
-      }
+      buffer[end].copy(item);
       end++;
       if( end == buffer.length )
       {
@@ -202,14 +198,14 @@ public class ShiftFn extends IterExpr
       }
     }
     
-    public ResettableJsonIterator iter()
+    public ResettableIter iter()
     {
-      return new ResettableJsonIterator()
+      return new ResettableIter()
       {
         int i = end + 1;
         
         @Override
-        public boolean moveNext() throws Exception
+        public Item next() throws Exception
         {
           if( i == buffer.length )
           {
@@ -217,10 +213,10 @@ public class ShiftFn extends IterExpr
           }
           if( i == end )
           {
-            return false;
+            return null;
           }
-          currentValue = buffer[i++];
-          return true;
+          Item item = buffer[i++];
+          return item;
         }
 
         public void reset()

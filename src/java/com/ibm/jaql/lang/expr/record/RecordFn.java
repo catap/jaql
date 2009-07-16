@@ -15,13 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import java.util.Map.Entry;
-
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -32,7 +30,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "record", minArgs = 1, maxArgs = 1)
 public class RecordFn extends Expr // TODO: make into an aggregate?
 {
-  protected BufferedJsonRecord rec;
+  protected MemoryJRecord rec;
+  protected Item resultRec;
 
   /**
    * @param exprs
@@ -47,34 +46,36 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     if (rec == null)
     {
-      rec = new BufferedJsonRecord();
+      rec = new MemoryJRecord();
+      resultRec = new Item(rec);
     }
     else
     {
       rec.clear();
     }
-    
-    JsonIterator iter = exprs[0].iter(context);
-    for (JsonValue v : iter) 
+    Item item;
+    Iter iter = exprs[0].iter(context);
+    while ((item = iter.next()) != null)
     {
-      JsonRecord inrec = (JsonRecord)v;
+      JRecord inrec = (JRecord) item.get();
       if (inrec != null)
       {
-        rec.ensureCapacity(rec.size() + inrec.size());
-        for (Entry<JsonString, JsonValue> e : inrec)
+        int n = inrec.arity();
+        rec.ensureCapacity(rec.getCapacity() + n);
+        for (int i = 0; i < n; i++)
         {
-          JsonString name = rec.nameOf(rec.size()); // reuse
-          JsonValue value = rec.valueOf(rec.size()); // reuse
-          name = e.getKey().getCopy(name);
-          value = e.getValue().getCopy(value);
+          JString name = rec.getName(rec.arity());
+          Item value = rec.getValue(rec.arity());
+          name.copy(inrec.getName(i));
+          value.copy(inrec.getValue(i));
           rec.add(name, value);
         }
       }
     }
-    return rec;
+    return resultRec;
   }
 }

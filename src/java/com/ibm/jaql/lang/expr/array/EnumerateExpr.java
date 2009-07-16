@@ -15,15 +15,15 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -49,10 +49,16 @@ public final class EnumerateExpr extends IterExpr
     this(new Expr[]{arrayExpr});
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
   @Override
-  public Schema getSchema()
+  public Bool3 isNull()
   {
-    return SchemaFactory.arraySchema();
+    return Bool3.FALSE;
+    // return exprs[0].isNull();
   }
 
   /*
@@ -60,22 +66,25 @@ public final class EnumerateExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonIterator iter = exprs[0].iter(context);
-    final BufferedJsonArray pair = new BufferedJsonArray(2);
-    final JsonLong counter = new JsonLong(-1);
-    pair.set(0, counter);
+    final Iter iter = exprs[0].iter(context);
+    final FixedJArray pair = new FixedJArray(2);
+    final JLong counter = new JLong(-1);
+    pair.set(0, new Item(counter));
+    final Item result = new Item(pair);
 
-    return new JsonIterator(pair) {
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      public Item next() throws Exception
       {
-        if (!iter.moveNext()) {
-          return false;
+        Item item = iter.next();
+        if (item == null)
+        {
+          return null;
         }
-        counter.set(counter.get()+1);
-        pair.set(1, iter.current());
-        return true;
+        counter.value++;
+        pair.set(1, item);
+        return result;
       }
     };
   }

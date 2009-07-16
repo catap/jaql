@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -53,20 +54,20 @@ public class PairFn extends IterExpr // TODO: rewrite into [A,B]
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    return new JsonIterator() {
+    return new Iter() {
       int index = 0;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         if (index < exprs.length)
         {
-          currentValue = exprs[index].eval(context);
+          Item item = exprs[index].eval(context);
           index++;
-          return true;
+          return item;
         }
-        return false;
+        return null;
       }
     };
   }

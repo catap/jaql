@@ -18,14 +18,13 @@ package com.ibm.jaql.lang.expr.array;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * This expression will stream out an Iterator<Item> values.
@@ -36,7 +35,7 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
  */
 public class StashIterExpr extends IterExpr
 {
-  protected JsonIterator iter;
+  protected Iter iter;
   
   /**
    * 
@@ -48,18 +47,23 @@ public class StashIterExpr extends IterExpr
   }
 
   /**
-   * @param iter
+   * @param expr
    */
-  public StashIterExpr(JsonIterator iter)
+  public StashIterExpr(Iter iter)
   {
     super(NO_EXPRS);
     this.iter = iter;
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
   @Override
-  public Schema getSchema()
+  public Bool3 isNull()
   {
-    return SchemaFactory.arraySchema();
+    return Bool3.FALSE;
   }
 
   @Override
@@ -83,13 +87,13 @@ public class StashIterExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     if( iter == null )
     {
       throw new RuntimeException("iter never set or requested multiple times");
     }
-    JsonIterator iter2 = iter;
+    Iter iter2 = iter;
     iter = null;
     return iter2;
   }  

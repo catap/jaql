@@ -22,8 +22,7 @@ import com.ibm.jaql.io.InputAdapter;
 /**
  * A HadoopAdapter that converts records to Items
  */
-@SuppressWarnings("unchecked")
-public interface HadoopInputAdapter
-    extends HadoopAdapter, InputFormat, InputAdapter
+public interface HadoopInputAdapter<T>
+    extends HadoopAdapter<T>, InputFormat, InputAdapter
 {
 }

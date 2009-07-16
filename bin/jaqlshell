@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -i
 # 
 # Run the jaql shell
 
@@ -22,21 +22,11 @@ if [ $? -eq 0 ]; then
 fi
 export JAQLSHELL_CLASSPATH
 
-# check for cygwin
-cygwin=false
-case "`uname`" in
-    CYGWIN*) cygwin=true;;
-esac
-
-# CYGWIN ONLY: save, then modify terminal settings 
-if $cygwin; then
-    STTY_STATE=`stty -g 2>/dev/null` 
-    "stty -icanon min 1 -echo;" 2>/dev/null
-fi
+# save, then modify terminal settings 
+STTY_STATE=`stty -g 2>/dev/null` 
+"stty -icanon min 1 -echo;" 2>/dev/null
 
 jaql JaqlShell $*
 
-# CYGWIN ONLY: restore terminal settings
-if $cygwin; then
-    stty $STTY_STATE 2>/dev/null
-fi
+# restore terminal settings
+stty $STTY_STATE 2>/dev/null

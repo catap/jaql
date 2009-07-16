@@ -16,14 +16,13 @@
 package com.ibm.jaql.lang.expr.array;
 
 import java.util.ArrayList;
-import java.util.Map.Entry;
 
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -55,59 +54,61 @@ public class RowwiseFn extends IterExpr
    * 
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonValue value = exprs[0].eval(context);
-    if( value == null )
+    Item item = exprs[0].eval(context);
+    if( item.isNull() )
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    JsonRecord inrec = (JsonRecord)value;
-    int n = inrec.size();
-    final ArrayList<JsonString> names = new ArrayList<JsonString>(n);
-    final ArrayList<JsonIterator> values = new ArrayList<JsonIterator>(n);
-    for (Entry<JsonString, JsonValue> e : inrec)
+    JRecord inrec = (JRecord)item.get();
+    int n = inrec.arity();
+    final ArrayList<JString> names = new ArrayList<JString>(n);
+    final ArrayList<Iter> values = new ArrayList<Iter>(n);
+    for(int i = 0 ; i < n ; i++)
     {
-      JsonString name = e.getKey();
-      JsonArray val = (JsonArray)e.getValue();
+      JArray val = (JArray)inrec.getValue(i).get();
       if( val != null && ! val.isEmpty() )
       {
-        names.add(name);
+        names.add(inrec.getName(i));
         values.add(val.iter());
       }
     }
     if( names.isEmpty() )
     {
-      return JsonIterator.EMPTY;
+      return Iter.empty;
     }
-    final BufferedJsonRecord outrec = new BufferedJsonRecord();
-    return new JsonIterator(outrec)
+    final MemoryJRecord outrec = new MemoryJRecord();
+    final Item result = new Item(outrec);
+    
+    return new Iter()
     {      
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         outrec.clear();
         int n = names.size();
         int done = 0;
         for(int i = 0 ; i < n ; i++)
         {
-          JsonString name = names.get(i);
-          JsonIterator iter = values.get(i);
-          if (!iter.moveNext())
+          JString name = names.get(i);
+          Iter iter = values.get(i);
+          Item item = iter.next();
+          if( item == null )
           {
-            values.set(i, JsonIterator.EMPTY);
+            values.set(i, Iter.empty);
             done++;
           }
-          else if( iter.current() != null  )
+          else if( ! item.isNull() )
           {
-            outrec.add(name, iter.current());
+            outrec.add(name, item);
           }
         }
         if( done == n )
         {
-          return false;
+          return null;
         }
-        return true; // currentValue == outRec
+        return result;
       }
     };
   }

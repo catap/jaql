@@ -17,15 +17,14 @@ package com.ibm.jaql.lang.expr.regex;
 
 import java.util.regex.Matcher;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonRegex;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRegex;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 // TODO: RegexExec: support regex () submatch  captures a la http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Guide:Working_with_Regular_Expressions:Using_Parenthesized_Substring_Matches
 
@@ -44,9 +43,9 @@ public class RegexExtractFn extends Expr
   }
 
   @Override
-  public Schema getSchema()
+  public Bool3 isArray()
   {
-    return SchemaFactory.arrayOrNullSchema();
+    return Bool3.TRUE;
   }
 
   /*
@@ -54,33 +53,33 @@ public class RegexExtractFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonArray eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    final JsonRegex regex = (JsonRegex) exprs[0].eval(context);
+    final JRegex regex = (JRegex) exprs[0].eval(context).get();
     if (regex == null)
     {
-      return null;
+      return Item.nil;
     }
-    JsonString text = (JsonString) exprs[1].eval(context);
+    JString text = (JString) exprs[1].eval(context).get();
     if (text == null)
     {
-      return null;
+      return Item.nil;
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());
     if (!matcher.find())
     {
       regex.returnMatcher(matcher);
-      return null;
+      return Item.nil;
     }
     int n = matcher.groupCount();    
-    BufferedJsonArray arr = new BufferedJsonArray(n); // TODO: memory
+    FixedJArray arr = new FixedJArray(n); // TODO: memory
+    Item result = new Item(arr); // TODO: memory
     for(int i = 0 ; i < n ; i++)
     {
       String s = matcher.group(i+1);
-      arr.set(i, new JsonString(s)); // TODO: memory
+      arr.set(i, new JString(s)); // TODO: memory
     }
-    regex.returnMatcher(matcher);
-    return arr;
+    return result;
   }
 }

@@ -17,19 +17,20 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.SpillJArray;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
  */
 public abstract class IterExpr extends Expr
 {
-  protected SpilledJsonArray tempArray;
+  // Runtime state:
+  protected SpillJArray tempArray;
+  protected Item tempItem;
 
   /**
    * @param inputs
@@ -75,16 +76,22 @@ public abstract class IterExpr extends Expr
     super(exprs);
   }
 
-  /* never returns null
+  /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public abstract JsonIterator iter(Context context) throws Exception;
+  public abstract Iter iter(Context context) throws Exception;
 
-  public Schema getSchema()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
+   */
+  @Override
+  public final Bool3 isArray()
   {
-    return SchemaFactory.arrayOrNullSchema();
+    return Bool3.TRUE;
   }
 
   /*
@@ -92,18 +99,19 @@ public abstract class IterExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonIterator iter = this.iter(context);
+    Iter iter = this.iter(context);
     if (iter.isNull())
     {
-      return null;
+      return Item.nil;
     }
-    if( tempArray == null )
+    if( tempItem == null )
     {
-      tempArray = new SpilledJsonArray();
+      tempArray = new SpillJArray();
+      tempItem = new Item(tempArray);
     }
-    tempArray.setCopy(iter);
-    return tempArray;
+    tempArray.set(iter);
+    return tempItem;
   }
 }

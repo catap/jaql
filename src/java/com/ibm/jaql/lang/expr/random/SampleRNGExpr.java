@@ -17,16 +17,16 @@ package com.ibm.jaql.lang.expr.random;
 
 import java.util.Random;
 
-import com.ibm.jaql.json.type.JsonEncoding;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.registry.RNGStore;
+import com.ibm.jaql.lang.registry.RNGStore.RNGEntry;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -49,39 +49,41 @@ public class SampleRNGExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonLong eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue key = exprs[0].eval(context);
+    Item key = exprs[0].eval(context);
 
     //RNGStore.RNGEntry entry = RNGStore.get(key);
     RNGStore.RNGEntry entry = JaqlUtil.getRNGStore().get(key);
     if (entry == null)
     {
-      return null;
+      return Item.nil;
     }
 
+    Item val = new Item();
     // use a different rng here if needed...
     Random rng = (Random) entry.getRng();
     if (rng == null)
     {
-      JaqlFunction f = entry.getSeed();
-      JsonValue seedValue = f.eval(context, new JsonValue[]{});
+      JFunction f = entry.getSeed();
+      Item seedItem = f.eval(context, new Item[]{});
       long seed = 0;
-      if (seedValue.getEncoding() == JsonEncoding.LONG)
+      if (seedItem.getEncoding() == Item.Encoding.LONG)
       {
-        seed = ((JsonNumber) seedValue).longValue();
+        seed = ((JNumber) seedItem.get()).longValue();
       }
-      else if (seedValue.getEncoding() == JsonEncoding.STRING)
+      else if (seedItem.getEncoding() == Item.Encoding.STRING)
       {
-        seed = Long.parseLong(((JsonString) seedValue).toString());
+        seed = Long.parseLong(((JString) seedItem.get()).toString());
       }
       else
       {
-        throw new RuntimeException("seed is of invalid type");
+        throw new RuntimeException();
       }
       rng = new Random(seed);
       entry.setRng(rng);
     }
-    return new JsonLong(rng.nextLong());
+    val.set(new JLong(rng.nextLong()));
+    return val;
   }
 }

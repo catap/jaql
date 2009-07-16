@@ -24,14 +24,13 @@
 
     <property name="lib.dir" value="${basedir}/lib" />
     <property name="conf.dir" value="${basedir}/conf" />
-    <property name="resources.dir" value="${basedir}/resources" />
     <property name="bin.dir" value="${basedir}/bin" />
     <property name="docs.dir" value="${basedir}/docs" />
     <property name="build.dir" value="${basedir}/build" />
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <!-- Default version is 0.18.3. Other supported versions include: 0.18.1 -->
+    <!-- Default version is 0.18.3. Other supported versions include: 0.16.3, 0.17.1, 0.18.1, 0.19.0, 0.19.1 -->
     <property name="hadoop.version" value="0.18.3" />
 
     <property name="hadoop.dir"
@@ -121,7 +120,7 @@
     <!-- ================================================================== -->
     <!-- Junit test                                                         -->
     <!-- ================================================================== -->
-    <target name="test" depends="jar, extension.jar">
+    <target name="test" depends="compile-test, jar">
         <mkdir dir="${build.dir}" />
         <mkdir dir="${test.build.dir}" />
         <delete dir="${test.build.data}" />
@@ -160,7 +159,6 @@
                maxmemory="256m"
                errorProperty="tests.failed"
                failureProperty="tests.failed">
-        	<assertions><enable/></assertions>
             <sysproperty key="test.build.data" value="${test.build.data}" />
             <sysproperty key="test.cache.data" value="${test.cache.data}" />
             <sysproperty key="hadoop.log.dir" value="${test.log.dir}" />
@@ -316,7 +314,7 @@
         </javac>
     </target>
 
-    <target name="extension.jar" depends="compile-test">
+    <target name="extension.jar" depends="compile">
         <jar jarfile="${build.dir}/extension.jar"
              basedir="${build.dir}/test/classes">
             <fileset dir="${build.dir}" includes="com/foobar/**/*.class" />
@@ -324,7 +322,7 @@
     </target>
 
     <!-- <property name="src.test.dir" value="${basedir}/src/test"/> -->
-    <target name="compile-test" depends="compile, init-test">
+    <target name="compile-test" depends="compile, init-test, extension.jar">
         <javac encoding="${build.encoding}"
                srcdir="${build.src}/test"
                includes="**/*.java"
@@ -451,11 +449,6 @@
             <fileset dir="${conf.dir}" />
         </copy>
 
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${resources.dir}" />
-        </copy>
-
         <mkdir dir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}" />
         <copy todir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}">
             <fileset dir="${hadoop.dir}">
@@ -515,11 +508,6 @@
             <fileset dir="${conf.dir}" />
         </copy>
 
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${conf.dir}" />
-        </copy>
-
         <mkdir dir="${build.dir}/jaql-${version}/bin" />
         <copy todir="${build.dir}/jaql-${version}/bin">
             <fileset refid="bin.files" />
@@ -555,11 +543,6 @@
         <mkdir dir="${build.dir}/jaql-${version}/conf" />
         <copy todir="${build.dir}/jaql-${version}/conf">
             <fileset dir="${conf.dir}" />
-        </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${resources.dir}" />
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/bin" />

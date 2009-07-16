@@ -41,7 +41,7 @@ public class EmptyOnNullElimination extends Rewrite
   {
     assert expr instanceof EmptyOnNullFn;
     Expr input = expr.child(0);
-    if( input.getSchema().isNull().never() )
+    if( input.isNull().never() )
     {
       expr.replaceInParent(input);
       return true;

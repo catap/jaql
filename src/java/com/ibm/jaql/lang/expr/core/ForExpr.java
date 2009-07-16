@@ -18,9 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
@@ -91,7 +90,6 @@ public final class ForExpr extends IterExpr // TODO: rename
         collectExpr);
   }
 
-  
   /**
    * @return
    */
@@ -116,9 +114,16 @@ public final class ForExpr extends IterExpr // TODO: rename
     return exprs[1];
   }
 
-  public Schema getSchema()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
+  @Override
+  public Bool3 isNull()
   {
-    return new ArraySchema(null, collectExpr().getSchema().elements(), null, null);
+    return Bool3.FALSE;
+    // return binding().inExpr().isNull().or(collectExpr().isNull());
   }
 
   /**
@@ -134,39 +139,29 @@ public final class ForExpr extends IterExpr // TODO: rename
     return Bool3.FALSE;
   }
 
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  @Override
-  public boolean isMappable(int i)
-  {
-    return i == 0;
-  }
-
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     // TODO: decompile as "for" or "expand"?
     BindingExpr b = binding();
-//    if( false )
-//    {
-//      exprText.print("\nfor( ");
-//      exprText.print(b.var.name);
-//      exprText.print(" in ");
-//      b.inExpr().decompile(exprText, capturedVars);
-//      exprText.print(" ) ( ");
-//      collectExpr().decompile(exprText, capturedVars);
-//      exprText.println(" )");
-//      capturedVars.remove(b.var);
-//    }
-//    else
+    if( false )
+    {
+      exprText.print("\nfor( ");
+      exprText.print(b.var.name);
+      exprText.print(" in ");
+      b.inExpr().decompile(exprText, capturedVars);
+      exprText.print(" ) ( ");
+      collectExpr().decompile(exprText, capturedVars);
+      exprText.println(" )");
+      capturedVars.remove(b.var);
+    }
+    else
     {
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(" -> expand each ");
@@ -183,34 +178,34 @@ public final class ForExpr extends IterExpr // TODO: rename
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr collectExpr = collectExpr();
 
-    final JsonIterator inIter = inBinding.iter(context);
+    final Iter inIter = inBinding.iter(context);
 
-    return new JsonIterator() 
+    return new Iter() 
     {
-      JsonIterator inner = JsonIterator.EMPTY;
+      Iter inner = Iter.empty;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (inner.moveNext()) {
-            currentValue = inner.current();
-            return true;
+          Item item;
+          while ((item = inner.next()) != null)
+          {
+            return item;
           }
 
-          if (inIter.moveNext()) 
+          item = inIter.next();
+          if (item == null)
           {
-            inner = collectExpr.iter(context); 
+            return null;
           }
-          else
-          {
-            return false;
-          }
+
+          inner = collectExpr.iter(context);
         }
       }
     };

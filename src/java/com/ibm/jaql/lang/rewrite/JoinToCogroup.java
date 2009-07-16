@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.MergeFn;
@@ -107,7 +108,7 @@ public class JoinToCogroup extends Rewrite
     if( numPreserved > 0 )
     {
       Expr[] toMerge = new Expr[numPreserved];
-      Expr nilExpr = new ConstExpr(null);
+      Expr nilExpr = new ConstExpr(Item.nil);
       int k = 0;
       for (int i = 0; i < n; i++)
       {

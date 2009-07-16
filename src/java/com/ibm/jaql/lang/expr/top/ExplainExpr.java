@@ -20,7 +20,8 @@ import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -66,7 +67,7 @@ public class ExplainExpr extends TopExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonString eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     PrintStream exprText = new PrintStream(outStream);
@@ -96,6 +97,6 @@ public class ExplainExpr extends TopExpr
     }
     // assert capturedVars.isEmpty();
     String query = outStream.toString();
-    return new JsonString(query);
+    return new Item(new JString(query));
   }
 }

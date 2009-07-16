@@ -15,15 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.pragma;
 
-import java.util.Map;
-
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * This is a pragma function to force const evaluation.
@@ -31,8 +26,6 @@ import com.ibm.jaql.util.Bool3;
 @JaqlFn(fnName = "const", minArgs = 1, maxArgs = 1)
 public class ConstPragma extends Pragma
 {
-  protected boolean evaluated = false;
-  protected JsonValue value;
 
   /**
    * @param exprs
@@ -42,23 +35,15 @@ public class ConstPragma extends Pragma
     super(exprs);
   }
 
-  public Bool3 getProperty(ExprProperty prop, boolean deep)
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
+  @Override
+  public boolean isConst()
   {
-    // deep ignored deliberately
-    return getProperty(getProperties(), prop, null);
-  }
-  
-  public Map<ExprProperty, Boolean> getProperties()
-  {
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
-    return result;
-  }
-
-  
-  public Schema getSchema()
-  {
-    return exprs[0].getSchema();
+    return true;
   }
 
   /*
@@ -66,13 +51,8 @@ public class ConstPragma extends Pragma
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    if( !evaluated )
-    {
-      value = exprs[0].eval(context);
-      evaluated = true;
-    }
-    return value;
+    return exprs[0].eval(context);
   }
 }

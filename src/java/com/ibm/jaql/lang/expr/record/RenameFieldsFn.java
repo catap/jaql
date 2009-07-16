@@ -15,12 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import java.util.Map.Entry;
-
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -46,34 +44,36 @@ public class RenameFieldsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonRecord oldRec = (JsonRecord) exprs[0].eval(context);
+    Item oldItem = exprs[0].eval(context);
+    JRecord oldRec = (JRecord) oldItem.get();
     if (oldRec == null)
     {
-      return null;
+      return Item.nil;
     }
 
-    JsonRecord map = (JsonRecord) exprs[1].eval(context);
-    if (map == null || map.size() == 0)
+    JRecord map = (JRecord) exprs[1].eval(context).get();
+    if (map == null || map.arity() == 0)
     {
-      return oldRec;
+      return oldItem;
     }
 
-    
-    BufferedJsonRecord newRec = new BufferedJsonRecord(oldRec.size()); // TODO: memory
+    int n = oldRec.arity();
+    MemoryJRecord newRec = new MemoryJRecord(n); // TODO: memory
+    Item newItem = new Item(newRec); // TODO: memory
     // TODO: create a JRecord that references another JRecord and overrides fields 
-    for (Entry<JsonString, JsonValue> e : oldRec)
+    for (int i = 0; i < n; i++)
     {
-      JsonString name = e.getKey();
-      JsonString name2 = (JsonString) map.get(name);
+      JString name = oldRec.getName(i);
+      JString name2 = (JString) map.getValue(name).get();
       if (name2 != null)
       {
         name = name2;
       }
-      newRec.add(name, e.getValue());
+      newRec.add(name, oldRec.getValue(i));
     }
 
-    return newRec;
+    return newItem;
   }
 }

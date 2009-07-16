@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.io.hadoop.converter;
 
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
 
 /**
  * Export a JSON Item and convert it to a Hadoop record, composed of a key K and value V
@@ -31,7 +31,7 @@ public interface KeyValueExport<K, V> {
    * 
    * @param options
    */
-  void init(JsonRecord options);
+  void init(JRecord options);
   
   /**
    * Construct the target Key K from which values from the source JSON Item is converted
@@ -45,14 +45,14 @@ public interface KeyValueExport<K, V> {
    * 
    * @return
    */
-  V createValueTarget();
+  V createValTarget();
   
   /**
-   * Export a source JSOn value into a target Hadoop Record key K, value V (assumed to be constructed using createTarget)
+   * Export a source Item into a target Hadoop Record key K, value V (assumed to be constructed using createTarget)
    * 
    * @param src
    * @param key
    * @param val
    */
-  void convert(JsonValue src, K key, V val);
+  void convert(Item src, K key, V val);
 }

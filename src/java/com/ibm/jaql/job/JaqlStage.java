@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.job;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -36,10 +36,10 @@ public class JaqlStage extends Stage
   public void runStage() throws Exception
   {
     // The result is discarded; it is most likely just a variable name or file handle
-    if( expr.getSchema().isArrayOrNull().always() )
+    if( expr.isArray().always() )
     {
-      JsonIterator iter = expr.iter(context);
-      while (iter.moveNext())
+      Iter iter = expr.iter(context);
+      while( iter.next() != null )
       {
         // ignore item
       }

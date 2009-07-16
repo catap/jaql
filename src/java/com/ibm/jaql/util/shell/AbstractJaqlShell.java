@@ -45,7 +45,7 @@ public abstract class AbstractJaqlShell {
   {
     try
     {
-      com.ibm.jaql.lang.Jaql.run("<unknown>", in);   // TODO: get filename   
+      com.ibm.jaql.lang.Jaql.main(in);      
     }
     catch (Exception e)
     {

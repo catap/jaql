@@ -15,47 +15,48 @@
  */
 package com.ibm.jaql.lang.expr.date;
 
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDate;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 @JaqlFn(fnName="date", minArgs=1, maxArgs=2)
 public class DateFn extends Expr
 {
-  protected JsonDate date = new JsonDate();
-  
   public DateFn(Expr[] exprs)
   {
     super(exprs);
   }
 
   @Override
-  public JsonDate eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonString dateStr = (JsonString)exprs[0].eval(context);
-    if( exprs.length == 1 )
+    String f = JDate.iso8601UTCFormat;
+    if( exprs.length == 2 )
     {
-      date.set(dateStr.toString());
+      JString js = (JString)exprs[1].eval(context).get();
+      if( js != null )
+      {
+        f = js.toString();
+      }
     }
-    else
-    {
-      JsonString formatStr = (JsonString)exprs[1].eval(context);
-      date.set(dateStr.toString(), JsonDate.getFormat(formatStr.toString()));
-    }
-    return date;
+    SimpleDateFormat format = new SimpleDateFormat(f); // TODO: memory
+    
+    Item s = exprs[0].eval(context);
+    // TODO: support date(millis)
+    JString js = (JString)s.get();
+    
+    Date date = format.parse(js.toString());
+    long millis = date.getTime();
+    millis -= format.getTimeZone().getRawOffset();
+    JDate d = new JDate(millis); // TODO: memory
+    Item item = new Item(d); // TODO: memory
+    return item;
   }
 
-  // needed for date(...) constructor
-  @Override
-  public Map<ExprProperty, Boolean> getProperties() 
-  {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
-    return result;
-  } 
 }

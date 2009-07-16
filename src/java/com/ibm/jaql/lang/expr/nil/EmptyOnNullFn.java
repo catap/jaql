@@ -15,14 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.nil;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.Iter;
+import com.ibm.jaql.json.util.ScalarIter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * emptyOnNull(e) == firstNonNull(e, [])
@@ -49,27 +48,15 @@ public class EmptyOnNullFn extends IterExpr
   }
 
   @Override
-  public Schema getSchema()
+  public Bool3 isEmpty()
   {
-    Schema inSchema = exprs[0].getSchema();
-    switch (inSchema.isNull())
-    {
-    case FALSE:
-      return inSchema;
-    case TRUE:
-      return SchemaFactory.emptyArraySchema();
-    case UNKNOWN:
-    default:
-      Schema outSchema = SchemaTransformation.removeNullability(inSchema);
-      if (outSchema == null)
-      {
-        return SchemaFactory.emptyArraySchema(); 
-      }
-      else
-      {
-        return SchemaTransformation.or(outSchema, SchemaFactory.emptyArraySchema());
-      }
-    }
+    return exprs[0].isEmpty();
+  }
+
+  @Override
+  public Bool3 isNull()
+  {
+    return Bool3.FALSE;
   }
 
   /*
@@ -77,12 +64,12 @@ public class EmptyOnNullFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    JsonIterator iter = exprs[0].iter(context);
+    Iter iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return JsonIterator.EMPTY;
+      return new ScalarIter(null);
     }
     return iter;
   }

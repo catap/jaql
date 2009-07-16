@@ -18,9 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -46,19 +45,6 @@ public class AndExpr extends Expr
     super(new Expr[]{expr1, expr2});
   }
 
-  @Override
-  public Schema getSchema()
-  {
-    if (exprs[0].getSchema().isNull().maybe() || exprs[1].getSchema().isNull().maybe())
-    {
-      return SchemaFactory.booleanOrNullSchema();
-    }
-    else
-    {
-      return SchemaFactory.booleanSchema();
-    }
-  }
-
   /*
    * (non-Javadoc)
    * 
@@ -80,24 +66,25 @@ public class AndExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonBool b1 = (JsonBool)exprs[0].eval(context);
-    if (b1 != null && b1.get() == false)
+    Item item1 = exprs[0].eval(context);
+    JBool b = (JBool) item1.get();
+    if (b != null && b.getValue() == false)
     {
-      return JsonBool.FALSE;
+      return JBool.falseItem;
     }
-    // b1 is true or null
-    JsonBool b2 = (JsonBool) exprs[1].eval(context);
-    if (b2 == null)
+    // item1 is true or null
+    b = (JBool) exprs[1].eval(context).get();
+    if (b == null)
     {
-      return null;
+      return Item.nil;
     }
-    if (b2.get() == false)
+    if (b.getValue() == false)
     {
-      return JsonBool.FALSE;
+      return JBool.falseItem;
     }
-    // b1 is true or null, b2 is true
-    return b1;
+    // b is true
+    return item1;
   }
 }

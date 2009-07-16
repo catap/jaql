@@ -20,18 +20,16 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Map.Entry;
 
 import com.ibm.jaql.io.AbstractInputAdapter;
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.ClosableJsonIterator;
-import com.ibm.jaql.io.converter.StreamToJson;
-import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.io.ItemReader;
+import com.ibm.jaql.io.converter.StreamToItem;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
 
 /** Input adapter that reads from data from a URL (constructed using the provided location
  * and all arguments) and converts the data to items using a {@link StreamToItem} converter.
@@ -42,41 +40,40 @@ import com.ibm.jaql.json.type.JsonValue;
 public class StreamInputAdapter extends AbstractInputAdapter
 {
 
-  public static final JsonString   ARGS_NAME = new JsonString("args");
-  public static final JsonString   ARR_NAME  = new JsonString("asArray"); // @see com.ibm.jaql.io.converter.StreamToItem
+  public static String   ARGS_NAME = "args";
+  public static String   ARR_NAME  = "asArray"; // @see com.ibm.jaql.io.converter.StreamToItem
 
-  protected StreamToJson<JsonValue> formatter;
+  protected StreamToItem formatter;
 
-  protected JsonRecord      strArgs;
+  protected JRecord      strArgs;
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.io.AbstractInputAdapter#initializeFrom(com.ibm.jaql.json.type.JRecord)
    */
-  @SuppressWarnings("unchecked")
   @Override
-  public void init(JsonValue args) throws Exception
+  protected void initializeFrom(JRecord args) throws Exception
   {
-    super.init(args);
+    super.initializeFrom(args);
 
-    JsonRecord inputArgs = AdapterStore.getStore().input.getOption((JsonRecord)args);
+    JRecord inputArgs = AdapterStore.getStore().input.getOption(args);
     
     // setup the formatter
     Class<?> fclass = AdapterStore.getStore().getClassFromRecord(inputArgs,
         FORMAT_NAME, null);
     if (fclass == null) throw new Exception("formatter must be specified");
-    if (!StreamToJson.class.isAssignableFrom(fclass))
+    if (!StreamToItem.class.isAssignableFrom(fclass))
       throw new Exception("formatter must implement ItemInputStream");
-    formatter = (StreamToJson<JsonValue>) fclass.newInstance();
-    JsonValue arrAcc = inputArgs.get(ARR_NAME);
-    if(arrAcc != null) {
-      formatter.setArrayAccessor( ((JsonBool)arrAcc).get());
+    formatter = (StreamToItem) fclass.newInstance();
+    Item arrAcc = inputArgs.getValue(ARR_NAME);
+    if(!arrAcc.isNull()) {
+      formatter.setArrayAccessor( ((JBool)arrAcc.get()).value);
     }
 
     // setup the args
-    JsonValue value = inputArgs.get(ARGS_NAME);
-    if (value != null) strArgs = (JsonRecord) value;
+    Item item = inputArgs.getValue(ARGS_NAME);
+    if (!item.isNull()) strArgs = (JRecord) item.get();
   }
 
   /*
@@ -84,16 +81,14 @@ public class StreamInputAdapter extends AbstractInputAdapter
    * 
    * @see com.ibm.jaql.io.InputAdapter#getItemReader()
    */
-  public ClosableJsonIterator iter() throws Exception
+  public ItemReader getItemReader() throws Exception
   {
 
     final InputStream istr = openStream(location, strArgs);
-    formatter.setInput(istr);
+    formatter.setInputStream(istr);
 
-    return new ClosableJsonIterator() { // TODO: temporary hack until interfaces are adapted
-//      boolean first = true;
-      JsonValue val = null; 
-      
+    return new ItemReader() {
+
       @Override
       public void close() throws IOException
       {
@@ -101,29 +96,26 @@ public class StreamInputAdapter extends AbstractInputAdapter
       }
 
       @Override
-      public boolean moveNext() throws IOException
+      public boolean next(Item value) throws IOException
       {
-        val = formatter.read(val);
-        if(val == null)
-          return false;
-        currentValue = val;
-        return true;
+        return formatter.read(value);
+      }
+
+      @Override
+      public Item createValue()
+      {
+        return formatter.createTarget();
       }
     };
   }
 
-  public Schema getSchema()
-  {
-    return new ArraySchema(formatter.getSchema(), null, null);
-  }
-  
   /**
    * @param location
    * @param args
    * @return
    * @throws Exception
    */
-  protected InputStream openStream(String location, JsonRecord args)
+  protected InputStream openStream(String location, JRecord args)
       throws Exception
   {
     // make a URI from location. args are converted to the query component
@@ -132,10 +124,11 @@ public class StreamInputAdapter extends AbstractInputAdapter
     if (args != null)
     {
       String sep = "?";
-      for (Entry<JsonString, JsonValue> e : args)
+      for (int i = 0; i < args.arity(); i++)
       {
-        JsonString name = e.getKey();
-        JsonValue w = e.getValue();        
+        JString name = args.getName(i);
+        Item value = args.getValue(i);
+        JValue w = value.get();
         if (w != null)
         {
           String s = w.toString();

@@ -94,7 +94,7 @@ public class JaqlShell extends AbstractJaqlShell
     {
       // hbase 0.1.3 is compatible w/ 0.16
       String hbvInfo = org.apache.hadoop.hbase.util.VersionInfo.getVersion();
-      if (hbvInfo.indexOf("0.18") >= 0 && vInfo.indexOf("0.18") >= 0)
+      if (hbvInfo.indexOf("0.1.3") >= 0 && vInfo.indexOf("0.16") >= 0)
       {
         m_base = new MiniHBaseCluster((HBaseConfiguration) m_conf, numNodes);
         setupOverride();

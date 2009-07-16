@@ -15,16 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
-import java.util.Map;
-import java.io.PrintStream;
-import java.util.HashSet;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -35,50 +30,35 @@ public class MaterializeExpr extends TopExpr
   private Var var;
 
   /**
-   * materialize var = expr;
+   * materialize()
    * 
-   * @param var
-   * @param expr
+   * @param exprs
    */
-  public MaterializeExpr(Var var, Expr expr)
+  public MaterializeExpr(Expr[] exprs)
   {
-    super(new Expr[]{expr.clone(new VarMap())});
-    this.var = var;
-    var.expr = expr;
+    super(NO_EXPRS);
   }
 
   /**
-   * materialize var;  
-   * 
-   * ie, materialize var = var.expr
+   * materialize var
    * 
    * @param var
    */
   public MaterializeExpr(Var var)
   {
-    this(var, var.expr);
+    super(NO_EXPRS);
+    this.var = var;
   }
 
-  public Map<ExprProperty, Boolean> getProperties()
-  {
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-    result.put(ExprProperty.HAS_CAPTURES, true);
-    return result;
-  }
-
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
+  public boolean isConst()
   {
-    exprText.print("materialize ");
-    exprText.print(var.name());
-    exprText.print(" = ");
-    exprs[0].decompile(exprText, capturedVars);
-  }
-  
-  @Override
-  public Expr clone(VarMap varMap)
-  {
-    return new MaterializeExpr(var, exprs[0].clone(varMap));
+    return false;
   }
 
   /*
@@ -86,15 +66,14 @@ public class MaterializeExpr extends TopExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonBool result = JsonBool.FALSE;
-    if( var.value == null )
+    Item result = JBool.falseItem;
+    if (var.expr != null /* && var.value == null */)
     {
-      result = JsonBool.TRUE;
+      result = JBool.trueItem;
       Context gctx = JaqlUtil.getSessionContext();
-      JsonValue value = exprs[0].eval(gctx);
-      var.setValue(value);
+      var.value = var.expr.eval(gctx);
     }
     return result;
   }

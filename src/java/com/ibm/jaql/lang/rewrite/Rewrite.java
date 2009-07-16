@@ -101,6 +101,7 @@ public abstract class Rewrite
     return null;
   }
 
+  // FIXME: finding a variable by name might not be done correctly in all cases...
   /**
    * @param atExpr
    * @param varName
@@ -128,14 +129,6 @@ public abstract class Rewrite
       }
       prev = e;
     }
-    // Look for globals:
-    Var var = engine.env.inscope(varName);
-    if( var != null )
-    {
-      assert var.isGlobal();
-      return var.expr;
-    }
-    // Var not found...
     return null;
   }
 

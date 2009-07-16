@@ -15,18 +15,15 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import java.util.Map;
-
 import com.ibm.jaql.io.hbase.HBaseStore;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * hbaseDelete(tableExpr, keyExpr, columnExpr)
@@ -50,33 +47,36 @@ public class HBaseDeleteExpr extends Expr
     super(exprs);
   }
 
-  public Map<ExprProperty, Boolean> getProperties()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
+  @Override
+  public boolean isConst()
   {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
-    return result;
+    return false;
   }
-
 
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     // get the table name
-    JsonString tableName = JaqlUtil.enforceNonNull((JsonString) exprs[0].eval(context));
+    JString tableName = (JString) exprs[0].eval(context).getNonNull();
 
-    JsonArray jcolumns = JaqlUtil.enforceNonNull((JsonArray) exprs[2].eval(context));
+    JArray jcolumns = (JArray) exprs[2].eval(context).getNonNull();
 
     // For each key, delete all the columns specified (or all columns)
     // TODO: return the number of matching keys?  the keys plus an indicator?
-    JsonIterator rows = exprs[1].iter(context);
+    Iter rows = exprs[1].iter(context);
 
     // do the deletes
     HBaseStore.Util.deleteValues(tableName, jcolumns, rows);
 
-    return JsonBool.TRUE;
+    return JBool.trueItem;
   }
 }

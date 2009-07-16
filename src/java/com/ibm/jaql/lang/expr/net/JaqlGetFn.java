@@ -18,17 +18,15 @@ package com.ibm.jaql.lang.expr.net;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Map;
-import java.util.Map.Entry;
 
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
@@ -45,13 +43,16 @@ public class JaqlGetFn extends Expr
     super(exprs);
   }
 
-  public Map<ExprProperty, Boolean> getProperties()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
+  @Override
+  public boolean isConst()
   {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.READS_EXTERNAL_DATA, true);
-    return result;
+    return false;
   }
-
 
   /**
    * @param context
@@ -60,19 +61,20 @@ public class JaqlGetFn extends Expr
    */
   protected JsonParser fetch(Context context) throws Exception
   {
-    JsonString urlText = (JsonString) exprs[0].eval(context);
+    JString urlText = (JString) exprs[0].eval(context).get();
     String urlStr = urlText.toString();
     // TODO: memory!!
     if (exprs.length == 2)
     {
-      JsonRecord args = (JsonRecord) exprs[1].eval(context);
+      JRecord args = (JRecord) exprs[1].eval(context).get();
       if (args != null)
       {
         String sep = "?";
-        for (Entry<JsonString, JsonValue> e : args)
+        for (int i = 0; i < args.arity(); i++)
         {
-          JsonString name = e.getKey();          
-          JsonValue w = e.getValue();
+          JString name = args.getName(i);
+          Item value = args.getValue(i);
+          JValue w = value.get();
           if (w != null)
           {
             String s = w.toString();
@@ -95,11 +97,11 @@ public class JaqlGetFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     JsonParser parser = fetch(context);
-    JsonValue value = parser.TopVal();
-    return value;
+    Item item = parser.TopVal();
+    return item;
   }
 
   /*
@@ -107,28 +109,28 @@ public class JaqlGetFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     final JsonParser parser = fetch(context);
-    return new JsonIterator() {
-      JsonValue nextValue = parser.ArrayFirst();
+    return new Iter() {
+      Item    nextItem   = parser.ArrayFirst();
       boolean checkedEOF = false;
 
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        if (nextValue == JsonParser.NIL)
+        if (nextItem == null)
         {
           if (!checkedEOF)
           {
             parser.Eof();
             checkedEOF = true;
           }
-          return false;
+          return null;
         }
-        currentValue = nextValue;
-        nextValue = parser.ArrayNext();
-        return true;
+        Item item = nextItem;
+        nextItem = parser.ArrayNext();
+        return item;
       }
     };
   }

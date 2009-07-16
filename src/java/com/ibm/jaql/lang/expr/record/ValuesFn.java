@@ -15,14 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
@@ -40,10 +40,15 @@ public class ValuesFn extends IterExpr
     super(exprs);
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
   @Override
-  public Schema getSchema()
+  public Bool3 isNull()
   {
-    return SchemaFactory.arraySchema();
+    return Bool3.FALSE;
   }
 
   /*
@@ -51,13 +56,26 @@ public class ValuesFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonRecord rec = (JsonRecord) exprs[0].eval(context);
+    final JRecord rec = (JRecord) exprs[0].eval(context).get();
     if (rec == null)
     {
-      return JsonIterator.EMPTY; // TODO: should this return null? If so, then not the same as fields($rec)[*][1]
+      return Iter.empty; // TODO: should this return null? If so, then not the same as fields($rec)[*][1]
     }
-    return rec.valueIter(); 
+    return new Iter() {
+      int i = 0;
+
+      public Item next() throws Exception
+      {
+        if (i < rec.arity())
+        {
+          Item item = rec.getValue(i);
+          i++;
+          return item;
+        }
+        return null;
+      }
+    };
   }
 }

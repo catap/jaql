@@ -21,13 +21,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Map;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -165,13 +163,13 @@ public abstract class Expr
     }
   }
 
-  /** Evaluates this expression and return the result as a value. 
+  /** Evaluates this expression and return the result as an Item. 
    * 
    * @param context
    * @return
    * @throws Exception
    */
-  public abstract JsonValue eval(Context context) throws Exception;
+  public abstract Item eval(Context context) throws Exception;
 
   //  public void write(Context context, TableWriter writer) throws Exception
   //  {
@@ -187,14 +185,15 @@ public abstract class Expr
    * @return
    * @throws Exception
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
-    JsonValue value = eval(context);
-    if (value == null)
+    Item item = eval(context);
+    JValue w = item.get();
+    if (w == null)
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
-    JsonArray array = (JsonArray)value; // intentional cast error is possible
+    JArray array = (JArray) w; // intentional cast error is possible
     return array.iter();
   }
 
@@ -217,82 +216,57 @@ public abstract class Expr
     //    }
   }
 
-  /** Checks whether this expression satisfies the given property. If the property has not been
-   * defined for this expression, returns <code>Bool3.UNKNOWN</code>. 
+  /**
+   * true iff this expression is compile-time provably constant. ie, not:
+   * nondeterministic (eg, random number generator) side-effect producing (eg,
+   * write to file, send mail) uses a variable that is not defined in this scope
    * 
-   * @param prop the property to check for
-   * @param deep check the entire tree (<code>true</code>) or just the root (<code>false</code>)? 
+   * @return
    */
-  public Bool3 getProperty(ExprProperty prop, boolean deep)
+  public boolean isConst() 
   {
-    Map<ExprProperty, Boolean> props = getProperties();
-    
-    // did it this way to allow easy change of default behavior
-    if (deep)
+    for (Expr e : exprs)
     {
-      return getProperty(props, prop, exprs);
-    }
-    else
-    {
-      return getProperty(props, prop, null);
-    }
-  }
-
-  /** Checks whether this expression satisfies the given property. If the property has not been
-   * defined for this expression, returns <code>Bool3.UNKNOWN</code>. 
-   * 
-   * @param prop the property to check for
-   * @param children check this expression and the specified children (can be null) 
-   */
-  protected final Bool3 getProperty(Map<ExprProperty, Boolean> props, ExprProperty prop, Expr[] children)
-  {     
-    Boolean shallowResult = props.get(prop);
-    Bool3 result = shallowResult == null ? Bool3.UNKNOWN : Bool3.valueOf(shallowResult);
-
-    // shallow?
-    if (children == null) return result;
-
-    // deep evaluation
-    switch (prop.getDistribution())
-    {
-    case ALL_DESCENDANTS:
-      for(int i=0; result!=Bool3.FALSE && i<exprs.length; i++)
+      if (!e.isConst())
       {
-        result = result.and(exprs[i].getProperty(prop, true));
-       }
-      return result;
-    case AT_LEAST_ONE_DESCENDANT:
-      for(int i=0; result!=Bool3.TRUE && i<exprs.length; i++)
-      {
-        result = result.or(exprs[i].getProperty(prop, true));
+        return false; // cache this?
       }
-      return result;
-    case SHALLOW:
-      return result;
     }
-    throw new IllegalStateException(); // should never happen
+    return true;
   }
-  
-  /** Returns the properties of this expression. The default implementation returns
-   * {@Link ExprProperty#createUnsafeDefaults()} and must be overridden by subclasses that 
-   * deviate from those defaults. */
-  public Map<ExprProperty, Boolean> getProperties()
+
+  /**
+   * true iff this expression is compile-time provably always null.
+   * 
+   * @return
+   */
+  public Bool3 isNull()
   {
-    // TODO: caching?
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-    return result;
+    return Bool3.UNKNOWN;
   }
-  
-  /** Returns true if it is both safe and efficient to compute this expression at compile time. */
-  public final Bool3 isCompileTimeComputable()
+
+  /**
+   * true if this expression is compile-time provably always an array or null
+   * result. (use isNullable() to eliminate null case)
+   * 
+   * @return
+   */
+  public Bool3 isArray()
   {
-    return  getProperty(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true)
-        .and(getProperty(ExprProperty.HAS_CAPTURES, true).not())
-        .and(getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).not())
-        .and(getProperty(ExprProperty.IS_NONDETERMINISTIC, true).not())
-        .and(getProperty(ExprProperty.READS_EXTERNAL_DATA, true).not());
+    return Bool3.UNKNOWN;
   }
-  
+
+  /**
+   * true iff this expression is compile-time provably an empty array or null
+   * (use isNullable() to eliminate null case)
+   * 
+   * @return
+   */
+  public Bool3 isEmpty() // TODO: improve this
+  {
+    return Bool3.UNKNOWN;
+  }
+
   /**
    * true iff this expression is compile-time provably going to be
    * evaluated once per evaluation of its parent. If the parent is 
@@ -307,6 +281,10 @@ public abstract class Expr
   }
 
   /**
+   * true iff this expression is compile-time provably going to be
+   * evaluated once per evaluation of its parent. If the parent is 
+   * evaluated multiple times, this expression might still be 
+   * evaluated multiple times.
    * 
    * @return
    */
@@ -315,21 +293,6 @@ public abstract class Expr
     return Bool3.UNKNOWN; // TODO: we could (should?) make the default be true because very few operators reval their children
   }
 
-  /** Returns the schema of this expression. The result is determined at compile-time, i.e., no
-   * subexpressions are evaluated (though their <code>getSchema()</code> methods might be called). */
-  public Schema getSchema()
-  {
-    return SchemaFactory.anyOrNullSchema();
-  }
-  
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  public boolean isMappable(int i)
-  {
-    return false;
-  }
-  
   /**
    * @return
    */

@@ -27,8 +27,6 @@ import java.nio.ByteBuffer;
  * Write-once DataOutput backed by a {@link PagedFile}. A single page file can serve multiple 
  * spill files. Spill files are intended to be used as temporary files; reading the spill 
  * file requires the SpillFile instance that created it. 
- * 
- * This class is not thread-safe.
  */
 public class SpillFile implements DataOutput
 {
@@ -91,7 +89,7 @@ public class SpillFile implements DataOutput
 
   public void clear() throws IOException
   {
-    fileVersion = file.freePages(fileVersion, firstPage, buffer);
+    fileVersion = file.freePageList(fileVersion, firstPage, buffer);
     frozen = false;
     firstPage = currentPage = -1;
     initPage(-1);
@@ -170,14 +168,7 @@ public class SpillFile implements DataOutput
     {
       rewind();
     }
-    
-    private SFDataInput(SFDataInput other) {
-      rpage = other.rpage;
-      rpos = other.rpos;
-      limit = other.limit;
-      rversion = other.rversion;
-    }
-    
+
     /** Reset the input to the beginning of the file.
      * @throws IOException
      */
@@ -437,10 +428,6 @@ public class SpillFile implements DataOutput
       return s;
     }
 
-    /** Make a copy of this input stream. Can be used to remember positions in the input file. */ 
-    public SFDataInput getCopy() {
-      return new SFDataInput(this);
-    }
   }
 
   /**

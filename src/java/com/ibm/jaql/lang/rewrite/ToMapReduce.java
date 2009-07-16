@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.rewrite;
 
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.DeemptyFn;
@@ -27,6 +28,7 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.FilterExpr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
@@ -134,6 +136,131 @@ public class ToMapReduce extends Rewrite
     }
   }
 
+  //  private StReadExpr injectTemp(Expr expr)
+  //  {
+  //    Expr parent = expr.parent;
+  //    int i = expr.getChildSlot();
+  //    StReadExpr reader = new StReadExpr(new StWriteExpr(new HadoopTempExpr(), expr));
+  //    parent.setChild(i, reader);
+  //    return reader;
+  //  }
+  //
+  //  private StReadExpr forceMapInput(Expr expr)
+  //  {
+  //    StReadExpr reader;
+  //    if( expr instanceof StReadExpr )
+  //    {
+  //      reader = (StReadExpr) expr;
+  //    }
+  //    else
+  //    {
+  //      reader = injectTemp(expr);
+  //    }
+  //    if( ! reader.isMapReducible() )
+  //    {
+  //      throw new RuntimeException("NYI //FIXME: add moveToCluster() ");
+  //    }
+  //    return reader;
+  //  }
+  //
+  //  private StWriteExpr forceMapOutput(Expr expr)
+  //  {
+  //    StWriteExpr writer;
+  //    if( expr instanceof StWriteExpr )
+  //    {
+  //      writer = (StWriteExpr) expr;
+  //    }
+  //    else
+  //    {
+  //      StReadExpr reader = injectTemp(expr);
+  //      writer = (StWriteExpr) reader.exprs[0];
+  //    }
+  //    if( ! writer.isMapReducible() )
+  //    {
+  //      throw new RuntimeException("NYI //FIXME: add moveOffCluster() ");
+  //    }
+  //    return writer;
+  //  }
+
+  /**
+   * @param combineSeg
+   * @throws Exception
+   */
+//  private void combineToMapReduce(Segment combineSeg) throws Exception
+//  {
+ // TODO: make work for AggregateExpr, any Aggregate fn, not old combine syntax
+//    CombineExpr combine = (CombineExpr) combineSeg.primaryExpr;
+//
+//    Expr topParent = combine.parent();
+//    int topSlot = combine.getChildSlot();
+//
+//    Segment mapSeg = combineSeg.firstChild;
+//    assert mapSeg.type == Segment.Type.INLINE_MAP;
+//    ReadFn reader = (ReadFn) mapSeg.primaryExpr;
+//    assert reader.isMapReducible();
+//
+//    // FIXME: rewrite function should not have any parameters
+//    Expr input = reader.rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS)); // TODO: change name (not rewriting, but does steal inputs)
+//    Expr output = new HadoopTempExpr();
+//
+//    // make the init expr:
+//    //   fn($ci) {  for $fj in <input>([$ci]) collect [ [null, $fj] ] }
+//    Var mapVar = engine.env.makeVar("$ci");
+//    Expr expr = new ArrayExpr(new VarExpr(mapVar));
+//    reader.replaceInParent(expr);
+//    BindingExpr binding = combine.binding();
+//    Expr combineInput = binding.inExpr(); // combine input
+//    Var forVar = engine.env.makeVar("$fj");
+//    Expr keyValPair = new ArrayExpr(new ConstExpr(Item.nil),
+//        new VarExpr(forVar));
+//    Expr forExpr = new ForExpr(forVar, combineInput, new ArrayExpr(keyValPair));
+//    DefineFunctionExpr initFn = new DefineFunctionExpr(null, new Var[]{mapVar},
+//        forExpr);
+//
+//    // make the combine fn:
+//    //   fn($nil, $a, $b) { <usingExpr>($a,$b) }
+//    Var keyVar = engine.env.makeVar("$nil");
+//    DefineFunctionExpr combineFn = new DefineFunctionExpr(null, new Var[]{
+//        keyVar, binding.var, binding.var2}, combine.usingExpr());
+//
+//    // make the final fn:
+//    //   fn($nil, $val) { [$val] }
+//    keyVar = engine.env.makeVar("$nil");
+//    Var valVar = engine.env.makeVar("$val");
+//    // TODO: could push upper exprs into this reduce (it is serial anyway)
+//    DefineFunctionExpr finalFn = new DefineFunctionExpr(null, new Var[]{keyVar,
+//        valVar}, new ArrayExpr(new VarExpr(valVar)));
+//
+//    RecordExpr args = new RecordExpr(new Expr[]{
+//        new NameValueBinding("input", input),
+//        new NameValueBinding("output", output),
+//        new NameValueBinding("init", initFn),
+//        new NameValueBinding("combine", combineFn),
+//        new NameValueBinding("final", finalFn)});
+//
+//    // TODO: set num reducers to one!
+//    MRAggregate mr = new MRAggregate(args);
+//    expr = new ReadFn(mr);
+//    expr = new IndexExpr(expr, new ConstExpr(JLong.ZERO_ITEM)); // TODO: add firstExpr?
+//    topParent.setChild(topSlot, expr);
+//
+//    combineSeg.root = expr;
+//    combineSeg.type = Segment.Type.SEQUENTIAL;
+//    combineSeg.firstChild = new Segment(Segment.Type.MAPREDUCE,
+//        combineSeg.firstChild);
+//    combineSeg.firstChild.root = combineSeg.firstChild.primaryExpr = mr;
+//
+//    modified = true;
+//  }
+
+  /**
+   * 
+   */
+  private static class PerCombineState
+  {
+    Expr init;
+    Expr using;
+  }
 
   /**
    * 
@@ -141,11 +268,118 @@ public class ToMapReduce extends Rewrite
   private static class PerInputState
   {
     Var                        mapIn;
+    Var                        combineKey;
+    Var                        combineIn1;
+    Var                        combineIn2;
+    ArrayList<PerCombineState> combineStates = new ArrayList<PerCombineState>();
+    // Expr                       mapValueExpr;
 
     public PerInputState(Env env, int i)
     {
       this.mapIn = env.makeVar("$mapIn" + i);;
+      this.combineKey = env.makeVar("$ckey" + i);
+      this.combineIn1 = env.makeVar("$ca" + i);
+      this.combineIn2 = env.makeVar("$cb" + i);
     }
+  }
+
+  /**
+   * @param reduceSeg
+   * @param group
+   * @param inputStates
+   * @param combineFns
+   */
+  private void buildCombiners(Segment reduceSeg, GroupByExpr group,
+      PerInputState[] inputStates, Expr[] combineFns)
+  {
+    
+    
+    
+ // TODO: make work for AggregateExpr, any Aggregate fn, not old combine syntax
+//    int n = group.numInputs();
+//
+//    assert reduceSeg.type == Segment.Type.FINAL_GROUP;
+//    for (Segment combineSeg = reduceSeg.firstChild; combineSeg != null; combineSeg = combineSeg.nextSibling)
+//    {
+//      // FINAL_GROUP with one or more COMBINE_GROUP children, each with exactly one MAP_GROUP.
+//      assert combineSeg.type == Segment.Type.COMBINE_GROUP;
+//      Segment mapSeg = combineSeg.firstChild;
+//      assert mapSeg.nextSibling == null; // COMBINE_GROUP has exactly one chld
+//      assert mapSeg.type == Segment.Type.MAP_GROUP;
+//      assert mapSeg.firstChild == null; // MAP_GROUP has no children
+//      CombineExpr combine = (CombineExpr) combineSeg.root;
+//      VarExpr intoVarExpr = (VarExpr) mapSeg.primaryExpr;
+//      Var intoVar = intoVarExpr.var();
+//      int i = group.getIntoIndex(intoVar);
+//      PerInputState inputState = inputStates[i];
+//      int j = inputState.combineStates.size();
+//      PerCombineState combineState = new PerCombineState();
+//      inputState.combineStates.add(combineState);
+//
+//      // Copy the combine expression and its entire input tree for the map function.
+//      // Replace the INTO var by [ $groupIn ].
+//      BindingExpr inBinding = group.inBinding(i);
+//      Expr expr = cloneExpr(combine);
+//      replaceVarUses(intoVar, expr, new ArrayExpr(new VarExpr(inBinding.var)));
+//      combineState.init = expr;
+//
+//      // Replace the combine expression in the final expression with $into[j]
+//      expr = new VarExpr(inBinding.var2);
+//      expr = new IndexExpr(expr, j);
+//      combine.replaceInParent(expr);
+//
+//      // Make the combiner for this combine part:
+//      //    if isNull($a[j]) then $b[j] 
+//      //    else if isNull($b[j]) then $a[j]
+//      //    else <using>($a[j],$b[j]) else null
+//      expr = combine.usingExpr();
+//      replaceVarUses(combine.binding().var, expr, new IndexExpr(new VarExpr(
+//          inputState.combineIn1), j));
+//      replaceVarUses(combine.binding().var2, expr, new IndexExpr(new VarExpr(
+//          inputState.combineIn2), j));
+//      expr = new IfExpr(new IsnullExpr(new IndexExpr(new VarExpr(
+//          inputState.combineIn2), j)), new IndexExpr(new VarExpr(
+//          inputState.combineIn1), j), expr);
+//      expr = new IfExpr(new IsnullExpr(new IndexExpr(new VarExpr(
+//          inputState.combineIn1), j)), new IndexExpr(new VarExpr(
+//          inputState.combineIn2), j), expr);
+//      combineState.using = expr;
+//    }
+//
+//    for (int i = 0; i < n; i++)
+//    {
+//      PerInputState inputState = inputStates[i];
+//      int m = inputState.combineStates.size();
+//      Expr usingExpr;
+//      // TODO: optimize out unnecessary arrays?  Need to fix IndexExpr references in the reducer too... 
+//      //      if( m == 0 )
+//      //      {
+//      //        inputState.mapValueExpr = new ConstExpr(Item.nil);
+//      //        usingExpr = new ConstExpr(Item.nil);
+//      //      }
+//      //      else if( m == 1 )
+//      //      {
+//      //        PerCombineState combineState = inputState.combineStates.get(0);
+//      //        inputState.mapValueExpr = combineState.init;
+//      //        usingExpr = combineState.using;
+//      //      }
+//      //      else
+//      {
+//        Expr[] inits = new Expr[m];
+//        Expr[] usings = new Expr[m];
+//        for (int j = 0; j < m; j++)
+//        {
+//          PerCombineState combineState = inputState.combineStates.get(j);
+//          inits[j] = combineState.init;
+//          usings[j] = combineState.using;
+//        }
+//        inputState.mapValueExpr = new ArrayExpr(inits);
+//        usingExpr = new ArrayExpr(usings);
+//      }
+//      combineFns[i] = new DefineFunctionExpr(null, new Var[]{
+//          inputState.combineKey, inputState.combineIn1, inputState.combineIn2},
+//          usingExpr);
+//    }
   }
 
   private void groupToMapReduce(Segment groupSeg)
@@ -233,7 +467,7 @@ public class ToMapReduce extends Rewrite
     }
     expr.replaceVar(group.byVar(), keyVar);
     expr.replaceVar(group.inBinding().var, valVar);
-    group.replaceInParent(expr);
+    Expr finalFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, expr);
 
     Expr output;
     Expr lastExpr = groupSeg.root;
@@ -249,12 +483,7 @@ public class ToMapReduce extends Rewrite
     else
     {
       output = new HadoopTempExpr();
-      if( lastExpr == group )
-      {
-        lastExpr = expr;
-      }
     }
-    Expr finalFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, lastExpr);
 
     Expr fnArgs[] = new Expr[] {
         new NameValueBinding("input", input),
@@ -341,6 +570,7 @@ public class ToMapReduce extends Rewrite
       mapName = "init";
       reduceName = "final";
       combineFns = new Expr[n];
+      buildCombiners(reduceSeg, group, inputStates, combineFns);
     }
 
     // build the map/init functions
@@ -496,7 +726,7 @@ public class ToMapReduce extends Rewrite
     // build key value pair:
     //   for $fv in <lastExpr> collect [[null, $fv]]
     Var forVar = engine.env.makeVar("$fv");
-    expr = new ArrayExpr(new ConstExpr(null), new VarExpr(forVar));
+    expr = new ArrayExpr(new ConstExpr(Item.nil), new VarExpr(forVar));
     expr = new ForExpr(forVar, lastExpr, new ArrayExpr(expr));
 
     Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);
@@ -544,14 +774,11 @@ public class ToMapReduce extends Rewrite
 
     // FIXME: IfExpr, UnnestExpr
 
-    if( expr.isMappable(0) )
+    if( expr instanceof TransformExpr ||
+        expr instanceof FilterExpr ||
+        expr instanceof ForExpr )
     {
-      Expr input = expr.child(0);
-      if( input instanceof BindingExpr )
-      {
-        input = input.child(0);
-      }
-      seg = segment(input);
+      seg = segment(expr.child(0).child(0)); // binding input
       switch (seg.type)
       {
         case SEQUENTIAL :
@@ -559,10 +786,7 @@ public class ToMapReduce extends Rewrite
           // -> the for loop will run sequentially, 
           // -> use the same segment
           // try to parallelize the return
-          for(int i = 1 ; i < expr.numChildren() ; i++)
-          {
-            seg.addChild(segment(expr.child(i)));
-          }
+          seg.addChild(segment(expr.child(1)));
           break;
         case MAP :
         case GROUP :
@@ -614,6 +838,30 @@ public class ToMapReduce extends Rewrite
         seg.mergeSequential();
       }
     }
+ // TODO: make work for AggregateExpr, any Aggregate fn, not old combine syntax
+//    else if (expr instanceof CombineExpr)
+//    {
+//      CombineExpr combine = (CombineExpr) expr;
+//      Segment s = segment(combine.binding().inExpr());
+//      if (s.type == Segment.Type.GROUP || s.type == Segment.Type.COMBINE)
+//      {
+//        s = makeMapSegment(s);
+//      }
+//      if (s.type == Segment.Type.MAP)
+//      {
+//        s.type = Segment.Type.INLINE_MAP;
+//        seg = new Segment(Segment.Type.COMBINE, s);
+//        seg.primaryExpr = combine;
+//      }
+//      else if (s.type == Segment.Type.SEQUENTIAL)
+//      {
+//        seg = s;
+//      }
+//      else
+//      {
+//        seg = new Segment(Segment.Type.SEQUENTIAL, s);
+//      }
+//    }
     else if (expr instanceof ReadFn)
     {
       ReadFn reader = (ReadFn) expr;
@@ -776,22 +1024,25 @@ public class ToMapReduce extends Rewrite
         seg = new Segment(Segment.Type.SEQUENTIAL_GROUP);
       }
     }
-    else if( expr.isMappable(0) )
+    else if (expr instanceof ForExpr ||
+             expr instanceof TransformExpr ||
+             expr instanceof FilterExpr )
     {
       if (segmentReduceIsLocal(group, expr.child(1)))
       {
-        Expr c = expr.child(0);
-        if( c instanceof BindingExpr )
-        {
-          c = c.child(0);
-        }
-        seg = segmentReduceCombine(group, c);
+        seg = segmentReduceCombine(group, expr.child(0).child(0));
       }
       else
       {
         seg = new Segment(Segment.Type.SEQUENTIAL_GROUP);
       }
     }
+ // TODO: make work for AggregateExpr, any Aggregate fn, not old combine syntax
+//    else if (expr instanceof CombineExpr) // chained combined expression - push into map phase
+//    {
+//      CombineExpr combine = (CombineExpr) expr;
+//      seg = segmentReduceCombine(group, combine.binding().inExpr());
+//    }
     else
     {
       if (false && segmentReduceIsLocal(group, expr))

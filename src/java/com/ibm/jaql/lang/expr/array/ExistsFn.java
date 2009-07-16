@@ -15,10 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -57,34 +58,36 @@ public class ExistsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonIterator iter;
+    Iter iter;
     Expr expr = exprs[0];
-    if (expr.getSchema().isArrayOrNull().always())
+    if (expr.isArray().always())
     {
       iter = expr.iter(context);
       if (iter.isNull())
       {
-        return null;
+        return Item.nil;
       }
     }
     else
     {
-      JsonValue w = expr.eval(context);
+      Item item = expr.eval(context);
+      JValue w = item.get();
       if (w == null)
       {
-        return null;
+        return Item.nil;
       }
-      else if (w instanceof JsonArray)
+      else if (w instanceof JArray)
       {
-        iter = ((JsonArray) w).iter();
+        iter = ((JArray) w).iter();
       }
       else
       {
-        return JsonBool.TRUE;
+        return JBool.trueItem;
       }
     }
-    return JsonBool.makeShared(iter.moveNext());
+    Item item = iter.next();
+    return JBool.make(item != null);
   }
 }

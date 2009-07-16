@@ -18,19 +18,14 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JNumber;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-/** e.g., [0] */
+
 public class PathIndex extends PathStep
 {
   /**
@@ -60,15 +55,6 @@ public class PathIndex extends PathStep
 
   /**
    * 
-   * @return
-   */
-  public final Expr indexExpr()
-  {
-    return exprs[0];
-  }
-  
-  /**
-   * 
    */
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
@@ -83,40 +69,19 @@ public class PathIndex extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonArray arr = (JsonArray)input;
+    JArray arr = (JArray)input.get();
     if( arr == null )
     {
-      return null;
+      return Item.nil;
     }
-    JsonNumber index = (JsonNumber)indexExpr().eval(context);
+    JNumber index = (JNumber)exprs[0].eval(context).get();
     if( index == null )
     {
-      return null;
+      return Item.nil;
     }
-    JsonValue value = arr.nth(index.longValueExact());
+    Item value = arr.nth(index.longValueExact());
     return nextStep(context, value);
-  }
-  
-  @Override
-  public PathStepSchema getSchema(Schema inputSchema)
-  {
-    Schema result = null;
-    if (indexExpr() instanceof ConstExpr)
-    {
-      ConstExpr c = (ConstExpr) indexExpr();
-      JsonLong i = new JsonLong(((JsonNumber)c.value).longValueExact());
-      result = inputSchema.element(i);
-      if (result != null && inputSchema.hasElement(i).maybeNot()) 
-      {
-        result = SchemaTransformation.addNullability(result);
-      }
-    }
-    if (result == null) 
-    {
-      result = SchemaFactory.anyOrNullSchema();
-    }
-    return nextStep().getSchema(result);
   }
 }

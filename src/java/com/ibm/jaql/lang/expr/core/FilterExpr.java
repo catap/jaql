@@ -18,10 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -84,12 +82,17 @@ public final class FilterExpr extends IterExpr
     return exprs[1];
   }
 
-  public Schema getSchema()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
+  @Override
+  public Bool3 isNull()
   {
-    Schema inSchema = binding().getSchema();
-    return new ArraySchema(inSchema.elements(), JsonLong.ZERO, inSchema.maxElements());
+    return Bool3.FALSE;
   }
-  
+
   /**
    * 
    */
@@ -101,15 +104,6 @@ public final class FilterExpr extends IterExpr
       return Bool3.TRUE;
     }
     return Bool3.FALSE;
-  }
-
-  /**
-   * This expression can be applied in parallel per partition of child i.
-   */
-  @Override
-  public boolean isMappable(int i)
-  {
-    return i == 0;
   }
 
   /*
@@ -135,28 +129,26 @@ public final class FilterExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr pred = predicate();
-    final JsonIterator inIter = inBinding.iter(context);
+    final Iter inIter = inBinding.iter(context);
 
-    return new JsonIterator() {
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (inIter.moveNext()) {
-            if( JaqlUtil.ebv(pred.eval(context)) )
-            {
-              currentValue = inIter.current();
-              return true;
-            }
-          } 
-          else 
+          Item item = inIter.next();
+          if( item == null )
           {
-            return false;
-          }          
+            return null;
+          }
+          if( JaqlUtil.ebv(pred.eval(context)) )
+          {
+            return item;
+          }
         }
       }
     };

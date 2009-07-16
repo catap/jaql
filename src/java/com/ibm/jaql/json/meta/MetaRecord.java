@@ -18,8 +18,8 @@ package com.ibm.jaql.json.meta;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.HashMap;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 
 /** Common API to access records, i.e., (name, value)-pairs. */
 public abstract class MetaRecord extends MetaValue
@@ -50,12 +50,12 @@ public abstract class MetaRecord extends MetaValue
   /**
    * @return
    */
-  public abstract JsonValue[] makeValues();
+  public abstract Item[] makeItems();
   /**
    * @param name
    * @return
    */
-  public abstract int findField(JsonString name);
+  public abstract int findField(JString name);
   /**
    * @param name
    * @return
@@ -65,13 +65,13 @@ public abstract class MetaRecord extends MetaValue
    * @param fieldId
    * @return
    */
-  public abstract JsonString getName(int fieldId);
+  public abstract JString getName(int fieldId);
   /**
    * @param obj
    * @param fieldId
    * @param result
    */
-  public abstract JsonValue getValue(Object obj, int fieldId, JsonValue result);
+  public abstract void getValue(Object obj, int fieldId, Item result);
   /**
    * @param toValue
    * @param fromValue

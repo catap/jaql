@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.udf;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -32,13 +32,13 @@ public class ScriptBlock extends Expr
 
   public ScriptBlock(String lang, String block)
   {
-    super(new ConstExpr(new JsonString(lang)), new ConstExpr(new JsonString(block)));
+    super(new ConstExpr(new JString(lang)), new ConstExpr(new JString(block)));
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    throw new UnsupportedOperationException("scripting is disabled");
+    throw new RuntimeException("scripting is disabled");
   }
 }
 

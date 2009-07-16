@@ -15,10 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -43,45 +44,44 @@ public class DeemptyFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    final JsonIterator iter = exprs[0].iter(context);
+    final Iter iter = exprs[0].iter(context);
     if (iter.isNull())
     {
-      return JsonIterator.NULL;
+      return Iter.nil;
     }
 
-    return new JsonIterator() {
-      public boolean moveNext() throws Exception
+    return new Iter() {
+      public Item next() throws Exception
       {
         while (true)
         {
-          if (!iter.moveNext()) {
-            return false;
+          Item item = iter.next();
+          if (item == null)
+          {
+            return null;
           }
-          JsonValue w = iter.current();
+          JValue w = item.get();
           if (w != null)
           {
-            if (w instanceof JsonRecord)
+            if (w instanceof JRecord)
             {
-              if (((JsonRecord) w).size() > 0)
+              if (((JRecord) w).arity() > 0)
               {
-                currentValue = w;
-                return true;
+                return item;
               }
             }
-            else if (w instanceof JsonArray)
+            else if (w instanceof JArray)
             {
-              if (!((JsonArray) w).isEmpty())
+              if (!((JArray) w).isEmpty())
               {
-                currentValue = w;
-                return true;
+                return item;
               }
             }
             else
             {
-              currentValue = w;
-              return true;
+              return item;
             }
           }
         }

@@ -15,18 +15,17 @@
  */
 package com.ibm.jaql.io;
 
-import com.ibm.jaql.json.schema.Schema;
-
-/** Input adapters are used for providing JSON views over arbitrary data sources. An adapter 
- * provides an iterator over the values in its underlying data source. */
+/**
+ * An adapter that produce Items
+ */
 public interface InputAdapter extends Adapter
 {
 
-  /** Returns an iterator over the values in the adapter's underlying data sources. */
-  ClosableJsonIterator iter() throws Exception;
+  /**
+   * 
+   * @return ItemReader
+   * @throws Exception
+   */
+  ItemReader getItemReader() throws Exception;
 
-  /** Describes the schema of the entire underlying data source (not just its individual elements). 
-   * This means that the resulting schema should satisfy {@link Schema#isArrayOrNull()}. If nothing
-   * is known, return <code>SchemaFactory.arrayOrNullSchema()</code>. */
-  public Schema getSchema(); 
 }

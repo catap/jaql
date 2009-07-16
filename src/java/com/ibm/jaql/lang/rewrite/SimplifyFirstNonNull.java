@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.nil.FirstNonNullFn;
@@ -52,7 +52,7 @@ public class SimplifyFirstNonNull extends Rewrite
       if (c instanceof ConstExpr)
       {
         ConstExpr ce = (ConstExpr) c;
-        if (ce.value == null)
+        if (ce.value.get() == null)
         {
           modified = true;
           fnn.removeChild(i);
@@ -64,14 +64,14 @@ public class SimplifyFirstNonNull extends Rewrite
     // If we have no arguments, replace firstNonNull with null
     if (last < 0)
     {
-      fnn.replaceInParent(new ConstExpr(null));
+      fnn.replaceInParent(new ConstExpr(Item.nil));
       return true;
     }
 
     // find the first non-nullable child that is not the last child
     for (i = 0; i < last; i++)
     {
-      if (fnn.child(i).getSchema().isNull().never())
+      if (fnn.child(i).isNull().never())
       {
         break;
       }

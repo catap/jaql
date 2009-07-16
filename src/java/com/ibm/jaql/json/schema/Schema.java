@@ -15,175 +15,87 @@
  */
 package com.ibm.jaql.json.schema;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
 
+import com.ibm.jaql.json.type.Item;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonSchema;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonUtil;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.util.Bool3;
-
-/** Superclass for schemata of JSON values. Commonly used schemata can be created using the
- * {@link SchemaFactory} class. Schemata can be modified or combined using the 
- * {@link SchemaTransformation} class. */
+/*******************************************************************************
+ * At the moment, a scheme provides methods that concern schema matching and 
+ * serialization of schema descriptions.
+ * 
+ * 
+ * Data model: ----------- value ::= record | array | atom record ::= { (string:
+ * value)* } array ::= [ (value)* ] atom ::= null | string | number | boolean |
+ * ...
+ * 
+ * Schema language: ---------------- type ::= oneType ('|' oneType)* oneType ::=
+ * anyType | atomType | arrayType | recordType anyType ::= '*' atomType ::= ID //
+ * null | string | number | boolean | ... arrayType ::= [ ( type (',' type)*
+ * (repeat)? )? ] typeList ::= repeat ::= <min,max> // min is integer >= 0, max
+ * is integer >= min or * for unbounded | <count> // == <count,count> recordType
+ * ::= { fieldType* } fieldType ::= name (fieldOpt)? ':' type fieldOpt ::= '*' //
+ * zero or more fields with this prefix have this type | '?' // optional field
+ * with this name and type
+ * 
+ * 
+ ******************************************************************************/
 public abstract class Schema
 {
-  public enum SchemaType
+  protected final static byte UNKNOWN_TYPE = 0;
+  protected final static byte ANY_TYPE     = 1;
+  protected final static byte ATOM_TYPE    = 2;
+  protected final static byte ARRAY_TYPE   = 3;
+  protected final static byte RECORD_TYPE  = 4;
+  protected final static byte OR_TYPE      = 5;
+
+  public Schema               nextSchema;      // used by Array and Or Schemas
+
+  /**
+   * @param item
+   * @return
+   * @throws Exception
+   */
+  public abstract boolean matches(Item item) throws Exception;
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see java.lang.Object#toString()
+   */
+  public abstract String toString();
+
+  /**
+   * @param out
+   * @throws IOException
+   */
+  public abstract void write(DataOutput out) throws IOException;
+
+  /**
+   * @param in
+   * @return
+   * @throws IOException
+   */
+  public static Schema read(DataInput in) throws IOException
   {
-    ANY_NON_NULL, ARRAY, BINARY, BOOLEAN, DATE, DECFLOAT, DOUBLE, GENERIC, LONG, NULL, NUMERIC, 
-    OR, RECORD, STRING
-  }
-  
-  // -- common argument names ---------------------------------------------------------------------
-  
-  public static final JsonString PAR_MIN = new JsonString("min");
-  public static final JsonString PAR_MAX = new JsonString("max");
-  public static final JsonString PAR_MIN_LENGTH = new JsonString("minLength");
-  public static final JsonString PAR_MAX_LENGTH = new JsonString("maxLength");
-  public static final JsonString PAR_VALUE = new JsonString("value");
-
-
-  // -- schema description ------------------------------------------------------------------------
-
-  public abstract SchemaType getSchemaType();
-
-  /** Checks whether this schema represents a null value.
-   *  
-   * Returns <code>Bool3.TRUE</code> if the schema matches null values only. 
-   * Returns <code>Bool3.UNKNOWN</code> if the schema matches null values and other values.
-   * Returns <code>Bool3.FALSE</code> if the schema does not match null values.
-   */
-  public abstract Bool3 isNull();
-
-  /** Checks whether this schema represents a constant value. 
-   *  
-   * Returns <code>true</code> if the schema matches only a single value.  
-   * Returns <code>false</code> if the schema matches more than one value.
-   */
-  public abstract boolean isConstant();
-
-  /** Checks whether this schema represents an array value.
-   *  
-   * Returns <code>Bool3.TRUE</code> if the schema matches array values only. 
-   * Returns <code>Bool3.UNKNOWN</code> if the schema matches array values and other values.
-   * Returns <code>Bool3.FALSE</code> if the schema does not match array values.
-   */
-  public Bool3 isArray()
-  {
-    return isArrayOrNull().and(isNull().not());
-  }
-
-  /** Checks whether this schema represents an array value and/or null.
-   *  
-   * Returns <code>Bool3.TRUE</code> if the schema matches null and/or array values only. 
-   * Returns <code>Bool3.UNKNOWN</code> if the schema matches null and/or array values, and other values.
-   * Returns <code>Bool3.FALSE</code> if the schema matches neither array nor null values.
-   */
-  public abstract Bool3 isArrayOrNull();
-
-  /** Checks whether this schema represents an empty array.
-   *  
-   * Returns <code>Bool3.TRUE</code> if the schema matches empty arrays only. 
-   * Returns <code>Bool3.UNKNOWN</code> if the schema matches empty arrays and other values.
-   * Returns <code>Bool3.FALSE</code> if the schema does not match empty arrays.
-   */
-  public Bool3 isEmptyArray() 
-  {
-    return isEmptyArrayOrNull().and(isNull().not());
-  }
-  
-  /** Checks whether this schema represents an empty array and/or null.
-   *  
-   * Returns <code>Bool3.TRUE</code> if the schema matches null and/or empty arrays only. 
-   * Returns <code>Bool3.UNKNOWN</code> if the schema matches null and/or empty arrays, and other values.
-   * Returns <code>Bool3.FALSE</code> if the schema matches neither empty arrays nor null values.
-   */
-  public abstract Bool3 isEmptyArrayOrNull();
-  
-  
-  // -- schema matching ---------------------------------------------------------------------------
-  
-  /** Checks whether this schema matches the specified value or throws an exception if an
-   * error occurs */
-  public abstract boolean matches(JsonValue value) throws Exception;
-  
-  /** Checks whether this schema matches the specified value or returns false if an error 
-   * occurs. */
-  public boolean matchesUnsafe(JsonValue value) 
-  {
-    try {
-      return matches(value);
-    }
-    catch (Exception e)
+    byte b = in.readByte();
+    switch (b)
     {
-     return false;    
-    }
-  }
-  
-  
-  // -- schema combination ------------------------------------------------------------------------
-  
-  /** Merges this schema with the given schema or return <code>null</code> if such a merge is
-   * not possible / desired / implemented. Most schemes will only accept arguments of their own
-   * type.  
-   */
-  protected abstract Schema merge(Schema other);
-
-  
-  
-  // -- introspection -----------------------------------------------------------------------------
-
-  /** Returns the schema of the elements of this schema or null if this schema does not have
-   * elements. Examples: (1) common schema of all elements of an array, (2) common schema
-   * of all values in a record. */
-  public Schema elements()
-  {
-    return null;
-  }
-
-  /** Checks whether this schema has the specified element. Examples: (1) index of array, 
-   * (2) field name of record */ 
-  public Bool3 hasElement(JsonValue which)
-  {
-    return Bool3.FALSE; // unsafe default!
-  }
-  
-  /** Returns the schema of the specified element of this schema or null if this schema does not 
-   * have elements. Examples: (1) schema for index of array, (2) schema for field of record */
-  public Schema element(JsonValue which)
-  {
-    return null;
-  }
-
-  /** Returns the minimum number of elements of this schema or <code>null</code> if no minimum
-   * can be determined. */
-  public JsonLong minElements()
-  {
-    return null;
-  }
-
-  /** Returns the maximum number of elements of this schema or <code>null</code> if no maximum
-   * can be determined. */
-  public JsonLong maxElements()
-  {
-    return null; 
-  }
-
-  
-  // -- printing ----------------------------------------------------------------------------------
-  
-  public String toString()
-  {
-    JsonSchema s = new JsonSchema(this);
-    try
-    {
-      return JsonUtil.printToString(s);
-    } catch (IOException e)
-    {
-      throw new UndeclaredThrowableException(e);
+      case UNKNOWN_TYPE :
+        return null;
+      case ANY_TYPE :
+        return new SchemaAny();
+      case ATOM_TYPE :
+        return new SchemaAtom(in);
+      case ARRAY_TYPE :
+        return new SchemaArray(in);
+      case RECORD_TYPE :
+        return new SchemaRecord(in);
+      case OR_TYPE :
+        return new SchemaOr(in);
+      default :
+        throw new IOException("invalid schema type: " + b);
     }
   }
 }

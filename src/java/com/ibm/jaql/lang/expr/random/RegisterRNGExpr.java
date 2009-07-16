@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.random;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -42,10 +42,10 @@ public class RegisterRNGExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue key = exprs[0].eval(context);
-    JaqlFunction seed = (JaqlFunction) exprs[1].eval(context);
+    Item key = exprs[0].eval(context);
+    JFunction seed = (JFunction) exprs[1].eval(context).get();
 
     JaqlUtil.getRNGStore().register(key, seed);
 

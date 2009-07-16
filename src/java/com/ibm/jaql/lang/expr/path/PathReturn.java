@@ -18,14 +18,11 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.util.Bool3;
 
-/** End marker for list of path steps */
 public class PathReturn extends PathStep
 {
   /**
@@ -76,16 +73,8 @@ public class PathReturn extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     return input;
-  }
-  
-  // -- schema ------------------------------------------------------------------------------------
-  
-  @Override
-  public PathStepSchema getSchema(Schema inputSchema)
-  {
-    return new PathStepSchema(inputSchema, Bool3.TRUE);
   }
 }

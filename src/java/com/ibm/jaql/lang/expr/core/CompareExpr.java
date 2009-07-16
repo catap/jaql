@@ -18,11 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonType;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -72,12 +69,6 @@ public class CompareExpr extends Expr
   {
     return new CompareExpr(op, cloneChildren(varMap));
   }
-  
-  @Override
-  public Schema getSchema()
-  {
-    return SchemaFactory.booleanOrNullSchema();
-  }
 
   /*
    * (non-Javadoc)
@@ -102,29 +93,29 @@ public class CompareExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonValue value1 = exprs[0].eval(context);
-    if (value1 == null)
+    Item item1 = exprs[0].eval(context);
+    if (item1.isNull())
     {
-      return null;
+      return Item.nil;
     }
-    JsonValue value2 = exprs[1].eval(context);
-    if (value2 == null)
+    Item item2 = exprs[1].eval(context);
+    if (item2.isNull())
     {
-      return null;
+      return Item.nil;
     }
-    int c = JsonType.typeCompare(value1, value2);
+    int c = Item.typeCompare(item1, item2);
     if (c != 0)
     {
-      return null;
+      return Item.nil;
     }
 
     // FIXME: arrays are reporting true/false when the should return null, eg: ['5'] < [5];
     boolean b;
-    c = value1.compareTo(value2);
+    c = item1.compareTo(item2);
 
-    if (value1.getEncoding().getType() == JsonType.RECORD)
+    if (item1.getType() == Item.Type.RECORD)
     {
       // FIXME: record inside arrays are still compared, also need to fix sort
       b = (c == 0);
@@ -141,7 +132,7 @@ public class CompareExpr extends Expr
           // not( null or a = b ) => a=b ? false : null;
           if (!b)
           {
-            return null;
+            return Item.nil;
           }
           b = false;
           break;
@@ -150,7 +141,7 @@ public class CompareExpr extends Expr
           // (null or a = b) => a=b ? true : null;
           if (!b)
           {
-            return null;
+            return Item.nil;
           }
           break;
         default :
@@ -183,6 +174,6 @@ public class CompareExpr extends Expr
           throw new RuntimeException("should not get here!");
       }
     }
-    return JsonBool.makeShared(b);
+    return JBool.make(b);
   }
 }

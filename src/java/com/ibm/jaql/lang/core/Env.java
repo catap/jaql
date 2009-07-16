@@ -18,9 +18,8 @@ package com.ibm.jaql.lang.core;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -99,20 +98,7 @@ public class Env
     scope(var);
     return var;
   }
-
-  /** Creates a new variable with the specified name and schema and puts it into the local scope.
-   * Previous definitions of variables of the specified name are hidden but not overwritten.
-   * 
-   * @param varName
-   * @return
-   */
-  public Var scope(String varName, Schema varSchema)
-  {
-    Var var = new Var(varName, varSchema);
-    scope(var);
-    return var;
-  }
-
+  
   /** Returns the global environment. Must not be called from the instance of
    * Env that represents the global environment.
    * 
@@ -135,7 +121,7 @@ public class Env
    * @param varName
    * @return
    */
-  public Var scopeGlobal(String varName, Schema varSchema)
+  public Var scopeGlobal(String varName)
   {
     if (globalEnv != null)
     {
@@ -147,15 +133,10 @@ public class Env
     {
       unscope(var); // TODO: varName might still be on the globals scope... 
     }
-    var = scope(varName, varSchema);
+    var = scope(varName);
     return var;
   }
 
-  public Var scopeGlobal(String varName)
-  {
-    return scopeGlobal(varName, SchemaFactory.anyOrNullSchema());
-  }
-  
   /** Removes the most recent definition of the specified variable from this scope. 
    * The most recent but one definition of the specified variable, if existent, 
    * becomes visible.
@@ -212,17 +193,12 @@ public class Env
    */
   public Var makeVar(String name) // FIXME: replace other scope()/unscope calls with this
   {
-    return makeVar(name, SchemaFactory.anyOrNullSchema());
-  }
-
-  public Var makeVar(String name, Schema schema) // FIXME: replace other scope()/unscope calls with this
-  {
     assert name.charAt(0) == '$';
-    Var var = scope(name, schema);
+    Var var = scope(name);
     unscope(var);
     return var;
   }
-  
+
   /**
    * @param root
    * @return
@@ -231,7 +207,7 @@ public class Env
   {
     HashMap<Var, Var> globalToLocal = new HashMap<Var, Var>();
     ArrayList<Expr> bindings = new ArrayList<Expr>();
-    VarMap varMap = new VarMap();
+    VarMap varMap = new VarMap(this);
     PostOrderExprWalker walker = new PostOrderExprWalker(root);
     Expr expr;
     while ((expr = walker.next()) != null)
@@ -248,12 +224,11 @@ public class Env
             localVar = makeVar(var.name);
             globalToLocal.put(var, localVar);
             Expr val;
-// TODO: make global context and import from there.
-//            if (var.value != null)
-//            {
-//              val = new ConstExpr(var.value);
-//            }
-//            else
+            if (var.value != null)
+            {
+              val = new ConstExpr(var.value);
+            }
+            else
             {
               varMap.clear();
               val = var.expr.clone(varMap);
@@ -274,18 +249,11 @@ public class Env
     return root;
   }
 
-  private VarMap tempVarMap = new VarMap();
+  private VarMap tempVarMap = new VarMap(this);
   public VarMap tempVarMap()
   {
     tempVarMap.clear();
     return tempVarMap;
   }
 
-  /** Preliminary method. Used to obtain a context at compile time. */
-  private static Context compileTimeContext = new Context();
-  public static Context getCompileTimeContext()
-  {
-    // FIXME: this is just a quick hack to support compile time compilation
-    return compileTimeContext;
-  }
 }

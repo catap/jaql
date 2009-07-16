@@ -15,24 +15,24 @@
  */
 package com.ibm.jaql.lang.expr.random;
 
-import java.util.Map;
 import java.util.Random;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JNumber;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
  * 
  */
-@JaqlFn(fnName = "randomLong", minArgs = 0, maxArgs = 1)
+@JaqlFn(fnName = "randomLong", minArgs = 1, maxArgs = 1)
 public class RandomLongFn extends Expr
 {
   private Random rng;
-  private JsonLong  longType = new JsonLong();
+  private JLong  longType = new JLong();
+  private Item   longItem = new Item(longType);
 
   /**
    * long randomLong(number seed)
@@ -52,12 +52,15 @@ public class RandomLongFn extends Expr
     super(new Expr[]{seed});
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
   @Override
-  public Map<ExprProperty, Boolean> getProperties()
+  public boolean isConst()
   {
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-    result.put(ExprProperty.IS_NONDETERMINISTIC, true);
-    return result;
+    return false;
   }
 
   /*
@@ -65,23 +68,16 @@ public class RandomLongFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonLong eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     // FIXME: This class does not work in recursion...
     if (rng == null)
     {
-      if( exprs.length == 0 )
-      {
-        rng = new Random();
-      }
-      else
-      {
-        JsonNumeric seedItem = (JsonNumeric) exprs[0].eval(context);
-        long seed = seedItem.longValue();
-        rng = new Random(seed);
-      }
+      JNumber seedItem = (JNumber) (exprs[0].eval(context).get());
+      long seed = seedItem.longValue();
+      rng = new Random(seed);
     }
-    longType.set(rng.nextLong() & 0x7FFFFFFFFFFFFFFFL);
-    return longType;
+    longType.value = rng.nextLong() & 0x7FFFFFFFFFFFFFFFL;
+    return longItem;
   }
 }

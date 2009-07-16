@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -25,7 +25,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "count", minArgs = 1, maxArgs = 1)
+@JaqlFn(fnName = "count", minArgs = 0, maxArgs = 1)
 public final class CountAgg extends AlgebraicAggregate
 {
   private long count;
@@ -47,17 +47,17 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonIterator iter = exprs.length == 0 ? JsonIterator.EMPTY : exprs[0].iter(context);
+    Iter iter = exprs.length == 0 ? Iter.empty : exprs[0].iter(context);
     count = 0;
 
-    while( iter.moveNext() )
+    while( iter.next() != null )
     {
       count++;
     }
 
-    return new JsonLong(count);
+    return new Item(new JLong(count));
   }
 
   @Override
@@ -67,27 +67,27 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void addInitial(Item item) throws Exception
   {
     count++;
   }
 
   @Override
-  public JsonValue getPartial() throws Exception
+  public Item getPartial() throws Exception
   {
-    return new JsonLong(count);
+    return new Item(new JLong(count));
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void addPartial(Item item) throws Exception
   {
-    JsonLong n = (JsonLong)value;
-    count += n.get();
+    JLong n = (JLong)item.get();
+    count += n.value;
   }
 
   @Override
-  public JsonValue getFinal() throws Exception
+  public Item getFinal() throws Exception
   {
-    return new JsonLong(count);
+    return new Item(new JLong(count));
   }
 }

@@ -19,11 +19,11 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * Run a list of pipes, perserving order as required.  Return the last pipe.
@@ -58,20 +58,38 @@ public class DoExpr extends Expr
   {
     super(exprs);
   }
-  
-  /**
-   * @return The Expr that returns a value to the caller.
-   */
-  public Expr returnExpr()
+
+  @Override
+  public Bool3 isArray()
   {
-    return exprs[exprs.length-1];
+    return exprs[exprs.length-1].isArray();
   }
 
-  public Schema getSchema()
+  @Override
+  public boolean isConst()
   {
-    return exprs[exprs.length-1].getSchema();
+    for(Expr e: exprs)
+    {
+      if( ! e.isConst() )
+      {
+        return false;
+      }
+    }
+    return true;
   }
-  
+
+  @Override
+  public Bool3 isEmpty()
+  {
+    return exprs[exprs.length-1].isEmpty();
+  }
+
+  @Override
+  public Bool3 isNull()
+  {
+    return exprs[exprs.length-1].isNull();
+  }
+
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
@@ -95,7 +113,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)
@@ -107,7 +125,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)

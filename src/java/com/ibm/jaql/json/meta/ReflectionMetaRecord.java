@@ -25,8 +25,8 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 
 /** MetaRecord in which the (name, value)-pairs correspond to the public variables and 
  * public getter/setter methods (of form T getX() and setX(T), where X is the name and T
@@ -142,15 +142,15 @@ public class ReflectionMetaRecord extends MetaRecord
    * @see com.ibm.jaql.json.meta.MetaRecord#makeItems()
    */
   @Override
-  public JsonValue[] makeValues()
+  public Item[] makeItems()
   {
     int n = arity();
-    JsonValue[] values = new JsonValue[n];
+    Item[] items = new Item[n];
     for (int i = 0; i < n; i++)
     {
-      values[i] = accessors[i].makeValue();
+      items[i] = accessors[i].makeItem();
     }
-    return values;
+    return items;
   }
 
   /*
@@ -159,7 +159,7 @@ public class ReflectionMetaRecord extends MetaRecord
    * @see com.ibm.jaql.json.meta.MetaRecord#findField(com.ibm.jaql.json.type.JString)
    */
   @Override
-  public int findField(JsonString name)
+  public int findField(JString name)
   {
     for (int i = 0; i < accessors.length; i++) // TODO: take advantage of accessors sorted by name
     {
@@ -195,7 +195,7 @@ public class ReflectionMetaRecord extends MetaRecord
    * @see com.ibm.jaql.json.meta.MetaRecord#getName(int)
    */
   @Override
-  public JsonString getName(int fieldId)
+  public JString getName(int fieldId)
   {
     return accessors[fieldId].getName();
   }
@@ -207,12 +207,12 @@ public class ReflectionMetaRecord extends MetaRecord
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public JsonValue getValue(Object obj, int fieldId, JsonValue target)
+  public void getValue(Object obj, int fieldId, Item result)
   {
     try
     {
       MetaAccessor ma = accessors[fieldId];
-      return ma.get(obj, target);
+      ma.get(obj, result);
     }
     catch (IllegalArgumentException e)
     {

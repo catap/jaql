@@ -15,15 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 
 /**
@@ -41,9 +40,9 @@ public class ArrayToRecordFn extends Expr
   }
 
   @Override
-  public Schema getSchema()
+  public Bool3 isArray()
   {
-    return SchemaFactory.recordSchema();
+    return Bool3.FALSE;
   }
 
   /*
@@ -51,15 +50,19 @@ public class ArrayToRecordFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    final JsonIterator names  = exprs[0].iter(context);
-    final JsonIterator values = exprs[1].iter(context);
-    BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: memory
-    while( names.moveNext() && values.moveNext() )
+    final Iter names  = exprs[0].iter(context);
+    final Iter values = exprs[1].iter(context);
+    Item n,v;
+    MemoryJRecord rec = new MemoryJRecord(); // TODO: memory
+    Item result = new Item(rec); // TODO: memory
+    while( (n = names.next()) != null && 
+           (v = values.next()) != null )
     {
-      rec.add((JsonString)names.current(), values.current());
+      JString s = (JString)n.get();
+      rec.add(s,v);
     }
-    return rec;
+    return result;
   }
 }

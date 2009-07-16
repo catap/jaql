@@ -17,14 +17,13 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
-import java.util.Map;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.agg.PushAggExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -132,20 +131,6 @@ public class BindingExpr extends Expr
     this(type, var, var2, false, new Expr[]{expr0, expr1});
   }
 
-  public Bool3 getProperty(ExprProperty prop, boolean deep)
-  {
-    Map<ExprProperty, Boolean> props = getProperties();
-    if (deep)
-    {
-      return getProperty(props, prop, new Expr[] { exprs[0] });
-    }
-    else
-    {
-      return getProperty(props, prop, null);
-    }    
-  }
-  
-  
   /**
    * 
    */
@@ -184,44 +169,63 @@ public class BindingExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.setEval(exprs[0], context); // TODO: set var.usage
-    return null;
+    Item item = exprs[0].eval(context);
+    var.set(item);
+    return item;
   }
 
-  /**
-   * Returns iter that returns the input plus a side-effect of setting the variable
-   * to each element. 
-   */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
-    var.undefine();
-    final JsonIterator iter = exprs[0].iter(context);
-    return new JsonIterator()
+    var.set(Item.nil);
+    final Iter iter = exprs[0].iter(context);
+    return new Iter()
     {
       @Override
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        if (iter.moveNext()) {
-          currentValue = iter.current();
-          var.setValue(currentValue);
-          return true;
-        } 
-        var.undefine();
-        return false;
+        Item item = iter.next();
+        if( item != null )
+        {
+          var.set(item);
+        }
+        else
+        {
+          var.set(Item.nil);
+        }
+        return item;
       }
     };
   }
   
-  public Schema getSchema()
+  @Override
+  public Bool3 isArray()
   {
-    return exprs[0].getSchema();
+    return exprs[0].isArray();
   }
-  
+
+  @Override
+  public boolean isConst()
+  {
+    return exprs[0].isConst();
+  }
+
+  @Override
+  public Bool3 isEmpty()
+  {
+    return exprs[0].isEmpty();
+  }
+
+  @Override
+  public Bool3 isNull()
+  {
+    return exprs[0].isNull();
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -266,4 +270,12 @@ public class BindingExpr extends Expr
     return exprs[i];
   }
 
+  /**
+   * @return
+   */
+  public PushAggExpr aggExpr()
+  {
+    assert type == Type.AGGFN;
+    return (PushAggExpr) exprs[0];
+  }
 }

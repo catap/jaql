@@ -18,8 +18,8 @@ package com.acme.extensions.fn;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.util.JIterator;
 
 /**
  * 
@@ -32,7 +32,7 @@ public class Grep
    * @return
    * @throws Exception
    */
-  public JsonIterator eval(JsonString regex, JsonIterator jstrs) throws Exception
+  public JIterator eval(JString regex, JIterator jstrs) throws Exception
   {
     return eval(regex, null, jstrs);
   }
@@ -44,7 +44,7 @@ public class Grep
    * @return
    * @throws Exception
    */
-  public JsonIterator eval(JsonString regex, JsonString flags, final JsonIterator jstrs)
+  public JIterator eval(JString regex, JString flags, final JIterator jstrs)
       throws Exception
   {
     if (regex == null || jstrs == null)
@@ -57,7 +57,7 @@ public class Grep
     if (flags != null)
     {
       String s = flags.toString();
-      for (int i = 0; i < flags.lengthUtf8(); i++)
+      for (int i = 0; i < flags.getLength(); i++)
       {
         switch (s.charAt(i))
         {
@@ -81,9 +81,9 @@ public class Grep
     final Matcher matcher = pattern.matcher("");
     final boolean global = global1;
 
-    final JsonString resultStr = new JsonString();
+    final JString resultStr = new JString();
 
-    return new JsonIterator(resultStr) {
+    return new JIterator(resultStr) {
       private boolean needInput = true;
 
       public boolean moveNext() throws Exception
@@ -96,14 +96,14 @@ public class Grep
             {
               return false;
             }
-            JsonString jstr = (JsonString) jstrs.current(); // could raise a cast error
+            JString jstr = (JString) jstrs.current(); // could raise a cast error
             matcher.reset(jstr.toString());
           }
           if (matcher.find())
           {
             resultStr.set(matcher.group());
             needInput = !global;
-            return true; // currentValue == resultStr
+            return true;
           }
           needInput = true;
         }

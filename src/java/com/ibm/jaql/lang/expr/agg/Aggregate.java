@@ -15,13 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import java.util.Map;
-
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -46,13 +43,6 @@ public abstract class Aggregate extends Expr
     super(arg);
   }  
 
-  @Override
-  public Map<ExprProperty, Boolean> getProperties() 
-  {
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-    return result;
-  }
-  
   /**
    * 
    */
@@ -80,19 +70,22 @@ public abstract class Aggregate extends Expr
    * If you override this function, you need to override processInitial as well.
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonIterator iter = exprs[0].iter(context);
+    Iter iter = exprs[0].iter(context);
     initInitial(context);
 
-    for (JsonValue value : iter) {
-      if( value != null )
+    Item item;
+    while( (item = iter.next()) != null )
+    {
+      if( ! item.isNull() )
       {
-        addInitial(value);
+        addInitial(item);
       }
     }
 
-    return getFinal();
+    item = getFinal();
+    return item;
   }
 
   
@@ -109,18 +102,20 @@ public abstract class Aggregate extends Expr
    * If you override this, you need to override eval() as well.
    *          
    * @param context
-   * @param scaler
+   * @param item
    * @throws Exception
    */
   public void evalInitial(Context context) throws Exception
   {
-    JsonIterator iter = exprs[0].iter(context);
-    for (JsonValue value : iter) {
-      addInitial(value);
+    Iter iter = exprs[0].iter(context);
+    Item item;
+    while( (item = iter.next()) != null )
+    {
+      addInitial(item);
     }
   }
 
   public abstract void initInitial(Context context) throws Exception;
-  public abstract void addInitial(JsonValue value) throws Exception;
-  public abstract JsonValue getFinal() throws Exception;
+  public abstract void addInitial(Item item) throws Exception;
+  public abstract Item getFinal() throws Exception;
 }

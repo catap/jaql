@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.nil;
 
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -51,17 +51,17 @@ public class FirstNonNullFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
     for (int i = 0; i < exprs.length; i++)
     {
-      JsonValue value = exprs[i].eval(context);
-      if (value != null)
+      Item item = exprs[i].eval(context);
+      if (!item.isNull())
       {
-        return value;
+        return item;
       }
     }
-    return null;
+    return Item.nil;
   }
 
   /*
@@ -69,16 +69,16 @@ public class FirstNonNullFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
     for (int i = 0; i < exprs.length; i++)
     {
-      JsonIterator iter = exprs[i].iter(context);
+      Iter iter = exprs[i].iter(context);
       if (!iter.isNull())
       {
         return iter;
       }
     }
-    return JsonIterator.NULL;
+    return Iter.nil;
   }
 }

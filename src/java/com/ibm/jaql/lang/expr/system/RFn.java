@@ -25,10 +25,8 @@ import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonUtil;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -65,7 +63,7 @@ public class RFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     try
     {
@@ -74,10 +72,10 @@ public class RFn extends Expr
         init(context);
       }
 
-      JsonString fn = (JsonString)exprs[1].eval(context);
+      JString fn = (JString)exprs[1].eval(context).get();
       if( fn == null )
       {
-        throw new RuntimeException("R(init, fn, ...): R function required");
+        throw new RuntimeException("callR(init, fn, ...): R function required");
       }
       stdin.print("cat(toJSON("); // TODO: we should do the conversion in jaql
       stdin.print(fn);
@@ -85,23 +83,10 @@ public class RFn extends Expr
       String sep = "";
       for(int i = 2 ; i < exprs.length ; i++)
       {
-        JsonValue value = exprs[i].eval(context);
+        Item item = exprs[i].eval(context);
         stdin.print(sep);
         stdin.print("fromJSON('"); // TODO: we should do the conversion in jaql
-        if (value == null) 
-        {
-          stdin.print("null");
-        } 
-        else if( value instanceof JsonNumeric ) // hack around fromJSON('number') doesn't work, but fromJSON('[number]') gives number
-        {
-          stdin.print('[');
-          JsonUtil.print(stdin, value);
-          stdin.print(']');
-        }
-        else
-        {
-          JsonUtil.print(stdin, value);
-        }
+        item.print(stdin);
         stdin.print("')");
         sep = ",";
       }
@@ -117,7 +102,7 @@ public class RFn extends Expr
       parser.ReInit(new StringReader(s));
       try
       {
-        JsonValue result = parser.JsonVal();
+        Item result = parser.JsonVal();
         return result;
       }
       catch( Exception e )
@@ -168,7 +153,7 @@ public class RFn extends Expr
     OutputStream os = proc.getOutputStream();
     stdin = new PrintStream(new BufferedOutputStream(os));
 
-    JsonString initStr = (JsonString)exprs[0].eval(context);
+    JString initStr = (JString)exprs[0].eval(context).get();
     stdin.println("sink(type='output',file=stderr())");
     stdin.println("require('rjson')");
     if( initStr != null )
@@ -179,7 +164,7 @@ public class RFn extends Expr
     stdin.flush();
     
     // TODO: contexts are not getting closed properly; mapreduce creates contexts, fncall creates contexts, but not cleaned up!
-    context.doAtReset(
+    context.doAtQueryEnd(
         new Runnable()
         {
           @Override

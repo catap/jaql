@@ -19,13 +19,15 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JArray;
+import com.ibm.jaql.json.type.JValue;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.path.PathFieldValue;
+import com.ibm.jaql.util.Bool3;
 
 /** A variable.
  * 
@@ -33,34 +35,75 @@ import com.ibm.jaql.lang.expr.path.PathFieldValue;
 public class VarExpr extends Expr
 {
   Var var;
-  
+
+  /**
+   * @param var
+   */
   public VarExpr(Var var)
   {
     super(NO_EXPRS);
-    this.var=var;
+    this.var = var;
   }
-  
-  
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
-//   */
-//  @Override
-//  public boolean isConst()
-//  {
-//    // TODO: do this?
-//    //    if( var.value != null )
-//    //    {
-//    //      return true;
-//    //    }
-//    return false;
-//  }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
   @Override
-  public Schema getSchema()
+  public boolean isConst()
   {
-    return var.getSchema();
+    // TODO: do this?
+    //    if( var.value != null )
+    //    {
+    //      return true;
+    //    }
+    return false;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isNull()
+   */
+  @Override
+  public Bool3 isNull()
+  {
+    if (var.expr == null)
+    {
+      return Bool3.UNKNOWN;
+    }
+    if (var.value != null)
+    {
+      return Bool3.valueOf(var.value.isNull());
+    }
+    else
+    {
+      return var.expr.isNull();
+    }
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
+   */
+  @Override
+  public Bool3 isArray()
+  {
+    if (var.expr == null)
+    {
+      return Bool3.UNKNOWN;
+    }
+    if (var.value != null)
+    {
+      JValue v = var.value.get();
+      return Bool3.valueOf(v == null || v instanceof JArray);
+    }
+    else
+    {
+      return var.expr.isArray();
+    }
   }
 
   //  public VarExpr(Env env, String varName)
@@ -97,10 +140,9 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue result = var.getValue(context); 
-    return result;
+    return var.getValue();
   }
 
   /*
@@ -108,9 +150,9 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
-    return var.iter(context);
+    return var.getIter();
   }
 
   /*

@@ -15,15 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import java.util.Map;
-
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 
 /**
@@ -51,7 +47,7 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
    *  
    * @return
    */
-  protected abstract JsonValue getType();
+  protected abstract Item getType();
 
   /**
    * Return the "location" for this descriptor
@@ -61,21 +57,14 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
   public Expr location() {
     return exprs[0];
   }
-  
-  public Map<ExprProperty, Boolean> getProperties() 
-  {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
-    return result;
-  }
 
   /* (non-Javadoc)
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    BufferedJsonRecord rec = new BufferedJsonRecord();
+    MemoryJRecord rec = new MemoryJRecord();
     rec.add(Adapter.TYPE_NAME, getType());
     rec.add(Adapter.LOCATION_NAME, location().eval(context));
     if(exprs.length > 1) {
@@ -89,6 +78,7 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
         rec.add(Adapter.OUTOPTIONS_NAME, exprs[2].eval(context));
       }
     }
-    return rec;
-  }  
+    return new Item(rec);
+  }
+  
 }

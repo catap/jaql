@@ -18,14 +18,10 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.RecordSchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.util.Bool3;
 
 
 /**
@@ -64,18 +60,8 @@ public class PathAllFields extends PathFields
    * @see com.ibm.jaql.lang.expr.core.PathFields#matches(com.ibm.jaql.lang.core.Context, com.ibm.jaql.json.type.JString)
    */
   @Override
-  public boolean matches(Context context, JsonString name) throws Exception
+  public boolean matches(Context context, JString name) throws Exception
   {
     return true;
-  }
-  
-  //special case: resulting fields nested in PathStepSchema.schema
-  public PathStepSchema getSchema(Schema inputSchema)
-  {
-    if (inputSchema instanceof RecordSchema)
-    {
-      return new PathStepSchema(inputSchema, Bool3.TRUE);
-    }
-    return new PathStepSchema(SchemaFactory.recordSchema(), Bool3.TRUE);
   }
 }

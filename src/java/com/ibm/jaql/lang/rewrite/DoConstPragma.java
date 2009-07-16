@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -42,15 +42,11 @@ public class DoConstPragma extends Rewrite
   @Override
   public boolean rewrite(Expr expr) throws Exception
   {
-    if( ! expr.getCapturedVars().isEmpty() )
-    {
-      return false;
-    }
-    Context context = new Context();
-    JsonValue value = expr.eval(context);
-    ConstExpr c = new ConstExpr(value);
+    Context context = new Context(); // TODO: memory
+    Item item = expr.eval(context);
+    ConstExpr c = new ConstExpr(item);
     expr.replaceInParent(c);
-    context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+    context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     return true;
   }
 }

@@ -25,8 +25,8 @@ import java.util.concurrent.Executors;
 
 import com.ibm.jaql.job.JaqlStage;
 import com.ibm.jaql.job.JobGraph;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -107,7 +107,7 @@ public class ParallelDoExpr extends DoExpr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     runNonReturned(context);
     return exprs[exprs.length-1].eval(context);
@@ -115,7 +115,7 @@ public class ParallelDoExpr extends DoExpr
   }
   
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     runNonReturned(context);
     return exprs[exprs.length-1].iter(context);

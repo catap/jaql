@@ -15,8 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.date;
 
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JDate;
+import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -30,15 +31,17 @@ public class DateMillisFn extends Expr
   }
 
   @Override
-  public JsonLong eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonDate d = (JsonDate)exprs[0].eval(context);
+    Item item = exprs[0].eval(context);
+    JDate d = (JDate)item.get();
     if( d == null )
     {
-      return null;
+      return Item.nil;
     }
-    JsonLong m = new JsonLong(d.getMillis()); // TODO: memory
-    return m;
+    JLong m = new JLong(d.millis); // TODO: memory
+    item = new Item(m); // TODO: memory
+    return item;
   }
 
 }

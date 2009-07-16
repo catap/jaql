@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.JFunction;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -57,24 +57,13 @@ public class FunctionInline extends Rewrite
     else if (callFn instanceof ConstExpr)
     {
       ConstExpr c = (ConstExpr) callFn;
-      if( !(c.value instanceof JaqlFunction) )
+      if( !(c.value.get() instanceof JFunction) )
       {
-        throw new RuntimeException("function expected, found: "+c.value);
+        // TODO: throw compile-time type-check error
+        return false;
       }
-      JaqlFunction jf = (JaqlFunction) c.value;
+      JFunction jf = (JFunction) c.value.get();
       f =(DefineFunctionExpr)cloneExpr(jf.getFunction());
-    }
-    else if( callFn instanceof DoExpr )
-    {
-      // Push call into DoExpr return:
-      //     (..., e2)(e3)
-      // ==> (..., e2(e3))
-      DoExpr de = (DoExpr)callFn;
-      call.replaceInParent(de);
-      Expr ret = de.returnExpr();
-      ret.replaceInParent(call);
-      call.setChild(0, ret);
-      return true;
     }
     else
     {
@@ -88,8 +77,6 @@ public class FunctionInline extends Rewrite
           "invalid number of arguments to function. expected:" + numParams
               + " got:" + call.numArgs());
     }
-    
-    // TODO: Don't inline (potentially) recursive functions
 
     // Inline zero-arg function by just its function body. 
     if (numParams == 0)

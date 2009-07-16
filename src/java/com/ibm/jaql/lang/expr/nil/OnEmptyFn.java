@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.nil;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -41,30 +42,28 @@ public class OnEmptyFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public Iter iter(final Context context) throws Exception
   {
-    return new JsonIterator() {
-      JsonIterator    iter  = exprs[0].iter(context);
+    return new Iter() {
+      Iter    iter  = exprs[0].iter(context);
       boolean didIt = false;
 
-      public boolean moveNext() throws Exception
+      public Item next() throws Exception
       {
-        if (iter.moveNext()) {
+        Item item = iter.next();
+        if( item != null )
+        {
           didIt = true;
-          currentValue = iter.current();
-          return true;
+          return item;
         }
         if( !didIt )
         {
           didIt = true;
           iter = exprs[1].iter(context);
-          if (iter.moveNext()) 
-          {
-            currentValue = iter.current();
-            return true;
-          }
+          item = iter.next();
+          return item;
         }
-        return false;
+        return null;
       }
     };
   }

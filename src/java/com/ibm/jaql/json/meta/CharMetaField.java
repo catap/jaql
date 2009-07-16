@@ -20,8 +20,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
 
 /**
  * 
@@ -43,9 +43,9 @@ public class CharMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonLong makeValue()
+  public Item makeItem()
   {
-    return new JsonLong();
+    return new Item(new JLong());
   }
 
   /*
@@ -55,12 +55,11 @@ public class CharMetaField extends MetaField
    *      com.ibm.jaql.json.type.Item)
    */
   @Override
-  public JsonValue get(Object obj, JsonValue target) throws IllegalArgumentException,
+  public void get(Object obj, Item target) throws IllegalArgumentException,
       IllegalAccessException
   {
     char x = field.getChar(obj);
-    ((JsonLong) target).set(x);
-    return target;
+    ((JLong) target.get()).value = x;
   }
 
   /*

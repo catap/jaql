@@ -18,12 +18,12 @@ package com.ibm.jaql.lang.expr.top;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -59,10 +59,26 @@ public class QueryExpr extends Expr
     exprs[0].decompile(exprText, capturedVars);
   }
 
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
   @Override
-  public Schema getSchema()
+  public boolean isConst()
   {
-    return exprs[0].getSchema();
+    return false;
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isArray()
+   */
+  @Override
+  public Bool3 isArray()
+  {
+    return exprs[0].isArray();
   }
 
   /*
@@ -71,7 +87,7 @@ public class QueryExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
@@ -82,7 +98,7 @@ public class QueryExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  public Iter iter(Context context) throws Exception
   {
     return exprs[0].iter(context);
   }

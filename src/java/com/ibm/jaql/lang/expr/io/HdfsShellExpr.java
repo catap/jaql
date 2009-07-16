@@ -17,9 +17,9 @@ package com.ibm.jaql.lang.expr.io;
 
 
 import com.ibm.jaql.io.hadoop.FsShellWrapper;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -45,11 +45,11 @@ public class HdfsShellExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonLong eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
-    JsonValue cmd = exprs[0].eval(context);
-    String cmdStr = ((JsonString) cmd).toString();
+    Item cmd = exprs[0].eval(context);
+    String cmdStr = ((JString) cmd.get()).toString();
 
-    return new JsonLong(FsShellWrapper.run(cmdStr.split(" ")));
+    return new Item(new JLong(FsShellWrapper.run(cmdStr.split(" "))));
   }
 }

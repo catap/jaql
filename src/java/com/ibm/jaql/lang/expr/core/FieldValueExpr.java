@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 
@@ -53,12 +53,12 @@ public class FieldValueExpr extends Expr
   /**
    * $rec.name
    * 
-   * @param record
+   * @param rec
    * @param name
    */
   public FieldValueExpr(Var recVar, String name)
   {
-    super(new VarExpr(recVar), new ConstExpr(new JsonString(name)));
+    super(new VarExpr(recVar), new ConstExpr(new JString(name)));
   }
 
   //// TODO: optimize constant name case
@@ -67,7 +67,6 @@ public class FieldValueExpr extends Expr
   //  this(new Expr[]{ input, new ConstExpr(new Item(new JString(nm))), input);
   //}
 
- 
   /**
    * @return
    */
@@ -105,18 +104,21 @@ public class FieldValueExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  public Item eval(final Context context) throws Exception
   {
-    JsonRecord record = (JsonRecord) exprs[0].eval(context);
-    if (record == null)
+    Item item = exprs[0].eval(context);
+    JRecord rec = (JRecord) item.get();
+    if (rec == null)
     {
-      return null;
+      return Item.nil;
     }
-    JsonString name = (JsonString) exprs[1].eval(context); // possible cast error
-    if (name == null)
+    Item nameItem = exprs[1].eval(context);
+    JString nm = (JString) nameItem.get(); // possible cast error
+    if (nm == null)
     {
-      return null;
+      return Item.nil;
     }
-    return record.get(name);
+    Item value = rec.getValue(nm);
+    return value;
   }
 }

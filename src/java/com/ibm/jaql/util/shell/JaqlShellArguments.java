@@ -200,13 +200,13 @@ public class JaqlShellArguments {
     if (cl.hasOption(optEval)) {
       String eval = (String)cl.getValue(optEval);
       if (!eval.endsWith(";")) eval += ";";
-      in.add(new EchoedInputStream(new ByteArrayInputStream(eval.getBytes())));
+      in.add(new ByteArrayInputStream(eval.getBytes()));
     }
     if (cl.hasOption(optInputFiles)) {
       List<String> files = (List<String>)cl.getValues(optInputFiles);				
       for (String file : files) {
         try {
-          in.add(new EchoedInputStream(new FileInputStream(file)));
+          in.add(new FileInputStream(file));
         } catch (FileNotFoundException e) {
           printHelp("Input file " + file + " not found", options);
           System.exit(1);
@@ -241,23 +241,5 @@ public class JaqlShellArguments {
     hf.getLineUsageSettings().add(DisplaySetting.DISPLAY_ARGUMENT_BRACKETED);
     hf.print();
     hf.printHelp();
-  }
-  
-  private static class EchoedInputStream extends InputStream {
-    InputStream in;
-    public EchoedInputStream(InputStream in) {
-      this.in = in;    
-    }
-    
-    @Override
-    public int read() throws IOException
-    {
-      int b = in.read();
-      if (b>0)
-      {
-        System.out.print((char)b);
-      }
-      return b;
-    }    
   }
 }

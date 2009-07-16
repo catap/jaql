@@ -15,15 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import java.util.Map;
-
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.util.DeleteFileTask;
 
@@ -41,13 +38,16 @@ public class HadoopTempExpr extends Expr
     super(exprs);
   }
 
-  public Map<ExprProperty, Boolean> getProperties()
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.Expr#isConst()
+   */
+  @Override
+  public boolean isConst()
   {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
-    return result;
+    return false;
   }
-  
 
   /**
    * 
@@ -62,13 +62,13 @@ public class HadoopTempExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.Expr#eval(com.ibm.jaql.lang.Context)
    */
-  public JsonRecord eval(Context context) throws Exception
+  public Item eval(Context context) throws Exception
   {
     String filename = "jaql_temp_" + System.nanoTime();     // FIXME: figure out where this should go
-    BufferedJsonRecord r = new BufferedJsonRecord();
-    r.add(Adapter.TYPE_NAME, new JsonString("hdfs"));
-    r.add(Adapter.LOCATION_NAME, new JsonString(filename));
-    context.doAtReset(new DeleteFileTask(filename));
-    return r; // TODO: memory
+    MemoryJRecord r = new MemoryJRecord();
+    r.add(Adapter.TYPE_NAME, new Item(new JString("hdfs")));
+    r.add(Adapter.LOCATION_NAME, new Item(new JString(filename)));
+    context.doAtQueryEnd(new DeleteFileTask(filename));
+    return new Item(r); // TODO: memory
   }
 }
