@@ -252,7 +252,8 @@ aggregate[Expr in] returns [Expr r=null]
 //       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
     : ("aggregate" | "agg") ("as" v=var)?
          {
-           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
+           //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
+           b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
          }
       ( "into" r=expr { r = AggregateFullExpr.make(env, b, r, false); }
       | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
@@ -875,7 +876,10 @@ op[Expr in] returns [Expr r=null]
 each[Expr in] returns [BindingExpr b=null]
     { String v = "$"; }
     : ( "each" v=var )?
-    { b = new BindingExpr(BindingExpr.Type.IN, env.scope(v, in.getSchema().elements()), null, in); }
+    { 
+//      b = new BindingExpr(BindingExpr.Type.IN, env.scope(v, in.getSchema().elements()), null, in); 
+      b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in);
+    }
     ;
 
 //assignOrCall[Expr in] returns [Expr r]
@@ -1142,7 +1146,8 @@ forDef[ArrayList<BindingExpr> bindings]
             // | "="  e=expr                { t = BindingExpr.Type.EQ; }
             )
     { 
-      Var var = env.scope(v, e.getSchema().elements());
+      //Var var = env.scope(v, e.getSchema().elements());
+      Var var = env.scope(v);
 //      Var var2 = null;
 //      if( v2 != null )
 //      {

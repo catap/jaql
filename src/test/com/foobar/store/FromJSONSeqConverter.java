@@ -31,7 +31,7 @@ import com.ibm.jaql.json.type.JsonValue;
 /**
  * 
  */
-public class FromJSONSeqConverter extends HadoopRecordToJson
+public class FromJSONSeqConverter extends HadoopRecordToJson<WritableComparable<?>,Writable>
 {
 
   /**
@@ -71,7 +71,7 @@ public class FromJSONSeqConverter extends HadoopRecordToJson
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToJson<WritableComparable> createKeyConverter()
+  protected ToJson<WritableComparable<?>> createKeyConverter()
   {
     return null;
   }

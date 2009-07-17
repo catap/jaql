@@ -218,6 +218,7 @@ public class Env
   public Var makeVar(String name, Schema schema) // FIXME: replace other scope()/unscope calls with this
   {
     assert name.charAt(0) == '$';
+    assert schema != null;
     Var var = scope(name, schema);
     unscope(var);
     return var;

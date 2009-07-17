@@ -1,3 +1,5 @@
+schemaof( [] -> expand);
+
 // -- parsing and matching: simple schemata -------------------------------------------------------
 
 $x = schema null;
@@ -490,7 +492,7 @@ schemaof([ 1, "2" ]);
 
 // -- schema merging ------------------------------------------------------------------------------
 
-registerFunction('mergeSchemata', 'com.ibm.jaql.udf.MergeSchemataUDF');
+registerFunction('mergeSchemata', 'com.ibm.jaql.udf.MergeSchemataUdf');
 
 mergeSchemata(schema binary, schema binary);
 mergeSchemata(schema binary(minLength=5,maxLength=10), schema binary);
@@ -608,6 +610,10 @@ schemaof ([ null ] []);
 
 // -- transforms ---------------------------------------------------------------------------------
 
+schemaof(null -> transform $);
+schemaof([]  -> transform $);
+schemaof([ 1, 2, 3]  -> transform $);
+
 // records
 schemaof ([{ a: "yes", b: 0 }] -> transform $.a) ;
 schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform $.a) ;
@@ -649,12 +655,56 @@ schemaof([ [ {a: [1, 2, "a", null] } ], null, 1 ] -> transform $[]);
 schemaof([ [ {a: [1, 2, "a", null] } ], null ] -> transform $[].a);
 
 
+// -- group by-------------------------------------------------------------------------------------
+
+schemaof(null -> group by $k=$ as $ into $);
+schemaof([] -> group by $k=$ as $ into $);
+schemaof([ {a: 1, b: "b1"}, {a: 1, b: "b2"} ] -> group by $k=$.a into { key: $k, values: $ });
+schemaof([ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] -> group by $k=$.a into { key: $k, values: $ });
+schemaof([ {a: 1, b: "b1"}, {b:"b2"} ] -> group by $k=$.a into { key: $k, values: $ });
+
+schemaof(group null by $k=$ as $ into $);
+schemaof(group []  by $k=$ as $ into $);
+schemaof(group [ {a: 1, b: "b1"}, {a: 1, b: "b1"} ] by $k=$.a as $g1 into { key: $k, values: $g1 });
+schemaof(group [ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] by $k=$.a as $g1 into { key: $k, values: $g1 });
+schemaof(group [ {a: 1, b: "b1"}, {b: "b1"} ] by $k=$.a as $g1 into { key: $k, values: $g1 });
+
+schemaof(group null by $k=$ as $g1, null by $k=$ as $g2 
+         into { key: $k, values1: $g1, values2: $g2 });
+schemaof(group []  by $k=$ as $g1, []  by $k=$ as $g2 
+         into { key: $k, values1: $g1, values2: $g2 });
+schemaof(group []  by $k=$ as $g1, null  by $k=$ as $g2 
+         into { key: $k, values1: $g1, values2: $g2 });
+
+schemaof(group null by $k=$ as $g1, [ 1 ] by $k=$ as $g2 
+         into { key: $k, values1: $g1, values2: $g2 });
+schemaof(group [] by $k=$ as $g1, [ 1 ] by $k=$ as $g2 
+         into { key: $k, values1: $g1, values2: $g2 });
+
+schemaof(
+  group [ {a: 1, b:"b1"}, {a: 1, b: "b2"} ] by $k=$.a as $g1,
+        [ {c: 3, d:"d1"}, {c: 4, b: "bbb"} ] by $k=$.c as $g2
+  into { key: $k, values1: $g1, values2: $g2 });
+
+
+// -- filter/sort/expand --------------------------------------------------------------------------
+
+schemaof( null -> filter $>1);
+schemaof( [] -> filter $>1);
+schemaof( [ 1, 2, 3 ] -> filter $>1);
+schemaof( null -> sort by [$] );
+schemaof( [] -> sort by [$] );
+schemaof( [ 2, 1, 3 ] -> sort by [$]);
+schemaof( null -> expand);
+schemaof( [] -> expand);
+schemaof( [[]] -> expand);
+schemaof( [[[]]] -> expand);
+schemaof( [ [1,2], ["a","b"], [true], null ] -> expand);
+
+
 // -- other expressions --------------------------------------------------------------------------
 
 schemaof(read("anything"));
-schemaof ([1,2,3] -> filter $>1);
-schemaof ([1,2,3] -> transform compare($, 1));
-
 
 
 //-------------------------- QUIT ---------------------------------

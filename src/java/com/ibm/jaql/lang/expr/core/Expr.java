@@ -316,7 +316,9 @@ public abstract class Expr
   }
 
   /** Returns the schema of this expression. The result is determined at compile-time, i.e., no
-   * subexpressions are evaluated (though their <code>getSchema()</code> methods might be called). */
+   * subexpressions are evaluated (though their <code>getSchema()</code> methods might be called).
+   * This method may have the side effect of propagating schema information to variables.
+   */
   public Schema getSchema()
   {
     return SchemaFactory.anyOrNullSchema();
@@ -469,8 +471,6 @@ public abstract class Expr
     
     subtreeModified();
   }
-
-
 
   /** Returns the index of this expression in the parent's list of child expressions.
    * @return

@@ -17,9 +17,15 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -217,10 +223,7 @@ public class BindingExpr extends Expr
     };
   }
   
-  public Schema getSchema()
-  {
-    return exprs[0].getSchema();
-  }
+
   
   /*
    * (non-Javadoc)
@@ -266,4 +269,114 @@ public class BindingExpr extends Expr
     return exprs[i];
   }
 
+  /** 
+   * Returns an array of schemata that are bound to the variable, respecting order, and sets
+   * the schema associated with the variable to a schema representing all possible bindings.
+   */
+  public Schema getSchema()
+  {
+    if (exprs.length == 0)
+    {
+      return var.getSchema();
+    } 
+    
+    switch (type)
+    {
+    case EQ: // array of all inputs
+      List<Schema> schemata = new LinkedList<Schema>();
+      for (int i=0; i<exprs.length; i++)
+      {
+        Schema s = exprs[i].getSchema();
+        assert s != null;
+        schemata.add(s);
+      }
+      Schema r = new ArraySchema(schemata);
+      Schema re = r.elements();
+      if (re != null)
+      {
+        // array is non-empty
+        var.setSchema(re); // update the schema associated with the variable
+      }
+      else
+      {
+        // variable will never be set
+      }
+      return r;
+    case IN: // array of all elements in the inputs
+      Schema varSchema = null; 
+      JsonLong minLength = JsonLong.MINUS_ONE; // sentinal
+      JsonLong maxLength = JsonLong.MINUS_ONE; // sentinal
+      for (int i=0; i<exprs.length; i++)
+      {
+        Schema inputSchema = exprs[i].getSchema();
+        Schema inputSchemaArray = SchemaTransformation.restrictToArrayOrNull(inputSchema);
+        if (inputSchemaArray == null) {
+          throw new IllegalArgumentException("array expected"); 
+        }
+        if (inputSchemaArray.isNull().always())
+        {
+            continue; 
+        }
+
+        // schema now is "array" or "array?"
+        Schema inputElements = inputSchemaArray.elements();
+        if (inputElements != null)   
+        {
+          // update schema information
+          if (varSchema == null)
+          {
+            varSchema = inputElements;
+          }
+          else
+          {
+            varSchema = SchemaTransformation.merge(varSchema, inputElements);
+          }
+          
+          // update minimum length information
+          JsonLong inputMin = inputSchemaArray.minElements();
+          if (inputMin == null) inputMin = JsonLong.ZERO;
+          if (minLength == JsonLong.MINUS_ONE)
+          {
+            minLength = inputMin;
+          }
+          else 
+          {
+            minLength.set(minLength.get() + inputMin.get());
+          }
+          
+          // update maximum length information
+          Schema inputNonNullArray = SchemaTransformation.removeNullability(inputSchemaArray);
+          JsonLong inputMax = inputNonNullArray.maxElements();
+          if (maxLength == JsonLong.MINUS_ONE)
+          {
+            maxLength = inputMax;
+          }
+          else if (maxLength != null)
+          {
+            if (inputMax == null) 
+            {
+              maxLength = null;
+            }
+            else
+            {
+              maxLength.set(maxLength.get()+inputMax.get());
+            }
+          }
+        }
+      }
+      if (varSchema != null) 
+      {
+        var.setSchema(varSchema); // update the schema associated with the variable
+        return new ArraySchema(varSchema, minLength, maxLength);
+      }
+      else
+      {
+        return SchemaFactory.emptyArraySchema();
+      }      
+    }
+    // TODO implement other types
+
+    return SchemaFactory.anyOrNullSchema();
+  }
+  
 }

@@ -44,7 +44,7 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
   public abstract JsonIterator iter() throws Exception;
 
   /** Returns the value at position <code>n</code> or <code>null<code> if there is no such value.
-   * This method is expensive in some implementations. 
+   * This method is expensive in some implementations; prefer {@link #iter()} if possible. 
    * 
    * @param n a position (0-based)
    * @return the value at position <code>n</code> or <code>null<code>

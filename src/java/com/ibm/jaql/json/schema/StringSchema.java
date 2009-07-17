@@ -224,8 +224,10 @@ public class StringSchema extends Schema
       
       // simple first cut; more sophisticated methods possible (not sure if needed)
       // currently information in value/pattern is ignored
-      JsonLong minLength = SchemaUtil.min(this.minLength, o.minLength);
-      JsonLong maxLength = SchemaUtil.max(this.maxLength, o.maxLength);
+      JsonLong minLength = SchemaUtil.min(this.value==null ? this.minLength : new JsonLong(this.value.lengthUtf8()), 
+                                          o.value==null ? o.minLength : new JsonLong(o.value.lengthUtf8()));
+      JsonLong maxLength = SchemaUtil.max(this.value==null ? this.maxLength : new JsonLong(this.value.lengthUtf8()), 
+                                          o.value==null ? o.maxLength : new JsonLong(o.value.lengthUtf8()));
       return new StringSchema(minLength, maxLength, null, null);
     }
     return null;

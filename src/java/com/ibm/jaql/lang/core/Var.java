@@ -50,6 +50,7 @@ public class Var extends Object
   
   public Var(String name, final Schema schema)
   {
+    assert schema != null;
     this.name = name;
     this.schema = schema;
   }
@@ -90,7 +91,7 @@ public class Var extends Object
    */
   public Var clone(VarMap varMap)
   {
-    Var v = new Var(name);
+    Var v = new Var(name, schema);
     v.usage = usage;
     // Cloning a Var does NOT clone its value!
     // It is NOT safe to share an iter unless one var is never evaluated.
@@ -277,6 +278,7 @@ public class Var extends Object
   /** Don't use at runtime! */
   public void setSchema(Schema schema)
   {
+    assert schema != null;
     this.schema = schema;
   }
 }
