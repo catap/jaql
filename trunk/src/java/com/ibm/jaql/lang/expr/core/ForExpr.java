@@ -20,6 +20,8 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -118,7 +120,35 @@ public final class ForExpr extends IterExpr // TODO: rename
 
   public Schema getSchema()
   {
-    return new ArraySchema(null, collectExpr().getSchema().elements(), null, null);
+    Schema in = binding().getSchema(); // binds variable for collect
+    if (in.isEmptyArrayOrNull().always())
+    {
+      return SchemaFactory.emptyArraySchema();
+    }
+    
+    // get the schema produced by the collect expression
+    Schema collectSchema = collectExpr().getSchema();
+    if (collectSchema == null)  
+    {
+      // input is null
+      return SchemaFactory.emptyArraySchema();
+    }
+    
+    // collectSchema is only valid when array or null
+    Schema out = SchemaTransformation.restrictToArray(collectSchema);
+    if (out == null)
+    {
+      if (collectSchema.isNull().maybe()) 
+      {
+        // input is null or non-array (the latter case would produce a runtime error)
+        return SchemaFactory.emptyArraySchema();
+      }
+      // input is non-null, non-array -> compile time error found
+      throw new IllegalArgumentException("for expects arrays as input");
+    }
+
+    if (out.isEmptyArray().always()) return SchemaFactory.emptyArraySchema();
+    return new ArraySchema(out.elements(), null, null);
   }
 
   /**

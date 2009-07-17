@@ -1,7 +1,5 @@
-package com.ibm.jaql.lang.expr.top;
+package com.ibm.jaql.lang.expr.internal;
 
-import java.io.PrintStream;
-import java.util.HashSet;
 import java.util.Map;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -9,14 +7,13 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /** An internal method that can be used to print the internal tree of expressions in JSON format. */
 @JaqlFn(fnName = "exprtree", minArgs = 1, maxArgs = 1)
-public class ExprTreeExpr extends TopExpr
+public class ExprTreeExpr extends Expr
 {
   /**
    * boolean explain expr
@@ -34,19 +31,6 @@ public class ExprTreeExpr extends TopExpr
   public ExprTreeExpr(Expr expr)
   {
     super(new Expr[] {expr});
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-   *      java.util.HashSet)
-   */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
-  {
-    exprText.print("explain ");
-    exprs[0].decompile(exprText, capturedVars);
   }
 
   public Map<ExprProperty, Boolean> getProperties() {

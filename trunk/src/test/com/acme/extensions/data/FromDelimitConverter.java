@@ -41,7 +41,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * Otherwise, the header is used to construct record field names. The header is assumed to be an
  * array of field names; it can be provided by reading a file of such names or as a literal array. 
  */
-public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable, Writable> {
+public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable<?>, Writable> {
   
   private static final Log LOG             = LogFactory.getLog(FromDelimitConverter.class.getName());
   
@@ -79,7 +79,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable,
    * @see com.ibm.jaql.io.hadoop.converter.HadoopRecordToItem#createKeyConverter()
    */
   @Override
-  protected ToJson<WritableComparable> createKeyConverter()
+  protected ToJson<WritableComparable<?>> createKeyConverter()
   {
     return null;
   }

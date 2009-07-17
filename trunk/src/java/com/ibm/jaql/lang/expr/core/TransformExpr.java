@@ -20,6 +20,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -85,7 +86,12 @@ public final class TransformExpr extends IterExpr
   @Override
   public Schema getSchema()
   {
-    return new ArraySchema(new Schema[0], exprs[1].getSchema(), null, null);
+    Schema in = binding().getSchema(); // binds variable for projection
+    if (in.isEmptyArrayOrNull().always())
+    {
+      return SchemaFactory.emptyArraySchema();
+    }
+    return new ArraySchema(projection().getSchema(), null, null);
   }
 
 

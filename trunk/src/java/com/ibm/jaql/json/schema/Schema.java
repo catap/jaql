@@ -138,7 +138,9 @@ public abstract class Schema
 
   /** Returns the schema of the elements of this schema or null if this schema does not have
    * elements. Examples: (1) common schema of all elements of an array, (2) common schema
-   * of all values in a record. */
+   * of all values in a record. When this schema can represent multiple types, the method
+   * is invoked recursively on each of those types; be careful when the schema contains both 
+   * arrays and records. */
   public Schema elements()
   {
     return null;

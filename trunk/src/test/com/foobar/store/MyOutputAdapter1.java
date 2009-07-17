@@ -20,7 +20,7 @@ import com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter;
 /**
  * 
  */
-public class MyOutputAdapter1 extends DefaultHadoopOutputAdapter
+public class MyOutputAdapter1<K,V> extends DefaultHadoopOutputAdapter<K,V>
 {
 
 }

@@ -52,6 +52,7 @@ public class ChainedInputStream extends InputStream {
     if (result<0) {
       inputStreams.remove().close();
     }
+    
 
     return result;
   }

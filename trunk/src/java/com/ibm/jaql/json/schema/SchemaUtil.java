@@ -18,8 +18,8 @@ package com.ibm.jaql.json.schema;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Package-private helper methods */
-class SchemaUtil
+/** helper methods */
+public class SchemaUtil
 {
   /** Checks whether start <= end */
   static boolean checkInterval(JsonValue start, JsonValue end)
