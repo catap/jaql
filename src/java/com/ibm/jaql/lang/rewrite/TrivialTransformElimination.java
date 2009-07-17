@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
@@ -52,7 +53,12 @@ public class TrivialTransformElimination extends Rewrite
       BindingExpr b = te.binding();
       if( ve.var() == te.binding().var )
       {
-        te.replaceInParent(b.inExpr());
+        Expr e = b.inExpr();
+        if( e.getSchema().isArrayOrNull().maybeNot() )
+        {
+          e = new AsArrayFn(e);
+        }
+        te.replaceInParent(e);
         return true;
       }
     }
