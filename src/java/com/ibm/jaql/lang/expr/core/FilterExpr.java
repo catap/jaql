@@ -20,7 +20,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -84,10 +84,21 @@ public final class FilterExpr extends IterExpr
     return exprs[1];
   }
 
+  @Override
   public Schema getSchema()
   {
-    Schema inSchema = binding().getSchema();
-    return new ArraySchema(inSchema.elements(), JsonLong.ZERO, inSchema.maxElements());
+    // inSchema is an array of the values that are to be filtered
+    Schema inSchema = binding().getSchema();  
+     
+    // handle null/empty input
+    if (inSchema.isEmptyArrayOrNull().always())
+    {
+      return SchemaFactory.emptyArraySchema();
+    }
+    
+    // handle non-empty input
+    Schema value = inSchema.elements();
+    return new ArraySchema(value, null, inSchema.maxElements());
   }
   
   /**

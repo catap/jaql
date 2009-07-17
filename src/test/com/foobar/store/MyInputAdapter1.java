@@ -20,7 +20,7 @@ import com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter;
 /**
  * 
  */
-public class MyInputAdapter1 extends DefaultHadoopInputAdapter
+public class MyInputAdapter1<K,V> extends DefaultHadoopInputAdapter<K,V>
 {
 
 }

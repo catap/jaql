@@ -19,8 +19,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -270,7 +272,57 @@ public class GroupByExpr extends IterExpr
 
   public Schema getSchema()
   {
-    return SchemaFactory.arraySchema();
+    // the following calls update (as a side effect) the schema of the bound variables 
+    inBinding().getSchema();
+    byBinding().getSchema();
+
+    // update variable schemata
+    boolean hasInput = false;
+    for (int i=0; i<numInputs(); i++)
+    {
+      Expr in = inBinding().byExpr(i);
+      Schema inSchema = SchemaTransformation.restrictToArrayOrNull(in.getSchema());
+      if (inSchema == null)
+      {
+        throw new IllegalArgumentException("array expected");
+      }
+
+      // update as-variable schemata
+      Var asVar = getAsVar(i);
+      if (inSchema.isEmptyArrayOrNull().always())
+      {
+        // this indicates null input, i.e., the variable will never be set
+        // e.g., schemaof(null -> group by $k=$ as $ into $);
+        // TODO what do we do? I take null for the moment
+        asVar.setSchema(SchemaFactory.nullSchema());
+      }
+      else
+      {
+        // input is a non-empty array
+        hasInput = true;
+        Schema asSchema = new ArraySchema(inSchema.elements(), null, null);
+        if (numInputs() > 1)
+        {
+          asSchema = SchemaTransformation.addNullability(asSchema);
+        }
+        asVar.setSchema(asSchema);
+      }
+    }
+    
+    if (!hasInput)
+    {
+      return SchemaFactory.emptyArraySchema();
+    }
+    Schema collectSchema = collectExpr().getSchema();
+    if (collectSchema.isArray().always()) // hopefully true 
+    {
+      return new ArraySchema(collectSchema.elements(), null, null);
+    }
+    else
+    {
+      // fallback
+      return SchemaFactory.arraySchema();
+    }
   }
 
   /**

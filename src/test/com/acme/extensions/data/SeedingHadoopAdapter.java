@@ -32,7 +32,7 @@ import com.ibm.jaql.json.type.JsonValue;
 /**
  * 
  */
-public class SeedingHadoopAdapter extends DefaultHadoopInputAdapter
+public class SeedingHadoopAdapter extends DefaultHadoopInputAdapter<JsonHolder, JsonHolder>
 {
 
   private long   seed;

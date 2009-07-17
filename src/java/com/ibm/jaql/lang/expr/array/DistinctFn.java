@@ -53,7 +53,7 @@ public class DistinctFn extends MacroExpr
     Var as = env.makeVar("$as");
     Expr r = new GroupByExpr(
         new BindingExpr(BindingExpr.Type.IN, v, null, exprs[0]),
-        new BindingExpr(BindingExpr.Type.IN, by, null, new VarExpr(v)),
+        new BindingExpr(BindingExpr.Type.EQ, by, null, new VarExpr(v)),
         as,
         null,
         new ArrayExpr(new VarExpr(by)));

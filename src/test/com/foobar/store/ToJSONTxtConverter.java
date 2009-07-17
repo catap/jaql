@@ -46,7 +46,7 @@ public class ToJSONTxtConverter extends ToJSONSeqConverter
    * @see com.foobar.store.ToJSONSeqConverter#createKeyTarget()
    */
   @Override
-  public WritableComparable createKeyTarget()
+  public WritableComparable<?> createKeyTarget()
   {
     return null;
   }

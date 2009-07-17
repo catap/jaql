@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.json.schema;
 
+import java.util.List;
+
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonUtil;
@@ -91,6 +93,11 @@ public class ArraySchema extends Schema
     this(schemata, null, JsonLong.ZERO, JsonLong.ZERO);
   }
 
+  public ArraySchema(List<Schema> schemata)
+  {
+    this(schemata.toArray(new Schema[schemata.size()]), null, JsonLong.ZERO, JsonLong.ZERO);
+  }
+  
   /** Matches any array */
   ArraySchema()
   {

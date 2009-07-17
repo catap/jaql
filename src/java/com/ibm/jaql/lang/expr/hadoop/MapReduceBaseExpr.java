@@ -103,7 +103,7 @@ public abstract class MapReduceBaseExpr extends Expr
     result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
     return result;
   }
-  
+
   /**
    * This is a tricky question... The expression is evaluated once, but 
    * it returns functions which are evaluated multiple times.
@@ -113,7 +113,6 @@ public abstract class MapReduceBaseExpr extends Expr
   {
     return Bool3.TRUE;
   }
-  
 
   /**
    * @param context

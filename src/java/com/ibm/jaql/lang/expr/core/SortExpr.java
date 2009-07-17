@@ -18,6 +18,10 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -137,5 +141,41 @@ public class SortExpr extends IterExpr
 //    }
 
     return temp.iter();
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    Schema out = SchemaTransformation.restrictToArray(in);
+    
+    // handle the case where input is null or non-array
+    if (out == null)
+    {
+      if (in.isNull().maybe())
+      {
+        return SchemaFactory.nullSchema();
+      }
+      throw new IllegalArgumentException("sort expects arrays as input");
+    }
+
+    if (out.isEmptyArray().always())
+    {
+      out = SchemaFactory.emptyArraySchema();
+    }
+    else
+    {
+      // get rid of order
+      out = new ArraySchema(out.elements(), out.minElements(), out.maxElements());
+    }
+    
+    // handle nulls (when input can be an array)
+    if (in.isNull().maybe())
+    { 
+      out = SchemaTransformation.addNullability(out);
+    }
+    
+    // that's it
+    return out;
   }
 }

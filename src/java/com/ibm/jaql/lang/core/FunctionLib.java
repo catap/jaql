@@ -79,6 +79,9 @@ import com.ibm.jaql.lang.expr.index.BuildLuceneFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
 import com.ibm.jaql.lang.expr.index.ProbeLuceneFn;
+import com.ibm.jaql.lang.expr.internal.ExprTreeExpr;
+import com.ibm.jaql.lang.expr.internal.HashExpr;
+import com.ibm.jaql.lang.expr.internal.LongHashExpr;
 import com.ibm.jaql.lang.expr.io.ArrayReadExpr;
 import com.ibm.jaql.lang.expr.io.FileFn;
 import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
@@ -152,7 +155,6 @@ import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.system.RFn;
-import com.ibm.jaql.lang.expr.top.ExprTreeExpr;
 import com.ibm.jaql.lang.expr.udf.JavaFnExpr;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
@@ -349,6 +351,8 @@ public class FunctionLib
     add(ProbeJIndexFn.class);
     // internal
     add(ExprTreeExpr.class);
+    add(HashExpr.class);
+    add(LongHashExpr.class);
   }
 
   /** Creates an instance of the function represented by the given class, passing the 
