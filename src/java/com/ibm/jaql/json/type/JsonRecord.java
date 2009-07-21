@@ -173,9 +173,9 @@ implements Iterable<Entry<JsonString, JsonValue>>
     int h = BaseUtil.GOLDEN_RATIO_32;
     for (Entry<JsonString, JsonValue> entry : this)
     {
-      h |= JsonUtil.hashCode(entry.getKey());
+      h ^= JsonUtil.hashCode(entry.getKey());
       h *= BaseUtil.GOLDEN_RATIO_32;
-      h |= JsonUtil.hashCode(entry.getValue());
+      h ^= JsonUtil.hashCode(entry.getValue());
       h *= BaseUtil.GOLDEN_RATIO_32;
     }
     return (int) (h >> 32);
@@ -188,9 +188,9 @@ implements Iterable<Entry<JsonString, JsonValue>>
     long h = BaseUtil.GOLDEN_RATIO_64;
     for (Entry<JsonString, JsonValue> entry : this)
     {
-      h |= JsonUtil.longHashCode(entry.getKey());
+      h ^= JsonUtil.longHashCode(entry.getKey());
       h *= BaseUtil.GOLDEN_RATIO_64;
-      h |= JsonUtil.longHashCode(entry.getValue());
+      h ^= JsonUtil.longHashCode(entry.getValue());
       h *= BaseUtil.GOLDEN_RATIO_64;
     }
     return (int) (h >> 32);
