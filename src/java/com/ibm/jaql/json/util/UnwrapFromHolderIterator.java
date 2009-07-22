@@ -7,9 +7,9 @@ import com.ibm.jaql.io.hadoop.JsonHolder;
 /** Temporary class to unwrap items */
 public final class UnwrapFromHolderIterator extends JsonIterator
 {
-  Iterator<JsonHolder> iterator;
+  Iterator<? extends JsonHolder> iterator;
   
-  public UnwrapFromHolderIterator(Iterator<JsonHolder> iterator) {
+  public UnwrapFromHolderIterator(Iterator<? extends JsonHolder> iterator) {
     this.iterator = iterator;
   }
   

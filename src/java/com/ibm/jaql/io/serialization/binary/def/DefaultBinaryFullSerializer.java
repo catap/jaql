@@ -30,7 +30,7 @@ import com.ibm.jaql.util.BaseUtil;
 
 /** Jaql's default serializer. This serializer is generic; it does not consider/exploit any
  * schema information. */
-public final class DefaultBinaryFullSerializer extends BinaryFullSerializer
+public class DefaultBinaryFullSerializer extends BinaryFullSerializer
 {
   final EnumMap<JsonEncoding, BinaryBasicSerializer<?>> serializers; 
 
