@@ -70,6 +70,10 @@ public abstract class JaqlBaseTestCase extends TestCase
 
   private HashSet<Var>     captures        = new HashSet<Var>();
 
+  protected boolean runResult = true;
+  protected boolean runDecompileResult = true;
+  protected boolean runRewriteResult = true;
+  
   /*
    * (non-Javadoc)
    * 
@@ -164,21 +168,30 @@ public abstract class JaqlBaseTestCase extends TestCase
         context.reset();
         qNum++;
 
-        System.err.println("\nrunning formatResult");
-        JaqlUtil.getRNGStore().save(rRngMap);
-        JaqlUtil.getRNGStore().restore(qRngMap);
-        formatResult(qNum, expr, context, oStr);
+        if (runResult)
+        {
+          System.err.println("\nrunning formatResult");
+          JaqlUtil.getRNGStore().save(rRngMap);
+          JaqlUtil.getRNGStore().restore(qRngMap);
+          formatResult(qNum, expr, context, oStr);
+        }
 
-        System.err.println("\nrunning formatDecompileResult");
-        JaqlUtil.getRNGStore().save(qRngMap);
-        JaqlUtil.getRNGStore().restore(dRngMap);
-        formatDecompileResult(expr, context, dStr);
+        if (runDecompileResult)
+        {
+          System.err.println("\nrunning formatDecompileResult");
+          JaqlUtil.getRNGStore().save(qRngMap);
+          JaqlUtil.getRNGStore().restore(dRngMap);
+          formatDecompileResult(expr, context, dStr);
+        }
 
-        System.err.println("\nrunning formatRewriteResult");
-        JaqlUtil.getRNGStore().save(dRngMap);
-        JaqlUtil.getRNGStore().restore(rRngMap);
-        formatRewriteResult(expr, parser, context, rStr);
-        System.err.println("\nMade it to the end for this query!");
+        if (runRewriteResult)
+        {
+          System.err.println("\nrunning formatRewriteResult");
+          JaqlUtil.getRNGStore().save(dRngMap);
+          JaqlUtil.getRNGStore().restore(rRngMap);
+          formatRewriteResult(expr, parser, context, rStr);
+          System.err.println("\nMade it to the end for this query!");
+        }
       }
       catch (Exception ex)
       {
@@ -370,12 +383,21 @@ public abstract class JaqlBaseTestCase extends TestCase
     // compare the new vs. expected output
     try
     {
-      assertTrue("Found difference between current and expected output",
-          UtilForTest.compareResults(m_tmpFileName, m_goldFileName, LOG));
-      assertTrue("Found differences between decompiles and expected ouput",
-          UtilForTest.compareResults(m_decompileName, m_goldFileName, LOG));
-      assertTrue("Found difference between rewrite and expected output",
-          UtilForTest.compareResults(m_rewriteName, m_goldFileName, LOG));
+      if (runResult)
+      {
+        assertTrue("Found difference between current and expected output",
+            UtilForTest.compareResults(m_tmpFileName, m_goldFileName, LOG));
+      }
+      if (runDecompileResult)
+      {
+        assertTrue("Found differences between decompiles and expected ouput",
+            UtilForTest.compareResults(m_decompileName, m_goldFileName, LOG));
+      }
+      if (runRewriteResult)
+      {
+        assertTrue("Found difference between rewrite and expected output",
+            UtilForTest.compareResults(m_rewriteName, m_goldFileName, LOG));
+      }
     }
     catch (IOException e)
     {

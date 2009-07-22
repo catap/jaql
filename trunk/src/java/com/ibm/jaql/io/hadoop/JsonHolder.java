@@ -3,7 +3,8 @@ package com.ibm.jaql.io.hadoop;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
-public final class JsonHolder
+/** Holds a JSON value. Mainly used for storing JSON values in SequenceFiles */
+public class JsonHolder
 {
   public JsonValue value;
   
@@ -19,6 +20,7 @@ public final class JsonHolder
   @Override
   public int hashCode()
   {
-    return JsonUtil.hashCode(value);
+    int hashCode = JsonUtil.hashCode(value);
+    return hashCode;
   }
 }

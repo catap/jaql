@@ -135,7 +135,7 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
 
   protected final static int hashValue(int h, JsonValue value)
   {
-    int v = value==null ? 1 : value.hashCode();
+    int v = com.ibm.jaql.json.type.JsonUtil.hashCode(value);
     return (h ^ v) * BaseUtil.GOLDEN_RATIO_32;
   }
   
@@ -164,7 +164,7 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
 
   protected final static long longHashValue(long h, JsonValue value)
   {
-    long v = value==null ? 1 : value.longHashCode();
+    long v = com.ibm.jaql.json.type.JsonUtil.longHashCode(value);
     return (h ^ v) * BaseUtil.GOLDEN_RATIO_64;
   }
  

@@ -32,6 +32,7 @@ public class TestSchema extends JaqlBaseTestCase
   protected void setUp() throws IOException
   {
     setFilePrefix("schema");
+    runRewriteResult = false; // disabled for the moment
   }
 
   /*

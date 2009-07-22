@@ -17,6 +17,10 @@ package com.ibm.jaql.lang.rewrite;
 
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.DeemptyFn;
@@ -295,6 +299,7 @@ public class ToMapReduce extends Rewrite
     int topSlot = groupSeg.root.getChildSlot();
 
     GroupByExpr group = (GroupByExpr) groupSeg.primaryExpr;
+    group.getSchema(); // performs schema computations for variable used in group-by expression
     int n = group.numInputs();
     BindingExpr byBinding = group.byBinding();
 
@@ -316,6 +321,7 @@ public class ToMapReduce extends Rewrite
       assert reader.isMapReducible();
       inputs[i] = reader.descriptor(); //rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS)); // TODO: change name (not rewriting, but does steal inputs)
       //Expr expr = new ArrayExpr(new VarExpr(inputState.mapIn));
+      inputState.mapIn.setSchema(reader.getSchema());
       Expr expr = new VarExpr(inputState.mapIn);
       reader.replaceInParent(expr);
 
@@ -345,19 +351,28 @@ public class ToMapReduce extends Rewrite
 
     // build the map/init functions
     Expr[] mapFns = new Expr[n];
+    Schema[] mapOutputKeySchemata = new Schema[n];
+    Schema[] mapOutputValueSchemata = new Schema[n];
     for (int i = 0; i < n; i++)
     {
-      Var v = engine.env.makeVar("$i"+i);
+      
       PerInputState inputState = inputStates[i];
       BindingExpr b = group.inBinding();
       Expr inExpr = b.child(i);
       Expr byExpr = byBinding.byExpr(i);
+      Var v = engine.env.makeVar("$i"+i, b.var.getSchema());
       byExpr.replaceVar(b.var, v);
       Expr keyValPair = new ArrayExpr(byExpr, new VarExpr(v));
       Expr forExpr = new ForExpr(v, inExpr, new ArrayExpr(keyValPair));
       mapFns[i] = new DefineFunctionExpr(new Var[]{inputState.mapIn}, forExpr);
+      mapOutputKeySchemata[i] = byExpr.getSchema();
+      mapOutputValueSchemata[i] = v.getSchema();
     }
 
+    // compute map output schema
+    Expr mapOutputKeySchema = new ConstExpr(new JsonSchema(SchemaTransformation.or(mapOutputKeySchemata)));
+    Expr mapOutputValueSchema = new ConstExpr(new JsonSchema(SchemaTransformation.or(mapOutputValueSchemata)));
+    
     // Make the output
     Expr output;
     Expr lastExpr = groupSeg.root;
@@ -391,6 +406,7 @@ public class ToMapReduce extends Rewrite
     {
       input = inputs[0];
       map = mapFns[0];
+      
       if (combining)
       {
         combine = combineFns[0];
@@ -407,17 +423,21 @@ public class ToMapReduce extends Rewrite
     }
     if (combining)
     {
-      fnArgs = new Expr[5];
-      fnArgs[4] = new NameValueBinding("combine", combine);
+      fnArgs = new Expr[6];
+      fnArgs[5] = new NameValueBinding("combine", combine);
     }
     else
     {
-      fnArgs = new Expr[4];
+      fnArgs = new Expr[5];
     }
     fnArgs[0] = new NameValueBinding("input", input);
     fnArgs[1] = new NameValueBinding("output", output);
     fnArgs[2] = new NameValueBinding(mapName, map);
-    fnArgs[3] = new NameValueBinding(reduceName, reduce);
+    fnArgs[3] = new NameValueBinding("schema", new RecordExpr(new Expr[] {
+        new NameValueBinding("key", mapOutputKeySchema),
+        new NameValueBinding("value", mapOutputValueSchema) 
+        }));
+    fnArgs[4] = new NameValueBinding(reduceName, reduce);
 
     RecordExpr args = new RecordExpr(fnArgs);
     Expr mr;
@@ -471,8 +491,9 @@ public class ToMapReduce extends Rewrite
     Expr topParent = mapSeg.root.parent();
     int topSlot = mapSeg.root.getChildSlot();
 
+    // make the input
     Expr input = reader.descriptor(); //rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS)); // TODO: change name (not rewriting, but does steal inputs)
-    Var mapIn = engine.env.makeVar("$mapIn");
+    Var mapIn = engine.env.makeVar("$mapIn", reader.getSchema());
     //Expr expr = new ArrayExpr(new VarExpr(mapIn));
     Expr expr = new VarExpr(mapIn);
     reader.replaceInParent(expr);
@@ -499,12 +520,23 @@ public class ToMapReduce extends Rewrite
     expr = new ArrayExpr(new ConstExpr(null), new VarExpr(forVar));
     expr = new ForExpr(forVar, lastExpr, new ArrayExpr(expr));
 
+    // compute the schema
+    Expr mapOutputKeySchema = new ConstExpr(new JsonSchema(SchemaFactory.nullSchema()));
+    Expr mapOutputValueSchema = new ConstExpr(new JsonSchema(lastExpr.getSchema().elements()));
+    
+//    if (1==1) throw new IllegalStateException(expr.getSchema().toString());
+    
     Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);
 
     expr = new MapReduceFn(new RecordExpr(new Expr[]{
         new NameValueBinding("input", input),
+        new NameValueBinding("map", mapFn),
+        new NameValueBinding("schema", new RecordExpr(new Expr[] {
+            new NameValueBinding("key", mapOutputKeySchema),
+            new NameValueBinding("value", mapOutputValueSchema),
+        })),
         new NameValueBinding("output", output),
-        new NameValueBinding("map", mapFn)}));
+        }));
 
     mapSeg.type = Segment.Type.MAPREDUCE;
     mapSeg.root = expr;
