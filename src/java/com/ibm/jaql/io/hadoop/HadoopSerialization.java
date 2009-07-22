@@ -6,41 +6,120 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 
+import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.serialization.Serializer;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.temp.TempBinaryFullSerializer;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonSchema;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /** Wrapper class to make our serializers available to Hadoop. Currently the {@link Serializer}
  * is hard-coded; future versions will read it from the job configuration. */
-public class HadoopSerialization implements org.apache.hadoop.io.serializer.Serialization<JsonHolder> {
+public class HadoopSerialization
+extends Configured 
+implements org.apache.hadoop.io.serializer.Serialization<JsonHolder> 
+{
   
   // -- org.apache.hadoop.io.serializer.Serialization interface -----------------------------------
   
   @Override
   public boolean accept(Class<?> c)
   {
-    return c.equals(JsonHolder.class);
+    return c.equals(JsonHolder.class) 
+        || c.equals(JsonHolderMapOutputKey.class) 
+        || c.equals(JsonHolderMapOutputValue.class);
   }
 
   @Override
   public org.apache.hadoop.io.serializer.Deserializer<JsonHolder> 
       getDeserializer(Class<JsonHolder> c)
   {
-    // TODO: make parametrizable
-    return new HadoopDeserializer(BinaryFullSerializer.getDefault());
+    if (c.equals(JsonHolder.class))
+    {
+      return new HadoopDeserializer(getInternalSerializer(c)); 
+    }
+    else if (c.equals(JsonHolderMapOutputKey.class))
+    {
+      return new HadoopDeserializerKey(getInternalSerializer(c));
+    }
+    else if (c.equals(JsonHolderMapOutputValue.class))
+    {
+      return new HadoopDeserializerValue(getInternalSerializer(c));
+    }
+    throw new IllegalArgumentException("no deserializer defined for class " + c);
   }
 
   @Override
   public org.apache.hadoop.io.serializer.Serializer<JsonHolder> 
-      getSerializer(
-      Class<JsonHolder> c)
+      getSerializer(Class<JsonHolder> c)
   {
-    // TODO: make parametrizable
-    return new HadoopSerializer(BinaryFullSerializer.getDefault());
+    return new HadoopSerializer(getInternalSerializer(c)); 
   }
 
+  public BinaryFullSerializer getInternalSerializer(Class<? extends JsonHolder> c)
+  {
+    if (c.equals(JsonHolder.class))
+    {
+      return BinaryFullSerializer.getDefault();
+    }
+
+    // get the schema argument
+    String schemaText = getConf().get(MapReduceBaseExpr.SCHEMA_NAME);
+    JsonRecord schemaRecord = null;
+    if (schemaText != null)
+    {
+      JsonValue t = null;
+      try 
+      {
+        JaqlLexer lexer = new JaqlLexer(new StringReader(schemaText));
+        JaqlParser parser = new JaqlParser(lexer);
+        Expr expr = parser.parse();
+        t = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
+      } catch (Exception e)
+      {
+        // schema stays null 
+      }
+      schemaRecord = (JsonRecord)t; // intentional class cast exception
+    }
+
+    // get the schemata
+    Schema keySchema, valueSchema;
+    if (schemaRecord != null)
+    {
+      keySchema = ((JsonSchema)JaqlUtil.enforceNonNull(schemaRecord.getRequired(new JsonString("key")))).get();
+      valueSchema = ((JsonSchema)JaqlUtil.enforceNonNull(schemaRecord.getRequired(new JsonString("value")))).get();
+    }
+    else
+    {
+      keySchema = SchemaFactory.anyOrNullSchema();
+      valueSchema = SchemaFactory.anyOrNullSchema();
+    }
+    
+    // get the right serializer
+    if (c.equals(JsonHolderMapOutputKey.class))
+    {
+      return new TempBinaryFullSerializer(keySchema);
+    }
+    else if (c.equals(JsonHolderMapOutputValue.class))
+    {
+      return new TempBinaryFullSerializer(valueSchema);
+    }
+    throw new IllegalArgumentException("no serializer defined for class " + c);
+  }
   
   // -- utility methods ---------------------------------------------------------------------------
 
@@ -61,7 +140,8 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
   /** Wrapper for writing. Makes use of an internal buffer because the <code>OutputStream</code> 
    * provided by Hadoop performs poorly when a large number of small elements are written to it.
    * (In our case, these small elements are encoding ids and field lengths, for example.) */
-  public static class HadoopSerializer implements org.apache.hadoop.io.serializer.Serializer<JsonHolder> {
+  public static class HadoopSerializer 
+  implements org.apache.hadoop.io.serializer.Serializer<JsonHolder> {
     BinaryFullSerializer serializer;
     // BufferedOutputStream out;    // would work as well but is synchronized
     UnsynchronizedBufferedOutputStream out;   
@@ -93,11 +173,12 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
   }
   
   /** Wrapper for reading. */
-  public static class HadoopDeserializer implements org.apache.hadoop.io.serializer.Deserializer<JsonHolder> {
+  static abstract class AbstractHadoopDeserializer<T extends JsonHolder>
+  implements org.apache.hadoop.io.serializer.Deserializer<JsonHolder> {
     BinaryFullSerializer serializer;
     DataInputStream in;
     
-    public HadoopDeserializer(BinaryFullSerializer serializer) {
+    public AbstractHadoopDeserializer(BinaryFullSerializer serializer) {
       this.serializer = serializer;
     }
 
@@ -111,7 +192,7 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
     public JsonHolder deserialize(JsonHolder t) throws IOException
     {
       if (t==null) {
-        t = new JsonHolder();
+        t = newHolder();
       }
       t.value = serializer.read(in, t.value);
       return t;
@@ -122,9 +203,52 @@ public class HadoopSerialization implements org.apache.hadoop.io.serializer.Seri
     {
       in.close();      
     }
+    
+    public abstract T newHolder();    
   }
   
+  /** Default deserializer. */
+  static class HadoopDeserializer extends AbstractHadoopDeserializer<JsonHolder>
+  {
+    public HadoopDeserializer(BinaryFullSerializer serializer) {
+      super(serializer);
+    }
+    
+    public JsonHolder newHolder()
+    {
+      return new JsonHolderMapOutputKey();
+    }
+  }
+  
+  /** Deserializer used for map output keys. */
+  static class HadoopDeserializerKey extends AbstractHadoopDeserializer<JsonHolderMapOutputKey>
+  {
+    public HadoopDeserializerKey(BinaryFullSerializer serializer) {
+      super(serializer);
+    }
+    
+    public JsonHolderMapOutputKey newHolder()
+    {
+      return new JsonHolderMapOutputKey();
+    }
+  }
 
+  /** Deserializer used for map output values. */
+  static class HadoopDeserializerValue extends AbstractHadoopDeserializer<JsonHolderMapOutputValue>
+  {
+    public HadoopDeserializerValue(BinaryFullSerializer serializer) {
+      super(serializer);
+    }
+    
+    public JsonHolderMapOutputValue newHolder()
+    {
+      return new JsonHolderMapOutputValue();
+    }
+  }
+
+  
+  // -- helper classes ----------------------------------------------------------------------------
+  
   /** Like {@link BufferedOutputStream} but without synchronization. */
   public static class UnsynchronizedBufferedOutputStream extends OutputStream
   {

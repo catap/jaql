@@ -21,9 +21,6 @@ import org.apache.hadoop.io.DataInputBuffer;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
-import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
-import com.ibm.jaql.io.serialization.binary.def.JsonStringSerializer;
-import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.JsonComparator;
@@ -36,7 +33,7 @@ import com.ibm.jaql.lang.core.JsonComparator;
  */
 public class DefaultJsonComparator implements JsonComparator
 {
-  // type of serialization; currently hardcoded
+  // type of serialization; overwritten by some subclasses
   protected BinaryFullSerializer serializer = BinaryFullSerializer.getDefault();
   
   // cache variables for hashing  
@@ -46,9 +43,6 @@ public class DefaultJsonComparator implements JsonComparator
   // cache variables for comparing
   protected DataInputBuffer input1 = new DataInputBuffer();
   protected DataInputBuffer input2 = new DataInputBuffer();
-  protected JsonStringSerializer jstringSerializer 
-    = (JsonStringSerializer)DefaultBinaryFullSerializer.getInstance().getSerializer(JsonEncoding.STRING);
-  
   
   // -- comparison -------------------------------------------------------------------------------
 

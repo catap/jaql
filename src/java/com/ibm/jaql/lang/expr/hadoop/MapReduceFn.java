@@ -26,6 +26,8 @@ import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.JsonHolderMapOutputKey;
+import com.ibm.jaql.io.hadoop.JsonHolderMapOutputValue;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
@@ -33,8 +35,8 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -98,10 +100,20 @@ public class MapReduceFn extends MapReduceBaseExpr
       conf.setReducerClass(ReduceEval.class);
       JaqlFunction reduceFn = (JaqlFunction) reduce;
       prepareFunction("reduce", numInputs + 1, reduceFn, 0);
+
+      // setup serialization (and propagate schema information, if present)
+      setupSerialization(true);
+      JsonValue schema = args.get(new JsonString("schema"));
+      if (schema != null) {
+        conf.set(SCHEMA_NAME, schema.toString());
+      }      
     }
     else
     {
       conf.setNumReduceTasks(0);
+      
+      // setup serialization
+      setupSerialization(false);
     }
 
     if (numInputs == 1)
@@ -175,7 +187,7 @@ public class MapReduceFn extends MapReduceBaseExpr
      * @param values
      * @throws IOException
      */
-    protected void splitValues(Iterator<JsonHolder> values) throws IOException
+    protected void splitValues(Iterator<? extends JsonHolder> values) throws IOException
     {
       // TODO: Would like values to be something that I can open an iterator on. 
       // Until I do the analysis that says that we are going over the values just once,
@@ -209,13 +221,13 @@ public class MapReduceFn extends MapReduceBaseExpr
    * 
    */
   public static class CombineEval extends CombineReduceEval
-      implements Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
+  implements Reducer<JsonHolderMapOutputKey, JsonHolderMapOutputValue, JsonHolderMapOutputKey, JsonHolderMapOutputValue>
   {
     protected JaqlFunction[] combineFns;
     protected JsonValue[]    fnArgs = new JsonValue[2];
     protected JsonLong       outId;
     protected BufferedJsonArray outPair;
-    protected JsonHolder valueHolder = new JsonHolder();
+    protected JsonHolderMapOutputValue valueHolder = new JsonHolderMapOutputValue();
     
     /*
      * (non-Javadoc)
@@ -246,8 +258,8 @@ public class MapReduceFn extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(JsonHolder key, Iterator<JsonHolder> values,
-        OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
+    public void reduce(JsonHolderMapOutputKey key, Iterator<JsonHolderMapOutputValue> values,
+        OutputCollector<JsonHolderMapOutputKey, JsonHolderMapOutputValue> output, Reporter reporter)
         throws IOException
     {
       try
@@ -295,10 +307,11 @@ public class MapReduceFn extends MapReduceBaseExpr
    */
   public static class ReduceEval extends CombineReduceEval
       implements
-        Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
+        Reducer<JsonHolderMapOutputKey, JsonHolderMapOutputValue, JsonHolder, JsonHolder>
   {
     protected JaqlFunction reduceFn;
     protected JsonValue[]  fnArgs;
+    JsonHolder keyHolder = new JsonHolder();
     JsonHolder valueHolder = new JsonHolder();
 
     /*
@@ -324,7 +337,7 @@ public class MapReduceFn extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(JsonHolder key, Iterator<JsonHolder> values,
+    public void reduce(JsonHolderMapOutputKey key, Iterator<JsonHolderMapOutputValue> values,
         OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
         throws IOException
     {
@@ -341,10 +354,11 @@ public class MapReduceFn extends MapReduceBaseExpr
           fnArgs[0] = key.value;
           iter = reduceFn.iter(context, fnArgs);
         }
+        keyHolder.value = key.value; // necessary (key has wrong JsonHolder impl)
         for (JsonValue value : iter)
         {
           valueHolder.value = value;
-          output.collect(key, valueHolder);
+          output.collect(keyHolder, valueHolder);
         }
       }
       catch (IOException ex)

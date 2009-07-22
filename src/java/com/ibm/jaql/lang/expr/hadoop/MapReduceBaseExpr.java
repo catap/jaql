@@ -37,6 +37,9 @@ import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopSerialization;
 import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.JsonHolderMapOutputKey;
+import com.ibm.jaql.io.hadoop.JsonHolderMapOutputValue;
+import com.ibm.jaql.io.hadoop.MapOutputKeyComparator;
 import com.ibm.jaql.io.registry.RegistryUtil;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
@@ -45,7 +48,6 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.DefaultJsonComparator;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
@@ -62,13 +64,14 @@ import com.ibm.jaql.util.ClassLoaderMgr;
  */
 public abstract class MapReduceBaseExpr extends Expr
 {
-  public final static String    IMP                  = "com.ibm.impliance.MapReduceExpr";
-  public final static String    storeRegistryVarName = IMP + ".sRegistry";
-  public final static String    funcRegistryVarName  = IMP + ".fRegistry";
-  public final static String    rngRegistryVarName   = IMP + ".rRegistry";
-  public final static String    registryVarName      = IMP + ".registry";
-  public final static String    numInputsName        = IMP + ".numInputs";
-
+  public final static String    BASE_NAME                  = "com.ibm.impliance.MapReduceExpr";
+  public final static String    STORE_REGISTRY_VAR_NAME    = BASE_NAME + ".sRegistry";
+  public final static String    FUNC_REGISTRY_VAR_NAME     = BASE_NAME + ".fRegistry";
+  public final static String    RNG_REGISTRY_VAR_NAME      = BASE_NAME + ".rRegistry";
+  public final static String    REGISTRY_VAR_NAM           = BASE_NAME + ".registry";
+  public final static String    NUM_INPUTS_NAME            = BASE_NAME + ".numInputs";
+  public final static String    SCHEMA_NAME                = BASE_NAME + ".schema";
+  
   protected static final Logger LOG                  = Logger
                                                          .getLogger(MapReduceFn.class
                                                              .getName());
@@ -173,19 +176,12 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       numInputs = 1;
     }
-    conf.setInt(numInputsName, numInputs);
+    conf.setInt(NUM_INPUTS_NAME, numInputs);
     HadoopInputAdapter inAdapter = (HadoopInputAdapter) JaqlUtil
         .getAdapterStore().input.getAdapter(inArgs);
     inAdapter.setParallel(conf);
     //ConfiguratorUtil.writeToConf(inAdapter, conf, inArgs);
 
-    //
-    // Setup serialization
-    
-    // TODO: currently assumes usage of  FullSerializer#getDefault()
-    HadoopSerialization.register(conf);
-    conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
-    
     //
     // Setup the output
     //
@@ -198,13 +194,31 @@ public abstract class MapReduceBaseExpr extends Expr
     // write out various static registries
     RegistryUtil.writeConf(conf, HadoopAdapter.storeRegistryVarName, JaqlUtil
         .getAdapterStore());
-    RegistryUtil.writeConf(conf, funcRegistryVarName, JaqlUtil
+    RegistryUtil.writeConf(conf, FUNC_REGISTRY_VAR_NAME, JaqlUtil
         .getFunctionStore());
-    RegistryUtil.writeConf(conf, rngRegistryVarName, JaqlUtil.getRNGStore());
+    RegistryUtil.writeConf(conf, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
 
     return args;
   }
 
+  /** Registers Jaql's serializers. Must be called by subclasses. */
+  protected final void setupSerialization(boolean hasReduce)
+  {
+    HadoopSerialization.register(conf);
+    if (hasReduce)
+    {
+      conf.setMapOutputKeyClass(JsonHolderMapOutputKey.class);
+      conf.setMapOutputValueClass(JsonHolderMapOutputValue.class);
+      conf.setOutputKeyComparatorClass(MapOutputKeyComparator.class);
+    }
+    else
+    {
+      conf.setMapOutputKeyClass(JsonHolder.class);
+      conf.setMapOutputValueClass(JsonHolder.class);
+      // no comparators needed
+    }
+  }
+  
   /**
    * @param fnName
    * @param numArgs
@@ -232,7 +246,7 @@ public abstract class MapReduceBaseExpr extends Expr
     }
     ps.flush();
     String s = outStream.toString();
-    conf.set(IMP + "." + fnName + "." + inId, s);
+    conf.set(BASE_NAME + "." + fnName + "." + inId, s);
   }
 
   /**
@@ -249,11 +263,11 @@ public abstract class MapReduceBaseExpr extends Expr
       // This might be useful for temps
       // String taskId = job.get("mapred.task.id");
 
-      numInputs = job.getInt(numInputsName, 0);
+      numInputs = job.getInt(NUM_INPUTS_NAME, 0);
       assert numInputs > 0;
 
-      runningReduce = (job.get(IMP + ".reduce.0") != null)
-          || (job.get(IMP + ".final.0") != null);
+      runningReduce = (job.get(BASE_NAME + ".reduce.0") != null)
+          || (job.get(BASE_NAME + ".final.0") != null);
 
       // setup global variables
       Globals.setJobConf(job);
@@ -262,9 +276,9 @@ public abstract class MapReduceBaseExpr extends Expr
         //AdapterManager.readRegistryFromConf(storeRegistryVarName, job);
         RegistryUtil.readConf(job, HadoopAdapter.storeRegistryVarName, JaqlUtil
             .getAdapterStore());
-        RegistryUtil.readConf(job, funcRegistryVarName, JaqlUtil
+        RegistryUtil.readConf(job, FUNC_REGISTRY_VAR_NAME, JaqlUtil
             .getFunctionStore());
-        RegistryUtil.readConf(job, rngRegistryVarName, JaqlUtil.getRNGStore());
+        RegistryUtil.readConf(job, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
         //FunctionStore.readRegistryFromConf(funcRegistryVarName, job);
         //RNGStore.readFromConf(rngRegistryVarName, job);
       }
@@ -284,7 +298,7 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       try
       {
-        String fullName = IMP + "." + fnName + "." + inId;
+        String fullName = BASE_NAME + "." + fnName + "." + inId;
         String exprText = job.get(fullName);
         // System.err.println("compiling: "+exprText);
         if (exprText == null)
@@ -314,6 +328,8 @@ public abstract class MapReduceBaseExpr extends Expr
   /**
    * Used for both map and init functions
    */
+  // produces JsonHolderMapOutputKey / JsonHolderMapOutputValue if there is a reduce phase
+  // otherwise produces JsonHolder / JsonHolder
   public static class MapEval extends RemoteEval
       implements MapRunnable<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
@@ -321,8 +337,8 @@ public abstract class MapReduceBaseExpr extends Expr
     JaqlFunction   mapFn;
     boolean     makePair    = false;
     BufferedJsonArray outPair;
-    JsonHolder outKey = new JsonHolder();
-    JsonHolder outValue = new JsonHolder();
+    JsonHolder outKey = null; 
+    JsonHolder outValue = null;
 
     /*
      * (non-Javadoc)
@@ -333,9 +349,24 @@ public abstract class MapReduceBaseExpr extends Expr
     public void configure(JobConf job)
     {
       super.configure(job);
+      
+      if (runningReduce)
+      {
+        // these classes indicate temporary map output
+        outKey = new JsonHolderMapOutputKey();
+        outValue = new JsonHolderMapOutputValue();
+      }
+      else
+      {
+        // these classes indicate permanent map output
+        outKey = new JsonHolder();
+        outValue = new JsonHolder();
+      }
+      
       if (numInputs > 1)
       {
         inputId = CompositeInputAdapter.readCurrentIndex(job);
+        
         makePair = runningReduce;
         if (makePair)
         {
