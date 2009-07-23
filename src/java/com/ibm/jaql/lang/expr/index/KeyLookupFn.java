@@ -27,6 +27,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * [ [key,value1] ] -> keyLookup([ [key,value2] ]) ==> [ [key, value1, value2] ]
@@ -63,6 +64,16 @@ public class KeyLookupFn extends IterExpr
   {
     return i == 0;
   }
+
+  /** 
+   * This expression evaluates both inputs only once
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
 
   @Override
   public JsonIterator iter(final Context context) throws Exception

@@ -8,6 +8,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 /** Checks whether the first argument matches the schema given in the second argument. If so,
  * returns the first argument. Otherwise, throws an expection.  
@@ -20,6 +21,17 @@ public class CheckFn extends Expr
   public CheckFn(Expr[] exprs)
   {
     super(exprs);
+  }
+
+  public CheckFn(Expr inExpr, Expr schemaExpr)
+  {
+    super(inExpr, schemaExpr);
+  }
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
   }
 
   @Override

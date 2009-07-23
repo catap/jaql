@@ -24,7 +24,6 @@ import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
-import com.ibm.jaql.lang.walk.OneExprWalker;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
 /**
@@ -33,7 +32,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[9];
+  protected RewritePhase[] phases      = new RewritePhase[7];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter
   protected long           counter     = 0;
@@ -65,12 +64,13 @@ public class RewriteEngine
     }
 
     ExprWalker postOrderWalker = new PostOrderExprWalker();
-    ExprWalker rootWalker = new OneExprWalker();
+    // ExprWalker rootWalker = new OneExprWalker();
 
     RewritePhase basicPhase = new RewritePhase(this, postOrderWalker, 10000);
     RewritePhase phase = phases[phaseId] = basicPhase;
     new LetInline(phase);
     new DoMerge(phase);
+    new DoPullup(phase);
     // new DechainFor(phase);
     new FunctionInline(phase);
     new TrivialForElimination(phase);
@@ -94,6 +94,8 @@ public class RewriteEngine
     new InjectAggregate(phase);
     new UnnestFor(phase);
     new WriteAssignment(phase);
+    new TypeCheckSimplification(phase);
+    //    new StrengthReduction(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
 
@@ -107,11 +109,13 @@ public class RewriteEngine
     new ConstEval(phase); // TODO: run bottom-up/post-order
     // new ConstFunction(phase);
 
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
-    new StrengthReduction(phase);
-    
-    phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
+    // phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
+    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);
     new ToMapReduce(phase);
+    new WriteAssignment(phase);
+    new LetInline(phase);
+    new DoMerge(phase);
+    new DoPullup(phase);
 
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     new GroupElimination(phase);
@@ -119,10 +123,6 @@ public class RewriteEngine
     
     phases[++phaseId] = basicPhase;
     
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 0);
-    new StrengthReduction(phase);
-
-
     // This phase is REQUIRED to run to completion if the expr has been
     // modified in a way that a variable could be hidden (ie, just about any rewrite)
     // FIXME: Make sure this phase is run to completion. Probably when we wrap up the parse & rewrite into one class. 
