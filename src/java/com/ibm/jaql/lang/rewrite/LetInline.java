@@ -76,6 +76,7 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
       boolean noExternalEffects = 
         e.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
         e.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never();
+      
       if( e instanceof BindingExpr )
       {
         BindingExpr b = (BindingExpr) e;
@@ -121,10 +122,23 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         if( valExpr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).maybe() ||
             valExpr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).maybe() )
         {
-          continue;
+          if( numUses == 1 )
+          {
+            VarExpr use = findFirstVarUse(doExpr, b.var);
+            if( use.parent() == doExpr && use.getChildSlot() == b.getChildSlot() + 1 )
+            {
+              // ( ..., $v = <some effect>, $v, <...no use of $v...> ) ==> (..., <some effect>, <...no use of $v...>)   
+              use.replaceInParent(valExpr);
+              replaced = true;
+            }
+          }
+          if( !replaced )
+          {
+            continue;
+          }
         }
 
-        if (numUses == 1)
+        if (!replaced && numUses == 1)
         {
           VarExpr use = findFirstVarUse(doExpr, b.var);
           if( evaluatedOnceTo(use, doExpr) ) // TODO: vars should be able to be marked as inlined to force inlining

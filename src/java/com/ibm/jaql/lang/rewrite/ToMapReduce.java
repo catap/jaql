@@ -43,6 +43,7 @@ import com.ibm.jaql.lang.expr.io.HadoopTempExpr;
 import com.ibm.jaql.lang.expr.io.ReadFn;
 import com.ibm.jaql.lang.expr.io.WriteFn;
 import com.ibm.jaql.lang.expr.nil.DenullFn;
+import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.rewrite.Segment.Type;
 
 /**
@@ -57,7 +58,7 @@ public class ToMapReduce extends Rewrite
    */
   public ToMapReduce(RewritePhase phase)
   {
-    super(phase, Expr.class);
+    super(phase, QueryExpr.class);
   }
 
   /**

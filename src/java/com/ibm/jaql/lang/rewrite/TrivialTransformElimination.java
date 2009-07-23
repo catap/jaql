@@ -22,9 +22,11 @@ import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 
 /**
- * e1 -> transform $ $
+ *     e1 -> transform $ $
  * ==>
- * e1
+ *     asArray(e1)
+ * ==>
+ *     e1              if e1 is always an array
  * 
  */
 public class TrivialTransformElimination extends Rewrite

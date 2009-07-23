@@ -33,6 +33,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.util.Bool3;
 
 /** Wrapper for functions implemented in Java.
  * 
@@ -174,6 +175,16 @@ public class JavaFnExpr extends Expr
     }
     exprText.print(" )");
   }
+
+  /** 
+   * This expression evaluates all input arguments only once
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
 
   public Map<ExprProperty, Boolean> getProperties()
   {

@@ -216,6 +216,7 @@ public class SchemaTransformation
         if (ns != null) alternatives.add(ns);
       }
       if (alternatives.size() == 0) return null;
+      if (alternatives.size() == 1) return alternatives.get(0);
       return new OrSchema(alternatives);
     }
     return null;
