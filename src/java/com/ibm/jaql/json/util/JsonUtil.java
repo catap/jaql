@@ -18,6 +18,7 @@ package com.ibm.jaql.json.util;
 import java.io.PrintStream;
 
 import com.ibm.jaql.json.type.Item;
+import com.ibm.jaql.json.type.JLong;
 import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.json.type.SpillJArray;
 
@@ -26,6 +27,8 @@ import com.ibm.jaql.json.type.SpillJArray;
  */
 public class JsonUtil
 {
+  public static char[] hex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+  
   /**
    * @param out
    * @param indent
@@ -134,10 +137,10 @@ public class JsonUtil
           if (Character.isISOControl(c))
           {
             out.print("\\u");
-            out.print(c & 0xf000);
-            out.print(c & 0x0f00);
-            out.print(c & 0x00f0);
-            out.print(c & 0x000f);
+            out.print( hex[ ((c & 0xf000) >>> 12) ] );
+            out.print( hex[ ((c & 0x0f00) >>> 8) ] );
+            out.print( hex[ ((c & 0x00f0) >>> 4) ] );
+            out.print( hex[ (c & 0x000f) ] );
           }
           else
           {
@@ -147,6 +150,16 @@ public class JsonUtil
     }
     out.print("\"");
   }
+  
+//  public static String toHex(char c) {
+//    StringBuilder sb = new StringBuilder();
+//    sb.append("\\u");
+//    sb.append( (c & 0xf000) >>> 12).append('|');
+//    sb.append( (c & 0x0f00) >>> 8).append('|');
+//    sb.append( (c & 0x00f0) >>> 4).append('|');
+//    sb.append(c & 0x000f);
+//    return sb.toString();
+//  }
 
   /**
    * @param out
