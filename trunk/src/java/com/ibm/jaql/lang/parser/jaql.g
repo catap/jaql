@@ -398,80 +398,6 @@ groupReturn returns [Expr r=null]
     //    { if(numInputs != 1) throw new RuntimeException("cannot use aggregate with cogroup"); } 
     ;
 
-//group returns [Expr r=null]
-//    {
-//      ArrayList<BindingExpr> inputs = new ArrayList<BindingExpr>();
-//      ArrayList<Expr> keys = new ArrayList<Expr>();
-//      ArrayList<Expr> intos = new ArrayList<Expr>();
-//      inputs.add(null); // for the by expressions
-//    }
-//    : "group" "(" groupIn[inputs, keys, intos] ( "," groupIn[inputs, keys, intos] )* ")" 
-//      {
-//        int n = keys.size();
-//          Var keyVar = env.makeVar("$key");
-//        Expr[] args = new Expr[n];
-//        inputs.set(0, new BindingExpr(BindingExpr.Type.EQ, keyVar, null, keys.toArray(args)));
-//        args = new Expr[n+1];
-//        args[0] = new ProjPattern(new VarExpr(keyVar),null,true);
-//        for(int i = 0 ; i < n ; i++)
-//        {
-//          Var aggVar = env.makeVar("$av");
-//          Var inVar = inputs.get(i+1).var;
-//          Expr e = intos.get(i);
-//          e.replaceVar(inVar, aggVar);
-//          e = AggregateExpr.make(env, aggVar, new VarExpr(inVar), e);
-//          e = new IndexExpr(e,0);
-//          e = new ProjPattern(e,null,true); // TODO: eliminate record assumption
-//          args[i+1] = e;
-//        }
-//        r = new RecordExpr(args);
-//        r = new ArrayExpr(r); 
-//        r = new GroupByExpr(inputs, r); // .expand(env);
-//      }
-//    ;
-//
-//groupIn[ArrayList<BindingExpr> inputs, ArrayList<Expr> keys, ArrayList<Expr> intos]
-//    { Expr f=null; String vn="$"; Var v; Expr e; Expr key=null; Expr r=null; }
-//    // TODO: verify that all keys and into are compatible (all recs/arrays)
-//    // TODO: verify that all keys have same fields??
-//    // TODO: make comparators another class of special functions (ignored outside of sorting/grouping)?
-//    : (f=simpleField)?
-//      (vn=var ( /*empty*/      { e = new VarExpr(env.inscope(vn)); }
-//              | "in" e=expr))  { v=env.scope(vn); } 
-//      ("by" key=cmp)?
-//      ("into" r=expr)?
-//    {
-//       env.unscope(v);
-//       if( key == null )
-//       {
-//         key = new ConstExpr(Item.NIL);
-//       }
-//       if( r == null )
-//       {
-//           r = new ArrayAgg(new VarExpr(v));
-//           if( f == null )
-//           {
-//             r = new ArrayExpr(r);
-//           }
-//           else
-//         {
-//           r = new RecordExpr(new NameValueBinding(f, r, false));
-//         }
-//       }
-//       else if( f != null )
-//       {
-//           // TODO: just ignore this?
-//           throw new RecognitionException("warning: field label cannot be used with 'into' clause: "+f,
-//              getFilename(), LT(1).getColumn(), LT(1).getLine());
-//       }
-//       
-//       BindingExpr in = new BindingExpr(BindingExpr.Type.IN, v, null, e);
-//       inputs.add(in);
-//       keys.add(key);
-//       intos.add(r);
-//     }
-//   ;
-
 
 groupPipe[Expr in] returns [Expr r=null]
     { 
@@ -537,84 +463,6 @@ cmpSpec[ArrayList<CmpSpec> keys]
     }
     ;
     
-
-//defBinding[String name] returns [BindingExpr b]
-//    { Expr e; }
-//    : e=pipe
-//    {
-//      if( e instanceof BindingExpr )
-//      {
-//          b=(BindingExpr)e;
-//      }
-//      else
-//      {
-//          b = new BindingExpr(BindingExpr.Type.IN, env.scope(name), null, e);
-//      } 
-//    }
-//    ;
-    
-//groupBy[BindingExpr by] returns [BindingExpr b=null]
-//    { String n = "$key"; Expr e=null; }
-//    : ("by" b=defBinding[n])? // TODO: start at simple expr
-////    : ("by" (bv=avar "=")? e=expr)?
-//    {
-//      if( b == null )
-//      {
-//        b = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, new ConstExpr(Item.NIL));
-//      }
-//      if( by == null )
-//      {
-//        by = b;
-//      }
-//      else if( by.var.name.equals(b.var.name) )
-//      {
-//        by.addChild(b.inExpr());
-//      }
-//      else
-//      {
-//        throw new RuntimeException("all group by variables must have the same name:" +by.var.name+" != "+b.var.name);
-//      }
-////      if( e == null )
-////      {
-////          e = new ConstExpr(Item.NIL);
-////      }
-//      b.type = BindingExpr.Type.EQ;
-//      by.addChild(b);
-//    }
-//    ;
- 
-
-//groupReturn[ArrayList<BindingExpr> in] returns [Expr r=null]
-//    : "into" r=expr // { r = new ArrayExpr(r); } 
-//    : "into" r=subpipe[null] // "into" r=expr { r = new ArrayExpr(r); } 
-//    | /* empty */
-//        {
-//          Expr[] fields = new Expr[in.size()];
-//          for(int i = 0 ; i < in.size() ; i++ )
-//          {
-//            Var var = i == 0 ? in.get(i).var : in.get(i).var2;
-//            env.unscope(var);
-//            fields[i] = new NameValueBinding(var, false);
-//          }
-//          r = new ArrayExpr(new RecordExpr(fields));
-//        }
-//    ;
-
-//partition[Expr in] returns [Expr r=null]
-//    { BindingExpr b; Var by = null; Expr e = null; String bn = "$key"; }
-//    : "partition" b=each[in]
-//          "by" ( "(" ( bn=avar "=" )? e=expr ")" // TODO: allow a list and comparators
-//               | "default" { e = new DefaultExpr(); } ) // use input/arbitrary partitioning 
-//                           { by = env.scope(bn); }
-//          "into" "(" r=subpipe[b.var] ")"
-//          // | r=aggregate[in.var,new PipeInput(new VarExpr(in.var))]
-//          // | r=window[in.var,new PipeInput(new VarExpr(in.var))] )
-//      { 
-//        env.unscope(by);
-//        env.unscope(b.var);
-//        r = new PartitionExpr(b.var,b.inExpr(),by,e,r); 
-//      }
-//    ;
 
 
 //window[Expr in] returns [Expr r=null]
@@ -713,122 +561,6 @@ ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
       "on" e=expr    { on.add(e); b.var.hidden=true; }
     ;
 
-
-//join returns [Expr r=null]
-//    { 
-//      ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();
-//      HashMap<String,Var> keys = new HashMap<String,Var>(); 
-//    }
-//    : "join" joinIn[keys,in] ("," joinIn[keys,in])+
-//        {
-//          for(int i = 0 ; i < in.size() ; i++ )
-//          {
-//            Var var = in.get(i).var;
-//            var.hidden = false;
-//          }
-//        }
-//      ( "into" r=expr { r = new ArrayExpr(r); } 
-//      | "expand" r=expr //TODO: support join...expand? 
-//      )
-//      { r = new MultiJoinExpr(in, r).expand(env);  }
-//    ;
-//
-//joinIn[HashMap<String,Var> keys, ArrayList<BindingExpr> bindings]
-//  { 
-//      boolean p = false; 
-//      BindingExpr b; 
-//      ArrayList<BindingExpr> on = new ArrayList<BindingExpr>(); 
-//  }
-//  : ( "preserve" { p = true; })? b=vpipe "on" "(" joinOn[keys,on] ("," joinOn[keys,on])* ")"  // TODO: define $ = b.var during on
-//      {
-//        b.var.hidden = true;
-//        b.preserve = p;
-//        b.addChildren(on);
-//        bindings.add( b );
-//      }
-//  ;
-//
-//joinOn[HashMap<String,Var> keys, ArrayList<BindingExpr> on]
-//    { String k = "$__key__"; Expr e; } // TODO: define $ has current input so $ or $input can be used
-//    : (k=avar "=")? e=expr 
-//      {
-//          Var var = keys.get(k);
-//          if( var == null )
-//          {
-//        var = env.scope(k);
-//          var.hidden = true;
-//          keys.put(k,var);
-//          }
-//          on.add(new BindingExpr(BindingExpr.Type.EQ, var, null, e)); 
-//      }
-//    ;
-    
-//joinReturn[ArrayList<BindingExpr> in] returns [Expr r=null]
-//    : "into" r=expr { r = new ArrayExpr(r); } 
-  //  | /* empty */
-//        {
-//          Expr[] fields = new Expr[in.size()];
-//          for(int i = 0 ; i < in.size() ; i++ )
-//          {
-//            Var var = in.get(i).var;
-//            env.unscope(var);
-//            fields[i] = new NameValueBinding(var, false);
-//          }
-//          r = new ArrayExpr(new RecordExpr(fields));
-//        }
-//    ;
-
-    
-// Introduce uncorrelated expand operator?
-// 
-//cross returns [Expr r=null]
-//    {  BindingExpr b; ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();  }
-//    : "cross" "(" b=vpipe   { in.add(b); } 
-//         ("," b=vpipe   { in.add(b); } )* ")"
-//      {
-//        Expr[] fields = new Expr[in.size()];
-//        for(int i = 0 ; i < in.size() ; i++ )
-//        {
-//          Var var = in.get(i).var;
-//          env.unscope(var);
-//          fields[i] = new NameValueBinding(var, false);
-//        }
-//        r = new ArrayExpr(new RecordExpr(fields));
-//        r = new MultiForExpr(in, null, r).expand(env);
-//      }
-//    ;
-
-
-// TODO: keep or remove taggedMerge?
-//taggedMerge returns [Expr r=null]
-//    { ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>(); }
-//    : "taggedMerge" "(" taggedInput[bs] ( "," taggedInput[bs] )* ")" 
-//      { r = new TaggedMergeExpr(bs); }
-//    ;
-//    
-//taggedInput[ArrayList<BindingExpr> bs]
-//    { BindingExpr b; String v; Expr e; }
-//    : b=vpipe 
-//      ( "with" v=avar "=" e=expr  // TODO: define $ as alias to pipe name here, and on join, copartition, etc 
-//        { b.var2 = env.makeVar(v); b.addChild(e); }
-//      )?
-//      { env.unscope(b.var); bs.add(b); }
-//    ;
-
-
-//tee[Expr in] returns [Expr r=null]
-//    { 
-//      ArrayList<Expr> es = new ArrayList<Expr>();
-//      Var var = env.makeVar("$tee");
-//      es.add( new BindingExpr(BindingExpr.Type.IN, var, null, in) );
-//    }
-//    : "tee" "("      r=subpipe[var] { es.add(r); }  
-//                ("," r=subpipe[var] { es.add(r); } )*
-//            ")"
-//      {
-//      r = new TeeExpr(es);
-//      }
-//    ;
 
 split[Expr in] returns [Expr r=null]
     { 
@@ -1351,6 +1083,8 @@ compareOp returns [int r = -1]
     | ">=" { r = CompareExpr.GE; }
     ;
 
+// TODO: add astype operator?
+// TODO: replace instanceof is istype?
 instanceOfExpr returns [Expr r = null]
     { Expr s; }
     : r=addExpr 

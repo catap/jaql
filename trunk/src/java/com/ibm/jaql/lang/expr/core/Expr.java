@@ -130,16 +130,28 @@ public abstract class Expr
       throws Exception
   {
     JaqlFn fn = this.getClass().getAnnotation(JaqlFn.class);
+    int i = 0;
+    String end = "";
+    if( exprs.length > 0 && 
+        exprs[0].getSchema().isArray().always() ) // TODO: this should be if this function expects an array
+    {
+      exprText.print("( ");
+      exprs[0].decompile(exprText, capturedVars);
+      exprText.print("\n-> ");
+      i++;
+      end = " )";
+    }
     exprText.print(fn.fnName());
     exprText.print("(");
     String sep = "";
-    for (Expr e : exprs)
+    for( ; i < exprs.length ; i++ )
     {
       exprText.print(sep);
-      e.decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars);
       sep = ", ";
     }
     exprText.print(")");
+    exprText.print(end);
   }
 
   /*

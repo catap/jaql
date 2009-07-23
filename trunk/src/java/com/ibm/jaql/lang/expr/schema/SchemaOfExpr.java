@@ -19,6 +19,7 @@ import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -34,6 +35,17 @@ public class SchemaOfExpr extends Expr
     super(exprs);
   }
 
+
+  /**
+   * schemaof(e) never evaluates e
+   */
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
+
   /*
    * (non-Javadoc)
    * 
@@ -43,5 +55,6 @@ public class SchemaOfExpr extends Expr
   {
     Expr expr = exprs[0];
     return new JsonSchema(expr.getSchema());
-  }  
+  }
+
 }
