@@ -217,6 +217,11 @@ $unsorted -> sort by [$[0], $[1] desc];
 
 =Expand=
 
+* PLEASE NOTE *
+
+In the current svn trunk, as well as in the download package, `unroll` is broken, see http://code.google.com/p/jaql/issues/detail?id=24
+
+
 The `expand` keyword takes an array as input and places specified elements of this array in one resulting array.
 With the additional `unroll` keyword, all other elements than the array to be unrolled will be kept in the result, one copy for each element in the unrolled array.
 
