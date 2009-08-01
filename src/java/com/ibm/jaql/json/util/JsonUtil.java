@@ -82,10 +82,10 @@ public class JsonUtil
           if (Character.isISOControl(c))
           {
             buf.append("\\u");
-            buf.append(c & 0xf000);
-            buf.append(c & 0x0f00);
-            buf.append(c & 0x00f0);
-            buf.append(c & 0x000f);
+            buf.append( hex[ ((c & 0xf000) >>> 12) ] );
+            buf.append( hex[ ((c & 0x0f00) >>> 8) ] );
+            buf.append( hex[ ((c & 0x00f0) >>> 4) ] );
+            buf.append( hex[ (c & 0x000f) ] );
           }
           else
           {
