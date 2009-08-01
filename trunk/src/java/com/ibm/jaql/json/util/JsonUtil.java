@@ -26,6 +26,8 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
  */
 public class JsonUtil
 {
+  public static char[] hex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+  
   /**
    * @param out
    * @param indent
@@ -79,10 +81,10 @@ public class JsonUtil
           if (Character.isISOControl(c))
           {
             buf.append("\\u");
-            buf.append(c & 0xf000);
-            buf.append(c & 0x0f00);
-            buf.append(c & 0x00f0);
-            buf.append(c & 0x000f);
+            buf.append( hex[ ((c & 0xf000) >>> 12) ] );
+            buf.append( hex[ ((c & 0x0f00) >>> 8) ] );
+            buf.append( hex[ ((c & 0x00f0) >>> 4) ] );
+            buf.append( hex[ (c & 0x000f) ] );
           }
           else
           {
@@ -134,10 +136,10 @@ public class JsonUtil
           if (Character.isISOControl(c))
           {
             out.print("\\u");
-            out.print(c & 0xf000);
-            out.print(c & 0x0f00);
-            out.print(c & 0x00f0);
-            out.print(c & 0x000f);
+            out.print( hex[ ((c & 0xf000) >>> 12) ] );
+            out.print( hex[ ((c & 0x0f00) >>> 8) ] );
+            out.print( hex[ ((c & 0x00f0) >>> 4) ] );
+            out.print( hex[ (c & 0x000f) ] );
           }
           else
           {
