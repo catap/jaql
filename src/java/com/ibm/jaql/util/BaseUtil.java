@@ -628,7 +628,7 @@ public static void writeVUInt(DataOutput out, int v) throws IOException
    */
   public static char parseUnicode(char h1, char h2, char h3, char h4)
   {
-    return (char) ((parseHex(h1) << 24) | (parseHex(h2) << 16)
-        | (parseHex(h3) << 8) | (parseHex(h4)));
+    return (char) ((parseHex(h1) << 12) | (parseHex(h2) << 8) | 
+        (parseHex(h3) << 4) | (parseHex(h4)));
   }
 }
