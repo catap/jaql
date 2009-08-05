@@ -1544,7 +1544,7 @@ recordSchemaField returns [RecordSchema.Field s = null]
     ;
     
 recordSchemaFieldSchema returns [Schema s]
-    : /*empty*/   { s = SchemaFactory.anyOrNullSchema(); }
+    : /*empty*/   { s = SchemaFactory.anySchema(); }
     | ":" s=schema
     ;
 
