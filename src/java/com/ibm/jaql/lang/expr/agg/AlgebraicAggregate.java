@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -43,6 +45,12 @@ public abstract class AlgebraicAggregate extends Aggregate
   public abstract void addPartial(JsonValue value) throws Exception;
   
   public abstract JsonValue getPartial() throws Exception;
+
+  /** schema of partial state */
+  public Schema getPartialSchema()
+  {
+    return SchemaFactory.anySchema();
+  }
 }
 
 

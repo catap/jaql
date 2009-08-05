@@ -122,7 +122,7 @@ public class Parameters
         }
         if (schemata[i]==null) // be friendly with emtpy schemata
         {
-          schemata[i] = SchemaFactory.anyOrNullSchema();
+          schemata[i] = SchemaFactory.anySchema();
         }
       }
     

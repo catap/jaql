@@ -24,10 +24,13 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.hadoop.JsonHolderMapOutputKey;
 import com.ibm.jaql.io.hadoop.JsonHolderMapOutputValue;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
@@ -68,6 +71,14 @@ public class MapReduceFn extends MapReduceBaseExpr
     this(new Expr[]{args});
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    Schema out = in.element(new JsonString("output"));
+    return out != null ? out : SchemaFactory.anySchema();
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -189,31 +200,41 @@ public class MapReduceFn extends MapReduceBaseExpr
      */
     protected void splitValues(Iterator<? extends JsonHolder> values) throws IOException
     {
-      // TODO: Would like values to be something that I can open an iterator on. 
-      // Until I do the analysis that says that we are going over the values just once,
-      // we need to copy the values...
-      // TODO: need to reduce copying, big time!
-      for (int i = 0; i < numInputs; i++)
-      {
-        valArrays[i].clear();
-      }
-      while (values.hasNext())
-      {
-        JsonValue value = values.next().value;
-        int i = 0;
-        if (numInputs > 1)
+      try {
+        // TODO: Would like values to be something that I can open an iterator on. 
+        // Until I do the analysis that says that we are going over the values just once,
+        // we need to copy the values...
+        // TODO: need to reduce copying, big time!
+        for (int i = 0; i < numInputs; i++)
         {
-          BufferedJsonArray valRec = (BufferedJsonArray) value;
-          JsonLong id = (JsonLong) JaqlUtil.enforceNonNull(valRec.get(0));
-          i = (int) id.get();
-          value = valRec.get(1);
+          valArrays[i].clear();
         }
-        valArrays[i].addCopy(value);
-      }
-      for (int i = 0; i < numInputs; i++)
-      {
+        while (values.hasNext())
+        {
+          JsonValue value = values.next().value;
+          int i = 0;
+          if (numInputs > 1)
+          {
+            JsonArray valRec = (JsonArray) value;
+            JsonLong id = (JsonLong) JaqlUtil.enforceNonNull(valRec.nth(0));
+            i = (int) id.get();
+            value = valRec.nth(1);
+          }
+          valArrays[i].addCopy(value);
+        }
+        for (int i = 0; i < numInputs; i++)
+        {
         valArrays[i].freeze();
+        }
+      } 
+      catch (IOException e)
+      {
+        throw e;
       }
+      catch (Exception e)
+      {
+        throw new RuntimeException(e);
+      }      
     }
   }
 
@@ -221,13 +242,13 @@ public class MapReduceFn extends MapReduceBaseExpr
    * 
    */
   public static class CombineEval extends CombineReduceEval
-  implements Reducer<JsonHolderMapOutputKey, JsonHolderMapOutputValue, JsonHolderMapOutputKey, JsonHolderMapOutputValue>
+  implements Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
     protected JaqlFunction[] combineFns;
     protected JsonValue[]    fnArgs = new JsonValue[2];
     protected JsonLong       outId;
     protected BufferedJsonArray outPair;
-    protected JsonHolderMapOutputValue valueHolder = new JsonHolderMapOutputValue();
+    protected JsonHolder valueHolder;
     
     /*
      * (non-Javadoc)
@@ -249,6 +270,7 @@ public class MapReduceFn extends MapReduceBaseExpr
         outPair = new BufferedJsonArray(2);
         outPair.set(0, outId);
       }
+      valueHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputValueClass(), job);
     }
 
     /*
@@ -258,8 +280,8 @@ public class MapReduceFn extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(JsonHolderMapOutputKey key, Iterator<JsonHolderMapOutputValue> values,
-        OutputCollector<JsonHolderMapOutputKey, JsonHolderMapOutputValue> output, Reporter reporter)
+    public void reduce(JsonHolder key, Iterator<JsonHolder> values,
+        OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
         throws IOException
     {
       try
@@ -311,8 +333,8 @@ public class MapReduceFn extends MapReduceBaseExpr
   {
     protected JaqlFunction reduceFn;
     protected JsonValue[]  fnArgs;
-    JsonHolder keyHolder = new JsonHolder();
-    JsonHolder valueHolder = new JsonHolder();
+    JsonHolder keyHolder; // set in configure
+    JsonHolder valueHolder;
 
     /*
      * (non-Javadoc)
@@ -328,6 +350,9 @@ public class MapReduceFn extends MapReduceBaseExpr
       {
         fnArgs[i + 1] = valArrays[i];
       }
+      
+      keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getOutputKeyClass(), job);
+      valueHolder = (JsonHolder)ReflectionUtils.newInstance(job.getOutputValueClass(), job);
     }
 
     /*

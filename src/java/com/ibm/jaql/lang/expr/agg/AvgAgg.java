@@ -15,6 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.LongSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
@@ -85,6 +89,20 @@ public class AvgAgg extends AlgebraicAggregate
     count += jlong.get();
   }
 
+  @Override
+  public Schema getPartialSchema()
+  {
+    return new ArraySchema(
+        SchemaFactory.numericOrNullSchema(), 
+        new LongSchema(JsonLong.ZERO, null, null));
+  }
+
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.numericOrNullSchema();
+  }
+  
   @Override
   public JsonValue getFinal() throws Exception
   {

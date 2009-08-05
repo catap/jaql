@@ -18,9 +18,9 @@ package com.ibm.jaql.lang.expr.core;
 import java.util.ArrayList;
 import java.util.Map.Entry;
 
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -57,7 +57,7 @@ public class MergeContainersFn extends Expr
   public Schema getSchema()
   {
     // TODO: refine
-    return SchemaTransformation.or(
+    return OrSchema.or(
         SchemaFactory.nullSchema(), 
         SchemaFactory.arraySchema(), 
         SchemaFactory.recordSchema());

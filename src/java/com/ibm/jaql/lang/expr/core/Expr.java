@@ -50,7 +50,7 @@ public abstract class Expr
   /**
    * @param exprs
    */
-  public Expr(Expr[] exprs)
+  public Expr(Expr ... exprs)
   {
     this.exprs = exprs;
     for (int i = 0; i < exprs.length; i++)
@@ -69,44 +69,11 @@ public abstract class Expr
     }
   }
 
-  /**
-   * @param expr0
-   */
-  public Expr(Expr expr0)
+  public Expr()
   {
-    this(new Expr[]{expr0});
+    this(NO_EXPRS);
   }
-
-  /**
-   * @param expr0
-   * @param expr1
-   */
-  public Expr(Expr expr0, Expr expr1)
-  {
-    this(new Expr[]{expr0, expr1});
-  }
-
-  /**
-   * @param expr0
-   * @param expr1
-   * @param expr2
-   */
-  public Expr(Expr expr0, Expr expr1, Expr expr2)
-  {
-    this(new Expr[]{expr0, expr1, expr2});
-  }
-
-  /**
-   * @param expr0
-   * @param expr1
-   * @param expr2
-   * @param expr3
-   */
-  public Expr(Expr expr0, Expr expr1, Expr expr2, Expr expr3)
-  {
-    this(new Expr[]{expr0, expr1, expr2, expr3});
-  }
-
+  
   /**
    * @param exprs
    */
@@ -333,7 +300,7 @@ public abstract class Expr
    */
   public Schema getSchema()
   {
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
   
   /**

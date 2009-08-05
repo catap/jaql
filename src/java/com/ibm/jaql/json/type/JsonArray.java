@@ -85,13 +85,6 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
     }    
   }
 
-  /* @see com.ibm.jaql.json.type.JValue#equals(java.lang.Object) */
-  @Override
-  public final boolean equals(Object x)
-  {
-    return this.compareTo(x) == 0;
-  }
-
   /* @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object) */
   @Override
   public int compareTo(Object x)

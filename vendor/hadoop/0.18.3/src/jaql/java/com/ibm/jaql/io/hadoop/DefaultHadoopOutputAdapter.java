@@ -72,7 +72,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
    * @throws Exception
    */
   @SuppressWarnings("unchecked")
-  private void init(JsonRecord args) throws Exception
+  protected void init(JsonRecord args) throws Exception
   {
     this.args = new BufferedJsonRecord(args.size());
     this.args.setCopy(args);
@@ -137,7 +137,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
         return null;
       }
     };
-
+    setSequential(conf);
     configurator.setSequential(conf);
     Globals.setJobConf(conf);
     if (oFormat instanceof JobConfigurable)
@@ -157,6 +157,16 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     }
   }
 
+  protected JsonHolder keyHolder()
+  {
+    return new JsonHolderDefault();
+  }
+
+  protected JsonHolder valueHolder()
+  {
+    return new JsonHolderDefault();
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -169,8 +179,8 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     final RecordWriter<JsonHolder, JsonHolder> writer = getRecordWriter(FileSystem
         .get(conf), conf, lPath.getName(), reporter);
     return new ClosableJsonWriter() {
-      JsonHolder keyHolder = new JsonHolder();
-      JsonHolder valueHolder = new JsonHolder();
+      JsonHolder keyHolder = keyHolder();
+      JsonHolder valueHolder = valueHolder();
       
       public void close() throws IOException
       {
@@ -198,8 +208,21 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
   {
     if (converter == null)
     {
-      writer = ((OutputFormat<JsonHolder, JsonHolder>) oFormat).getRecordWriter(ignored,
+      final RecordWriter<JsonHolder, JsonHolder> baseWriter 
+        = ((OutputFormat<JsonHolder, JsonHolder>) oFormat).getRecordWriter(ignored,
           job, name, progress);
+      final JsonHolder nullHolder = keyHolder();
+      writer = new RecordWriter<JsonHolder, JsonHolder>() {
+        public void close(Reporter reporter) throws IOException
+        {
+          baseWriter.close(reporter);
+        }
+
+        public void write(JsonHolder key, JsonHolder value) throws IOException
+        {
+          baseWriter.write(nullHolder, value); // key is unused
+        }
+      };
     }
     else
     {

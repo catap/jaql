@@ -26,10 +26,9 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.ReflectionUtils;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.io.hadoop.JsonHolderMapOutputKey;
-import com.ibm.jaql.io.hadoop.JsonHolderMapOutputValue;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -132,11 +131,12 @@ public class MRAggregate extends MapReduceBaseExpr
    * Used for both map and init functions
    */
   public static class MapEval extends RemoteEval
-      implements MapRunnable<JsonHolder, JsonHolder, JsonHolderMapOutputKey, JsonHolderMapOutputValue>
+      implements MapRunnable<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
     protected JaqlFunction mapFn;
     protected JaqlFunction aggFn;
-
+    JsonHolder aggArrayHolder;
+    JsonHolder keyHolder;
     /*
      * (non-Javadoc)
      * 
@@ -148,6 +148,9 @@ public class MRAggregate extends MapReduceBaseExpr
       super.configure(job);
       mapFn = compile(job, "map", 0);
       aggFn = compile(job, "aggregate", 0);
+      
+      keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputKeyClass(), job);
+      aggArrayHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputValueClass(), job);
     }
 
     /**
@@ -155,7 +158,7 @@ public class MRAggregate extends MapReduceBaseExpr
      */
     // fails on java 1.5: @Override
     public void run( RecordReader<JsonHolder, JsonHolder> input,
-                     OutputCollector<JsonHolderMapOutputKey, JsonHolderMapOutputValue> output, 
+                     OutputCollector<JsonHolder, JsonHolder> output, 
                      Reporter reporter) 
       throws IOException
     {
@@ -170,9 +173,7 @@ public class MRAggregate extends MapReduceBaseExpr
         Var valVar = aggFn.param(1);
         JsonValue[] mappedKeyValue = new JsonValue[2];
         BufferedJsonArray aggArray = new BufferedJsonArray(aggs.length);
-        JsonHolderMapOutputValue aggArrayHolder = new JsonHolderMapOutputValue(aggArray);
-        JsonHolderMapOutputKey keyHolder = new JsonHolderMapOutputKey();
-        
+        aggArrayHolder.value = aggArray;
         JsonIterator iter = mapFn.iter(context, new RecordReaderValueIter(input));
         BufferedJsonArray tmpArray = new BufferedJsonArray(1);
         for (JsonValue value : iter)
@@ -213,7 +214,7 @@ public class MRAggregate extends MapReduceBaseExpr
    */
   // produces JsonHolderMapOutputKey and JsonHolderMapOutputValue
   public static class AggCombineEval extends RemoteEval 
-  implements  Reducer<JsonHolderMapOutputKey, JsonHolderMapOutputValue, JsonHolder, JsonHolder> 
+  implements  Reducer<JsonHolder, JsonHolder, JsonHolder, JsonHolder> 
   {
     protected JaqlFunction aggFn;
     protected Var keyVar;
@@ -236,11 +237,12 @@ public class MRAggregate extends MapReduceBaseExpr
       {
         throw new RuntimeException("aggregate function must have exactly two parameters");
       }
-      keyHolder = new JsonHolderMapOutputKey();
+      keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputKeyClass(), job);
       keyVar = aggFn.param(0);
       aggs = makeAggs(aggFn);
-      aggArray = new BufferedJsonArray(aggs.length);
-      aggArrayHolder = new JsonHolderMapOutputValue(aggArray);
+      aggArray = new BufferedJsonArray(aggs.length);      
+      aggArrayHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputValueClass(), job);
+      aggArrayHolder.value = aggArray;
     }
 
     /*
@@ -250,7 +252,7 @@ public class MRAggregate extends MapReduceBaseExpr
      *      java.util.Iterator, org.apache.hadoop.mapred.OutputCollector,
      *      org.apache.hadoop.mapred.Reporter)
      */
-    public void reduce(JsonHolderMapOutputKey key, Iterator<JsonHolderMapOutputValue> values,
+    public void reduce(JsonHolder key, Iterator<JsonHolder> values,
         OutputCollector<JsonHolder, JsonHolder> output, Reporter reporter)
         throws IOException
     {
@@ -266,10 +268,10 @@ public class MRAggregate extends MapReduceBaseExpr
         
         while( values.hasNext() )
         {
-          BufferedJsonArray partArray = (BufferedJsonArray) values.next().value;
+          JsonArray partArray = (JsonArray) values.next().value;
           for(int i = 0 ; i < aggs.length ; i++)
           {
-            aggs[i].addPartial(partArray.get(i));
+            aggs[i].addPartial(partArray.nth(i));
           }
         }
         processAggs(keyHolder, output);
@@ -305,7 +307,7 @@ public class MRAggregate extends MapReduceBaseExpr
   {
     protected JaqlFunction finalFn;
     protected JsonValue[] finalArgs;
-    JsonHolder valueHolder = new JsonHolder();
+    JsonHolder valueHolder;
     
     /*
      * (non-Javadoc)
@@ -317,7 +319,8 @@ public class MRAggregate extends MapReduceBaseExpr
       super.configure(job);
       finalFn = compile(job, "final", 0);
       finalArgs = new JsonValue[2];
-      keyHolder = new JsonHolder(); // final aggregate uses JsonHolder instead of JsonHolderMapOutputKey
+      keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getOutputKeyClass(), job);
+      valueHolder = (JsonHolder)ReflectionUtils.newInstance(job.getOutputValueClass(), job);
     }
 
     /*

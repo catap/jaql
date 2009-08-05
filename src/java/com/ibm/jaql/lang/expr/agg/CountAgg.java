@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -86,8 +88,21 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
+  public Schema getPartialSchema()
+  {
+    return SchemaFactory.longSchema();
+  }
+  
+  @Override
   public JsonValue getFinal() throws Exception
   {
     return new JsonLong(count);
   }
+  
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.longSchema();
+  }
+
 }

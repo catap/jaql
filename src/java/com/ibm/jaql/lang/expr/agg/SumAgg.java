@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.agg;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
@@ -162,6 +164,18 @@ public final class SumAgg extends AlgebraicAggregate
   public JsonValue getFinal() throws Exception
   {
     return summer.get();
+  }
+
+  @Override
+  public Schema getPartialSchema()
+  {
+    return getSchema();
+  }
+
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.numericOrNullSchema();
   }
 }
 

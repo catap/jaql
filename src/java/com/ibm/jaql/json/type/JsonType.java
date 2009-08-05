@@ -23,7 +23,7 @@ public enum JsonType
 
   BINARY(JsonBinary.class, "binary"),
   DATE(JsonDate.class, "date"),
-  SCHEMA(JsonSchema.class, "schema"),
+  SCHEMA(JsonSchema.class, "aschema"),
   FUNCTION(JaqlFunction.class, "function"),
 
   // Extensiblity for writable java objects, but the class name is written on every instance!

@@ -69,7 +69,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
       Schema result = exprs[0].getSchema().element(i);
       if (result == null) 
       {
-        result = SchemaFactory.anyOrNullSchema();
+        result = SchemaFactory.anySchema();
       }
       else if (inputSchema.hasElement(i).maybeNot()) 
       {
@@ -77,7 +77,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
       }
       return result;
     }
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
   
   /**

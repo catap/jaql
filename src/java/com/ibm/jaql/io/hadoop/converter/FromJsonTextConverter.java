@@ -81,7 +81,7 @@ public class FromJsonTextConverter extends HadoopRecordToJson<WritableComparable
       
       public Schema getSchema()
       {
-        return SchemaFactory.anyOrNullSchema();
+        return SchemaFactory.anySchema();
       }
     };
   }

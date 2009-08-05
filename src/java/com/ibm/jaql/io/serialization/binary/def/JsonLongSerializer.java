@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
-public class JsonLongSerializer extends BinaryBasicSerializer<JsonLong>
+class JsonLongSerializer extends BinaryBasicSerializer<JsonLong>
 {
 
   @Override

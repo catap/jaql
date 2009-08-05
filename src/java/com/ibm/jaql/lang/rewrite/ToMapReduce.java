@@ -17,12 +17,16 @@ package com.ibm.jaql.lang.rewrite;
 
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 import com.ibm.jaql.lang.expr.array.DeemptyFn;
 import com.ibm.jaql.lang.expr.core.AggregateExpr;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
@@ -159,6 +163,7 @@ public class ToMapReduce extends Rewrite
     int topSlot = groupSeg.root.getChildSlot();
 
     GroupByExpr group = (GroupByExpr) groupSeg.primaryExpr;
+    group.getSchema();
     if( group.numInputs() != 1 )
     {
       cogroupToMapReduce(groupSeg);
@@ -175,45 +180,75 @@ public class ToMapReduce extends Rewrite
     assert reduceSeg.type == Type.FINAL_GROUP;
     
     AggregateExpr ae = null;
-    Expr[] aggs;
+    AlgebraicAggregate[] aggs;
     if( reduceSeg.firstChild == null )
     {
-      aggs = new Expr[0];
+      aggs = new AlgebraicAggregate[0];
     }
     else
     {
       assert reduceSeg.firstChild.type == Type.COMBINE_GROUP;
       ae = (AggregateExpr)reduceSeg.firstChild.root;
-      aggs = new Expr[ae.numAggs()];
+      aggs = new AlgebraicAggregate[ae.numAggs()];
       for(int i = 0 ; i < aggs.length ; i++)
       {
-        aggs[i] = ae.agg(i);
+        aggs[i] = (AlgebraicAggregate)ae.agg(i);
       }
     }
 
+    // determine the map output
     Env env = engine.env;
     Var keyVar;
     Var valVar = group.inBinding().var;
     Expr expr = group.byBinding().byExpr(0);
     expr = new ArrayExpr(expr, new VarExpr(valVar));
     expr = new TransformExpr(group.inBinding(), expr);
-    valVar = env.makeVar("$vals");
+    
+    // compute its schema
+    Schema mapOutputSchema = expr.getSchema().elements();
+    Schema mapOutputKeySchema = null, mapOutputValueSchema = null;
+    if (mapOutputSchema != null)
+    {
+      // this branch should always be taken and the resulting schemata should not be empty
+      // because the expr is built above
+      mapOutputKeySchema = mapOutputSchema.element(JsonLong.ZERO);
+      mapOutputValueSchema = mapOutputSchema.element(JsonLong.ONE);
+    }
+    if (mapOutputKeySchema == null) mapOutputKeySchema = SchemaFactory.anySchema();
+    if (mapOutputValueSchema == null) mapOutputKeySchema = SchemaFactory.anySchema();
+    
+    // replace read by variable and derive map function
     Segment mapSeg = groupSeg.firstChild;
     assert mapSeg.type == Segment.Type.INLINE_MAP;
     assert mapSeg.nextSibling == null;
     // Replace the reader with $vals
     ReadFn reader = (ReadFn) mapSeg.primaryExpr;
+    valVar = env.makeVar("$vals", reader.getSchema());
     Expr input = reader.descriptor(); //reader.rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS));
     reader.replaceInParent(new VarExpr(valVar));
     Expr mapFn = new DefineFunctionExpr(new Var[]{valVar}, expr);    
 
-    keyVar = env.makeVar(group.byVar().name());
+    // derive aggregate expression
+    keyVar = env.makeVar(group.byVar().name(), mapOutputKeySchema);
     expr = new ArrayExpr(aggs);
+    
+    // compute schema of aggregate expression
+    Schema[] aggPartialSchemata = new Schema[aggs.length];
+    Schema[] aggFinalSchemata = new Schema[aggs.length];
+    for (int i=0; i<aggs.length; i++)
+    {
+      aggPartialSchemata[i] = aggs[i].getPartialSchema();
+      aggFinalSchemata[i] = aggs[i].getSchema();
+    }
+    Schema aggPartialSchema = new ArraySchema(aggPartialSchemata);
+    Schema aggFinalSchema = new ArraySchema(aggFinalSchemata);
+    
+    // replace variables in aggregate expression
     expr.replaceVar(group.byVar(), keyVar);
     if( ae != null )
     {
       valVar = ae.binding().var;
-      expr.replaceVar(ae.binding().var, valVar);
+      expr.replaceVar(ae.binding().var, valVar);       // useless?
     }
     else
     {
@@ -221,8 +256,9 @@ public class ToMapReduce extends Rewrite
     }
     Expr aggFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, expr);
     
-    keyVar = env.makeVar(group.byVar().name());
-    valVar = env.makeVar("$vals");
+    // final
+    keyVar = env.makeVar(group.byVar().name(), mapOutputKeySchema);
+    valVar = env.makeVar("$vals", aggFinalSchema);
     expr = group.collectExpr();
     if( ae != null )
     {
@@ -253,22 +289,28 @@ public class ToMapReduce extends Rewrite
     }
     else
     {
-      output = new HadoopTempExpr();
       if( lastExpr == group )
       {
         lastExpr = expr;
       }
+      Schema s = lastExpr.getSchema().elements();
+      output = new HadoopTempExpr(new ConstExpr(new JsonSchema(s)));
     }
     Expr finalFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, lastExpr);
 
-    Expr fnArgs[] = new Expr[] {
+    RecordExpr args = new RecordExpr(
         new NameValueBinding("input", input),
         new NameValueBinding("output", output),
         new NameValueBinding("map", mapFn),
         new NameValueBinding("aggregate", aggFn),
         new NameValueBinding("final", finalFn),
-    };
-    RecordExpr args = new RecordExpr(fnArgs);
+        new NameValueBinding("schema", 
+            new RecordExpr(
+                new NameValueBinding("key", new ConstExpr(new JsonSchema(mapOutputKeySchema))),
+                new NameValueBinding("value", new ConstExpr(new JsonSchema(aggPartialSchema)))
+            )
+        )
+    );
     Expr mr = new MRAggregate(args);
     
     if (writing)
@@ -300,7 +342,7 @@ public class ToMapReduce extends Rewrite
     int topSlot = groupSeg.root.getChildSlot();
 
     GroupByExpr group = (GroupByExpr) groupSeg.primaryExpr;
-    group.getSchema(); // performs schema computations for variable used in group-by expression
+    JsonSchema reduceOutputValueSchema = new JsonSchema(group.getSchema().elements()); // also performs schema computations for variable used in group-by expression
     int n = group.numInputs();
     BindingExpr byBinding = group.byBinding();
 
@@ -356,7 +398,6 @@ public class ToMapReduce extends Rewrite
     Schema[] mapOutputValueSchemata = new Schema[n];
     for (int i = 0; i < n; i++)
     {
-      
       PerInputState inputState = inputStates[i];
       BindingExpr b = group.inBinding();
       Expr inExpr = b.child(i);
@@ -371,8 +412,21 @@ public class ToMapReduce extends Rewrite
     }
 
     // compute map output schema
-    Expr mapOutputKeySchema = new ConstExpr(new JsonSchema(SchemaTransformation.or(mapOutputKeySchemata)));
-    Expr mapOutputValueSchema = new ConstExpr(new JsonSchema(SchemaTransformation.or(mapOutputValueSchemata)));
+    Expr mapOutputKeySchema, mapOutputValueSchema;
+    if (n == 1)
+    {
+      mapOutputKeySchema = new ConstExpr(new JsonSchema(mapOutputKeySchemata[0]));
+      mapOutputValueSchema = new ConstExpr(new JsonSchema(mapOutputValueSchemata[0]));
+    }
+    else
+    {
+      mapOutputKeySchema = new ConstExpr(new JsonSchema(OrSchema.or(mapOutputKeySchemata)));
+      mapOutputValueSchema = new ConstExpr(new JsonSchema(
+          new ArraySchema(new Schema[] {
+              SchemaFactory.longSchema(),         // input id
+              OrSchema.or(mapOutputValueSchemata) // value
+          })));
+    }
     
     // Make the output
     Expr output;
@@ -387,7 +441,7 @@ public class ToMapReduce extends Rewrite
     }
     else
     {
-      output = new HadoopTempExpr();
+      output = new HadoopTempExpr(new ConstExpr(reduceOutputValueSchema));
     }
 
     // Build the final function, including any expressions above the group-by
@@ -499,9 +553,13 @@ public class ToMapReduce extends Rewrite
     Expr expr = new VarExpr(mapIn);
     reader.replaceInParent(expr);
 
+    // compute the schema
+    Expr lastExpr = mapSeg.root;
+    JsonSchema mapOutputKeySchema = new JsonSchema(SchemaFactory.nullSchema());
+    JsonSchema mapOutputValueSchema = new JsonSchema(lastExpr.getSchema().elements());
+    
     // Make the output
     Expr output;
-    Expr lastExpr = mapSeg.root;
     boolean writing = lastExpr instanceof WriteFn;
     if (writing)
     {
@@ -512,7 +570,7 @@ public class ToMapReduce extends Rewrite
     }
     else
     {
-      output = new HadoopTempExpr();
+      output = new HadoopTempExpr(new ConstExpr(mapOutputValueSchema));
     }
 
     // build key value pair:
@@ -521,23 +579,23 @@ public class ToMapReduce extends Rewrite
     expr = new ArrayExpr(new ConstExpr(null), new VarExpr(forVar));
     expr = new ForExpr(forVar, lastExpr, new ArrayExpr(expr));
 
-    // compute the schema
-    Expr mapOutputKeySchema = new ConstExpr(new JsonSchema(SchemaFactory.nullSchema()));
-    Expr mapOutputValueSchema = new ConstExpr(new JsonSchema(lastExpr.getSchema().elements()));
+
     
 //    if (1==1) throw new IllegalStateException(expr.getSchema().toString());
     
     Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);
 
-    expr = new MapReduceFn(new RecordExpr(new Expr[]{
+    expr = new MapReduceFn(new RecordExpr(
         new NameValueBinding("input", input),
         new NameValueBinding("map", mapFn),
-        new NameValueBinding("schema", new RecordExpr(new Expr[] {
-            new NameValueBinding("key", mapOutputKeySchema),
-            new NameValueBinding("value", mapOutputValueSchema),
-        })),
-        new NameValueBinding("output", output),
-        }));
+        new NameValueBinding("schema", 
+            new RecordExpr(
+                new NameValueBinding("key", new ConstExpr(mapOutputKeySchema)),
+                new NameValueBinding("value", new ConstExpr(mapOutputValueSchema))
+            )
+        ),
+        new NameValueBinding("output", output)
+    ));
 
     mapSeg.type = Segment.Type.MAPREDUCE;
     mapSeg.root = expr;
@@ -741,7 +799,7 @@ public class ToMapReduce extends Rewrite
     Expr root = seg.root;
     Expr parent = root.parent();
     int slot = root.getChildSlot();
-    Expr tmp = new WriteFn(root, new HadoopTempExpr());
+    Expr tmp = new WriteFn(root, new HadoopTempExpr(new ConstExpr(new JsonSchema(root.getSchema().elements()))));
     Expr read = new ReadFn(tmp);
     parent.setChild(slot, read);
     if (seg.type == Segment.Type.GROUP || seg.type == Segment.Type.COMBINE)

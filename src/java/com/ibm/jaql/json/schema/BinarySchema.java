@@ -110,8 +110,15 @@ public class BinarySchema extends Schema
     return Bool3.FALSE;
   }
   
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonBinary.class }; 
+  }
+  
   @Override
-  public boolean matches(JsonValue value) throws Exception
+  public boolean matches(JsonValue value)
   {
     if (!(value instanceof JsonBinary))
     {
@@ -155,4 +162,22 @@ public class BinarySchema extends Schema
     }
     return null;
   }
+  
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    BinarySchema o = (BinarySchema)other;
+    c = SchemaUtil.compare(this.minLength, o.minLength);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.maxLength, o.maxLength);
+    if (c != 0) return c;
+    
+    return 0;
+  } 
 }

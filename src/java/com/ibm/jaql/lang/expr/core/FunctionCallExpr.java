@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -123,6 +124,17 @@ public class FunctionCallExpr extends Expr
   @Override
   public Schema getSchema()
   {
+    DefineFunctionExpr def = getDef();
+    if( def != null )
+    {
+      return def.body().getSchema();
+    }
+    return SchemaFactory.anySchema();
+  }
+  
+  /** may return null */
+  private DefineFunctionExpr getDef()
+  {
     Expr fn = fnExpr();
     DefineFunctionExpr def = null;
     if( fn instanceof DoExpr )
@@ -141,11 +153,22 @@ public class FunctionCallExpr extends Expr
         def = jf.getFunction();
       }
     }
-    if( def != null )
+    return def;
+  }
+
+  public Map<ExprProperty, Boolean> getProperties()
+  {
+    DefineFunctionExpr def = getDef();
+    if (def != null)
     {
-      return def.body().getSchema();
+      return def.body().getProperties();
     }
-    return SchemaFactory.anyOrNullSchema();
+    else {
+      // FIXME: this is too optimistic
+      Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+//      Map<ExprProperty, Boolean> result = ExprProperty.createSafeDefaults();
+      return result;
+    }
   }
   
   /*

@@ -110,7 +110,8 @@ public class InjectAggregate extends Rewrite
     // We can transform!
     
     // Replace all uses of the group variable with the aggregate variable.
-    Var aggVar = engine.env.makeVar("$");
+    g.getSchema();
+    Var aggVar = engine.env.makeVar("$", groupVar.getSchema());
     for( Expr e: engine.exprList )
     {
       ((VarExpr)e).setVar(aggVar);

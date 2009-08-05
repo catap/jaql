@@ -59,7 +59,7 @@ public class Var extends Object
    */
   public Var(String name)
   {
-    this(name, SchemaFactory.anyOrNullSchema());
+    this(name, SchemaFactory.anySchema());
   }
 
   /**

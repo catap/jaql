@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.numeric;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
@@ -26,7 +28,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "toDouble", minArgs = 1, maxArgs = 1)
+@JaqlFn(fnName = "double", minArgs = 1, maxArgs = 1)
 public class DoubleFn extends Expr
 {
   /**
@@ -78,5 +80,12 @@ public class DoubleFn extends Expr
           + val.getEncoding().getType().name() + " to double");
     }
     return (JsonDouble)val; // TODO: memory
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    return in.isNull().never() ? SchemaFactory.doubleSchema() : SchemaFactory.doubleOrNullSchema();
   }
 }

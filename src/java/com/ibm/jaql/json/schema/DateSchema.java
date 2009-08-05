@@ -70,6 +70,13 @@ public class DateSchema extends RangeSchema<JsonDate>
     return SchemaType.DATE;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonDate.class }; 
+  }
+  
   @Override
   public boolean matches(JsonValue value)
   {

@@ -22,7 +22,7 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class NullSerializer extends BinaryBasicSerializer<JsonValue>
+class NullSerializer extends BinaryBasicSerializer<JsonValue>
 {
   @Override
   public JsonValue newInstance()

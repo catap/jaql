@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
-public class JsonStringSerializer extends BinaryBasicSerializer<JsonString>
+class JsonStringSerializer extends BinaryBasicSerializer<JsonString>
 {
   @Override
   public JsonString newInstance()

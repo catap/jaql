@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a 128 bit decimal float value */
-public class DecimalSchema extends RangeSchema<JsonDecimal>
+public class DecfloatSchema extends RangeSchema<JsonDecimal>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -34,7 +34,7 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
   {
     if (parameters == null)
     {
-      Schema schema = new DecimalSchema();
+      Schema schema = new DecfloatSchema();
       parameters = new Parameters(
           new JsonString[] { PAR_MIN, PAR_MAX, PAR_VALUE },
           new Schema[]     { schema , schema , schema    },
@@ -46,7 +46,7 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
   
   //-- construction ------------------------------------------------------------------------------
   
-  public DecimalSchema(JsonRecord args)
+  public DecfloatSchema(JsonRecord args)
   {
     this(
         (JsonNumeric)getParameters().argumentOrDefault(PAR_MIN, args),
@@ -54,16 +54,16 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
         (JsonNumeric)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
-  DecimalSchema()
+  DecfloatSchema()
   {
   }
   
-  public DecimalSchema(JsonDecimal min, JsonDecimal max, JsonDecimal value)
+  public DecfloatSchema(JsonDecimal min, JsonDecimal max, JsonDecimal value)
   {
     super(min, max, value);
   }
   
-  public DecimalSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
+  public DecfloatSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
   {
     this(convert(min), convert(max), convert(value));
   }
@@ -88,6 +88,13 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
   public SchemaType getSchemaType()
   {
     return SchemaType.DECFLOAT;
+  }
+  
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonDecimal.class, JsonLong.class }; 
   }
 
   public boolean matches(JsonValue value)
@@ -116,12 +123,12 @@ public class DecimalSchema extends RangeSchema<JsonDecimal>
   @Override
   protected Schema merge(Schema other)
   {
-    if (other instanceof DecimalSchema)
+    if (other instanceof DecfloatSchema)
     {
-      DecimalSchema o = (DecimalSchema)other;
+      DecfloatSchema o = (DecfloatSchema)other;
       JsonDecimal min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
       JsonDecimal max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);
-      return new DecimalSchema(min, max, null);
+      return new DecfloatSchema(min, max, null);
     }
     return null;
   }

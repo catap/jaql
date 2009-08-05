@@ -31,8 +31,8 @@ import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.registry.RegistryUtil;
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
@@ -157,7 +157,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     {
       inSchemata[i] = adapters[i].getSchema();
     }
-    return SchemaTransformation.or(inSchemata);
+    return OrSchema.or(inSchemata);
   }
 
   /*

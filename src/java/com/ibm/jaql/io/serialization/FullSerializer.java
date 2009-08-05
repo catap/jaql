@@ -17,6 +17,7 @@ package com.ibm.jaql.io.serialization;
 
 import java.io.IOException;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /** Superclass for serializers of <code>JValue</code>s of unknown type. 
@@ -49,7 +50,7 @@ public abstract class FullSerializer<In, Out> implements Serializer<In, Out, Jso
   public int compare(In in1, In in2) throws IOException {
     JsonValue v1 = read(in1, null);
     JsonValue v2 = read(in2, null);
-    return v1.compareTo(v2);
+    return JsonUtil.compare(v1, v2);
   }
   
   @Override

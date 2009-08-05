@@ -80,15 +80,10 @@ public class ArraySchema extends Schema
     this(new Schema[0], schema, minCount, maxCount);
   }
   
-  public ArraySchema(Schema schema)
-  {
-    this(new Schema[] { schema });
-  }
-  
   /**
    * 
    */
-  public ArraySchema(Schema[] schemata)
+  public ArraySchema(Schema ... schemata)
   {
     this(schemata, null, JsonLong.ZERO, JsonLong.ZERO);
   }
@@ -101,7 +96,7 @@ public class ArraySchema extends Schema
   /** Matches any array */
   ArraySchema()
   {
-    this(new Schema[0], SchemaFactory.anyOrNullSchema(), null, null); 
+    this(new Schema[0], SchemaFactory.anySchema(), null, null); 
   }
   
   // -- Schema methods ----------------------------------------------------------------------------
@@ -160,6 +155,13 @@ public class ArraySchema extends Schema
       return Bool3.FALSE;
     }    
   }
+  
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonArray.class }; 
+  }
 
   @Override
   public boolean matches(JsonValue value) throws Exception
@@ -209,11 +211,9 @@ public class ArraySchema extends Schema
       if (!rest.matches(iter.current()))
       {
         return false;
-      }
-      
+      }      
     }
   }
-
   
   // -- getters -----------------------------------------------------------------------------------
   
@@ -454,5 +454,31 @@ public class ArraySchema extends Schema
   {
     if (rest != null && maxRest == null) return null;
     return new JsonLong(head.length + (rest!=null ? maxRest.get() : 0));
-  }  
+  }
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  //private Schema[]          head;                 // list of schemas for the first elements (never null)
+  //private Schema            rest;                 // schema of the remaining elements (can be null)
+  //private JsonLong          minRest;              // min number of values matching rest, >=0, never iff rest==null
+  //private JsonLong          maxRest
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    ArraySchema o = (ArraySchema)other;
+    c = SchemaUtil.arrayCompare(this.head, o.head);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.rest, o.rest);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.minRest, o.minRest);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.maxRest, o.maxRest);
+    if (c != 0) return c;
+    
+    return 0;
+  } 
 }

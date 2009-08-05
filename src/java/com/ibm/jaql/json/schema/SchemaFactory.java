@@ -32,6 +32,7 @@ import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
@@ -44,13 +45,14 @@ public class SchemaFactory
 {
   // -- cache -------------------------------------------------------------------------------------
 
-  private static AnyNonNullSchema anyNonNullSchema;
+  private static NonNullSchema nonNullSchema;
   private static ArraySchema arraySchema;
   private static ArraySchema emptyArraySchema;
   private static BinarySchema binarySchema;
   private static BooleanSchema booleanSchema;
   private static DateSchema dateSchema;
-  private static DecimalSchema decimalSchema;
+  private static Schema schematypeSchema;
+  private static DecfloatSchema decfloatSchema;
   private static DoubleSchema doubleSchema;
   private static GenericSchema functionSchema;
   private static LongSchema longSchema;
@@ -58,27 +60,31 @@ public class SchemaFactory
   private static RecordSchema recordSchema;
   private static RecordSchema emptyRecordSchema;
   private static StringSchema stringSchema;
-
-  private static Schema anyOrNullSchema;
+  private static Schema numericSchema;
+  private static Schema numberSchema;
+  
+  private static Schema anySchema;
   private static Schema arrayOrNullSchema;
   private static Schema emptyArrayOrNullSchema;
   private static Schema binaryOrNullSchema;
   private static Schema booleanOrNullSchema;
   private static Schema dateOrNullSchema;
-  private static Schema decimalOrNullSchema;
+  private static Schema schematypeOrNullSchema;
+  private static Schema decfloatOrNullSchema;
   private static Schema doubleOrNullSchema;
   private static Schema functionOrNullSchema;
   private static Schema longOrNullSchema;
   private static Schema recordOrNullSchema;
   private static Schema stringOrNullSchema;
-
+  private static Schema numericOrNullSchema;
+  private static Schema numberOrNullSchema;
 
   // -- commonly used schemata --------------------------------------------------------------------
 
-  public static Schema anyNonNullSchema()
+  public static Schema nonNullSchema()
   {
-    if (anyNonNullSchema  == null) anyNonNullSchema = new AnyNonNullSchema();
-    return anyNonNullSchema;
+    if (nonNullSchema  == null) nonNullSchema = new NonNullSchema();
+    return nonNullSchema;
   }
 
   public static Schema arraySchema()
@@ -112,10 +118,16 @@ public class SchemaFactory
     return dateSchema;
   }
 
-  public static Schema decimalSchema()
+  public static Schema schematypeSchema()
   {
-    if (decimalSchema  == null) decimalSchema = new DecimalSchema();
-    return decimalSchema;
+    if (schematypeSchema  == null) schematypeSchema  = new GenericSchema(JsonType.SCHEMA);
+    return schematypeSchema;
+  }
+
+  public static Schema decfloatSchema()
+  {
+    if (decfloatSchema  == null) decfloatSchema = new DecfloatSchema();
+    return decfloatSchema;
   }
 
   public static Schema doubleSchema()
@@ -160,78 +172,111 @@ public class SchemaFactory
     return stringSchema;
   }
 
-  public static Schema anyOrNullSchema()
+  public static Schema numericSchema()
   {
-    if (anyOrNullSchema  == null) anyOrNullSchema = SchemaTransformation.or(anyNonNullSchema(), nullSchema());
-    return anyOrNullSchema;
+    if (numericSchema  == null) {
+      numericSchema = OrSchema.or(longSchema(), doubleSchema(), decfloatSchema());
+    }
+    return numericSchema;
+  }
+
+  public static Schema numberSchema()
+  {
+    if (numberSchema  == null) {
+      numberSchema = OrSchema.or(longSchema(), decfloatSchema());
+    }
+    return numberSchema;
+  }
+
+  public static Schema anySchema()
+  {
+    if (anySchema  == null) anySchema = OrSchema.or(nonNullSchema(), nullSchema());
+    return anySchema;
   }
 
   public static Schema arrayOrNullSchema()
   {
-    if (arrayOrNullSchema  == null) arrayOrNullSchema = SchemaTransformation.or(arraySchema(), nullSchema());
+    if (arrayOrNullSchema  == null) arrayOrNullSchema = OrSchema.or(arraySchema(), nullSchema());
     return arrayOrNullSchema;
   }
 
   public static Schema emptyArrayOrNullSchema()
   {
-    if (emptyArrayOrNullSchema  == null) emptyArrayOrNullSchema = SchemaTransformation.or(emptyArraySchema(), nullSchema());
+    if (emptyArrayOrNullSchema  == null) emptyArrayOrNullSchema = OrSchema.or(emptyArraySchema(), nullSchema());
     return emptyArrayOrNullSchema;
   }
   
   public static Schema binaryOrNullSchema()
   {
-    if (binaryOrNullSchema  == null) binaryOrNullSchema = SchemaTransformation.or(binarySchema(), nullSchema());
+    if (binaryOrNullSchema  == null) binaryOrNullSchema = OrSchema.or(binarySchema(), nullSchema());
     return binaryOrNullSchema;
   }
   
   public static Schema booleanOrNullSchema()
   {
-    if (booleanOrNullSchema  == null) booleanOrNullSchema = SchemaTransformation.or(booleanSchema(), nullSchema());
+    if (booleanOrNullSchema  == null) booleanOrNullSchema = OrSchema.or(booleanSchema(), nullSchema());
     return booleanOrNullSchema;
   }
 
   public static Schema dateOrNullSchema()
   {
-    if (dateOrNullSchema  == null) dateOrNullSchema = SchemaTransformation.or(dateSchema(), nullSchema());
+    if (dateOrNullSchema  == null) dateOrNullSchema = OrSchema.or(dateSchema(), nullSchema());
     return dateOrNullSchema;
   }
-
-  public static Schema decimalOrNullSchema()
+  
+  public static Schema schematypeOrNullSchema()
   {
-    if (decimalOrNullSchema  == null) decimalOrNullSchema = SchemaTransformation.or(decimalSchema(), nullSchema());
-    return decimalOrNullSchema;
+    if (schematypeOrNullSchema  == null) schematypeOrNullSchema = OrSchema.or(schematypeSchema(), nullSchema());
+    return schematypeOrNullSchema;
+  }
+
+  public static Schema decfloatOrNullSchema()
+  {
+    if (decfloatOrNullSchema  == null) decfloatOrNullSchema = OrSchema.or(decfloatSchema(), nullSchema());
+    return decfloatOrNullSchema;
   }
 
   public static Schema doubleOrNullSchema()
   {
-    if (doubleOrNullSchema  == null) doubleOrNullSchema = SchemaTransformation.or(doubleSchema(), nullSchema());
+    if (doubleOrNullSchema  == null) doubleOrNullSchema = OrSchema.or(doubleSchema(), nullSchema());
     return doubleOrNullSchema;
   }
   
   public static Schema functionOrNullSchema()
   {
-    if (functionOrNullSchema  == null) functionOrNullSchema = SchemaTransformation.or(functionSchema(), nullSchema());
+    if (functionOrNullSchema  == null) functionOrNullSchema = OrSchema.or(functionSchema(), nullSchema());
     return functionOrNullSchema;
   }
   public static Schema longOrNullSchema()
   {
-    if (longOrNullSchema  == null) longOrNullSchema = SchemaTransformation.or(longSchema(), nullSchema());
+    if (longOrNullSchema  == null) longOrNullSchema = OrSchema.or(longSchema(), nullSchema());
     return longOrNullSchema;
   }
 
   public static Schema recordOrNullSchema()
   {
-    if (recordOrNullSchema  == null) recordOrNullSchema = SchemaTransformation.or(recordSchema(), nullSchema());
+    if (recordOrNullSchema  == null) recordOrNullSchema = OrSchema.or(recordSchema(), nullSchema());
     return recordOrNullSchema;
   }
   
   public static Schema stringOrNullSchema()
   {
-    if (stringOrNullSchema  == null) stringOrNullSchema = SchemaTransformation.or(stringSchema(), nullSchema());
+    if (stringOrNullSchema  == null) stringOrNullSchema = OrSchema.or(stringSchema(), nullSchema());
     return stringOrNullSchema;
   }
   
-  
+  public static Schema numericOrNullSchema()
+  {
+    if (numericOrNullSchema  == null) numericOrNullSchema = OrSchema.or(numericSchema(), nullSchema());
+    return numericOrNullSchema;
+  }
+
+  public static Schema numberOrNullSchema()
+  {
+    if (numberOrNullSchema  == null) numberOrNullSchema = OrSchema.or(numberSchema(), nullSchema());
+    return numberOrNullSchema;
+  }
+
   // -- construction for the parser ---------------------------------------------------------------
   
   /**
@@ -241,7 +286,7 @@ public class SchemaFactory
   public static Parameters getParameters(String typeConstructorName)
   {
     // TODO: this code should be table-driven. It requires Parameter factory classes.
-    if( typeConstructorName.equals("any") )
+    if( typeConstructorName.equals("nonnull") )
     {
       return new Parameters();
     } 
@@ -259,7 +304,7 @@ public class SchemaFactory
     }
     else if( typeConstructorName.equals("decfloat") )
     {
-      return DecimalSchema.getParameters();
+      return DecfloatSchema.getParameters();
     }
     else if( typeConstructorName.equals("double") )
     {
@@ -273,13 +318,17 @@ public class SchemaFactory
     {
       return LongSchema.getParameters();
     }
-    else if( typeConstructorName.equals("schema") )
+    else if( typeConstructorName.equals("schematype") )
     {
-      return GenericSchema.getParameters();
+      return SchematypeSchema.getParameters();
     }
     else if( typeConstructorName.equals("string") )
     {
       return StringSchema.getParameters();
+    }
+    else if( typeConstructorName.equals("any") )
+    {
+      return new Parameters();
     }
     else 
     throw new RuntimeException("undefined type: " + typeConstructorName);
@@ -288,9 +337,9 @@ public class SchemaFactory
   public static Schema make(String typeConstructorName, JsonRecord args)
   {
     // TODO: this code should be table-driven.
-    if( typeConstructorName.equals("any") )
+    if( typeConstructorName.equals("nonnull") )
     {
-      return SchemaFactory.anyNonNullSchema();
+      return SchemaFactory.nonNullSchema();
     }
     else if( typeConstructorName.equals("binary") )
     {
@@ -306,7 +355,7 @@ public class SchemaFactory
     }
     else if( typeConstructorName.equals("decfloat") )
     {
-      return new DecimalSchema(args);
+      return new DecfloatSchema(args);
     }
     else if( typeConstructorName.equals("double") )
     {
@@ -320,13 +369,17 @@ public class SchemaFactory
     {
       return new LongSchema(args);
     }
-    else if( typeConstructorName.equals("schema") )
+    else if( typeConstructorName.equals("schematype") )
     {
-      return new GenericSchema(JsonType.SCHEMA, args);
+      return new SchematypeSchema(args);
     }
     else if( typeConstructorName.equals("string") )
     {
       return new StringSchema(args);
+    }
+    else if( typeConstructorName.equals("any") )
+    {
+      return SchemaFactory.anySchema();
     }
     throw new RuntimeException("undefined type: "+typeConstructorName);
   }
@@ -374,7 +427,7 @@ public class SchemaFactory
       switch (v.getEncoding())
       {
       case DECIMAL:
-        return new DecimalSchema(null, null, (JsonDecimal)v);
+        return new DecfloatSchema(null, null, (JsonDecimal)v);
       case LONG:
         return new LongSchema(null, null, (JsonLong)v);
       default:
@@ -396,7 +449,7 @@ public class SchemaFactory
       return new DateSchema(null, null, jd);
       
     case SCHEMA:
-      return new GenericSchema(JsonType.SCHEMA);
+      return new SchematypeSchema((JsonSchema)v);
     
     case FUNCTION:
       return new GenericSchema(JsonType.FUNCTION);
@@ -404,7 +457,7 @@ public class SchemaFactory
     case JAVAOBJECT:
     case REGEX:
     default:
-      return anyNonNullSchema();
+      return nonNullSchema();
     }
   }
 

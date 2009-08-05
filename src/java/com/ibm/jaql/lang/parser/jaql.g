@@ -1434,7 +1434,7 @@ schema returns [Schema s = null]
           s2 = schemaTerm     { alternatives.add(s2); } 
         )*
       ) {
-      	  s = SchemaTransformation.or(alternatives);
+      	  s = OrSchema.or(alternatives);
         }
     ;
     

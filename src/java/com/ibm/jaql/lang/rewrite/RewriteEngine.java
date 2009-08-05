@@ -84,7 +84,7 @@ public class RewriteEngine
     new ConstFieldAccess(phase);
     new ForInSimpleIf(phase);
     new SimplifyFirstNonNull(phase);
-    new TrivialCombineElmination(phase);
+    new TrivialCombineElimination(phase);
     new CombineInputSimplification(phase);
     new DoConstPragma(phase);
     new PathArrayToFor(phase);

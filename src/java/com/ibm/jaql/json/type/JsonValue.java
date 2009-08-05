@@ -62,11 +62,15 @@ public abstract class JsonValue implements Comparable<Object>
   @Override
   public boolean equals(Object x)
   {
-    return this.compareTo(x) == 0;
+    if (x instanceof JsonValue)
+    {
+      return this.compareTo((JsonValue)x) == 0;
+    }
+    return false;
   }
 
   /* @see java.lang.Comparable#compareTo(java.lang.Object) */
-  public abstract int compareTo(Object obj);
+  public abstract int compareTo(Object o);
 
   /* @see java.lang.Object#hashCode() */
   @Override

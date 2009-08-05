@@ -23,7 +23,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonDoubleSerializer extends BinaryBasicSerializer<JsonDouble>
+class JsonDoubleSerializer extends BinaryBasicSerializer<JsonDouble>
 {
 
   @Override

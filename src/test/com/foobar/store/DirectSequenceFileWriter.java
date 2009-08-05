@@ -15,8 +15,8 @@ import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter;
 import com.ibm.jaql.io.hadoop.FileOutputConfigurator;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
-import com.ibm.jaql.io.hadoop.HadoopSerialization;
-import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.HadoopSerializationDefault;
+import com.ibm.jaql.io.hadoop.JsonHolderDefault;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonString;
@@ -40,7 +40,7 @@ public class DirectSequenceFileWriter {
     args.add(Adapter.OUTOPTIONS_NAME, options);
     
     // create adapter
-    OutputAdapter adapter = new DefaultHadoopOutputAdapter<JsonHolder, JsonHolder>();
+    OutputAdapter adapter = new DefaultHadoopOutputAdapter<JsonHolderDefault, JsonHolderDefault>();
     adapter.init(args);
     
     // open adapter
@@ -65,16 +65,16 @@ public class DirectSequenceFileWriter {
     
     // interrogate the environment
     JobConf conf = new JobConf();
-    HadoopSerialization.register(conf);
+    HadoopSerializationDefault.register(conf);
     Path p = new Path(fileName);
     FileSystem fs = p.getFileSystem(conf);
     
     // get the writer
-    Writer writer = SequenceFile.createWriter(fs, conf, p, JsonHolder.class, JsonHolder.class);
+    Writer writer = SequenceFile.createWriter(fs, conf, p, JsonHolderDefault.class, JsonHolderDefault.class);
     
     // write values
-    JsonHolder keyHolder = new JsonHolder(null);
-    JsonHolder valueHolder = new JsonHolder();
+    JsonHolderDefault keyHolder = new JsonHolderDefault(null);
+    JsonHolderDefault valueHolder = new JsonHolderDefault();
     for(JsonValue v : values) {
       valueHolder.value = v;
       writer.append(keyHolder, valueHolder);

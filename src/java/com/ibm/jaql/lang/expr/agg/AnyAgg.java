@@ -101,6 +101,6 @@ public final class AnyAgg extends AlgebraicAggregate
         return valueSchema;
       }
     }
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
 }

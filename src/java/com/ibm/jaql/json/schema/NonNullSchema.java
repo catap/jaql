@@ -19,9 +19,9 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema that accepts any value but null */
-public class AnyNonNullSchema extends Schema
+public class NonNullSchema extends Schema
 {
-  AnyNonNullSchema()
+  NonNullSchema()
   {    
   }
 
@@ -30,7 +30,7 @@ public class AnyNonNullSchema extends Schema
   @Override
   public SchemaType getSchemaType()
   {
-    return SchemaType.ANY_NON_NULL;
+    return SchemaType.NON_NULL;
   }
   
   @Override
@@ -57,6 +57,13 @@ public class AnyNonNullSchema extends Schema
     return Bool3.UNKNOWN;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonValue.class }; // means everything 
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -79,7 +86,7 @@ public class AnyNonNullSchema extends Schema
   {
     if (other.isNull().maybe())
     {
-      return SchemaFactory.anyOrNullSchema();
+      return SchemaFactory.anySchema();
     }
     else
     {
@@ -87,14 +94,13 @@ public class AnyNonNullSchema extends Schema
     }
   }
   
-  
   // -- introspection -----------------------------------------------------------------------------
   
   @Override
   public Schema elements()
   {
     // if the actual value has elements, they could have any schema
-    return SchemaFactory.anyOrNullSchema(); 
+    return SchemaFactory.anySchema(); 
   }
 
   @Override
@@ -107,6 +113,18 @@ public class AnyNonNullSchema extends Schema
   public Schema element(JsonValue which)
   {
     // if the actual value has elements, they could have any schema
-    return SchemaFactory.anyOrNullSchema(); 
+    return SchemaFactory.anySchema(); 
   }
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    assert other instanceof NonNullSchema;
+    return 0;
+  }  
 }

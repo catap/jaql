@@ -91,6 +91,7 @@ public class JaqlFunction extends JsonAtom
     }
     fn.annotate();
     ownFn = true;
+    this.fnText = fnText;
   }
   
   /**

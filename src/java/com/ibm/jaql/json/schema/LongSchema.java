@@ -99,6 +99,13 @@ public class LongSchema extends RangeSchema<JsonLong>
     return SchemaType.LONG;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonLong.class, JsonDecimal.class }; 
+  }
+  
   @Override
   public boolean matches(JsonValue value)
   {

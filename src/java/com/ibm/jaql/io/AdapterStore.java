@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.io;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
@@ -32,6 +33,7 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
@@ -384,7 +386,14 @@ public class AdapterStore
         i = args.get(Adapter.OPTIONS_NAME);
         // can still be null
       }
-      return (JsonRecord) i;
+      try
+      {
+        return JsonUtil.getCopy((JsonRecord) i, null);
+      }
+      catch (Exception e)
+      {
+        throw new UndeclaredThrowableException(e);
+      }
     }
 
     public void replaceOption(BufferedJsonRecord args, JsonRecord options)

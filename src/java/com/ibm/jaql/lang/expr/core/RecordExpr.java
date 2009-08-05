@@ -48,7 +48,7 @@ public class RecordExpr extends Expr
    * 
    * @param exprs
    */
-  public RecordExpr(Expr[] exprs)
+  public RecordExpr(Expr ... exprs)
   {
     super(exprs);
   }
@@ -58,39 +58,10 @@ public class RecordExpr extends Expr
    */
   public RecordExpr()
   {
-    this(NO_EXPRS);
+    super();
   }
   
   /**
-   * 
-   * @param expr
-   */
-  public RecordExpr(Expr expr)
-  {
-    super(expr);
-  }
-
-  /**
-   * 
-   * @param expr0
-   * @param expr1
-   */
-  public RecordExpr(Expr expr0, Expr expr1)
-  {
-    super(expr0, expr1);
-  }
-
-  /**
-   * 
-   * @param expr0
-   * @param expr1
-   * @param expr2
-   */
-  public RecordExpr(Expr expr0, Expr expr1, Expr expr2)
-  {
-    super(expr0, expr1, expr2);
-  }
-
   /**
    * 
    * @param fields
@@ -196,7 +167,7 @@ public class RecordExpr extends Expr
           if (hasElement.maybe())
           {
             Schema valueSchema = recordSchema.element(name);
-            if (valueSchema==null) valueSchema = SchemaFactory.anyOrNullSchema(); // don't know better
+            if (valueSchema==null) valueSchema = SchemaFactory.anySchema(); // don't know better
             fields.add(new RecordSchema.Field(name, valueSchema, hasElement.always() ? false : true));
           }
         }
@@ -230,12 +201,12 @@ public class RecordExpr extends Expr
         }
         else
         {
-          unresolved = SchemaFactory.anyOrNullSchema();
+          unresolved = SchemaFactory.anySchema();
         }
       }
       else // unknown FieldExpr
       {
-        unresolved = SchemaFactory.anyOrNullSchema();
+        unresolved = SchemaFactory.anySchema();
       }
     }
     
