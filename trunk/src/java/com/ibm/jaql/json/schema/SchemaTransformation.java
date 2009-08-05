@@ -1,6 +1,5 @@
 package com.ibm.jaql.json.schema;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -11,125 +10,91 @@ public class SchemaTransformation
 {
   // -- combination -------------------------------------------------------------------------------
   
-  /** Merges schemata <code>s1</code> and <code>s2</code>. The resulting schema will match
-   * (1) any value that is matched by <code>s1</code> and/or <code>s2</code> and (2) some 
-   * other values. The methods tries to both keep the size of schema description small and to
-   * minimize (2).  
-   * 
-   * Commutative: merge(s1,s2)==merge(s2,s1)
+  /** Merges its input schemata. The resulting schema will match (1) any value that is matched by 
+   * at least one of the provided schemata (2) some other values. The methods tries to both keep 
+   * the size of schema description small and to minimize (2).  
    * 
    * See {@link #or(List<Schema>)} for lossless merging.
    */
-  public static Schema merge(Schema s1, Schema s2)
+  public static Schema merge(Schema ... schemata)
   {
-    // try a direct merge
-    if (s1 instanceof OrSchema) // try OrSchema merge second
+    // invalid input
+    if (schemata.length == 0)
     {
-      Schema t = s1;
-      s1 = s2;
-      s2 = t;
+      throw new IllegalArgumentException("at least one schema has to be provided");
     }
-    Schema mergedSchema = s1.merge(s2);
-    if (mergedSchema == null) mergedSchema = s2.merge(s1);
     
-    // if not successful, OR them
-    if (mergedSchema == null)
-    {
-      return new OrSchema(s1, s2);
-    }
-    else
-    {
-      return mergedSchema;    
-    }
-  }
-  
-  /** Combines schemata <code>s1</code> and <code>s2</code>. The resulting schema will match
-   * precisely the values matched by <code>s1</code> and/or <code>s2</code>. 
-   * 
-   * See {@link #merge(Schema, Schema)} for lossy merging. */
-  public static Schema or(Schema s1, Schema s2)
-  {
-    List<Schema> unnestedSchemata = new LinkedList<Schema>();
-    unnestedSchemata.addAll(unnestOrs(s1));
-    unnestedSchemata.addAll(unnestOrs(s2));
-    return new OrSchema(unnestedSchemata);
-  }
-
-  /** Combines schemata <code>s1</code>, <code>s2</code> and <code>s3</code>. The resulting schema 
-   * will match precisely the values matched by <code>s1</code>, <code>s2</code>, and/or 
-   * <code>s3</code>. 
-   * 
-   * See {@link #merge(Schema, Schema)} for lossy merging. */
-  public static Schema or(Schema s1, Schema s2, Schema s3)
-  {
-    List<Schema> unnestedSchemata = new LinkedList<Schema>();
-    unnestedSchemata.addAll(unnestOrs(s1));
-    unnestedSchemata.addAll(unnestOrs(s2));
-    unnestedSchemata.addAll(unnestOrs(s3));
-    return new OrSchema(unnestedSchemata);
-  }
-
-  /** Combines schemata the provided schemata. The resulting schema 
-   * will match precisely the values matched by any of the provided schemata. 
-   * 
-   * See {@link #merge(Schema, Schema)} for lossy merging. */
-  public static Schema or(List<Schema> schemata)
-  {
-    if (schemata.size() == 1)
-    {
-      return schemata.get(0);
-    }
-    else
-    {
-      List<Schema> unnestedSchemata = new LinkedList<Schema>();
-      for (Schema s : schemata)
-      {
-        unnestedSchemata.addAll(unnestOrs(s));
-      }
-      return new OrSchema(unnestedSchemata);
-    }
-  }
-  
-  /** Combines schemata the provided schemata. The resulting schema 
-   * will match precisely the values matched by any of the provided schemata. 
-   * 
-   * See {@link #merge(Schema, Schema)} for lossy merging. */
-  public static Schema or(Schema[] schemata)
-  {
-    if (schemata.length == 1)
-    {
+    // single input
+    if (schemata.length == 1) {
       return schemata[0];
     }
-    else
+      
+    // more than one input
+    Schema result = schemata[0];
+    for (Schema next : schemata)
     {
-      List<Schema> unnestedSchemata = new LinkedList<Schema>();
-      for (Schema s : schemata)
+      // try a direct merge
+      if (result instanceof OrSchema) // try OrSchema merge second
       {
-        unnestedSchemata.addAll(unnestOrs(s));
+        Schema t = result;
+        result = next;
+        next = t;
       }
-      return new OrSchema(unnestedSchemata);
-    }
-  }
-  
-  // helper that recursively unnests OrSchema
-  private static List<Schema> unnestOrs(Schema schema)
-  {
-    List<Schema> result;
-    if (schema instanceof OrSchema)
-    {
-      result = new LinkedList<Schema>();
-      for (Schema s : ((OrSchema)schema).schemata)
+      Schema mergedSchema = result.merge(next);
+      if (mergedSchema == null) mergedSchema = next.merge(result);
+    
+      // if not successful, OR them
+      if (mergedSchema == null)
       {
-        result.addAll(unnestOrs(s));
+        result = OrSchema.or(result, next);
       }
-    }
-    else
-    {
-      result = new ArrayList<Schema>(1);
-      result.add(schema);
+      else
+      {
+        result = mergedSchema;    
+      }
     }
     return result;
   }
+
+  /** Compacts its input schemata by combining multiple alternatives of the same schema type
+   * into a single alternative. This is different to {@link #merge}, which also tries to combine
+   * different schema types. */
+  public static Schema compact(Schema ... schemata)
+  {
+    // unnest, sort and remove duplicates
+    Schema sin = OrSchema.or(schemata);
+    if ( !(sin instanceof OrSchema) )
+    {
+      return sin;
+    }
+    Schema[] in = ((OrSchema)sin).schemata; 
+    
+    List<Schema> out = new LinkedList<Schema>();
+    Schema current = in[0];
+    for (int i=1; i<in.length; i++)
+    {
+      Schema next = in[i];
+      if (current.getSchemaType() != next.getSchemaType())
+      {
+        out.add(current);
+        current = next;
+      }
+      else
+      {
+        Schema merged = current.merge(next);
+        if (merged.getSchemaType() != current.getSchemaType())
+        {
+          // should not happen if all Schema implementations obey the merge() contract
+          throw new IllegalStateException("merge of schema type " + current.getSchemaType() + " failed");
+        }
+        current = merged;
+      }
+    }
+    out.add(current);
+    
+    return OrSchema.or(out);
+  }
+  
   
   // -- null values -------------------------------------------------------------------------------
   
@@ -160,7 +125,7 @@ public class SchemaTransformation
       }
       if (outOrSchema.size() > 0)
       {
-        return or(outOrSchema);
+        return OrSchema.or(outOrSchema);
       }
       return null;
     }
@@ -186,6 +151,13 @@ public class SchemaTransformation
   
   // -- arrays ------------------------------------------------------------------------------------
   
+  /** Returns a common schema of the elements of all arrays matched by the given schema. */
+  public static Schema arrayElements(Schema s)
+  {
+    Schema array = restrictToArray(s);
+    return array != null ? array.elements() : null;
+  }
+  
   /** Returns a schema that matches all arrays matched by <code>s</code>. Returns <code>null</code> 
    * if <code>s</code> does not match any array. */
   public static Schema restrictToArray(Schema s)
@@ -199,7 +171,7 @@ public class SchemaTransformation
    * <code>null</code>. */
   public static Schema restrictToArrayOrNull(Schema s)
   {
-    if (s instanceof AnyNonNullSchema)
+    if (s instanceof NonNullSchema)
     {
       return SchemaFactory.arraySchema();
     }
@@ -216,8 +188,7 @@ public class SchemaTransformation
         if (ns != null) alternatives.add(ns);
       }
       if (alternatives.size() == 0) return null;
-      if (alternatives.size() == 1) return alternatives.get(0);
-      return new OrSchema(alternatives);
+      return OrSchema.or(alternatives);
     }
     return null;
   }
@@ -260,7 +231,7 @@ public class SchemaTransformation
       {
         schemata.add(SchemaFactory.arraySchema());
       }
-      return or(schemata);
+      return OrSchema.or(schemata);
     }
     
     // otherwise we just know that it will be an array (or null)
@@ -292,10 +263,10 @@ public class SchemaTransformation
         Schema se = expandArrays(s);
         schemata.add(se);
       }
-      return or(schemata);
+      return OrSchema.or(schemata);
     }
     
     // fallback
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
 }

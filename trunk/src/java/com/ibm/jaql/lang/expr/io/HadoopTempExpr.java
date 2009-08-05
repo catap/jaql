@@ -18,25 +18,30 @@ package com.ibm.jaql.lang.expr.io;
 import java.util.Map;
 
 import com.ibm.jaql.io.Adapter;
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.util.DeleteFileTask;
 
-/**
- * 
- */
-@JaqlFn(fnName = "HadoopTemp", minArgs = 0, maxArgs = 0)
+/** Creates a file descriptor for temporary files used by Jaql. Takes a schema argument that
+ * describes the schema of the individual values written to the file. */
+@JaqlFn(fnName = "HadoopTemp", minArgs = 0, maxArgs = 1)
 public class HadoopTempExpr extends Expr
 {
   /**
    * @param exprs
    */
-  public HadoopTempExpr(Expr[] exprs)
+  public HadoopTempExpr(Expr ... exprs)
   {
     super(exprs);
   }
@@ -57,6 +62,42 @@ public class HadoopTempExpr extends Expr
     super(NO_EXPRS);
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    // determine options 
+    RecordSchema.Field options[] = new RecordSchema.Field[1];
+    options[0] = new RecordSchema.Field(new JsonString("schema"), SchemaFactory.schematypeSchema(), false);
+    if (exprs.length == 1 && exprs[0].isCompileTimeComputable().always())
+    {
+      try
+      {
+        JsonSchema schema = (JsonSchema)exprs[0].eval(Env.getCompileTimeContext());
+        options[0] = new RecordSchema.Field(
+            new JsonString("schema"), SchemaFactory.schemaOf(schema), false);
+      } catch (Exception e)
+      {
+        // ignore
+      }
+    }
+    
+    // compute result
+    RecordSchema.Field fields[] = new RecordSchema.Field[3];
+    fields[0] = new RecordSchema.Field(
+        Adapter.LOCATION_NAME, 
+        SchemaFactory.stringSchema(), 
+        false);
+    fields[1] = new RecordSchema.Field(
+        Adapter.TYPE_NAME, 
+        new StringSchema(null, null, null, new JsonString("jaqltemp")), 
+        false);
+    fields[2] = new RecordSchema.Field(Adapter.OPTIONS_NAME, 
+        new RecordSchema(options, SchemaFactory.anySchema()), false);
+    
+    // return resutl
+    return new RecordSchema(fields, null);
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -64,10 +105,20 @@ public class HadoopTempExpr extends Expr
    */
   public JsonRecord eval(Context context) throws Exception
   {
-    String filename = "jaql_temp_" + System.nanoTime();     // FIXME: figure out where this should go
+    String filename = "jaqltemp_" + System.nanoTime();     // FIXME: figure out where this should go
     BufferedJsonRecord r = new BufferedJsonRecord();
-    r.add(Adapter.TYPE_NAME, new JsonString("hdfs"));
+    r.add(Adapter.TYPE_NAME, new JsonString("jaqltemp"));
     r.add(Adapter.LOCATION_NAME, new JsonString(filename));
+    BufferedJsonRecord options = new BufferedJsonRecord();
+    if (exprs.length > 0)
+    {
+      options.add(new JsonString("schema"), (JsonSchema)exprs[0].eval(context));
+    }
+    else
+    {
+      options.add(new JsonString("schema"), new JsonSchema(SchemaFactory.nonNullSchema()));
+    }
+    r.add(Adapter.OPTIONS_NAME, options);
     context.doAtReset(new DeleteFileTask(filename));
     return r; // TODO: memory
   }

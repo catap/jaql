@@ -97,7 +97,7 @@ public class WriteAssignment extends Rewrite // TODO: rename to Var inline
       return false;
     }
     
-    Var v = engine.env.makeVar("$fd_"+engine.counter()); // TODO: stash inline names to reuse here when possible
+    Var v = engine.env.makeVar("$fd_"+engine.counter(), write.getSchema()); // TODO: stash inline names to reuse here when possible
     write.replaceInParent(new VarExpr(v));
     BindingExpr bind = new BindingExpr(BindingExpr.Type.EQ, v, null, write);
     new DoExpr(bind, safe.injectAbove());

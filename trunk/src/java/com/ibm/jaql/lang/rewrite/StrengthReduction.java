@@ -91,7 +91,7 @@ public class StrengthReduction extends Rewrite // TODO: rename to Var inline
       {
         continue;
       }
-      Var v = engine.env.makeVar("$temp"); // TODO: stash inline names to reuse here when possible
+      Var v = engine.env.makeVar("$temp", indep.getSchema()); // TODO: stash inline names to reuse here when possible
       indep.replaceInParent(new VarExpr(v));
       BindingExpr bind = new BindingExpr(BindingExpr.Type.EQ, v, null, indep);
       new DoExpr(bind, expr.injectAbove());

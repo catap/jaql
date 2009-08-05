@@ -92,6 +92,6 @@ public class JsonTextInputStream implements StreamToJson<JsonValue>
   
   public Schema getSchema()
   {
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
 }

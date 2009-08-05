@@ -376,7 +376,7 @@ public class BindingExpr extends Expr
     }
     // TODO implement other types
 
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
   
 }

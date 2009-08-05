@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -77,7 +77,7 @@ public final class IfExpr extends Expr
 
   public Schema getSchema()
   {
-    return SchemaTransformation.or(exprs[1].getSchema(), exprs[2].getSchema());
+    return OrSchema.or(exprs[1].getSchema(), exprs[2].getSchema());
   }
 
   /**

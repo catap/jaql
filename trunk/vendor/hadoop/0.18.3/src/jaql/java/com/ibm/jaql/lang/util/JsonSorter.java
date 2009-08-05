@@ -25,8 +25,8 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.PublicMergeSorter;
 import org.apache.hadoop.mapred.Reporter;
 
-import com.ibm.jaql.io.hadoop.HadoopSerialization;
-import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.HadoopSerializationDefault;
+import com.ibm.jaql.io.hadoop.JsonHolderDefault;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.DefaultJsonComparator;
@@ -59,8 +59,8 @@ public class JsonSorter
    */
   public JsonSorter(JsonComparator comparator)
   {
-    conf.setMapOutputKeyClass(JsonHolder.class);
-    HadoopSerialization.register(conf);
+    conf.setMapOutputKeyClass(JsonHolderDefault.class);
+    HadoopSerializationDefault.register(conf);
     if (comparator != null)
     {
       conf.setOutputKeyComparatorClass(comparator.getClass());      

@@ -86,6 +86,13 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
     return SchemaType.DOUBLE;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonDouble.class }; 
+  }
+  
   public boolean matches(JsonValue value)
   {
     if (!(value instanceof JsonDouble))

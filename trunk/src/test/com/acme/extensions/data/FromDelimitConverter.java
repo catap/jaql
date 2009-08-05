@@ -106,7 +106,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable<
           throw new RuntimeException("tried to convert from: " + src);
         }
         
-        String[] vals = new String(t.getBytes()).split(delimiter);
+        String[] vals = new String(t.getBytes(), 0, t.getLength()).split(delimiter);
         try {
           if(header == null) {
             setArray(vals, (BufferedJsonArray)tgt);

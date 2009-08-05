@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.nil;
 
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
@@ -67,7 +68,7 @@ public class EmptyOnNullFn extends IterExpr
       }
       else
       {
-        return SchemaTransformation.or(outSchema, SchemaFactory.emptyArraySchema());
+        return OrSchema.or(outSchema, SchemaFactory.emptyArraySchema());
       }
     }
   }

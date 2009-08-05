@@ -22,9 +22,9 @@ import org.apache.hadoop.hbase.mapred.TableOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.AdapterStore;
-import com.ibm.jaql.io.hadoop.HadoopSerialization;
+import com.ibm.jaql.io.hadoop.HadoopSerializationDefault;
 import com.ibm.jaql.io.hadoop.InitializableConfSetter;
-import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.JsonHolderDefault;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.DefaultJsonComparator;
@@ -54,9 +54,9 @@ public class TableOutputConfigurator implements InitializableConfSetter
   public void setParallel(JobConf conf) throws Exception
   {
     conf.set(TableOutputFormat.OUTPUT_TABLE, location);
-    conf.setOutputKeyClass(JsonHolder.class);
-    conf.setOutputValueClass(JsonHolder.class);
-    HadoopSerialization.register(conf);
+    conf.setOutputKeyClass(JsonHolderDefault.class);
+    conf.setOutputValueClass(JsonHolderDefault.class);
+    HadoopSerializationDefault.register(conf);
     conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
   }
 

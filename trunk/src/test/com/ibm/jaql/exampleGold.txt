@@ -2194,8 +2194,6 @@ $books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'o
 {
   "location": "example.jql",
   "outoptions": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
-    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
     "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },

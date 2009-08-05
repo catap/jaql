@@ -28,6 +28,7 @@ import org.apache.hadoop.mapred.MapRunnable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.hadoop.CompositeInputAdapter;
@@ -35,7 +36,7 @@ import com.ibm.jaql.io.hadoop.Globals;
 import com.ibm.jaql.io.hadoop.HadoopAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
-import com.ibm.jaql.io.hadoop.HadoopSerialization;
+import com.ibm.jaql.io.hadoop.HadoopSerializationMapOutput;
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.hadoop.JsonHolderMapOutputKey;
 import com.ibm.jaql.io.hadoop.JsonHolderMapOutputValue;
@@ -204,18 +205,13 @@ public abstract class MapReduceBaseExpr extends Expr
   /** Registers Jaql's serializers. Must be called by subclasses. */
   protected final void setupSerialization(boolean hasReduce)
   {
-    HadoopSerialization.register(conf);
+    // set the intermediate file format, if necessary
     if (hasReduce)
     {
+      HadoopSerializationMapOutput.register(conf);
       conf.setMapOutputKeyClass(JsonHolderMapOutputKey.class);
       conf.setMapOutputValueClass(JsonHolderMapOutputValue.class);
       conf.setOutputKeyComparatorClass(MapOutputKeyComparator.class);
-    }
-    else
-    {
-      conf.setMapOutputKeyClass(JsonHolder.class);
-      conf.setMapOutputValueClass(JsonHolder.class);
-      // no comparators needed
     }
   }
   
@@ -349,20 +345,10 @@ public abstract class MapReduceBaseExpr extends Expr
     public void configure(JobConf job)
     {
       super.configure(job);
-      
-      if (runningReduce)
-      {
-        // these classes indicate temporary map output
-        outKey = new JsonHolderMapOutputKey();
-        outValue = new JsonHolderMapOutputValue();
-      }
-      else
-      {
-        // these classes indicate permanent map output
-        outKey = new JsonHolder();
-        outValue = new JsonHolder();
-      }
-      
+
+      outKey = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputKeyClass(), job);
+      outValue = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputValueClass(), job);
+
       if (numInputs > 1)
       {
         inputId = CompositeInputAdapter.readCurrentIndex(job);

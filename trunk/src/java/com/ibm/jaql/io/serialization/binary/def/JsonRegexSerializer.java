@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonRegexSerializer extends BinaryBasicSerializer<JsonRegex>
+class JsonRegexSerializer extends BinaryBasicSerializer<JsonRegex>
 {
   BinaryBasicSerializer<JsonString> stringSerializer;
   

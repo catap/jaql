@@ -48,9 +48,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
    */
   public void setSequential(JobConf conf) throws Exception
   {
-    conf.setOutputKeyClass(JsonHolder.class);
-    conf.setOutputValueClass(JsonHolder.class);
-    HadoopSerialization.register(conf);
+    registerSerializers(conf);
     
     // For an expression, the location is the final file name, so its directory
     // must be the location's parent.
@@ -74,6 +72,13 @@ public class FileOutputConfigurator implements InitializableConfSetter
     }
   }
 
+  protected void registerSerializers(JobConf conf)
+  {
+    conf.setOutputKeyClass(JsonHolderDefault.class);
+    conf.setOutputValueClass(JsonHolderDefault.class);
+    HadoopSerializationDefault.register(conf);
+  }
+
   /*
    * (non-Javadoc)
    * 
@@ -81,10 +86,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
    */
   public void setParallel(JobConf conf) throws Exception
   {
-    conf.setOutputKeyClass(JsonHolder.class);
-    conf.setOutputValueClass(JsonHolder.class);
-    // TODO: currently assumes usage of  FullSerializer#getDefault()
-    HadoopSerialization.register(conf);
+    registerSerializers(conf);
 
     // For map-reduce, multiple files can be produced, so the location is their
     // parent directory.

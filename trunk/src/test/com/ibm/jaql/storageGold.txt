@@ -79,10 +79,8 @@ read({location: 'jaqlTest/test2.dat',
 {
   "location": "jaqlTest/test3.dat",
   "outoptions": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.foobar.store.TextFileOutputConfigurator",
-    "converter": "com.foobar.store.ToJSONSeqConverter",
-    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
+    "converter": "com.foobar.store.ToJSONSeqConverter"
   },
   "type": "hdfs"
 }
@@ -131,7 +129,6 @@ read({type: 'hdfs', location: 'jaqlTest/test3.dat',
 {
   "location": "jaqlTest/test4.txt",
   "outoptions": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.foobar.store.TextFileOutputConfigurator",
     "converter": "com.foobar.store.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
@@ -375,7 +372,6 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'});##
 {
   "location": "jaqlTest/test8.txt",
   "outoptions": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
     "configurator": "com.foobar.store.TextFileOutputConfigurator",
     "converter": "com.foobar.store.ToJSONTxtConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
@@ -587,7 +583,6 @@ $r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonO
 {
   "location": "build/test/cache/b2",
   "options": {
-    "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
     "format": "com.ibm.jaql.io.stream.converter.JsonOutputStream"
   },
   "type": "local"
@@ -621,9 +616,7 @@ $v = {someField: "some value"};##
 {
   "location": "build/test/cache/b2",
   "options": {
-    "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
-    "asArray": false,
-    "format": "com.ibm.jaql.io.stream.converter.JsonTextOutputStream"
+    "asArray": false
   },
   "type": "local"
 }
@@ -659,8 +652,6 @@ $l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutput
 {
   "location": "jaqlTest/test2",
   "options": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
-    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
     "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },
@@ -672,8 +663,6 @@ $r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutput
 {
   "location": "jaqlTest/test2",
   "options": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter",
-    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
     "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
     "format": "org.apache.hadoop.mapred.TextOutputFormat"
   },

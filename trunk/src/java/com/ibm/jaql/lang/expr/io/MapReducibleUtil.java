@@ -64,6 +64,7 @@ public class MapReducibleUtil
     }
 
     if (e instanceof AbstractHandleFn) return ((AbstractHandleFn) e).isMapReducible();
+    if (e instanceof JaqlTempFn) return ((JaqlTempFn) e).isMapReducible();
     if (e instanceof RecordExpr) return isMapReducible(input, (RecordExpr) e);
     if (e instanceof ConstExpr) return isMapReducible(input, ((ConstExpr) e).value);
 

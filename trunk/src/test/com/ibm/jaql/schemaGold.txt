@@ -1,7 +1,3 @@
-schemaof( [] -> expand);##
-schema []
-
-
 // -- parsing and matching: simple schemata -------------------------------------------------------
 
 $x = schema null;##
@@ -17,11 +13,11 @@ true
 false
    // incompatible
 
-$x = schema any;##
+$x = schema nonnull;##
 "$x"
 
 $x;##
-schema any
+schema nonnull
 
 null instanceof $x;##
 false
@@ -30,11 +26,11 @@ false
 true
 
 
-$x = schema any?;##
+$x = schema any;##
 "$x"
 
 $x;##
-schema any?
+schema any
 
 null instanceof $x;##
 true
@@ -55,6 +51,28 @@ true
 1 instanceof $x;##
 false
   // incompatible
+
+// -- parsing and matching: schema ----------------------------------------------------------------
+
+$x = schema schematype;##
+"$x"
+
+schema long instanceof $x;##
+true
+
+1 instanceof $x;##
+false
+  // incompatible
+
+$x = schema schematype(value=schema long);##
+"$x"
+
+schema long instanceof $x;##
+true
+   
+schema boolean instanceof $x;##
+false
+ // incompatible
 
 
 // -- parsing and matching: boolean ---------------------------------------------------------------
@@ -972,7 +990,7 @@ $x = schema { a };##
 
 $x;##
 schema {
-         "a": any?
+         "a": any
        }
 
 { a: 1 } instanceof $x;##
@@ -996,7 +1014,7 @@ $x = schema { "a" };##
 
 $x;##
 schema {
-         "a": any?
+         "a": any
        }
 
 { a: 1 } instanceof $x;##
@@ -1017,7 +1035,7 @@ $x = schema { a? };##
 
 $x;##
 schema {
-         "a"?: any?
+         "a"?: any
        }
 
 { } instanceof $x;##
@@ -1045,12 +1063,12 @@ true
 false
        // incompatible
 
-$x = schema { a: any };##
+$x = schema { a: nonnull };##
 "$x"
 
 $x;##
 schema {
-         "a": any
+         "a": nonnull
        }
 
 { a: 1 } instanceof $x;##
@@ -1065,7 +1083,7 @@ $x = schema { * };##
 
 $x;##
 schema {
-         *: any?
+         *: any
        }
 
 { } instanceof $x;##
@@ -1084,7 +1102,7 @@ $x = schema { a: long, * };##
 $x;##
 schema {
          "a": long,
-         *: any?
+         *: any
        }
 
 { a: 1 } instanceof $x;##
@@ -1103,7 +1121,7 @@ $x = schema { a?: long, * };##
 $x;##
 schema {
          "a"?: long,
-         *: any?
+         *: any
        }
 
 { a: 1 } instanceof $x;##
@@ -1162,31 +1180,31 @@ false
 
 // keyword checks
 // schema { for }; // does not work currently 
-schema { for: any };##
+schema { for: nonnull };##
 schema {
-         "for": any
+         "for": nonnull
        }
 
 schema { "for" };##
 schema {
-         "for": any?
+         "for": any
        }
 
 // schema { null }; // does not work currently
-schema { null: any };##
+schema { null: nonnull };##
 schema {
-         "null": any
+         "null": nonnull
        }
  // treated as "null"
 
 schema { "1" };##
 schema {
-         "1": any?
+         "1": any
        }
 
 schema { 1:##
 FAILURE
- any }; // must fail: invalid field name (numbers must be quoted)
+ nonnull }; // must fail: invalid field name (numbers must be quoted)
 schema { *, * }##
 FAILURE
 ; // must fail: wildcard field occurs twice
@@ -1246,7 +1264,7 @@ $x = schema string(pattern="a*") | string(pattern="b*") | long;##
 "$x"
 
 $x;##
-schema string(pattern="a*") | string(pattern="b*") | long
+schema long | string(pattern="a*") | string(pattern="b*")
 
 "aaa" instanceof $x;##
 true
@@ -1269,7 +1287,7 @@ $x = schema string(pattern="a*") | string(pattern="b*") | long?;##
 "$x"
 
 $x;##
-schema string(pattern="a*") | string(pattern="b*") | long | null
+schema long | string(pattern="a*") | string(pattern="b*") | null
 
 "aaa" instanceof $x;##
 true
@@ -1322,6 +1340,110 @@ schema [
          long(value=1),
          string(value="2")
        ]
+
+
+
+// -- schema comparison ---------------------------------------------------------------------------
+
+$x = [ schema nonnull, 
+       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string<*> ],
+       schema binary, 
+       schema boolean, 
+       schema date, 
+       schema decfloat, 
+       schema double, 
+       schema long, 
+       schema null, 
+       schema {}, schema { a: long }, schema { a?: long }, schema { b: long }, schema { *: long },  
+       schema string,
+       schema any,
+       schema decfloat | long, schema date | double  
+];##
+"$x"
+
+$x -> sort by [$];##
+[
+  schema boolean,
+  schema long,
+  schema decfloat,
+  schema double,
+  schema string,
+  schema binary,
+  schema date,
+  schema [],
+  schema [
+           long
+         ],
+  schema [
+           long,
+           decfloat,
+           string<0,*>
+         ],
+  schema [
+           long,
+           decfloat
+         ],
+  schema {
+           *: long
+         },
+  schema {},
+  schema {
+           "a": long
+         },
+  schema {
+           "a"?: long
+         },
+  schema {
+           "b": long
+         },
+  schema long | decfloat,
+  schema double | date,
+  schema any,
+  schema nonnull,
+  schema null
+]
+
+$x -> sort by [$ desc];##
+[
+  schema null,
+  schema nonnull,
+  schema any,
+  schema double | date,
+  schema long | decfloat,
+  schema {
+           "b": long
+         },
+  schema {
+           "a"?: long
+         },
+  schema {
+           "a": long
+         },
+  schema {},
+  schema {
+           *: long
+         },
+  schema [
+           long,
+           decfloat
+         ],
+  schema [
+           long,
+           decfloat,
+           string<0,*>
+         ],
+  schema [
+           long
+         ],
+  schema [],
+  schema date,
+  schema binary,
+  schema string,
+  schema double,
+  schema decfloat,
+  schema long,
+  schema boolean
+]
 
 
 
@@ -1460,29 +1582,29 @@ mergeSchemata(schema null, schema string);##
 schema string?
 
 mergeSchemata(schema null, schema string|long);##
-schema string | long | null
+schema long | string | null
 
 mergeSchemata(schema null, schema string|null);##
 schema string?
 
 mergeSchemata(schema long(min=1)|string(maxLength=8)|null, schema date|long(min=2)|string(maxLength=5));##
-schema date | long(min=1) | string(maxLength=8) | null
+schema long(min=1) | string(maxLength=8) | date | null
 
 
-mergeSchemata(schema any, schema any);##
+mergeSchemata(schema nonnull, schema nonnull);##
+schema nonnull
+
+mergeSchemata(schema nonnull, schema long);##
+schema nonnull
+
+mergeSchemata(schema nonnull, schema long|date);##
+schema nonnull
+
+mergeSchemata(schema nonnull, schema null);##
 schema any
 
-mergeSchemata(schema any, schema long);##
+mergeSchemata(schema nonnull, schema long|null);##
 schema any
-
-mergeSchemata(schema any, schema long|date);##
-schema any
-
-mergeSchemata(schema any, schema null);##
-schema any?
-
-mergeSchemata(schema any, schema long|null);##
-schema any?
 
 
 
@@ -1567,6 +1689,249 @@ schema {
        }
 
 
+// -- schema compaction ---------------------------------------------------------------------------
+
+registerFunction('compactSchemata', 'com.ibm.jaql.udf.CompactSchemataUdf');##
+"compactSchemata"
+
+
+compactSchemata(schema binary, schema binary);##
+schema binary
+
+compactSchemata(schema binary(minLength=5,maxLength=10), schema binary);##
+schema binary
+
+compactSchemata(schema binary(minLength=5,maxLength=11), schema binary(minLength=4,maxLength=10));##
+schema binary(minLength=4, maxLength=11)
+
+
+compactSchemata(schema boolean, schema boolean);##
+schema boolean
+
+compactSchemata(schema boolean, schema boolean(false));##
+schema boolean
+
+compactSchemata(schema boolean, schema boolean(true));##
+schema boolean
+
+compactSchemata(schema boolean(false), schema boolean(true));##
+schema boolean
+
+compactSchemata(schema boolean(false), schema boolean(false));##
+schema boolean(value=false)
+
+compactSchemata(schema boolean(true), schema boolean(true));##
+schema boolean(value=true)
+
+
+compactSchemata(schema date, schema date);##
+schema date
+
+compactSchemata(schema date, schema date(value=date('2001-07-04T12:08:56Z')));##
+schema date
+
+compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
+              schema date(min=date('2001-08-04T12:08:56Z'), max=date('2002-08-04T12:08:56Z')));##
+schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-08-04T12:08:56Z'))
+
+compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
+              schema date(min=date('2001-06-04T12:08:56Z'), max=date('2002-06-04T12:08:56Z')));##
+schema date(min=date('2001-06-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z'))
+
+compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
+              schema date(value=date('2001-06-04T12:08:56Z')));##
+schema date(min=date('2001-06-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z'))
+
+
+compactSchemata(schema decfloat, schema decfloat);##
+schema decfloat
+
+compactSchemata(schema decfloat, schema decfloat(value=1.0));##
+schema decfloat
+
+compactSchemata(schema decfloat(min=1.0, max=5.0),
+              schema decfloat(min=2.0, max=6.0));##
+schema decfloat(min=1.0, max=6.0)
+
+compactSchemata(schema decfloat(min=1.0, max=5.0),
+              schema decfloat(min=0.0, max=4.0));##
+schema decfloat(min=0.0, max=5.0)
+
+compactSchemata(schema decfloat(min=1.0, max=5.0),
+              schema decfloat(value=0.0));##
+schema decfloat(min=0.0, max=5.0)
+
+
+compactSchemata(schema double, schema double);##
+schema double
+
+compactSchemata(schema double, schema double(value=1.0d));##
+schema double
+
+compactSchemata(schema double(min=1.0d, max=5.0d),
+              schema double(min=2.0d, max=6.0d));##
+schema double(min=1.0d, max=6.0d)
+
+compactSchemata(schema double(min=1.0d, max=5.0d),
+              schema double(min=0.0d, max=4.0d));##
+schema double(min=0.0d, max=5.0d)
+
+compactSchemata(schema double(min=1.0d, max=5.0d),
+              schema double(value=0.0d));##
+schema double(min=0.0d, max=5.0d)
+
+
+compactSchemata(schema long, schema long);##
+schema long
+
+compactSchemata(schema long, schema long(value=1));##
+schema long
+
+compactSchemata(schema long(min=1, max=5),
+              schema long(min=2, max=6));##
+schema long(min=1, max=6)
+
+compactSchemata(schema long(min=1, max=5),
+              schema long(min=0, max=4));##
+schema long(min=0, max=5)
+
+compactSchemata(schema long(min=1, max=5),
+              schema long(value=0));##
+schema long(min=0, max=5)
+
+
+compactSchemata(schema null, schema null);##
+schema null
+
+
+compactSchemata(schema string, schema string);##
+schema string
+
+compactSchemata(schema string(minLength=5,maxLength=10), schema string);##
+schema string
+
+compactSchemata(schema string(minLength=5,maxLength=11), schema string(minLength=4,maxLength=10));##
+schema string(minLength=4, maxLength=11)
+
+compactSchemata(schema string(value="a"), schema string);##
+schema string
+
+compactSchemata(schema string(pattern="a"), schema string);##
+schema string
+
+
+compactSchemata(schema null, schema string);##
+schema string?
+
+compactSchemata(schema null, schema string|long);##
+schema long | string | null
+
+compactSchemata(schema null, schema string|null);##
+schema string?
+
+compactSchemata(schema long(min=1)|string(maxLength=8)|null, schema date|long(min=2)|string(maxLength=5));##
+schema long(min=1) | string(maxLength=8) | date | null
+
+
+
+compactSchemata(schema nonnull, schema nonnull);##
+schema nonnull
+
+compactSchemata(schema nonnull, schema long);##
+schema long | nonnull
+
+compactSchemata(schema nonnull, schema long|date);##
+schema long | date | nonnull
+
+compactSchemata(schema nonnull, schema null);##
+schema any
+
+compactSchemata(schema nonnull, schema long|null);##
+schema long | any
+
+
+
+compactSchemata(schema [], schema []);##
+schema []
+
+compactSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);##
+schema [
+         long,
+         boolean | string,
+         date?
+       ]
+
+compactSchemata(schema [ long, decfloat ], schema [ long ]);##
+schema [
+         long,
+         decfloat<0,1>
+       ]
+
+compactSchemata(schema [ long, decfloat<2,5> ], schema [ long ]);##
+schema [
+         long,
+         decfloat<0,5>
+       ]
+
+compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, date ]);##
+schema [
+         long,
+         decfloat | date,
+         decfloat<0,4>
+       ]
+
+compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, decfloat<4,7> ]);##
+schema [
+         long,
+         decfloat<2,7>
+       ]
+
+compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, date<4,7> ]);##
+schema [
+         long,
+         decfloat | date<2,7>
+       ]
+
+compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, null, date<4,7> ]);##
+schema [
+         long,
+         decfloat?,
+         decfloat | date<1,7>
+       ]
+
+
+compactSchemata(schema {}, schema {});##
+schema {}
+
+compactSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });##
+schema {
+         "a": long,
+         "b": long,
+         "c": null
+       }
+
+compactSchemata(schema { a: long, b:long, c:null, e?: date }, schema { a: long, b:string, d:null, e:date });##
+schema {
+         "a": long,
+         "b": long | string,
+         "c"?: null,
+         "d"?: null,
+         "e"?: date
+       }
+
+compactSchemata(schema { a: long, *:date }, schema { a: long });##
+schema {
+         "a": long,
+         *: date
+       }
+
+compactSchemata(schema { a: long, *:date }, schema { a: long, *:null });##
+schema {
+         "a": long,
+         *: date?
+       }
+
+
 
 // -- path expressions and schemata --------------------------------------------------------------
 
@@ -1612,42 +1977,42 @@ schemaof ([ "yes", 0, 1][1]);##
 schema long(value=0)
 
 schemaof ([ "yes", 0, 1][4]);##
-schema any?
+schema any
 
 schemaof ([ "yes", 0, 1][0:1]);##
 schema [
-         string(value="yes") | long(min=0, max=1)<0,*>
+         long(min=0, max=1) | string(value="yes")<0,*>
        ]
 
 schemaof ([ "yes", 0, 1][1:*]);##
 schema [
-         string(value="yes") | long(min=0, max=1)<0,*>
+         long(min=0, max=1) | string(value="yes")<0,*>
        ]
 
 schemaof ([ "yes", 0, 1][*:1]);##
 schema [
-         string(value="yes") | long(min=0, max=1)<0,*>
+         long(min=0, max=1) | string(value="yes")<0,*>
        ]
 
 schemaof ([ "yes", 0, 1][*:*]);##
 schema [
-         string(value="yes") | long(min=0, max=1)<3>
+         long(min=0, max=1) | string(value="yes")<3>
        ]
 
 
 // arrays: nulls
 schemaof ([ "yes", [ 0 ], 1, null] [?]);##
 schema [
-         string(value="yes") | [
+         long(value=1) | string(value="yes") | [
            long(value=0)
-         ] | long(value=1) | null<4>
+         ] | null<4>
        ]
 
 schemaof ([ "yes", [ 0 ], 1, [ null ]] [?]);##
 schema [
-         string(value="yes") | [
+         long(value=1) | string(value="yes") | [
            long(value=0)?
-         ] | long(value=1)<4>
+         ]<4>
        ]
 
 schemaof ([ null ] [?]);##
@@ -1659,12 +2024,12 @@ schema [
 // arrays: expanding
 schemaof ([ "yes", [ 0 ], 1, null] []);##
 schema [
-         string(value="yes") | long(value=0) | long(value=1)<0,*>
+         long(value=0) | long(value=1) | string(value="yes")<0,*>
        ]
 
 schemaof ([ "yes", [ 0 ], 1, [ null ]] []);##
 schema [
-         string(value="yes") | long(value=0) | null | long(value=1)<0,*>
+         long(value=0) | long(value=1) | string(value="yes") | null<0,*>
        ]
 
 schemaof ([ null ] []);##
@@ -1803,28 +2168,28 @@ schema [
 schemaof ([ [ true, "a", 1 ] ] -> transform $[0:1]);##
 schema [
          [
-           boolean(value=true) | string(value="a") | long(value=1)<0,*>
+           boolean(value=true) | long(value=1) | string(value="a")<0,*>
          ]<0,*>
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[1:*]);##
 schema [
          [
-           boolean(value=true) | string(value="a") | long(value=1)<0,*>
+           boolean(value=true) | long(value=1) | string(value="a")<0,*>
          ]<0,*>
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[*:1]);##
 schema [
          [
-           boolean(value=true) | string(value="a") | long(value=1)<0,*>
+           boolean(value=true) | long(value=1) | string(value="a")<0,*>
          ]<0,*>
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[*:*]);##
 schema [
          [
-           boolean(value=true) | string(value="a") | long(value=1)<3>
+           boolean(value=true) | long(value=1) | string(value="a")<3>
          ]<0,*>
        ]
 
@@ -1889,14 +2254,14 @@ schema [
 schemaof([ [ {a: [1, 2, "a", null] } ], null, 1 ] -> transform $[]);##
 schema [
          [
-           {
+           long(value=1) | {
              "a": [
                     long(value=1),
                     long(value=2),
                     string(value="a"),
                     null
                   ]
-           } | long(value=1)<0,*>
+           }<0,*>
          ]<0,*>
        ]
 
@@ -2106,7 +2471,7 @@ schema [
 
 schemaof( [ [1,2], ["a","b"], [true], null ] -> expand);##
 schema [
-         long(min=1, max=2) | string(minLength=1, maxLength=1) | boolean(value=true)<0,*>
+         boolean(value=true) | long(min=1, max=2) | string(minLength=1, maxLength=1)<0,*>
        ]
 
 
@@ -2115,9 +2480,33 @@ schema [
 
 schemaof(read("anything"));##
 schema [
-         any?<0,*>
+         any<0,*>
        ]
 
+
+schemaof(null -> keyLookup(null));##
+schema []
+
+schemaof([[1, "a"]] -> keyLookup(null));##
+schema [
+         [
+           long(value=1),
+           string(value="a"),
+           null
+         ]<0,*>
+       ]
+
+schemaof(null -> keyLookup([[1, "a"]]));##
+schema []
+
+schemaof([[1, "a"]] -> keyLookup([[1, "b"]]));##
+schema [
+         [
+           long(value=1),
+           string(value="a"),
+           string(value="b")?
+         ]<0,*>
+       ]
 
 
 //-------------------------- QUIT ---------------------------------

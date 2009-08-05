@@ -41,7 +41,7 @@ public class RecordSchema extends Schema
   // -- inner classes -----------------------------------------------------------------------------
   
   /** Describes the field of a record */
-  public static class Field
+  public static class Field implements Comparable<Field>
   {
     protected JsonString  name;
     protected Schema      schema;
@@ -70,6 +70,19 @@ public class RecordSchema extends Schema
     public boolean isOptional()
     {
       return isOptional;
+    }
+
+    @Override
+    public int compareTo(Field o)
+    {
+      int c = SchemaUtil.compare(this.name, o.name);
+      if (c != 0) return c;
+      c = Boolean.valueOf(this.isOptional).compareTo(Boolean.valueOf(o.isOptional));
+      if (c != 0) return c;
+      c = SchemaUtil.compare(this.schema, o.schema);
+      if (c != 0) return c;
+      
+      return 0;
     }
   }
 
@@ -130,7 +143,7 @@ public class RecordSchema extends Schema
   /** Matches any record */
   RecordSchema()
   {
-    this((Field[])null, SchemaFactory.anyOrNullSchema());
+    this((Field[])null, SchemaFactory.anySchema());
   }
 
   /** Checks whether all fields are valid. If not, throws an exception */
@@ -190,6 +203,13 @@ public class RecordSchema extends Schema
     return true;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonRecord.class }; 
+  }
+  
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
@@ -497,5 +517,22 @@ public class RecordSchema extends Schema
     {
       return new JsonLong(fields.length);
     }    
+  } 
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    RecordSchema o = (RecordSchema)other;
+    c = SchemaUtil.arrayCompare(this.fields, o.fields);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.rest, o.rest);
+    if (c != 0) return c;
+    
+    return 0;
   } 
 }

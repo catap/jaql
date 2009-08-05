@@ -55,14 +55,10 @@ public class JsonUtil
     return bout.toString();
   }
 
-  /** Handles null */
+  /** Handles null (nulls go first) */
   public static int compare(JsonValue v1, JsonValue v2) {
-    if (v1 == null) {
-      return v2==null ? 0 : -1; // nulls go first
-    } 
-    if (v2 == null) {
-      return 1;
-    }
+    int cmp = JsonType.typeCompare(v1, v2); // also handles null
+    if (cmp != 0 || v1==null) return cmp;
     return v1.compareTo(v2);
   }
 

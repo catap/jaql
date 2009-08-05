@@ -49,63 +49,46 @@ public class SchemaUtil
   }
   
   /** Returns the minimum value of its arguments or null if one of its inputs is null  */
-  public static <T extends JsonValue> T min(T v1, T v2)
+  public static <T extends JsonValue> T min(T v, T ... values)
   {
-    if (v1 == null)
+    if (v == null)
     {
       return null;
-    } 
-    else if (v2 == null)
-    {
-      return null;  
     }
-    else
+    
+    T min = v;
+    for (T next : values)
     {
-      return v1.compareTo(v2) <= 0 ? v1 : v2;
-    }
+      if (next == null)
+      {
+        return null;  
+      }
+      min = min.compareTo(next) <= 0 ? min : next;
+    }    
+    return min;
   }
   
-  /** Returns the minimum value of its arguments or null if one of its inputs is null  */
-  public static <T extends JsonValue> T min(T v1, T v2, T v3)
+    /** Returns the maximum value of its arguments or null if one of its inputs is null  */
+  public static <T extends JsonValue> T max(T v, T ... values)
   {
-    return min(min(v1, v2), v3);
-  }
-
-  /** Returns the minimum value of its arguments or null if one of its inputs is null  */
-  public static <T extends JsonValue> T min(T v1, T v2, T v3, T v4)
-  {
-    return min(min(v1, v2), min(v3, v4));
-  }
-
-  /** Returns the maximum value of its arguments or null if one of its inputs is null  */
-  public static <T extends JsonValue> T max(T v1, T v2)
-  {
-    if (v1 == null)
+    if (v == null)
     {
       return null;
-    } 
-    else if (v2 == null)
-    {
-      return null;  
     }
-    else
+    
+    T max = v;
+    for (T next : values)
     {
-      return v1.compareTo(v2) >= 0 ? v1 : v2;
-    }
+      if (next == null)
+      {
+        return null;  
+      }
+      max = max.compareTo(next) >= 0 ? max : next;
+    }    
+    return max;
   }
   
-  /** Returns the maximum value of its arguments or null if one of its inputs is null  */
-  public static <T extends JsonValue> T max(T v1, T v2, T v3)
-  {
-    return max(max(v1, v2), v3);
-  }
-
-  /** Returns the maximum value of its arguments or null if one of its inputs is null  */
-  public static <T extends JsonValue> T max(T v1, T v2, T v3, T v4)
-  {
-    return max(max(v1, v2), max(v3, v4));
-  }
-  
+  @SuppressWarnings("unchecked")
   public static <T extends JsonValue> T minOrValue(T min1, T min2, T v1, T v2)
   {
     if (v1!=null) min1=v1;
@@ -115,6 +98,7 @@ public class SchemaUtil
     return min(min1, min2, v1, v2);
   }
   
+  @SuppressWarnings("unchecked")
   public static <T extends JsonValue> T maxOrValue(T max1, T max2, T v1, T v2)
   {
     if (v1!=null) max1=v1;
@@ -124,5 +108,42 @@ public class SchemaUtil
     return max(max1, max2, v1, v2);
   }
 
-
+  /** Compares two arrays, element by element. Handles null arguments (nulls go last) and null 
+   * values in the provided arrays gracefully (nulls go first). */
+  @SuppressWarnings("unchecked")
+  public static <T extends Comparable> int arrayCompare(T[] a1, T[] a2)
+  {
+    if (a1 == null && a2 == null) return 0;
+    if (a1 != null && a2 == null) return -1;
+    if (a1 == null && a2 != null) return +1;
+    
+    // both non-null
+    int l1 = a1.length;
+    int l2 = a2.length;
+    int l = Math.min(l1, l2);
+    for (int i=0; i<l; i++)
+    {
+      if (a1[i] == null && a2[i] == null) continue;
+      if (a1[i] != null && a2[i] == null) return +1;
+      if (a1[i] == null && a2[i] != null) return -1;
+      
+      int cmp = a1[i].compareTo(a2[i]);
+      if (cmp != 0) return cmp;
+    }
+    
+    // both have same prefix; length decides
+    return l1 < l2 ? -1 : (l1==l2) ? 0 : +1; 
+  }  
+  
+  /** Handles null (nulls go last) */
+  @SuppressWarnings("unchecked")
+  public static <T extends Comparable> int compare(T v1, T v2) {
+    if (v1 == null) {
+      return v2==null ? 0 : +1; // nulls go first
+    } 
+    if (v2 == null) {
+      return -1;
+    }
+    return v1.compareTo(v2);
+  }
 }

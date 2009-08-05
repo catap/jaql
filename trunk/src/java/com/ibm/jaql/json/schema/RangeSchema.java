@@ -111,4 +111,25 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
   {
     return value;
   }
+
+  
+  // -- comparison --------------------------------------------------------------------------------
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    RangeSchema<T> o = (RangeSchema<T>)other;
+    c = SchemaUtil.compare(this.value, o.value);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.min, o.min);
+    if (c != 0) return c;
+    c = SchemaUtil.compare(this.max, o.max);
+    if (c != 0) return c;
+    
+    return 0;
+  }
 }

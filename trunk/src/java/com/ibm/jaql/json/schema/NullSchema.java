@@ -58,6 +58,13 @@ public class NullSchema extends Schema
     return Bool3.TRUE;
   }
 
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[0]; 
+  }
+  
   @Override
   public boolean matches(JsonValue value) throws Exception
   {
@@ -76,4 +83,16 @@ public class NullSchema extends Schema
     }
     return null;
   }
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    assert other instanceof NullSchema;
+    return 0;
+  } 
 }

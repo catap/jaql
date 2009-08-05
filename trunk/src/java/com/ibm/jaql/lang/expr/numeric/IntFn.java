@@ -15,7 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.numeric;
 
-import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
@@ -66,8 +67,9 @@ public class IntFn extends Expr
     }
     else if (val instanceof JsonNumeric)
     {
-      JsonNumeric n = (JsonNumeric) val;
-      val = new JsonDecimal(n.longValue()); // TODO: memory
+      JsonNumeric n = (JsonNumeric) val; 
+      // TODO: memory
+      val = new JsonLong(n.longValue()); // FIXME: rounding error      
     }
     else if (val instanceof JsonString)
     {
@@ -80,4 +82,12 @@ public class IntFn extends Expr
     }
     return (JsonNumeric) val; // TODO: memory
   }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    return in.isNull().never() ? SchemaFactory.numberSchema() : SchemaFactory.numberOrNullSchema();
+  }
+
 }

@@ -221,7 +221,7 @@ public abstract class PathStep extends Expr
         return new PathStepSchema(nextSchema.schema, nextSchema.hasData.and(Bool3.UNKNOWN));
       }
     }
-    PathStepSchema nextSchema = nextStep.getSchema(SchemaFactory.anyOrNullSchema());
+    PathStepSchema nextSchema = nextStep.getSchema(SchemaFactory.anySchema());
     return new PathStepSchema(nextSchema.schema, nextSchema.hasData.and(Bool3.UNKNOWN));
   }
 }

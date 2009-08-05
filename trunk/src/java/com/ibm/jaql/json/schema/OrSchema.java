@@ -15,56 +15,94 @@
  */
 package com.ibm.jaql.json.schema;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.Bool3;
 
-/** Schema that matches if at least one of the provided schemata matches. */
+/** Schema that matches if at least one of the provided schemata matches. This class cannot be
+ * instantiated directly; instances may be obtained using {@link #or(Schema...)}. */
 public class OrSchema extends Schema
 {
-  protected Schema[] schemata;    // list of alternatives, never null, does not contain OrSchema
+  protected Schema[] schemata;    // list of alternatives, never null, does not contain OrSchema, kept sorted
 
   // -- construction ------------------------------------------------------------------------------
   
-  OrSchema(Schema[] schemata)
+  private OrSchema(Schema[] schemata)
+  {
+    this.schemata = schemata;
+  }
+  
+  /** Combines its argument schemata. The resulting schema will match a value if and only if it
+   * is matched by one of the provided schemata. The method does not necessarily return an 
+   * instance or <code>OrSchema</code>. */
+  public static Schema or(Schema ... schemata)
   {
     if (schemata.length == 0)
     {
       throw new IllegalArgumentException("at least one schema has to be provided");
     }
-    for (int i=0; i<schemata.length; i++)
+
+    // unnest, sort and remove duplicates (TODO: could be more efficient)
+    SortedSet<Schema> sortedSet = new TreeSet<Schema>();
+    for (Schema s : schemata)
     {
-      if (schemata[i] instanceof OrSchema)
+      if (s instanceof OrSchema)
       {
-        throw new IllegalArgumentException("Schema alternatives cannot be nested");
+        sortedSet.addAll( Arrays.asList( ((OrSchema)s).schemata ) );
+      }
+      else
+      {
+        sortedSet.add(s);
       }
     }
-    this.schemata = schemata;
+    
+    // return result
+    if (sortedSet.size() == 1)
+    {
+      return sortedSet.first();
+    }
+    else
+    {
+      return new OrSchema(sortedSet.toArray(new Schema[sortedSet.size()]));
+    }
   }
 
-  OrSchema(List<Schema> schemata)
+  /** Combines its argument schemata. The resulting schema will match a value if and only if it
+   * is matched by one of the provided schemata. The method does not necessarily return an 
+   * instance or <code>OrSchema</code>. */
+  public static Schema or(List<Schema> schemata)
   {
-    this(schemata.toArray(new Schema[schemata.size()]));
+    return or(schemata.toArray(new Schema[schemata.size()]));
   }
   
-  OrSchema(Schema s1, Schema s2, Schema s3)
-  {
-    this(new Schema[] { s1, s2, s3 });
-  }
-
-  OrSchema(Schema s1, Schema s2)
-  {
-    this(new Schema[] { s1, s2 });
-  }
-
+ 
   // -- Schema methods ----------------------------------------------------------------------------
   
   @Override
   public SchemaType getSchemaType()
   {
     return SchemaType.OR;
+  }
+  
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    Set<Class<? extends JsonValue>> classes = new HashSet<Class<? extends JsonValue>>();
+    for (Schema s : schemata) {
+      for (Class<? extends JsonValue> clazz : s.matchedClasses()) 
+      {
+        classes.add(clazz);
+      }
+    }
+    return classes.toArray(new Class[classes.size()]); 
   }
   
   @Override
@@ -233,7 +271,7 @@ public class OrSchema extends Schema
           newSchemata = new Schema[schemata.length];
           System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
           newSchemata[i] = mergedSchema;
-          return SchemaTransformation.or(newSchemata);
+          return OrSchema.or(newSchemata);
         }
       }
       
@@ -241,7 +279,7 @@ public class OrSchema extends Schema
       Schema[] newSchemata = new Schema[schemata.length+1];
       System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
       newSchemata[schemata.length] = other;
-      return SchemaTransformation.or(newSchemata);
+      return OrSchema.or(newSchemata);
     }
   }
 
@@ -268,7 +306,7 @@ public class OrSchema extends Schema
       // check whether all are false
       for (int i=1; i<schemata.length; i++) 
       {
-        if (schemata[i].isNull().maybe()) 
+        if (schemata[i].hasElement(which).maybe()) 
         {
           return Bool3.UNKNOWN;
         }
@@ -297,6 +335,21 @@ public class OrSchema extends Schema
       }
     }
     return result; 
+  }
+
+  @Override 
+  public Schema element(JsonValue which)
+  {
+    Schema result = null;
+    for (int i=0; i<schemata.length; i++)
+    {
+      Schema s = schemata[i].element(which);
+      if (s!=null)
+      {
+        result = result == null ? s : SchemaTransformation.merge(result, s);
+      }
+    }
+    return result;
   }
   
   @Override
@@ -337,5 +390,17 @@ public class OrSchema extends Schema
       
     }
     return result;
+  }
+  
+  // -- comparison --------------------------------------------------------------------------------
+
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    OrSchema o = (OrSchema)other;
+    return SchemaUtil.arrayCompare(this.schemata, o.schemata);
   }
 }

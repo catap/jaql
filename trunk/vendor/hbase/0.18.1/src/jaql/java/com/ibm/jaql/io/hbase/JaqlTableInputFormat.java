@@ -246,7 +246,7 @@ public class JaqlTableInputFormat
         // add all splits if no starting point was given
         splitList.add(new TableSplit(tableName, start.getBytes(), end.getBytes()));
       }
-      else if (lowKey.compareTo(end) < 0)
+      else if (lowKey.compareTo(new JsonString(end)) < 0)
       {
         // add a split if its end point is greater than the given starting point
         splitList.add(new TableSplit(tableName, start.getBytes(), end.getBytes()));

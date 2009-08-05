@@ -25,8 +25,8 @@ public class MapOutputKeyComparator extends DefaultJsonComparator implements Con
   public void setConf(Configuration conf)
   {
     this.conf = conf;
-    HadoopSerialization hs = new HadoopSerialization();
+    HadoopSerializationMapOutput hs = new HadoopSerializationMapOutput();
     hs.setConf(conf);
-    serializer = hs.getInternalSerializer(JsonHolderMapOutputKey.class);
+    serializer = hs.keySerializer();
   }  
 }

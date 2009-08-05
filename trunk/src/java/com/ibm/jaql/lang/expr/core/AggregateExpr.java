@@ -174,12 +174,12 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
 
     boolean hadInput = false;
     BindingExpr in = binding();    
-    in.var.setValue(tmpArray);
     JsonIterator iter = in.inExpr().iter(context);
     for (JsonValue value : iter)
     {
       hadInput = true;
       tmpArray.set(0, value);
+      in.var.setValue(tmpArray);
       for(int i = 0 ; i < aggs.length ; i++)
       {
         aggs[i].evalInitial(context);

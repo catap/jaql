@@ -12,8 +12,6 @@ import com.ibm.jaql.util.Bool3;
 
 /** Checks whether the first argument matches the schema given in the second argument. If so,
  * returns the first argument. Otherwise, throws an expection.  
- * 
- * @author rgemull@us.ibm.com
  */
 @JaqlFn(fnName="check", minArgs=2, maxArgs=2)
 public class CheckFn extends Expr
@@ -48,7 +46,7 @@ public class CheckFn extends Expr
     catch (Exception e) {
       // ignore
     }
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
   
   @Override
@@ -68,7 +66,7 @@ public class CheckFn extends Expr
     }
     else
     {
-      throw new IllegalArgumentException("input does not match schema");
+      throw new IllegalArgumentException("input value " + value + " does not match the provided schema");
     }
   }
 }

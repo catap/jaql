@@ -94,6 +94,7 @@ import com.ibm.jaql.lang.expr.io.HdfsFn;
 import com.ibm.jaql.lang.expr.io.HdfsShellExpr;
 import com.ibm.jaql.lang.expr.io.HttpFn;
 import com.ibm.jaql.lang.expr.io.HttpGetExpr;
+import com.ibm.jaql.lang.expr.io.JaqlTempFn;
 import com.ibm.jaql.lang.expr.io.LocalReadFn;
 import com.ibm.jaql.lang.expr.io.LocalWriteFn;
 import com.ibm.jaql.lang.expr.io.ReadAdapterRegistryExpr;
@@ -139,6 +140,7 @@ import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
 import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
 import com.ibm.jaql.lang.expr.regex.RegexTestFn;
+import com.ibm.jaql.lang.expr.schema.AssertFn;
 import com.ibm.jaql.lang.expr.schema.CheckFn;
 import com.ibm.jaql.lang.expr.schema.SchemaOfExpr;
 import com.ibm.jaql.lang.expr.schema.TypeOfExpr;
@@ -205,6 +207,7 @@ public class FunctionLib
     add(TypeOfExpr.class);
     add(SchemaOfExpr.class);
     add(CheckFn.class);
+    add(AssertFn.class);
     //    
     add(CompareFn.class);
     add(ExistsFn.class);
@@ -319,6 +322,7 @@ public class FunctionLib
     add(HdfsFn.class);
     add(FileFn.class);
     add(HttpFn.class);
+    add(JaqlTempFn.class);
  // TODO: delete: add(HdfsWriteExpr.class);
  // TODO: delete: add(HdfsReadExpr.class);
     add(HadoopTempExpr.class);

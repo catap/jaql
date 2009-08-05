@@ -25,7 +25,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Default serializer for {@link JsonBinary}. */
-public class JsonBinarySerializer extends BinaryBasicSerializer<JsonBinary>
+class JsonBinarySerializer extends BinaryBasicSerializer<JsonBinary>
 {
   @Override
   public JsonBinary newInstance()

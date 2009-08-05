@@ -24,7 +24,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.JaqlFunction;
 
-public class JaqlFunctionSerializer extends BinaryBasicSerializer<JaqlFunction>
+class JaqlFunctionSerializer extends BinaryBasicSerializer<JaqlFunction>
 {
   @Override
   public JaqlFunction newInstance()

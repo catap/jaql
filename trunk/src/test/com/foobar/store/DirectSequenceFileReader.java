@@ -10,7 +10,7 @@ import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.FileInputConfigurator;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
-import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.JsonHolderDefault;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonString;
@@ -32,7 +32,7 @@ public class DirectSequenceFileReader {
     args.add(Adapter.INOPTIONS_NAME, options);
     
     // create adapter
-    InputAdapter adapter = new DefaultHadoopInputAdapter<JsonHolder, JsonHolder>();
+    InputAdapter adapter = new DefaultHadoopInputAdapter<JsonHolderDefault, JsonHolderDefault>();
     adapter.init(args);
     
     // open adapter

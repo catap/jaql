@@ -32,6 +32,7 @@ public class JsonSchema extends JsonAtom
   /** Constructs a new <code>JsonSchema</code> representing the specified schema. */
   public JsonSchema(Schema schema)
   {
+    if (schema == null) throw new IllegalArgumentException("schema must not be null");
     this.schema = schema;
   }
 
@@ -65,6 +66,7 @@ public class JsonSchema extends JsonAtom
   /** Sets the schema represented by this value. */
   public void set(Schema schema)
   {
+    if (schema == null) throw new IllegalArgumentException("schema must not be null");
     this.schema = schema;
   }
   
@@ -74,7 +76,8 @@ public class JsonSchema extends JsonAtom
   /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   public int compareTo(Object x)
   {
-    throw new RuntimeException("schema are not comparable");
+    JsonSchema o = (JsonSchema)x;
+    return this.schema.compareTo(o.schema);
   }
 
   /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */

@@ -26,7 +26,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonJavaObject;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonJavaObjectSerializer extends BinaryBasicSerializer<JsonJavaObject>
+class JsonJavaObjectSerializer extends BinaryBasicSerializer<JsonJavaObject>
 {
   @Override
   public JsonJavaObject newInstance()

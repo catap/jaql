@@ -67,7 +67,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
    * @throws Exception
    */
   @SuppressWarnings("unchecked")
-  private void initializeFrom(JsonRecord args) throws Exception
+  protected void initializeFrom(JsonRecord args) throws Exception
   {
     this.args = (BufferedJsonRecord) args;
 
@@ -134,6 +134,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
     };
 
     // write state to conf, pass in top-level args
+    setSequential(conf);
     configurator.setSequential(conf);
     Globals.setJobConf(conf);
     // initialize the format from conf
@@ -183,7 +184,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
     final SplitState state = new SplitState();
     final InputSplit[] splits = getSplits(conf, conf.getNumMapTasks());
 
-    final JsonHolder valueHolder = new JsonHolder();
+    final JsonHolder valueHolder = valueHolder();
     valueHolder.value = converter != null ? converter.createTarget() : null;
     return new ClosableJsonIterator() {
       JsonHolder key;
@@ -229,9 +230,18 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
           state.reader.close();
           state.reader = null;
         }
-
       }
     };
+  }
+
+  protected JsonHolder keyHolder()
+  {
+    return new JsonHolderDefault();
+  }
+
+  protected JsonHolder valueHolder()
+  {
+    return new JsonHolderDefault();
   }
 
   /*
@@ -261,12 +271,12 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
 
       public JsonHolder createKey()
       {
-        return new JsonHolder();
+        return keyHolder();
       }
 
       public JsonHolder createValue()
       {
-        JsonHolder holder = new JsonHolder();
+        JsonHolder holder = valueHolder();
         holder.value = converter.createTarget();
         return holder;
       }

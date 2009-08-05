@@ -199,7 +199,7 @@ public class JavaFnExpr extends Expr
     {
       return SchemaFactory.arrayOrNullSchema();
     }
-    return SchemaFactory.anyOrNullSchema();
+    return SchemaFactory.anySchema();
   }
 
   /*

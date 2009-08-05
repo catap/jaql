@@ -36,7 +36,7 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
   /**
    * @param exprs
    */
-  public AbstractHandleFn(Expr[] exprs)
+  public AbstractHandleFn(Expr ... exprs)
   {
     super(exprs);
   }

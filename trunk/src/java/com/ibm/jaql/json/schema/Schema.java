@@ -18,23 +18,54 @@ package com.ibm.jaql.json.schema;
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 
-
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.Bool3;
 
 /** Superclass for schemata of JSON values. Commonly used schemata can be created using the
  * {@link SchemaFactory} class. Schemata can be modified or combined using the 
- * {@link SchemaTransformation} class. */
-public abstract class Schema
+ * {@link SchemaTransformation} class. No subclass but {@link NullSchema} is allowed to match
+ * the <code>null</code> value. */
+public abstract class Schema implements Comparable<Schema>
 {
-  public enum SchemaType
+  /** Enumeration of all schema types. Each schema is implemented by exactly one class. */
+  public enum SchemaType implements Comparable<SchemaType>
   {
-    ANY_NON_NULL, ARRAY, BINARY, BOOLEAN, DATE, DECFLOAT, DOUBLE, GENERIC, LONG, NULL, NUMERIC, 
-    OR, RECORD, STRING
+    // determines ordering
+    
+    // atoms
+    BOOLEAN(JsonType.BOOLEAN),
+    LONG(JsonType.NUMBER), DECFLOAT(JsonType.NUMBER), DOUBLE(JsonType.NUMBER),
+    STRING(JsonType.STRING), BINARY(JsonType.BINARY),
+    DATE(JsonType.DATE), GENERIC(null),
+    SCHEMATYPE(JsonType.SCHEMA),
+    
+    // compound types
+    ARRAY(JsonType.ARRAY), RECORD(JsonType.ARRAY), 
+
+    OR(null),
+
+    // null
+    NON_NULL(null), 
+    NULL(JsonType.NULL); 
+
+    
+    private JsonType type;
+    
+    SchemaType(JsonType type)
+    {
+      this.type = type;
+    }
+    
+    /** Returns a JSON type of null if there is no single type that is matched. */
+    public JsonType getJsonType()
+    {
+      return type;
+    }
   }
   
   // -- common argument names ---------------------------------------------------------------------
@@ -103,6 +134,13 @@ public abstract class Schema
    */
   public abstract Bool3 isEmptyArrayOrNull();
   
+  /** Returns a list of classes that are potentially be matched by this schema; classes not
+   * in this list are never matched. Subclasses of the returned classes are also assumed to be 
+   * potentially matched. This means that returning an array containing
+   * <code>JsonValue.class</code> corresponds to potentially matching every JSON value.
+   * Null values are treated specially: to find out whether a schema might accept null values,
+   * use {@link #isNull()}. */
+  public abstract Class<? extends JsonValue>[] matchedClasses();
   
   // -- schema matching ---------------------------------------------------------------------------
   
@@ -127,9 +165,9 @@ public abstract class Schema
   // -- schema combination ------------------------------------------------------------------------
   
   /** Merges this schema with the given schema or return <code>null</code> if such a merge is
-   * not possible / desired / implemented. Most schemes will only accept arguments of their own
-   * type.  
-   */
+   * not possible / desired / implemented. Every implementing schema must accept arguments of its 
+   * own type and return a schema of its type. Some implementing schemata may also accept arguments
+   * of other types. */
   protected abstract Schema merge(Schema other);
 
   
@@ -174,7 +212,15 @@ public abstract class Schema
     return null; 
   }
 
-  
+  // -- comparison --------------------------------------------------------------------------------
+
+  /** Compares this schema description with the specified schema description. Inequality does not
+   * mean that the values matched by this schema and <code>other</code> are different; it means that
+   * the schema description is different. Implementations should first compare the schema type 
+   * using {@link SchemaType#compareTo(SchemaType)} and, if equal, the description of the schemata.  
+   */
+  public abstract int compareTo(Schema other);
+
   // -- printing ----------------------------------------------------------------------------------
   
   public String toString()
