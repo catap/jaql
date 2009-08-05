@@ -41,7 +41,7 @@ public class ArrayExpr extends IterExpr
   /**
    * @param exprs
    */
-  public ArrayExpr(Expr[] exprs)
+  public ArrayExpr(Expr ... exprs)
   {
     super(exprs);
   }
@@ -52,23 +52,6 @@ public class ArrayExpr extends IterExpr
   public ArrayExpr()
   {
     super(NO_EXPRS);
-  }
-
-  /**
-   * @param expr
-   */
-  public ArrayExpr(Expr expr)
-  {
-    super(new Expr[]{expr});
-  }
-
-  /**
-   * @param expr0
-   * @param expr1
-   */
-  public ArrayExpr(Expr expr0, Expr expr1)
-  {
-    super(new Expr[]{expr0, expr1});
   }
 
   /**

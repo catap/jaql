@@ -41,6 +41,11 @@ public class FileInputConfigurator implements InitializableConfSetter
     location = AdapterStore.getStore().getLocation((JsonRecord) options);
   }
 
+  protected void registerSerializers(JobConf conf)
+  {
+    HadoopSerializationDefault.register(conf);
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -68,6 +73,6 @@ public class FileInputConfigurator implements InitializableConfSetter
   protected void set(JobConf conf) throws Exception
   {
     FileInputFormat.setInputPaths(conf, new Path(location));
-    HadoopSerialization.register(conf);
+    registerSerializers(conf);
   }
 }

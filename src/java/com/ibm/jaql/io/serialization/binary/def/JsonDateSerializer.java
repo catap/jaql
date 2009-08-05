@@ -23,7 +23,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonDateSerializer extends BinaryBasicSerializer<JsonDate>
+class JsonDateSerializer extends BinaryBasicSerializer<JsonDate>
 {
 
   @Override

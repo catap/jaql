@@ -270,7 +270,7 @@ public class JsonUtil
   // TODO: not needed anymore, kept because it is still used
   public static int deepCompare(SpilledJsonArray x, SpilledJsonArray y) throws Exception
   {
-    return x.compareTo(y);
+    return com.ibm.jaql.json.type.JsonUtil.compare(x, y);
   }
 
   /**
@@ -288,13 +288,7 @@ public class JsonUtil
     {
       JsonValue value1 = iter1.current();
       JsonValue value2 = iter2.current();
-
-      if (value1 == null)
-      {
-        return value2==null ? 0 : -1;
-      }
-
-      int c = value1.compareTo(value2);
+      int c = com.ibm.jaql.json.type.JsonUtil.compare(value1, value2);
       if (c != 0)
       {
         return c;

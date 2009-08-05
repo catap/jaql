@@ -26,7 +26,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.util.BaseUtil;
 
-public class SpilledJsonArraySerializer extends BinaryBasicSerializer<SpilledJsonArray>
+class SpilledJsonArraySerializer extends BinaryBasicSerializer<SpilledJsonArray>
 {
   BinaryFullSerializer fullSerializer;
 

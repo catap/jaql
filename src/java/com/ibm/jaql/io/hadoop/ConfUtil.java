@@ -21,11 +21,15 @@ import java.io.PrintStream;
 
 import org.apache.hadoop.mapred.JobConf;
 
-import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /** Provides static methods that serializes and deserializes {@link JsonRecord}s and 
  * {@link JsonArray}s to and from the Hadoop configuration file */
@@ -65,8 +69,14 @@ public class ConfUtil
     String jsonTxt = conf.get(name);
     if (jsonTxt == null) return null;
     ByteArrayInputStream input = new ByteArrayInputStream(jsonTxt.getBytes());
-    JsonParser parser = new JsonParser(input);
-    JsonValue data = parser.TopVal();
+
+    // TODO: cannot use JsonParser because of schema
+//    JsonParser parser = new JsonParser(input);
+//    JsonValue data = parser.TopVal();
+    JaqlLexer lexer = new JaqlLexer(input);
+    JaqlParser parser = new JaqlParser(lexer);
+    Expr expr = parser.parse();
+    JsonValue data = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
 
     return (JsonRecord) data;
   }
@@ -83,9 +93,14 @@ public class ConfUtil
     String jsonTxt = conf.get(name);
     if (jsonTxt == null) return null;
     ByteArrayInputStream input = new ByteArrayInputStream(jsonTxt.getBytes());
-    JsonParser parser = new JsonParser(input);
 
-    JsonValue data = parser.TopVal();
+    // TODO: cannot use JsonParser because of schema
+    //    JsonParser parser = new JsonParser(input);
+    //    JsonValue data = parser.TopVal();
+    JaqlLexer lexer = new JaqlLexer(input);
+    JaqlParser parser = new JaqlParser(lexer);
+    Expr expr = parser.parse();
+    JsonValue data = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
     return (JsonArray) data;
   }
 

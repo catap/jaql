@@ -3,7 +3,7 @@ package com.ibm.jaql.io.hadoop;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Holds a JSON value. Mainly used for storing JSON values in SequenceFiles */
+/** Holds a JSON value. */
 public class JsonHolder
 {
   public JsonValue value;

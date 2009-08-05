@@ -23,7 +23,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonBoolSerializer extends BinaryBasicSerializer<JsonBool>
+class JsonBoolSerializer extends BinaryBasicSerializer<JsonBool>
 {
 
   @Override

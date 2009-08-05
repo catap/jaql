@@ -30,7 +30,7 @@ import com.ibm.jaql.json.type.JsonValue;
 /** Binary serializer a Json schema. */ 
 // TODO: The current implementation simply makes use of the text representation of the schema.
 //       It might be more efficient to use a real binary format, if needed.
-public class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema> 
+class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema> 
 {
   @Override
   public JsonSchema newInstance()

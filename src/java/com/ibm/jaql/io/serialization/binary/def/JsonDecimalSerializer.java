@@ -24,7 +24,7 @@ import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonDecimalSerializer extends BinaryBasicSerializer<JsonDecimal>
+class JsonDecimalSerializer extends BinaryBasicSerializer<JsonDecimal>
 {
 
   @Override

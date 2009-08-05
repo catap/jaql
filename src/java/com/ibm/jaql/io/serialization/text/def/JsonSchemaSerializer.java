@@ -19,12 +19,13 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.schema.AnyNonNullSchema;
+import com.ibm.jaql.json.schema.NonNullSchema;
 import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.schema.BooleanSchema;
 import com.ibm.jaql.json.schema.DateSchema;
-import com.ibm.jaql.json.schema.DecimalSchema;
+import com.ibm.jaql.json.schema.DecfloatSchema;
 import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.schema.GenericSchema;
 import com.ibm.jaql.json.schema.LongSchema;
@@ -33,6 +34,7 @@ import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.RangeSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.Schema.SchemaType;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
@@ -60,11 +62,14 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   {
     switch (schema.getSchemaType())
     {
-    case ANY_NON_NULL:
-      writeAny(out, (AnyNonNullSchema)schema, indent);
+    case NON_NULL:
+      writeNonNull(out, (NonNullSchema)schema, indent);
       break;
     case ARRAY:
       writeArray(out, (ArraySchema)schema, indent);
+      break;
+    case SCHEMATYPE:
+      writeSchema(out, (SchematypeSchema)schema, indent);
       break;
     case BINARY:
       writeBinary(out, (BinarySchema)schema, indent);
@@ -73,7 +78,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       writeBoolean(out, (BooleanSchema)schema, indent);
       break;
     case DECFLOAT:
-      writeDecimal(out, (DecimalSchema)schema, indent);
+      writeDecimal(out, (DecfloatSchema)schema, indent);
       break;
     case DATE:
       writeDate(out, (DateSchema)schema, indent);
@@ -106,9 +111,9 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   
   // -- write methods for each schema type --------------------------------------------------------
   
-  private static void writeAny(PrintStream out, AnyNonNullSchema schema, int indent) throws IOException
+  private static void writeNonNull(PrintStream out, NonNullSchema schema, int indent) throws IOException
   {
-    out.print("any");
+    out.print("nonnull");
   }
   
   private static void writeArray(PrintStream out, ArraySchema schema, int indent) throws IOException
@@ -174,6 +179,17 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     out.print("]");
   }
   
+  private static void writeSchema(PrintStream out, SchematypeSchema schema, int indent) throws IOException
+  {
+    out.print("schematype");
+    if (schema.getValue() != null)
+    {
+      out.print("(");
+      JsonUtil.print(out, schema.getValue(), indent+8);
+      out.print(")");     
+    }
+  }
+  
   private static void writeBinary(PrintStream out, BinarySchema schema, int indent) throws IOException
   {
     out.print("binary");
@@ -191,10 +207,10 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     writeArgs(out, indent, BooleanSchema.getParameters(), new JsonValue[] { value } );
   }
   
-  private static void writeDecimal(PrintStream out, DecimalSchema schema, int indent) throws IOException
+  private static void writeDecimal(PrintStream out, DecfloatSchema schema, int indent) throws IOException
   {
     out.print("decfloat");
-    writeRangeArgs(out, indent, DecimalSchema.getParameters(), schema);    
+    writeRangeArgs(out, indent, DecfloatSchema.getParameters(), schema);    
   }
 
   private static void writeDate(PrintStream out, DateSchema schema, int indent) throws IOException
@@ -228,35 +244,48 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeOr(PrintStream out, OrSchema schema, int indent) throws IOException
   {
     Schema[] schemata = schema.getInternal();
-    
-    // special case: nullable
-    if (schemata.length == 2)
+
+    // handle nulls
+    boolean matchesNull = false;
+    boolean matchesNonNull = false;
+    String separator = "";
+    int n = 0;
+    for (Schema s : schemata)
     {
-      if (schemata[0] instanceof NullSchema)
+      if (s.getSchemaType() == SchemaType.NULL)
       {
-        write(out, schemata[1], indent);
-        if (!(schemata[1] instanceof NullSchema))
-        {
-          out.print('?'); 
-        }
-        return;
+        matchesNull = true;
       }
-      
-      if (schemata[1] instanceof NullSchema)
+      else if (s.getSchemaType() == SchemaType.NON_NULL)
       {
-        write(out, schemata[0], indent); // != NullSchema
-        out.print('?');
-        return;
+        matchesNonNull = true;
+      }
+      else
+      {
+        out.print(separator);
+        write(out, s, indent);      
+        n++;
+        separator = " | ";
       }
     }
     
-    // default
-    String separator = "";
-    for (Schema s : schemata)
+    // deal with null and nonnull
+    if (matchesNull || matchesNonNull)
     {
-      out.print(separator);
-      write(out, s, indent);      
-      separator = " | ";
+      if (matchesNull && matchesNonNull)
+      {
+        out.print(separator);
+        out.print("any");
+      }
+      else if (n==1 && matchesNull) // but not nonnull
+      {
+        out.print("?");
+      } 
+      else
+      {
+        out.print(separator);
+        out.print(matchesNull ? "null" : "nonnull");
+      }
     }
   }
   

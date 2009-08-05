@@ -153,7 +153,7 @@ public class Env
 
   public Var scopeGlobal(String varName)
   {
-    return scopeGlobal(varName, SchemaFactory.anyOrNullSchema());
+    return scopeGlobal(varName, SchemaFactory.anySchema());
   }
   
   /** Removes the most recent definition of the specified variable from this scope. 
@@ -212,7 +212,7 @@ public class Env
    */
   public Var makeVar(String name) // FIXME: replace other scope()/unscope calls with this
   {
-    return makeVar(name, SchemaFactory.anyOrNullSchema());
+    return makeVar(name, SchemaFactory.anySchema());
   }
 
   public Var makeVar(String name, Schema schema) // FIXME: replace other scope()/unscope calls with this

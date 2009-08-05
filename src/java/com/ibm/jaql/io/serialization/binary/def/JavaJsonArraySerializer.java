@@ -24,7 +24,7 @@ import com.ibm.jaql.json.meta.MetaArray;
 import com.ibm.jaql.json.type.JavaJsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JavaJsonArraySerializer extends BinaryBasicSerializer<JavaJsonArray>
+class JavaJsonArraySerializer extends BinaryBasicSerializer<JavaJsonArray>
 {
 
   @Override

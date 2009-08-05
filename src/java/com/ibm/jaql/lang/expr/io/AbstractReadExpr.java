@@ -17,10 +17,16 @@ package com.ibm.jaql.lang.expr.io;
 
 import java.util.Map;
 
+import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.InputAdapter;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.StringSchema;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -65,6 +71,7 @@ public abstract class AbstractReadExpr extends IterExpr
     // TODO: this is a quick hack to derive schema
     try
     {
+      // when argument is compile-time computable, ask adapter for schema
       if (exprs[0].isCompileTimeComputable().always())
       {
         JsonValue args = exprs[0].eval(Env.getCompileTimeContext()); // TODO should provide context
@@ -72,6 +79,22 @@ public abstract class AbstractReadExpr extends IterExpr
         Schema s = adapter.getSchema();
         assert s.isArrayOrNull().always();
         return s;
+      }
+      
+      // special case: see if it is one of our temp files
+      Schema descriptor = exprs[0].getSchema();
+      Schema type = descriptor.element(Adapter.TYPE_NAME);
+      if (type != null 
+          && type instanceof StringSchema 
+          && JsonUtil.equals(((StringSchema)type).getValue(), new JsonString("jaqltemp")))
+      {
+        // it is one of our temp files --> try to get its schema
+        Schema options = descriptor.element(Adapter.OPTIONS_NAME);
+        Schema schema = options != null ? options.element(new JsonString("schema")) : null;
+        if (schema instanceof SchematypeSchema && schema.isConstant())
+        {
+          return new ArraySchema(((SchematypeSchema)schema).getValue().get(), null, null);
+        }
       }
     } catch (Exception e)
     {

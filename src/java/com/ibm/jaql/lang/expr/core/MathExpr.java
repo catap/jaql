@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
@@ -119,6 +121,7 @@ public class MathExpr extends Expr
    */
   public JsonValue eval(Context context) throws Exception
   {
+    // changes here should be reflected in getSchema() below
     JsonValue value1 = exprs[0].eval(context);
     if (value1 == null)
     {
@@ -198,6 +201,39 @@ public class MathExpr extends Expr
       }
       return new JsonDecimal(n3);
     }
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema s1 = exprs[0].getSchema();
+    Schema s2 = exprs[1].getSchema();
+    
+    if (s1.isNull().always() || s2.isNull().always())
+    {
+      return SchemaFactory.nullSchema();
+    }
+    if (
+        (s1.getSchemaType()==Schema.SchemaType.LONG && s2.getSchemaType()==Schema.SchemaType.LONG)
+        || (s1.getSchemaType()==Schema.SchemaType.DATE && s2.getSchemaType()==Schema.SchemaType.DATE)
+        )
+    {
+      return op == DIVIDE ? SchemaFactory.decfloatSchema() : SchemaFactory.longSchema();
+    }
+    if (s1.getSchemaType()==Schema.SchemaType.STRING && s2.getSchemaType()==Schema.SchemaType.STRING)
+    {
+      if (op != PLUS)
+      {
+        throw new RuntimeException("invalid operator on strings");
+      }
+      return SchemaFactory.stringSchema();
+    }
+    if (s1.getSchemaType()==Schema.SchemaType.DOUBLE || s2.getSchemaType()==Schema.SchemaType.DOUBLE)
+    {
+      return SchemaFactory.doubleSchema();
+    }
+    boolean nullable = s1.isNull().maybe() || s2.isNull().maybe();
+    return nullable ? SchemaFactory.numericOrNullSchema() : SchemaFactory.numericSchema();
   }
 
   /**

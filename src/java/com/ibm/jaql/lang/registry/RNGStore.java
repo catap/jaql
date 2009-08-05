@@ -197,7 +197,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
 
         public Schema getSchema()
         {
-          return SchemaFactory.anyOrNullSchema();
+          return SchemaFactory.anySchema();
         }
       };
     }

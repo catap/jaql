@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
-public class JsonSpanSerializer extends BinaryBasicSerializer<JsonSpan>
+class JsonSpanSerializer extends BinaryBasicSerializer<JsonSpan>
 {
 
   @Override

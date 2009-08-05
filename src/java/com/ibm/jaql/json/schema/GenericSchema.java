@@ -101,6 +101,13 @@ public class GenericSchema extends Schema
     return type;  
   }
   
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { type.clazz }; 
+  }
+  
   // -- merge -------------------------------------------------------------------------------------
 
   @Override
@@ -120,4 +127,16 @@ public class GenericSchema extends Schema
     }
     return null;
   }
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    GenericSchema o = (GenericSchema)other;
+    return this.type.compareTo(o.type);
+  } 
 }

@@ -39,12 +39,12 @@ import com.ibm.jaql.lang.expr.core.Expr;
  * ...] return e2($a,$b) ==> combine $a, $b in [..., ...] return e2($a,$b)
  * 
  */
-public class TrivialCombineElmination extends Rewrite
+public class TrivialCombineElimination extends Rewrite
 {
   /**
    * @param phase
    */
-  public TrivialCombineElmination(RewritePhase phase)
+  public TrivialCombineElimination(RewritePhase phase)
   {
     super(phase, CombineExpr.class);
   }

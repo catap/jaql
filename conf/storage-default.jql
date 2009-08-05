@@ -33,6 +33,16 @@
        			           configurator : 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}}
 },
 
+// jaqltemp data
+{key:   'jaqltemp',
+ val: {inoptions  : {adapter      : 'com.ibm.jaql.io.hadoop.TempHadoopInputAdapter', 
+                           format       : 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                           configurator : 'com.ibm.jaql.io.hadoop.TempFileInputConfigurator'},
+       outoptions : {adapter      : 'com.ibm.jaql.io.hadoop.TempHadoopOutputAdapter', 
+                           format       : 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                           configurator : 'com.ibm.jaql.io.hadoop.TempFileOutputConfigurator'}}
+},
+
 // hbase data
 {key:	'hbase',
  val: {inoptions  :	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 

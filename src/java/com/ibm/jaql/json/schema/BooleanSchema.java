@@ -18,6 +18,7 @@ package com.ibm.jaql.json.schema;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 import com.ibm.jaql.util.Bool3;
@@ -93,8 +94,15 @@ public class BooleanSchema extends Schema
     return Bool3.FALSE;
   }
   
+  @SuppressWarnings("unchecked")
+  @Override 
+  public Class<? extends JsonValue>[] matchedClasses()
+  {
+    return new Class[] { JsonBool.class }; 
+  }
+
   @Override
-  public boolean matches(JsonValue value) throws Exception
+  public boolean matches(JsonValue value)
   {
     if (!(value instanceof JsonBool))
     {
@@ -144,5 +152,19 @@ public class BooleanSchema extends Schema
     }
     return null;
   }
- 
+  
+  // -- comparison --------------------------------------------------------------------------------
+  
+  @Override
+  public int compareTo(Schema other)
+  {
+    int c = this.getSchemaType().compareTo(other.getSchemaType());
+    if (c != 0) return c;
+    
+    BooleanSchema o = (BooleanSchema)other;
+    c = JsonUtil.compare(this.value, o.value);
+    if (c != 0) return c;
+    
+    return 0;
+  } 
 }

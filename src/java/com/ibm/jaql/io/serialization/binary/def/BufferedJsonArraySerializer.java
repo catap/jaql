@@ -26,7 +26,7 @@ import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
-public class BufferedJsonArraySerializer extends BinaryBasicSerializer<BufferedJsonArray>
+class BufferedJsonArraySerializer extends BinaryBasicSerializer<BufferedJsonArray>
 {
   BinaryFullSerializer fullSerializer;
   

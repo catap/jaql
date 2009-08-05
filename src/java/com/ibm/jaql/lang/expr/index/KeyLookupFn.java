@@ -17,8 +17,13 @@ package com.ibm.jaql.lang.expr.index;
 
 import java.util.HashMap;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -112,5 +117,61 @@ public class KeyLookupFn extends IterExpr
         return true; // currentValue == resultArray
       }
     };
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    // determine outer schema
+    Schema outer = exprs[0].getSchema();
+    Schema outerElements = SchemaTransformation.arrayElements(outer);
+    if (outerElements == null)
+    {
+      // outer is not an array; only valid value is null 
+      if (outer.isNull().maybe())
+      {
+        return SchemaFactory.emptyArraySchema();
+      }
+      else
+      {
+        throw new IllegalArgumentException("array expected as outer table for keyLookup");
+      }
+    }
+    Schema key = outerElements.element(JsonLong.ZERO);
+    Schema value1 = outerElements.element(JsonLong.ONE);
+    if (key==null || value1==null)
+    {
+      throw new IllegalArgumentException("array of size-2 arrays expected as outer table for keyLookup");
+    }
+    
+    // determine inner schema
+    Schema inner = exprs[1].getSchema();
+    Schema innerElements = SchemaTransformation.arrayElements(inner);
+    Schema value2;
+    if (innerElements == null)
+    {
+      // inner is not an array; only valid value is null 
+      if (inner.isNull().maybe())
+      {
+        value2 = SchemaFactory.nullSchema();
+      }
+      else
+      {
+        throw new IllegalArgumentException("array expected as inner table for keyLookup");
+      }
+    }
+    else
+    {
+      value2 = innerElements.element(JsonLong.ONE);
+      if (value2==null)
+      {
+        throw new IllegalArgumentException("array of size-2 arrays expected as inner table for keyLookup");
+      }
+      value2 = SchemaTransformation.addNullability(value2);
+    }
+    
+    // return result
+    Schema resultElements = new ArraySchema(key, value1, value2);
+    return new ArraySchema(resultElements, null, null);
   }
 }

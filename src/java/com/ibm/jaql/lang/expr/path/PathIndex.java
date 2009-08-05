@@ -115,7 +115,7 @@ public class PathIndex extends PathStep
     }
     if (result == null) 
     {
-      result = SchemaFactory.anyOrNullSchema();
+      result = SchemaFactory.anySchema();
     }
     return nextStep().getSchema(result);
   }

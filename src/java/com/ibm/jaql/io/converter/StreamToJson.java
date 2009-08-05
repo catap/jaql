@@ -61,7 +61,7 @@ public interface StreamToJson<T extends JsonValue>
    * is configured for array access, this method should return the schema of each individual
    * element of the array. Implementations should provide as much information as possible to 
    * facilitate query optimization. If no information about the schema is known, return 
-   * {@link SchemaFactory#anyOrNullSchema()}.
+   * {@link SchemaFactory#anySchema()}.
    * 
    * @return a schema that all values produced by this converter adhere to
    */
