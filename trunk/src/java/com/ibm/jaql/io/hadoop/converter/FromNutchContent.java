@@ -50,6 +50,8 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
     }
   };
   
+  private static final JsonString EMPTY_STRING = new JsonString();
+  
   @Override
   protected ToJson<WritableComparable<?>> createKeyConverter() {
     // TODO Auto-generated method stub
@@ -66,6 +68,24 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
       
       public JsonValue convert(Writable src, JsonValue tgt)
       {
+        if(! (src instanceof Content) ) {
+          // FIXME: exception should be propagated up
+          // just clear the fields
+          BufferedJsonRecord r = null;
+          try {
+            r = (BufferedJsonRecord)tgt.getCopy(null);
+            r.set(Field.URL.jsonName, EMPTY_STRING);
+            r.set(Field.BASEURL.jsonName, EMPTY_STRING);
+            r.set(Field.TYPE.jsonName, EMPTY_STRING);
+            r.set(Field.CONTENT.jsonName, null);
+            ((BufferedJsonRecord) r.get(Field.META.jsonName)).clear();
+          } catch(Exception e) {
+            throw new RuntimeException("error creating target record");
+          }
+          
+          return r;
+        }
+        
         // expect src to be Content
         Content c = (Content)src;
         
