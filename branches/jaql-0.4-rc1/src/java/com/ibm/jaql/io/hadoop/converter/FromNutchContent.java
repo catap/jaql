@@ -43,6 +43,8 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
     }
   };
   
+  public static JString EMPTY_STRING = new JString("");
+  
   @Override
   protected FromItem<WritableComparable> createKeyConverter() {
     // TODO Auto-generated method stub
@@ -59,10 +61,21 @@ public class FromNutchContent extends HadoopRecordToItem<WritableComparable, Wri
       
       public void convert(Writable src, Item tgt)
       {
+        if(! (src instanceof Content) ) {
+          // just clear the fields
+          MemoryJRecord r = (MemoryJRecord)tgt.get();
+          ((JString)r.getValue(Field.URL.name).get()).copy(EMPTY_STRING.getBytes());
+          ((JString)r.getValue(Field.BASEURL.name).get()).copy(EMPTY_STRING.getBytes());
+          ((JString)r.getValue(Field.TYPE.name).get()).copy(EMPTY_STRING.getBytes());
+          r.getValue(Field.CONTENT.name).set(null);
+          ((MemoryJRecord)r.getValue(Field.META.name).get()).clear();
+          
+          return;
+        }
         // expect src to be Content
         Content c = (Content)src;
         
-        // expect tgt's value to be MemoryJRecord 
+        // expect tgt's value to be MemoryJRecord
         MemoryJRecord r = (MemoryJRecord)tgt.get();
         
         // the metadata
