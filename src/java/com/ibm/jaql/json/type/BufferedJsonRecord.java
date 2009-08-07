@@ -17,42 +17,53 @@
 package com.ibm.jaql.json.type;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Map.Entry;
 
 
-/** An in-memory {@link JsonRecord}. 
+/** An in-memory {@link JsonRecord}. Name-based field access is implemented using a hash table.
+ * In addition, this class provides functionality to access record fields by index. This is 
+ * possible because the main data structure used by this record is a parallel array: one array 
+ * storing the field names and one array storing the corresponding field values. As long as the 
+ * record names are not modified, field indexes are stable and can be used to avoid the look-up 
+ * cost of name-based accesses.
  * 
- * In addition to name-based record access, this class provides functionality to access record
- * fields by index. This is possible because this record is implemented using two parallel arrays:
- * one storing the field names and one storing the actual values. (The field-name array is kept 
- * sorted for efficiency reasons.) Thus, as long as the record's fields are not modified, field 
- * indexes are stable and can be used to avoid the look-up cost of name-based access.
+ * Quick record construction is supported via the {@link #setInternal(JsonString[], JsonValue[], 
+ * int, boolean)} method.  
  */
 public class BufferedJsonRecord extends JsonRecord {
-	protected final static JsonString[] NO_NAMES  = new JsonString[0];
-  protected final static JsonValue[]  NO_VALUES = new JsonValue[0];        
+  protected static final int MIN_CAPACITY = 8; // when non-empty
+  protected static final JsonString[] NOTHING = new JsonString[0];
   
-  // names and values are parallel arrays with names being kept in sorted order
-  protected JsonString[]     names   = NO_NAMES;			 
-  protected JsonValue[]      values  = NO_VALUES;		   
-  protected int              size    = 0;
+  // names and values are parallel arrays with names being kept in arbitrary order
+  // invariants: size<=names.length==values.length
+  protected JsonString[]     names  = NOTHING;			 
+  protected JsonValue[]      values = NOTHING;		   
+  protected int              size   = 0;
 
+  // index structures (we could be more efficent by implementing our own hash maps) 
+  protected Map<JsonString, Integer> hashIndex; 
+  boolean isSorted = true; // empty record is always sorted
 
   // -- construction ------------------------------------------------------------------------------
   
   /** Constructs an empty in-memory JSON record */
   public BufferedJsonRecord()
   {
+    hashIndex = new HashMap<JsonString, Integer>();
   }
 
   /** Constructs an empty in-memory JSON record and allocates space for the specified number of
    * entries */
   public BufferedJsonRecord(int capacity)
   {
-    ensureCapacity(capacity);
+    names = new JsonString[capacity];
+    values = new JsonValue[capacity];
+    hashIndex = new HashMap<JsonString, Integer>(capacity);
   }
-
 
   // -- reading -----------------------------------------------------------------------------------
 
@@ -91,6 +102,16 @@ public class BufferedJsonRecord extends JsonRecord {
   /* @see com.ibm.jaql.json.type.JsonRecord#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
   public BufferedJsonRecord getCopy(JsonValue target) throws Exception {
+    return getCopy(target, true);
+  }
+  
+  /** Returns a shallow copy of this record. They key data strutures are copied, but the actual
+   * field names and field values are not. */
+  public BufferedJsonRecord getShallowCopy(JsonValue target) throws Exception {
+    return getCopy(target, false);
+  }
+  
+  protected BufferedJsonRecord getCopy(JsonValue target, boolean deep) throws Exception {
     if (target == this) target = null;
     
     // determine target record
@@ -105,35 +126,41 @@ public class BufferedJsonRecord extends JsonRecord {
     }
     t.resize(this.size);
     
-    // and copy
+    // copy data
     for (int i = 0; i < size; i++)
     {
-      t.names[i] = JsonUtil.getCopy(names[i], t.names[i]); 
-      t.values[i] = JsonUtil.getCopy(values[i], t.values[i]);
+      t.names[i] = deep ? JsonUtil.getCopy(names[i], t.names[i]) : names[i]; 
+      t.values[i] = deep ? JsonUtil.getCopy(values[i], t.values[i]) : values[i];
     }
-    t.reorg();    
+    t.isSorted = isSorted;
+    if (deep)
+    {
+      t.reindex();
+    }
+    else
+    {
+      t.hashIndex.clear();
+      t.hashIndex.putAll(hashIndex);
+    }
+    
     return t;
   } 
 
-
+  
   // -- index-based access ------------------------------------------------------------------------
-
-  /** @see Arrays#binarySearch(Object[], int, int, Object) */
-  protected int binarySearch(JsonString name) {
-    return size > 0 ? Arrays.binarySearch(names, 0, size, name) : -1;
-  }
 
   /** Searches this record for the specified field and returns its index. Returns a negative
    * number when the field name has not been found. */
   public int indexOf(JsonString name)
   {
-  	return binarySearch(name);
+  	Integer index = hashIndex.get(name);
+  	return index==null ? -1 : index;
   }
 
   /** Returns the field located at the specified index without boundary checking. This
    * method suceeds when 0&le;<code>i</code>&lt;<code>size()</code>. Otherwise, the result is either 
    * undefined or an exception is thrown. */
-  public JsonString nameOf(int i)
+  public JsonString getName(int i)
   {
     return names[i];
   }
@@ -141,7 +168,7 @@ public class BufferedJsonRecord extends JsonRecord {
   /** Returns the value of the field located at the specified index without boundary checking. 
    * This method suceeds when 0&le;<code>i</code>&lt;<code>size()</code>. Otherwise, the result 
    * is either undefined or an exception is thrown. */
-  public JsonValue valueOf(int i)
+  public JsonValue get(int i)
   {
     return values[i];
   }
@@ -161,7 +188,7 @@ public class BufferedJsonRecord extends JsonRecord {
   // -- mutation ----------------------------------------------------------------------------------
 
 
-  /** Adds the specified (name, value) pair to this record (without copying). Throws an expection if 
+  /** Adds the specified (name, value) pair to this record (without copying). Throws an exception if 
    * a field of the specified name exists already.*/
   public void add(JsonString name, JsonValue value)
   {
@@ -179,17 +206,19 @@ public class BufferedJsonRecord extends JsonRecord {
    * is either undefined or an exception is thrown. */
   public void set(int i, JsonValue value)
   {
-    values[i] = value; // TODO: unsafe to call readfields now because we don't own this value
+    values[i] = value; 
   }
   
-  /** Sets the internal arrays to new values. The names have to be sorted; no consistency
-   * checks are performed. The arguments are not copied. Use with caution! */
-  public void setInternal(JsonString[] names, JsonValue[] values, int arity) {
+  /** Sets the internal arrays to new values. No consistency checks are performed. The arguments 
+   * are not copied. Use with caution! */
+  public void setInternal(JsonString[] names, JsonValue[] values, int arity, boolean isSorted) {
     assert names.length >= arity;
     assert values.length >= arity;
     this.names = names;
     this.values = values;
     this.size = arity;
+    this.isSorted = isSorted;
+    reindex();
   }
   
   /** Adds or updates the specified (name, value) pair (without copying).
@@ -197,7 +226,7 @@ public class BufferedJsonRecord extends JsonRecord {
    * @param exceptionOnSet throw RuntimeException when field already present?
    */
   protected void addOrSet(JsonString name, JsonValue value, boolean exceptionOnSet) {
-  	int index = binarySearch(name);
+  	int index = indexOf(name);
   	if (index >= 0) {
   		if (exceptionOnSet) {
   			throw new RuntimeException("duplicate field name: " + name);
@@ -205,42 +234,38 @@ public class BufferedJsonRecord extends JsonRecord {
   			set(index, value);
   		}
   	}	else {
-  		resize(size+1);
-  		index = -index-1;
-  		if (index < size-1) {
-  			System.arraycopy(names, index, names, index+1, (size-1)-index);
-  			System.arraycopy(values, index, values, index+1, (size-1)-index);
-  		}
+  		index = size;
+  	  resize(size+1);
   		names[index] = name;
-  		set(index, value);
-  		reorg();
-  	}
+      values[index] = value;
+      hashIndex.put(name, index);
+      isSorted = index==0 || (isSorted && names[index].compareTo(names[index-1]) > 0);
+    }
   }
 
   /** Clears this record, i.e., removes all its fields. */
   public void clear()
   {
     this.size = 0;
+    hashIndex.clear();
+    isSorted = true;
   }
 
   /** Increases the capacity of this record so that it can hold more fields, but does not change
    * its actual size. */
   public void ensureCapacity(int capacity)
   {
-    int curCapacity = names.length;
-    if (curCapacity  < capacity)
+    if (names.length  < capacity)
     {
-      JsonString[] newNames = new JsonString[capacity];
-      System.arraycopy(names, 0, newNames, 0, curCapacity);
+      int newCapacity = Math.max(MIN_CAPACITY, names.length);
+      while (newCapacity < capacity) newCapacity *= 2;
+      
+      JsonString[] newNames = new JsonString[newCapacity];
+      System.arraycopy(names, 0, newNames, 0, names.length);
       names = newNames;
-      JsonValue[] newValues = new JsonValue[capacity];
-      System.arraycopy(values, 0, newValues, 0, curCapacity);
+      JsonValue[] newValues = new JsonValue[newCapacity];
+      System.arraycopy(values, 0, newValues, 0, values.length);
       values = newValues;
-      for (int i = curCapacity; i < capacity; i++) {
-        names[i] = new JsonString();
-        //values[i] = null;
-      }
-      // no reorg needed because all fields have the same positions
     }
   }
 
@@ -252,33 +277,98 @@ public class BufferedJsonRecord extends JsonRecord {
     ensureCapacity(newSize);
     this.size = newSize;
   }
-
-  /** Called whenever names have changed positions. Used by subclasses. */
-  protected void reorg() {
-  	// all methods maintain sorted order --> no actions required
-    // TODO: it might be more efficient to start unsorted and to sort only on demand
-    //       (an isSorted flag might be kept)
-  }
   
   /** Copies the content of the given record into this record. */
   public void setCopy(JsonRecord other) throws Exception
   {
     clear();
     resize(other.size());
-    int i=0;
-    for (Entry<JsonString, JsonValue> e : other)
+    if (other instanceof BufferedJsonRecord)
     {
-      names[i] = e.getKey().getCopy(names[i]);
-      values[i] = e.getValue().getCopy(values[i]);
-      i++;
+      BufferedJsonRecord o = (BufferedJsonRecord)other;
+      for (int i=0; i<size; i++)
+      {
+        names[i] = o.names[i].getCopy(names[i]); // TODO: copy names?
+        values[i] = JsonUtil.getCopy(o.values[i], values[i]);
+      }
+      isSorted = o.isSorted;
+      hashIndex.clear();
+      hashIndex.putAll(((BufferedJsonRecord)other).hashIndex);
     }
-    reorg();    
+    else 
+    {
+      // other record impementation
+      int i=0;
+      for (Entry<JsonString, JsonValue> e : other)
+      {
+        names[i] = e.getKey().getCopy(names[i]); // TODO: copy names?
+        values[i] = JsonUtil.getCopy(e.getValue(), values[i]);
+        isSorted = i==0 || (isSorted && names[i].compareTo(names[i-1])>0);
+        i++;
+      }
+      reindex();
+    }
   }
   
+  /** Rearranges the names to be in sorted order. This will change the indexes of some fields! */
+  public void sort()
+  {
+    Integer[] sortedIndex = sortPermutation();
+    JsonString name = null;
+    JsonValue value = null;
+    for (int i=0; i<size; i++)
+    {
+      if (sortedIndex[i] == null) continue; // already moved
+      name = names[i]; // cache
+      value = values[i]; // cache
+      int j = i;
+      while (sortedIndex[j] != i) // until one permutation cycle is completed
+      {
+        names[j] = names[sortedIndex[j]];
+        values[j] = values[sortedIndex[j]];
+        int k = sortedIndex[j];
+        sortedIndex[j] = null; // mark as done
+        j = k;
+      }
+      names[j] = name;
+      values[j] = value;
+      sortedIndex[j] = null; // mark as done
+    }
+    isSorted = true;
+    reindex();
+  }
+  
+  /** Computes the permutation of the fields that leads to field-name order. */
+  protected Integer[] sortPermutation()
+  {
+    Integer[] p = new Integer[size];
+    for (int i=0; i<size; i++)
+    {
+      p[i] = i;
+    }
+    Arrays.sort(p, new Comparator<Integer>() {
+      @Override
+      public int compare(Integer o1, Integer o2)
+      {
+        return names[o1].compareTo(names[o2]);
+      }
+    });
+    return p;
+  }
+  
+  /** Recomputes the hash index */
+  protected void reindex()
+  {
+    hashIndex.clear();
+    for (int i=0; i<size; i++)
+    {
+      hashIndex.put(names[i], i);
+    }
+  }
   
   // -- Iterable interface ------------------------------------------------------------------------
   
-  /** Returns an iterator over the fields in this record */
+  /** Returns an iterator over the fields in this record (in index order). */
   @Override
   public Iterator<Entry<JsonString, JsonValue>> iterator()
   {
@@ -296,8 +386,8 @@ public class BufferedJsonRecord extends JsonRecord {
       @Override
       public Entry<JsonString, JsonValue> next()
       {
-        entry.name = nameOf(i);
-        entry.value = valueOf(i);
+        entry.name = names[i]; 
+        entry.value = values[i];
         i++;
         return entry;
       }
@@ -310,6 +400,43 @@ public class BufferedJsonRecord extends JsonRecord {
     };
   }
   
+  /** Returns an iterator over the fields in this record (in field-name order). */
+  public Iterator<Entry<JsonString, JsonValue>> iteratorSorted()
+  {
+    if (isSorted) return iterator();
+    
+    final Integer[] sortedIndex = sortPermutation();
+    
+    // and return an iterator using that index
+    return new Iterator<Entry<JsonString, JsonValue>>()
+    {
+      int i = 0;
+      RecordEntry entry = new RecordEntry(); // reused
+      
+      @Override
+      public boolean hasNext()
+      {
+        return i < size();
+      }
+
+      @Override
+      public Entry<JsonString, JsonValue> next()
+      {
+        entry.name = names[sortedIndex[i]];
+        entry.value = values[sortedIndex[i]];
+        i++;
+        return entry;
+      }
+
+      @Override
+      public void remove()
+      {
+        throw new UnsupportedOperationException();        
+      }      
+    };
+  }
+
+
   
   // -- misc --------------------------------------------------------------------------------------
 

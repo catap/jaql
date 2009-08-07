@@ -58,6 +58,6 @@ public class ValuesFn extends IterExpr
     {
       return JsonIterator.EMPTY; // TODO: should this return null? If so, then not the same as fields($rec)[*][1]
     }
-    return rec.valueIter(); 
+    return JsonRecord.valueIter(rec.iteratorSorted()); 
   }
 }

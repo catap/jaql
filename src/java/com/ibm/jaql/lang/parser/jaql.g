@@ -1038,7 +1038,7 @@ kwTest returns [Expr r]
     : r=inExpr
     | r=isnullExpr
     | r=isdefinedExpr
-    | r=existexpr
+//| r=existexpr
     ;
 
 isnullExpr returns [Expr r]
@@ -1046,10 +1046,10 @@ isnullExpr returns [Expr r]
     { r = new IsnullExpr(r); }
     ;
 
-existexpr returns [Expr r]
-    : "exists" r=inExpr
-    { r = new ExistsFn(r); }
-    ;
+//existexpr returns [Expr r]
+//    : "exists" r=inExpr
+//    { r = new ExistsFn(r); }
+//    ;
 
 
 isdefinedExpr returns [Expr r]

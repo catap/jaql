@@ -220,7 +220,8 @@ $s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
 ( [ { a: true, d:"!" }, { a: true, d:"!", b: 1 }, 
     { a: true, d:"!", f:null }, { a: true, d:"!", f:null, b:3 },
     { a: true, d:"!", c:1d }, { a: true, d:"!", b: 1, c:1d, e:1d }, 
-    { a: true, d:"!", f:null, "0":1d, g:2d }, { a: true, d:"!", f:null, b:3, c:1d }
+    { a: true, d:"!", f:null, "0":1d, g:2d }, { a: true, d:"!", f:null, b:3, c:1d },
+    {a: true, d: "d", "0": 1d, "c":2d, "g":3d }
     ] -> $w($s), $r($s) );
 [ { a:true, d:null } ] -> $w($s); // should fail
 [ { a:null, d:"!" } ] -> $w($s); // should fail

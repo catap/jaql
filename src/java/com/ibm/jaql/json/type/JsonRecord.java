@@ -26,7 +26,6 @@ public abstract class JsonRecord extends JsonValue
 implements Iterable<Entry<JsonString, JsonValue>>
 {
   public static final JsonRecord EMPTY = new BufferedJsonRecord(); // TODO: should be immutable
-
   
   // -- abstract methods --------------------------------------------------------------------------
 
@@ -44,10 +43,13 @@ implements Iterable<Entry<JsonString, JsonValue>>
    * {@link IllegalArgumentException} if the key doesn't exist. */
   public abstract JsonValue getRequired(JsonString key);
 
-  /** Returns an iterator over the fields in this record. Entries returned by the iterator are
-   * valid only until the next call to the {@link Iterator#next()} method. The fields are produced
-   * in ascending order of their field name. */
+  /** Returns an iterator over the fields in this record in arbitrary order. Entries returned by 
+   * the iterator are valid only until the next call to the {@link Iterator#next()} method. */
   public abstract Iterator<Entry<JsonString, JsonValue>> iterator();
+  
+  /** Returns an iterator over the fields in this record in field-name order. Entries returned by 
+   * the iterator are valid only until the next call to the {@link Iterator#next()} method. */
+  public abstract Iterator<Entry<JsonString, JsonValue>> iteratorSorted();
 
   /* Overrides return type of {@link JsonValue#getCopy(JsonValue)}. */
   public abstract JsonRecord getCopy(JsonValue target) throws Exception;
@@ -61,57 +63,52 @@ implements Iterable<Entry<JsonString, JsonValue>>
     return get(key, null);
   }
 
-  /** Returns an iterator over the field names in this record (in ascending order). */
-  public JsonIterator keyIter()
+  /** Produces a JsonIterator for the keys of the provided iterator. */
+  public static JsonIterator keyIter(final Iterator<Entry<JsonString, JsonValue>> iterator)
   {
-    final Iterator<Entry<JsonString, JsonValue>> entries = iterator();
     return new JsonIterator() {
       public boolean moveNext() throws Exception
       {
-        if (!entries.hasNext())
+        if (!iterator.hasNext())
         {
           return false;
         }
-        Entry<JsonString, JsonValue> e = entries.next();
+        Entry<JsonString, JsonValue> e = iterator.next();
         currentValue = e.getKey();
         return true; 
       }
     };
   }
-  
-  /** Returns an iterator over the field values in this record (in ascending order of 
-   * field names). */
-  public JsonIterator valueIter()
+
+  /** Produces a JsonIterator for the values of the provided iterator. */
+  public static JsonIterator valueIter(final Iterator<Entry<JsonString, JsonValue>> iterator)
   {
-    final Iterator<Entry<JsonString, JsonValue>> entries = iterator();
     return new JsonIterator() {
       public boolean moveNext() throws Exception
       {
-        if (!entries.hasNext())
+        if (!iterator.hasNext())
         {
           return false;
         }
-        Entry<JsonString, JsonValue> e = entries.next();
+        Entry<JsonString, JsonValue> e = iterator.next();
         currentValue = e.getValue();
         return true; 
       }
     };
   }
-  
-  /** Returns an iterator over the fields in this record (in ascending order of field names),
-   * represented as arrays of form [key, value].*/
-  public JsonIterator keyValueIter()
+
+  /** Produces a JsonIterator with [key, value] entries from provided iterator. */
+  public static JsonIterator keyValueIter(final Iterator<Entry<JsonString, JsonValue>> iterator)
   {
-    final Iterator<Entry<JsonString, JsonValue>> entries = iterator();
     final BufferedJsonArray pair = new BufferedJsonArray(2);
     return new JsonIterator(pair) {
       public boolean moveNext() throws Exception
       {
-        if (!entries.hasNext())
+        if (!iterator.hasNext())
         {
           return false;
         }
-        Entry<JsonString, JsonValue> e = entries.next();
+        Entry<JsonString, JsonValue> e = iterator.next();
         pair.set(0, e.getKey());
         pair.set(1, e.getValue());
         return true; // currentValue == pair
@@ -119,16 +116,16 @@ implements Iterable<Entry<JsonString, JsonValue>>
     };
   }
   
+  
   // -- hashing/comparison ------------------------------------------------------------------------
 
   /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   public final int compareTo(Object arg0)
   {
-    // TODO: this should be order-independent
     JsonRecord t = (JsonRecord) arg0;
     int cmp;
-    Iterator<Entry<JsonString, JsonValue>> i1 = this.iterator();
-    Iterator<Entry<JsonString, JsonValue>> i2 = t.iterator();
+    Iterator<Entry<JsonString, JsonValue>> i1 = this.iteratorSorted();
+    Iterator<Entry<JsonString, JsonValue>> i2 = t.iteratorSorted();
     int s1 = size();
     int s2 = t.size();
     int size = Math.min(s1, s2);
@@ -171,8 +168,10 @@ implements Iterable<Entry<JsonString, JsonValue>>
   public int hashCode()
   {
     int h = BaseUtil.GOLDEN_RATIO_32;
-    for (Entry<JsonString, JsonValue> entry : this)
+    Iterator<Entry<JsonString, JsonValue>> it = iteratorSorted();
+    while (it.hasNext())
     {
+      Entry<JsonString, JsonValue> entry = it.next();
       h ^= JsonUtil.hashCode(entry.getKey());
       h *= BaseUtil.GOLDEN_RATIO_32;
       h ^= JsonUtil.hashCode(entry.getValue());
@@ -186,8 +185,10 @@ implements Iterable<Entry<JsonString, JsonValue>>
   public long longHashCode()
   {
     long h = BaseUtil.GOLDEN_RATIO_64;
-    for (Entry<JsonString, JsonValue> entry : this)
+    Iterator<Entry<JsonString, JsonValue>> it = iteratorSorted();
+    while (it.hasNext())
     {
+      Entry<JsonString, JsonValue> entry = it.next();
       h ^= JsonUtil.longHashCode(entry.getKey());
       h *= BaseUtil.GOLDEN_RATIO_64;
       h ^= JsonUtil.longHashCode(entry.getValue());

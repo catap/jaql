@@ -65,25 +65,20 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
   {
     // construct target
     SpilledJsonArray t;
-    JsonValue cache[];
     if (!(target instanceof SpilledJsonArray))
     {
       t = new SpilledJsonArray();
-      cache = new JsonValue[0];
     }
     else
     {
       t = (SpilledJsonArray)target;
-      cache = t.getInternalCache();
       t.clear();
     }
     
     // read the head
     for (int i=0; i<headSerializers.length; i++)
     {
-      BinaryFullSerializer headSerializer = headSerializers[i];
-      JsonValue cachedTarget = cache.length > i ? cache[i] : null;
-      t.add(headSerializer.read(in, cachedTarget));
+      t.addCopySerialized(in, headSerializers[i]);
     }
     
     // read the rest
@@ -105,7 +100,7 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
       for (long i=0; i<n; i++)
       {
         // TODO: use cache here?
-        t.add(restSerializer.read(in, null));
+        t.addCopySerialized(in, restSerializer);
       }
     }
     
