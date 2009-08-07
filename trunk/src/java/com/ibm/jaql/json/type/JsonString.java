@@ -80,7 +80,7 @@ public class JsonString extends JsonAtom
   
   /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
-  public JsonString getCopy(JsonValue target) throws Exception
+  public JsonString getCopy(JsonValue target) 
   {
     if (target == this) target = null;
     
@@ -316,11 +316,7 @@ public class JsonString extends JsonAtom
   public int compareTo(Object x)
   {
     JsonString s = (JsonString) x;
-    int len = this.length;
-    if (s.length < len)
-    {
-      len = s.length;
-    }
+    int len = Math.min(this.length, s.length);
     for (int i = 0; i < len; i++)
     {
       int c = (int) (bytes[i] & 0xff) - (int) (s.bytes[i] & 0xff);
@@ -331,20 +327,6 @@ public class JsonString extends JsonAtom
     }
     int c = this.length - s.length;
     return c;
-  }
-  
-  /* @see com.ibm.jaql.json.type.JsonValue#hashCode() */
-  public int hashCode() {
-  	try {
-  		return toString().hashCode(); // this way, hash code is cached in the String's cache
-  	}	catch (UndeclaredThrowableException e) {
-  		// standard hash code
-  		int result = 1;
-  		for (byte element : bytes) {
-  			result = 31 * result + element;
-  		}
-  		return result;
-  	}
   }
   
   /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
@@ -358,7 +340,7 @@ public class JsonString extends JsonAtom
     long h = BaseUtil.GOLDEN_RATIO_64;
     for (int i = 0; i < n; i++)
     {
-      h |= bs[i];
+      h ^= bs[i];
       h *= BaseUtil.GOLDEN_RATIO_64;
     }
     cachedLongHashCode = h; // remember it

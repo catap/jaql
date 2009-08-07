@@ -352,4 +352,10 @@ public class JavaJsonRecord extends JsonRecord
       }      
     };
   }
+  
+  @Override
+  public Iterator<Entry<JsonString, JsonValue>> iteratorSorted()
+  {
+    throw new RuntimeException("NYI");
+  }
 }
