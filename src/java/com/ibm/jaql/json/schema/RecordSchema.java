@@ -226,7 +226,7 @@ public class RecordSchema extends Schema
     int ps = 0;                   // current field in schema
     
     // zip join
-    Iterator<Entry<JsonString, JsonValue>> recIt = rec.iterator();
+    Iterator<Entry<JsonString, JsonValue>> recIt = rec.iteratorSorted();
     Entry<JsonString, JsonValue> recEntry = null;
     if (nr > 0) recEntry = recIt.next();
     while (pr<nr && ps<ns)
@@ -337,6 +337,28 @@ public class RecordSchema extends Schema
     return null;
   }
   
+  /** Returns the number of required fields */
+  public int noRequiredFields()
+  {
+    int n = 0;
+    for (Field field : fields)
+    {
+      if (!field.isOptional()) n++;
+    }
+    return n;
+  }
+
+  /** Returns the number of optional fields (not counting the wildcard) */
+  public int noOptionalFields()
+  {
+    int n = 0;
+    for (Field field : fields)
+    {
+      if (field.isOptional()) n++;
+    }
+    return n;
+  }
+
   @Override
   // -- merge -------------------------------------------------------------------------------------
 

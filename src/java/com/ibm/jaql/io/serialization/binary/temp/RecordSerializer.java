@@ -22,51 +22,52 @@ import com.ibm.jaql.util.BaseUtil;
 // not threadsafe
 class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
 {
-  private static final JsonString[] NO_NAMES = new JsonString[0];
-  private static final JsonValue[] NO_VALUES = new JsonValue[0];
+  // -- private variables -------------------------------------------------------------------------
   
   private RecordSchema schema;
-  private TempBinaryFullSerializer stringSerializer;
-  private TempBinaryFullSerializer restSerializer;
-  
-  private enum TYPE { ADDITIONAL, OPTIONAL, REQUIRED };
+  private TempBinaryFullSerializer nameSerializer;
+  private TempBinaryFullSerializer additionalSerializer;
   
   // info variables
-  int noRequired;
-  int noOptional;
-  int noRequiredOrOptional;
-  private List<FieldInfo> requiredInfo;
-  private List<FieldInfo> optionalInfo; 
-  private List<FieldInfo> allInfo;
+  private int noRequired;
+  private int noOptional;
+  private int noRequiredOptional;
+  private FieldInfo[] requiredInfo;
+  private FieldInfo[] optionalInfo; 
+  private FieldInfo[] allInfo;
   
-  // worker variables for serialization and deserialization
-  private List<JsonValue> requiredValues = new ArrayList<JsonValue>();
-  private MyBitSet optionalFields;
-  private List<JsonValue> optionalValues = new ArrayList<JsonValue>();
-  private List<JsonString> additionalNames = new ArrayList<JsonString>();
-  private List<JsonValue> additionalValues = new ArrayList<JsonValue>();
+  // worker variables for serialization (content owned by someone else)
+  private JsonValue[] requiredValues;       // values of required fields
+  private MyBitSet optionalBits;            // bitmap indicating which optional fields are present
+  private JsonValue[] optionalValues;       // values of the present optional fields
+  private List<JsonString> additionalNames = new ArrayList<JsonString>(); // names of additional fields
+  private List<JsonValue> additionalValues = new ArrayList<JsonValue>();  // values of additional fields
   
-  // worker variables for binary comparison
-  private List<JsonString> additionalNames1 = new ArrayList<JsonString>();
-  private List<JsonValue> additionalValues1 = new ArrayList<JsonValue>();
-  private List<JsonString> additionalNames2 = new ArrayList<JsonString>();
-  private List<JsonValue> additionalValues2 = new ArrayList<JsonValue>();
-  private MyBitSet optionalFields1;
-  private MyBitSet optionalFields2;
+  // worker variables for binary comparison (content owned by this instance)
+  private JsonString[] additionalNamesCache1;
+  private JsonValue[] additionalValuesCache1;
+  private JsonString[] additionalNamesCache2;
+  private JsonValue[] additionalValuesCache2;
+  private MyBitSet optionalBits1;
+  private MyBitSet optionalBits2;
   
+  /** Stores information about a required or optional field. */
   private static class FieldInfo
   {
     RecordSchema.Field field;
     TempBinaryFullSerializer serializer;
     int index; // index in requiredInfo or optionalInfo
+    JsonString name;
     
     FieldInfo(RecordSchema.Field field, TempBinaryFullSerializer serializer)
     {
       this.field = field;
       this.serializer = serializer;
+      this.name = (JsonString)field.getName().getCopy(null);
     }
   }
   
+  /** Lightweight implementation of a bitset. */
   private static class MyBitSet
   {
     byte[] bytes;
@@ -94,6 +95,13 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     }
   }
   
+  /** Stores a name/value pair */
+  private static class NameValue
+  {
+    JsonString name = null;
+    JsonValue value = null;
+  }
+  
   // -- construction ------------------------------------------------------------------------------
   
   public RecordSerializer(RecordSchema schema)
@@ -104,145 +112,260 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   
   private void init()
   {
-    // scan fields
-    noOptional = 0;
-    noRequired = 0;
-    optionalInfo = new ArrayList<FieldInfo>();
-    requiredInfo = new ArrayList<FieldInfo>();
-    allInfo = new ArrayList<FieldInfo>();
-    for (RecordSchema.Field f : schema.getFields())
+    // create data structures
+    noRequired = schema.noRequiredFields();
+    noOptional = schema.noOptionalFields();
+    noRequiredOptional = noRequired + noOptional;
+    requiredInfo = new FieldInfo[noRequired];
+    optionalInfo = new FieldInfo[noOptional];
+    allInfo = new FieldInfo[noRequiredOptional];
+    
+    // scan required and optional fields
+    RecordSchema.Field[] fields = schema.getFields();
+    for (int posRequired=0, posOptional=0, pos=0; pos < fields.length; pos++)
     {
-      FieldInfo k = new FieldInfo(f, new TempBinaryFullSerializer(f.getSchema()));
-      allInfo.add(k);
-      if (f.isOptional()) {
-        optionalInfo.add(k);
-        k.index = optionalInfo.size()-1;
-        ++noOptional;
-        ++noRequiredOrOptional;
+      RecordSchema.Field field = fields[pos];
+      FieldInfo k = new FieldInfo(field, new TempBinaryFullSerializer(field.getSchema()));
+      allInfo[pos] = k;
+      if (field.isOptional()) {
+        optionalInfo[posOptional] = k;
+        k.index = posOptional;
+        ++posOptional;
       }
       else
       {
-        requiredInfo.add(k);
-        k.index = requiredInfo.size()-1;
-        ++noRequired;
-        ++noRequiredOrOptional;
+        requiredInfo[posRequired] = k;
+        k.index = posRequired;
+        ++posRequired;
       }
     }
-    optionalFields = new MyBitSet(noOptional);
-    optionalFields1 = new MyBitSet(noOptional);
-    optionalFields2 = new MyBitSet(noOptional);
     
-    // scan rest
+    // scan additional fields
     if (schema.getRest() != null)
     {
-      restSerializer = new TempBinaryFullSerializer(schema.getRest());
-      stringSerializer = new TempBinaryFullSerializer(SchemaFactory.stringSchema());
+      additionalSerializer = new TempBinaryFullSerializer(schema.getRest());
+      nameSerializer = new TempBinaryFullSerializer(SchemaFactory.stringSchema());
     }
+    
+    // intitialize worker variables
+    optionalBits = new MyBitSet(noOptional);
+    requiredValues = new JsonValue[noRequired];
+    optionalValues = new JsonValue[noOptional];
+    optionalBits1 = new MyBitSet(noOptional);
+    optionalBits2 = new MyBitSet(noOptional);
+    additionalNamesCache1 = new JsonString[0];
+    additionalValuesCache1 = new JsonValue[0];
+    additionalNamesCache2 = new JsonString[0];
+    additionalValuesCache2 = new JsonValue[0]; 
   }
-  
-  // -- serialization -----------------------------------------------------------------------------
+
+  // -- reading -----------------------------------------------------------------------------------
   
   @Override
   public JsonRecord newInstance()
   {
-    // TODO: make type dependent on schema?
     return new BufferedJsonRecord();
   }
 
   @Override
   public JsonRecord read(DataInput in, JsonValue target) throws IOException
   {
+    // read the size information
+    if (noOptional > 0)
+    {
+      in.readFully(optionalBits.bytes);
+    }
+    int noAdditional = 0;
+    if (additionalSerializer != null)
+    {
+      noAdditional = BaseUtil.readVUInt(in);
+    }
+
+    // obtain a record with enough capacity
     BufferedJsonRecord t;
-    JsonString[] reusableNames = NO_NAMES;
-    JsonValue[] reusableValues = NO_VALUES; 
     if (target instanceof BufferedJsonRecord)
     {
       t = (BufferedJsonRecord)target;
-      reusableNames = t.getInternalNamesArray();
-      reusableValues = t.getInternalValuesArray();
-      t.clear(); 
+      t.ensureCapacity(noAdditional+noRequiredOptional);
     }
     else
     {
-      t = new BufferedJsonRecord();
+      t = new BufferedJsonRecord(noAdditional+noRequiredOptional);
     }
-    int k = 0;                               // position of next reused name/value instance
-    int noReusable = reusableNames.length;   // number of those instances
     
-    try 
-    {
-      // read the additional fields
-      if (restSerializer != null)
-      {
-        int n = BaseUtil.readVUInt(in);
-        for (int i=0; i<n; i++)
-        {
-          JsonString name;
-          JsonValue value;
-          if (k<noReusable)
-          {
-            name = (JsonString)stringSerializer.read(in, reusableNames[k]);
-            value = restSerializer.read(in, reusableValues[k]);
-            k++;
-          }
-          else
-          {
-            name = (JsonString)stringSerializer.read(in, null);
-            value = restSerializer.read(in, null);
-          };
-          t.add(name, value);
-        }
-      }
+    // the internal data structures will be reused
+    JsonString[] names = t.getInternalNamesArray();
+    JsonValue[] values = t.getInternalValuesArray();
 
-      // determine which optional fields are present
-      if (noOptional > 0)
+    // read the data
+    readAdditional(in, names, values, 0, noAdditional, false);    
+    int noPresent = readRequiredOptional(in, names, values, noAdditional, optionalBits);
+    int n = noAdditional + noPresent;
+    
+    // set it
+    if (noAdditional != 0 || noPresent != 0) 
+    {
+      // we do not HAVE to sort the names/values in the record, but it is much cheaper to 
+      // do that now because we can exploit the knowledge that the additional names and 
+      // required/optional names are sorted among themselves
+      merge(names, values, noAdditional, n);
+      t.setInternal(names, values, n, true);
+    }
+    else
+    {
+      t.setInternal(names, values, n, true);      
+    }
+
+    // done
+    return t;
+  }
+  
+  /** Sorts the name array (and the corresponding values). This implementation makes use of the
+   * fact that the intervals [0...noAdditional-1] and [noAdditional...n-1] are both sorted. */
+  private void merge(JsonString[] names, JsonValue[] values, int noAdditional, int n)
+  {
+    NameValue temp = new NameValue(); // when temp.name != null, stores a value to be inserted
+    int p0=0, p1=noAdditional; 
+    while (p0<p1 && p1<n)
+    {
+      // check whether p0 reached a position that we marked unused
+      if (names[p0]==null)
       {
-        in.readFully(optionalFields.bytes);
+        swap(names, values, p0, temp);
+        // temp.name = null --> temp is unused
       }
       
-      // read the optional and required fields
-      for (int i=0; i<noRequiredOrOptional; i++)
+      // put smallest of names[p0], names[p1], temp.name to position p0 
+      int cmp = names[p0].compareTo(names[p1]);
+      if (cmp < 0)
       {
-        FieldInfo info = allInfo.get(i);
-        if (info.field.isOptional() && !optionalFields.get(info.index))
+        // p0 < p1
+        if (temp.name != null && names[p0].compareTo(temp.name) > 0)
         {
-          // optional field that is not present
-          continue;
+          // temp < p0 < p1
+          swap(names, values, p0, temp);
         }
-        
-        JsonString name;
-        JsonValue value;
-        if (k<noReusable)
+        p0++;
+      }
+      else
+      {
+        // p1 < p0
+        if (temp.name == null)
         {
-          name = JsonUtil.getCopy(info.field.getName(), reusableNames[k]);
-          value = info.serializer.read(in, reusableValues[k]);
-          k++;
+          temp.name = names[p0];
+          temp.value = values[p0];
+          names[p0] = names[p1];
+          values[p0] = values[p1];
+          names[p1] = null; // mark as unused
+          p1++;
+        } 
+        else if (names[p1].compareTo(temp.name) > 0)
+        {
+          // temp < p1 < p0
+          swap(names, values, p0, temp);
         }
         else
         {
-          name = JsonUtil.getCopy(info.field.getName(), null);
-          value = info.serializer.read(in, null);
+          // p1 < p0, p1 < temp 
+          swap(names, values, p0, p1);
+          p1++;
         }
-        t.add(name, value);
+        p0++;
       }
-      
-      // done
-      return t;
-    } 
-    catch (Exception e)
-    {
-      throw new IOException(e);
     }
+    
+    // insert temp when necessary
+    if (names[p0] == null)
+    {
+      names[p0] = temp.name;
+      values[p0] = temp.value;
+    }     
+  }
+  
+  /** Exchanges name/value pairs at positions i and j */
+  private void swap(JsonString[] names, JsonValue[] values, int i, int j)
+  {
+    JsonString tn = names[i];
+    JsonValue tv = values[i];
+    names[i] = names[j];
+    values[i] = values[j];
+    names[j] = tn;
+    values[j] = tv;
   }
 
+  /** Exchanges name/value pair at positions i with t */
+  private void swap(JsonString[] names, JsonValue[] values, int i, NameValue t)
+  {
+    JsonString tn = names[i];
+    JsonValue tv = values[i];
+    names[i] = t.name;
+    values[i] = t.value;
+    t.name = tn;
+    t.value = tv;
+  }
+
+  /** Read <code>length</code> additional fields from the provided input stream into the 
+   * <code>names</code> and <code>values</code> arrays at the specified <code>offset</code>. 
+   * The arrays have to be sufficiently large. */
+  private void readAdditional(DataInput in, JsonString[] names, JsonValue[] values, int offset, 
+      int length, boolean reuseNames) 
+  throws IOException
+  {
+    // read the additional fields
+    if (additionalSerializer != null)
+    {
+      for (int i=0; i<length; i++)
+      {
+        int j = offset+i;
+        // TODO: reuse 
+        names[j] = (JsonString)nameSerializer.read(in, reuseNames ? names[j] : null);
+        values[j] = additionalSerializer.read(in, values[j]);
+      }
+    }
+  }
+  
+  /** Read required and optional fields from the provided input stream into the 
+   * <code>names</code> and <code>values</code> arrays at the specified <code>offset</code>. 
+   * <code>optionalBits</code> determines which optional fields are present. 
+   * The arrays have to be sufficiently large. */
+  private int readRequiredOptional(DataInput in, JsonString[] names, JsonValue[] values, int offset, 
+      MyBitSet optionalBits) throws IOException
+  {
+    // read the optional and required fields
+    int n = offset;
+    for (int i=0; i<noRequiredOptional; i++)
+    {
+      FieldInfo info = allInfo[i];
+      if (info.field.isOptional() && !optionalBits.get(info.index))
+      {
+        // optional field that is not present
+        continue;
+      }
+      
+      names[n] = info.name;
+      values[n] = info.serializer.read(in, values[n]);
+      n++;
+    }
+    return n-offset;
+  }
+  
+  
+  // -- writing -----------------------------------------------------------------------------------
+  
   @Override
   public void write(DataOutput out, JsonRecord inRecord) throws IOException
   {
-    // put all required, optional and additional fields are in the corresponding lists. 
+    // put all required, optional and additional fields in the corresponding lists. 
     partition(inRecord);
 
-    // Write the additional fields first
-    if (restSerializer != null)
+    // Write a bit list indicating which optional fields are present
+    if (noOptional > 0)
+    {
+      out.write(optionalBits.bytes);
+    }
+    
+    // Write the additional fields 
+    if (additionalSerializer != null)
     {
       int n = additionalNames.size();
       BaseUtil.writeVUInt(out, n);
@@ -252,38 +375,32 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       {
         JsonString name = nameIt.next();
         JsonValue value = valueIt.next();
-        stringSerializer.write(out, name);
-        restSerializer.write(out, value);
+        nameSerializer.write(out, name);
+        additionalSerializer.write(out, value);
       }
-    }
-
-    // Write a bit list indicating which optional fields are present
-    if (noOptional > 0)
-    {
-      out.write(optionalFields.bytes);
     }
     
     // Write the required and optional fields intermingled
     int nextOptional = 0;
-    for (int i=0; i<noRequiredOrOptional; i++)
+    for (int i=0; i<noRequiredOptional; i++)
     {
-      FieldInfo info = allInfo.get(i);
+      FieldInfo info = allInfo[i];
       
       // required or optional
       if (info.field.isOptional())
       {
         // optional field; check if present
-        if (optionalFields.get(info.index))
+        if (optionalBits.get(info.index))
         {
           // yes, it is --> write it
-          info.serializer.write(out, optionalValues.get(nextOptional));
+          info.serializer.write(out, optionalValues[nextOptional]);
           ++nextOptional;
         }
       }
       else
       {
         // required field, write always
-        info.serializer.write(out, requiredValues.get(info.index));
+        info.serializer.write(out, requiredValues[info.index]);
       }
     }
     
@@ -300,86 +417,79 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   private void partition(JsonRecord inRecord)
   {
     // init
-    requiredValues.clear();
-    optionalFields.clear();
-    optionalValues.clear();
+    optionalBits.clear();
     additionalNames.clear();
     additionalValues.clear();
     
     // set up iterators
-    Iterator<FieldInfo> schemaIt = allInfo.iterator();
-    Iterator<Entry<JsonString, JsonValue>> recordIt = inRecord.iterator();
-    FieldInfo schema = schemaIt.hasNext() ? schemaIt.next() : null;
+    int posSchema = 0;
+    FieldInfo schema = posSchema < noRequiredOptional ? allInfo[posSchema] : null;
+    Iterator<Entry<JsonString, JsonValue>> recordIt = inRecord.iteratorSorted();
     Entry<JsonString, JsonValue> record = recordIt.hasNext() ? recordIt.next() : null;
     
     // scan schema and record concurrently (both are sorted by field name)
-    int currentOptional = 0;
-    while (record != null)
+    int posRequired = 0, posOptional = 0, nextOptional = 0;
+    while (record != null && schema != null)
     {
-      TYPE type;
-      if (schema == null) 
+      // there are more fields
+      int cmp = JsonUtil.compare(schema.field.getName(), record.getKey());
+      if (cmp == 0)
       {
-        type = TYPE.ADDITIONAL;
-      }
-      else
-      {
-        // there are more fields
-        int cmp = JsonUtil.compare(schema.field.getName(), record.getKey());
-        if (cmp < 0)
+        // identical field names
+        if (!schema.field.isOptional())
         {
-          // schema field name comes first
-          if (!schema.field.isOptional())
-          {
-            throw new IllegalArgumentException("field missing: " + schema.field.getName());
-          }
-          schema = schemaIt.hasNext() ? schemaIt.next() : null;
-          ++currentOptional;
-          continue;
-        } 
-        else if (cmp > 0)
-        {
-          // record field name comes first
-          type = TYPE.ADDITIONAL;
+          requiredValues[posRequired] = record.getValue();
+          ++posRequired;
+          ++posSchema;
+          schema = posSchema < noRequiredOptional ? allInfo[posSchema] : null;
+          record = recordIt.hasNext() ? recordIt.next() : null;
         }
         else
         {
-          // identical field names
-          if (!schema.field.isOptional())
-          {
-            type = TYPE.REQUIRED;
-          }
-          else
-          {
-            type = TYPE.OPTIONAL;
-          }
+          optionalBits.set(posOptional);
+          optionalValues[nextOptional] = record.getValue();
+          ++posOptional;
+          ++nextOptional;
+          ++posSchema;
+          schema = posSchema < noRequiredOptional ? allInfo[posSchema] : null;
+          record = recordIt.hasNext() ? recordIt.next() : null;
         }
       }
-       
-      // handle field
-      switch (type)
+      else if (cmp < 0)
       {
-      case REQUIRED:
-        requiredValues.add(record.getValue());
-        schema = schemaIt.hasNext() ? schemaIt.next() : null;
-        record = recordIt.hasNext() ? recordIt.next() : null;
-        break;
-      case OPTIONAL:
-        optionalFields.set(currentOptional);
-        optionalValues.add(record.getValue());
-        ++currentOptional;
-        schema = schemaIt.hasNext() ? schemaIt.next() : null;
-        record = recordIt.hasNext() ? recordIt.next() : null;
-        break;
-      case ADDITIONAL:
-        if (restSerializer == null)
+        // schema field name comes first
+        if (!schema.field.isOptional())
+        {
+          throw new IllegalArgumentException("field missing: " + schema.field.getName());
+        }
+        ++posOptional;
+        ++posSchema;
+        schema = posSchema < noRequiredOptional ? allInfo[posSchema] : null;
+        continue;
+      } 
+      else 
+      {
+        // record field name comes first
+        if (additionalSerializer == null)
         {
           throw new IllegalArgumentException("invalid field: " + record.getKey());
         }
         additionalNames.add(record.getKey());
         additionalValues.add(record.getValue());
         record = recordIt.hasNext() ? recordIt.next() : null;
-        break;
       }
+    }
+    
+    // process remaining fields in record
+    while (record != null) // if so, schema must be null
+    {
+      if (additionalSerializer == null)
+      {
+        throw new IllegalArgumentException("invalid field: " + record.getKey());
+      }
+      additionalNames.add(record.getKey());
+      additionalValues.add(record.getValue());
+      record = recordIt.hasNext() ? recordIt.next() : null;
     }
     
     // At this point, all the fields in "record" have been processed. Now check that there are no 
@@ -390,72 +500,63 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       {
         throw new IllegalArgumentException("missing field: " + schema.field.getName());
       }
-      ++currentOptional;
-      schema = schemaIt.hasNext() ? schemaIt.next() : null;
+      ++posOptional;
+      ++posSchema;
+      schema = posSchema < noRequiredOptional ? allInfo[posSchema] : null;
     }
-    assert requiredValues.size() == requiredInfo.size();
-    assert currentOptional == noOptional;
+    assert posRequired == noRequired;
+    assert posOptional == noOptional;
     assert additionalNames.size() == additionalValues.size();
-    assert !(restSerializer == null && additionalNames.size() > 0);
+    assert !(additionalSerializer == null && additionalNames.size() > 0);
   }
   
 
-  //TODO: efficient implementation of skip, and copy
-  
   // -- comparison --------------------------------------------------------------------------------
-
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
     // special case: all fields are additional
-    if (noRequiredOrOptional == 0)
+    if (noRequiredOptional == 0)
     {
       return additionalOnlyCompare(in1, in2);
     }
-    
+
+    // determine which optional fields are present in both streams 
+    if (noOptional > 0)
+    {
+      in1.readFully(optionalBits1.bytes);
+      in2.readFully(optionalBits2.bytes);
+    }
+
     // deserialize the additional fields 
     int noAdditional1 = 0;
     int noAdditional2 = 0;
-    if (restSerializer != null)
+    if (additionalSerializer != null)
     {
-      // left side
+      // read counts
       noAdditional1 = BaseUtil.readVUInt(in1);
-      resizeTemps(noAdditional1, additionalNames1, additionalValues1);
-      for (int i=0; i<noAdditional1; i++)
-      {
-        additionalNames1.set(i, (JsonString)stringSerializer.read(in1, additionalNames1.get(i)));
-        additionalValues1.set(i, restSerializer.read(in1, additionalValues1.get(i)));
-      }
-      
-      
-      // right side
       noAdditional2 = BaseUtil.readVUInt(in2);
-      resizeTemps(noAdditional2, additionalNames2, additionalValues2);
-      for (int i=0; i<noAdditional2; i++)
-      {
-        additionalNames2.set(i, (JsonString)stringSerializer.read(in2, additionalNames2.get(i)));
-        additionalValues2.set(i, restSerializer.read(in2, additionalValues2.get(i)));
-      }
-    }
-    
-    // now determine which optional fields are present in both streams 
-    if (noOptional > 0)
-    {
-      in1.readFully(optionalFields1.bytes);
-      in2.readFully(optionalFields2.bytes);
+      
+      // resize data structure
+      ensureCacheCapacity1(noAdditional1);
+      ensureCacheCapacity2(noAdditional2);
+      
+      // and read
+      readAdditional(in1, additionalNamesCache1, additionalValuesCache1, 0, noAdditional1, true);
+      readAdditional(in2, additionalNamesCache2, additionalValuesCache2, 0, noAdditional2, true);
     }
     
     // start the comparison process
     int posAdditional = 0;
-    for (int i=0; i<noRequiredOrOptional; i++) // there is at least one
+    for (int i=0; i<noRequiredOptional; i++) // there is at least one
     {
-      FieldInfo info = allInfo.get(i);
+      FieldInfo info = allInfo[i];
       
-      // check if additional fields are smaller
+      // check if one of the additional fields is smallest
       while (posAdditional < noAdditional1 || posAdditional < noAdditional2)
       {
         // get the names
-        JsonString name1 = posAdditional < noAdditional1 ? additionalNames1.get(posAdditional) : null;
-        JsonString name2 = posAdditional < noAdditional2 ? additionalNames2.get(posAdditional) : null;
+        JsonString name1 = posAdditional < noAdditional1 ? additionalNamesCache1[posAdditional] : null;
+        JsonString name2 = posAdditional < noAdditional2 ? additionalNamesCache2[posAdditional] : null;
         
         // check if they are smallest
         boolean name1next = name1!=null && name1.compareTo(info.field.getName()) < 0; // cannot be ==
@@ -483,8 +584,8 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
         
         // compare the values
         assert name1next && name2next;
-        JsonValue value1 = additionalValues1.get(posAdditional);
-        JsonValue value2 = additionalValues2.get(posAdditional);
+        JsonValue value1 = additionalValuesCache1[posAdditional];
+        JsonValue value2 = additionalValuesCache2[posAdditional];
         int cmp = JsonUtil.compare(value1, value2);      
         if (cmp != 0)
         {
@@ -498,8 +599,8 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       // first check if it is optional, and if so, if it is in both records
       if (info.field.isOptional())
       {
-        boolean fieldIn1 = optionalFields1.get(info.index);
-        boolean fieldIn2 = optionalFields2.get(info.index);
+        boolean fieldIn1 = optionalBits1.get(info.index);
+        boolean fieldIn2 = optionalBits2.get(info.index);
         if (fieldIn1)
         {
           if (!fieldIn2)
@@ -529,11 +630,19 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     // compare the remaining additional fields
     while (posAdditional < noAdditional1 && posAdditional < noAdditional2)
     {
-      // get the names
-      JsonString name1 = additionalNames1.get(posAdditional);
-      JsonString name2 = additionalNames2.get(posAdditional);
+      // compare the names
+      JsonString name1 = additionalNamesCache1[posAdditional];
+      JsonString name2 = additionalNamesCache2[posAdditional];
       int cmp = name1.compareTo(name2);
       if (cmp != 0) return cmp;
+      
+      
+      // compare the values
+      JsonValue value1 = additionalValuesCache1[posAdditional];
+      JsonValue value2 = additionalValuesCache2[posAdditional];
+      cmp = JsonUtil.compare(value1, value2);      
+      if (cmp != 0) return cmp;
+      
       ++posAdditional;
     }
     
@@ -541,9 +650,9 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     return noAdditional1-noAdditional2;
   }
   
-  /** comparison when all fields are additional */
+  /** Comparison when all fields are additional */
   public int additionalOnlyCompare(DataInput in1, DataInput in2) throws IOException {
-    if (restSerializer == null)
+    if (additionalSerializer == null)
     {
       // both empty
       return 0;      
@@ -551,32 +660,18 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     
     // determine lengths
     int noAdditional1 = BaseUtil.readVUInt(in1);
-    resizeTemps(noAdditional1, additionalNames1, additionalValues1);
     int noAdditional2 = BaseUtil.readVUInt(in2);
-    resizeTemps(noAdditional2, additionalNames2, additionalValues2);
     
     // go
     int n = Math.min(noAdditional1, noAdditional2);
     for (int i = 0; i<n; i++)
     {
-      // read the names
-      JsonString name1 = (JsonString)stringSerializer.read(in1, additionalNames1.get(i));
-      additionalNames1.set(i, name1);
-      JsonString name2 = (JsonString)stringSerializer.read(in2, additionalNames2.get(i));
-      additionalNames2.set(i, name2);
-      
-      // compare them
-      int cmp = name1.compareTo(name2);
+      // compare the names
+      int cmp = nameSerializer.compare(in1, in2);
       if (cmp != 0) return cmp;
       
       // read the values
-      JsonValue value1 = restSerializer.read(in1, additionalValues1.get(i));
-      additionalValues1.set(i, value1);
-      JsonValue value2 = restSerializer.read(in2, additionalValues2.get(i));
-      additionalValues2.set(i, value2);
-      
-      // compare them
-      cmp = value1.compareTo(value2);
+      cmp = additionalSerializer.compare(in1, in2);
       if (cmp != 0) return cmp;
     }
     
@@ -584,14 +679,36 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     return noAdditional1-noAdditional2;
   }
   
-  // ensures that the length of the two arrays is at least minSize
-  private void resizeTemps(int minSize, List<JsonString> names, List<JsonValue> values)
+  /** Ensure that the <code>additionalNamesCache1</code> and <code>additionalValuesCache2</code> 
+   * arrays have at least size <code>n</code>. */
+  private void ensureCacheCapacity1(int n)
   {
-    assert names.size() == values.size();
-    while (minSize > names.size())
+    if (additionalNamesCache1.length < n)
     {
-      names.add(null);
-      values.add(null);
+      JsonString[] s = new JsonString[n];
+      System.arraycopy(additionalNamesCache1, 0, s, 0, additionalNamesCache1.length);
+      additionalNamesCache1 = s;
+      JsonValue[] v = new JsonValue[n];
+      System.arraycopy(additionalValuesCache1, 0, v, 0, additionalValuesCache1.length);
+      additionalValuesCache1 = v;
     }
   }
+  
+  /** Ensure that the <code>additionalNamesCache2</code> and <code>additionalValuesCache2</code> 
+   * arrays have at least size <code>n</code>. */
+  private void ensureCacheCapacity2(int n)
+  {
+    if (additionalNamesCache2.length < n)
+    {
+      JsonString[] s = new JsonString[n];
+      System.arraycopy(additionalNamesCache2, 0, s, 0, additionalNamesCache2.length);
+      additionalNamesCache2 = s;
+      JsonValue[] v = new JsonValue[n];
+      System.arraycopy(additionalValuesCache2, 0, v, 0, additionalValuesCache2.length);
+      additionalValuesCache2 = v;
+    }
+  }
+  
+  //TODO: efficient implementation of skip, and copy
+
 }

@@ -653,7 +653,7 @@ public class HBaseStore
           if (idx < 0)
             valueHolder.value = null;
           else
-            valueHolder.value = rec.valueOf(idx);
+            valueHolder.value = rec.get(idx);
           HBaseStore.Util.convertFromBytes(value, valueHolder, rec);
           HBaseStore.Util.setMap(jcols[i], valueHolder.value, rec);
           hasValue = true;
@@ -710,7 +710,7 @@ public class HBaseStore
 
         if (value != null && value.length > 0)
         {
-          SpilledJsonArray tArr = JaqlUtil.enforceNonNull((SpilledJsonArray) rec.valueOf(i + 1));
+          SpilledJsonArray tArr = JaqlUtil.enforceNonNull((SpilledJsonArray) rec.get(i + 1));
           tArr.clear();
 
           for (int j = 0; j < value.length; j++)

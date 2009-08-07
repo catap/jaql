@@ -67,8 +67,8 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
         rec.ensureCapacity(rec.size() + inrec.size());
         for (Entry<JsonString, JsonValue> e : inrec)
         {
-          JsonString name = rec.nameOf(rec.size()); // reuse
-          JsonValue value = rec.valueOf(rec.size()); // reuse
+          JsonString name = rec.getName(rec.size()); // reuse
+          JsonValue value = rec.get(rec.size()); // reuse
           name = e.getKey().getCopy(name);
           value = e.getValue().getCopy(value);
           rec.add(name, value);

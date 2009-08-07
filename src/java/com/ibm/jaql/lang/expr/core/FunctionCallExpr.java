@@ -165,8 +165,8 @@ public class FunctionCallExpr extends Expr
     }
     else {
       // FIXME: this is too optimistic
-      Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-//      Map<ExprProperty, Boolean> result = ExprProperty.createSafeDefaults();
+//      Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+      Map<ExprProperty, Boolean> result = ExprProperty.createSafeDefaults();
       return result;
     }
   }

@@ -18,6 +18,8 @@ package com.ibm.jaql.io.serialization.binary.def;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
@@ -65,7 +67,7 @@ class BufferedJsonRecordSerializer extends BinaryBasicSerializer<BufferedJsonRec
       values[i] = valueSerializer.read(in, values[i]);
     }
     
-    t.setInternal(names, values, arity);    
+    t.setInternal(names, values, arity, true);    
     return t;
   }
 
@@ -75,11 +77,13 @@ class BufferedJsonRecordSerializer extends BinaryBasicSerializer<BufferedJsonRec
   {
     int arity = value.size();
     BaseUtil.writeVUInt(out, arity);
-    for (int i = 0; i < arity; i++)
+    Iterator<Entry<JsonString, JsonValue>> it = value.iteratorSorted(); // write in sorted order for comparison!
+    while (it.hasNext())
     {
-      nameSerializer.write(out, value.nameOf(i));
-      valueSerializer.write(out, value.valueOf(i));
-    }    
+      Entry<JsonString, JsonValue> entry = it.next();
+      nameSerializer.write(out, entry.getKey());
+      valueSerializer.write(out, entry.getValue());
+    }
   }
   
   public int compare(DataInput in1, DataInput in2) throws IOException {

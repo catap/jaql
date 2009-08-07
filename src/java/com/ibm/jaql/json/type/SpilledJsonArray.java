@@ -380,7 +380,7 @@ public class SpilledJsonArray extends JsonArray
     boolean copied;
     if (count < cacheSize) {       // cache value
       setCache((int)count, value);
-      cacheIsMine = cacheIsMine && value!=null;
+      cacheIsMine = cacheIsMine && value==null;
       copied = false;
     } else {       // spill item
       ensureSpillFile();
@@ -445,8 +445,9 @@ public class SpilledJsonArray extends JsonArray
       setCache(i, value);
     } else {
       ensureSpillFile();
-      if (serializer.equals(spillSerializer)) {
-    	ensureSpillFile();
+      if (serializer.equals(spillSerializer)) 
+      {
+        ensureSpillFile();
         spillSerializer.copy(input, spillFile); 
       } else {
         tempValue = serializer.read(input, tempValue);

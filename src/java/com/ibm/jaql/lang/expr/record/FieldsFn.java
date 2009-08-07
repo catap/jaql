@@ -73,7 +73,7 @@ public final class FieldsFn extends IterExpr
       return JsonIterator.NULL; // TODO: should this be []?
     }
     
-    return rec.keyValueIter();
+    return JsonRecord.keyValueIter(rec.iteratorSorted());
   }
 
 }
