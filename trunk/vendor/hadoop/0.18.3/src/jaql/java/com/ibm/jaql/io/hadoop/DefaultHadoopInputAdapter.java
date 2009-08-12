@@ -108,7 +108,9 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
   public void open() throws Exception
   {
     this.conf = new JobConf();
-    Globals.setJobConf(conf);
+    if(Globals.getJobConf() != null)
+      conf.setWorkingDirectory(Globals.getJobConf().getWorkingDirectory());
+    
     this.reporter = new Reporter() {
       public void incrCounter(String arg0, String arg1, long arg2)
       {        
