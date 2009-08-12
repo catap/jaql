@@ -151,7 +151,7 @@ implements Iterable<Entry<JsonString, JsonValue>>
       h ^= JsonUtil.longHashCode(entry.getValue());
       h *= BaseUtil.GOLDEN_RATIO_64;
     }
-    return (int) (h >> 32);
+    return h >> 32;
   }
   
 
