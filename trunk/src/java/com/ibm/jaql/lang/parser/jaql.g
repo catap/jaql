@@ -1435,7 +1435,7 @@ schema returns [Schema s = null]
           s2 = schemaTerm     { alternatives.add(s2); } 
         )*
       ) {
-      	  s = OrSchema.or(alternatives);
+      	  s = OrSchema.make(alternatives);
         }
     ;
     
