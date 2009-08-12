@@ -20,6 +20,10 @@ import java.util.Map.Entry;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.MutableJsonBinary;
+import com.ibm.jaql.json.type.MutableJsonBool;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
@@ -28,6 +32,11 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.MutableJsonDate;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonDouble;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.JaqlFunction;
@@ -52,19 +61,20 @@ public class EveryType
     return new JsonIterator() {
       // These are both types and encodings
       BufferedJsonRecord rec  = new BufferedJsonRecord();
-      JsonBool         bool = new JsonBool();
-      JsonString       str  = new JsonString();
-      JsonBinary       bin  = new JsonBinary();
-      JsonDate         date = new JsonDate();
+      MutableJsonBool       bool = new MutableJsonBool();
+      MutableJsonString       str  = new MutableJsonString();
+      MutableJsonBinary       bin  = new MutableJsonBinary();
+      MutableJsonDate         date = new MutableJsonDate();
       JaqlFunction     fn   = new JaqlFunction();
 
       // These are encodings of JArray
       SpilledJsonArray   arrs = new SpilledJsonArray();
       BufferedJsonArray   arrf = new BufferedJsonArray();
 
-      // These are encodings of JNumber
-      JsonDecimal      dec  = new JsonDecimal();
-      JsonLong         lng  = new JsonLong();
+      // These are encodings of JNumberic
+      MutableJsonDecimal      dec  = new MutableJsonDecimal();
+      MutableJsonLong         lng  = new MutableJsonLong();
+      MutableJsonDouble dbl = new MutableJsonDouble();
 
       public boolean moveNext() throws Exception
       {
@@ -103,7 +113,7 @@ public class EveryType
           arrf.resize(n);
           for (int i = 0; i < n; i++)
           {
-            arrf.set(i, a.get(n - 1 - i));
+            arrf.set(i, a.getUnchecked(n - 1 - i));
           }
           currentValue = arrf;
         }
@@ -132,13 +142,13 @@ public class EveryType
         {
           // Add "hi, " before JStrings
           JsonString s = (JsonString) v;
-          str.set("hi, " + s);
+          str.setCopy("hi, " + s);
           currentValue = str;
         }
-        else if (v instanceof JsonNumber)
+        else if (v instanceof JsonNumeric)
         {
           // Set a number to the negated or floor the value (and muck with encodings)
-          JsonNumber n = (JsonNumber) v;
+          JsonNumeric n = (JsonNumeric) v;
           if (n instanceof JsonDecimal)
           {
             lng.set(n.longValue());
@@ -149,28 +159,32 @@ public class EveryType
             dec.set(-n.longValue());
             currentValue = dec;
           }
+          else if (n instanceof JsonDouble)
+          {
+            dbl.set(-n.longValue());
+            currentValue = dbl;
+          }
         }
         else if (v instanceof JsonBinary)
         {
           // Add 0xABADDEED before JBinary
           JsonBinary b = (JsonBinary) v;
-          byte[] bytes1 = b.getInternalBytes(); // Don't modify this!  v, b, bytes1 are not ours!
-          int n = b.length();
+          int n = b.bytesLength();
           bin.ensureCapacity(n + 4);
-          byte[] bytes2 = bin.getInternalBytes(); // This can be modifed because bin is ours.
+          byte[] bytes2 = bin.get(); // This can be modifed because bin is ours.
           bytes2[0] = (byte) 0xAB;
           bytes2[1] = (byte) 0xAD;
           bytes2[2] = (byte) 0xDE;
           bytes2[3] = (byte) 0xED;
-          System.arraycopy(bytes1, 0, bytes2, 4, n);
-          bin.setBytes(bytes2, n + 4);
+          b.writeBytes(0, bytes2, 4, n);
+          bin.set(bytes2, n + 4);
           currentValue = bin;
         }
         else if (v instanceof JsonDate)
         {
           // Add one hour to the date
           JsonDate d = (JsonDate) v;
-          date.setMillis(d.getMillis() + 60 * 60 * 1000);
+          date.set(d.get() + 60 * 60 * 1000);
           currentValue = date;
         }
         else if (v instanceof JaqlFunction)

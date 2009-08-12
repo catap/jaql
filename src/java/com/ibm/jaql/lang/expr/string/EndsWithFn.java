@@ -53,6 +53,6 @@ public class EndsWithFn extends Expr
       return null;
     }
     boolean rc = text.endsWith(suffix);
-    return JsonBool.makeShared(rc);
+    return JsonBool.make(rc);
   }
 }

@@ -39,10 +39,72 @@ public abstract class JsonNumeric extends JsonAtom
    * long value. Otherwise throws an {@link ArithmeticException}. */
   public abstract long longValueExact() throws ArithmeticException;
   
-  /** Returns this numeric value as 128-bit decimal floating point number. */
-  public abstract BigDecimal decimalValue();
-  
   /** If this numeric value is representable as an double value, returns it as an double value. 
    * Otherwise, returns some "close" double value. */
   public abstract double doubleValue();
+  
+  /** If this numeric value is representable as an double value, returns it as an double value. 
+   * Otherwise, throws an {@link ArithmeticException}. */
+  public abstract double doubleValueExact();
+  
+  /** If this numeric value is representable as an 128-bit decimal floating point, returns it as 
+   * an 128-bit decimal floating point value. Otherwise, returns some "close" value. */
+  public abstract BigDecimal decimalValue();
+  
+  /** If this numeric value is representable as an 128-bit decimal floating point, returns it as 
+   * an 128-bit decimal floating point value. Otherwise throws an {@link ArithmeticException}. */
+  public abstract BigDecimal decimalValueExact();
+
+
+
+  // -- comparison --------------------------------------------------------------------------------
+  
+  // longs
+  protected static final int compare(JsonLong value1, JsonLong value2)
+  {
+    long v1 = value1.get();
+    long v2 = value2.get();
+    return v1<v2 ? -1 : (v1 == v2 ? 0 : +1);
+  }
+  
+  // doubles  
+  protected static final int compare(JsonDouble value1, JsonDouble value2)
+  {
+    double v1 = value1.get();
+    double v2 = value2.get();
+    return v1<v2 ? -1 : (v1 == v2 ? 0 : +1);
+  }
+  
+  protected static final int compare(JsonLong value1, JsonDouble value2)
+  {
+    long v1 = value1.get();
+    if (Math.abs(v1) < 72057594037927936L) // =2^56; represented exactly as doube
+    {
+      double v1d = v1;
+      double v2d = value2.get();
+      return v1d < v2d ? -1 : (v1d == v2d ? 0 : +1);
+    } 
+    else
+    {
+      return value1.decimalValue().compareTo(value2.decimalValue());
+    }
+  }
+    
+  protected static final int compare(JsonDouble value1, JsonLong value2)
+  {
+    return -compare(value2, value1);
+  }
+  
+  // decimals
+  protected static final int compare(JsonDecimal value1, JsonNumeric value2)
+  {
+    BigDecimal v1 = value1.get();
+    BigDecimal v2 = value2.decimalValue();
+    return v1.compareTo(v2);
+  }
+  
+  protected static final int compare(JsonNumeric value1, JsonDecimal value2)
+  {
+    return -compare(value2, value1);
+  }
 }

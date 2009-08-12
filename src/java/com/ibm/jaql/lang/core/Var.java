@@ -22,6 +22,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -135,12 +136,12 @@ public class Var extends Object
    * Set the runtime value.
    * 
    * @param var
-   * @param value
+   * @param bytes
    */
   public void setIter(JsonIterator iter)
   {
     assert iter != null;
-    assert schema.isArray().maybe();
+    assert schema.is(ARRAY).maybe();
     value = iter;
     isDefined = true;
   }
@@ -157,7 +158,7 @@ public class Var extends Object
    */
   public void setEval(Expr expr, Context context) throws Exception
   {
-    if( usage == Usage.STREAM && expr.getSchema().isArrayOrNull().always() ) 
+    if( usage == Usage.STREAM && expr.getSchema().is(ARRAY,NULL).always() ) 
     {
       setIter(expr.iter(context));
     }

@@ -19,9 +19,4 @@ package com.ibm.jaql.json.type;
 /** Superclass for all atomic JSON values. */
 public abstract class JsonAtom extends JsonValue
 {
-  /** Returns <code>true</code>. */
-  public final boolean isAtom()
-  {
-    return true;
-  }
 }

@@ -114,17 +114,19 @@ public class CompareExpr extends Expr
     {
       return null;
     }
-    int c = JsonType.typeCompare(value1, value2);
-    if (c != 0)
+    
+    // check types (different types cannot be compared in general, numeric types are exception)
+    if (JsonType.typeCompare(value1, value2) != 0 
+        && !(value1.getType().isNumeric() && value2.getType().isNumeric()))
     {
       return null;
     }
 
     // FIXME: arrays are reporting true/false when the should return null, eg: ['5'] < [5];
     boolean b;
-    c = value1.compareTo(value2);
+    int c = value1.compareTo(value2);
 
-    if (value1.getEncoding().getType() == JsonType.RECORD)
+    if (value1.getType() == JsonType.RECORD)
     {
       // FIXME: record inside arrays are still compared, also need to fix sort
       b = (c == 0);
@@ -183,6 +185,6 @@ public class CompareExpr extends Expr
           throw new RuntimeException("should not get here!");
       }
     }
-    return JsonBool.makeShared(b);
+    return JsonBool.make(b);
   }
 }

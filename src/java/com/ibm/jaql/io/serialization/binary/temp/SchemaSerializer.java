@@ -31,12 +31,6 @@ public class SchemaSerializer extends BinaryBasicSerializer<JsonSchema>
   // -- serialization -----------------------------------------------------------------------------
 
   @Override
-  public JsonSchema newInstance()
-  {
-    return new JsonSchema();
-  }
-
-  @Override
   public JsonSchema read(DataInput in, JsonValue target) throws IOException
   {
     return serializer.read(in, target);

@@ -24,6 +24,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -65,7 +66,7 @@ public class IsnullExpr extends Expr
   {
     Expr expr = exprs[0];
     boolean b;
-    if (expr.getSchema().isArrayOrNull().always())
+    if (expr.getSchema().is(ARRAY,NULL).always())
     {
       JsonIterator iter = expr.iter(context);
       b = iter.isNull();
@@ -75,6 +76,6 @@ public class IsnullExpr extends Expr
       JsonValue value = expr.eval(context);
       b = value == null;
     }
-    return JsonBool.makeShared(b);
+    return JsonBool.make(b);
   }
 }

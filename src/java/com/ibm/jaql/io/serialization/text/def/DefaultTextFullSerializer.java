@@ -64,16 +64,16 @@ public final class DefaultTextFullSerializer extends TextFullSerializer
 //    UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
 //    UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
     serializers.put(JsonEncoding.NULL, new NullSerializer());
-    serializers.put(JsonEncoding.ARRAY_SPILLING, new JsonArraySerializer(this));
-    serializers.put(JsonEncoding.ARRAY_FIXED, new JsonArraySerializer(this));
-    serializers.put(JsonEncoding.MEMORY_RECORD, new JsonRecordSerializer(
+    serializers.put(JsonEncoding.ARRAY_SPILLED, new JsonArraySerializer(this));
+    serializers.put(JsonEncoding.ARRAY_BUFFERED, new JsonArraySerializer(this));
+    serializers.put(JsonEncoding.RECORD, new JsonRecordSerializer(
         jstringSerializer, this));
     serializers.put(JsonEncoding.BOOLEAN, new JsonBoolSerializer());
     serializers.put(JsonEncoding.STRING, jstringSerializer);
     serializers.put(JsonEncoding.BINARY, new JsonBinarySerializer());
     serializers.put(JsonEncoding.LONG, new JsonLongSerializer());
-    serializers.put(JsonEncoding.DECIMAL, new JsonDecimalSerializer());
-    serializers.put(JsonEncoding.DATE_MSEC, new JsonDateSerializer());
+    serializers.put(JsonEncoding.DECFLOAT, new JsonDecimalSerializer());
+    serializers.put(JsonEncoding.DATE, new JsonDateSerializer());
     serializers.put(JsonEncoding.FUNCTION, new JaqlFunctionSerializer());
     serializers.put(JsonEncoding.SCHEMA, new JsonSchemaSerializer());
 //    serializers.put(JsonEncoding.JAVAOBJECT_CLASSNAME, new JsonJavaObjectSerializer());

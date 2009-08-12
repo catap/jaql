@@ -16,27 +16,33 @@
 package com.ibm.jaql.json.type;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 import com.ibm.jaql.util.BaseUtil;
 
-/** A long JSON value (64-bit signed integer). */
+/** A long JSON value (64-bit signed integer). 
+ * 
+ * Instances of this class are immutable, but subclasses might add mutation functionality
+ * (in which case they have to override the {@link #getCopy(JsonValue)} method). 
+ */
 public class JsonLong extends JsonNumber
 {
   protected long value = 0;
 
   // -- construction ------------------------------------------------------------------------------
   
-  /** Constructs a new <code>JsonLong</code> having value 0. */
-  public JsonLong()
-  {
-  }
-
   /** Constructs a new <code>JsonLong</code> with the specified value. */
   public JsonLong(long value)
   {
     this.value = value;
   }
 
+  /** Copy constructs from the specified value. */
+  public JsonLong(JsonLong value)
+  {
+    this.value = value.get();
+  }
+  
   /** Constructs a new <code>JsonLong</code> from the specified value. 
    *
    * @throws NumberFormatException when <code>value</code> does not represent a valid long
@@ -47,34 +53,6 @@ public class JsonLong extends JsonNumber
     {
       // parseLong can't handle negative hex values - do we want it to?
       this.value = Long.parseLong(value.substring(2), 16);
-      //      int n = value.length();
-      //      if( n < 2 || n > 18 )
-      //      {
-      //        throw new RuntimeException("invalid hex string length");
-      //      }
-      //      long v = 0;
-      //      for(int i = 2 ; i < n ; i++)
-      //      {
-      //        v <<= 4;
-      //        char c = value.charAt(i);
-      //        if( c >= '0' || c <= '9' )
-      //        {
-      //          v += c - '0'; 
-      //        }
-      //        else if( c >= 'A' || c <= 'F' )
-      //        {
-      //          v += c - 'A'; 
-      //        }
-      //        else if( c >= 'a' || c <= 'F' )
-      //        {
-      //          v += c - 'a'; 
-      //        }
-      //        else
-      //        {
-      //          throw new RuntimeException("invalid hex string character");
-      //        }
-      //      }
-      //      this.value = v;
     }
     else
     {
@@ -82,9 +60,9 @@ public class JsonLong extends JsonNumber
     }
   }
 
-  /** Returns a {@link JsonLong} for the given value. The returned value must not be changed;
-   * is mutation is required, use one of the constructors instead. */
-  public static JsonValue makeShared(long i)
+  /** Returns an (immutable) {@link JsonLong} for the given value. Recommended for common
+   * integers because instances can be shared. */
+  public static JsonLong make(long i)
   {
     if (i == -1)
     {
@@ -118,7 +96,7 @@ public class JsonLong extends JsonNumber
     int x = (int) value;
     if (x != value)
     {
-      throw new ArithmeticException("cannot convert to int: " + value);
+      throw new ArithmeticException(this + " cannot be represented as an int");
     }
     return x;
   }
@@ -141,7 +119,14 @@ public class JsonLong extends JsonNumber
   @Override
   public BigDecimal decimalValue()
   {
-    return new BigDecimal(value);
+    return new BigDecimal(value, MathContext.DECIMAL128);
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonNumeric#decimalValueExact() */
+  @Override
+  public BigDecimal decimalValueExact()
+  {
+    return new BigDecimal(value, MathContext.DECIMAL128);
   }
 
   /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValue() */
@@ -149,6 +134,18 @@ public class JsonLong extends JsonNumber
   public double doubleValue()
   {
     return value;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValueExact() */
+  @Override
+  public double doubleValueExact()
+  {
+    double x = value;
+    if ((long)x != value)
+    {
+      throw new ArithmeticException(this + " cannot be represented as a double");
+    }
+    return x;
   }
   
   /** Returns {@link #longValue()}. */
@@ -159,34 +156,15 @@ public class JsonLong extends JsonNumber
   
   /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
-  public JsonLong getCopy(JsonValue target) throws Exception
+  public JsonLong getCopy(JsonValue target) 
   {
-    if (target == this) target = null;
-    
-    if (target instanceof JsonLong)
-    {
-      JsonLong t = (JsonLong)target;
-      t.value = this.value;
-      return t;
-    }
-    return new JsonLong(value);
+    return this;
   }
   
-
-  // -- setters -----------------------------------------------------------------------------------
-
-  /** Sets the value of this <code>JsonLong</code> to the specified value. */
-  public void set(long value)
+  @Override
+  public JsonLong getImmutableCopy() 
   {
-    this.value = value;
-  }
-  
-
-  /** Negates this JsonLong. This method does not produce meaningful results when it represents
-   * {@link Long#MAX_VALUE}. */
-  public void negate()
-  {
-    value = -value;
+    return this;
   }
 
   // -- comparison/hashing ------------------------------------------------------------------------
@@ -195,19 +173,18 @@ public class JsonLong extends JsonNumber
   @Override
   public int compareTo(Object x)
   {
-    //    int c = Util.typeCompare(this, (Writable)x);
-    //    if( c != 0 )
-    //    {
-    //      return c;
-    //    }
-    if (x instanceof JsonLong)
+    JsonNumeric other = (JsonNumeric)x;
+    JsonType otherType = other.getEncoding().getType();
+    switch (otherType)
     {
-      JsonLong y = (JsonLong) x;
-      return this.value < y.value ? -1 : ((this.value > y.value) ? +1 : 0);
-    }
-    else
-    {
-      return -((JsonDecimal) x).compareTo(this);
+    case LONG:
+      return compare(this, (JsonLong)other);
+    case DOUBLE:
+      return compare(this, (JsonDouble)other);
+    case DECFLOAT:
+      return compare(this, (JsonDecimal)other);
+    default:
+      throw new IllegalStateException("unknown numeric type " + otherType);
     }
   }
 

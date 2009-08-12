@@ -80,7 +80,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     // 2. instantiate and initialize all StorableInputAdapters
     for (int i = 0; i < numAdapters; i++)
     {
-      JsonValue value = this.args.nth(i);
+      JsonValue value = this.args.get(i);
       // adapters[i] = AdapterStore.getInputAdapter((JRecord) item.getNonNull(),
       // item);
       adapters[i] = (HadoopInputAdapter) AdapterStore.getStore().input
@@ -157,7 +157,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     {
       inSchemata[i] = adapters[i].getSchema();
     }
-    return OrSchema.or(inSchemata);
+    return OrSchema.make(inSchemata);
   }
 
   /*
@@ -179,7 +179,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     try
     {
       // 2. get the ith adapter's args record
-      JsonValue value = this.args.nth(idx);
+      JsonValue value = this.args.get(idx);
       // JRecord baseArgs = (JRecord) item.getNonNull();
       // record the current index to the job conf
       // ASSUMES: in map/reduce, the format's record reader is called *before*

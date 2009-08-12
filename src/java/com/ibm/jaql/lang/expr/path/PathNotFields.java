@@ -131,7 +131,7 @@ public class PathNotFields extends PathFields
               unresolved ? true : field.isOptional())); // unresolved fields might match this field
         }
       }
-      Schema rest = ((RecordSchema)inputSchema).getRest();
+      Schema rest = ((RecordSchema)inputSchema).getAdditionalSchema();
       return new PathStepSchema(new RecordSchema(fields, rest) , Bool3.TRUE);
     }
     return new PathStepSchema(SchemaFactory.recordSchema(), Bool3.TRUE);

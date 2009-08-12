@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.schema.NonNullSchema;
 import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.SchemaType;
 import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.schema.BooleanSchema;
@@ -34,12 +35,12 @@ import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.RangeSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.Schema.SchemaType;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
@@ -119,7 +120,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeArray(PrintStream out, ArraySchema schema, int indent) throws IOException
   {
     // handle empty arrays
-    if (schema.isEmpty())
+    if (schema.isEmpty(JsonType.ARRAY).always())
     {
       out.print("[]");
       return;
@@ -131,8 +132,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     String sep="";
     
     // print head
-    Schema[] head = schema.getHeadSchemata();
-    for (Schema s : head)
+    for (Schema s : schema.getHeadSchemata())
     {
       out.println(sep);
       sep=",";
@@ -227,7 +227,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   
   private static void writeGeneric(PrintStream out, GenericSchema schema, int indent) throws IOException
   {
-    out.print(schema.getType().name);
+    out.print(schema.getType().toString());
   }
   
   private static void writeLong(PrintStream out, LongSchema schema, int indent) throws IOException
@@ -243,14 +243,12 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
 
   private static void writeOr(PrintStream out, OrSchema schema, int indent) throws IOException
   {
-    Schema[] schemata = schema.getInternal();
-
     // handle nulls
     boolean matchesNull = false;
     boolean matchesNonNull = false;
     String separator = "";
     int n = 0;
-    for (Schema s : schemata)
+    for (Schema s : schema.get())
     {
       if (s.getSchemaType() == SchemaType.NULL)
       {
@@ -292,7 +290,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeRecord(PrintStream out, RecordSchema schema, int indent) throws IOException
   {
     // handle empty fields
-    if (schema.isEmpty())
+    if (schema.isEmpty(JsonType.RECORD).always())
     {
       out.print("{}");
       return;
@@ -324,7 +322,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     }
     
     // print rest
-    Schema rest = schema.getRest();
+    Schema rest = schema.getAdditionalSchema();
     if (rest != null)
     {
       out.println(sep);

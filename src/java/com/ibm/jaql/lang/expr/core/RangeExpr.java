@@ -21,6 +21,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 
@@ -107,10 +108,10 @@ public class RangeExpr extends IterExpr
     final long start = v1.longValueExact();
     final long end = v2.longValueExact();
 
-    return new JsonIterator(new JsonLong(start - 1)) {
+    return new JsonIterator(new MutableJsonLong(start - 1)) {
       public boolean moveNext()
       {
-        JsonLong num = (JsonLong)currentValue;
+        MutableJsonLong num = (MutableJsonLong)currentValue;
         if (num.get() + 1 <= end)
         {
           num.set(num.get()+1);

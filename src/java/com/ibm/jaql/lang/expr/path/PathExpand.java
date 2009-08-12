@@ -30,7 +30,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
-
+import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * 
  *  Given ctx[]path
@@ -136,7 +136,7 @@ public class PathExpand extends PathArray
   public PathStepSchema getSchema(Schema inputSchema)
   {
     // expand input arrays and remove nulls
-    boolean mayReturnEmpty = inputSchema.isEmptyArrayOrNull().maybe();
+    boolean mayReturnEmpty = inputSchema.isEmpty(ARRAY,NULL).maybe();
     Schema nextInput = SchemaTransformation.expandArrays(inputSchema);
     if (nextInput != null)
     {
@@ -151,7 +151,7 @@ public class PathExpand extends PathArray
       if (next.hasData.maybe())
       {
         mayReturnEmpty = mayReturnEmpty || next.hasData.maybeNot() 
-            || next.schema.isEmptyArrayOrNull().maybe();
+            || next.schema.isEmpty(ARRAY,NULL).maybe();
         nextResult = SchemaTransformation.removeNullability(next.schema);
         if (nextResult != null)
         {

@@ -22,25 +22,19 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.util.BaseUtil;
 
 class JsonLongSerializer extends BinaryBasicSerializer<JsonLong>
 {
-
-  @Override
-  public JsonLong newInstance()
-  {
-    return new JsonLong();
-  }
-
   @Override
   public JsonLong read(DataInput in, JsonValue target) throws IOException
   {
     long value = BaseUtil.readVSLong(in); 
-    if (target == null || !(target instanceof JsonLong)) {
-      return new JsonLong(value);
+    if (target == null || !(target instanceof MutableJsonLong)) {
+      return new MutableJsonLong(value);
     } else {
-      JsonLong t = (JsonLong)target;
+      MutableJsonLong t = (MutableJsonLong)target;
       t.set(value);
       return t;
     }

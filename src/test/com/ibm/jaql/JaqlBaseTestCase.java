@@ -49,6 +49,7 @@ import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.TeeInputStream;
 import com.ibm.jaql.util.UtilForTest;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -242,7 +243,7 @@ public abstract class JaqlBaseTestCase extends TestCase
     try
     {
       Schema schema = expr.getSchema();
-      if (schema.isArrayOrNull().always())
+      if (schema.is(ARRAY,NULL).always())
       {
 //        JsonIterator iter = expr.iter(context);
 //        iter.print(str);

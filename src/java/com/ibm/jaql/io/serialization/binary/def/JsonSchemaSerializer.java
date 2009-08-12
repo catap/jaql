@@ -26,6 +26,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonSchema;
 
 /** Binary serializer a Json schema. */ 
 // TODO: The current implementation simply makes use of the text representation of the schema.
@@ -33,20 +34,14 @@ import com.ibm.jaql.json.type.JsonValue;
 class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema> 
 {
   @Override
-  public JsonSchema newInstance()
-  {
-    return new JsonSchema();
-  }
-
-  @Override
   public JsonSchema read(DataInput in, JsonValue target) throws IOException
   {
     String s = in.readUTF();
     Schema schema = SchemaFactory.parse(s);
-    if (target == null || !(target instanceof JsonSchema)) {
-      return new JsonSchema(schema);
+    if (target == null || !(target instanceof MutableJsonSchema)) {
+      return new MutableJsonSchema(schema);
     } else {
-      JsonSchema t = (JsonSchema)target;
+      MutableJsonSchema t = (MutableJsonSchema)target;
       t.set(schema);
       return t;
     }

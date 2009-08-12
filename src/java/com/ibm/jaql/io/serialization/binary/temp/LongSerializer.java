@@ -22,11 +22,12 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.LongSchema;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.util.BaseUtil;
 
-class LongSerializer extends BinaryBasicSerializer<JsonNumber>
+class LongSerializer extends BinaryBasicSerializer<JsonNumeric>
 {
   private LongSchema schema;
   private long offset;
@@ -49,22 +50,16 @@ class LongSerializer extends BinaryBasicSerializer<JsonNumber>
   // -- serialization -----------------------------------------------------------------------------
 
   @Override
-  public JsonLong newInstance()
-  {
-    return new JsonLong();
-  }
-
-  @Override
   public JsonLong read(DataInput in, JsonValue target) throws IOException
   {
     // get value
     long value =readValue(in);
     
     // return result
-    if (target == null || !(target instanceof JsonLong)) {
-      return new JsonLong(value);
+    if (target == null || !(target instanceof MutableJsonLong)) {
+      return new MutableJsonLong(value);
     } else {
-      JsonLong t = (JsonLong)target;
+      MutableJsonLong t = (MutableJsonLong)target;
       t.set(value);
       return t;
     }
@@ -72,7 +67,7 @@ class LongSerializer extends BinaryBasicSerializer<JsonNumber>
 
 
   @Override
-  public void write(DataOutput out, JsonNumber value) throws IOException
+  public void write(DataOutput out, JsonNumeric value) throws IOException
   {
     // check match
     if (!schema.matches(value))
@@ -87,7 +82,7 @@ class LongSerializer extends BinaryBasicSerializer<JsonNumber>
     }
     
     // write
-    BaseUtil.writeVSLong(out, value.longValueExact()-offset);
+    BaseUtil.writeVSLong(out, value.longValue()-offset);
   }
   
   private long readValue(DataInput in) throws IOException

@@ -31,6 +31,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /** [?] retains nulls */
 public class PathToArray extends PathArray
@@ -105,7 +106,7 @@ public class PathToArray extends PathArray
   public PathStepSchema getSchema(Schema inputSchema)
   {
     Schema s = SchemaTransformation.wrapIntoArrayOrNull(inputSchema);
-    boolean inputMaybeNull =  s.isNull().maybe();
+    boolean inputMaybeNull =  s.is(NULL).maybe();
     s = SchemaTransformation.removeNullability(s);
     if (s == null)
     {

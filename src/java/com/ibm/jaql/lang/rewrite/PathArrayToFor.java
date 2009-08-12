@@ -34,7 +34,7 @@ import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.lang.expr.path.PathToArray;
-
+import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * e [*] p ==> for( $i in         e  ) [ $i p ]
  * e [?] p ==> for( $i in toArray(e) ) [ $i p ]
@@ -76,7 +76,7 @@ public class PathArrayToFor extends Rewrite
         expr instanceof PathToArray ||
         expr instanceof PathExpand )
     {
-      if( ! outerSchema.isArrayOrNull().always() &&
+      if( ! outerSchema.is(ARRAY,NULL).always() &&
           ( expr instanceof PathToArray ||
             expr instanceof PathExpand ) )
       {
@@ -93,7 +93,7 @@ public class PathArrayToFor extends Rewrite
       {
         inner = new ArrayExpr(inner);
       }
-      else if( ! nextStep.getSchema().isArrayOrNull().always() )
+      else if( ! nextStep.getSchema().is(ARRAY,NULL).always() )
       {
         assert expr instanceof PathExpand;
         inner = new ToArrayFn(inner);

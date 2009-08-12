@@ -155,7 +155,7 @@ public class PathRecord extends PathStep
             {
               fields.add(field);
             }
-            rest = rest==null ? innerSchema.getRest() : SchemaTransformation.merge(rest, innerSchema.getRest());
+            rest = rest==null ? innerSchema.getAdditionalSchema() : SchemaTransformation.merge(rest, innerSchema.getAdditionalSchema());
           }
           else
           {

@@ -26,6 +26,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /*
  * 
@@ -121,7 +122,7 @@ public final class ForExpr extends IterExpr // TODO: rename
   public Schema getSchema()
   {
     Schema in = binding().getSchema(); // binds variable for collect
-    if (in.isEmptyArrayOrNull().always())
+    if (in.isEmpty(ARRAY,NULL).always())
     {
       return SchemaFactory.emptyArraySchema();
     }
@@ -138,7 +139,7 @@ public final class ForExpr extends IterExpr // TODO: rename
     Schema out = SchemaTransformation.restrictToArray(collectSchema);
     if (out == null)
     {
-      if (collectSchema.isNull().maybe()) 
+      if (collectSchema.is(NULL).maybe()) 
       {
         // input is null or non-array (the latter case would produce a runtime error)
         return SchemaFactory.emptyArraySchema();
@@ -147,7 +148,7 @@ public final class ForExpr extends IterExpr // TODO: rename
       throw new IllegalArgumentException("for expects arrays as input");
     }
 
-    if (out.isEmptyArray().always()) return SchemaFactory.emptyArraySchema();
+    if (out.isEmpty(ARRAY).always()) return SchemaFactory.emptyArraySchema();
     return new ArraySchema(out.elements(), null, null);
   }
 

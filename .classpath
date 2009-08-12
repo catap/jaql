@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/java"/>
+	<classpathentry kind="src" path="vendor/hbase/0.18.1/src/jaql/test"/>
 	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/test"/>
 	<classpathentry kind="src" path="vendor/hadoop/0.18.3/src/jaql/java"/>
 	<classpathentry kind="src" path="vendor/hbase/0.18.1/src/jaql/java"/>

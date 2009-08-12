@@ -77,6 +77,7 @@ public class SpilledJsonArray extends JsonArray
   // static variables 
   private static final JsonValue[] EMPTY_CACHE = new JsonValue[0];
 
+  
   // -- constructors -----------------------------------------------------------------------------
 
   /** Creates a new <code>SpillJArray</code> that stores its data in the provided 
@@ -170,19 +171,8 @@ public class SpilledJsonArray extends JsonArray
     spillFile.writeToOutput(out); 
   }
   
-  // -- business methods -------------------------------------------------------------------------
+  // -- getters ----------------------------------------------------------------------------------
   
-  /** Returns {@link JsonEncoding#ARRAY_SPILLING}.
-   * 
-   * @returns <code></code>Item.Encoding#ARRAY_SPILLING</code>
-   * @see com.ibm.jaql.json.type.JsonValue#getEncoding() 
-   */
-  @Override
-  public JsonEncoding getEncoding()
-  {
-    return JsonEncoding.ARRAY_SPILLING;
-  }
-
   /* @see com.ibm.jaql.json.type.JArray#count() */
   @Override
   public final long count()
@@ -247,7 +237,7 @@ public class SpilledJsonArray extends JsonArray
    * @throws Exception
    */
   @Override
-  public JsonValue nth(long n) throws Exception 
+  public JsonValue get(long n) throws Exception 
   {
     if (n<0 || n>=count()) {
       return null;
@@ -292,25 +282,7 @@ public class SpilledJsonArray extends JsonArray
       i++;
     }
   }
-
-  //-- manipulation -----------------------------------------------------------------------------
   
-  /** Copies all the elements provided by the specified iterator into this array, then freezes it. 
-   * Clears the array before doing so.
-   * 
-   * @param iter an iterator
-   * @throws Exception
-   */
-  public void setCopy(JsonIterator iter) throws Exception
-  {
-    clear();
-    for (JsonValue value : iter) 
-    {
-      addCopy(value);
-    }
-    freeze();
-  }
-
   @SuppressWarnings("static-access")
   @Override
   public SpilledJsonArray getCopy(JsonValue target) throws Exception
@@ -351,24 +323,27 @@ public class SpilledJsonArray extends JsonArray
     return t;
   }
   
-  /** Clears this array. New elements can be added using {@link #addCopy(Item)} or 
-   * {@link #addCopySerialized(byte[], int, int)}. Before reading the data, {@link #freeze()} has to
-   * be called.
-   * 
-   * @throws IOException
-   */
-  public void clear() throws IOException
+  @Override
+  public SpilledJsonArray getImmutableCopy() throws Exception
   {
-    if (!cacheIsMine) {
-      Arrays.fill(cache, null);
-      cacheIsMine = true;
-    }
-    if (hasSpillFile()) {
-      spillFile.clear();
-    }    
-    count = 0;
+    // FIXME: copy is not immutable
+    return getCopy(null);
+  }
+  
+  /** Returns {@link JsonEncoding#ARRAY_SPILLED}.
+   * 
+   * @returns <code></code>Item.Encoding#ARRAY_SPILLING</code>
+   * @see com.ibm.jaql.json.type.JsonValue#getEncoding() 
+   */
+  @Override
+  public JsonEncoding getEncoding()
+  {
+    return JsonEncoding.ARRAY_SPILLED;
   }
 
+
+  //-- mutation ---------------------------------------------------------------------------------
+  
   /** Appends either <code>value</code> or a copy thereof to this array. 
    * 
    * @param value a value
@@ -391,7 +366,6 @@ public class SpilledJsonArray extends JsonArray
     count++;
     return copied;
   }
-  
   
   /** Appends a copy of <code>value</code> to this array.
    * 
@@ -495,6 +469,39 @@ public class SpilledJsonArray extends JsonArray
     }
   }
 
+  /** Copies all the elements provided by the specified iterator into this array, then freezes it. 
+   * Clears the array before doing so.
+   * 
+   * @param iter an iterator
+   * @throws Exception
+   */
+  public void setCopy(JsonIterator iter) throws Exception
+  {
+    clear();
+    for (JsonValue value : iter) 
+    {
+      addCopy(value);
+    }
+    freeze();
+  }
+  
+  /** Clears this array. New elements can be added using {@link #addCopy(Item)} or 
+   * {@link #addCopySerialized(byte[], int, int)}. Before reading the data, {@link #freeze()} has to
+   * be called.
+   * 
+   * @throws IOException
+   */
+  public void clear() throws IOException
+  {
+    if (!cacheIsMine) {
+      Arrays.fill(cache, null);
+      cacheIsMine = true;
+    }
+    if (hasSpillFile()) {
+      spillFile.clear();
+    }    
+    count = 0;
+  }
 
   /** Freezes this array. This function should be called after the array has been constructed and
    * before it is read. After calling this function, no further adds but can be performed. However,
@@ -528,5 +535,4 @@ public class SpilledJsonArray extends JsonArray
       throw new UndeclaredThrowableException(e);
     }
   }
-
 }

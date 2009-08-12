@@ -19,14 +19,16 @@ import java.util.List;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema for an array. Has individual schemata for the first k elements and a single schema 
  * for the remaining elements, if any. */
-public class ArraySchema extends Schema
+public final class ArraySchema extends Schema
 {
   // If minRest == maxRest then this is a fixed-length array (head length + rest count)
   // If head == {} and minCount == maxCount == 0, then this is an empty array
@@ -54,12 +56,13 @@ public class ArraySchema extends Schema
     }
     
     // init
-    this.head = head;
+    this.head = new Schema[head.length];
+    System.arraycopy(head, 0, this.head, 0, head.length);
     this.rest = rest;
     if (rest != null)
     {
-      this.minRest = minRest == null ? JsonLong.ZERO : minRest;
-      this.maxRest = maxRest;
+      this.minRest = minRest == null ? JsonLong.ZERO : minRest.getImmutableCopy();
+      this.maxRest = maxRest == null ? null : maxRest.getImmutableCopy();
     }
     
     // move rest to head if occuring precisely once
@@ -108,12 +111,6 @@ public class ArraySchema extends Schema
   }
   
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     boolean result = true;
@@ -130,14 +127,7 @@ public class ArraySchema extends Schema
     return result && rest.isConstant();
   }
 
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.TRUE;
-  }
-
-  @Override
-  public Bool3 isEmptyArrayOrNull()
+  public Bool3 isEmpty()
   {
     if ( head.length==0 )
     {
@@ -153,7 +143,13 @@ public class ArraySchema extends Schema
     else
     {
       return Bool3.FALSE;
-    }    
+    } 
+  }
+  
+  @Override
+  public Bool3 isEmpty(JsonType type, JsonType ... types)
+  {
+    return is(type, types).and(isEmpty());
   }
   
   @SuppressWarnings("unchecked")
@@ -217,9 +213,9 @@ public class ArraySchema extends Schema
   
   // -- getters -----------------------------------------------------------------------------------
   
-  public Schema[] getHeadSchemata()
+  public List<Schema> getHeadSchemata()
   {
-    return head;
+    return JaqlUtil.toUnmodifiableList(head);
   }
   
   public Schema getRestSchema()
@@ -230,11 +226,6 @@ public class ArraySchema extends Schema
   public boolean hasRest() 
   {
     return rest != null && (maxRest == null || maxRest.get() > 0);    
-  }
-  
-  public boolean isEmpty()
-  {
-    return head.length == 0 && !hasRest();
   }
   
   public JsonLong getMinRest() 
@@ -257,8 +248,8 @@ public class ArraySchema extends Schema
       ArraySchema o = (ArraySchema)other;
       
       // keep empty arrays separate
-      if ((other.isEmptyArray().always() && this.isEmptyArray().never()) ||
-          (this.isEmptyArray().always() && other.isEmptyArray().never()))
+      if ((o.isEmpty().always() && this.isEmpty().never()) ||
+          (this.isEmpty().always() && o.isEmpty().never()))
       {
         return null; 
       }

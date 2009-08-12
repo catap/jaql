@@ -33,10 +33,10 @@ import org.apache.lucene.search.Scorer;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -107,7 +107,7 @@ public class ProbeLuceneFn extends IterExpr
     final Scorer scorer = query.weight(searcher).scorer(searcher.getIndexReader());
     final BufferedJsonRecord rec = new BufferedJsonRecord();
     final JsonString jdoc = new JsonString("doc");
-    final JsonLong jdocid = new JsonLong();
+    final MutableJsonLong jdocid = new MutableJsonLong();
     
     return new JsonIterator(rec)
     {

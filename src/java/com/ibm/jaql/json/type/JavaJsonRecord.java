@@ -138,6 +138,13 @@ public class JavaJsonRecord extends JsonRecord
     return t;  
   }
   
+  @Override
+  public JsonRecord getImmutableCopy() throws Exception
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
+  }
+
   /*
    * (non-Javadoc)
    * 

@@ -56,9 +56,9 @@ false instanceof $x;
 $x = schema long;
 $x;
 1 instanceof $x;
-1.0 instanceof $x;
+1m instanceof $x;
+1d instanceof $x;
 1.1 instanceof $x; // incompatible
-1d instanceof $x;  // incompatible
 "a" instanceof $x; // incompatible
 
 $x = schema long(5);
@@ -93,8 +93,8 @@ $x;
 schema long(max=9223372036854775808); // must fail: too large argument
 schema long(min=-9223372036854775809); // must fail: too large argument
 schema long(5,3); // must fail: invalid interval
-schema long(5d); // must fail: invalid argument
-schema long(5.0); // should be ok
+schema long(5d); // should be ok
+schema long(5m); // should be ok
 schema long(5.1); // must fail: invalid argument
 schema long(5, value=4); // must fail: invalid argument
 
@@ -104,9 +104,10 @@ schema long(5, value=4); // must fail: invalid argument
 $x = schema double;
 $x;
 1d instanceof $x;
-1 instanceof $x;   // incompatible
-1.0 instanceof $x; // incompatible
-1.1 instanceof $x; // incompatible
+1 instanceof $x;
+1.1 instanceof $x;
+1.5m instanceof $x;
+1.1m instanceof $x; // incompatible
 "a" instanceof $x; // incompatible
 
 $x = schema double(5d);
@@ -136,9 +137,9 @@ $x;
 5.001d instanceof $x;  // incompatible
 
 schema double(5d,3d); // must fail: invalid interval
-schema double(5); // must fail: invalid argument
-schema double(5.0); // must fail: invalid argument
-schema double(5.1); // must fail: invalid argument
+schema double(5);     // should be ok
+schema double(5.0);  // should be ok
+schema double(5.1m); // must fail: invalid argument
 schema double(5d, value=4d); // must fail: invalid argument
 
 // -- parsing and matching: decfloat --------------------------------------------------------------
@@ -146,40 +147,40 @@ schema double(5d, value=4d); // must fail: invalid argument
 $x = schema decfloat;
 $x;
 1 instanceof $x;   
-1.1 instanceof $x;
-1d instanceof $x; // incompatible
+1.1d instanceof $x;
+1.1m instanceof $x;
 "a" instanceof $x; // incompatible
 
 $x = schema decfloat(5);
 $x;
 4 instanceof $x;  // incompatible
 5 instanceof $x;
-5.001 instanceof $x;
+5.001m instanceof $x;
 
 $x = schema decfloat(max=5);
 $x;
 4 instanceof $x;  
 5 instanceof $x;
-5.001 instanceof $x; // incompatible
+5.001m instanceof $x; // incompatible
 
 $x = schema decfloat(-1,1);
 $x;
--1.001 instanceof $x; // incompatible
+-1.001m instanceof $x; // incompatible
 -1 instanceof $x;
 0 instanceof $x;
 1 instanceof $x;
-1.001 instanceof $x; // incompatible
+1.001m instanceof $x; // incompatible
 
 $x = schema decfloat(value=5);
 $x;
-4.999 instanceof $x;  // incompatible
-5 instanceof $x;
-5.001 instanceof $x;  // incompatible
+4.999m instanceof $x;  // incompatible
+5m instanceof $x;
+5.001m instanceof $x;  // incompatible
 
 // TODO: uncomment next line when parser is fixed to accept big decimals
 // schema decfloat(-9223372036854775809, 9223372036854775808); // should work (outside long range)
 schema decfloat(5,3); // must fail: invalid interval
-schema decfloat(5d); // must fail: invalid argument
+schema decfloat(5d); // should be ok
 schema decfloat(5, value=4d); // must fail: invalid argument
 
 

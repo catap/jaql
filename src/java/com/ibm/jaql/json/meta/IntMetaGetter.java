@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 
 /**
  * 
@@ -45,9 +45,9 @@ public final class IntMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonLong makeValue()
+  public MutableJsonLong makeValue()
   {
-    return new JsonLong();
+    return new MutableJsonLong();
   }
 
   /*
@@ -61,7 +61,7 @@ public final class IntMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     int x = (Integer) getter.invoke(obj);
-    ((JsonLong) target).set(x);
+    ((MutableJsonLong) target).set(x);
     return target;
   }
 

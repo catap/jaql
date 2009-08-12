@@ -32,6 +32,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /** Superclass for all JAQL expressions.
  * 
@@ -100,7 +101,7 @@ public abstract class Expr
     int i = 0;
     String end = "";
     if( exprs.length > 0 && 
-        exprs[0].getSchema().isArray().always() ) // TODO: this should be if this function expects an array
+        exprs[0].getSchema().is(ARRAY).always() ) // TODO: this should be if this function expects an array
     {
       exprText.print("( ");
       exprs[0].decompile(exprText, capturedVars);

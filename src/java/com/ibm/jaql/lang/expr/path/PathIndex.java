@@ -95,7 +95,7 @@ public class PathIndex extends PathStep
     {
       return null;
     }
-    JsonValue value = arr.nth(index.longValueExact());
+    JsonValue value = arr.get(index.longValueExact());
     return nextStep(context, value);
   }
   

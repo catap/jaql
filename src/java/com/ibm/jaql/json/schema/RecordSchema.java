@@ -15,44 +15,47 @@
  */
 package com.ibm.jaql.json.schema;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema for a JSON record */
-public class RecordSchema extends Schema
+public final class RecordSchema extends Schema
 {
-  protected Field[] fields; // never null
-  protected Schema  rest; // Null if record is "closed"
+  protected final Field[] fields;     // required/optional fields, never null
+  protected final Schema  additional; // additional fields; null if record is "closed"
 
   
   // -- inner classes -----------------------------------------------------------------------------
   
-  /** Describes the field of a record */
+  /** Describes the field of a record. Immutable. */
   public static class Field implements Comparable<Field>
   {
-    protected JsonString  name;
-    protected Schema      schema;
-    protected boolean     isOptional;
+    protected final JsonString  name;
+    protected final Schema      schema;
+    protected final boolean     isOptional;
 
     public Field(JsonString name, Schema schema, boolean isOptional)
     {
       JaqlUtil.enforceNonNull(name);
       JaqlUtil.enforceNonNull(schema);
       
-      this.name = new JsonString(name);
+      this.name = name.getImmutableCopy();
       this.isOptional = isOptional;
       this.schema = schema;
     }
@@ -121,7 +124,7 @@ public class RecordSchema extends Schema
   /**
    * rest==null is closed
    */
-  public RecordSchema(Field[] fields, Schema rest)
+  public RecordSchema(Field[] fields, Schema additional)
   {
     // check
     if (fields == null) fields = new Field[0];
@@ -131,13 +134,14 @@ public class RecordSchema extends Schema
     Arrays.sort(fields, FIELD_BY_NAME_COMPARATOR);
     
     // set
-    this.fields = fields;
-    this.rest = rest;
+    this.fields = new Field[fields.length];
+    System.arraycopy(fields, 0, this.fields, 0, fields.length);
+    this.additional = additional;
   }
   
-  public RecordSchema(List<Field> fields, Schema rest)
+  public RecordSchema(List<Field> fields, Schema additional)
   {
-    this(fields.toArray(new Field[fields.size()]), rest);
+    this(fields.toArray(new Field[fields.size()]), additional);
   }
   
   /** Matches any record */
@@ -149,7 +153,7 @@ public class RecordSchema extends Schema
   /** Checks whether all fields are valid. If not, throws an exception */
   private void checkFields(Field[] fields)
   {
-    Set<JsonString> names = new TreeSet<JsonString>();
+    Set<JsonString> names = new HashSet<JsonString>();
     for (Field f : fields)
     {
       if (names.contains(f.getName()))
@@ -169,28 +173,26 @@ public class RecordSchema extends Schema
     return SchemaType.RECORD;
   }
 
-  @Override
-  public Bool3 isNull()
+  public Bool3 isEmpty()
   {
-    return Bool3.FALSE;
-  }
-
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
+    Bool3 isEmpty = Bool3.FALSE;
+    if (fields.length == 0)
+    {
+      isEmpty = additional==null ? Bool3.TRUE : Bool3.UNKNOWN;
+    }
+    return isEmpty;
   }
   
   @Override
-  public Bool3 isEmptyArrayOrNull()
+  public Bool3 isEmpty(JsonType type, JsonType ... types)
   {
-    return Bool3.FALSE;
+    return is(type, types).and(isEmpty());
   }
-
+  
   @Override
   public boolean isConstant()
   {
-    if (rest != null) {
+    if (additional != null) {
       return false;
     }
     for (Field f : fields)
@@ -263,7 +265,7 @@ public class RecordSchema extends Schema
       else
       {
         // field is not in schema but in record
-        if (rest == null || !rest.matches(recEntry.getValue()))
+        if (additional == null || !additional.matches(recEntry.getValue()))
         {
           return false;
         }
@@ -280,7 +282,7 @@ public class RecordSchema extends Schema
     while (pr < nr)
     {
       // there are fields left in the record
-      if (rest == null || !rest.matches(recEntry.getValue()))
+      if (additional == null || !additional.matches(recEntry.getValue()))
       {
         return false;
       }
@@ -309,22 +311,9 @@ public class RecordSchema extends Schema
   
   // -- getters -----------------------------------------------------------------------------------
 
-  public Field[] getFields()
+  public Field getField(int index)
   {
-    return fields;
-  }
-
-  /**
-   * @return The schema for unnamed fields.
-   */
-  public Schema getRest()
-  {
-    return rest;
-  }
-
-  public boolean isEmpty()
-  {
-    return fields.length==0 && rest==null;
+    return fields[index];
   }
 
   public Field getField(JsonString name)
@@ -336,9 +325,27 @@ public class RecordSchema extends Schema
     }
     return null;
   }
-  
+
+  /** Returns a list of required and optional fields sorted by name */
+  public List<Field> getFields()
+  {
+    List<Field> result = new ArrayList<Field>(fields.length);
+    for (Field field : fields)
+    {
+      result.add(field);
+    }
+    return Collections.unmodifiableList(result); // to make clear that modifcations won't work
+  }
+
+  /** Returns the schema for additional fields or null if there are no additional fields. */
+  public Schema getAdditionalSchema()
+  {
+    return additional;
+  }
+
+
   /** Returns the number of required fields */
-  public int noRequiredFields()
+  public int noRequired()
   {
     int n = 0;
     for (Field field : fields)
@@ -349,7 +356,7 @@ public class RecordSchema extends Schema
   }
 
   /** Returns the number of optional fields (not counting the wildcard) */
-  public int noOptionalFields()
+  public int noOptional()
   {
     int n = 0;
     for (Field field : fields)
@@ -358,7 +365,20 @@ public class RecordSchema extends Schema
     }
     return n;
   }
+  
+  /** Returns the number of required or optional fields (not counting the wildcard) */
+  public int noRequiredOrOptional()
+  {
+    return fields.length;
+  }
 
+  /** Checks whether there is a wildcard. */
+  public boolean hasAdditional()
+  {
+    return additional != null;
+  }
+
+  
   @Override
   // -- merge -------------------------------------------------------------------------------------
 
@@ -424,20 +444,20 @@ public class RecordSchema extends Schema
       
       // deal with rest
       Schema newRest = null;
-      if (this.rest != null)
+      if (this.additional != null)
       {
-        if (o.rest != null) 
+        if (o.additional != null) 
         {
-          newRest = SchemaTransformation.merge(this.rest, o.rest);
+          newRest = SchemaTransformation.merge(this.additional, o.additional);
         }
         else
         {
-          newRest = rest;
+          newRest = additional;
         }
       }
-      else if (o.rest != null)
+      else if (o.additional != null)
       {
-        newRest = o.rest;
+        newRest = o.additional;
       }
 
       // done
@@ -462,15 +482,15 @@ public class RecordSchema extends Schema
         result = SchemaTransformation.merge(result, s);
       }
     }
-    if (rest != null)
+    if (additional != null)
     {
       if (result == null)
       {
-        result = rest;
+        result = additional;
       }
       else
       {
-        result = SchemaTransformation.merge(result, rest);
+        result = SchemaTransformation.merge(result, additional);
       }
     }
     return result; 
@@ -486,7 +506,7 @@ public class RecordSchema extends Schema
       Field field = getField((JsonString)which);
       if (field==null)
       {
-        return rest==null ? Bool3.FALSE : Bool3.UNKNOWN;
+        return additional==null ? Bool3.FALSE : Bool3.UNKNOWN;
       }
       else
       {
@@ -504,7 +524,7 @@ public class RecordSchema extends Schema
       Field field = getField((JsonString)which);
       if (field == null)
       {
-        return rest;
+        return additional;
       }
       else
       {
@@ -531,7 +551,7 @@ public class RecordSchema extends Schema
   @Override
   public JsonLong maxElements()
   {
-    if (rest != null) 
+    if (additional != null) 
     {
       return null;
     }
@@ -552,7 +572,7 @@ public class RecordSchema extends Schema
     RecordSchema o = (RecordSchema)other;
     c = SchemaUtil.arrayCompare(this.fields, o.fields);
     if (c != 0) return c;
-    c = SchemaUtil.compare(this.rest, o.rest);
+    c = SchemaUtil.compare(this.additional, o.additional);
     if (c != 0) return c;
     
     return 0;

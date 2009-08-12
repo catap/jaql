@@ -20,7 +20,6 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -48,13 +47,13 @@ public class RegexFn extends Expr
     {
       return null;
     }
-    JsonString flags = JaqlUtil.emptyString;
+    JsonString flags = JsonString.EMPTY;
     if (exprs.length == 2)
     {
       flags = (JsonString) exprs[1].eval(context);
       if (flags == null)
       {
-        flags = JaqlUtil.emptyString;
+        flags = JsonString.EMPTY;
       }
     }
     return new JsonRegex(regex, flags); // TODO: memory!

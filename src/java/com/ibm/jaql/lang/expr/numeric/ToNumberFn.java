@@ -19,12 +19,13 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 
 import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -35,8 +36,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "number", minArgs = 1, maxArgs = 1)
 public class ToNumberFn extends Expr
 {
-  protected JsonLong jlong = new JsonLong();
-  protected JsonDecimal jdec = new JsonDecimal();
+  protected MutableJsonLong jlong = new MutableJsonLong();
+  protected MutableJsonDecimal jdec = new MutableJsonDecimal();
   
   /**
    * @param exprs

@@ -37,7 +37,7 @@ public class DateMillisFn extends Expr
     {
       return null;
     }
-    JsonLong m = new JsonLong(d.getMillis()); // TODO: memory
+    JsonLong m = new JsonLong(d.get()); // TODO: memory
     return m;
   }
 

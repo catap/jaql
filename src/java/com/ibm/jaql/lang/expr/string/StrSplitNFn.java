@@ -21,6 +21,7 @@ import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -35,7 +36,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 public class StrSplitNFn extends Expr
 {
   protected BufferedJsonArray tuple = new BufferedJsonArray();
-  protected JsonString[] resultStrings = new JsonString[0];
+  protected MutableJsonString[] resultStrings = new MutableJsonString[0];
   
   /**
    * @param args
@@ -75,11 +76,11 @@ public class StrSplitNFn extends Expr
     if( n > resultStrings.length )
     {
       tuple.resize(n);
-      JsonString[] rs = new JsonString[n];
+      MutableJsonString[] rs = new MutableJsonString[n];
       System.arraycopy(resultStrings, 0, rs, 0, resultStrings.length);
       for(int i = resultStrings.length ; i < n ; i++ )
       {
-        rs[i] = new JsonString();
+        rs[i] = new MutableJsonString();
         tuple.set(i, rs[i]);
       }
       resultStrings = rs;
@@ -100,10 +101,10 @@ public class StrSplitNFn extends Expr
         }
         p = q + 1;
       }
-      resultStrings[i].set(ss);
+      resultStrings[i].setCopy(ss);
     }
     ss = (p >= 0) ? s.substring(p) : ""; 
-    resultStrings[n-1].set(ss);
+    resultStrings[n-1].setCopy(ss);
     return tuple;
   }
 }

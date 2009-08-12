@@ -18,7 +18,7 @@ package com.ibm.jaql.lang.expr.array;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -64,7 +64,7 @@ public final class EnumerateExpr extends IterExpr
   {
     final JsonIterator iter = exprs[0].iter(context);
     final BufferedJsonArray pair = new BufferedJsonArray(2);
-    final JsonLong counter = new JsonLong(-1);
+    final MutableJsonLong counter = new MutableJsonLong(-1);
     pair.set(0, counter);
 
     return new JsonIterator(pair) {

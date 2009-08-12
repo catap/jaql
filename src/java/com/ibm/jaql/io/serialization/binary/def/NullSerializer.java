@@ -25,12 +25,6 @@ import com.ibm.jaql.json.type.JsonValue;
 class NullSerializer extends BinaryBasicSerializer<JsonValue>
 {
   @Override
-  public JsonValue newInstance()
-  {
-    return null;
-  }
-  
-  @Override
   public int compare(DataInput in1, DataInput in2) throws IOException
   {
     return 0;

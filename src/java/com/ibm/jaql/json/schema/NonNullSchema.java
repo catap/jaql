@@ -15,11 +15,12 @@
  */
 package com.ibm.jaql.json.schema;
 
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema that accepts any value but null */
-public class NonNullSchema extends Schema
+public final class NonNullSchema extends Schema
 {
   NonNullSchema()
   {    
@@ -34,11 +35,17 @@ public class NonNullSchema extends Schema
   }
   
   @Override
-  public Bool3 isNull()
+  public Bool3 is(JsonType type, JsonType ... types)
   {
+    if (type != JsonType.NULL) return Bool3.UNKNOWN;
+    // test whether all are null
+    for (int i=0; i<types.length; i++)
+    {
+      if (types[i] != JsonType.NULL) return Bool3.UNKNOWN;
+    }
     return Bool3.FALSE;
   }
-
+  
   @Override
   public boolean isConstant()
   {
@@ -46,15 +53,9 @@ public class NonNullSchema extends Schema
   }
 
   @Override
-  public Bool3 isArrayOrNull()
+  public Bool3 isEmpty(JsonType type, JsonType ... types)
   {
-    return Bool3.UNKNOWN;
-  }
-
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.UNKNOWN;
+    return is(type, types).and(Bool3.UNKNOWN);
   }
 
   @SuppressWarnings("unchecked")
@@ -84,7 +85,7 @@ public class NonNullSchema extends Schema
   @Override
   protected Schema merge(Schema other)
   {
-    if (other.isNull().maybe())
+    if (other.is(JsonType.NULL).maybe())
     {
       return SchemaFactory.anySchema();
     }

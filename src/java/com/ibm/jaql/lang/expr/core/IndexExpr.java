@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * element(array, index) is the same as array[index], but it captures a simpler 
@@ -55,7 +56,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
    */
   public IndexExpr(Expr expr, int i)
   {
-    this(expr, new ConstExpr(JsonLong.makeShared(i)));
+    this(expr, new ConstExpr(JsonLong.make(i)));
   }
 
   @Override
@@ -130,7 +131,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
     }
     long i = ((JsonNumber) w).longValueExact();
     Expr arrayExpr = exprs[0];
-    if (arrayExpr.getSchema().isArrayOrNull().always())
+    if (arrayExpr.getSchema().is(ARRAY,NULL).always())
     {
       JsonIterator iter = arrayExpr.iter(context);
       boolean hasNext = iter.moveN(i+1);
@@ -144,7 +145,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
       {
         return null;
       }
-      value = array.nth(i);
+      value = array.get(i);
     }
     return value;
   }

@@ -19,8 +19,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -44,9 +44,9 @@ public class DoubleMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public JsonDouble makeValue()
+  public MutableJsonDouble makeValue()
   {
-    return new JsonDouble();
+    return new MutableJsonDouble();
   }
 
   /*
@@ -70,7 +70,7 @@ public class DoubleMetaArray extends MetaArray
   public JsonIterator iter(Object obj) throws Exception
   {
     final double[] arr = (double[]) obj;
-    final JsonDouble jdouble = new JsonDouble();
+    final MutableJsonDouble jdouble = new MutableJsonDouble();
     return new JsonIterator() {
       int     i       = 0;
 
@@ -99,7 +99,7 @@ public class DoubleMetaArray extends MetaArray
     double[] arr = (double[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonDouble) target).set(arr[(int) n]);
+      ((MutableJsonDouble) target).set(arr[(int) n]);
       return target;
     }
     else

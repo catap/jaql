@@ -23,6 +23,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 @JaqlFn(fnName="perf", minArgs=1, maxArgs=1)
 public class PerfFn extends Expr
@@ -38,7 +39,7 @@ public class PerfFn extends Expr
     Expr e = exprs[0];
     long start = System.currentTimeMillis();
     long n = 0;
-    if( e.getSchema().isArrayOrNull().always() )
+    if( e.getSchema().is(ARRAY,NULL).always() )
     {
       JsonIterator iter = e.iter(context);
       while (iter.moveNext()) 

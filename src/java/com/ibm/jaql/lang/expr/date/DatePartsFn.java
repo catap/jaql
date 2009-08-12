@@ -48,9 +48,9 @@ public class DatePartsFn extends Expr
       return null;
     }
     BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: mucho memory
-    cal.setTimeInMillis(d.getMillis());
+    cal.setTimeInMillis(d.get());
     // TODO: muchissimo memory; make static JsonStrings?
-    rec.add(new JsonString("millis"), new JsonLong(d.getMillis()));
+    rec.add(new JsonString("millis"), new JsonLong(d.get()));
     rec.add(new JsonString("year"), new JsonLong(cal.get(Calendar.YEAR)));
     rec.add(new JsonString("month"), new JsonLong(cal.get(Calendar.MONTH)+1));
     rec.add(new JsonString("day"), new JsonLong(cal.get(Calendar.DAY_OF_MONTH)));

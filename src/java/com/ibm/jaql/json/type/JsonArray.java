@@ -16,16 +16,21 @@
 package com.ibm.jaql.json.type;
 
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.AbstractList;
+import java.util.Iterator;
+import java.util.List;
 
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.util.BaseUtil;
 
-/** A JSON array. */
-public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
+/** A JSON array. Compatibility with the Java Collection Framework is provided via the 
+ * {@link #asList()} method. */ 
+public abstract class JsonArray extends JsonValue 
+implements Iterable<JsonValue>
 {
   public final static JsonArray EMPTY 
-      = new BufferedJsonArray(new JsonValue[0]); // TODO: should be immutable
+      = new BufferedJsonArray(new JsonValue[0], false); // TODO: should be immutable
 
   
   // -- abstract methods --------------------------------------------------------------------------
@@ -50,7 +55,7 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
    * @return the value at position <code>n</code> or <code>null<code>
    * @throws Exception
    */
-  public abstract JsonValue nth(long n) throws Exception;
+  public abstract JsonValue get(long n) throws Exception;
 
   /** Fills the specified array with the elements of this array (without necessarily copying the 
    * elements themselves). The length of <code>target</code> has to be identical to the length of 
@@ -62,19 +67,16 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
   public abstract void getAll(JsonValue[] target) throws Exception;
 
 
-  // -- business methods --------------------------------------------------------------------------
+  // -- default implementation --------------------------------------------------------------------
   
-  /** Checks whether this array contains any elements. */
+  /** Checks whether this array is empty */
   public boolean isEmpty()
   {
     return count() == 0;
   }
-
-  /** Returns an iterator over this array. This is a convenience method that allows 
-   * using <code>JsonArray</code>s in <code>foreach</code> statements. It as implemented by a 
-   * call to {@link #iter()}; all exceptions are rethrown as runtime exceptions. */ 
+  
   @Override
-  public JsonIterator iterator() {
+  public Iterator<JsonValue> iterator() {
     try 
     {
       return iter();
@@ -84,6 +86,9 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
       throw new UndeclaredThrowableException(e);
     }    
   }
+
+  
+  // -- comparison and hashing --------------------------------------------------------------------
 
   /* @see com.ibm.jaql.json.type.JValue#compareTo(java.lang.Object) */
   @Override
@@ -100,47 +105,16 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
     }
   }
 
-  
-  // -- hashing -----------------------------------------------------------------------------------
-
-  /* @see java.lang.Object#hashCode() */
-  @Override
-  public int hashCode()
-  {
-    try
-    {
-      int h = initHash();
-      for (JsonValue value : iter()) {
-        h = hashValue(h, value);
-      }
-      return h;
-    }
-    catch (Exception e)
-    {
-      throw new UndeclaredThrowableException(e);
-    }
-  }
-
-  protected final static int initHash()
-  {
-    return BaseUtil.GOLDEN_RATIO_32;
-  }
-
-  protected final static int hashValue(int h, JsonValue value)
-  {
-    int v = com.ibm.jaql.json.type.JsonUtil.hashCode(value);
-    return (h ^ v) * BaseUtil.GOLDEN_RATIO_32;
-  }
-  
   /* @see com.ibm.jaql.json.type.JValue#longHashCode() */
   @Override
   public long longHashCode()
   {
     try
     {
-      long h = initLongHash();
+      long h = BaseUtil.GOLDEN_RATIO_64;
       for (JsonValue value : iter()) {
-        h = longHashValue(h, value);
+        long v = com.ibm.jaql.json.type.JsonUtil.longHashCode(value); 
+        h = (h ^ v) * BaseUtil.GOLDEN_RATIO_64;
       }
       return h;
     }
@@ -150,15 +124,41 @@ public abstract class JsonArray extends JsonValue implements Iterable<JsonValue>
     }
   }
 
-  protected final static long initLongHash()
+  // -- List compatibility ------------------------------------------------------------------------
+  
+  /** Returns an unmodifiable list view of this JSON array */
+  public List<JsonValue> asList()
   {
-    return BaseUtil.GOLDEN_RATIO_64;
+    return new JsonArrayAsList();
   }
+  
+  /** A list view of this JSON array */
+  private class JsonArrayAsList extends AbstractList<JsonValue>
+  {
+    @Override
+    public JsonValue get(int index)
+    {
+      try 
+      {
+        return JsonArray.this.get(index);
+      }
+      catch (Exception e)
+      {
+        throw new UndeclaredThrowableException(e);
+      }
+      
+    }
 
-  protected final static long longHashValue(long h, JsonValue value)
-  {
-    long v = com.ibm.jaql.json.type.JsonUtil.longHashCode(value);
-    return (h ^ v) * BaseUtil.GOLDEN_RATIO_64;
+    @Override
+    public int size()
+    {
+      return (int)JsonArray.this.count();
+    }
+    
+    @Override 
+    public Iterator<JsonValue> iterator()
+    {
+      return JsonArray.this.iterator();
+    }
   }
- 
 }

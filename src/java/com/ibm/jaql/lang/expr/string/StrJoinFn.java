@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.string;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -34,7 +35,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class StrJoinFn extends Expr // TODO: make Aggregate?
 {
   protected StringBuilder builder;
-  protected JsonString text;
+  protected MutableJsonString text;
   
   /**
    * @param exprs
@@ -54,7 +55,7 @@ public class StrJoinFn extends Expr // TODO: make Aggregate?
     if( text == null )
     {
       builder = new StringBuilder();
-      text = new JsonString();      
+      text = new MutableJsonString();      
     }
     else
     {
@@ -74,7 +75,7 @@ public class StrJoinFn extends Expr // TODO: make Aggregate?
         sep = theSep;
       }
     }
-    text.set(builder.toString());
+    text.setCopy(builder.toString());
     return text;
   }
 }

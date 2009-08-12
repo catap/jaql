@@ -21,10 +21,9 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
-import com.ibm.jaql.util.Bool3;
 
 /** Schema for a boolean value */
-public class BooleanSchema extends Schema 
+public final class BooleanSchema extends Schema 
 {
   private JsonBool value;
   
@@ -55,7 +54,7 @@ public class BooleanSchema extends Schema
   
   public BooleanSchema(JsonBool value)
   {
-    this.value = value;
+    this.value = (JsonBool)JsonUtil.getImmutableCopyUnchecked(value);
   }
   
   BooleanSchema()
@@ -71,29 +70,11 @@ public class BooleanSchema extends Schema
   }
 
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return value != null;
   }
 
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()

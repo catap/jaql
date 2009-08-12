@@ -25,6 +25,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -77,7 +78,7 @@ public final class IfExpr extends Expr
 
   public Schema getSchema()
   {
-    return OrSchema.or(exprs[1].getSchema(), exprs[2].getSchema());
+    return OrSchema.make(exprs[1].getSchema(), exprs[2].getSchema());
   }
 
   /**
@@ -117,7 +118,7 @@ public final class IfExpr extends Expr
     testExpr().decompile(exprText, capturedVars);
     exprText.print(" )\n( ");
     trueExpr().decompile(exprText, capturedVars);
-    if (falseExpr().getSchema().isNull().maybeNot())
+    if (falseExpr().getSchema().is(NULL).maybeNot())
     {
       exprText.print(" )\nelse ( ");
       falseExpr().decompile(exprText, capturedVars);

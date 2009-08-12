@@ -27,6 +27,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 public abstract class PathArray extends PathStep
 {
@@ -108,7 +109,7 @@ public abstract class PathArray extends PathStep
   {
     PathStepSchema elements = null;
     boolean inputMaybeNull = false;
-    if (inputSchema.isArray().never())
+    if (inputSchema.is(ARRAY).never())
     {
       // TODO: this indicates a compile-time error but unless error handling is implemented, 
       // we are silent here
@@ -118,7 +119,7 @@ public abstract class PathArray extends PathStep
     {
       Schema s = SchemaTransformation.restrictToArrayOrNull(inputSchema);
       if (s==null)  return new PathStepSchema(null, Bool3.FALSE); // TODO: silent here as well
-      inputMaybeNull = s.isNull().maybe();
+      inputMaybeNull = s.is(NULL).maybe();
       s = SchemaTransformation.removeNullability(s);
       elements = nextStep().getSchema(inputSchema.elements());
     }

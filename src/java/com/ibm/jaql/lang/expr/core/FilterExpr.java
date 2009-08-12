@@ -20,6 +20,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
+import static com.ibm.jaql.json.type.JsonType.*;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -91,7 +92,7 @@ public final class FilterExpr extends IterExpr
     Schema inSchema = binding().getSchema();  
      
     // handle null/empty input
-    if (inSchema.isEmptyArrayOrNull().always())
+    if (inSchema.isEmpty(ARRAY,NULL).always())
     {
       return SchemaFactory.emptyArraySchema();
     }

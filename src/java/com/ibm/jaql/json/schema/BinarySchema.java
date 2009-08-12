@@ -19,12 +19,12 @@ import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
-import com.ibm.jaql.util.Bool3;
 
 /** Schema for a binary value */
-public class BinarySchema extends Schema 
+public final class BinarySchema extends Schema 
 {
   // -- private variables ------------------------------------------------------------------------- 
   
@@ -69,8 +69,8 @@ public class BinarySchema extends Schema
     // store length
     if (minLength != null || maxLength != null)
     {
-      this.minLength = minLength==null ? JsonLong.ZERO : minLength;
-      this.maxLength = maxLength;
+      this.minLength = minLength==null ? JsonLong.ZERO : (JsonLong)JsonUtil.getImmutableCopyUnchecked(minLength);
+      this.maxLength = (JsonLong)JsonUtil.getImmutableCopyUnchecked(maxLength);
     }
   }
   
@@ -87,29 +87,11 @@ public class BinarySchema extends Schema
   }
 
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return false;
   }
 
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
@@ -127,8 +109,8 @@ public class BinarySchema extends Schema
     JsonBinary b = (JsonBinary)value;
     
     // check length
-    if (!(minLength==null || b.length()>=minLength.get())) return false;
-    if (!(maxLength==null || b.length()<=maxLength.get())) return false;
+    if (!(minLength==null || b.bytesLength()>=minLength.get())) return false;
+    if (!(maxLength==null || b.bytesLength()<=maxLength.get())) return false;
 
     // everything ok
     return true;

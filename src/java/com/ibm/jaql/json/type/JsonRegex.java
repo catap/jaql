@@ -260,6 +260,14 @@ public class JsonRegex extends JsonAtom
     return t;
   }
   
+  @Override
+  public JsonRegex getImmutableCopy() throws Exception
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
+  }
+
+  
   public JsonString getInternalRegex() {
     return regex;
   }

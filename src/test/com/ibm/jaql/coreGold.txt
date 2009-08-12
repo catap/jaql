@@ -16,19 +16,31 @@ typeof(true);##
 
 
 typeof(1);##
-"number"
+"long"
 
 
 1;##
 1
 
+1d;##
+1.0
 
-10.5;##
-10.5
+1m;##
+1m
 
 
-15.5e-9;##
-1.55E-8
+1.5;##
+1.5
+
+1.5d;##
+1.5
+
+1.5m;##
+1.5m
+
+
+100e-2;##
+1.0
 
 
 d'2001-07-04T12:08:56Z';##
@@ -187,12 +199,43 @@ FAILURE
 
 
 //-------------------------- ARITH/LOGIC OPS-----------------------
+
 1+2;##
 3
 
+1+2d;##
+3.0
+
+1+2m;##
+3m
+
+1d+2d;##
+3.0
+
+1d+2m;##
+3m
+
+1m+2m;##
+3m
+
 
 1/2;##
+0
+
+1/2d;##
 0.5
+
+1/2m;##
+0.5m
+
+1d/2d;##
+0.5
+
+1d/2m;##
+0.5m
+
+1m/2m;##
+0.5m
 
 
 true or false;##
@@ -230,22 +273,31 @@ true
 
 
 // make sure numeric encodings hash and compare properly
-distinct( [1, 1.0, 1.1, 1.10] ) -> sort by [$];##
+distinct( [1, 1d, 1m, 1.5d, 1.5m, 1.50d, 1.50m ] ) -> sort by [$];##
 [
   1,
-  1.1
+  1.5
 ]
  // 2 items
 
-1 == 1.0;##
+1 == 1d;##
+true
+ // true
+1 == 1m;##
+true
+ // true
+1d == 1m;##
 true
  // true
 
-1 == 1.1;##
+1 == 1.5;##
+false
+ // false
+1 == 1.5m;##
 false
  // false
 
-1.1 == 1.10;##
+1.5 == 1.5m;##
 true
  // true
 
@@ -1043,7 +1095,7 @@ $search1 = fn($list, $item, $search2) (
   if( not exists($list) ) null
   else (
     $n = count($list),
-    $m = int($n / 2),
+    $m = long($n / 2),
     $c = compare($item, $list[ $m ]),
     if     ( $c < 0 ) $search2( $list[*:$m-1], $item, $search2 )
     else if( $c > 0 ) 1 + $m + $search2( $list[$m+1:*], $item, $search2 )

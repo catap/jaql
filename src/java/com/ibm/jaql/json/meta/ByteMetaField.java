@@ -19,8 +19,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 
 /**
  * 
@@ -42,9 +42,9 @@ public class ByteMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonLong makeValue()
+  public MutableJsonLong makeValue()
   {
-    return new JsonLong();
+    return new MutableJsonLong();
   }
 
   /*
@@ -58,7 +58,7 @@ public class ByteMetaField extends MetaField
       IllegalAccessException
   {
     byte x = field.getByte(obj);
-    ((JsonLong) target).set(x);
+    ((MutableJsonLong) target).set(x);
     return target;  
   }
 

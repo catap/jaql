@@ -74,7 +74,7 @@ public class AvgAgg extends AlgebraicAggregate
   {
     JsonValue sum = summer.get();
     JsonValue cnt = new JsonLong(count);
-    BufferedJsonArray pair = new BufferedJsonArray(new JsonValue[]{sum,cnt});
+    BufferedJsonArray pair = new BufferedJsonArray(new JsonValue[]{sum,cnt}, false);
     return pair;
   }
 
@@ -108,7 +108,7 @@ public class AvgAgg extends AlgebraicAggregate
   {
     JsonValue sum = summer.get();
     JsonLong n = new JsonLong(count);
-    return MathExpr.divide(sum, n);    
+    return MathExpr.eval(sum, n, MathExpr.DIVIDE);    
   }
 
   

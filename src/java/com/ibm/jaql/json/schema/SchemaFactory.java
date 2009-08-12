@@ -175,7 +175,7 @@ public class SchemaFactory
   public static Schema numericSchema()
   {
     if (numericSchema  == null) {
-      numericSchema = OrSchema.or(longSchema(), doubleSchema(), decfloatSchema());
+      numericSchema = OrSchema.make(longSchema(), doubleSchema(), decfloatSchema());
     }
     return numericSchema;
   }
@@ -183,100 +183,161 @@ public class SchemaFactory
   public static Schema numberSchema()
   {
     if (numberSchema  == null) {
-      numberSchema = OrSchema.or(longSchema(), decfloatSchema());
+      numberSchema = OrSchema.make(longSchema(), decfloatSchema());
     }
     return numberSchema;
   }
 
   public static Schema anySchema()
   {
-    if (anySchema  == null) anySchema = OrSchema.or(nonNullSchema(), nullSchema());
+    if (anySchema  == null) anySchema = OrSchema.make(nonNullSchema(), nullSchema());
     return anySchema;
   }
 
   public static Schema arrayOrNullSchema()
   {
-    if (arrayOrNullSchema  == null) arrayOrNullSchema = OrSchema.or(arraySchema(), nullSchema());
+    if (arrayOrNullSchema  == null) arrayOrNullSchema = OrSchema.make(arraySchema(), nullSchema());
     return arrayOrNullSchema;
   }
 
   public static Schema emptyArrayOrNullSchema()
   {
-    if (emptyArrayOrNullSchema  == null) emptyArrayOrNullSchema = OrSchema.or(emptyArraySchema(), nullSchema());
+    if (emptyArrayOrNullSchema  == null) emptyArrayOrNullSchema = OrSchema.make(emptyArraySchema(), nullSchema());
     return emptyArrayOrNullSchema;
   }
   
   public static Schema binaryOrNullSchema()
   {
-    if (binaryOrNullSchema  == null) binaryOrNullSchema = OrSchema.or(binarySchema(), nullSchema());
+    if (binaryOrNullSchema  == null) binaryOrNullSchema = OrSchema.make(binarySchema(), nullSchema());
     return binaryOrNullSchema;
   }
   
   public static Schema booleanOrNullSchema()
   {
-    if (booleanOrNullSchema  == null) booleanOrNullSchema = OrSchema.or(booleanSchema(), nullSchema());
+    if (booleanOrNullSchema  == null) booleanOrNullSchema = OrSchema.make(booleanSchema(), nullSchema());
     return booleanOrNullSchema;
   }
 
   public static Schema dateOrNullSchema()
   {
-    if (dateOrNullSchema  == null) dateOrNullSchema = OrSchema.or(dateSchema(), nullSchema());
+    if (dateOrNullSchema  == null) dateOrNullSchema = OrSchema.make(dateSchema(), nullSchema());
     return dateOrNullSchema;
   }
   
   public static Schema schematypeOrNullSchema()
   {
-    if (schematypeOrNullSchema  == null) schematypeOrNullSchema = OrSchema.or(schematypeSchema(), nullSchema());
+    if (schematypeOrNullSchema  == null) schematypeOrNullSchema = OrSchema.make(schematypeSchema(), nullSchema());
     return schematypeOrNullSchema;
   }
 
   public static Schema decfloatOrNullSchema()
   {
-    if (decfloatOrNullSchema  == null) decfloatOrNullSchema = OrSchema.or(decfloatSchema(), nullSchema());
+    if (decfloatOrNullSchema  == null) decfloatOrNullSchema = OrSchema.make(decfloatSchema(), nullSchema());
     return decfloatOrNullSchema;
   }
 
   public static Schema doubleOrNullSchema()
   {
-    if (doubleOrNullSchema  == null) doubleOrNullSchema = OrSchema.or(doubleSchema(), nullSchema());
+    if (doubleOrNullSchema  == null) doubleOrNullSchema = OrSchema.make(doubleSchema(), nullSchema());
     return doubleOrNullSchema;
   }
   
   public static Schema functionOrNullSchema()
   {
-    if (functionOrNullSchema  == null) functionOrNullSchema = OrSchema.or(functionSchema(), nullSchema());
+    if (functionOrNullSchema  == null) functionOrNullSchema = OrSchema.make(functionSchema(), nullSchema());
     return functionOrNullSchema;
   }
   public static Schema longOrNullSchema()
   {
-    if (longOrNullSchema  == null) longOrNullSchema = OrSchema.or(longSchema(), nullSchema());
+    if (longOrNullSchema  == null) longOrNullSchema = OrSchema.make(longSchema(), nullSchema());
     return longOrNullSchema;
   }
 
   public static Schema recordOrNullSchema()
   {
-    if (recordOrNullSchema  == null) recordOrNullSchema = OrSchema.or(recordSchema(), nullSchema());
+    if (recordOrNullSchema  == null) recordOrNullSchema = OrSchema.make(recordSchema(), nullSchema());
     return recordOrNullSchema;
   }
   
   public static Schema stringOrNullSchema()
   {
-    if (stringOrNullSchema  == null) stringOrNullSchema = OrSchema.or(stringSchema(), nullSchema());
+    if (stringOrNullSchema  == null) stringOrNullSchema = OrSchema.make(stringSchema(), nullSchema());
     return stringOrNullSchema;
   }
   
   public static Schema numericOrNullSchema()
   {
-    if (numericOrNullSchema  == null) numericOrNullSchema = OrSchema.or(numericSchema(), nullSchema());
+    if (numericOrNullSchema  == null) numericOrNullSchema = OrSchema.make(numericSchema(), nullSchema());
     return numericOrNullSchema;
   }
 
   public static Schema numberOrNullSchema()
   {
-    if (numberOrNullSchema  == null) numberOrNullSchema = OrSchema.or(numberSchema(), nullSchema());
+    if (numberOrNullSchema  == null) numberOrNullSchema = OrSchema.make(numberSchema(), nullSchema());
     return numberOrNullSchema;
   }
 
+  /** Returns a schema that matches values of the specified classes and null. */
+  public static Schema make(Class<? extends JsonValue> ... classes)
+  {
+    JsonType[] types = new JsonType[classes.length+1];
+    for (int i=0; i<classes.length; i++)
+    {
+      types[i] = JsonType.getType(classes[i]);
+      if (types[i] == null) return SchemaFactory.anySchema();
+    }
+    types[types.length-1] = JsonType.NULL;
+    return make(types);
+  }
+  
+  /** Returns a schema for the specified JSON types. */ 
+  public static Schema make(JsonType ... types)
+  {
+    Schema[] schemata = new Schema[types.length];
+    for (int i=0; i<types.length; i++)
+    {
+      schemata[i] = makeInternal(types[i]);
+    }
+    return OrSchema.make(schemata);
+  }
+
+  /** Returns a schema for the specified JSON type. */ 
+  private static Schema makeInternal(JsonType type)
+  {
+    switch (type)
+    {
+    case BOOLEAN:
+      return booleanSchema();
+    case LONG:
+      return longSchema();
+    case DECFLOAT:
+      return decfloatSchema();
+    case DOUBLE:
+      return doubleSchema();
+    case STRING:
+      return stringSchema();
+    case BINARY:
+      return binarySchema();
+    case DATE:
+      return dateSchema();
+    case SCHEMA:
+      return schematypeSchema();
+    case ARRAY:
+      return arraySchema();
+    case RECORD:
+      return recordSchema();
+    case NULL:
+      return nullSchema();
+    case FUNCTION:
+      return functionSchema();
+    case REGEX:
+    case JAVAOBJECT:
+    case SPAN:
+      return new GenericSchema(type);      
+    default:
+      return nonNullSchema();
+    }
+  }
   // -- construction for the parser ---------------------------------------------------------------
   
   /**
@@ -422,26 +483,19 @@ public class SchemaFactory
     case STRING:
       JsonString js = (JsonString)v;
       return new StringSchema(null, null, null, js);
-      
-    case NUMBER:
-      switch (v.getEncoding())
-      {
-      case DECIMAL:
-        return new DecfloatSchema(null, null, (JsonDecimal)v);
-      case LONG:
-        return new LongSchema(null, null, (JsonLong)v);
-      default:
-        throw new IllegalStateException(); // only reached when new number encodings are added
-      }
 
+    case LONG:
+      return new LongSchema(null, null, (JsonLong)v);
     case DOUBLE:
       return new DoubleSchema(null, null, (JsonDouble)v);
+    case DECFLOAT:
+      return new DecfloatSchema(null, null, (JsonDecimal)v);
       
     // JSON extensions
 
     case BINARY:
       JsonBinary jb = (JsonBinary)v;
-      length = new JsonLong(jb.length());
+      length = new JsonLong(jb.bytesLength());
       return new BinarySchema(length, length);
       
     case DATE:

@@ -84,7 +84,7 @@ public class ArrayInputFormat implements InputFormat<JsonHolder, JsonHolder>
       // cast here...
       for (int i = 0; i < splits.length; i++)
       {
-        splits[i] = new ArrayInputSplit(arr.nth(i));
+        splits[i] = new ArrayInputSplit(arr.get(i));
       }
     }
     catch (Exception e)

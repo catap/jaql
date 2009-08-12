@@ -44,48 +44,46 @@ $s = schema boolean(value = true);
 
 $s = schema long;
 ( [ -9223372036854775807-1, 0, 9223372036854775807 ] -> $w($s), $r($s) );
-( [ -9223372036854775807.0-1.0, 0.0, 9223372036854775807.0 ] -> $w($s), $r($s) ); // decimals are matched
+( [ -9223372036854775808m, 0d, 9867796d ] -> $w($s), $r($s) ); // decimals and doubles are matched
 [ 1.5 ] -> $w($s); // should fail: non-integer
-[ 1d ] -> $w($s); // should fail: double
 
 $s = schema long(min=-100);
 ( [ -100, 0, 9223372036854775807 ] -> $w($s), $r($s) );
 [ -101 ] -> $w($s); // should fail
 
 $s = schema long(value=22);
-( [ 22, 22 ] -> $w($s), $r($s) );
+( [ 22, 22d, 22m ] -> $w($s), $r($s) );
 [ -101 ] -> $w($s); // should fail
 
 
 // -- decfloat ------------------------------------------------------------------------------------
 
 $s = schema decfloat;
-( [ -9223372036854775807.0-1.0, 0.5, 9223372036854775807.0 ] -> $w($s), $r($s) );
-( [ -9223372036854775807-1, 0.5, 9223372036854775807 ] -> $w($s), $r($s) );  // longs are matched
-[ 1d ] -> $w($s); // should fail: double
+( [ -9223372036854775808m, 0.5m, 9223372036854775807m ] -> $w($s), $r($s) );
+( [ -9223372036854775807-1, 0.5d, 9223372036854775807 ] -> $w($s), $r($s) );  // doubles and longs are matched
 
-$s = schema decfloat(min=-100.1);
-( [ -100.1, 0.0, 9223372036854775807.0 ] -> $w($s), $r($s) );
-[ -101.2 ] -> $w($s); // should fail
+$s = schema decfloat(min=-100.1m);
+( [ -100.1m, 0.0m, 9223372036854775807.0m ] -> $w($s), $r($s) );
+[ -101.2m ] -> $w($s); // should fail
 
-$s = schema decfloat(value=22.0);
-( [ 22.0, 22 ] -> $w($s), $r($s) );
-[ -101.0 ] -> $w($s); // should fail
+$s = schema decfloat(value=22m);
+( [ 22, 22d, 22m ] -> $w($s), $r($s) );
+[ -101m ] -> $w($s); // should fail
 
 
 // -- double --------------------------------------------------------------------------------------
 
 $s = schema double;
 ( [ -9223372036854775807d-1d, 0.5d, 9223372036854775807d ] -> $w($s), $r($s) );
-[ 1 ] -> $w($s); // should fail
-[ 1.0 ] -> $w($s); // should fail
+( [ 1, 1m, 1.5m ] -> $w($s), $r($s) ); // long and decimal are matched, if representable
+[ 1.1m ] -> $w($s); // should fail (not representable)
 
 $s = schema double(min=-100.1d);
 ( [ -100.1d, 0d, 9223372036854d ] -> $w($s), $r($s) );
 [ -101.2d ] -> $w($s); // should fail
 
 $s = schema double(value=22d);
-( [ 22d, 22d ] -> $w($s), $r($s) );
+( [ 22, 22d, 22m ] -> $w($s), $r($s) );
 [ -101d ] -> $w($s); // should fail
 
 
@@ -263,7 +261,7 @@ $sort = fn($what, $schema) (
 // single schemata
 $sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long);
 $sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double);
-$sort([ 23512, -45346, 0, 0.002, 0.001, 9223372036854775807, -9223372036854775807-1 ], schema decfloat);
+$sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat);
 $sort([ "abcc", "abc", "bcd", "abcd" ], schema string);
 $sort([ true, false ], schema boolean);
 $sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), ], schema date);
@@ -272,7 +270,7 @@ $sort([ hex("abcc"), hex("abc0"), hex("bcd0"), hex("abcd") ], schema binary);
 // single type
 $sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long(max=0) | long(min=0));
 $sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double(max=0d) | double(min=0d));
-$sort([ 23512, -45346, 0, 0.002, 0.001, 9223372036854775807, -9223372036854775807-1 ], schema decfloat(max=0) | decfloat(min=0));
+$sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat(max=0) | decfloat(min=0));
 $sort([ "abcc", "abc", "bcd", "abcd" ], schema string(maxLength=3) | string(minLength=4));
 $sort([ true, false ], schema boolean(value=true) | boolean(value=false));
 $sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:00Z') ], schema date(min=date('2000-01-01T12:00:00Z')) | date(max=date('2000-01-01T12:00:00Z')));

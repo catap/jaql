@@ -22,10 +22,9 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
-import com.ibm.jaql.util.Bool3;
 
 /** Schema for a JSON string */
-public class StringSchema extends Schema
+public final class StringSchema extends Schema
 {
   private JsonLong minLength = JsonLong.ZERO;
   private JsonLong maxLength;
@@ -86,15 +85,15 @@ public class StringSchema extends Schema
     // store pattern
     if (pattern != null)
     {
-      this.pattern = pattern;
+      this.pattern = pattern.getImmutableCopy();
       compiledPattern = Pattern.compile(pattern.toString());
     }
     
     // store length
     if (minLength != null || maxLength != null)
     {
-      this.minLength = minLength==null ? JsonLong.ZERO : minLength;
-      this.maxLength = maxLength;
+      this.minLength = minLength==null ? JsonLong.ZERO : minLength.getImmutableCopy();
+      this.maxLength = maxLength==null ? null : maxLength.getImmutableCopy();
     }
     
     // store value
@@ -112,7 +111,7 @@ public class StringSchema extends Schema
       {
         throw new IllegalArgumentException("value argument conflicts with other arguments");
       }        
-      this.value = value;
+      this.value = value.getImmutableCopy();
       
       // throw away other stuff
       this.minLength = JsonLong.ZERO; 
@@ -136,27 +135,9 @@ public class StringSchema extends Schema
   }
 
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return value != null;
-  }
-
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.FALSE;
   }
 
   @SuppressWarnings("unchecked")
@@ -183,8 +164,8 @@ public class StringSchema extends Schema
     
     // check string length
     // TODO: currently uses UTF8 representation
-    if (!(minLength==null || s.lengthUtf8()>=minLength.get())) return false;
-    if (!(maxLength==null || s.lengthUtf8()<=maxLength.get())) return false;
+    if (!(minLength==null || s.bytesLength()>=minLength.get())) return false;
+    if (!(maxLength==null || s.bytesLength()<=maxLength.get())) return false;
 
     // check regexp pattern
     if (!(pattern == null || compiledPattern.matcher(s.toString()).matches())) return false;
@@ -231,10 +212,10 @@ public class StringSchema extends Schema
       
       // simple first cut; more sophisticated methods possible (not sure if needed)
       // currently information in value/pattern is ignored
-      JsonLong minLength = SchemaUtil.min(this.value==null ? this.minLength : new JsonLong(this.value.lengthUtf8()), 
-                                          o.value==null ? o.minLength : new JsonLong(o.value.lengthUtf8()));
-      JsonLong maxLength = SchemaUtil.max(this.value==null ? this.maxLength : new JsonLong(this.value.lengthUtf8()), 
-                                          o.value==null ? o.maxLength : new JsonLong(o.value.lengthUtf8()));
+      JsonLong minLength = SchemaUtil.min(this.value==null ? this.minLength : new JsonLong(this.value.bytesLength()), 
+                                          o.value==null ? o.minLength : new JsonLong(o.value.bytesLength()));
+      JsonLong maxLength = SchemaUtil.max(this.value==null ? this.maxLength : new JsonLong(this.value.bytesLength()), 
+                                          o.value==null ? o.maxLength : new JsonLong(o.value.bytesLength()));
       return new StringSchema(minLength, maxLength, null, null);
     }
     return null;

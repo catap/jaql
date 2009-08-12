@@ -29,7 +29,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
-
+import static com.ibm.jaql.json.type.JsonType.*;
 
 public class PathArrayAll extends PathArray
 {
@@ -103,13 +103,13 @@ public class PathArrayAll extends PathArray
     boolean inputMaybeNull = false;
     JsonLong minLength = null;
     JsonLong maxLength = null;
-    if (inputSchema.isArray().never())
+    if (inputSchema.is(ARRAY).never())
     {
       // TODO: this indicates a compile-time error but unless error handling is implemented, 
       // we are silent here
       return new PathStepSchema(null, Bool3.FALSE);
     }
-    else if (inputSchema.isArray().always())
+    else if (inputSchema.is(ARRAY).always())
     {
       minLength = inputSchema.minElements();
       maxLength = inputSchema.maxElements();
@@ -119,7 +119,7 @@ public class PathArrayAll extends PathArray
     {
       Schema s = SchemaTransformation.restrictToArrayOrNull(inputSchema);
       if (s==null)  return new PathStepSchema(null, Bool3.FALSE); // TODO: friendly here as well
-      inputMaybeNull = s.isNull().maybe();
+      inputMaybeNull = s.is(NULL).maybe();
       s = SchemaTransformation.removeNullability(s);
       minLength = s.minElements();
       maxLength = s.maxElements();

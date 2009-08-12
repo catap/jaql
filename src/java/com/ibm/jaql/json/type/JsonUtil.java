@@ -3,6 +3,7 @@ package com.ibm.jaql.json.type;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 
@@ -57,9 +58,26 @@ public class JsonUtil
 
   /** Handles null (nulls go first) */
   public static int compare(JsonValue v1, JsonValue v2) {
-    int cmp = JsonType.typeCompare(v1, v2); // also handles null
-    if (cmp != 0 || v1==null) return cmp;
-    return v1.compareTo(v2);
+    // handle null
+    if (v1 == null)
+    {
+      return v2 == null ? 0 : -1;
+    }
+    if (v2 == null)
+    {
+      return 1;
+    }
+    
+    // compare types
+    int cmp = v1.getType().compareTo(v2.getType());
+    if (cmp == 0 || (v1.getType().isNumeric() && v2.getType().isNumeric()))
+    {
+      return v1.compareTo(v2); 
+    }
+    else
+    {
+      return cmp;
+    }
   }
 
   /** Handles null */
@@ -93,5 +111,49 @@ public class JsonUtil
     }
     return (T)src.getCopy(target);
   }
+  
+  /** Handles null */
+  @SuppressWarnings("unchecked")
+  public static <T extends JsonValue> T getCopyUnchecked(T src, JsonValue target) 
+  {
+    if (src == null) 
+    {
+      return null;
+    }
+    try
+    {
+      return (T)src.getCopy(target);
+    } 
+    catch (Exception e)
+    {
+      throw new UndeclaredThrowableException(e);
+    }    
+  }
 
+  /** Handles null */
+  public static <T extends JsonValue> JsonValue getImmutableCopy(T src) throws Exception
+  {
+    if (src == null) 
+    {
+      return null;
+    }
+    return src.getImmutableCopy();
+  }
+  
+  /** Handles null */
+  public static <T extends JsonValue> JsonValue getImmutableCopyUnchecked(T src) 
+  {
+    if (src == null) 
+    {
+      return null;
+    }
+    try
+    {
+      return src.getImmutableCopy();
+    } 
+    catch (Exception e)
+    {
+      throw new UndeclaredThrowableException(e);
+    }    
+  }
 }

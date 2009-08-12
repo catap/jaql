@@ -22,7 +22,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a date value */
-public class DateSchema extends RangeSchema<JsonDate>
+public final class DateSchema extends RangeSchema<JsonDate>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -58,7 +58,7 @@ public class DateSchema extends RangeSchema<JsonDate>
   
   public DateSchema(JsonDate min, JsonDate max, JsonDate value)
   {
-    super(min, max, value);
+    init(min, max, value);
   }
   
   

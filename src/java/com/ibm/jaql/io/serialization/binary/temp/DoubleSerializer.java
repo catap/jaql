@@ -22,9 +22,11 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 
-class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
+class DoubleSerializer extends BinaryBasicSerializer<JsonNumeric>
 {
   private DoubleSchema schema;
   
@@ -38,22 +40,16 @@ class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
   // -- serialization -----------------------------------------------------------------------------
 
   @Override
-  public JsonDouble newInstance()
-  {
-    return new JsonDouble();
-  }
-
-  @Override
   public JsonDouble read(DataInput in, JsonValue target) throws IOException
   {
     // get value
     double value = readValue(in);
     
     // return result
-    if (target == null || !(target instanceof JsonDouble)) {
-      return new JsonDouble(value);
+    if (target == null || !(target instanceof MutableJsonDouble)) {
+      return new MutableJsonDouble(value);
     } else {
-      JsonDouble t = (JsonDouble)target;
+      MutableJsonDouble t = (MutableJsonDouble)target;
       t.set(value);
       return t;
     }
@@ -61,7 +57,7 @@ class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
 
 
   @Override
-  public void write(DataOutput out, JsonDouble value) throws IOException
+  public void write(DataOutput out, JsonNumeric value) throws IOException
   {
     // check match
     if (!schema.matches(value))
@@ -76,7 +72,7 @@ class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
     }
     
     // write
-    out.writeDouble(value.get());
+    out.writeDouble(value.doubleValue());
   }
   
   

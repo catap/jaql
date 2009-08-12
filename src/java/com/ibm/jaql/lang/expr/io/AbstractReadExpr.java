@@ -36,6 +36,7 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 public abstract class AbstractReadExpr extends IterExpr
 {
@@ -77,7 +78,7 @@ public abstract class AbstractReadExpr extends IterExpr
         JsonValue args = exprs[0].eval(Env.getCompileTimeContext()); // TODO should provide context
         InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
         Schema s = adapter.getSchema();
-        assert s.isArrayOrNull().always();
+        assert s.is(ARRAY,NULL).always();
         return s;
       }
       

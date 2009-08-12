@@ -20,12 +20,11 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.Bool3;
 
 /** Generic schema used for types that do not have parameters */
-public class GenericSchema extends Schema
+public final class GenericSchema extends Schema
 {
-  JsonType type;
+  final JsonType type;
 
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -64,33 +63,15 @@ public class GenericSchema extends Schema
   }
 
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return false;
   }
 
   @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean matches(JsonValue value) throws Exception
   {
-    return type.clazz.isInstance(value);
+    return type.getMainClass().isInstance(value);
   }
 
   
@@ -105,7 +86,7 @@ public class GenericSchema extends Schema
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { type.clazz }; 
+    return new Class[] { type.getMainClass() }; 
   }
   
   // -- merge -------------------------------------------------------------------------------------

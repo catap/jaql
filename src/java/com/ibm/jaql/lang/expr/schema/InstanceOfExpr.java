@@ -96,6 +96,6 @@ public class InstanceOfExpr extends Expr
       return null;
     }
     boolean b = schema.get().matches(value);
-    return JsonBool.makeShared(b);
+    return JsonBool.make(b);
   }
 }
