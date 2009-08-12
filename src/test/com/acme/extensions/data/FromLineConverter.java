@@ -23,8 +23,8 @@ import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.hadoop.converter.HadoopRecordToJson;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 
 /**
  * Assumes that the "value" of a [key, value] pair is of type
@@ -64,13 +64,13 @@ public class FromLineConverter extends HadoopRecordToJson<WritableComparable<?>,
         {
           throw new RuntimeException("tried to convert from: " + src);
         }
-        ((JsonString)tgt).set(t.getBytes(), t.getLength());
+        ((MutableJsonString)tgt).set(t.getBytes(), t.getLength());
         return tgt;
       }
       
       public JsonValue createTarget()
       {
-        return new JsonString();
+        return new MutableJsonString();
       }
       
       public Schema getSchema()

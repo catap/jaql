@@ -57,7 +57,7 @@ public class MergeContainersFn extends Expr
   public Schema getSchema()
   {
     // TODO: refine
-    return OrSchema.or(
+    return OrSchema.make(
         SchemaFactory.nullSchema(), 
         SchemaFactory.arraySchema(), 
         SchemaFactory.recordSchema());

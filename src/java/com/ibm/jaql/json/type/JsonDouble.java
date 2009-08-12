@@ -16,24 +16,30 @@
 package com.ibm.jaql.json.type;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 
-/** A double JSON value (64-bit base-2 floating point value). */
+/** A double JSON value (64-bit base-2 floating point value). 
+ * 
+ * Instances of this class are immutable, but subclasses might add mutation functionality
+ * (in which case they have to override the {@link #getCopy(JsonValue)} method). 
+ */
 public class JsonDouble extends JsonNumeric
 {
   protected double value = 0;
 
   // -- construction ------------------------------------------------------------------------------
 
-  /** Constructs a new <code>JsonDouble</code> having value 0. */
-  public JsonDouble()
-  {
-  }
-
-  /** Constructs a new <code>JsonDouble</code> with the specified value. */
+  /** Copy constructs from the specified value. */
   public JsonDouble(double value)
   {
     this.value = value;
+  }
+
+  /** Copy constructs from the specified value. */
+  public JsonDouble(JsonDouble value)
+  {
+    this.value = value.value;
   }
 
   /** Constructs a new <code>JsonDouble</code> from the specified value. 
@@ -51,12 +57,32 @@ public class JsonDouble extends JsonNumeric
   @Override
   public BigDecimal decimalValue()
   {
-    return new BigDecimal(value);
+    return new BigDecimal(value, MathContext.DECIMAL128);
   }
+  
+  /* @see com.ibm.jaql.json.type.JsonNumeric#decimalValueExact() */
+  @Override
+  public BigDecimal decimalValueExact()
+  {
+    BigDecimal x = new BigDecimal(value, MathContext.DECIMAL128);
+    if (x.doubleValue() != value)
+    {
+      throw new ArithmeticException(this + " cannot be represented as an 128-bit decimal");
+    }
+    return x;
+  }
+
 
   /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValue() */
   @Override
   public double doubleValue()
+  {
+    return value;
+  }
+  
+  /* @see com.ibm.jaql.json.type.JsonNumeric#doubleValueExact() */
+  @Override
+  public double doubleValueExact()
   {
     return value;
   }
@@ -75,7 +101,7 @@ public class JsonDouble extends JsonNumeric
     int x = (int) value;
     if (x != value) // TODO: is this the best way to determine exactness?
     {
-      throw new ArithmeticException("cannot convert to int: " + value);
+      throw new ArithmeticException(this + " cannot be represented as an integer");
     }
     return x;
   }
@@ -94,7 +120,7 @@ public class JsonDouble extends JsonNumeric
     long x = (long) value;
     if (x != value) // TODO: is this the best way to determine exactness?
     {
-      throw new ArithmeticException("cannot convert to long exactly: " + value);
+      throw new ArithmeticException(this + " cannot be represented as a long integer");
     }
     return x;
   }
@@ -109,49 +135,33 @@ public class JsonDouble extends JsonNumeric
   @Override
   public JsonDouble getCopy(JsonValue target) throws Exception
   {
-    if (target == this) target = null;
-    
-    if (target instanceof JsonDouble)
-    {
-      JsonDouble t = (JsonDouble)target;
-      t.value = this.value;
-      return t;
-    }
-    return new JsonDouble(value);
+    return this;
   }
   
-  // -- mutation ----------------------------------------------------------------------------------
-
-  /** Negates this value */ 
-  public void negate()
+  @Override
+  public JsonDouble getImmutableCopy() throws Exception
   {
-    value = -value;
+    return this;
   }
   
-  /** Sets the value of this <code>JsonDouble</code> to the specified value. */
-  public void set(double value)
-  {
-    this.value = value;
-  }
-
   // -- comparison/hashing ------------------------------------------------------------------------
 
   /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   @Override
-  public int compareTo(Object obj)
+  public int compareTo(Object x)
   {
-    JsonDouble that = (JsonDouble) obj;
-    if (this.value < that.value)
+    JsonNumeric other = (JsonNumeric)x;
+    JsonType otherType = other.getEncoding().getType();
+    switch (otherType)
     {
-      return -1;
-    }
-    else if (this.value > that.value)
-    {
-      return +1;
-    }
-    else
-    {
-      return 0;
+    case LONG:
+      return compare(this, (JsonLong)other);
+    case DOUBLE:
+      return compare(this, (JsonDouble)other);
+    case DECFLOAT:
+      return compare(this, (JsonDecimal)other);
+    default:
+      throw new IllegalStateException("unknown numeric type " + otherType);
     }
   }
 
@@ -159,7 +169,12 @@ public class JsonDouble extends JsonNumeric
   @Override
   public long longHashCode()
   {
-    long x = Double.doubleToLongBits(value);
+    long x = (long)value;
+    if (x == value)
+    {
+      return JsonLong.longHashCode(x);
+    }
+    x = Double.doubleToLongBits(value);
     return JsonLong.longHashCode(x);
   }
   

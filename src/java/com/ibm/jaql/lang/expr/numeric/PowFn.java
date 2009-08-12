@@ -18,7 +18,6 @@ package com.ibm.jaql.lang.expr.numeric;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDecimal;
@@ -30,7 +29,8 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-
+import static com.ibm.jaql.json.type.JsonType.*;
+    
 /**
  * raise a number to power
  */
@@ -102,7 +102,7 @@ public class PowFn extends Expr
   {
     Schema in1 = exprs[0].getSchema();
     Schema in2 = exprs[1].getSchema();
-    boolean nullable = in1.isNull().maybe() || in2.isNull().maybe();
+    boolean nullable = in1.is(NULL).maybe() || in2.is(NULL).maybe();
     
     if (in1.equals(SchemaFactory.doubleSchema()) || in1.equals(SchemaFactory.doubleOrNullSchema()))
     {

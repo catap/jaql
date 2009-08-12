@@ -19,8 +19,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -44,9 +44,9 @@ public class StringMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public JsonString makeValue()
+  public MutableJsonString makeValue()
   {
-    return new JsonString();
+    return new MutableJsonString();
   }
 
   /*
@@ -70,7 +70,7 @@ public class StringMetaArray extends MetaArray
   public JsonIterator iter(Object obj) throws Exception
   {
     final String[] arr = (String[]) obj;
-    final JsonString jstring = new JsonString();
+    final MutableJsonString jstring = new MutableJsonString();
     return new JsonIterator() {
       int     i       = 0;
 
@@ -79,7 +79,7 @@ public class StringMetaArray extends MetaArray
       {
         if (i < arr.length)
         {
-          jstring.set(arr[i++]);
+          jstring.setCopy(arr[i++]);
           return true; // currentValue == jstring
         }
         return false;
@@ -99,7 +99,7 @@ public class StringMetaArray extends MetaArray
     String[] arr = (String[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonString) target).set(arr[(int) n]);
+      ((MutableJsonString) target).setCopy(arr[(int) n]);
       return target;
     }
     else

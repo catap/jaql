@@ -19,6 +19,7 @@ package com.ibm.jaql.lang.rewrite;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.nil.FirstNonNullFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -71,7 +72,7 @@ public class SimplifyFirstNonNull extends Rewrite
     // find the first non-nullable child that is not the last child
     for (i = 0; i < last; i++)
     {
-      if (fnn.child(i).getSchema().isNull().never())
+      if (fnn.child(i).getSchema().is(NULL).never())
       {
         break;
       }

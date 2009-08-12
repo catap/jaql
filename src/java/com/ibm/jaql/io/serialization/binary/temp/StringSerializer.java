@@ -24,6 +24,7 @@ import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.util.BaseUtil;
 
 class StringSerializer extends BinaryBasicSerializer<JsonString>
@@ -39,7 +40,7 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
     if (schema.getValue() != null)
     {
       constantLength = true;
-      minLength = schema.getValue().lengthUtf8();
+      minLength = schema.getValue().bytesLength();
     }
     else if (schema.getMinLength() != null)
     {
@@ -49,12 +50,6 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
   }
   
   // -- serialization -----------------------------------------------------------------------------
-
-  @Override
-  public JsonString newInstance()
-  {
-    return new JsonString();
-  }
 
   @Override
   public JsonString read(DataInput in, JsonValue target) throws IOException
@@ -71,18 +66,14 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
     }
 
     // create target
-    JsonString t;
-    byte[] bytes;
-    if (target==null || !(target instanceof JsonString)) {
-      bytes = new byte[length];
-      t = new JsonString(bytes);
+    MutableJsonString t;
+    if (target==null || !(target instanceof MutableJsonString)) {
+      t = new MutableJsonString();
     } else {
-      t = (JsonString)target;
-      bytes = t.getInternalBytes();
-      if (bytes.length < length) {
-        bytes = new byte[length];
-      }
+      t = (MutableJsonString)target;
     }
+    t.ensureCapacity(length);
+    byte[] bytes = t.get();
 
     // fill bytes
     if (schema.getValue() == null)
@@ -91,9 +82,8 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
     }
     else
     {
-      System.arraycopy(schema.getValue().getInternalBytes(), 0, bytes, 0, length); 
+      schema.getValue().writeBytes(bytes);
     }
-    
     
     // set and return
     t.set(bytes, length);
@@ -117,14 +107,14 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
     }
     
     // write length
-    int length = value.lengthUtf8();
+    int length = value.bytesLength();
     if (!constantLength)
     {
       BaseUtil.writeVUInt(out, length-minLength);
     }
     
     // write
-    out.write(value.getInternalBytes(), 0, length);
+    value.writeBytes(out);
   }
   
   // -- comparison --------------------------------------------------------------------------------

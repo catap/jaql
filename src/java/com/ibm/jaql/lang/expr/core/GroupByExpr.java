@@ -30,6 +30,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 // TODO: translate cogroup into group over merge?
 // group $x by e1<$x>, $y by e2<$y> into e3<$by,$x,$y>
@@ -289,7 +290,7 @@ public class GroupByExpr extends IterExpr
 
       // update as-variable schemata
       Var asVar = getAsVar(i);
-      if (inSchema.isEmptyArrayOrNull().always())
+      if (inSchema.isEmpty(ARRAY,NULL).always())
       {
         // this indicates null input, i.e., the variable will never be set
         // e.g., schemaof(null -> group by $k=$ as $ into $);
@@ -314,7 +315,7 @@ public class GroupByExpr extends IterExpr
       return SchemaFactory.emptyArraySchema();
     }
     Schema collectSchema = collectExpr().getSchema();
-    if (collectSchema.isArray().always()) // hopefully true 
+    if (collectSchema.is(ARRAY).always()) // hopefully true 
     {
       return new ArraySchema(collectSchema.elements(), null, null);
     }
@@ -449,7 +450,7 @@ public class GroupByExpr extends IterExpr
       sep = ", ";
     }
     Expr using = usingExpr();
-    if( using.getSchema().isNull().maybeNot() )
+    if( using.getSchema().is(NULL).maybeNot() )
     {
       exprText.println(" using (");
       using.decompile(exprText, capturedVars);

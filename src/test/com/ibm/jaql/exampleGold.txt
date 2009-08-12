@@ -445,7 +445,7 @@ into {$x.a, $x.b, $y.c, $y.d}
   $median = fn($items) (
     $sorted = $items -> sort by [$],
 
-    $sorted[int(count($sorted)/2)]
+    $sorted[long(count($sorted)/2)]
   );##
 "$median"
 
@@ -2084,11 +2084,11 @@ null
     "world"
   ],
   [
-    -23,
+    -23m,
     23
   ],
   [
-    38,
+    -38.0,
     38.9
   ],
   [

@@ -148,7 +148,7 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
     // expand OrSchema
     if (schema instanceof OrSchema)
     {
-      for (Schema s : ((OrSchema)schema).getInternal())
+      for (Schema s : ((OrSchema)schema).get())
       {
         add(s); // s is not an OrSchema because OrSchemas are not nested
       }

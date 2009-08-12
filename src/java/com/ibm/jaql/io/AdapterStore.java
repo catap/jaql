@@ -35,6 +35,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
 /**
@@ -115,13 +116,13 @@ public class AdapterStore
 
         public JsonString convert(JsonValue src, JsonString target)
         {
-          target.set(src.toString());
+          ((MutableJsonString)target).setCopy(src.toString());
           return target;
         }
 
         public JsonString createTarget()
         {
-          return new JsonString();
+          return new MutableJsonString();
         }
       };
     }
@@ -156,13 +157,13 @@ public class AdapterStore
 
         public JsonValue convert(JsonString src, JsonValue target)
         {
-          ((JsonString) target).set(src.toString());
+          ((MutableJsonString) target).setCopy(src.toString());
           return target;
         }
 
         public JsonValue createTarget()
         {
-          return new JsonString();
+          return new MutableJsonString();
         }
         
         public Schema getSchema()

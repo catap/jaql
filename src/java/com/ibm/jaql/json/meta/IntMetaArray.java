@@ -19,8 +19,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -44,9 +44,9 @@ public class IntMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public JsonLong makeValue()
+  public MutableJsonLong makeValue()
   {
-    return new JsonLong();
+    return new MutableJsonLong();
   }
 
   /*
@@ -70,7 +70,7 @@ public class IntMetaArray extends MetaArray
   public JsonIterator iter(Object obj) throws Exception
   {
     final int[] arr = (int[]) obj;
-    final JsonLong jlong = new JsonLong();
+    final MutableJsonLong jlong = new MutableJsonLong();
     return new JsonIterator(jlong) {
       int   i     = 0;
 
@@ -99,7 +99,7 @@ public class IntMetaArray extends MetaArray
     int[] arr = (int[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonLong) target).set(arr[(int) n]);
+      ((MutableJsonLong) target).set(arr[(int) n]);
       return target;
     }
     else

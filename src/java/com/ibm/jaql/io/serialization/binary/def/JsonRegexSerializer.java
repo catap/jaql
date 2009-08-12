@@ -31,12 +31,6 @@ class JsonRegexSerializer extends BinaryBasicSerializer<JsonRegex>
   public JsonRegexSerializer(BinaryBasicSerializer<JsonString> stringSerializer) {
     this.stringSerializer = stringSerializer;
   }
-  
-  @Override
-  public JsonRegex newInstance()
-  {
-    return new JsonRegex();
-  }
 
   @Override
   public JsonRegex read(DataInput in, JsonValue target) throws IOException

@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * emptyOnNull( e ) ==> e  if e is never null
@@ -41,7 +42,7 @@ public class EmptyOnNullElimination extends Rewrite
   {
     assert expr instanceof EmptyOnNullFn;
     Expr input = expr.child(0);
-    if( input.getSchema().isNull().never() )
+    if( input.getSchema().is(NULL).never() )
     {
       expr.replaceInParent(input);
       return true;

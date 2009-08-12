@@ -29,5 +29,6 @@ public class JsonDecimalSerializer extends TextBasicSerializer<JsonDecimal>
       throws IOException
   {
     out.print(value.get().toString());
+    out.print('m'); // TODO: flag to disable suffix for JSON compatibility
   }
 }

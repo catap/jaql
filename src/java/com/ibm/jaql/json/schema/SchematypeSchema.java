@@ -21,10 +21,9 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
-import com.ibm.jaql.util.Bool3;
 
 /** Schema for a schema value */
-public class SchematypeSchema extends Schema 
+public final class SchematypeSchema extends Schema 
 {
   // -- private variables ------------------------------------------------------------------------- 
   
@@ -57,7 +56,7 @@ public class SchematypeSchema extends Schema
   public SchematypeSchema(JsonSchema value)
   {
     assert value == null || value.get() != null;
-    this.value = value;
+    this.value = (JsonSchema)JsonUtil.getImmutableCopyUnchecked(value);
   }
   
   SchematypeSchema()
@@ -73,29 +72,11 @@ public class SchematypeSchema extends Schema
   }
 
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return value != null;
   }
 
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()

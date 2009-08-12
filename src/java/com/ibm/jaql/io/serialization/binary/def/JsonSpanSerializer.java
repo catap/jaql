@@ -26,13 +26,6 @@ import com.ibm.jaql.util.BaseUtil;
 
 class JsonSpanSerializer extends BinaryBasicSerializer<JsonSpan>
 {
-
-  @Override
-  public JsonSpan newInstance()
-  {
-    return new JsonSpan();
-  }
-
   @Override
   public JsonSpan read(DataInput in, JsonValue target) throws IOException
   {

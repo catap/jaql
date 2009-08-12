@@ -92,7 +92,7 @@ public final class AnyAgg extends AlgebraicAggregate
     {
       ArraySchema arraySchema = (ArraySchema)inSchema;
       Schema valueSchema = arraySchema.elements();
-      if (arraySchema.isEmptyArray().maybe())
+      if (arraySchema.isEmpty().maybe())
       {
         return SchemaTransformation.addNullability(valueSchema);
       }

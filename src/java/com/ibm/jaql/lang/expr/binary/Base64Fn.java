@@ -59,16 +59,12 @@ public class Base64Fn extends Expr
     {
       return null;
     }
-    byte[] utf8 = jstr.getInternalBytes();
-    int len = jstr.lengthUtf8();
-    if( utf8.length != len )
-    {
-      // TODO: use a better codec that allows us to pass in the length,
-      // and preferably an output buffer
-      byte[] temp = new byte[len];
-      System.arraycopy(utf8, 0, temp, 0, len);
-      utf8 = temp;
-    }
+
+    // TODO: use a better codec that allows us to pass in the length,
+    // and preferably an output buffer
+    int len = jstr.bytesLength();
+    byte[] utf8 = new byte[len];
+    jstr.writeBytes(utf8);
     byte[] base64 = codec.decode(utf8);
     return new JsonBinary(base64);
   }

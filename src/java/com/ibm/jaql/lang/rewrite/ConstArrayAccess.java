@@ -20,6 +20,7 @@ import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -46,7 +47,7 @@ public class ConstArrayAccess extends Rewrite
 
     Expr array = ie.arrayExpr();
     
-    if( array.getSchema().isNull().always() )
+    if( array.getSchema().is(NULL).always() )
     {
       ie.replaceInParent(new ConstExpr(null));
       return true;

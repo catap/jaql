@@ -29,12 +29,6 @@ import com.ibm.jaql.json.type.JsonValue;
 class JsonJavaObjectSerializer extends BinaryBasicSerializer<JsonJavaObject>
 {
   @Override
-  public JsonJavaObject newInstance()
-  {
-    return new JsonJavaObject();
-  }
-
-  @Override
   public JsonJavaObject read(DataInput in, JsonValue target) throws IOException
   {
     JsonJavaObject t;

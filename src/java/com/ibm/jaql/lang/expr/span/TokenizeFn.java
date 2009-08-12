@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.span;
 
 import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -53,11 +54,12 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
       return JsonIterator.NULL;
     }
 
-    final JsonString tokText   = new JsonString();
+    final MutableJsonString tokText   = new MutableJsonString();
     return new JsonIterator(tokText) {
 
-      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getInternalBytes(), 0,
-                                          text.lengthUtf8()); // TODO: reuse
+      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getCopy(), 0,
+                                          text.bytesLength()); // TODO: reuse
+      
       public boolean moveNext() throws Exception
       {
         JsonSpan span = tokenizer.next();

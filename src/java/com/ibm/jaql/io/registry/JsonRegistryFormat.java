@@ -145,7 +145,7 @@ public abstract class JsonRegistryFormat<K, V>
     long n = arr.count();
     for (long i = 0; i < n; i++)
     {
-      JsonRecord r = (JsonRecord) arr.nth(i);
+      JsonRecord r = (JsonRecord) arr.get(i);
       K kVal = convertKey(r);
       V vVal = convertVal(r);
       registry.register(kVal, vVal);

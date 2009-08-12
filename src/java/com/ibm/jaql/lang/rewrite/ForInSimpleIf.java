@@ -20,6 +20,7 @@ import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.IfExpr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 // TODO: this can be generalized (with blow-up of e2):
 // for $i in 
@@ -68,12 +69,12 @@ public class ForInSimpleIf extends Rewrite
     IfExpr ifExpr = (IfExpr) bind.inExpr();
     Expr falseExpr = ifExpr.falseExpr();
 
-    if (falseExpr.getSchema().isEmptyArrayOrNull().maybeNot())
+    if (falseExpr.getSchema().isEmpty(ARRAY,NULL).maybeNot())
     {
       return false;
     }
 
-    if (falseExpr.getSchema().isNull().maybe())
+    if (falseExpr.getSchema().is(NULL).maybe())
     {
       falseExpr.replaceInParent(new ArrayExpr());
     }

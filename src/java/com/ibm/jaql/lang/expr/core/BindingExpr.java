@@ -27,11 +27,13 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * A BindingExpr is not really an Expr at all. It is used to associate a
@@ -41,6 +43,8 @@ import com.ibm.jaql.util.Bool3;
  */
 public class BindingExpr extends Expr
 {
+  private static final MutableJsonLong SENTINAL = new MutableJsonLong(-1); 
+  
   public static enum Type
   {
     EQ(), IN(), INREC(), INPAIR(), INAGG(), AGGFN(),
@@ -304,8 +308,8 @@ public class BindingExpr extends Expr
       return r;
     case IN: // array of all elements in the inputs
       Schema varSchema = null; 
-      JsonLong minLength = JsonLong.MINUS_ONE; // sentinal
-      JsonLong maxLength = JsonLong.MINUS_ONE; // sentinal
+      MutableJsonLong minLength = SENTINAL;
+      MutableJsonLong maxLength = SENTINAL;
       for (int i=0; i<exprs.length; i++)
       {
         Schema inputSchema = exprs[i].getSchema();
@@ -313,7 +317,7 @@ public class BindingExpr extends Expr
         if (inputSchemaArray == null) {
           throw new IllegalArgumentException("array expected"); 
         }
-        if (inputSchemaArray.isNull().always())
+        if (inputSchemaArray.is(NULL).always())
         {
             continue; 
         }
@@ -335,9 +339,9 @@ public class BindingExpr extends Expr
           // update minimum length information
           JsonLong inputMin = inputSchemaArray.minElements();
           if (inputMin == null) inputMin = JsonLong.ZERO;
-          if (minLength == JsonLong.MINUS_ONE)
+          if (minLength == SENTINAL)
           {
-            minLength = inputMin;
+            minLength = inputMin == null ? null : new MutableJsonLong(inputMin);
           }
           else 
           {
@@ -347,9 +351,9 @@ public class BindingExpr extends Expr
           // update maximum length information
           Schema inputNonNullArray = SchemaTransformation.removeNullability(inputSchemaArray);
           JsonLong inputMax = inputNonNullArray.maxElements();
-          if (maxLength == JsonLong.MINUS_ONE)
+          if (maxLength == SENTINAL)
           {
-            maxLength = inputMax;
+            maxLength = inputMax == null ? null : new MutableJsonLong(inputMax);
           }
           else if (maxLength != null)
           {

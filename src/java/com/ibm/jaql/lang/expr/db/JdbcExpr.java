@@ -24,13 +24,14 @@ import java.sql.Types;
 import java.util.Map;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBinary;
+import com.ibm.jaql.json.type.MutableJsonDate;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -106,25 +107,25 @@ public class JdbcExpr extends IterExpr
         case Types.INTEGER :
         case Types.TINYINT :
         case Types.SMALLINT :
-          values[i] = new JsonLong();
+          values[i] = new MutableJsonLong();
           break;
         case Types.DECIMAL :
         case Types.DOUBLE :
         case Types.FLOAT :
-          values[i] = new JsonDecimal();
+          values[i] = new MutableJsonDecimal();
           break;
         case Types.CHAR :
         case Types.VARCHAR :
         case Types.OTHER : // TODO: Types.XML, when jdbc gets there...
-          values[i] = new JsonString();
+          values[i] = new MutableJsonString();
           break;
         case Types.DATE :
         case Types.TIME :
         case Types.TIMESTAMP :
-          values[i] = new JsonDate();
+          values[i] = new MutableJsonDate();
           break;
         case Types.BINARY :
-          values[i] = new JsonBinary();
+          values[i] = new MutableJsonBinary();
           break;
         default :
           throw new RuntimeException("Unsupported column type: "
@@ -164,33 +165,33 @@ public class JdbcExpr extends IterExpr
             case Types.INTEGER :
             case Types.TINYINT :
             case Types.SMALLINT :
-              ((JsonLong) values[i]).set(rs.getLong(i + 1));
+              ((MutableJsonLong) values[i]).set(rs.getLong(i + 1));
               break;
             case Types.DECIMAL :
             case Types.DOUBLE :
             case Types.FLOAT :
-              ((JsonDecimal) values[i]).set(rs.getBigDecimal(i + 1));
+              ((MutableJsonDecimal) values[i]).set(rs.getBigDecimal(i + 1));
               break;
             case Types.CHAR :
             case Types.VARCHAR :
               String s = rs.getString(i + 1);
               if (s != null)
               {
-                ((JsonString) values[i]).set(s);
+                ((MutableJsonString) values[i]).setCopy(s);
               }
               break;
             case Types.DATE :
               // TODO: all these need null handling...
-              ((JsonDate) values[i]).setMillis(rs.getDate(i + 1).getTime());
+              ((MutableJsonDate) values[i]).set(rs.getDate(i + 1).getTime());
               break;
             case Types.TIME :
-              ((JsonDate) values[i]).setMillis(rs.getTime(i + 1).getTime());
+              ((MutableJsonDate) values[i]).set(rs.getTime(i + 1).getTime());
               break;
             case Types.TIMESTAMP :
-              ((JsonDate) values[i]).setMillis(rs.getTimestamp(i + 1).getTime());
+              ((MutableJsonDate) values[i]).set(rs.getTimestamp(i + 1).getTime());
               break;
             case Types.BINARY :
-              ((JsonBinary) values[i]).setBytes(rs.getBytes(i + 1));
+              ((MutableJsonBinary) values[i]).set(rs.getBytes(i + 1));
               break;
             default :
               throw new RuntimeException("Unsupported column type: "

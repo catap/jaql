@@ -35,12 +35,6 @@ class BufferedJsonArraySerializer extends BinaryBasicSerializer<BufferedJsonArra
   }
   
   @Override
-  public BufferedJsonArray newInstance()
-  {
-    return new BufferedJsonArray();
-  }
-
-  @Override
   public BufferedJsonArray read(DataInput in, JsonValue target) throws IOException
   {
     int n = BaseUtil.readVUInt(in);
@@ -54,7 +48,7 @@ class BufferedJsonArraySerializer extends BinaryBasicSerializer<BufferedJsonArra
     
     for (int i = 0; i < n; i++)
     {
-      JsonValue value = t.get(i);
+      JsonValue value = t.getUnchecked(i);
       value = fullSerializer.read(in, value);
       t.set(i, value);      
     }
@@ -71,7 +65,7 @@ class BufferedJsonArraySerializer extends BinaryBasicSerializer<BufferedJsonArra
     BaseUtil.writeVUInt(out, n);
     for (int i = 0; i < n; i++)
     {
-      fullSerializer.write(out, value.get(i));
+      fullSerializer.write(out, value.getUnchecked(i));
     }
   }
   

@@ -108,9 +108,13 @@ public class JsonSpan extends JsonAtom
    * @param inText
    * @param outText
    */
-  public void getText(JsonString inText, JsonString outText)
+  public void getText(JsonString inText, MutableJsonString outText)
   {
-    outText.setCopy(inText.getInternalBytes(), (int) begin, (int) (end - begin));
+    int length = (int)(end-begin);
+    byte[] bytes = outText.get();
+    outText.ensureCapacity(length);
+    inText.writeBytes(bytes, (int)begin, length);
+    outText.set(bytes, length);
   }
 
   /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
@@ -127,6 +131,13 @@ public class JsonSpan extends JsonAtom
       return t;
     }
     return new JsonSpan(this.begin, this.end);
+  }
+  
+  @Override
+  public JsonSpan getImmutableCopy() throws Exception
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
   }
 
   /**

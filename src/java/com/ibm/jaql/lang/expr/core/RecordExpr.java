@@ -34,6 +34,7 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 //TODO: add optimized RecordExpr when all cols are known at compile time
 /**
@@ -108,7 +109,7 @@ public class RecordExpr extends Expr
         vars[n] = env.makeVar("$_flat_"+n);
         ins[n] = new VarExpr(letVar);
         Expr e = flatten.child(0);
-        if( e.getSchema().isEmptyArrayOrNull().maybe() )
+        if( e.getSchema().isEmpty(ARRAY,NULL).maybe() )
         {
           e = new NullElementOnEmptyFn(e);
         }
@@ -193,7 +194,7 @@ public class RecordExpr extends Expr
           {
             fields.add(f);
           }
-          Schema rest = ((RecordSchema)copySchema).getRest();
+          Schema rest = ((RecordSchema)copySchema).getAdditionalSchema();
           if (rest!=null)
           {
             unresolved = unresolved==null ? rest : SchemaTransformation.merge(unresolved, rest);

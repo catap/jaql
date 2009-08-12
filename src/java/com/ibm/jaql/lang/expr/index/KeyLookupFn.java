@@ -33,7 +33,7 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
-
+import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * [ [key,value1] ] -> keyLookup([ [key,value2] ]) ==> [ [key, value1, value2] ]
  * 
@@ -128,7 +128,7 @@ public class KeyLookupFn extends IterExpr
     if (outerElements == null)
     {
       // outer is not an array; only valid value is null 
-      if (outer.isNull().maybe())
+      if (outer.is(NULL).maybe())
       {
         return SchemaFactory.emptyArraySchema();
       }
@@ -151,7 +151,7 @@ public class KeyLookupFn extends IterExpr
     if (innerElements == null)
     {
       // inner is not an array; only valid value is null 
-      if (inner.isNull().maybe())
+      if (inner.is(NULL).maybe())
       {
         value2 = SchemaFactory.nullSchema();
       }

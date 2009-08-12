@@ -16,15 +16,17 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a 128 bit decimal float value */
-public class DecfloatSchema extends RangeSchema<JsonDecimal>
+public final class DecfloatSchema extends RangeSchema<JsonDecimal>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -43,6 +45,8 @@ public class DecfloatSchema extends RangeSchema<JsonDecimal>
     return parameters;
   }
 
+  // used for matching
+  private MutableJsonDecimal temp = new MutableJsonDecimal();
   
   //-- construction ------------------------------------------------------------------------------
   
@@ -60,7 +64,7 @@ public class DecfloatSchema extends RangeSchema<JsonDecimal>
   
   public DecfloatSchema(JsonDecimal min, JsonDecimal max, JsonDecimal value)
   {
-    super(min, max, value);
+    init(min, max, value);
   }
   
   public DecfloatSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
@@ -71,15 +75,19 @@ public class DecfloatSchema extends RangeSchema<JsonDecimal>
   /** Convert the specified numeric to a decimal or throw an exception */  
   private static JsonDecimal convert(JsonNumeric v)
   {
-    if (v == null || v instanceof JsonDecimal)
+    if (v == null) return null;
+    if (v instanceof JsonNumeric)
     {
-      return (JsonDecimal)v;
+      try 
+      {
+        return new JsonDecimal(((JsonNumeric)v).decimalValueExact());
+      }
+      catch (ArithmeticException e)
+      {
+        // throw below
+      }
     }
-    if (v instanceof JsonLong)
-    {
-      return new JsonDecimal(v.longValue());
-    }
-    throw new IllegalArgumentException("interval argument has to be of type long or decimal: " + v);
+    throw new IllegalArgumentException("interval argument has to be of type decfloat: " + v);
   }
   
   // -- Schema methods ----------------------------------------------------------------------------
@@ -94,23 +102,32 @@ public class DecfloatSchema extends RangeSchema<JsonDecimal>
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { JsonDecimal.class, JsonLong.class }; 
+    return new Class[] { JsonDecimal.class, JsonLong.class, JsonDouble.class }; 
   }
 
   public boolean matches(JsonValue value)
   {
-    if (!(value instanceof JsonLong || value instanceof JsonDecimal))
+    if (value == null || !value.getType().isNumeric())
     {
       return false;
     }
-    // value can be long or decimal, min and max are decimal
     
+    // convert to decimal
+    try 
+    {
+      temp.set( ((JsonNumeric)value).decimalValueExact() );
+    }
+    catch (ArithmeticException e)
+    {
+      return false;
+    }
+
+    // match
     if (this.value != null)
     {
       return value.equals(this.value);
     }
-
-    if ( (min != null && min.compareTo(value)>0) || (max != null && max.compareTo(value)<0) )
+    if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
     {
       return false;
     }

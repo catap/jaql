@@ -17,7 +17,6 @@ package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.util.Bool3;
 
 /** Superclass for schemata with minimum, maximum and constant value. */
 public abstract class RangeSchema<T extends JsonValue> extends Schema
@@ -32,7 +31,8 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
   {
   }
   
-  public RangeSchema(T min, T max, T value)
+  @SuppressWarnings("unchecked")
+  protected void init(T min, T max, T value)
   {
     // check min/max
     if (!SchemaUtil.checkInterval(min, max))
@@ -50,45 +50,26 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
         throw new IllegalArgumentException("value argument conflicts with other arguments");
       }
       this.min = this.max = null;
-      this.value = value;
+      this.value = (T)JsonUtil.getImmutableCopyUnchecked(value);
     }
     else if (JsonUtil.equals(min, max))
     {
-      this.value = min;
-      // this.min and this.max stay null
+      this.value = (T)JsonUtil.getImmutableCopyUnchecked(min);
+      // min and max stay null
     }
     else
     {
-      this.min = min;
-      this.max = max;
+      this.min = (T)JsonUtil.getImmutableCopyUnchecked(min);
+      this.max = (T)JsonUtil.getImmutableCopyUnchecked(max);
     }
   }
-  
   
   // -- Schema methods ----------------------------------------------------------------------------
   
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.FALSE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return value != null || (min != null && max != null && min.equals(max));
-  }
-
-  @Override
-  public Bool3 isArrayOrNull()
-  {
-    return Bool3.FALSE;
-  }
-  
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.FALSE;
   }
 
   @Override

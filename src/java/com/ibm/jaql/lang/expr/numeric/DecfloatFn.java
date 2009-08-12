@@ -17,26 +17,27 @@ package com.ibm.jaql.lang.expr.numeric;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
  */
-@JaqlFn(fnName = "int", minArgs = 1, maxArgs = 1)
-public class IntFn extends Expr
+@JaqlFn(fnName = "decfloat", minArgs = 1, maxArgs = 1)
+public class DecfloatFn extends Expr
 {
   /**
-   * int(num)
+   * double(numeric or string)
    * 
    * @param exprs
    */
-  public IntFn(Expr[] exprs)
+  public DecfloatFn(Expr[] exprs)
   {
     super(exprs);
   }
@@ -44,7 +45,7 @@ public class IntFn extends Expr
   /**
    * @param num
    */
-  public IntFn(Expr num)
+  public DecfloatFn(Expr num)
   {
     super(num);
   }
@@ -54,40 +55,36 @@ public class IntFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(final Context context) throws Exception
+  public JsonDecimal eval(final Context context) throws Exception
   {
     JsonValue val = exprs[0].eval(context);
     if (val == null)
     {
       return null;
     }
-    else if (val instanceof JsonLong)
+    else if (val instanceof JsonDecimal)
     {
-      return (JsonNumeric) val;
+      return (JsonDecimal)val;
     }
     else if (val instanceof JsonNumeric)
     {
-      JsonNumeric n = (JsonNumeric) val; 
-      // TODO: memory
-      val = new JsonLong(n.longValue()); // FIXME: rounding error      
+      return new JsonDecimal(((JsonNumeric)val).decimalValue()); // TODO: memory
     }
     else if (val instanceof JsonString)
     {
-      val = new JsonLong(val.toString()); // TODO: memory
+      return new JsonDecimal(val.toString()); // TODO: memory
     }
     else
     {
       throw new ClassCastException("cannot convert "
-          + val.getEncoding().getType().name() + " to number");
+          + val.getEncoding().getType().name() + " to decfloat");
     }
-    return (JsonNumeric) val; // TODO: memory
   }
   
   @Override
   public Schema getSchema()
   {
     Schema in = exprs[0].getSchema();
-    return in.isNull().never() ? SchemaFactory.numberSchema() : SchemaFactory.numberOrNullSchema();
+    return in.is(NULL).never() ? SchemaFactory.decfloatSchema() : SchemaFactory.decfloatOrNullSchema();
   }
-
 }

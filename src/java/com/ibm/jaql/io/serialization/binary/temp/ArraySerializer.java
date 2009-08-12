@@ -3,6 +3,7 @@ package com.ibm.jaql.io.serialization.binary.temp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.List;
 
 import com.ibm.jaql.io.serialization.FullSerializer;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
@@ -32,11 +33,11 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
   
   private void init()
   {
-    Schema[] head = schema.getHeadSchemata();
-    headSerializers = new BinaryFullSerializer[head.length];
-    for (int i=0; i<head.length; i++)
+    List<Schema> head = schema.getHeadSchemata();
+    headSerializers = new BinaryFullSerializer[head.size()];
+    for (int i=0; i<head.size(); i++)
     {
-      headSerializers[i] = new TempBinaryFullSerializer(head[i]);
+      headSerializers[i] = new TempBinaryFullSerializer(head.get(i));
     }
     
     Schema rest = schema.getRestSchema();
@@ -54,16 +55,10 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
   // -- serialization -----------------------------------------------------------------------------
   
   @Override
-  public JsonArray newInstance()
-  {
-    // TODO: make type dependent on schema?
-    return new SpilledJsonArray();
-  }
-
-  @Override
   public JsonArray read(DataInput in, JsonValue target) throws IOException
   {
     // construct target
+    // TODO: make type dependent on schema?
     SpilledJsonArray t;
     if (!(target instanceof SpilledJsonArray))
     {

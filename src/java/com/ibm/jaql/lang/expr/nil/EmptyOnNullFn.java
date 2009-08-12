@@ -24,6 +24,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * emptyOnNull(e) == firstNonNull(e, [])
@@ -53,7 +54,7 @@ public class EmptyOnNullFn extends IterExpr
   public Schema getSchema()
   {
     Schema inSchema = exprs[0].getSchema();
-    switch (inSchema.isNull())
+    switch (inSchema.is(NULL))
     {
     case FALSE:
       return inSchema;
@@ -68,7 +69,7 @@ public class EmptyOnNullFn extends IterExpr
       }
       else
       {
-        return OrSchema.or(outSchema, SchemaFactory.emptyArraySchema());
+        return OrSchema.make(outSchema, SchemaFactory.emptyArraySchema());
       }
     }
   }

@@ -15,11 +15,12 @@
  */
 package com.ibm.jaql.json.schema;
 
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema for the null value */
-public class NullSchema extends Schema
+public final class NullSchema extends Schema
 {
   NullSchema()
   {    
@@ -35,27 +36,15 @@ public class NullSchema extends Schema
   }
 
   @Override
-  public Bool3 isNull()
-  {
-    return Bool3.TRUE;
-  }
-
-  @Override
   public boolean isConstant()
   {
     return true;
   }
 
   @Override
-  public Bool3 isArrayOrNull()
+  public Bool3 isEmpty(JsonType type, JsonType ... types) 
   {
-    return Bool3.TRUE;
-  }
-
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    return Bool3.TRUE;
+    return is(type, types);
   }
 
   @SuppressWarnings("unchecked")

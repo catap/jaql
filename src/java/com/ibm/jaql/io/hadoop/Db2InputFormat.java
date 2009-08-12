@@ -41,14 +41,15 @@ import org.apache.hadoop.mapred.Reporter;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBinary;
+import com.ibm.jaql.json.type.MutableJsonDate;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.json.type.MutableJsonString;
 
 public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
 {
@@ -380,25 +381,25 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
           case Types.INTEGER:
           case Types.TINYINT:
           case Types.SMALLINT:
-            values[i] = new JsonLong();
+            values[i] = new MutableJsonLong();
             break;
           case Types.DECIMAL: 
           case Types.DOUBLE: 
           case Types.FLOAT: 
-            values[i] = new JsonDecimal();
+            values[i] = new MutableJsonDecimal();
             break;
           case Types.CHAR:
           case Types.VARCHAR:
           case Types.OTHER:   // TODO: Types.XML, when jdbc gets there...
-            values[i] = new JsonString();
+            values[i] = new MutableJsonString();
             break;
           case Types.DATE:
           case Types.TIME:
           case Types.TIMESTAMP:
-            values[i] = new JsonDate();
+            values[i] = new MutableJsonDate();
             break;
           case Types.BINARY:          
-            values[i] = new JsonBinary();
+            values[i] = new MutableJsonBinary();
             break;
           default:
             throw new RuntimeException("Unsupported column type: " + meta.getColumnTypeName(i+1));
@@ -463,33 +464,33 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
             case Types.INTEGER:
             case Types.TINYINT:
             case Types.SMALLINT:
-              ((JsonLong)values[i]).set(resultSet.getLong(i+1));
+              ((MutableJsonLong)values[i]).set(resultSet.getLong(i+1));
               break;
             case Types.DECIMAL: 
             case Types.DOUBLE: 
             case Types.FLOAT: 
-              ((JsonDecimal)values[i]).set(resultSet.getBigDecimal(i+1));
+              ((MutableJsonDecimal)values[i]).set(resultSet.getBigDecimal(i+1));
               break;
             case Types.CHAR:
             case Types.VARCHAR:
               String s = resultSet.getString(i+1);
               if( s != null )
               {
-                ((JsonString)values[i]).set(s);
+                ((MutableJsonString)values[i]).setCopy(s);
               }
               break;
             case Types.DATE:
               // TODO: all these need null handling...
-              ((JsonDate)values[i]).setMillis(resultSet.getDate(i+1).getTime());
+              ((MutableJsonDate)values[i]).set(resultSet.getDate(i+1).getTime());
               break;
             case Types.TIME:
-              ((JsonDate)values[i]).setMillis(resultSet.getTime(i+1).getTime());
+              ((MutableJsonDate)values[i]).set(resultSet.getTime(i+1).getTime());
               break;
             case Types.TIMESTAMP:
-              ((JsonDate)values[i]).setMillis(resultSet.getTimestamp(i+1).getTime());
+              ((MutableJsonDate)values[i]).set(resultSet.getTimestamp(i+1).getTime());
               break;
             case Types.BINARY:
-              ((JsonBinary)values[i]).setBytes(resultSet.getBytes(i+1));
+              ((MutableJsonBinary)values[i]).set(resultSet.getBytes(i+1));
               break;
             default:
               throw new RuntimeException("Unsupported column type: " + meta.getColumnTypeName(i+1));

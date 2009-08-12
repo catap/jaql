@@ -19,8 +19,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBool;
 
 /**
  * 
@@ -42,9 +42,9 @@ public class BooleanMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonBool makeValue()
+  public MutableJsonBool makeValue()
   {
-    return new JsonBool();
+    return new MutableJsonBool();
   }
 
   /*
@@ -58,7 +58,7 @@ public class BooleanMetaField extends MetaField
       IllegalAccessException
   {
     boolean x = field.getBoolean(obj);
-    ((JsonBool) target).set(x);
+    ((MutableJsonBool) target).set(x);
     return target;
   }
 

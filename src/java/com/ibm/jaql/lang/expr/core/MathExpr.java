@@ -20,19 +20,26 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.HashSet;
 
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.schema.SchemaType;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonDouble;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -60,17 +67,29 @@ public class MathExpr extends Expr
       JsonValue t = ce.value;
       if (t instanceof JsonLong)
       {
-        ((JsonLong) t).negate();
+        return new ConstExpr(new JsonLong(-((JsonLong) t).get()));
+      }
+      if (t instanceof MutableJsonLong)
+      {
+        ((MutableJsonLong) t).negate();
         return expr;
       }
       if (t instanceof JsonDouble)
       {
-        ((JsonDouble) t).negate();
+        return new ConstExpr(new JsonDouble(-((JsonDouble) t).get()));
+      }
+      if (t instanceof MutableJsonDouble)
+      {
+        ((MutableJsonDouble) t).negate();
         return expr;
       }
       if (t instanceof JsonDecimal)
       {
-        ((JsonDecimal) t).negate();
+        return new ConstExpr(new JsonDecimal(((JsonDecimal) t).get().negate()));
+      }
+      if (t instanceof MutableJsonDecimal)
+      {
+        ((MutableJsonDecimal) t).negate();
         return expr;
       }
     }
@@ -121,127 +140,83 @@ public class MathExpr extends Expr
    */
   public JsonValue eval(Context context) throws Exception
   {
-    // changes here should be reflected in getSchema() below
     JsonValue value1 = exprs[0].eval(context);
-    if (value1 == null)
-    {
-      return null;
-    }
     JsonValue value2 = exprs[1].eval(context);
-    if (value2 == null)
-    {
-      return null;
-    }
-    if (value1 instanceof JsonLong && value2 instanceof JsonLong)
-    {
-      long n1 = ((JsonLong) value1).get();
-      long n2 = ((JsonLong) value2).get();
-      return longEval(n1, n2);
-    }
-    else if (value1 instanceof JsonDate && value2 instanceof JsonDate)
-    {
-      long n1 = ((JsonDate) value1).getMillis();
-      long n2 = ((JsonDate) value2).getMillis();
-      return longEval(n1, n2);
-    }
-    else if (value1 instanceof JsonString || value2 instanceof JsonString)
-    {
-      if (op != PLUS) // TODO: use a different symbol or function for string concat? javascript uses +
-      {
-        throw new RuntimeException("invalid operator on strings");
-      }
-      // TODO: memory
-      JsonString text1 = (JsonString) value1;
-      JsonString text2 = (JsonString) value2;
-      byte[] buf = new byte[text1.lengthUtf8() + text2.lengthUtf8()];
-      System.arraycopy(text1.getInternalBytes(), 0, buf, 0, text1.lengthUtf8());
-      System.arraycopy(text2.getInternalBytes(), 0, buf, text1.lengthUtf8(), text2
-          .lengthUtf8());
-      return new JsonString(buf);
-    }
-    else if (value1 instanceof JsonDouble || value2 instanceof JsonDouble)
-    {
-      double d1 = ((JsonNumeric) value1).doubleValue();
-      double d2 = ((JsonNumeric) value2).doubleValue();
-      return doubleEval(d1, d2);
-    }
-    else
-    {
-      BigDecimal n1 = ((JsonNumber) value1).decimalValue();
-      BigDecimal n2 = ((JsonNumber) value2).decimalValue();
-      BigDecimal n3;
-      switch (op)
-      {
-        case PLUS : {
-          n3 = n1.add(n2, MathContext.DECIMAL128);
-          break;
-        }
-        case MINUS : {
-          n3 = n1.subtract(n2, MathContext.DECIMAL128);
-          break;
-        }
-        case MULTIPLY : {
-          n3 = n1.multiply(n2, MathContext.DECIMAL128);
-          break;
-        }
-        case DIVIDE : {
-          try
-          {
-            n3 = n1.divide(n2, MathContext.DECIMAL128);
-          }
-          catch (ArithmeticException e)
-          {
-            // TODO: need +INF, -INF, and NaN
-            return null;
-          }
-          break;
-        }
-        default :
-          throw new RuntimeException("invalid op:" + op);
-      }
-      return new JsonDecimal(n3);
-    }
+    return eval(value1, value2, op);
   }
   
-  @Override
-  public Schema getSchema()
+  public static JsonValue eval(JsonValue value1, JsonValue value2, int op)
   {
-    Schema s1 = exprs[0].getSchema();
-    Schema s2 = exprs[1].getSchema();
-    
-    if (s1.isNull().always() || s2.isNull().always())
+    // changes here should be reflected in getSchema() below
+    if (value1 == null || value2 == null)
     {
-      return SchemaFactory.nullSchema();
+      return null;
     }
-    if (
-        (s1.getSchemaType()==Schema.SchemaType.LONG && s2.getSchemaType()==Schema.SchemaType.LONG)
-        || (s1.getSchemaType()==Schema.SchemaType.DATE && s2.getSchemaType()==Schema.SchemaType.DATE)
-        )
+    switch (value1.getType())
     {
-      return op == DIVIDE ? SchemaFactory.decfloatSchema() : SchemaFactory.longSchema();
-    }
-    if (s1.getSchemaType()==Schema.SchemaType.STRING && s2.getSchemaType()==Schema.SchemaType.STRING)
-    {
-      if (op != PLUS)
-      {
-        throw new RuntimeException("invalid operator on strings");
+    case LONG:
+      switch (value2.getType()) {
+      case LONG:
+        return longEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      case DOUBLE:
+        return doubleEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      case DECFLOAT:
+        return decimalEval((JsonNumeric)value1, (JsonNumeric)value2, op);
       }
-      return SchemaFactory.stringSchema();
+      break;
+    case DOUBLE:
+      switch (value2.getType()) {
+      case LONG:
+        return doubleEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      case DOUBLE:
+        return doubleEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      case DECFLOAT:
+        return decimalEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      }
+      break;
+    case DECFLOAT:
+      switch (value2.getType()) {
+      case LONG:
+        return decimalEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      case DOUBLE:
+        return decimalEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      case DECFLOAT:
+        return decimalEval((JsonNumeric)value1, (JsonNumeric)value2, op);
+      }
+      break;
+    case STRING:
+      if (value2.getType() == JsonType.STRING && op==PLUS)
+      {
+        JsonString text1 = (JsonString) value1;
+        JsonString text2 = (JsonString) value2;
+        MutableJsonString result = new MutableJsonString();
+        result.ensureCapacity(text1.bytesLength() + text2.bytesLength());
+        byte[] buf = result.get();
+        text1.writeBytes(buf, 0, text1.bytesLength());
+        text2.writeBytes(buf, text1.bytesLength(), text2.bytesLength());
+        result.set(buf, text1.bytesLength() + text2.bytesLength());
+        return result;
+      }
+      break;
     }
-    if (s1.getSchemaType()==Schema.SchemaType.DOUBLE || s2.getSchemaType()==Schema.SchemaType.DOUBLE)
-    {
-      return SchemaFactory.doubleSchema();
-    }
-    boolean nullable = s1.isNull().maybe() || s2.isNull().maybe();
-    return nullable ? SchemaFactory.numericOrNullSchema() : SchemaFactory.numericSchema();
+    
+    // if we reach this point, we cannot apply the op
+    throw new RuntimeException("Operation " + OP_STR[op] + " not defined for input types " 
+        + value1.getType() + " and " + value2.getType());
   }
 
+
+  private static JsonValue longEval(JsonNumeric v1, JsonNumeric v2, int op)
+  {
+    return longEval(v1.longValue(), v2.longValue(), op);
+  }
+  
   /**
    * @param n1
    * @param n2
    * @return
    */
-  private JsonValue longEval(long n1, long n2)
+  private static JsonValue longEval(long n1, long n2, int op)
   {
     long n3;
     switch (op)
@@ -259,19 +234,8 @@ public class MathExpr extends Expr
         break;
       }
       case DIVIDE : {
-        try
-        {
-          // n3 = n1 / n2;
-          BigDecimal d1 = new BigDecimal(n1);
-          BigDecimal d2 = new BigDecimal(n2);
-          BigDecimal d3 = d1.divide(d2, MathContext.DECIMAL128);
-          return new JsonDecimal(d3); // TODO: memory
-        }
-        catch (ArithmeticException e)
-        {
-          // TODO: need +INF, -INF, and NaN
-          return null;
-        }
+        n3 = n1/n2;
+        break;
       }
       default :
         throw new RuntimeException("invalid op:" + op);
@@ -284,8 +248,10 @@ public class MathExpr extends Expr
    * @param n2
    * @return
    */
-  private JsonValue doubleEval(double n1, double n2)
+  private static JsonValue doubleEval(JsonNumeric v1, JsonNumeric v2, int op)
   {
+    double n1 = v1.doubleValue();
+    double n2 = v2.doubleValue();
     double n3;
     switch (op)
     {
@@ -311,35 +277,133 @@ public class MathExpr extends Expr
     return new JsonDouble(n3); // TODO: memory!
   }
 
-  public static JsonValue divide(JsonValue x, JsonValue y)
+  private static JsonValue decimalEval(JsonNumeric v1, JsonNumeric v2, int op)
   {
-    if( x == null || y == null )
+    BigDecimal n1 = v1.decimalValue();
+    BigDecimal n2 = v2.decimalValue();
+    BigDecimal n3;
+    switch (op)
     {
-      return null;
+      case PLUS : {
+        n3 = n1.add(n2, MathContext.DECIMAL128);
+        break;
+      }
+      case MINUS : {
+        n3 = n1.subtract(n2, MathContext.DECIMAL128);
+        break;
+      }
+      case MULTIPLY : {
+        n3 = n1.multiply(n2, MathContext.DECIMAL128);
+        break;
+      }
+      case DIVIDE : {
+        try
+        {
+          n3 = n1.divide(n2, MathContext.DECIMAL128);
+        }
+        catch (ArithmeticException e)
+        {
+          // TODO: need +INF, -INF, and NaN
+          return null;
+        }
+        break;
+      }
+      default :
+        throw new RuntimeException("invalid op:" + op);
+    }
+    return new JsonDecimal(n3);
+  }
+
+  // -- schema ------------------------------------------------------------------------------------
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema s1 = exprs[0].getSchema();
+    Schema s2 = exprs[1].getSchema();
+    
+    // check for nulls
+    boolean isNullable = s1.is(NULL).maybe() || s2.is(NULL).maybe();
+    s1 = SchemaTransformation.removeNullability(s1);
+    s2 = SchemaTransformation.removeNullability(s2);
+    if (s1==null || s2==null)
+    {
+      return SchemaFactory.nullSchema();
     }
     
-    if( x instanceof JsonDouble && y instanceof JsonDouble)
+    // check for basic types
+    JsonType resultType = null;
+    switch (s1.getSchemaType())
     {
-      JsonDouble dx = (JsonDouble)x;
-      JsonDouble dy = (JsonDouble)y;
-      double div = dx.get() / dy.get();
-      return new JsonDouble(div);
-    }
-    else
-    {
-      BigDecimal dx = ((JsonNumeric)x).decimalValue();
-      BigDecimal dy = ((JsonNumeric)y).decimalValue();
-      try
+    case LONG:
+      switch (s2.getSchemaType())
       {
-        // dz = dx / dy
-        BigDecimal dz = dx.divide(dy, MathContext.DECIMAL128);
-        return new JsonDecimal(dz); // TODO: memory
+      case LONG:
+        resultType = JsonType.LONG;
+        break;
+      case DOUBLE:
+        resultType = JsonType.DOUBLE;
+        break;
+      case DECFLOAT:
+        resultType = JsonType.DECFLOAT;
+        break;
       }
-      catch (ArithmeticException e)
+      break;
+    case DOUBLE:
+      switch (s2.getSchemaType())
       {
-        // TODO: need +INF, -INF, and NaN
-        return null;
+      case LONG:
+      case DOUBLE:
+        resultType = JsonType.DOUBLE;
+        break;
+      case DECFLOAT:
+        resultType = JsonType.DECFLOAT;
+        break;
+      }
+      break;  
+    case DECFLOAT:
+      switch (s2.getSchemaType())
+      {
+      case LONG:
+      case DOUBLE:
+      case DECFLOAT:
+        resultType = JsonType.DECFLOAT;
+        break;
+      }
+      break;  
+    case STRING:
+      if (s2.getSchemaType() == SchemaType.STRING)
+      {
+        resultType = JsonType.STRING;
+      }
+      break;
+    }
+    
+    // return result
+    if (resultType != null)
+    {
+      if (isNullable)
+      {
+        return SchemaFactory.make(resultType, JsonType.NULL);
+      }
+      else
+      {
+        return SchemaFactory.make(resultType);
+      }
+    }
+    else 
+    {
+      // resultType == null
+      if (isNullable)
+      {
+        return OrSchema.make(SchemaFactory.stringSchema(), SchemaFactory.numericSchema(), SchemaFactory.nullSchema());
+      }
+      else
+      {
+        return OrSchema.make(SchemaFactory.stringSchema(), SchemaFactory.numericSchema());
       }
     }
   }
+
+  
 }

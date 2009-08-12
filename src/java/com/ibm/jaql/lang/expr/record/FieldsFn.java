@@ -23,6 +23,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -50,7 +51,7 @@ public final class FieldsFn extends IterExpr
 
   public Schema getSchema()
   {
-    if (exprs[0].getSchema().isNull().maybe())
+    if (exprs[0].getSchema().is(NULL).maybe())
     {
       return SchemaFactory.arrayOrNullSchema();
     }

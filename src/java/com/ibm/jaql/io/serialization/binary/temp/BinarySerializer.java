@@ -24,6 +24,7 @@ import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBinary;
 import com.ibm.jaql.util.BaseUtil;
 
 class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
@@ -47,12 +48,6 @@ class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
   // -- serialization -----------------------------------------------------------------------------
 
   @Override
-  public JsonBinary newInstance()
-  {
-    return new JsonBinary();
-  }
-
-  @Override
   public JsonBinary read(DataInput in, JsonValue target) throws IOException
   {
     // read length
@@ -67,22 +62,18 @@ class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
     }
 
     // create target
-    JsonBinary t;
-    byte[] bytes;
-    if (target==null || !(target instanceof JsonBinary)) {
-      bytes = new byte[length];
-      t = new JsonBinary(bytes);
+    MutableJsonBinary t;
+    if (target==null || !(target instanceof MutableJsonBinary)) {
+      t = new MutableJsonBinary();
     } else {
-      t = (JsonBinary)target;
-      bytes = t.getInternalBytes();
-      if (bytes.length < length) {
-        bytes = new byte[length];
-      }
+      t = (MutableJsonBinary)target;
     }
+    t.ensureCapacity(length);
+    byte[] bytes = t.get();
 
     // fill bytes, set and return
     in.readFully(bytes, 0, length);
-    t.setBytes(bytes, length);
+    t.set(bytes, length);
     return t;
   }
 
@@ -96,14 +87,14 @@ class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
     }
     
     // write length
-    int length = value.length();
+    int length = value.bytesLength();
     if (!constantLength)
     {
       BaseUtil.writeVUInt(out, length-minLength);
     }
     
     // write
-    out.write(value.getInternalBytes(), 0, length);
+    value.writeBytes(out);
   }
   
   // -- comparison --------------------------------------------------------------------------------

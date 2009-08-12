@@ -22,8 +22,8 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.DateSchema;
 import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.util.BaseUtil;
 
 class DateSerializer extends BinaryBasicSerializer<JsonDate>
@@ -38,7 +38,7 @@ class DateSerializer extends BinaryBasicSerializer<JsonDate>
     this.schema = schema; 
     if (schema.getMin() != null)
     {
-      offset = schema.getMin().getMillis();
+      offset = schema.getMin().get();
     }
     else
     {
@@ -49,23 +49,17 @@ class DateSerializer extends BinaryBasicSerializer<JsonDate>
   // -- serialization -----------------------------------------------------------------------------
 
   @Override
-  public JsonDate newInstance()
-  {
-    return new JsonDate();
-  }
-
-  @Override
   public JsonDate read(DataInput in, JsonValue target) throws IOException
   {
     // get value
     long value = readValue(in);
     
     // return result
-    if (target == null || !(target instanceof JsonLong)) {
-      return new JsonDate(value);
+    if (target == null || !(target instanceof MutableJsonDate)) {
+      return new MutableJsonDate(value);
     } else {
-      JsonDate t = (JsonDate)target;
-      t.setMillis(value);
+      MutableJsonDate t = (MutableJsonDate)target;
+      t.set(value);
       return t;
     }
   }
@@ -87,14 +81,14 @@ class DateSerializer extends BinaryBasicSerializer<JsonDate>
     }
     
     // write
-    BaseUtil.writeVSLong(out, value.getMillis()-offset);
+    BaseUtil.writeVSLong(out, value.get()-offset);
   }
   
   private long readValue(DataInput in) throws IOException
   {
     if (schema.getValue() != null)
     {
-      return schema.getValue().getMillis();
+      return schema.getValue().get();
     }
     else
     {

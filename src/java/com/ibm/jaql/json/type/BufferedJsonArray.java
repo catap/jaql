@@ -28,58 +28,123 @@ import com.ibm.jaql.json.util.JsonIterator;
  */
 public final class BufferedJsonArray extends JsonArray
 {
+  protected static final int MIN_CAPACITY = 8; // when non-empty
   private final static JsonValue[] NO_VALUES = new JsonValue[0];
   
   /** number of values in the array */
-  private int count;
+  private int size;
 
   /** buffer that stores the content of the array */
   private JsonValue[] values;
   
   
   // -- construction ------------------------------------------------------------------------------
-  
-  /** Construct a new in-memory array containing the specified values. */
-  public BufferedJsonArray(JsonValue[] values)
+
+  /** Construct a new buffered array containing the specified values. If <code>copy</code> 
+   * is set to false, the constructed array will be backed by <code>values</code>. 
+   * Otherwise, a deep copy of <code>values</code> will be used. */
+  public BufferedJsonArray(JsonValue[] values, boolean copy)
   {
-    this.values = values;
-    this.count = values.length;
+    this(values, values.length, copy);
+  }
+
+  /** Construct a new buffered array containing the specified values. If <code>copy</code> 
+   * is set to false, the constructed array will be backed by <code>values</code>. 
+   * Otherwise, a deep copy of <code>values</code> will be used. */
+  public BufferedJsonArray(JsonValue[] values, int size, boolean copy)
+  {
+    if (copy)
+    {
+      setCopy(values, size);
+    }
+    else
+    {
+      set(values, size);
+    }
   }
 
   /** Construct a new in-memory array of the specified size. The array is initially filled with
    * <code>null</code> values. */
   public BufferedJsonArray(int size)
   {
-    this(new JsonValue[size]);
+    this(new JsonValue[size], false);
   }
 
   /** Construct an empty in-memory array */
   public BufferedJsonArray()
   {
-    this(NO_VALUES);
+    this(NO_VALUES, false);
   }
 
   
-  // -- mutation ----------------------------------------------------------------------------------
-  
-  /** Appends the specified value to this array */
-  public void add(JsonValue value)
+  // -- getters -----------------------------------------------------------------------------------
+
+  /* @see com.ibm.jaql.json.type.JsonArray#count() */
+  @Override
+  public final long count()
   {
-    ensureCapacity(count + 1);
-    values[count] = value;
-    count++;
-  }
-  
-  /** Sets the i-th element of this array to the specified value without boundary checking. 
-   * Correctly sets the desired element whenever 0&le;<code>i</code>&le;<code>count()</code>. 
-   * Otherwise, the behaviour is unspecified. */
-  public void set(int i, JsonValue value)
-  {
-    assert i < count;
-    values[i] = value;
+    return size;
   }
 
+  /** Returns the size of this array. Same as {@link #count()} except that it returns an int. */
+  public final int size()
+  {
+    return size;
+  }
+
+  /* @see com.ibm.jaql.json.type.JArray#iter() */
+  @Override
+  public JsonIterator iter() throws Exception
+  {
+    if (size == 0)
+    {
+      return JsonIterator.EMPTY;
+    }
+    return new JsonIterator() {
+      int i = 0;
+
+      @Override
+      public boolean moveNext() throws Exception
+      {
+        if (i < size)
+        {
+          currentValue = values[i++];
+          return true;
+        }
+        return false;
+      }
+    };
+  }
+
+  /* @see com.ibm.jaql.json.type.JsonArray#get(long) */
+  @Override
+  public JsonValue get(long n) throws Exception
+  {
+    if (n >= 0 && n < size)
+    {
+      return values[(int) n];
+    }
+    return null;
+  }
+
+  /** Returns the i-th element of this array without boundary checking. Produces the desired
+   * element whenever 0&le;<code>i</code>&le;<code>count()</code>. Otherwise, the behaviour is
+   * unspecified. */
+  public JsonValue getUnchecked(int i)
+  {
+    assert i < size;
+    return values[i];
+  }
   
+  /* @see com.ibm.jaql.json.type.JsonArray#getAll(com.ibm.jaql.json.type.JsonValue[]) */
+  @Override
+  public void getAll(JsonValue[] target) throws Exception
+  {
+    assert target.length == size;
+    System.arraycopy(this.values, 0, target, 0, size);
+  }
+
+
   /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
   public BufferedJsonArray getCopy(JsonValue target) throws Exception
@@ -90,136 +155,127 @@ public final class BufferedJsonArray extends JsonArray
     if (target instanceof BufferedJsonArray)
     {
       t = (BufferedJsonArray)target;
-      t.resize(count);
+      t.resize(size);
     }
     else
     {
-      t = new BufferedJsonArray(count);
+      t = new BufferedJsonArray(size);
     }
     
-    for (int i = 0; i < count; i++)
+    for (int i = 0; i < size; i++)
     {
       JsonValue v = values[i]; 
       t.values[i] = v==null ? null : v.getCopy(values[i]);
     }
     return t;
   }
+
+  @Override
+  public JsonArray getImmutableCopy() throws Exception
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
+  }
+  
+  // -- mutation ----------------------------------------------------------------------------------
+  
+  /** Sets this JSON array to the first <code>size</code> values in the given array. The array is not 
+   * copied but directly used as internal buffer. */
+  public void set(JsonValue values[], int size)
+  {
+    if (size > values.length) throw new IllegalArgumentException();
+    this.values = values;
+    this.size = size;
+  }
+  
+  /** Sets this JSON array to a (deep) copy of the first <code>size</code> values in the given 
+   * array. */
+  public void setCopy(JsonValue values[], int size)
+  {
+    if (size > values.length) throw new IllegalArgumentException();
+    resize(size);
+    for (int i=0; i<size; i++)
+    {
+      this.values[i] = JsonUtil.getCopyUnchecked(values[i], this.values[i]);
+    }
+  }
+  
+  /** Appends the specified value to this array */
+  public void add(JsonValue value)
+  {
+    ensureCapacity(size + 1);
+    values[size] = value;
+    size++;
+  }
+  
+  /** Appends a copy of the specified value to this array */
+  public void addCopy(JsonValue value)
+  {
+    ensureCapacity(size + 1);
+    values[size] = JsonUtil.getCopyUnchecked(value, values[size]);
+    size++;
+  }
+  
+  /** Sets the i-th element of this array to the specified value without boundary checking. 
+   * Correctly sets the desired element whenever 0&le;<code>i</code>&le;<code>count()</code>. 
+   * Otherwise, the behaviour is unspecified. */
+  public void set(int i, JsonValue value)
+  {
+    assert i < size;
+    values[i] = value;
+  }
+
+  /** Sets the i-th element of this array to a copy of the specified value without boundary checking. 
+   * Correctly sets the desired element whenever 0&le;<code>i</code>&le;<code>count()</code>. 
+   * Otherwise, the behaviour is unspecified. */
+  public void setCopy(int i, JsonValue value)
+  {
+    assert i < size;
+    values[i] = JsonUtil.getCopyUnchecked(value, values[i]);
+  }
   
   /** Ensures that the array can store up to <code>capacity</code> elements but does not change
    * the actual size or content of the array. */
   public final void ensureCapacity(int capacity)
   {
-    if (capacity > values.length)
+    if (values.length < capacity)
     {
-      JsonValue[] newValues = new JsonValue[capacity];
+      int newCapacity = Math.max(MIN_CAPACITY, values.length);
+      while (newCapacity < capacity) newCapacity *= 2;
+
+      JsonValue[] newValues = new JsonValue[newCapacity];
       System.arraycopy(this.values, 0, newValues, 0, values.length);
       this.values = newValues;
     }
   }
 
-  /** Resizes this array to the specified size. If <code>newSize<count()</code>, the tail of
-   * the array will be truncated. If <code>newSize>count()</code>, new elements are appended to
+  /** Resizes this array to the specified size. If <code>size<count()</code>, the tail of
+   * the array will be truncated. If <code>size>count()</code>, new elements are appended to
    * the end of the array; their content is undefined. */
-  public void resize(int newSize)
+  public void resize(int size)
   {
     // NOTE: shrinking an array and then growing it again makes the values that have been 
     // truncated reappear: e.g., [1,2,3] --resize(2)--> [1,2] --resize(3)--> [1,2,3]  
-    ensureCapacity(newSize);
-    this.count = newSize;
-  }
-
-  /** Resizes this array to the specified size when interpreted as an <code>int</code>. See
-   * {@link #resize(int)}. */
-  public void resize(long newSize)
-  {
-    resize((int) newSize);
+    ensureCapacity(size);
+    this.size = size;
   }
 
   /** Clears this array, i.e., sets its size to zero. */
   public void clear()
   {
-    count = 0;
+    size = 0;
   }
   
-  
-  // -- getters -----------------------------------------------------------------------------------
-
-  /* @see com.ibm.jaql.json.type.JsonArray#count() */
-  @Override
-  public final long count()
-  {
-    return count;
-  }
-
-  /** Returns the size of this array. Same as {@link #count()} except that it returns an int. */
-  public final int size()
-  {
-    return count;
-  }
-
-  /* @see com.ibm.jaql.json.type.JArray#iter() */
-  @Override
-  public JsonIterator iter() throws Exception
-  {
-    if (count == 0)
-    {
-      return JsonIterator.EMPTY;
-    }
-    return new JsonIterator() {
-      int i = 0;
-
-      @Override
-      public boolean moveNext() throws Exception
-      {
-        if (i < count)
-        {
-          currentValue = values[i++];
-          return true;
-        }
-        return false;
-      }
-    };
-  }
-
-  /* @see com.ibm.jaql.json.type.JArray#nth(long) */
-  @Override
-  public JsonValue nth(long n) throws Exception
-  {
-    if (n >= 0 && n < count)
-    {
-      return values[(int) n];
-    }
-    return null;
-  }
-
-  /** Returns the i-th element of this array without boundary checking. Produces the desired
-   * element whenever 0&le;<code>i</code>&le;<code>count()</code>. Otherwise, the behaviour is
-   * unspecified. */
-  public JsonValue get(int i)
-  {
-    assert i < count;
-    return values[i];
-  }
-  
-  /* @see com.ibm.jaql.json.type.JsonArray#getAll(com.ibm.jaql.json.type.JsonValue[]) */
-  @Override
-  public void getAll(JsonValue[] target) throws Exception
-  {
-    assert target.length == count;
-    System.arraycopy(this.values, 0, target, 0, count);
-  }
-
-
 
   // -- comparison/hashing ------------------------------------------------------------------------
   
   /** Compares this array with the specified array (deep). */
   public int compareTo(BufferedJsonArray x)
   {
-    int n = count;
-    if (x.count < n)
+    int n = size;
+    if (x.size < n)
     {
-      n = x.count;
+      n = x.size;
     }
     for (int i = 0; i < n; i++)
     {
@@ -229,11 +285,11 @@ public final class BufferedJsonArray extends JsonArray
         return c;
       }
     }
-    if (count == x.count)
+    if (size == x.size)
     {
       return 0;
     }
-    else if (count < x.count)
+    else if (size < x.size)
     {
       return +1;
     }
@@ -254,12 +310,9 @@ public final class BufferedJsonArray extends JsonArray
     return super.compareTo(x);
   }
   
-
-  // -- misc --------------------------------------------------------------------------------------
-
   /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
   public JsonEncoding getEncoding()
   {
-    return JsonEncoding.ARRAY_FIXED;
+    return JsonEncoding.ARRAY_BUFFERED;
   }
 }

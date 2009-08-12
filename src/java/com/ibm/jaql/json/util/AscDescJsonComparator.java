@@ -64,18 +64,18 @@ public class AscDescJsonComparator extends DefaultJsonComparator
 
     // check that we have arrays and read their length
     long l1 = 0;
-    if (encoding1.equals(JsonEncoding.ARRAY_FIXED)) {
+    if (encoding1.equals(JsonEncoding.ARRAY_BUFFERED)) {
       l1 = BaseUtil.readVUInt(input1);
-    } else if (encoding1.equals(JsonEncoding.ARRAY_SPILLING)) {
+    } else if (encoding1.equals(JsonEncoding.ARRAY_SPILLED)) {
       l1 = BaseUtil.readVULong(input1);
     } else {
       throw new RuntimeException("Input types must be arrays");
     }
     
     long l2 = 0;
-    if (encoding2.equals(JsonEncoding.ARRAY_FIXED)) {
+    if (encoding2.equals(JsonEncoding.ARRAY_BUFFERED)) {
       l2 = BaseUtil.readVUInt(input2);
-    } else if (encoding2.equals(JsonEncoding.ARRAY_SPILLING)) {
+    } else if (encoding2.equals(JsonEncoding.ARRAY_SPILLED)) {
       l2 = BaseUtil.readVULong(input2);
     } else {
       throw new RuntimeException("Input types must be arrays");
@@ -148,7 +148,7 @@ public class AscDescJsonComparator extends DefaultJsonComparator
     }
     for(int i = 0 ; i < asc.length ; i++)
     {
-      int c = x.get(i).compareTo(y.get(i));
+      int c = x.getUnchecked(i).compareTo(y.getUnchecked(i));
       if( c != 0 )
       {
         return asc[i] ? c : -c;

@@ -25,7 +25,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
-
+import static com.ibm.jaql.json.type.JsonType.*;
 
 public final class TransformExpr extends IterExpr
 {
@@ -87,7 +87,7 @@ public final class TransformExpr extends IterExpr
   public Schema getSchema()
   {
     Schema in = binding().getSchema(); // binds variable for projection
-    if (in.isEmptyArrayOrNull().always())
+    if (in.isEmpty(ARRAY,NULL).always())
     {
       return SchemaFactory.emptyArraySchema();
     }

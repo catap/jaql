@@ -113,7 +113,7 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
     {
       tempAggs[i] = aggs[i].getPartial();
     }
-    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs); // TODO: memory
+    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs, false); // TODO: memory
     return new SingleJsonValueIterator(tuple); // TODO: memory
   }
 
@@ -127,7 +127,7 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
     {
       tempAggs[i] = aggs[i].getFinal();
     }
-    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs); // TODO: memory
+    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs, false); // TODO: memory
     return new SingleJsonValueIterator(tuple); // TODO: memory
   }
 

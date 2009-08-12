@@ -26,14 +26,6 @@ import com.ibm.jaql.json.type.JsonValue;
 
 class JavaJsonArraySerializer extends BinaryBasicSerializer<JavaJsonArray>
 {
-
-  @Override
-  public JavaJsonArray newInstance()
-  {
-    return new JavaJsonArray();
-  }
-
-  
   @Override
   public JavaJsonArray read(DataInput in, JsonValue target) throws IOException
   {

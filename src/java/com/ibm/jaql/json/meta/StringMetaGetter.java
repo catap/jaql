@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 
 /**
  * 
@@ -45,9 +45,9 @@ public final class StringMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonString makeValue()
+  public MutableJsonString makeValue()
   {
-    return new JsonString();
+    return new MutableJsonString();
   }
 
   /*
@@ -61,7 +61,7 @@ public final class StringMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     String x = (String) getter.invoke(obj);
-    ((JsonString) target).set(x);
+    ((MutableJsonString) target).setCopy(x);
     return target;
   }
 

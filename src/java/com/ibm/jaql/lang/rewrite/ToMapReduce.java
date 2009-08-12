@@ -342,7 +342,8 @@ public class ToMapReduce extends Rewrite
     int topSlot = groupSeg.root.getChildSlot();
 
     GroupByExpr group = (GroupByExpr) groupSeg.primaryExpr;
-    JsonSchema reduceOutputValueSchema = new JsonSchema(group.getSchema().elements()); // also performs schema computations for variable used in group-by expression
+    group.getSchema(); // also performs schema computations for variable used in group-by expression
+//    JsonSchema reduceOutputValueSchema = new JsonSchema(group.getSchema().elements()); 
     int n = group.numInputs();
     BindingExpr byBinding = group.byBinding();
 
@@ -420,16 +421,16 @@ public class ToMapReduce extends Rewrite
     }
     else
     {
-      mapOutputKeySchema = new ConstExpr(new JsonSchema(OrSchema.or(mapOutputKeySchemata)));
+      mapOutputKeySchema = new ConstExpr(new JsonSchema(OrSchema.make(mapOutputKeySchemata)));
       mapOutputValueSchema = new ConstExpr(new JsonSchema(
           new ArraySchema(new Schema[] {
               SchemaFactory.longSchema(),         // input id
-              OrSchema.or(mapOutputValueSchemata) // value
+              OrSchema.make(mapOutputValueSchemata) // value
           })));
     }
     
     // Make the output
-    Expr output;
+    Expr output = null;
     Expr lastExpr = groupSeg.root;
     boolean writing = lastExpr instanceof WriteFn;
     if (writing)
@@ -441,7 +442,7 @@ public class ToMapReduce extends Rewrite
     }
     else
     {
-      output = new HadoopTempExpr(new ConstExpr(reduceOutputValueSchema));
+      // later
     }
 
     // Build the final function, including any expressions above the group-by
@@ -451,8 +452,18 @@ public class ToMapReduce extends Rewrite
       group.replaceInParent(reduce);
       reduce = lastExpr;
     }
+    JsonSchema reduceOutputValueSchema = new JsonSchema(reduce.getSchema().elements());
     reduce = new DefineFunctionExpr(reduceParams, reduce);
-
+    
+    if (writing)
+    {
+      // earlier
+    }
+    else
+    {
+      output = new HadoopTempExpr(new ConstExpr(reduceOutputValueSchema));
+    }
+    
     Expr[] fnArgs = new Expr[5];
     Expr input;
     Expr map;
@@ -553,12 +564,10 @@ public class ToMapReduce extends Rewrite
     Expr expr = new VarExpr(mapIn);
     reader.replaceInParent(expr);
 
-    // compute the schema
+    // make the output and compute the schema
     Expr lastExpr = mapSeg.root;
     JsonSchema mapOutputKeySchema = new JsonSchema(SchemaFactory.nullSchema());
-    JsonSchema mapOutputValueSchema = new JsonSchema(lastExpr.getSchema().elements());
-    
-    // Make the output
+    JsonSchema mapOutputValueSchema;
     Expr output;
     boolean writing = lastExpr instanceof WriteFn;
     if (writing)
@@ -567,9 +576,11 @@ public class ToMapReduce extends Rewrite
       assert writer.isMapReducible();
       output = writer.descriptor(); //rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS)); // TODO: change name (not rewriting, but does steal inputs)
       lastExpr = writer.dataExpr();
+      mapOutputValueSchema = new JsonSchema(lastExpr.getSchema().elements());
     }
     else
     {
+      mapOutputValueSchema = new JsonSchema(lastExpr.getSchema().elements());
       output = new HadoopTempExpr(new ConstExpr(mapOutputValueSchema));
     }
 

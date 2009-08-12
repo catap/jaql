@@ -132,15 +132,15 @@ schema long
 1 instanceof $x;##
 true
 
-1.0 instanceof $x;##
+1m instanceof $x;##
+true
+
+1d instanceof $x;##
 true
 
 1.1 instanceof $x;##
 false
  // incompatible
-1d instanceof $x;##
-false
-  // incompatible
 "a" instanceof $x;##
 false
  // incompatible
@@ -227,10 +227,10 @@ FAILURE
 schema long(5,3)##
 FAILURE
 ; // must fail: invalid interval
-schema long(5d)##
-FAILURE
-; // must fail: invalid argument
-schema long(5.0);##
+schema long(5d);##
+schema long(min=5)
+ // should be ok
+schema long(5m);##
 schema long(min=5)
  // should be ok
 schema long(5.1)##
@@ -253,12 +253,15 @@ schema double
 true
 
 1 instanceof $x;##
-false
-   // incompatible
-1.0 instanceof $x;##
-false
- // incompatible
+true
+
 1.1 instanceof $x;##
+true
+
+1.5m instanceof $x;##
+true
+
+1.1m instanceof $x;##
 false
  // incompatible
 "a" instanceof $x;##
@@ -269,7 +272,7 @@ $x = schema double(5d);##
 "$x"
 
 $x;##
-schema double(min=5.0d)
+schema double(min=5.0)
 
 4d instanceof $x;##
 false
@@ -285,7 +288,7 @@ $x = schema double(max=5d);##
 "$x"
 
 $x;##
-schema double(max=5.0d)
+schema double(max=5.0)
 
 4d instanceof $x;##
 true
@@ -301,7 +304,7 @@ $x = schema double(-1d,1d);##
 "$x"
 
 $x;##
-schema double(min=-1.0d, max=1.0d)
+schema double(min=-1.0, max=1.0)
 
 -1.001d instanceof $x;##
 false
@@ -323,7 +326,7 @@ $x = schema double(value=5d);##
 "$x"
 
 $x;##
-schema double(value=5.0d)
+schema double(value=5.0)
 
 4.999d instanceof $x;##
 false
@@ -338,13 +341,13 @@ false
 schema double(5d,3d)##
 FAILURE
 ; // must fail: invalid interval
-schema double(5)##
-FAILURE
-; // must fail: invalid argument
-schema double(5.0)##
-FAILURE
-; // must fail: invalid argument
-schema double(5.1)##
+schema double(5);##
+schema double(min=5.0)
+     // should be ok
+schema double(5.0);##
+schema double(min=5.0)
+  // should be ok
+schema double(5.1m)##
 FAILURE
 ; // must fail: invalid argument
 schema double(5d, value=4d)##
@@ -362,12 +365,12 @@ schema decfloat
 1 instanceof $x;##
 true
    
-1.1 instanceof $x;##
+1.1d instanceof $x;##
 true
 
-1d instanceof $x;##
-false
- // incompatible
+1.1m instanceof $x;##
+true
+
 "a" instanceof $x;##
 false
  // incompatible
@@ -376,7 +379,7 @@ $x = schema decfloat(5);##
 "$x"
 
 $x;##
-schema decfloat(min=5)
+schema decfloat(min=5m)
 
 4 instanceof $x;##
 false
@@ -384,7 +387,7 @@ false
 5 instanceof $x;##
 true
 
-5.001 instanceof $x;##
+5.001m instanceof $x;##
 true
 
 
@@ -392,7 +395,7 @@ $x = schema decfloat(max=5);##
 "$x"
 
 $x;##
-schema decfloat(max=5)
+schema decfloat(max=5m)
 
 4 instanceof $x;##
 true
@@ -400,7 +403,7 @@ true
 5 instanceof $x;##
 true
 
-5.001 instanceof $x;##
+5.001m instanceof $x;##
 false
  // incompatible
 
@@ -408,9 +411,9 @@ $x = schema decfloat(-1,1);##
 "$x"
 
 $x;##
-schema decfloat(min=-1, max=1)
+schema decfloat(min=-1m, max=1m)
 
--1.001 instanceof $x;##
+-1.001m instanceof $x;##
 false
  // incompatible
 -1 instanceof $x;##
@@ -422,7 +425,7 @@ true
 1 instanceof $x;##
 true
 
-1.001 instanceof $x;##
+1.001m instanceof $x;##
 false
  // incompatible
 
@@ -430,15 +433,15 @@ $x = schema decfloat(value=5);##
 "$x"
 
 $x;##
-schema decfloat(value=5)
+schema decfloat(value=5m)
 
-4.999 instanceof $x;##
+4.999m instanceof $x;##
 false
   // incompatible
-5 instanceof $x;##
+5m instanceof $x;##
 true
 
-5.001 instanceof $x;##
+5.001m instanceof $x;##
 false
   // incompatible
 
@@ -447,9 +450,9 @@ false
 schema decfloat(5,3)##
 FAILURE
 ; // must fail: invalid interval
-schema decfloat(5d)##
-FAILURE
-; // must fail: invalid argument
+schema decfloat(5d);##
+schema decfloat(min=5m)
+ // should be ok
 schema decfloat(5, value=4d)##
 FAILURE
 ; // must fail: invalid argument
@@ -1318,10 +1321,10 @@ schemaof(1);##
 schema long(value=1)
 
 schemaof(1d);##
-schema double(value=1.0d)
+schema double(value=1.0)
 
 schemaof(1.0);##
-schema decfloat(value=1.0)
+schema double(value=1.0)
 
 schemaof("a string");##
 schema string(value="a string")
@@ -1365,8 +1368,8 @@ $x -> sort by [$];##
 [
   schema boolean,
   schema long,
-  schema decfloat,
   schema double,
+  schema decfloat,
   schema string,
   schema binary,
   schema date,
@@ -1439,8 +1442,8 @@ $x -> sort by [$ desc];##
   schema date,
   schema binary,
   schema string,
-  schema double,
   schema decfloat,
+  schema double,
   schema long,
   schema boolean
 ]
@@ -1509,15 +1512,15 @@ schema decfloat
 
 mergeSchemata(schema decfloat(min=1.0, max=5.0),
               schema decfloat(min=2.0, max=6.0));##
-schema decfloat(min=1.0, max=6.0)
+schema decfloat(min=1m, max=6m)
 
 mergeSchemata(schema decfloat(min=1.0, max=5.0),
               schema decfloat(min=0.0, max=4.0));##
-schema decfloat(min=0.0, max=5.0)
+schema decfloat(min=0m, max=5m)
 
 mergeSchemata(schema decfloat(min=1.0, max=5.0),
               schema decfloat(value=0.0));##
-schema decfloat(min=0.0, max=5.0)
+schema decfloat(min=0m, max=5m)
 
 
 mergeSchemata(schema double, schema double);##
@@ -1528,15 +1531,15 @@ schema double
 
 mergeSchemata(schema double(min=1.0d, max=5.0d),
               schema double(min=2.0d, max=6.0d));##
-schema double(min=1.0d, max=6.0d)
+schema double(min=1.0, max=6.0)
 
 mergeSchemata(schema double(min=1.0d, max=5.0d),
               schema double(min=0.0d, max=4.0d));##
-schema double(min=0.0d, max=5.0d)
+schema double(min=0.0, max=5.0)
 
 mergeSchemata(schema double(min=1.0d, max=5.0d),
               schema double(value=0.0d));##
-schema double(min=0.0d, max=5.0d)
+schema double(min=0.0, max=5.0)
 
 
 mergeSchemata(schema long, schema long);##
@@ -1751,15 +1754,15 @@ schema decfloat
 
 compactSchemata(schema decfloat(min=1.0, max=5.0),
               schema decfloat(min=2.0, max=6.0));##
-schema decfloat(min=1.0, max=6.0)
+schema decfloat(min=1m, max=6m)
 
 compactSchemata(schema decfloat(min=1.0, max=5.0),
               schema decfloat(min=0.0, max=4.0));##
-schema decfloat(min=0.0, max=5.0)
+schema decfloat(min=0m, max=5m)
 
 compactSchemata(schema decfloat(min=1.0, max=5.0),
               schema decfloat(value=0.0));##
-schema decfloat(min=0.0, max=5.0)
+schema decfloat(min=0m, max=5m)
 
 
 compactSchemata(schema double, schema double);##
@@ -1770,15 +1773,15 @@ schema double
 
 compactSchemata(schema double(min=1.0d, max=5.0d),
               schema double(min=2.0d, max=6.0d));##
-schema double(min=1.0d, max=6.0d)
+schema double(min=1.0, max=6.0)
 
 compactSchemata(schema double(min=1.0d, max=5.0d),
               schema double(min=0.0d, max=4.0d));##
-schema double(min=0.0d, max=5.0d)
+schema double(min=0.0, max=5.0)
 
 compactSchemata(schema double(min=1.0d, max=5.0d),
               schema double(value=0.0d));##
-schema double(min=0.0d, max=5.0d)
+schema double(min=0.0, max=5.0)
 
 
 compactSchemata(schema long, schema long);##

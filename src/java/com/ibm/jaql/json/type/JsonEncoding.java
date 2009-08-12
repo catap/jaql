@@ -13,15 +13,15 @@ public enum JsonEncoding
   // UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
   // UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
   NULL(2, null, JsonType.NULL),
-  ARRAY_SPILLING(3, SpilledJsonArray.class, JsonType.ARRAY),
-  ARRAY_FIXED(4, BufferedJsonArray.class, JsonType.ARRAY),
-  MEMORY_RECORD(5, BufferedJsonRecord.class, JsonType.RECORD),
+  ARRAY_SPILLED(3, SpilledJsonArray.class, JsonType.ARRAY),
+  ARRAY_BUFFERED(4, BufferedJsonArray.class, JsonType.ARRAY),
+  RECORD(5, BufferedJsonRecord.class, JsonType.RECORD),
   BOOLEAN(6, JsonBool.class, JsonType.BOOLEAN),
   STRING(7, JsonString.class, JsonType.STRING),
   BINARY(8, JsonBinary.class, JsonType.BINARY),
-  LONG(9, JsonLong.class, JsonType.NUMBER),
-  DECIMAL(10, JsonDecimal.class, JsonType.NUMBER),
-  DATE_MSEC(11, JsonDate.class, JsonType.DATE),
+  LONG(9, JsonLong.class, JsonType.LONG),
+  DECFLOAT(10, JsonDecimal.class, JsonType.DECFLOAT),
+  DATE(11, JsonDate.class, JsonType.DATE),
   FUNCTION(12, JaqlFunction.class, JsonType.FUNCTION),
   SCHEMA(13, JsonSchema.class, JsonType.SCHEMA),
   JAVAOBJECT_CLASSNAME(14, JsonJavaObject.class, JsonType.JAVAOBJECT), // extension type that lists class name next
@@ -35,9 +35,9 @@ public enum JsonEncoding
   private static final JsonEncoding[]                                idToEncoding = new JsonEncoding[LIMIT];
   private static final HashMap<Class<? extends JsonValue>, Integer> classMap     = new HashMap<Class<? extends JsonValue>, Integer>();
 
-  public final int                                               id;
-  public final Class<? extends JsonValue>                           clazz;
-  public final JsonType                                              type;
+  private final int                         id;
+  private final Class<? extends JsonValue>  clazz;
+  private final JsonType                    type;
 
   static
   {
@@ -62,6 +62,7 @@ public enum JsonEncoding
     return idToEncoding[id];
   }
 
+  // FIXME: this has to go away
   public JsonValue newInstance()
   {
     try
@@ -78,6 +79,11 @@ public enum JsonEncoding
     }
   }
 
+  public int getId()
+  {
+    return id;
+  }
+  
   public JsonType getType()
   {
     return type;

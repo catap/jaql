@@ -133,6 +133,14 @@ public class JsonJavaObject extends JsonAtom
     
     return t;  
   }
+  
+  @Override
+  public JsonJavaObject getImmutableCopy() throws Exception
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
+  }
+
 
   /*
    * (non-Javadoc)

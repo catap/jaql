@@ -25,6 +25,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -77,7 +78,7 @@ public class ExecFn extends IterExpr
     // TODO: add thread pool to context
     InputThread inputThread = new InputThread();
     ErrorThread errorThread = new ErrorThread();
-    final JsonString str = new JsonString();
+    final MutableJsonString str = new MutableJsonString();
     try
     {
       InputStream is = proc.getInputStream();
@@ -102,7 +103,7 @@ public class ExecFn extends IterExpr
               }
               return false;
             }
-            str.set(s);
+            str.setCopy(s);
             return true; // currentValue == str
           }
           catch (Throwable e)

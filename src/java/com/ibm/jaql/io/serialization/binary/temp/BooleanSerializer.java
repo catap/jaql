@@ -37,11 +37,6 @@ class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
 
   // -- serialization -----------------------------------------------------------------------------
 
-  @Override
-  public JsonBool newInstance()
-  {
-    return new JsonBool();
-  }
 
   @Override
   public JsonBool read(DataInput in, JsonValue target) throws IOException
@@ -58,13 +53,7 @@ class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
     }
     
     // return it 
-    if (target == null || !(target instanceof JsonBool)) {
-      return new JsonBool(value);
-    } else {
-      JsonBool t = (JsonBool)target;
-      t.set(value);
-      return t;
-    }
+    return JsonBool.make(value);
   }
 
   @Override

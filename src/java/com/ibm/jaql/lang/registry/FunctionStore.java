@@ -29,6 +29,7 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.FunctionLib;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
@@ -49,13 +50,13 @@ public class FunctionStore extends Registry<JsonString, JsonString>
     {
       public JsonString convert(JsonValue src, JsonString tgt)
       {
-        tgt.set(src.toString());
+        ((MutableJsonString)tgt).setCopy(src.toString());
         return tgt;
       }
 
       public JsonString createTarget()
       {
-        return new JsonString();
+        return new MutableJsonString();
       }
 
     };
@@ -75,7 +76,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
 
       public JsonValue createTarget()
       {
-        return new JsonString();
+        return new MutableJsonString();
       }
       
       public Schema getSchema()

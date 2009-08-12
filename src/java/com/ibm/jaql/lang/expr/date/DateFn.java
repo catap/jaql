@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
@@ -27,7 +28,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName="date", minArgs=1, maxArgs=2)
 public class DateFn extends Expr
 {
-  protected JsonDate date = new JsonDate();
+  protected MutableJsonDate date = new MutableJsonDate();
   
   public DateFn(Expr[] exprs)
   {

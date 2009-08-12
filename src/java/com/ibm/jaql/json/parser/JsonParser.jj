@@ -72,6 +72,12 @@ public class JsonParser
     {
       throw new UnsupportedOperationException();
     }
+
+        @Override
+    public JsonValue getImmutableCopy() throws Exception
+    {
+      throw new UnsupportedOperationException();
+    }
   };
 	
   public JsonParser() 
@@ -313,7 +319,7 @@ JsonValue ArrayVal() :
 }
 {
 	<ARRAY_BEGIN> values=ValueList() <ARRAY_END>
-	{ return new BufferedJsonArray(values); }
+	{ return new BufferedJsonArray(values, false); }
 }
 
 JsonValue MapVal() :

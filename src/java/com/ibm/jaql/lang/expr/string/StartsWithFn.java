@@ -53,6 +53,6 @@ public class StartsWithFn extends Expr
       return null;
     }
     boolean rc = text.startsWith(prefix);
-    return JsonBool.makeShared(rc);
+    return JsonBool.make(rc);
   }
 }

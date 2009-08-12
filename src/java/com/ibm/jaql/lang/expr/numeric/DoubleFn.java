@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -86,6 +87,6 @@ public class DoubleFn extends Expr
   public Schema getSchema()
   {
     Schema in = exprs[0].getSchema();
-    return in.isNull().never() ? SchemaFactory.doubleSchema() : SchemaFactory.doubleOrNullSchema();
+    return in.is(NULL).never() ? SchemaFactory.doubleSchema() : SchemaFactory.doubleOrNullSchema();
   }
 }

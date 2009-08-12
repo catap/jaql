@@ -28,6 +28,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -61,7 +62,7 @@ public final class IsdefinedExpr extends Expr
 
   public Schema getSchema()
   {
-    if (exprs[0].getSchema().isNull().or(exprs[1].getSchema().isNull()).maybe())
+    if (exprs[0].getSchema().is(NULL).or(exprs[1].getSchema().is(NULL)).maybe())
     {
       return SchemaFactory.booleanOrNullSchema();
     }
@@ -99,7 +100,7 @@ public final class IsdefinedExpr extends Expr
     {
       return null;
     }
-    return JsonBool.makeShared(rec.containsKey(name));
+    return JsonBool.make(rec.containsKey(name));
   }
 
 }

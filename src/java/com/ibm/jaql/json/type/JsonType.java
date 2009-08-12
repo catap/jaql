@@ -17,13 +17,15 @@ public enum JsonType
   RECORD(JsonRecord.class, "record"),
   BOOLEAN(JsonBool.class, "boolean"),
   STRING(JsonString.class, "string"),
-  NUMBER(JsonNumber.class, "number"),
+  LONG(JsonLong.class, "long"),
+  DOUBLE(JsonDouble.class, "double"),
+  DECFLOAT(JsonDecimal.class, "decfloat"),
 
   // JSON extensions
 
   BINARY(JsonBinary.class, "binary"),
   DATE(JsonDate.class, "date"),
-  SCHEMA(JsonSchema.class, "aschema"),
+  SCHEMA(JsonSchema.class, "schematype"),
   FUNCTION(JaqlFunction.class, "function"),
 
   // Extensiblity for writable java objects, but the class name is written on every instance!
@@ -32,50 +34,57 @@ public enum JsonType
 
   // Experimental types - They might disappear!
 
-  REGEX(JsonRegex.class, "regex"), SPAN(JsonSpan.class, "span"), DOUBLE(
-      JsonDouble.class, "double");
+  REGEX(JsonRegex.class, "regex"), SPAN(JsonSpan.class, "span");
 
-  private static final HashMap<String, JsonType>  nameToType  = new HashMap<String, JsonType>();
-  private static final HashMap<JsonString, JsonType> jnameToType = new HashMap<JsonString, JsonType>();
-  private static final HashMap<Class<? extends JsonValue>, JsonType> classToType = new HashMap<Class<? extends JsonValue>, JsonType>();
+  private static final HashMap<String, JsonType>  STRING_TO_TYPE = new HashMap<String, JsonType>();
+  private static final HashMap<JsonString, JsonType> NAME_TO_TYPE = new HashMap<JsonString, JsonType>();
+  private static final HashMap<Class<? extends JsonValue>, JsonType> CLASS_TO_TYPE = new HashMap<Class<? extends JsonValue>, JsonType>();
 
   static
   {
     for (JsonType t : values())
     {
-      nameToType.put(t.name, t);
-      jnameToType.put(t.nameValue, t);
-      classToType.put(t.clazz, t);
+      STRING_TO_TYPE.put(t.name.toString(), t);
+      NAME_TO_TYPE.put(t.name, t);
+      CLASS_TO_TYPE.put(t.mainClass, t);
     }
   }
 
-  public final Class<? extends JsonValue>        clazz;
-  public final String                         name;
-  public final JsonString                        nameValue;
-  //public final Item                           nameItem;
+  private final Class<? extends JsonValue> mainClass;
+  private final JsonString                 name;
+  private final boolean                    isNumeric;
 
-  JsonType(Class<? extends JsonValue> clazz, String name)
+  JsonType(Class<? extends JsonValue> mainClass, String name)
   {
-    this.clazz = clazz;
-    this.name = name;
-    this.nameValue = new JsonString(name);
-    // BUG: this is a circular dependency, i.e., Item -> Encoding -> Type -> Item
-    //this.nameItem = new Item(nameValue);
+    this.mainClass = mainClass;
+    this.name = new JsonString(name);
+    this.isNumeric = mainClass!=null && JsonNumeric.class.isAssignableFrom(mainClass); 
   }
-
+  
   public static JsonType getType(String name)
   {
-    return nameToType.get(name);
+    return STRING_TO_TYPE.get(name);
   }
 
   public static JsonType getType(JsonString name)
   {
-    return jnameToType.get(name);
+    return NAME_TO_TYPE.get(name);
   }
   
+  @SuppressWarnings("unchecked")
   public static JsonType getType(Class<? extends JsonValue> clazz)
   {
-    return classToType.get(clazz);
+    JsonType t = CLASS_TO_TYPE.get(clazz); 
+    if (t == null)
+    {
+      // check superclass
+      t = getType((Class<? extends JsonValue>)clazz.getSuperclass());
+      if (t != null)
+      {
+        CLASS_TO_TYPE.put(clazz, t);
+      }
+    }
+    return t;
   }
   
   /**
@@ -93,6 +102,26 @@ public enum JsonType
     {
       return 1;
     }
-    return x.getEncoding().type.compareTo(y.getEncoding().type);
+    return x.getType().compareTo(y.getType());
+  }
+  
+  public JsonString getName()
+  {
+    return name;
+  }
+
+  public String toString()
+  {
+    return name.toString();
+  }
+  
+  public Class<? extends JsonValue> getMainClass()
+  {
+    return mainClass;
+  }
+  
+  public boolean isNumeric()
+  {
+    return isNumeric;
   }
 }

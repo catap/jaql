@@ -23,16 +23,10 @@ import java.math.BigDecimal;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
 
 class JsonDecimalSerializer extends BinaryBasicSerializer<JsonDecimal>
 {
-
-  @Override
-  public JsonDecimal newInstance()
-  {
-    return new JsonDecimal();
-  }
-
   @Override
   public JsonDecimal read(DataInput in, JsonValue target) throws IOException
   {
@@ -40,10 +34,10 @@ class JsonDecimalSerializer extends BinaryBasicSerializer<JsonDecimal>
     // TODO: need to cache bigdecimal
     String str = in.readUTF();
     BigDecimal value = new BigDecimal(str);
-    if (target == null || !(target instanceof JsonDecimal)) {
-      return new JsonDecimal(value);
+    if (target == null || !(target instanceof MutableJsonDecimal)) {
+      return new MutableJsonDecimal(value);
     } else {
-      JsonDecimal t = (JsonDecimal)target;
+      MutableJsonDecimal t = (MutableJsonDecimal)target;
       t.set(value);
       return t;
     }

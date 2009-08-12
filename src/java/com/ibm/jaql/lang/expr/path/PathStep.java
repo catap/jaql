@@ -184,13 +184,13 @@ public abstract class PathStep extends Expr
     else
     {
       // field is null
-      if (recordSchema.getRest() == null)
+      if (recordSchema.getAdditionalSchema() == null)
       {
         return new PathStepSchema(null, Bool3.FALSE, name); // means that this never produces output
       }
       else
       {
-        return new PathStepSchema(recordSchema.getRest(), Bool3.UNKNOWN, name); // make optional
+        return new PathStepSchema(recordSchema.getAdditionalSchema(), Bool3.UNKNOWN, name); // make optional
       }
     }
   }

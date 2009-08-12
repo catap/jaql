@@ -22,6 +22,7 @@ import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * for( $i in [e1] ) e2 ==> ( $i = e1, asArray(e2) )
@@ -55,11 +56,11 @@ public class ForToLet extends Rewrite
 
     Expr elem = inExpr.child(0);
     Expr ret = fe.collectExpr();
-    if (ret.getSchema().isArrayOrNull().maybeNot())
+    if (ret.getSchema().is(ARRAY,NULL).maybeNot())
     {
       ret = new AsArrayFn(ret);
     }
-    else if (ret.getSchema().isNull().maybe())
+    else if (ret.getSchema().is(NULL).maybe())
     {
       ret = new EmptyOnNullFn(ret);
     }

@@ -21,6 +21,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * for $i in e collect ([] | null) ==> []
@@ -56,7 +57,7 @@ public class TrivialForElimination extends Rewrite
 
     // for $i in ([] | null) collect e => []
     // for $i in e collect ([] | null) => []
-    if (inExpr.getSchema().isEmptyArrayOrNull().always() || c.getSchema().isEmptyArrayOrNull().always())
+    if (inExpr.getSchema().isEmpty(ARRAY,NULL).always() || c.getSchema().isEmpty(ARRAY,NULL).always())
     {
       fe.replaceInParent(new ArrayExpr());
       return true;
@@ -75,7 +76,7 @@ public class TrivialForElimination extends Rewrite
       VarExpr ve = (VarExpr) c;
       if (ve.var() == fe.var())
       {
-        if (inExpr.getSchema().isArrayOrNull().maybeNot() || inExpr.getSchema().isNull().maybe())
+        if (inExpr.getSchema().is(ARRAY,NULL).maybeNot() || inExpr.getSchema().is(NULL).maybe())
         {
           inExpr = new AsArrayFn(inExpr);
         }
