@@ -27,10 +27,11 @@ import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBinary;
+import com.ibm.jaql.json.type.MutableJsonString;
 
 public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, Writable> {
 
@@ -63,8 +64,8 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
   protected ToJson<Writable> createValueConverter() {
     return new ToJson<Writable> () {
       
-      private JsonString sVal = new JsonString();
-      private JsonBinary bVal = new JsonBinary();
+      private MutableJsonString sVal = new MutableJsonString();
+      private MutableJsonBinary bVal = new MutableJsonBinary();
       
       public JsonValue convert(Writable src, JsonValue tgt)
       {
@@ -96,9 +97,9 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
         Metadata meta = c.getMetadata();
         
         // set the fixed fields
-        ((JsonString)r.get(Field.URL.jsonName)).setCopy(c.getUrl().getBytes());
-        ((JsonString)r.get(Field.BASEURL.jsonName)).setCopy(c.getBaseUrl().getBytes());
-        ((JsonString)r.get(Field.TYPE.jsonName)).setCopy(c.getContentType().getBytes());
+        ((MutableJsonString)r.get(Field.URL.jsonName)).setCopy(c.getUrl().getBytes());
+        ((MutableJsonString)r.get(Field.BASEURL.jsonName)).setCopy(c.getBaseUrl().getBytes());
+        ((MutableJsonString)r.get(Field.TYPE.jsonName)).setCopy(c.getContentType().getBytes());
         
         String cTypeFromMeta = meta.get(Response.CONTENT_TYPE);
         String cTypeFromTop  = c.getContentType();
@@ -109,7 +110,7 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
           if(cValue.getEncoding().getType() != JsonType.STRING) 
             cValue = sVal;
         } else {
-          bVal.setBytes(c.getContent());
+          bVal.set(c.getContent());
           if(cValue.getEncoding().getType() != JsonType.BINARY)
             cValue = bVal;
         }
@@ -129,9 +130,9 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
       {
         int n = Field.values().length;
         BufferedJsonRecord r = new BufferedJsonRecord(n);
-        r.add(Field.URL.jsonName, new JsonString());
-        r.add(Field.BASEURL.jsonName, new JsonString());
-        r.add(Field.TYPE.jsonName, new JsonString());
+        r.add(Field.URL.jsonName, new MutableJsonString());
+        r.add(Field.BASEURL.jsonName, new MutableJsonString());
+        r.add(Field.TYPE.jsonName, new MutableJsonString());
         r.add(Field.CONTENT.jsonName, sVal);
         r.add(Field.META.jsonName, new BufferedJsonRecord());
         
@@ -145,7 +146,7 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
             new RecordSchema.Field(Field.BASEURL.jsonName, SchemaFactory.stringSchema(), false),
             new RecordSchema.Field(Field.TYPE.jsonName, SchemaFactory.stringSchema(), false),
             new RecordSchema.Field(Field.CONTENT.jsonName, 
-                OrSchema.or(SchemaFactory.stringSchema(), SchemaFactory.binarySchema()), 
+                OrSchema.make(SchemaFactory.stringSchema(), SchemaFactory.binarySchema()), 
                 false),
             new RecordSchema.Field(Field.META.jsonName, SchemaFactory.stringSchema(), false)
         }, SchemaFactory.stringSchema());

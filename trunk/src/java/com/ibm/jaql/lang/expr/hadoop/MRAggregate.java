@@ -271,7 +271,7 @@ public class MRAggregate extends MapReduceBaseExpr
           JsonArray partArray = (JsonArray) values.next().value;
           for(int i = 0 ; i < aggs.length ; i++)
           {
-            aggs[i].addPartial(partArray.nth(i));
+            aggs[i].addPartial(partArray.get(i));
           }
         }
         processAggs(keyHolder, output);

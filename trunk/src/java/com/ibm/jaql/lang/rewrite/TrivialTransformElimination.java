@@ -20,6 +20,7 @@ import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  *     e1 -> transform $ $
@@ -56,7 +57,7 @@ public class TrivialTransformElimination extends Rewrite
       if( ve.var() == te.binding().var )
       {
         Expr e = b.inExpr();
-        if( e.getSchema().isArrayOrNull().maybeNot() )
+        if( e.getSchema().is(ARRAY,NULL).maybeNot() )
         {
           e = new AsArrayFn(e);
         }

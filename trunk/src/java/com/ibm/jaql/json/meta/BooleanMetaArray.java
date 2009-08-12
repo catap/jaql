@@ -18,8 +18,8 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBool;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
@@ -42,9 +42,9 @@ public class BooleanMetaArray extends MetaArray
    * @see com.ibm.jaql.json.meta.MetaArray#makeItem()
    */
   @Override
-  public JsonBool makeValue()
+  public MutableJsonBool makeValue()
   {
-    return new JsonBool();
+    return new MutableJsonBool();
   }
 
   /*
@@ -68,7 +68,7 @@ public class BooleanMetaArray extends MetaArray
   public JsonIterator iter(Object obj) throws Exception
   {
     final boolean[] arr = (boolean[]) obj;
-    final JsonBool jbool = new JsonBool();
+    final MutableJsonBool jbool = new MutableJsonBool();
     return new JsonIterator(jbool) {
       int   i     = 0;
 
@@ -97,7 +97,7 @@ public class BooleanMetaArray extends MetaArray
     boolean[] arr = (boolean[]) obj;
     if (n >= 0 && n < arr.length)
     {
-      ((JsonBool) target).set(arr[(int) n]);
+      ((MutableJsonBool) target).set(arr[(int) n]);
       return target;
     }
     else

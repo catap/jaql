@@ -22,30 +22,26 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBinary;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Default serializer for {@link JsonBinary}. */
 class JsonBinarySerializer extends BinaryBasicSerializer<JsonBinary>
 {
   @Override
-  public JsonBinary newInstance()
-  {
-    return new JsonBinary();
-  }
-  
-  @Override
   public JsonBinary read(DataInput in, JsonValue target) throws IOException
   {
     int length = BaseUtil.readVUInt(in);
     byte[] bytes;
-    JsonBinary t;
-    if (target == null || !(target instanceof JsonBinary)) {
+    MutableJsonBinary t;
+    if (target == null || !(target instanceof MutableJsonBinary)) {
       bytes = new byte[length];
-      t = new JsonBinary(bytes);
+      t = new MutableJsonBinary();
+      t.set(bytes); // does not copy
     } else {
-      t = (JsonBinary)target;
+      t = (MutableJsonBinary)target;
       t.ensureCapacity(length);
-      bytes = t.getInternalBytes();
+      bytes = t.get();
     }
     in.readFully(bytes, 0, length);
  
@@ -55,9 +51,9 @@ class JsonBinarySerializer extends BinaryBasicSerializer<JsonBinary>
   @Override
   public void write(DataOutput out, JsonBinary value) throws IOException
   {
-    int length = value.length();
+    int length = value.bytesLength();
     BaseUtil.writeVUInt(out, length);
-    out.write(value.getInternalBytes(), 0, length);
+    value.writeBytes(out);
   }
 
   @Override

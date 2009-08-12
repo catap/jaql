@@ -20,6 +20,7 @@ import java.util.Random;
 
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
@@ -32,7 +33,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class RandomDoubleFn extends Expr
 {
   private Random rng;
-  private JsonDouble jdouble = new JsonDouble();
+  private MutableJsonDouble jdouble = new MutableJsonDouble();
 
   /**
    * long randomLong(number seed)

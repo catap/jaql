@@ -17,6 +17,7 @@ package com.acme.extensions.fn;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 
 /**
@@ -25,7 +26,7 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
 public class Split1
 {
   private SpilledJsonArray result    = new SpilledJsonArray();
-  private JsonString     resultStr = new JsonString();
+  private MutableJsonString     resultStr = new MutableJsonString();
 
   /**
    * @param jstr
@@ -47,7 +48,7 @@ public class Split1
     result.clear();
     for (String s : splits)
     {
-      resultStr.set(s);
+      resultStr.setCopy(s);
       result.addCopy(resultStr);
     }
 

@@ -368,7 +368,7 @@ public class JaqlFunction extends JsonAtom
   }
 
   @Override
-  public JaqlFunction getCopy(JsonValue target) throws Exception
+  public JaqlFunction getCopy(JsonValue target) 
   {
     JaqlFunction t;
     if (target instanceof JaqlFunction)
@@ -383,5 +383,11 @@ public class JaqlFunction extends JsonAtom
     t.ownFn = true;
     t.fnText = this.fnText;
     return t;
+  }
+  
+  public JaqlFunction getImmutableCopy()
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
   }
 }

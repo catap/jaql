@@ -27,12 +27,6 @@ import com.ibm.jaql.lang.core.JaqlFunction;
 class JaqlFunctionSerializer extends BinaryBasicSerializer<JaqlFunction>
 {
   @Override
-  public JaqlFunction newInstance()
-  {
-    return new JaqlFunction();
-  }
-
-  @Override
   public JaqlFunction read(DataInput in, JsonValue target) throws IOException
   {
     JaqlFunction t;

@@ -22,25 +22,18 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 
 class JsonDoubleSerializer extends BinaryBasicSerializer<JsonDouble>
 {
-
-  @Override
-  public JsonDouble newInstance()
-  {
-    return new JsonDouble();
-  }
-
-
   @Override
   public JsonDouble read(DataInput in, JsonValue target) throws IOException
   {
     double value = in.readDouble();
-    if (target == null || !(target instanceof JsonDouble)) {
-      return new JsonDouble(value);
+    if (target == null || !(target instanceof MutableJsonDouble)) {
+      return new MutableJsonDouble(value);
     } else {
-      JsonDouble t = (JsonDouble)target;
+      MutableJsonDouble t = (MutableJsonDouble)target;
       t.set(value);
       return t;
     }

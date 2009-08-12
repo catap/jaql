@@ -16,6 +16,7 @@
 package com.acme.extensions.fn;
 
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 
 /**
@@ -40,7 +41,7 @@ public class Split2
 
     final String[] splits = str.split(delim);
 
-    final JsonString resultStr = new JsonString();
+    final MutableJsonString resultStr = new MutableJsonString();
     return new JsonIterator(resultStr) {
       int             i         = 0;
       
@@ -50,7 +51,7 @@ public class Split2
         {
           return false;
         }
-        resultStr.set(splits[i]);
+        resultStr.setCopy(splits[i]);
         i++;
         return true; // currentValue == resultStr
       }

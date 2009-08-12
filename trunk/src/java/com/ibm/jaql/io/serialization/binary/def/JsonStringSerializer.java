@@ -22,33 +22,24 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.util.BaseUtil;
 
 class JsonStringSerializer extends BinaryBasicSerializer<JsonString>
 {
   @Override
-  public JsonString newInstance()
-  {
-    return new JsonString();
-  }
-
-  @Override
   public JsonString read(DataInput in, JsonValue target) throws IOException
   {
     int length = BaseUtil.readVUInt(in);
     
-    JsonString t;
-    byte[] bytes;
-    if (target==null || !(target instanceof JsonString)) {
-      bytes = new byte[length];
-      t = new JsonString(bytes);
+    MutableJsonString t;
+    if (target==null || !(target instanceof MutableJsonString)) {
+      t = new MutableJsonString();
     } else {
-      t = (JsonString)target;
-      bytes = t.getInternalBytes();
-      if (bytes.length < length) {
-        bytes = new byte[length];
-      }
+      t = (MutableJsonString)target;
     }
+    t.ensureCapacity(length);
+    byte[] bytes = t.get();
     in.readFully(bytes, 0, length);
     t.set(bytes, length);
     return t;
@@ -57,10 +48,9 @@ class JsonStringSerializer extends BinaryBasicSerializer<JsonString>
   @Override
   public void write(DataOutput out, JsonString value) throws IOException
   {
-    int length = value.lengthUtf8();
+    int length = value.bytesLength();
     BaseUtil.writeVUInt(out, length);
-    out.write(value.getInternalBytes(), 0, length);
-    
+    value.writeBytes(out);
   }
 
   //TODO: efficient implementation of compare, skip, and copy

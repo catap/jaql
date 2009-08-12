@@ -25,24 +25,11 @@ import com.ibm.jaql.json.type.JsonValue;
 
 class JsonBoolSerializer extends BinaryBasicSerializer<JsonBool>
 {
-
-  @Override
-  public JsonBool newInstance()
-  {
-    return new JsonBool();
-  }
-
   @Override
   public JsonBool read(DataInput in, JsonValue target) throws IOException
   {
     boolean value = in.readByte() != 0; 
-    if (target == null || !(target instanceof JsonBool)) {
-      return new JsonBool(value);
-    } else {
-      JsonBool t = (JsonBool)target;
-      t.set(value);
-      return t;
-    }
+    return JsonBool.make(value);
   }
 
   @Override

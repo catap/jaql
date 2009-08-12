@@ -16,15 +16,17 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a 64 bit integer */
-public class LongSchema extends RangeSchema<JsonLong>
+public final class LongSchema extends RangeSchema<JsonLong>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -43,6 +45,8 @@ public class LongSchema extends RangeSchema<JsonLong>
     return parameters;
   }
   
+  // used for matching
+  private MutableJsonLong temp = new MutableJsonLong();
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -60,7 +64,7 @@ public class LongSchema extends RangeSchema<JsonLong>
   
   public LongSchema(JsonLong min, JsonLong max, JsonLong value)
   {
-    super(min, max, value);
+    init(min, max, value);
   }
   
   public LongSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
@@ -71,20 +75,16 @@ public class LongSchema extends RangeSchema<JsonLong>
   /** Convert the specified numeric to a long or throw an exception */  
   private static JsonLong convert(JsonNumeric v)
   {
-    if (v == null || v instanceof JsonLong)
+    if (v == null) return null;
+    if (v instanceof JsonNumeric)
     {
-      return (JsonLong)v;
-    }
-    if (v instanceof JsonDecimal)
-    {
-      JsonDecimal d = (JsonDecimal)v;
       try 
       {
-        return new JsonLong(d.longValueExact());
+        return new JsonLong(((JsonNumeric)v).longValueExact());
       }
       catch (ArithmeticException e)
       {
-        throw new IllegalArgumentException("interval argument too large or fractional: " + d);
+        // throw below
       }
     }
     throw new IllegalArgumentException("interval argument has to be of type long: " + v);
@@ -103,34 +103,32 @@ public class LongSchema extends RangeSchema<JsonLong>
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { JsonLong.class, JsonDecimal.class }; 
+    return new Class[] { JsonLong.class, JsonDouble.class, JsonDecimal.class }; 
   }
   
   @Override
   public boolean matches(JsonValue value)
   {
-    if (!(value instanceof JsonLong || value instanceof JsonDecimal))
+    if (value == null || !value.getType().isNumeric())
     {
       return false;
     }
-    if (value instanceof JsonDecimal)
+    
+    // convert to long
+    try 
     {
-      try 
-      {
-        ((JsonDecimal)value).longValueExact();
-      }
-      catch (ArithmeticException e)
-      {
-        return false;
-      }
+      temp.set( ((JsonNumeric)value).longValueExact() );
     }
-    // value can be long or decimal, min and max are long
+    catch (ArithmeticException e)
+    {
+      return false;
+    }
 
+    // match
     if (this.value != null)
     {
       return value.equals(this.value);
     }
-
     if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
     {
       return false;

@@ -20,8 +20,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 
 /**
  * 
@@ -43,9 +43,9 @@ public class StringMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonString makeValue()
+  public MutableJsonString makeValue()
   {
-    return new JsonString();
+    return new MutableJsonString();
   }
 
   /*
@@ -59,7 +59,7 @@ public class StringMetaField extends MetaField
       IllegalAccessException
   {
     String s = (String) field.get(obj);
-    ((JsonString) target).set(s);
+    ((MutableJsonString) target).setCopy(s);
     return target;
   }
 

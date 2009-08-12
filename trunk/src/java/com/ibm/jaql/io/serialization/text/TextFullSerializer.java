@@ -42,9 +42,9 @@ public abstract class TextFullSerializer extends FullSerializer<InputStream, Pri
   
   private static TextFullSerializer DEFAULT_SERIALIZER = DefaultTextFullSerializer.getInstance();
   
-  public static void setDefault(TextFullSerializer serializer) {
-    DEFAULT_SERIALIZER = serializer;
-  }
+//  public static void setDefault(TextFullSerializer serializer) {
+//    DEFAULT_SERIALIZER = serializer;
+//  }
   
   public static TextFullSerializer getDefault()
   {

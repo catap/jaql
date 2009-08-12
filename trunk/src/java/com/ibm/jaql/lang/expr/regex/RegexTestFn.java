@@ -57,6 +57,6 @@ public class RegexTestFn extends Expr
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());
-    return JsonBool.makeShared(matcher.find());
+    return JsonBool.make(matcher.find());
   }
 }

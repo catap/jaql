@@ -37,6 +37,7 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
@@ -216,9 +217,9 @@ public class MapReduceFn extends MapReduceBaseExpr
           if (numInputs > 1)
           {
             JsonArray valRec = (JsonArray) value;
-            JsonLong id = (JsonLong) JaqlUtil.enforceNonNull(valRec.nth(0));
+            JsonLong id = (JsonLong) JaqlUtil.enforceNonNull(valRec.get(0));
             i = (int) id.get();
-            value = valRec.nth(1);
+            value = valRec.get(1);
           }
           valArrays[i].addCopy(value);
         }
@@ -246,7 +247,7 @@ public class MapReduceFn extends MapReduceBaseExpr
   {
     protected JaqlFunction[] combineFns;
     protected JsonValue[]    fnArgs = new JsonValue[2];
-    protected JsonLong       outId;
+    protected MutableJsonLong       outId;
     protected BufferedJsonArray outPair;
     protected JsonHolder valueHolder;
     
@@ -266,7 +267,7 @@ public class MapReduceFn extends MapReduceBaseExpr
       if (numInputs > 1)
       {
         // FIXME: ideally we could know which input was used to when reading map/combine output files without encoding it on every record
-        outId = new JsonLong();
+        outId = new MutableJsonLong();
         outPair = new BufferedJsonArray(2);
         outPair.set(0, outId);
       }

@@ -22,6 +22,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 // TODO: redefine this for JSON; add empty()
 /**
@@ -61,7 +62,7 @@ public class ExistsFn extends Expr
   {
     JsonIterator iter;
     Expr expr = exprs[0];
-    if (expr.getSchema().isArrayOrNull().always())
+    if (expr.getSchema().is(ARRAY,NULL).always())
     {
       iter = expr.iter(context);
       if (iter.isNull())
@@ -85,6 +86,6 @@ public class ExistsFn extends Expr
         return JsonBool.TRUE;
       }
     }
-    return JsonBool.makeShared(iter.moveNext());
+    return JsonBool.make(iter.moveNext());
   }
 }

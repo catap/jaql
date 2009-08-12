@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -31,6 +32,10 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 @JaqlFn(fnName = "serialize", minArgs = 1, maxArgs = 1)
 public class SerializeFn extends Expr
 {
+  MutableJsonString text = new MutableJsonString();
+  ByteArrayOutputStream baos = new ByteArrayOutputStream();
+  PrintStream out = new PrintStream(baos);
+  
   /**
    * string serialize( value v )
    * 
@@ -50,10 +55,7 @@ public class SerializeFn extends Expr
   {
     // TODO: memory!!
     JsonValue value = exprs[0].eval(context);
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
-    JsonString text = new JsonString();
-    // baos.reset();
+    baos.reset();
     JsonUtil.print(out, value, 0);
     out.flush();
     text.set(baos.toByteArray());

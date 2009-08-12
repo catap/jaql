@@ -64,16 +64,16 @@ public class DefaultBinaryFullSerializer extends BinaryFullSerializer
 //    UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
 //    UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
     serializers.put(JsonEncoding.NULL, new NullSerializer());
-    serializers.put(JsonEncoding.ARRAY_SPILLING, new SpilledJsonArraySerializer(this));
-    serializers.put(JsonEncoding.ARRAY_FIXED, new BufferedJsonArraySerializer(this));
-    serializers.put(JsonEncoding.MEMORY_RECORD, new BufferedJsonRecordSerializer(
+    serializers.put(JsonEncoding.ARRAY_SPILLED, new SpilledJsonArraySerializer(this));
+    serializers.put(JsonEncoding.ARRAY_BUFFERED, new BufferedJsonArraySerializer(this));
+    serializers.put(JsonEncoding.RECORD, new BufferedJsonRecordSerializer(
         jstringSerializer, this));
     serializers.put(JsonEncoding.BOOLEAN, new JsonBoolSerializer());
     serializers.put(JsonEncoding.STRING, jstringSerializer);
     serializers.put(JsonEncoding.BINARY, new JsonBinarySerializer());
     serializers.put(JsonEncoding.LONG, new JsonLongSerializer());
-    serializers.put(JsonEncoding.DECIMAL, new JsonDecimalSerializer());
-    serializers.put(JsonEncoding.DATE_MSEC, new JsonDateSerializer());
+    serializers.put(JsonEncoding.DECFLOAT, new JsonDecimalSerializer());
+    serializers.put(JsonEncoding.DATE, new JsonDateSerializer());
     serializers.put(JsonEncoding.FUNCTION, new JaqlFunctionSerializer());
     serializers.put(JsonEncoding.SCHEMA, new JsonSchemaSerializer());
     serializers.put(JsonEncoding.JAVAOBJECT_CLASSNAME, new JsonJavaObjectSerializer());
@@ -106,7 +106,7 @@ public class DefaultBinaryFullSerializer extends BinaryFullSerializer
     } else {
       encoding = value.getEncoding();
     }
-    BaseUtil.writeVUInt(out, encoding.id);
+    BaseUtil.writeVUInt(out, encoding.getId());
     BinaryBasicSerializer serializer = serializers.get(encoding);
     assert serializer != null : "No serializer defined for " + encoding;
     serializer.write(out, value);    
@@ -183,8 +183,8 @@ public class DefaultBinaryFullSerializer extends BinaryFullSerializer
     BinaryBasicSerializer s2 = getSerializer(encoding2);
 
     // atoms can be overwritten; they are only used here 
-    JsonValue value1 = atoms1[encoding1.id] = s1.read(in1, atoms1[encoding1.id]);
-    JsonValue value2 = atoms2[encoding2.id] = s2.read(in2, atoms2[encoding2.id]);
+    JsonValue value1 = atoms1[encoding1.getId()] = s1.read(in1, atoms1[encoding1.getId()]);
+    JsonValue value2 = atoms2[encoding2.getId()] = s2.read(in2, atoms2[encoding2.getId()]);
     return value1.compareTo(value2);
   }
   

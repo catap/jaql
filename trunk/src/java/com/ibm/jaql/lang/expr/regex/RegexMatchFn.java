@@ -19,6 +19,7 @@ import java.util.regex.Matcher;
 
 import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -66,7 +67,7 @@ public class RegexMatchFn extends IterExpr
       return JsonIterator.EMPTY;
     }
     
-    final JsonString substr = new JsonString();
+    final MutableJsonString substr = new MutableJsonString();
     return new JsonIterator(substr) {
       boolean done   = false;
 
@@ -78,7 +79,7 @@ public class RegexMatchFn extends IterExpr
           return false;
         }
 
-        substr.set(matcher.group()); // TODO: memory for the String
+        substr.setCopy(matcher.group()); // TODO: memory for the String
         done = !regex.isGlobal() || !matcher.find();
         return true; // currentValue == substr
       }

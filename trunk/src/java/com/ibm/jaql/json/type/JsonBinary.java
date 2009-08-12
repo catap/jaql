@@ -19,48 +19,45 @@ import org.apache.hadoop.io.WritableComparator;
 
 import com.ibm.jaql.util.BaseUtil;
 
-/** An atomic JSON value representing a byte array. */
-public class JsonBinary extends JsonAtom
+/** An atomic JSON value representing a byte array.
+ * 
+ * Instances of this class are immutable, but subclasses might add mutation functionality
+ * (in which case they have to override the {@link #getCopy(JsonValue)} method).
+ */
+public class JsonBinary extends AbstractBinaryJsonAtom
 {
-  protected static final byte[] EMPTY_BUFFER = new byte[0];
-
-  protected byte[] value = EMPTY_BUFFER;
-  protected int length;
-
-
   // -- construction ------------------------------------------------------------------------------
   
-  /** Constructs an emtpy byte array. */
-  public JsonBinary()
+  /** Copy constructs from the provided byte array. */
+  public JsonBinary(byte[] bytes)
   {
-    this(EMPTY_BUFFER);
+    setCopy(bytes);
+  }
+
+  /** Copy constructs from the provided byte array.
+   * 
+   * @param bytes a byte array 
+   * @param length number of bytes 
+   */
+  public JsonBinary(byte[] bytes, int length)
+  {
+    setCopy(bytes, length);
   }
   
-  /** Construct a new JsonBinary using the given byte array as its value. The array is not copied but
-   * directly used as internal buffer. 
+  /** Copy constructs from the provided byte array.
    * 
-   * @param value a byte array to be used as internal buffer 
+   * @param bytes a byte array 
+   * @param offset starting point of bytes
+   * @param length number of bytes 
    */
-  public JsonBinary(byte[] value)
+  public JsonBinary(byte[] bytes, int offset, int length)
   {
-    this(value, value.length);
+    setCopy(bytes, offset, length);
   }
 
-  /** Construct a new JsonBinary using the first <code>length</code> bytes of the given byte array 
-   * as its value. The array is not copied but directly used as internal buffer. 
-   * 
-   * @param value a byte array to be used as internal buffer
-   * @param length number of bytes that are valid
-   */
-  public JsonBinary(byte[] value, int length)
-  {
-    this.value = value;
-    this.length = length;        
-  }
-
-  /** Construct a new JsonBinary from a hexstring, ignoring whitespace. 
+  /** Copy constructs from a hex string, ignoring whitespace. 
    *
-   * @throws IllegalArgumentException when the hexstring is not valid
+   * @throws IllegalArgumentException when the hex string is not valid
    */
   public JsonBinary(String hexString)
   {
@@ -86,9 +83,9 @@ public class JsonBinary extends JsonAtom
     {
       throw new IllegalArgumentException("hex string must be a multiple of two");
     }
-    length = n / 2;
+    bytesLength = n / 2;
     n = 0;
-    value = new byte[length];
+    bytes = new byte[bytesLength];
     byte b1 = 0;
     boolean half = false;
     for (int i = 0; i < len; i++)
@@ -117,100 +114,26 @@ public class JsonBinary extends JsonAtom
         else
         {
           b1 = (byte) ((b1 << 4) | b2);
-          value[n++] = b1;
+          bytes[n++] = b1;
         }
       }
     }
   }
 
   
-  // -- reading/writing ---------------------------------------------------------------------------
-
-  /** Returns the internal byte buffer. Use with caution! */
-  public byte[] getInternalBytes()
-  {
-    return value;
-  }
-
-  /** Returns the number of bytes in {@link #getBytes()} that are valid. */
-  public int length()
-  {
-    return length;
-  }
-
-
-
-  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
+  // -- getters -----------------------------------------------------------------------------------
+  
   @Override
   public JsonBinary getCopy(JsonValue target) throws Exception
   {
-    if (target == this) target = null;
-    
-    JsonBinary t;
-    if (target instanceof JsonBinary)
-    {
-      t = (JsonBinary)target;
-    }
-    else
-    {
-      t = new JsonBinary();
-    }
-    t.setCopy(this.value, 0, this.length);
-    return t;
+    return this;
   }
   
-  
-  // -- mutation ----------------------------------------------------------------------------------
-  
-  /** Sets the value of this JsonBinary to the first <code>length</code> bytes of the given byte 
-   * array. The array is not copied but directly used as internal buffer. 
-   * 
-   * @param buffer a byte buffer
-   * @param length number of bytes that are valid
-   */
-  public void setBytes(byte[] bytes, int length)
+  @Override
+  public JsonBinary getImmutableCopy() throws Exception
   {
-    this.value = bytes;
-    this.length = length;
+    return this;
   }
-
-  /** Sets the value of this JsonBinary to the given byte array. The array is not copied but 
-   * directly used as internal buffer. 
-   * 
-   * @param buffer a byte buffer
-   */
-  public void setBytes(byte[] bytes)
-  {
-    setBytes(bytes, bytes.length);
-  }
-
-  /** Ensures that the internal buffer has at least the provided capacity but neither changes
-   * nor increases the valid bytes (the first {@link #size()} bytes).  
-   * 
-   * @param capacity
-   */
-  public void ensureCapacity(int capacity)
-  {
-    if (capacity > value.length)
-    {
-      byte[] newval = new byte[capacity];
-      System.arraycopy(value, 0, newval, 0, length); // non-valid bytes are not copied
-      value = newval;
-    }
-  }
-  
-  /** Copies data from a byte array into this JsonBinary. 
-   * 
-   * @param buf a byte array
-   * @param pos position in byte array
-   * @param length number of bytes to copy
-   */ 
-  public void setCopy(byte[] buf, int pos, int length) {
-    this.length = length;
-    value = value.length >= length ? value : new byte[length];
-    System.arraycopy(buf, pos, value, 0, length);
-  }
-  
   
   // -- comparison/hashing ------------------------------------------------------------------------
   
@@ -219,18 +142,7 @@ public class JsonBinary extends JsonAtom
   public int compareTo(Object x)
   {
     JsonBinary bi = (JsonBinary) x;
-    return WritableComparator.compareBytes(value, 0, length, bi.value, 0, bi.length);
-  }
-
-  /* @see com.ibm.jaql.json.type.JsonValue#hashCode(java.lang.Object) */
-  @Override
-  public int hashCode() {
-    int h = BaseUtil.GOLDEN_RATIO_32;
-    for (int i = 0; i < length; i++)
-    {
-      h = (h ^ value[i]) * BaseUtil.GOLDEN_RATIO_32;
-    }
-    return h;
+    return WritableComparator.compareBytes(bytes, 0, bytesLength, bi.bytes, 0, bi.bytesLength);
   }
 
   /* @see com.ibm.jaql.json.type.JsonValue#longHashCode(java.lang.Object) */
@@ -238,29 +150,19 @@ public class JsonBinary extends JsonAtom
   public long longHashCode()
   {
     long h = BaseUtil.GOLDEN_RATIO_64;
-    for (int i = 0; i < length; i++)
+    for (int i = 0; i < bytesLength; i++)
     {
-      h = (h ^ value[i]) * BaseUtil.GOLDEN_RATIO_64;
+      h = (h ^ bytes[i]) * BaseUtil.GOLDEN_RATIO_64;
     }
     return h;
   }
 
-
-
   
   // -- misc --------------------------------------------------------------------------------------
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.json.type.JValue#getEncoding()
-   */
   @Override
   public JsonEncoding getEncoding()
   {
     return JsonEncoding.BINARY;
   }
-  
-  
-  
 }

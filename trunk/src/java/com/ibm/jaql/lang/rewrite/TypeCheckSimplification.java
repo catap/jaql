@@ -25,6 +25,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.schema.CheckFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * ------------------------------------------------------------------------
@@ -69,7 +70,7 @@ public class TypeCheckSimplification extends Rewrite
     
     Expr inExpr = check.child(0);
     Schema inSchema = inExpr.getSchema();
-    if( inSchema.isArray().maybeNot() )
+    if( inSchema.is(ARRAY).maybeNot() )
     {
       return false;
     }
@@ -91,7 +92,7 @@ public class TypeCheckSimplification extends Rewrite
     }
     
     ArraySchema arraySchema = (ArraySchema)asSchema;
-    if( arraySchema.getHeadSchemata().length != 0 ||
+    if( arraySchema.getHeadSchemata().size() != 0 ||
         ! arraySchema.hasRest() ||
         arraySchema.getMinRest().longValueExact() != 0 ||
         arraySchema.getMaxRest() != null )

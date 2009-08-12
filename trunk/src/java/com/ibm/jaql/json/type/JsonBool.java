@@ -15,37 +15,34 @@
  */
 package com.ibm.jaql.json.type;
 
-/** A boolean JSON value. */
+/** An boolean JSON value.
+ * 
+ * Instances of this class are immutable, but subclasses might add mutation functionality
+ * (in which case they have to override the {@link #getCopy(JsonValue)} method).
+ */
 public class JsonBool extends JsonAtom
 {
-  // TODO: should be immutable
   public final static JsonBool TRUE  = new JsonBool(true);
   public final static JsonBool FALSE = new JsonBool(false);
 
-  protected boolean value;
+  protected boolean value = false;
 
-  
+
   // -- construction ------------------------------------------------------------------------------
   
-  /** Constructs a new JsonBool with an undefined value. */
-  public JsonBool()
-  {
-  }
-
   /** Constructs a new JsonBool representing the given value */
-  public JsonBool(boolean value)
+  protected JsonBool(boolean value)
   {
     this.value = value;
   }
 
-  /** Returns a {@link JsonBool} for the given value. The returned value must not be changed;
-   * is mutation is required, use one of the constructors instead. */
-  public static JsonBool makeShared(boolean value)
+  /** Returns an (immutable) {@link JsonBool} for the given value. */
+  public static JsonBool make(boolean value)
   {
     return value ? TRUE : FALSE;
   }
 
-  
+ 
   // -- getters -----------------------------------------------------------------------------------
   
   /** Returns the boolean value */
@@ -54,28 +51,16 @@ public class JsonBool extends JsonAtom
     return value;
   }
 
-  /* @see JsonValue#getCopy(JsonValue) */
   @Override
   public JsonBool getCopy(JsonValue target) throws Exception
   {
-    if (target == this) target = null;
-    
-    if (target instanceof JsonBool)
-    {
-      JsonBool t = (JsonBool)target;
-      t.value = value;
-      return t;
-    }
-    return new JsonBool(value);
+    return this;  // immutable, no copying needed
   }
-
-
-  // -- setters -----------------------------------------------------------------------------------
   
-  /** Sets the boolean value */
-  public void set(boolean value)
+  @Override
+  public JsonBool getImmutableCopy() throws Exception
   {
-    this.value = value;
+    return this;
   }
 
   
@@ -84,30 +69,23 @@ public class JsonBool extends JsonAtom
   /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */
   public int compareTo(Object x)
   {
-    //    int c = Util.typeCompare(this, (Writable)x);
-    //    if( c != 0 )
-    //    {
-    //      return c;
-    //    }
-    boolean value2 = ((JsonBool) x).value;
-    return (value == value2) ? 0 : (value2 ? -1 : +1);
+    boolean value2 = ((JsonBool) x).get();
+    return (get()== value2) ? 0 : (value2 ? -1 : +1);
   }
 
   /* @see com.ibm.jaql.json.type.JsonValue#longHashCode() */
   @Override
   public long longHashCode()
   {
-    return value ? JsonLong.longHashCode(1) : JsonLong.longHashCode(0);
+    return get() ? JsonLong.longHashCode(1) : JsonLong.longHashCode(0);
   }
 
-  
+
   // -- misc --------------------------------------------------------------------------------------
 
-  /* @see com.ibm.jaql.json.type.JsonValue#getEncoding() */
+  @Override
   public JsonEncoding getEncoding()
   {
     return JsonEncoding.BOOLEAN;
   }
-
-
 }

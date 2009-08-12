@@ -22,26 +22,20 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDate;
 
 class JsonDateSerializer extends BinaryBasicSerializer<JsonDate>
 {
 
   @Override
-  public JsonDate newInstance()
-  {
-    return new JsonDate();
-  }
-
-
-  @Override
   public JsonDate read(DataInput in, JsonValue target) throws IOException
   {
     long millis = in.readLong();
-    if (target == null || !(target instanceof JsonDate)) {
-      return new JsonDate(millis);
+    if (target == null || !(target instanceof MutableJsonDate)) {
+      return new MutableJsonDate(millis);
     } else {
-      JsonDate t = (JsonDate)target;
-      t.setMillis(millis);
+      MutableJsonDate t = (MutableJsonDate)target;
+      t.set(millis);
       return t;
     }
   }
@@ -50,7 +44,7 @@ class JsonDateSerializer extends BinaryBasicSerializer<JsonDate>
   @Override
   public void write(DataOutput out, JsonDate value) throws IOException
   {
-    out.writeLong(value.getMillis());
+    out.writeLong(value.get());
   }
   
   

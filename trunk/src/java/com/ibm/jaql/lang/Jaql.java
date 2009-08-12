@@ -40,6 +40,7 @@ import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.util.ClassLoaderMgr;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 public class Jaql
 {
@@ -349,7 +350,7 @@ public class Jaql
     }
     context.reset();
     JsonIterator iter;
-    if( expr.getSchema().isArrayOrNull().always() )
+    if( expr.getSchema().is(ARRAY, NULL).always() )
     {
       iter = expr.iter(context);
     }
@@ -398,7 +399,7 @@ public class Jaql
     {
       try
       {
-        if (expr.getSchema().isArrayOrNull().always())
+        if (expr.getSchema().is(ARRAY, NULL).always())
         {
           JsonIterator iter = expr.iter(context);
           iter.print(output);

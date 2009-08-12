@@ -200,7 +200,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
     {
       tempAggs[i] = aggs[i].getFinal();
     }
-    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs); // TODO: memory
+    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs, false); // TODO: memory
     return new SingleJsonValueIterator(tuple); // TODO: memory
   }
 

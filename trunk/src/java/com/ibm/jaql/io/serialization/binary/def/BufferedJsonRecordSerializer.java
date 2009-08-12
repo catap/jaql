@@ -41,13 +41,6 @@ class BufferedJsonRecordSerializer extends BinaryBasicSerializer<BufferedJsonRec
 
   
   @Override
-  public BufferedJsonRecord newInstance()
-  {
-    return new BufferedJsonRecord();
-  }
-
-
-  @Override
   public BufferedJsonRecord read(DataInput in, JsonValue target) throws IOException
   {
     int arity = BaseUtil.readVUInt(in);
@@ -67,7 +60,7 @@ class BufferedJsonRecordSerializer extends BinaryBasicSerializer<BufferedJsonRec
       values[i] = valueSerializer.read(in, values[i]);
     }
     
-    t.setInternal(names, values, arity, true);    
+    t.set(names, values, arity, true);    
     return t;
   }
 

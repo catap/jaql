@@ -36,12 +36,6 @@ class SpilledJsonArraySerializer extends BinaryBasicSerializer<SpilledJsonArray>
   }
 
   @Override
-  public SpilledJsonArray newInstance()
-  {
-    return new SpilledJsonArray();
-  }
-
-  @Override
   public SpilledJsonArray read(DataInput in, JsonValue target) throws IOException
   {
     SpilledJsonArray t;

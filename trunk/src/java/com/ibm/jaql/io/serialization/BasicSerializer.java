@@ -36,9 +36,6 @@ implements Serializer<In, Out, T>
 
   // -- abstract methods -------------------------------------------------------------------------
   
-  /** Creates a new instance of the value corresponding to this serializer. */
-  public abstract T newInstance();
-
   @Override
   public abstract T read(In in, JsonValue target) throws IOException;
   

@@ -15,15 +15,18 @@
  */
 package com.ibm.jaql.json.schema;
 
+import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a double. */
-public class DoubleSchema extends RangeSchema<JsonDouble>
+public final class DoubleSchema extends RangeSchema<JsonDouble>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -33,7 +36,7 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
   {
     if (parameters == null)
     {
-      Schema schema = new DoubleSchema();
+      Schema schema = SchemaFactory.numericSchema();
       parameters = new Parameters(
           new JsonString[] { PAR_MIN, PAR_MAX, PAR_VALUE },
           new Schema[]     { schema , schema , schema    },
@@ -42,6 +45,8 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
     return parameters;
   }
 
+  // used for matching
+  private MutableJsonDouble temp = new MutableJsonDouble();;
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -58,25 +63,33 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
   }
   
   public DoubleSchema(JsonDouble min, JsonDouble max, JsonDouble value)
-  {
-    super(min, max, value);
+  {    
+    init(min, max, value);
   }
-
+  
   public DoubleSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
   {
     this(convert(min), convert(max), convert(value));
   }
+
   
   /** Convert the specified numeric to a long or throw an exception */  
   private static JsonDouble convert(JsonNumeric v)
   {
-    if (v == null || v instanceof JsonDouble)
+    if (v == null) return null;
+    if (v instanceof JsonNumeric)
     {
-      return (JsonDouble)v;
+      try 
+      {
+        return new JsonDouble(((JsonNumeric)v).doubleValueExact());
+      }
+      catch (ArithmeticException e)
+      {
+        // throw below
+      }
     }
     throw new IllegalArgumentException("interval argument has to be of type double: " + v);
   }
-  
   
   // -- Schema methods ----------------------------------------------------------------------------
 
@@ -90,29 +103,39 @@ public class DoubleSchema extends RangeSchema<JsonDouble>
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { JsonDouble.class }; 
+    return new Class[] { JsonDouble.class, JsonLong.class, JsonDecimal.class }; 
   }
   
+  @Override
   public boolean matches(JsonValue value)
   {
-    if (!(value instanceof JsonDouble))
+    if (value == null || !value.getType().isNumeric())
     {
       return false;
     }
-    // value is double, as are min and max
     
+    // convert to double
+    try 
+    {
+      temp.set( ((JsonNumeric)value).doubleValueExact() );
+    }
+    catch (ArithmeticException e)
+    {
+      return false;
+    }
+
+    // match
     if (this.value != null)
     {
       return value.equals(this.value);
     }
-
     if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
     {
       return false;
     }
     
     return true;
-  }  
+  } 
   
   // -- merge -------------------------------------------------------------------------------------
 

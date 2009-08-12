@@ -23,10 +23,11 @@ import java.math.BigDecimal;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.DecfloatSchema;
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
 
-class DecfloatSerializer extends BinaryBasicSerializer<JsonNumber>
+class DecfloatSerializer extends BinaryBasicSerializer<JsonNumeric>
 {
   private DecfloatSchema schema;
   
@@ -40,29 +41,23 @@ class DecfloatSerializer extends BinaryBasicSerializer<JsonNumber>
   // -- serialization -----------------------------------------------------------------------------
 
   @Override
-  public JsonDecimal newInstance()
-  {
-    return new JsonDecimal();
-  }
-
-  @Override
   public JsonDecimal read(DataInput in, JsonValue target) throws IOException
   {
     // get value
     BigDecimal value = readValue(in);
     
     // return result
-    if (target == null || !(target instanceof JsonDecimal)) {
-      return new JsonDecimal(value);
+    if (target == null || !(target instanceof MutableJsonDecimal)) {
+      return new MutableJsonDecimal(value);
     } else {
-      JsonDecimal t = (JsonDecimal)target;
+      MutableJsonDecimal t = (MutableJsonDecimal)target;
       t.set(value);
       return t;
     }
   }
 
   @Override
-  public void write(DataOutput out, JsonNumber value) throws IOException
+  public void write(DataOutput out, JsonNumeric value) throws IOException
   {
     // check match
     if (!schema.matches(value))

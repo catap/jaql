@@ -378,15 +378,15 @@ public abstract class MapReduceBaseExpr extends Expr
           JsonArray inValue = (JsonArray)v;
           assert inValue.count() == 2;
             
-          outKey.value = inValue.nth(0);
+          outKey.value = inValue.get(0);
           if (makePair)
           {
-            outPair.set(1, inValue.nth(1));
+            outPair.set(1, inValue.get(1));
             outValue.value = outPair;
           }
           else 
           {
-            outValue.value = inValue.nth(1);
+            outValue.value = inValue.get(1);
           }
           output.collect(outKey, outValue);
         }

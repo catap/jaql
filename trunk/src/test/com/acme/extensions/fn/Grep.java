@@ -19,6 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 
 /**
@@ -57,7 +58,7 @@ public class Grep
     if (flags != null)
     {
       String s = flags.toString();
-      for (int i = 0; i < flags.lengthUtf8(); i++)
+      for (int i = 0; i < flags.bytesLength(); i++)
       {
         switch (s.charAt(i))
         {
@@ -81,7 +82,7 @@ public class Grep
     final Matcher matcher = pattern.matcher("");
     final boolean global = global1;
 
-    final JsonString resultStr = new JsonString();
+    final MutableJsonString resultStr = new MutableJsonString();
 
     return new JsonIterator(resultStr) {
       private boolean needInput = true;
@@ -101,7 +102,7 @@ public class Grep
           }
           if (matcher.find())
           {
-            resultStr.set(matcher.group());
+            resultStr.setCopy(matcher.group());
             needInput = !global;
             return true; // currentValue == resultStr
           }

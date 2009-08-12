@@ -171,7 +171,7 @@ into {$x.a, $x.b, $y.c, $y.d}
   $median = fn($items) (
     $sorted = $items -> sort by [$],
 
-    $sorted[int(count($sorted)/2)]
+    $sorted[long(count($sorted)/2)]
   );
 
   $median( [ 1, 4, 5, 3, 2 ] ); // 3

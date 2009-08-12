@@ -10,10 +10,14 @@ typeof(true);
 typeof(1);
 
 1;
+1d;
+1m;
 
-10.5;
+1.5;
+1.5d;
+1.5m;
 
-15.5e-9;
+100e-2;
 
 d'2001-07-04T12:08:56Z';
 
@@ -67,9 +71,20 @@ null;
 [{a:'some string', b:[{},{y:1, z:42},['a', 'b']]},1,'a string',['another string']];
 
 //-------------------------- ARITH/LOGIC OPS-----------------------
+
 1+2;
+1+2d;
+1+2m;
+1d+2d;
+1d+2m;
+1m+2m;
 
 1/2;
+1/2d;
+1/2m;
+1d/2d;
+1d/2m;
+1m/2m;
 
 true or false;
 
@@ -90,13 +105,16 @@ false or not null;
 [1,2,3,{a:'foo', b:['bar']}] == [1,2,3,{a:'foo', b:['bar']}];
 
 // make sure numeric encodings hash and compare properly
-distinct( [1, 1.0, 1.1, 1.10] ) -> sort by [$]; // 2 items
+distinct( [1, 1d, 1m, 1.5d, 1.5m, 1.50d, 1.50m ] ) -> sort by [$]; // 2 items
 
-1 == 1.0; // true
+1 == 1d; // true
+1 == 1m; // true
+1d == 1m; // true
 
-1 == 1.1; // false
+1 == 1.5; // false
+1 == 1.5m; // false
 
-1.1 == 1.10; // true
+1.5 == 1.5m; // true
 
 1.11 != 1.10; // true
 
@@ -317,7 +335,7 @@ $search1 = fn($list, $item, $search2) (
   if( not exists($list) ) null
   else (
     $n = count($list),
-    $m = int($n / 2),
+    $m = long($n / 2),
     $c = compare($item, $list[ $m ]),
     if     ( $c < 0 ) $search2( $list[*:$m-1], $item, $search2 )
     else if( $c > 0 ) 1 + $m + $search2( $list[$m+1:*], $item, $search2 )

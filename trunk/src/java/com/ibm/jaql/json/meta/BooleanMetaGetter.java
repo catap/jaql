@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBool;
 
 /**
  * 
@@ -44,9 +44,9 @@ public final class BooleanMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonBool makeValue()
+  public MutableJsonBool makeValue()
   {
-    return new JsonBool();
+    return new MutableJsonBool();
   }
 
   /*
@@ -60,7 +60,7 @@ public final class BooleanMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     boolean x = (Boolean) getter.invoke(obj);
-    ((JsonBool) target).set(x);
+    ((MutableJsonBool) target).set(x);
     return target;
   }
 

@@ -30,6 +30,7 @@ import com.ibm.jaql.lang.core.JsonComparator;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.util.JsonSorter;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -152,14 +153,14 @@ public class SortExpr extends IterExpr
     // handle the case where input is null or non-array
     if (out == null)
     {
-      if (in.isNull().maybe())
+      if (in.is(NULL).maybe())
       {
         return SchemaFactory.nullSchema();
       }
       throw new IllegalArgumentException("sort expects arrays as input");
     }
 
-    if (out.isEmptyArray().always())
+    if (out.isEmpty(ARRAY).always())
     {
       out = SchemaFactory.emptyArraySchema();
     }
@@ -170,7 +171,7 @@ public class SortExpr extends IterExpr
     }
     
     // handle nulls (when input can be an array)
-    if (in.isNull().maybe())
+    if (in.is(NULL).maybe())
     { 
       out = SchemaTransformation.addNullability(out);
     }

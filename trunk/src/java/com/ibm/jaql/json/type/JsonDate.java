@@ -21,7 +21,11 @@ import java.text.SimpleDateFormat;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 
-/** A date JSON value. */
+/** An JSON date. 
+ * 
+ * Instances of this class are immutable, but subclasses might add mutation functionality
+ * (in which case they have to override the {@link #getCopy(JsonValue)} method).
+ */
 public class JsonDate extends JsonAtom
 {
   public static final String ISO8601UTC_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss'Z'";
@@ -39,18 +43,13 @@ public class JsonDate extends JsonAtom
   
   // -- construction ------------------------------------------------------------------------------
   
-  /** Constructs a new <code>JsonDate</code> with an undefined value. */
-  public JsonDate()
-  {
-  }
-
   /** Constructs a new <code>JsonDate</code> using the specified timestamp.
    * 
    * @param millis number of milliseconds since January 1, 1970, 00:00:00 GMT
    */
   public JsonDate(long millis)
   {
-    this.millis = millis;
+    set(millis);
   }
 
   /** Constructs a new <code>JsonDate</code> using the specified value.
@@ -106,7 +105,7 @@ public class JsonDate extends JsonAtom
   /** Returns the number of milliseconds since January 1, 1970, 00:00:00 GMT represented by this 
    * <code>JsonDate</code> object.
    */
-  public long getMillis()
+  public long get()
   {
     return millis;
   }
@@ -125,17 +124,14 @@ public class JsonDate extends JsonAtom
   @Override
   public JsonDate getCopy(JsonValue target) throws Exception
   {
-    if (target == this) target = null;
-    
-    if (target instanceof JsonDate)
-    {
-      JsonDate t = (JsonDate)target;
-      t.millis = this.millis;
-      return t;
-    }
-    return new JsonDate(millis);
+    return this;  // immutable, no copying needed
   }
 
+  @Override
+  public JsonDate getImmutableCopy() throws Exception
+  {
+    return this;
+  }
 
   // -- setters -----------------------------------------------------------------------------------
 
@@ -143,7 +139,7 @@ public class JsonDate extends JsonAtom
    * 
    * @param millis the number of milliseconds since January 1, 1970, 00:00:00 GMT  
    */
-  public void setMillis(long millis)
+  protected void set(long millis)
   {
     this.millis = millis;
   }
@@ -155,7 +151,7 @@ public class JsonDate extends JsonAtom
    * 
    * @throws UndeclaredThrowableException when a parse error occurs
    */
-  public void set(String date, DateFormat format)
+  protected void set(String date, DateFormat format)
   {
     try
     {
@@ -175,7 +171,7 @@ public class JsonDate extends JsonAtom
    * 
    * @param date string representation of the data in iso8601 (only UTC specified by a Z right now) 
    */
-  public void set(String date)
+  protected void set(String date)
   {
     set(date, ISO8601UTC_FORMAT);
   }
@@ -187,11 +183,6 @@ public class JsonDate extends JsonAtom
   @Override
   public int compareTo(Object x)
   {
-    //    int c = Util.typeCompare(this, (Writable)x);
-    //    if( c != 0 )
-    //    {
-    //      return c;
-    //    }
     long m2 = ((JsonDate) x).millis;
     return (millis == m2) ? 0 : (millis < m2 ? -1 : +1);
   }
@@ -222,7 +213,7 @@ public class JsonDate extends JsonAtom
   @Override
   public JsonEncoding getEncoding()
   {
-    return JsonEncoding.DATE_MSEC;
+    return JsonEncoding.DATE;
   }
 
 }

@@ -43,6 +43,7 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -90,7 +91,14 @@ public class HBaseStore
     public static Text makeText(JsonString s)
     {
       Text t = new Text();
-      t.set(s.getInternalBytes(), 0, s.lengthUtf8());
+      if (s instanceof MutableJsonString)
+      {
+        t.set(((MutableJsonString)s).get(), 0, s.bytesLength());
+      }
+      else
+      {
+        t.set(s.getCopy(), 0, s.bytesLength());
+      }
       return t;
     }
 
@@ -151,13 +159,13 @@ public class HBaseStore
      * @param rec
      * @throws IOException
      */
-    public static void setMap(JsonString colName, JsonValue value, BufferedJsonRecord rec)
+    public static void setMap(MutableJsonString colName, JsonValue value, BufferedJsonRecord rec)
         throws IOException
     {
       // unpeel the column family only if its the default column family
       if (colName.startsWith(J_DEFAULT_HBASE_COLUMN_FAMILY_NAME))
       {
-        colName.removeBytes(0, J_DEFAULT_HBASE_COLUMN_FAMILY_NAME.lengthUtf8());
+        colName.removeBytes(0, J_DEFAULT_HBASE_COLUMN_FAMILY_NAME.bytesLength());
       }
       else
       {
@@ -192,20 +200,20 @@ public class HBaseStore
      * @return
      * @throws Exception
      */
-    public static JsonString convertColumn(JsonString col) throws Exception
+    public static MutableJsonString convertColumn(JsonString col) throws Exception
     {
-      JsonString ncol = null;
+      MutableJsonString ncol = null;
       // add the default column family if one is not specified
       if (col.indexOf(HBASE_CF_SEPARATOR_CHAR) < 0)
       {
-        ncol = new JsonString(DEFAULT_HBASE_COLUMN_FAMILY_NAME + col);
+        ncol = new MutableJsonString(DEFAULT_HBASE_COLUMN_FAMILY_NAME + col);
       }
       else
       {
         // TODO: memory
         String o = col.toString();
         String n = o.replace(JAQL_CF_SEPARATOR_CHAR, HBASE_CF_SEPARATOR_CHAR);
-        ncol = new JsonString(n);
+        ncol = new MutableJsonString(n);
       }
       return ncol;
     }
@@ -215,13 +223,13 @@ public class HBaseStore
      * @return
      * @throws Exception
      */
-    public static JsonString[] convertColumns(JsonArray columns) throws Exception
+    public static MutableJsonString[] convertColumns(JsonArray columns) throws Exception
     {
-      JsonString[] cols = null;
+      MutableJsonString[] cols = null;
       if (columns != null)
       {
         int ncols = (int) columns.count();
-        cols = new JsonString[ncols];
+        cols = new MutableJsonString[ncols];
         JsonIterator colIter = columns.iter();
         for (int i = 0; i < ncols; i++)
         {
@@ -247,8 +255,16 @@ public class HBaseStore
     {
       rec.clear();
       rec.ensureCapacity(row.size() + 1);
-      JsonString name = new JsonString(J_KEY);
-      JsonString value = new JsonString(key.getInternalBytes(), key.lengthUtf8());
+      MutableJsonString name = new MutableJsonString(J_KEY);
+      MutableJsonString value = new MutableJsonString();
+      if (key instanceof MutableJsonString)
+      {
+        value.set(((MutableJsonString)key).get(), key.bytesLength());
+      }
+      else
+      {
+        value.set(key.getCopy(), key.bytesLength());
+      }
       rec.add(name, value);
       JsonHolder valueHolder = new JsonHolder();
       for (Map.Entry<byte[], Cell> e : row.entrySet())
@@ -257,7 +273,7 @@ public class HBaseStore
         if (!n.equals(KEY_NAME))
         {
           convertFromBytes(e.getValue().getValue(), valueHolder, rec);
-          JsonString newName = new JsonString(n.getBytes(), n.length());
+          MutableJsonString newName = new MutableJsonString(n);
           setMap(newName, valueHolder.value, rec);
         }
       }
@@ -299,20 +315,20 @@ public class HBaseStore
       BatchUpdate xact = new BatchUpdate(hbaseKey.toString());
       for (Entry<JsonString, JsonValue> e : rec)
       {
-        JsonString columnName = e.getKey();
+        JsonString columnName = (JsonString)e.getKey();
         if (columnName.equals(J_KEY)) continue; // skip the key
         // specify the default column family only when no column family is
         // specified
         if (columnName.indexOf(JAQL_CF_SEPARATOR_CHAR) < 0)
         {
-          columnName = new JsonString(DEFAULT_HBASE_COLUMN_FAMILY_NAME
+          columnName = new MutableJsonString(DEFAULT_HBASE_COLUMN_FAMILY_NAME
               + columnName);
         }
         else
         {
           // TODO: memory
-          columnName = new JsonString(columnName);
-          columnName.replace(JAQL_CF_SEPARATOR_CHAR, HBASE_CF_SEPARATOR_CHAR);
+          columnName = new MutableJsonString(columnName);
+          ((MutableJsonString)columnName).replace(JAQL_CF_SEPARATOR_CHAR, HBASE_CF_SEPARATOR_CHAR);
         }
         JsonValue val = e.getValue();
         byte[] valueBytes = convertToBytes(val);
@@ -333,7 +349,7 @@ public class HBaseStore
      * @throws IOException
      */
     public static void deleteFromHBase(HTable table, JsonString key,
-        JsonString[] columns) throws Exception
+        MutableJsonString[] columns) throws Exception
     {
       // TODO: mismatch between Text and JString
       // start the transaction
@@ -347,10 +363,10 @@ public class HBaseStore
           RowResult row = table.getRow(key.toString());
           columns = row.keySet().toArray(columns);
         }
-        for (JsonString col : columns)
+        for (MutableJsonString col : columns)
         {
           // int start = col.find(HBASE_CF_SEPARATOR_CHAR) + 1;
-          xact.delete(col.getInternalBytes());
+          xact.delete(col.get());
         }
         // end the transaction
         table.commit(xact);
@@ -420,10 +436,10 @@ public class HBaseStore
           if ( (row = scanner.next()) != null)
           {
             String key = new String(row.getRow());
-            if (stopKey == null || stopKey.lengthUtf8() == 0
+            if (stopKey == null || stopKey.bytesLength() == 0
                 || key.compareTo(stopKey.toString()) <= 0)
             {
-              HBaseStore.Util.convertMap(new JsonString(key), row, current);
+              HBaseStore.Util.convertMap(new MutableJsonString(key), row, current);
               return true; // currentValue == current
             }
           }
@@ -447,7 +463,7 @@ public class HBaseStore
         JsonIterator rows) throws Exception
     {
       // setup the columns
-      JsonString[] cols = convertColumns(columnNames);
+      MutableJsonString[] cols = convertColumns(columnNames);
 
       // open the table
       HTable table = openHTable(tableName);
@@ -478,7 +494,7 @@ public class HBaseStore
       HTable table = HBaseStore.Util.openHTable(tableName);
 
       // setup the columns
-      JsonString[] cols = HBaseStore.Util.convertColumns(columnNames);
+      MutableJsonString[] cols = HBaseStore.Util.convertColumns(columnNames);
 
       // setup the timestamp
       long timestamp = (timestampValue != null) ? timestampValue.get() : -1;
@@ -610,7 +626,7 @@ public class HBaseStore
    */
   static class FetchSingleVersionIter extends FetchIter
   {
-    protected JsonString[] jcols;
+    protected MutableJsonString[] jcols;
 
     protected Text[]    tcols;
     private JsonHolder valueHolder = new JsonHolder();
@@ -621,7 +637,7 @@ public class HBaseStore
      * @param cols
      * @throws Exception
      */
-    public FetchSingleVersionIter(HTable table, JsonIterator keyIter, JsonString[] cols)
+    public FetchSingleVersionIter(HTable table, JsonIterator keyIter, MutableJsonString[] cols)
       throws Exception
     {
       super(table, keyIter, cols.length + 1);
@@ -644,8 +660,16 @@ public class HBaseStore
       boolean hasValue = false;
       for (int i = 0; i < jcols.length; i++)
       {
-        Cell cell = table.get(key.getInternalBytes(), tcols[i].getBytes());
-
+        Cell cell;
+        if (key instanceof MutableJsonString)
+        {
+          cell = table.get(((MutableJsonString)key).get(), tcols[i].getBytes());
+        }
+        else
+        {
+          cell = table.get(key.getCopy(), tcols[i].getBytes());
+        }
+          
         if (cell != null)
         {
           byte[] value = cell.getValue();
@@ -680,7 +704,7 @@ public class HBaseStore
      * @param numVersions
      * @throws Exception
      */
-    public FetchMultiVersionIter(HTable table, JsonIterator keyIter, JsonString[] cols,
+    public FetchMultiVersionIter(HTable table, JsonIterator keyIter, MutableJsonString[] cols,
         long timestamp, int numVersions) throws Exception
     {
       super(table, keyIter, cols);
@@ -703,10 +727,11 @@ public class HBaseStore
       for (int i = 0; i < jcols.length; i++)
       {
         Cell[] value = null;
+        byte[] keyBytes = key instanceof MutableJsonString ? ((MutableJsonString)key).get() : key.getCopy();
         if (timestamp < 0)
-          value = table.get(key.getInternalBytes(), tcols[i].getBytes(), numVersions);
+          value = table.get(keyBytes, tcols[i].getBytes(), numVersions);
         else
-          value = table.get(key.getInternalBytes(), tcols[i].getBytes(), timestamp, numVersions);
+          value = table.get(keyBytes, tcols[i].getBytes(), timestamp, numVersions);
 
         if (value != null && value.length > 0)
         {

@@ -113,18 +113,17 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   private void init()
   {
     // create data structures
-    noRequired = schema.noRequiredFields();
-    noOptional = schema.noOptionalFields();
-    noRequiredOptional = noRequired + noOptional;
+    noRequired = schema.noRequired();
+    noOptional = schema.noOptional();
+    noRequiredOptional = schema.noRequiredOrOptional();
     requiredInfo = new FieldInfo[noRequired];
     optionalInfo = new FieldInfo[noOptional];
     allInfo = new FieldInfo[noRequiredOptional];
     
     // scan required and optional fields
-    RecordSchema.Field[] fields = schema.getFields();
-    for (int posRequired=0, posOptional=0, pos=0; pos < fields.length; pos++)
+    for (int posRequired=0, posOptional=0, pos=0; pos < noRequiredOptional; pos++)
     {
-      RecordSchema.Field field = fields[pos];
+      RecordSchema.Field field = schema.getField(pos);
       FieldInfo k = new FieldInfo(field, new TempBinaryFullSerializer(field.getSchema()));
       allInfo[pos] = k;
       if (field.isOptional()) {
@@ -141,9 +140,9 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     }
     
     // scan additional fields
-    if (schema.getRest() != null)
+    if (schema.getAdditionalSchema() != null)
     {
-      additionalSerializer = new TempBinaryFullSerializer(schema.getRest());
+      additionalSerializer = new TempBinaryFullSerializer(schema.getAdditionalSchema());
       nameSerializer = new TempBinaryFullSerializer(SchemaFactory.stringSchema());
     }
     
@@ -161,12 +160,6 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
 
   // -- reading -----------------------------------------------------------------------------------
   
-  @Override
-  public JsonRecord newInstance()
-  {
-    return new BufferedJsonRecord();
-  }
-
   @Override
   public JsonRecord read(DataInput in, JsonValue target) throws IOException
   {
@@ -209,11 +202,11 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       // do that now because we can exploit the knowledge that the additional names and 
       // required/optional names are sorted among themselves
       merge(names, values, noAdditional, n);
-      t.setInternal(names, values, n, true);
+      t.set(names, values, n, true);
     }
     else
     {
-      t.setInternal(names, values, n, true);      
+      t.set(names, values, n, true);      
     }
 
     // done

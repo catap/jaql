@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.string;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -28,7 +29,7 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class StrcatFn extends Expr
 {
   protected StringBuilder builder;
-  protected JsonString text;
+  protected MutableJsonString text;
   
   /**
    * string strcat(...)
@@ -50,7 +51,7 @@ public class StrcatFn extends Expr
     if( text == null )
     {
       builder = new StringBuilder();
-      text = new JsonString();
+      text = new MutableJsonString();
     }
     else
     {
@@ -66,7 +67,7 @@ public class StrcatFn extends Expr
         builder.append(s);
       }
     }
-    text.set(builder.toString());
+    text.setCopy(builder.toString());
     return text;
   }
 }

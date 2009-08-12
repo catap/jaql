@@ -1,8 +1,11 @@
 package com.ibm.jaql.json.schema;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import static com.ibm.jaql.json.type.JsonType.*;
 
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.util.Bool3;
 
 /** Useful methods for schema transformation */
@@ -46,7 +49,7 @@ public class SchemaTransformation
       // if not successful, OR them
       if (mergedSchema == null)
       {
-        result = OrSchema.or(result, next);
+        result = OrSchema.make(result, next);
       }
       else
       {
@@ -62,7 +65,7 @@ public class SchemaTransformation
   public static Schema compact(Schema ... schemata)
   {
     // unnest, sort and remove duplicates
-    Schema sin = OrSchema.or(schemata);
+    Schema sin = OrSchema.make(schemata);
     if ( !(sin instanceof OrSchema) )
     {
       return sin;
@@ -102,7 +105,7 @@ public class SchemaTransformation
    * Returns <code>null</code> when input schema matches <code>null</code> only. */
   public static Schema removeNullability(Schema inSchema)
   {
-    Bool3 isNull = inSchema.isNull();
+    Bool3 isNull = inSchema.is(NULL);
     if (isNull.always())
     {
       return null;
@@ -138,7 +141,7 @@ public class SchemaTransformation
    * <code>null</code>. */
   public static Schema addNullability(Schema s)
   {
-    if (s.isNull().maybe())
+    if (s.is(NULL).maybe())
     {
       return s;
     }
@@ -154,54 +157,97 @@ public class SchemaTransformation
   /** Returns a common schema of the elements of all arrays matched by the given schema. */
   public static Schema arrayElements(Schema s)
   {
-    Schema array = restrictToArray(s);
+    Schema array = restrictTo(s, JsonType.ARRAY);
     return array != null ? array.elements() : null;
   }
-  
-  /** Returns a schema that matches all arrays matched by <code>s</code>. Returns <code>null</code> 
-   * if <code>s</code> does not match any array. */
-  public static Schema restrictToArray(Schema s)
+
+  /** Returns a common schema of the elements of all records matched by the given schema. */
+  public static Schema recordElements(Schema s)
   {
-    Schema result = restrictToArrayOrNull(s);
-    return result!=null ? removeNullability(result) : null;
+    Schema record = restrictTo(s, JsonType.RECORD);
+    return record != null ? record.elements() : null;
   }
-  
-  /** Returns a schema that matches the arrays as well as the <code>null</code> value matched 
-   * by <code>s</code>. Returns <code>null</code> if <code>s</code> does not match any array or 
-   * <code>null</code>. */
-  public static Schema restrictToArrayOrNull(Schema s)
+
+  /** Shortcut for <code>restrictTo(schema, SchemaType.ARRAY)</code> */
+  public static Schema restrictToArray(Schema schema)
   {
-    if (s instanceof NonNullSchema)
+    return restrictTo(schema, JsonType.ARRAY);
+  }
+
+  /** Shortcut for <code>restrictTo(schema, SchemaType.ARRAY, SchemaType.NULL)</code> */
+  public static Schema restrictToArrayOrNull(Schema schema)
+  {
+    return restrictTo(schema, JsonType.ARRAY, JsonType.NULL);
+  }
+
+  /** Shortcut for <code>restrictTo(schema, SchemaType.RECORD)</code> */
+  public static Schema restrictToRecord(Schema schema)
+  {
+    return restrictTo(schema, JsonType.RECORD);
+  }
+
+  /** Shortcut for <code>restrictTo(schema, SchemaType.RECORD, SchemaType.NULL)</code> */
+  public static Schema restrictToRecordOrNull(Schema schema)
+  {
+    return restrictTo(schema, JsonType.RECORD, JsonType.NULL);
+  }
+
+  /** Returns a schema that matches the values that are (1) matched by the provided <code>schema</code> 
+   * and (2) of one of the specified <code>types</code>, or <code>null</code> if no such restriction 
+   * exists. For example,
+   * <code>restrictTo(schema, SchemaType.ARRAY)</code> will only retain arrays, while
+   * <code>restrictTo(schema, SchemaType.ARRAY, SchemaType.NULL)</code> will retain arrays and null. 
+   */
+  public static Schema restrictTo(Schema schema, JsonType ... types)
+  {
+    if (schema instanceof NonNullSchema)
     {
-      return SchemaFactory.arraySchema();
+      return removeNullability( SchemaFactory.make(types) );
     }
-    if (s instanceof ArraySchema || s instanceof NullSchema)
+    if (schema instanceof OrSchema)
     {
-      return s;
-    }
-    if (s instanceof OrSchema)
-    {
-      List<Schema> alternatives = new LinkedList<Schema>();
-      for (Schema os : ((OrSchema) s).schemata)
+      // we are given a multiple alternative schemata
+      List<Schema> schemata = new ArrayList<Schema>(types.length);
+      for (Schema unrestricted : ((OrSchema)schema).get())
       {
-        Schema ns = restrictToArrayOrNull(os);
-        if (ns != null) alternatives.add(ns);
+        Schema restricted = restrictTo(unrestricted, types);
+        if (restricted != null)
+        {
+          schemata.add(restricted);
+        }
       }
-      if (alternatives.size() == 0) return null;
-      return OrSchema.or(alternatives);
+      if (schemata.size() == 0)
+      {
+        return null;
+      }
+      else
+      {
+        return OrSchema.or(schemata);
+      }      
     }
-    return null;
+    else
+    {
+      // we are given a specific schema (!= nonnull, != or)
+      for (JsonType type : types)
+      {
+        if (schema.is(type).maybe())
+        {
+          return schema;
+        }
+      }
+      return null;
+    }  
   }
 
   /** Wraps non-null, non-array parts of the provided schema into a single-element array. Array
    * and null elements are retained. */
   public static Schema wrapIntoArrayOrNull(Schema inSchema)
   {
-    if (inSchema.isArrayOrNull().always())
+    if (inSchema.is(ARRAY, NULL).always())
     {
       return inSchema;
     }
-    if (inSchema.isArrayOrNull().never())
+    if (inSchema.is(ARRAY, NULL).never())
     {
       return new ArraySchema(inSchema);
     }
@@ -212,13 +258,13 @@ public class SchemaTransformation
       OrSchema o = (OrSchema)inSchema;
       List<Schema> schemata = new LinkedList<Schema>();
       boolean unresolved = false;
-      for (Schema s : o.getInternal())
+      for (Schema s : o.get())
       {
-        if (s.isArrayOrNull().always())
+        if (s.is(ARRAY, NULL).always())
         {
           schemata.add(s);
         }
-        else if (s.isArrayOrNull().never())
+        else if (s.is(ARRAY, NULL).never())
         {
           schemata.add(new ArraySchema(s));
         }
@@ -235,7 +281,7 @@ public class SchemaTransformation
     }
     
     // otherwise we just know that it will be an array (or null)
-    return inSchema.isNull().never() ? SchemaFactory.arraySchema() : SchemaFactory.arrayOrNullSchema();
+    return inSchema.is(NULL).never() ? SchemaFactory.arraySchema() : SchemaFactory.arrayOrNullSchema();
   }
 
   /** Returns a schema that matches all non-array values matched by <code>inSchema</code> as well
@@ -243,12 +289,12 @@ public class SchemaTransformation
    * <code>null</code>. */
   public static Schema expandArrays(Schema inSchema)
   {
-    if (inSchema.isArray().never())
+    if (inSchema.is(ARRAY).never())
     {
       return inSchema;
     }
   
-    if (inSchema.isArray().always())
+    if (inSchema.is(ARRAY).always())
     {
       return inSchema.elements();
     }
@@ -258,7 +304,7 @@ public class SchemaTransformation
     {
       OrSchema o = (OrSchema)inSchema;
       List<Schema> schemata = new LinkedList<Schema>();
-      for (Schema s : o.getInternal())
+      for (Schema s : o.get())
       {
         Schema se = expandArrays(s);
         schemata.add(se);

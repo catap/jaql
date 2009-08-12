@@ -24,6 +24,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.util.Bool3;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * toArray( array ) ==> array
@@ -81,7 +82,7 @@ public class ToArrayElimination extends Rewrite
       }
     }
     
-    Bool3 isArrayOrNull = input.getSchema().isArrayOrNull();
+    Bool3 isArrayOrNull = input.getSchema().is(ARRAY, NULL);
     if( isArrayOrNull.always() )
     {
       expr.replaceInParent(input);

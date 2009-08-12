@@ -22,18 +22,19 @@ import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 
-/** Superclass for all JSON values. Provides abstract methods for serialization, conversion 
- * to JSON language, deep copying, and hashing. See {@link JsonUtil} for useful utility methods
- * in JSON values. */
+/** A JSON value. */
 public abstract class JsonValue implements Comparable<Object>
 {
-
   // -- getters -----------------------------------------------------------------------------------
   
-  /** Obtain a copy of this value. Reuses the specified target, if possible. Otherwise, returns
-   * a fresh copy of this value */
+  /** Obtain a copy of this value. If this value is immutable, returns itself. If this value
+   * is mutable, the method tries to copy it into the specified target, if possible. Otherwise, 
+   * returns a fresh copy of this value. */
   public abstract JsonValue getCopy(JsonValue target) throws Exception;
 
+  /** Returns an immutable copy of this value. This method should be preferred over
+   * {@link #getCopy(JsonValue)} whenever no target is available and mutability is not required. */
+  public abstract JsonValue getImmutableCopy() throws Exception;
   /**
    * Convert this value to a Java String. The default is the JSON string, but
    * some classes will override to return other strings.
@@ -74,23 +75,23 @@ public abstract class JsonValue implements Comparable<Object>
 
   /* @see java.lang.Object#hashCode() */
   @Override
-  public int hashCode()
+  public final int hashCode()
   {
     return (int) (longHashCode() >>> 32);
   }
   
-  /** Returns a long hash code for this value.
-   * 
-   * @return a long hash code
-   */
+  /** Returns a long hash code for this value. */
   public abstract long longHashCode();
   
 
   // -- misc --------------------------------------------------------------------------------------
 
-  /** Returns the encoding of this object.
-   * 
-   * @return the encoding of this object
-   */
-  public abstract JsonEncoding getEncoding();  
+  /** Returns the encoding of this object. */
+  public abstract JsonEncoding getEncoding();
+  
+  /** Returns the type of this object. */
+  public JsonType getType()
+  {
+    return getEncoding().getType();
+  }
 }

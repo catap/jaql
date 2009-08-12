@@ -139,7 +139,7 @@ public class JavaJsonArray extends JsonArray
    * @see com.ibm.jaql.json.type.JArray#nth(long)
    */
   @Override
-  public JsonValue nth(long n) throws Exception
+  public JsonValue get(long n) throws Exception
   {
     buffer = metaArray.nth(value, n, buffer);
     return buffer;
@@ -166,4 +166,12 @@ public class JavaJsonArray extends JsonArray
     t.value = metaArray.copy(t.value, this.value);
     return t;  
   }
+  
+  @Override
+  public JsonArray getImmutableCopy() throws Exception
+  {
+    // FIXME: copy is not immutable
+    return getCopy(null);
+  }
+
 }

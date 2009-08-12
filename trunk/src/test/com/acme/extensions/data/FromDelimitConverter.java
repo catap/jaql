@@ -31,6 +31,7 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -126,8 +127,8 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable<
           throw new RuntimeException("values and header disagree in length: " + vals.length + "," + n);
         
         for(int i = 0; i < n; i++) {
-          JsonString name = (JsonString) names.nth(i);
-          ((JsonString)tgt.getRequired(name)).set(vals[i]);
+          JsonString name = (JsonString) names.get(i);
+          ((MutableJsonString)tgt.getRequired(name)).setCopy(vals[i]);
         }
       }
       
@@ -135,7 +136,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable<
         tgt.clear();
         int n = vals.length;
         for(int i = 0; i < n; i++) {
-          tgt.add(new JsonString(vals[i])); // FIXME: memory
+          tgt.add(new MutableJsonString(vals[i])); // FIXME: memory
         }
       }
       
@@ -148,7 +149,7 @@ public class FromDelimitConverter extends HadoopRecordToJson<WritableComparable<
           BufferedJsonRecord r = new BufferedJsonRecord(n);
           try {
             for(int i = 0; i < n; i++) {
-              r.add( JaqlUtil.enforceNonNull((JsonString)header.nth(i)), new JsonString());
+              r.add( JaqlUtil.enforceNonNull((JsonString)header.get(i)), new MutableJsonString());
             }
           } catch(Exception e) { throw new RuntimeException(e);}
 

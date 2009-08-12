@@ -198,8 +198,8 @@ public abstract class HadoopRecordToJson<K, V> implements KeyValueImport<K, V>//
       BufferedJsonArray array = (BufferedJsonArray) target;
       try
       {
-        array.set(0, keyConverter.convert(key, array.nth(0)));
-        array.set(1, valueConverter.convert(value, array.nth(1)));
+        array.set(0, keyConverter.convert(key, array.get(0)));
+        array.set(1, valueConverter.convert(value, array.get(1)));
         return array;
       } catch (Exception e)
       {

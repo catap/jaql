@@ -19,14 +19,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
@@ -40,8 +42,6 @@ import com.ibm.jaql.util.PagedFile;
  */
 public class JaqlUtil
 {
-  public final static JsonString emptyString = new JsonString();
-
   /** Returns true if the value is a JBool that equals true
    * @param value a JBool
    * @return
@@ -246,4 +246,15 @@ public class JaqlUtil
     return true;
   }
 
+  public static <T> List<T> toList(T[] array)
+  {
+    List<T> result = new ArrayList<T>(array.length);
+    for (T v : array) result.add(v);
+    return result;
+  }
+  
+  public static <T> List<T> toUnmodifiableList(T[] array)
+  {
+    return Collections.unmodifiableList(toList(array));
+  }
 }

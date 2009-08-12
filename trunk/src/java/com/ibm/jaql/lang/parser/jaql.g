@@ -77,12 +77,13 @@ options {
     
     public static final JsonDouble parseDouble(String v, boolean isNegative) 
     {
-       JsonDouble d = new JsonDouble(v);
-       if (isNegative)
+       if (isNegative) {
+         return new JsonDouble("-" + v);
+       } 
+       else
        {
-         d.set(-d.get());
-       }
-       return d;
+         return new JsonDouble(v);
+       } 
     }
 
     public static final JsonDecimal parseDecimal(String v, boolean isNegative) 
@@ -1810,13 +1811,13 @@ DOTTY
     options { testLiterals=false; }
     : (DEC) => 
          DEC        
-           ( /*empty*/       {$setType(DEC);} // TODO: flag to control default decimal/double
+           ( /*empty*/       {$setType(DOUBLE);} 
            | "m"!            {$setType(DEC);}
            | "d"!            {$setType(DOUBLE);}
            )
     |  INT
-        ( /*empty*/          {$setType(INT);} // TODO: flag to control default decimal/double
-        | "m"!               {$setType(INT);}
+        ( /*empty*/          {$setType(INT);} 
+        | "m"!               {$setType(DEC);}
         | "d"!               {$setType(DOUBLE);}
         )
     | '0'('x'|'X')(HEX)+     {$setType(INT);}

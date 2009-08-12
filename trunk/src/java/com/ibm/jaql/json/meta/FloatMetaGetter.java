@@ -21,8 +21,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 
 /**
  * 
@@ -45,9 +45,9 @@ public final class FloatMetaGetter extends MetaGetter
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonDouble makeValue()
+  public MutableJsonDouble makeValue()
   {
-    return new JsonDouble();
+    return new MutableJsonDouble();
   }
 
   /*
@@ -61,7 +61,7 @@ public final class FloatMetaGetter extends MetaGetter
       IllegalAccessException, InvocationTargetException
   {
     float x = (Float) getter.invoke(obj);
-    ((JsonDouble) target).set(x);
+    ((MutableJsonDouble) target).set(x);
     return target;
   }
 

@@ -20,8 +20,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 
 /**
  * 
@@ -43,9 +43,9 @@ public class FloatMetaField extends MetaField
    * @see com.ibm.jaql.json.meta.MetaAccessor#makeItem()
    */
   @Override
-  public JsonDouble makeValue()
+  public MutableJsonDouble makeValue()
   {
-    return new JsonDouble();
+    return new MutableJsonDouble();
   }
 
   /*
@@ -59,7 +59,7 @@ public class FloatMetaField extends MetaField
       IllegalAccessException
   {
     float x = field.getFloat(obj);
-    ((JsonDouble) target).set(x);
+    ((MutableJsonDouble) target).set(x);
     return target;
   }
 

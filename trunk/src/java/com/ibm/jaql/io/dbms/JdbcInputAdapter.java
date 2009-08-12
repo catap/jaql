@@ -30,12 +30,13 @@ import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonBinary;
+import com.ibm.jaql.json.type.MutableJsonDate;
+import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.json.type.MutableJsonString;
 
 /**
  * An input adapter that wraps a JDBC connection. Usage: read({location:
@@ -112,25 +113,25 @@ public class JdbcInputAdapter extends AbstractInputAdapter
         case Types.INTEGER :
         case Types.TINYINT :
         case Types.SMALLINT :
-          writables[i] = new JsonLong();
+          writables[i] = new MutableJsonLong();
           break;
         case Types.DECIMAL :
         case Types.DOUBLE :
         case Types.FLOAT :
-          writables[i] = new JsonDecimal();
+          writables[i] = new MutableJsonDecimal();
           break;
         case Types.CHAR :
         case Types.VARCHAR :
         case Types.OTHER : // TODO: Types.XML, when jdbc gets there...
-          writables[i] = new JsonString();
+          writables[i] = new MutableJsonString();
           break;
         case Types.DATE :
         case Types.TIME :
         case Types.TIMESTAMP :
-          writables[i] = new JsonDate();
+          writables[i] = new MutableJsonDate();
           break;
         case Types.BINARY :
-          writables[i] = new JsonBinary();
+          writables[i] = new MutableJsonBinary();
           break;
         default :
           throw new RuntimeException("Unsupported column type: "
@@ -178,33 +179,33 @@ public class JdbcInputAdapter extends AbstractInputAdapter
                 case Types.INTEGER :
                 case Types.TINYINT :
                 case Types.SMALLINT :
-                  ((JsonLong) writables[i]).set(rs.getLong(i + 1));
+                  ((MutableJsonLong) writables[i]).set(rs.getLong(i + 1));
                   break;
                 case Types.DECIMAL :
                 case Types.DOUBLE :
                 case Types.FLOAT :
-                  ((JsonDecimal) writables[i]).set(rs.getBigDecimal(i + 1));
+                  ((MutableJsonDecimal) writables[i]).set(rs.getBigDecimal(i + 1));
                   break;
                 case Types.CHAR :
                 case Types.VARCHAR :
                   String s = rs.getString(i + 1);
                   if (s != null)
                   {
-                    ((JsonString) writables[i]).set(s);
+                    ((MutableJsonString) writables[i]).setCopy(s);
                   }
                   break;
                 case Types.DATE :
                   // TODO: all these need null handling...
-                  ((JsonDate) writables[i]).setMillis(rs.getDate(i + 1).getTime());
+                  ((MutableJsonDate) writables[i]).set(rs.getDate(i + 1).getTime());
                   break;
                 case Types.TIME :
-                  ((JsonDate) writables[i]).setMillis(rs.getTime(i + 1).getTime());
+                  ((MutableJsonDate) writables[i]).set(rs.getTime(i + 1).getTime());
                   break;
                 case Types.TIMESTAMP :
-                  ((JsonDate) writables[i]).setMillis(rs.getTimestamp(i + 1).getTime());
+                  ((MutableJsonDate) writables[i]).set(rs.getTimestamp(i + 1).getTime());
                   break;
                 case Types.BINARY :
-                  ((JsonBinary) writables[i]).setBytes(rs.getBytes(i + 1));
+                  ((MutableJsonBinary) writables[i]).set(rs.getBytes(i + 1));
                   break;
                 default :
                   throw new RuntimeException("Unsupported column type: "

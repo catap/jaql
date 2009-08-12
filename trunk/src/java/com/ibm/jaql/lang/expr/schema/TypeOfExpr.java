@@ -22,6 +22,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -45,28 +46,27 @@ public class TypeOfExpr extends Expr
   public JsonString eval(final Context context) throws Exception
   {
     Expr expr = exprs[0];
-    // FIXME: the Item created here should be cached.
-    if (expr.getSchema().isArrayOrNull().always())
+    if (expr.getSchema().is(ARRAY,NULL).always())
     {
       JsonIterator iter = expr.iter(context);
       if (iter.isNull())
       {
-        return JsonType.NULL.nameValue;
+        return JsonType.NULL.getName();
       }
       else
       {
-        return JsonType.ARRAY.nameValue;
+        return JsonType.ARRAY.getName();
       }
     }
     else
     {
       JsonValue value = expr.eval(context);
       if (value == null) {
-        return JsonType.NULL.nameValue;
+        return JsonType.NULL.getName();
       } 
       else
       {
-        return value.getEncoding().type.nameValue;
+        return value.getType().getName();
       }      
     }
   }  

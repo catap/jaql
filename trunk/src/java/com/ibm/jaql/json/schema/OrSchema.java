@@ -23,12 +23,15 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 /** Schema that matches if at least one of the provided schemata matches. This class cannot be
- * instantiated directly; instances may be obtained using {@link #or(Schema...)}. */
-public class OrSchema extends Schema
+ * instantiated directly; instances may be obtained using {@link #make(Schema...)}. */
+public final class OrSchema extends Schema
 {
   protected Schema[] schemata;    // list of alternatives, never null, does not contain OrSchema, kept sorted
 
@@ -36,13 +39,14 @@ public class OrSchema extends Schema
   
   private OrSchema(Schema[] schemata)
   {
-    this.schemata = schemata;
+    this.schemata = new Schema[schemata.length];
+    System.arraycopy(schemata, 0, this.schemata, 0, schemata.length);
   }
   
   /** Combines its argument schemata. The resulting schema will match a value if and only if it
    * is matched by one of the provided schemata. The method does not necessarily return an 
    * instance or <code>OrSchema</code>. */
-  public static Schema or(Schema ... schemata)
+  public static Schema make(Schema ... schemata)
   {
     if (schemata.length == 0)
     {
@@ -79,7 +83,7 @@ public class OrSchema extends Schema
    * instance or <code>OrSchema</code>. */
   public static Schema or(List<Schema> schemata)
   {
-    return or(schemata.toArray(new Schema[schemata.size()]));
+    return make(schemata.toArray(new Schema[schemata.size()]));
   }
   
  
@@ -106,16 +110,16 @@ public class OrSchema extends Schema
   }
   
   @Override
-  public Bool3 isNull()
+  public Bool3 is(JsonType type, JsonType ... types)
   {
-    Bool3 result = schemata[0].isNull();
+    Bool3 result = schemata[0].is(type, types);
     switch (result)
     {
     case TRUE:
       // check whether all are true
       for (int i=1; i<schemata.length; i++) 
       {
-        if (!schemata[i].isNull().always()) 
+        if (!schemata[i].is(type, types).always()) 
         {
           return Bool3.UNKNOWN;
         }
@@ -126,7 +130,7 @@ public class OrSchema extends Schema
       // check whether all are false
       for (int i=1; i<schemata.length; i++) 
       {
-        if (!schemata[i].isNull().never()) 
+        if (!schemata[i].is(type, types).never()) 
         {
           return Bool3.UNKNOWN;
         }
@@ -143,16 +147,16 @@ public class OrSchema extends Schema
   }
   
   @Override
-  public Bool3 isArrayOrNull()
+  public Bool3 isEmpty(JsonType type, JsonType ... types)
   {
-    Bool3 result = schemata[0].isArrayOrNull();
+    Bool3 result = schemata[0].isEmpty(type, types);
     switch (result)
     {
     case TRUE:
       // check whether all are true
       for (int i=1; i<schemata.length; i++) 
       {
-        if (!schemata[i].isArrayOrNull().always()) 
+        if (!schemata[i].isEmpty(type, types).always()) 
         {
           return Bool3.UNKNOWN;
         }
@@ -163,44 +167,7 @@ public class OrSchema extends Schema
       // check whether all are false
       for (int i=1; i<schemata.length; i++) 
       {
-        if (!schemata[i].isArrayOrNull().never()) 
-        {
-          return Bool3.UNKNOWN;
-        }
-      }
-      return Bool3.FALSE;      
-    
-    case UNKNOWN:
-      /// otherwise we don't know
-      return Bool3.UNKNOWN;
-    
-    default:
-      throw new IllegalStateException();
-    }
-  }
-  
-  @Override
-  public Bool3 isEmptyArrayOrNull()
-  {
-    Bool3 result = schemata[0].isEmptyArrayOrNull();
-    switch (result)
-    {
-    case TRUE:
-      // check whether all are true
-      for (int i=1; i<schemata.length; i++) 
-      {
-        if (!schemata[i].isEmptyArrayOrNull().always()) 
-        {
-          return Bool3.UNKNOWN;
-        }
-      }
-      return Bool3.TRUE;
-    
-    case FALSE:
-      // check whether all are false
-      for (int i=1; i<schemata.length; i++) 
-      {
-        if (!schemata[i].isEmptyArrayOrNull().never()) 
+        if (!schemata[i].isEmpty(type, types).never()) 
         {
           return Bool3.UNKNOWN;
         }
@@ -238,9 +205,9 @@ public class OrSchema extends Schema
   
   // -- getters -----------------------------------------------------------------------------------
   
-  public Schema[] getInternal()
+  public List<Schema> get()
   {
-    return schemata;
+    return JaqlUtil.toUnmodifiableList(schemata);
   }
   
 
@@ -271,7 +238,7 @@ public class OrSchema extends Schema
           newSchemata = new Schema[schemata.length];
           System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
           newSchemata[i] = mergedSchema;
-          return OrSchema.or(newSchemata);
+          return OrSchema.make(newSchemata);
         }
       }
       
@@ -279,7 +246,7 @@ public class OrSchema extends Schema
       Schema[] newSchemata = new Schema[schemata.length+1];
       System.arraycopy(schemata, 0, newSchemata, 0, schemata.length);
       newSchemata[schemata.length] = other;
-      return OrSchema.or(newSchemata);
+      return OrSchema.make(newSchemata);
     }
   }
 
@@ -355,7 +322,8 @@ public class OrSchema extends Schema
   @Override
   public JsonLong minElements()
   {
-    JsonLong result = schemata[0].minElements();
+    JsonLong m = schemata[0].minElements();
+    MutableJsonLong result = m == null ? null : new MutableJsonLong(m);
     for (int i=1; i<schemata.length && result != null; i++)
     {
       JsonLong l = schemata[i].minElements();
@@ -375,7 +343,8 @@ public class OrSchema extends Schema
   @Override
   public JsonLong maxElements()
   {
-    JsonLong result = schemata[0].maxElements();
+    JsonLong m = schemata[0].maxElements();
+    MutableJsonLong result = m == null ? null : new MutableJsonLong(m);
     for (int i=1; i<schemata.length && result != null; i++)
     {
       JsonLong l = schemata[i].maxElements();

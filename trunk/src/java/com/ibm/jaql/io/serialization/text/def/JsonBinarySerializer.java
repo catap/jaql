@@ -27,10 +27,9 @@ public class JsonBinarySerializer extends TextBasicSerializer<JsonBinary>
   public void write(PrintStream out, JsonBinary value, int indent)
   {
     out.print("hex('");
-    byte[] v = value.getInternalBytes();
-    for (int i = 0; i < v.length ; i++)
+    for (int i = 0; i < value.bytesLength() ; i++)
     {
-      byte b = v[i];
+      byte b = value.get(i);
       out.print(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
       out.print(BaseUtil.HEX_NIBBLE[b & 0x0f]);
     }

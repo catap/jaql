@@ -23,6 +23,7 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
@@ -49,7 +50,7 @@ public class OrExpr extends Expr
   @Override
   public Schema getSchema()
   {
-    if (exprs[0].getSchema().isNull().maybe() || exprs[1].getSchema().isNull().maybe())
+    if (exprs[0].getSchema().is(NULL).maybe() || exprs[1].getSchema().is(NULL).maybe())
     {
       return SchemaFactory.booleanOrNullSchema();
     }
