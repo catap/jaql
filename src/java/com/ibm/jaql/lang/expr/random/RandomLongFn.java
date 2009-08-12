@@ -18,8 +18,10 @@ package com.ibm.jaql.lang.expr.random;
 import java.util.Map;
 import java.util.Random;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -77,12 +79,18 @@ public class RandomLongFn extends Expr
       }
       else
       {
-        JsonNumeric seedItem = (JsonNumeric) exprs[0].eval(context);
+        JsonNumber seedItem = (JsonNumber) exprs[0].eval(context);
         long seed = seedItem.longValue();
         rng = new Random(seed);
       }
     }
     longType.set(rng.nextLong() & 0x7FFFFFFFFFFFFFFFL);
     return longType;
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.longSchema();
   }
 }

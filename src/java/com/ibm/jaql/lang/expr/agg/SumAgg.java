@@ -17,16 +17,23 @@ package com.ibm.jaql.lang.expr.agg;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.core.MathExpr;
 
 
 /**
@@ -37,15 +44,16 @@ public final class SumAgg extends AlgebraicAggregate
 {
   public static final class Summer
   {
-    private boolean sawLong;
-    private boolean sawDouble;
+    boolean hadData;
+    JsonType myType;
     private long lsum;
     private double dblSum;
     private BigDecimal decSum;
 
     public void init()
     {
-      sawDouble = sawLong = false;
+      hadData = false;
+      myType = JsonType.LONG;
       dblSum = lsum = 0;
       decSum = null;
     }
@@ -56,65 +64,112 @@ public final class SumAgg extends AlgebraicAggregate
       {
         return;
       }
-      if( value instanceof JsonLong )
+      if (value instanceof JsonNumber)
       {
-        if( sawDouble )
+        hadData = true;
+        JsonNumber addend = (JsonNumber)value;
+        
+        // find out new type
+        JsonType newType = MathExpr.promote(myType, addend.getType());
+        if (newType != myType)
         {
-          throw new RuntimeException("cannot sum doubles and decimals");
+          if (newType == JsonType.DOUBLE)
+          {
+            assert myType == JsonType.LONG;
+            dblSum = lsum;
+          }
+          else
+          {
+            assert newType == JsonType.DECFLOAT;
+            if (myType == JsonType.LONG)
+            {
+              decSum = new BigDecimal(lsum, MathContext.DECIMAL128);
+            }
+            else
+            {
+              decSum = new BigDecimal(dblSum, MathContext.DECIMAL128);
+            }
+          }
+          myType = newType;
         }
-        sawLong = true;
-        lsum += ((JsonLong)value).get();
-      }
-      else if( value instanceof JsonDouble )
-      {
-        if( sawLong || decSum != null )
+        
+        // add
+        
+        switch (myType)
         {
-          throw new RuntimeException("cannot sum doubles and decimals");
+        case LONG:
+          lsum += addend.longValue();
+          break;
+        case DOUBLE:
+          dblSum += addend.doubleValue();
+          break;
+        case DECFLOAT:
+          decSum = decSum.add(addend.decimalValue(), MathContext.DECIMAL128);
+          break;
         }
-        sawDouble = true;
-        dblSum += ((JsonDouble)value).get();
       }
       else
       {
-        JsonDecimal n = (JsonDecimal)value;      // TODO: need a mutable BigDecimal...
-        if( decSum == null )
-        {
-          decSum = n.get();
-        }
-        else
-        {
-          decSum = decSum.add(n.get());
-        }
+        throw new RuntimeException("Invalid input for sum aggregate: " + value);
       }
     }
     
-    public JsonValue get()
+    public JsonNumber get()
     {
-      JsonValue v;
-      if( sawDouble )
+      if (!hadData) return null;
+      switch (myType)
       {
-        v = new JsonDouble(dblSum); // TODO: memory
+      case LONG:
+        return new JsonLong(lsum);
+      case DOUBLE:
+        return new JsonDouble(dblSum);
+      case DECFLOAT:
+        return new JsonDecimal(decSum);
       }
-      else if( decSum == null )
+      throw new IllegalStateException("cannot happen");
+    }
+    
+    public static Schema getSchema(Schema in)
+    {
+      // compute schema in input elements
+      Schema elements = SchemaTransformation.arrayElements(in);
+      if (elements == null)
       {
-        if( sawLong )
+        if (in.isEmpty(JsonType.ARRAY).maybe())
         {
-          v = new JsonLong(lsum);  // TODO: memory
+          return SchemaFactory.nullSchema();
         }
-        else
-        {
-          v = null;
-        }
+        throw new RuntimeException("non-null array input expected");
       }
-      else
+      
+      // restrict schema to numeric types
+      List<Schema> restricted = new ArrayList<Schema>(3);
+      if (elements.is(JsonType.LONG).maybe())
       {
-        if( lsum != 0 )
-        {
-          decSum = decSum.add(new BigDecimal(lsum), MathContext.DECIMAL128);
-        }
-        v = new JsonDecimal(decSum); // TODO: memory
+        restricted.add(SchemaFactory.longSchema());
       }
-      return v;
+      if (elements.is(JsonType.DOUBLE).maybe())
+      {
+        restricted.add(SchemaFactory.doubleSchema());
+      }
+      if (elements.is(JsonType.DECFLOAT).maybe())
+      {
+        restricted.add(SchemaFactory.decfloatSchema());
+      }
+      
+      // check validity
+      if (restricted.size() == 0)
+      {
+        if (elements.is(JsonType.NULL).maybe())
+        {
+          return SchemaFactory.nullSchema();
+        }
+        throw new RuntimeException("array of numbers expected");
+      }
+     
+      // construct schema
+      restricted.add(SchemaFactory.nullSchema());
+      return OrSchema.make(restricted);
     }
   }
   
@@ -166,6 +221,7 @@ public final class SumAgg extends AlgebraicAggregate
     return summer.get();
   }
 
+
   @Override
   public Schema getPartialSchema()
   {
@@ -175,119 +231,8 @@ public final class SumAgg extends AlgebraicAggregate
   @Override
   public Schema getSchema()
   {
-    return SchemaFactory.numericOrNullSchema();
+    Schema in = exprs[0].getSchema();
+    return Summer.getSchema(in);
   }
 }
 
-
-///**
-// * 
-// */
-//@JaqlFn(fnName = "sum", minArgs = 1, maxArgs = 1)
-//public class SumAgg extends AlgebraicAggregate // DistributiveAggregate
-//{
-//  /**
-//   * @param exprs
-//   */
-//  public SumAgg(Expr[] exprs)
-//  {
-//    super(exprs);
-//  }
-//
-//  /**
-//   * @param expr
-//   */
-//  public SumAgg(Expr expr)
-//  {
-//    super(new Expr[]{expr});
-//  }
-//
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.agg.AlgebraicAggregate#initExpr(com.ibm.jaql.lang.core.Var)
-//   */
-//  @Override
-//  protected Expr initExpr(Var var) throws Exception
-//  {
-//    return new VarExpr(var);
-//  }
-//
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.agg.AlgebraicAggregate#combineExpr(com.ibm.jaql.lang.core.Var,
-//   *      com.ibm.jaql.lang.core.Var)
-//   */
-//  @Override
-//  protected Expr combineExpr(Var var1, Var var2) throws Exception
-//  {
-//    return new MathExpr(MathExpr.PLUS, new VarExpr(var1), new VarExpr(var2));
-//  }
-//
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.agg.AlgebraicAggregate#finalExpr(com.ibm.jaql.lang.expr.core.Expr)
-//   */
-//  @Override
-//  protected Expr finalExpr(Expr agg) throws Exception
-//  {
-//    return agg;
-//  }
-//
-//  //  public Item eval(final Context context) throws Exception
-//  //  {
-//  //    boolean sawLong = false;
-//  //    long lsum = 0;
-//  //    BigDecimal sum = null;
-//  //    Iter iter = exprs[0].iter(context);
-//  //    if( iter.isNull() )
-//  //    {
-//  //      return Item.nil;
-//  //    }
-//  //    Item item;
-//  //    while( (item = iter.next()) != null )
-//  //    {
-//  //      JaqlType w = item.get();
-//  //      if( w == null) 
-//  //      {
-//  //        continue;
-//  //      }
-//  //      else if( w instanceof LongItem )
-//  //      {
-//  //        sawLong = true;
-//  //        lsum += ((LongItem)w).value;
-//  //      }
-//  //      else
-//  //      {
-//  //        DecimalItem n = (DecimalItem)w;
-//  //        // TODO: need a mutable BigDecimal...
-//  //        if( sum == null )
-//  //        {
-//  //          sum = n.value;
-//  //        }
-//  //        else
-//  //        {
-//  //          sum = sum.add(n.value);
-//  //        }
-//  //      }
-//  //    }
-//  //    if( sum == null )
-//  //    {
-//  //      if( sawLong )
-//  //      {
-//  //        return new Item(new LongItem(lsum));  // TODO: memory
-//  //      }
-//  //      return Item.nil;
-//  //    }
-//  //    else
-//  //    {
-//  //      if( lsum != 0 )
-//  //      {
-//  //        sum = sum.add(new BigDecimal(lsum));
-//  //      }
-//  //      return new Item(new DecimalItem(sum)); // TODO: memory
-//  //    }
-//  //  }
-//}

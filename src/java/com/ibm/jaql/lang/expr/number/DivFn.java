@@ -13,14 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
+
+import static com.ibm.jaql.json.type.JsonType.NULL;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -45,7 +49,7 @@ public class DivFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(final Context context) throws Exception
+  public JsonNumber eval(final Context context) throws Exception
   {
     JsonValue w1 = exprs[0].eval(context);
     if (w1 == null)
@@ -76,5 +80,14 @@ public class DivFn extends Expr
       mod = x1.divideToIntegralValue(x2, MathContext.DECIMAL128).longValue(); // TODO: does this fit?
     }
     return new JsonLong(mod); // TODO: memory
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema in1 = exprs[0].getSchema();
+    Schema in2 = exprs[0].getSchema();
+    boolean nullable = in1.is(NULL).maybe() || in2.is(NULL).maybe();
+    return nullable ? SchemaFactory.longOrNullSchema() : SchemaFactory.longSchema();
   }
 }

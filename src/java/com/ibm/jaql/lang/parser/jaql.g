@@ -1315,7 +1315,7 @@ arg[ArrayList<Expr> r]
     ;
 
 constant returns [Expr r=null]
-    { String s; JsonNumeric n; JsonBool b;}
+    { String s; JsonNumber n; JsonBool b;}
     : s=str      { r = new ConstExpr(new JsonString(s)); }
     | n=numericLit { r = new ConstExpr(n); }
     | h:HEXSTR   { r = new ConstExpr(new JsonBinary(h.getText())); }
@@ -1324,7 +1324,7 @@ constant returns [Expr r=null]
     | r=nullExpr
     ;
 
-numericLit returns [JsonNumeric v=null]
+numericLit returns [JsonNumber v=null]
     : v=intLit
     | v=doubleLit
     | v=decLit
@@ -1345,7 +1345,7 @@ decLit returns [ JsonDecimal v=null]
 
 
 // not to be used in terms!    
-signedNumericLit returns [ JsonNumeric v = null ]
+signedNumericLit returns [ JsonNumber v = null ]
     { boolean isNegative = false; }
     : ( "-" { isNegative = !isNegative; }
       | "+"
@@ -1357,7 +1357,7 @@ signedNumericLit returns [ JsonNumeric v = null ]
     ;
 
 // not to be used in terms!    
-signedNumberLit returns [ JsonNumeric v = null ]
+signedNumberLit returns [ JsonNumber v = null ]
     { boolean isNegative = false; }
     : ( "-" { isNegative = !isNegative; }
       | "+"

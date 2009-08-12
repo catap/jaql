@@ -117,7 +117,7 @@ public class CompareExpr extends Expr
     
     // check types (different types cannot be compared in general, numeric types are exception)
     if (JsonType.typeCompare(value1, value2) != 0 
-        && !(value1.getType().isNumeric() && value2.getType().isNumeric()))
+        && !(value1.getType().isNumber() && value2.getType().isNumber()))
     {
       return null;
     }

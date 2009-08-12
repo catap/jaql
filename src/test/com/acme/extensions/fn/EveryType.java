@@ -21,13 +21,12 @@ import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.MutableJsonBinary;
 import com.ibm.jaql.json.type.MutableJsonBool;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -145,10 +144,10 @@ public class EveryType
           str.setCopy("hi, " + s);
           currentValue = str;
         }
-        else if (v instanceof JsonNumeric)
+        else if (v instanceof JsonNumber)
         {
           // Set a number to the negated or floor the value (and muck with encodings)
-          JsonNumeric n = (JsonNumeric) v;
+          JsonNumber n = (JsonNumber) v;
           if (n instanceof JsonDecimal)
           {
             lng.set(n.longValue());

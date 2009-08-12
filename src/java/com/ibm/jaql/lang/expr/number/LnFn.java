@@ -13,29 +13,26 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
- * 
+ * natural logarithm
  */
-@JaqlFn(fnName = "mod", minArgs = 2, maxArgs = 2)
-public class ModFn extends Expr
+@JaqlFn(fnName = "ln", minArgs = 1, maxArgs = 1)
+public class LnFn extends AbstractRealFn
 {
-  /**
-   * @param exprs
-   */
-  public ModFn(Expr[] exprs)
+  public LnFn(Expr ... exprs)
   {
     super(exprs);
   }
@@ -45,36 +42,24 @@ public class ModFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(final Context context) throws Exception
+  public JsonNumber eval(Context context) throws Exception
   {
-    JsonValue w1 = exprs[0].eval(context);
-    if (w1 == null)
+    JsonValue value = exprs[0].eval(context);
+    if (value == null)
     {
       return null;
     }
-    JsonValue w2 = exprs[1].eval(context);
-    if (w2 == null)
+    JsonNumber n = (JsonNumber)value;
+    
+    if (n instanceof JsonDecimal)
     {
-      return null;
-    }
-
-    boolean long1 = w1 instanceof JsonLong;
-    boolean long2 = w2 instanceof JsonLong;
-    long mod;
-    if (long1 && long2)
-    {
-      mod = ((JsonLong) w1).get() % ((JsonLong) w2).get();
+      // TODO: How I hate Java's decimal support... get better decimal log
+      BigDecimal m = new BigDecimal(Math.log(n.doubleValue()), MathContext.DECIMAL128);
+      return new JsonDecimal(m); // TODO: reuse  
     }
     else
     {
-      BigDecimal x1 = long1
-          ? new BigDecimal(((JsonLong) w1).get())
-          : ((JsonDecimal) w1).get();
-      BigDecimal x2 = long2
-          ? new BigDecimal(((JsonLong) w2).get())
-          : ((JsonDecimal) w2).get();
-      mod = x1.remainder(x2, MathContext.DECIMAL128).longValue();
+      return new JsonDouble(Math.log(n.doubleValue()));
     }
-    return new JsonLong(mod); // TODO: memory
   }
 }

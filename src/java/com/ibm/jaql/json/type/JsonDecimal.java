@@ -145,7 +145,7 @@ public class JsonDecimal extends JsonNumber
   @Override
   public int compareTo(Object x)
   {
-    JsonNumeric other = (JsonNumeric)x;
+    JsonNumber other = (JsonNumber)x;
     return compare(this, other);
   }
   

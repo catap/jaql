@@ -13,14 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -30,22 +30,14 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * raise base of natural log (e) to arg: e^a pow(x,y) = exp( y * ln(x) )
  */
 @JaqlFn(fnName = "exp", minArgs = 1, maxArgs = 1)
-public class ExpFn extends Expr
+public class ExpFn extends AbstractRealFn
 {
   /**
    * @param exprs
    */
-  public ExpFn(Expr[] exprs)
+  public ExpFn(Expr ... exprs)
   {
     super(exprs);
-  }
-
-  /**
-   * @param expr1
-   */
-  public ExpFn(Expr expr1)
-  {
-    super(new Expr[]{expr1});
   }
 
   /*
@@ -53,24 +45,24 @@ public class ExpFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(Context context) throws Exception
+  public JsonNumber eval(Context context) throws Exception
   {
-    JsonValue value1 = exprs[0].eval(context);
-    if (value1 == null)
+    JsonValue value = exprs[0].eval(context);
+    if (value == null)
     {
       return null;
     }
-    BigDecimal n1, n2;
-    if (value1 instanceof JsonLong)
+    JsonNumber n = (JsonNumber)value;
+    
+    if (n instanceof JsonDecimal)
     {
-      n1 = new BigDecimal(((JsonLong) value1).get());
+      // TODO: How I hate Java's decimal support... get better decimal exp
+      BigDecimal m = new BigDecimal(Math.exp(n.doubleValue()), MathContext.DECIMAL128);
+      return new JsonDecimal(m); // TODO: reuse  
     }
     else
     {
-      n1 = ((JsonDecimal) value1).get();
+      return new JsonDouble(Math.exp(n.doubleValue()));
     }
-    // TODO: How I hate Java's decimal support... get better decimal exp
-    n2 = new BigDecimal(Math.exp(n1.doubleValue()), MathContext.DECIMAL128);
-    return new JsonDecimal(n2); // TODO: reuse
   }
 }

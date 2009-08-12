@@ -15,6 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -83,5 +87,27 @@ public final class MinAgg extends AlgebraicAggregate
   public JsonValue getFinal() throws Exception
   {
     return min;
+  }
+  
+  @Override 
+  public Schema getPartialSchema()
+  {
+    return getSchema();
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    Schema out = SchemaTransformation.arrayElements(in);
+    if (out == null)
+    {
+      if (in.isEmpty(JsonType.ARRAY, JsonType.NULL).maybe())
+      {
+        return SchemaFactory.nullSchema();
+      }
+      throw new RuntimeException("min aggregate expects array input");
+    }
+    return SchemaTransformation.addNullability(out);
   }
 }
