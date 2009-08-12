@@ -77,7 +77,7 @@ public abstract class JsonValue implements Comparable<Object>
   @Override
   public final int hashCode()
   {
-    return (int) (longHashCode() >>> 32);
+    return (int) ((longHashCode() & 0xFFFFFFFFL) ^ (longHashCode() >>> 32));
   }
   
   /** Returns a long hash code for this value. */
