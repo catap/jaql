@@ -94,7 +94,7 @@ public final class BufferedJsonArray extends JsonArray
 
   /* @see com.ibm.jaql.json.type.JArray#iter() */
   @Override
-  public JsonIterator iter() throws Exception
+  public JsonIterator iter()
   {
     if (size == 0)
     {
@@ -104,7 +104,7 @@ public final class BufferedJsonArray extends JsonArray
       int i = 0;
 
       @Override
-      public boolean moveNext() throws Exception
+      public boolean moveNext()
       {
         if (i < size)
         {
@@ -118,7 +118,7 @@ public final class BufferedJsonArray extends JsonArray
 
   /* @see com.ibm.jaql.json.type.JsonArray#get(long) */
   @Override
-  public JsonValue get(long n) throws Exception
+  public JsonValue get(long n)
   {
     if (n >= 0 && n < size)
     {
@@ -138,7 +138,7 @@ public final class BufferedJsonArray extends JsonArray
   
   /* @see com.ibm.jaql.json.type.JsonArray#getAll(com.ibm.jaql.json.type.JsonValue[]) */
   @Override
-  public void getAll(JsonValue[] target) throws Exception
+  public void getAll(JsonValue[] target)
   {
     assert target.length == size;
     System.arraycopy(this.values, 0, target, 0, size);
