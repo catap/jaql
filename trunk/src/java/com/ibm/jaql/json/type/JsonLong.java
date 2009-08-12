@@ -60,6 +60,16 @@ public class JsonLong extends JsonNumber
     }
   }
 
+  /** Constructs a new <code>JsonLong</code> from the specified value. 
+  *
+  * @throws NumberFormatException when <code>value</code> does not represent a valid long
+  */
+  public JsonLong(JsonString value) throws NumberFormatException
+  {
+    // TODO: make this more efficient
+    this(value.toString());
+  }
+  
   /** Returns an (immutable) {@link JsonLong} for the given value. Recommended for common
    * integers because instances can be shared. */
   public static JsonLong make(long i)
@@ -173,7 +183,7 @@ public class JsonLong extends JsonNumber
   @Override
   public int compareTo(Object x)
   {
-    JsonNumeric other = (JsonNumeric)x;
+    JsonNumber other = (JsonNumber)x;
     JsonType otherType = other.getEncoding().getType();
     switch (otherType)
     {

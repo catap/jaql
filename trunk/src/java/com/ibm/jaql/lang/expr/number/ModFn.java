@@ -13,12 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
+
+import java.math.BigDecimal;
+import java.math.MathContext;
 
 import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -27,25 +29,15 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * 
  */
-@JaqlFn(fnName = "number", minArgs = 1, maxArgs = 1)
-public class NumberFn extends Expr
+@JaqlFn(fnName = "mod", minArgs = 2, maxArgs = 2)
+public class ModFn extends Expr
 {
   /**
-   * number(numeric or string)
-   * 
    * @param exprs
    */
-  public NumberFn(Expr[] exprs)
+  public ModFn(Expr[] exprs)
   {
     super(exprs);
-  }
-
-  /**
-   * @param num
-   */
-  public NumberFn(Expr num)
-  {
-    super(num);
   }
 
   /*
@@ -55,28 +47,34 @@ public class NumberFn extends Expr
    */
   public JsonNumber eval(final Context context) throws Exception
   {
-    JsonValue val = exprs[0].eval(context);
-    if (val == null)
+    JsonValue w1 = exprs[0].eval(context);
+    if (w1 == null)
     {
       return null;
     }
-    else if (val instanceof JsonNumber)
+    JsonValue w2 = exprs[1].eval(context);
+    if (w2 == null)
     {
-      return (JsonNumber)val;
+      return null;
     }
-    else if (val instanceof JsonNumeric)
+
+    boolean long1 = w1 instanceof JsonLong;
+    boolean long2 = w2 instanceof JsonLong;
+    long mod;
+    if (long1 && long2)
     {
-      JsonNumeric n = (JsonNumeric) val;
-      return new JsonDecimal(n.decimalValue()); // TODO: memory
-    }
-    else if (val instanceof JsonString)
-    {
-      return new JsonDecimal(val.toString()); // TODO: memory
+      mod = ((JsonLong) w1).get() % ((JsonLong) w2).get();
     }
     else
     {
-      throw new ClassCastException("cannot convert "
-          + val.getEncoding().getType().name() + " to number");
+      BigDecimal x1 = long1
+          ? new BigDecimal(((JsonLong) w1).get())
+          : ((JsonDecimal) w1).get();
+      BigDecimal x2 = long2
+          ? new BigDecimal(((JsonLong) w2).get())
+          : ((JsonDecimal) w2).get();
+      mod = x1.remainder(x2, MathContext.DECIMAL128).longValue();
     }
+    return new JsonLong(mod); // TODO: memory
   }
 }

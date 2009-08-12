@@ -19,7 +19,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
@@ -61,7 +61,7 @@ public class StrSplitNFn extends Expr
   {
     // TODO: need a way to avoid recomputing const exprs...
     JsonString sep = JaqlUtil.enforceNonNull((JsonString)exprs[1].eval(context));
-    JsonNumeric num = JaqlUtil.enforceNonNull((JsonNumeric)exprs[2].eval(context));
+    JsonNumber num = JaqlUtil.enforceNonNull((JsonNumber)exprs[2].eval(context));
     char c = sep.toString().charAt(0);
     int n = num.intValueExact();
     

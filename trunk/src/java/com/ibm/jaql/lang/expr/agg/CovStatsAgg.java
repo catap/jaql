@@ -21,7 +21,7 @@ import java.math.MathContext;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -91,7 +91,7 @@ public class CovStatsAgg extends AlgebraicAggregate
     arr.getAll(tuple);
     for(int i = 0 ; i < tuple.length ; i++)
     {
-      JsonNumeric num = (JsonNumeric)tuple[i];
+      JsonNumber num = (JsonNumber)tuple[i];
       BigDecimal d = num.decimalValue();
       vec[i+1] = d;
     }
@@ -146,7 +146,7 @@ public class CovStatsAgg extends AlgebraicAggregate
       {
         boolean valid = iter.moveNext();
         assert valid == true;
-        JsonNumeric num = (JsonNumeric)iter.current();
+        JsonNumber num = (JsonNumber)iter.current();
         BigDecimal d = num.decimalValue();
         sum[i][j] = sum[i][j].add(d, MathContext.DECIMAL128);
       }

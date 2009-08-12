@@ -37,7 +37,7 @@ import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
@@ -394,7 +394,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     writeArgs(out, indent, parameters, new JsonValue[] { min, max, value });
   }
   
-  private static void writeLengthArgs(PrintStream out, JsonNumeric min, JsonNumeric max, 
+  private static void writeLengthArgs(PrintStream out, JsonNumber min, JsonNumber max, 
       int indent, String sep) throws IOException
   {
     out.print(sep);

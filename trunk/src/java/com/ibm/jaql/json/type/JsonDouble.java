@@ -24,7 +24,7 @@ import java.math.MathContext;
  * Instances of this class are immutable, but subclasses might add mutation functionality
  * (in which case they have to override the {@link #getCopy(JsonValue)} method). 
  */
-public class JsonDouble extends JsonNumeric
+public class JsonDouble extends JsonNumber
 {
   protected double value = 0;
 
@@ -150,7 +150,7 @@ public class JsonDouble extends JsonNumeric
   @Override
   public int compareTo(Object x)
   {
-    JsonNumeric other = (JsonNumeric)x;
+    JsonNumber other = (JsonNumber)x;
     JsonType otherType = other.getEncoding().getType();
     switch (otherType)
     {

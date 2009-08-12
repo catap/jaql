@@ -58,7 +58,7 @@ public enum JsonType
   {
     this.mainClass = mainClass;
     this.name = new JsonString(name);
-    this.isNumeric = mainClass!=null && JsonNumeric.class.isAssignableFrom(mainClass); 
+    this.isNumeric = mainClass!=null && JsonNumber.class.isAssignableFrom(mainClass); 
   }
   
   public static JsonType getType(String name)
@@ -120,7 +120,7 @@ public enum JsonType
     return mainClass;
   }
   
-  public boolean isNumeric()
+  public boolean isNumber()
   {
     return isNumeric;
   }

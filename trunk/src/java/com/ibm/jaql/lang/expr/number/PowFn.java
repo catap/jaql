@@ -13,24 +13,22 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
 
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonNumeric;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import static com.ibm.jaql.json.type.JsonType.*;
-    
+import com.ibm.jaql.lang.expr.core.MathExpr;
+
 /**
  * raise a number to power
  */
@@ -58,43 +56,55 @@ public class PowFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(Context context) throws Exception
+  public JsonNumber eval(Context context) throws Exception
   {
-    JsonValue value1 = exprs[0].eval(context);
+    JsonNumber value1 = (JsonNumber)exprs[0].eval(context);
     if (value1 == null)
     {
       return null;
     }
-    JsonValue value2 = exprs[1].eval(context);
+    JsonNumber value2 = (JsonNumber)exprs[1].eval(context);
     if (value2 == null)
     {
       return null;
     }
 
-    if (value1 instanceof JsonDouble)
+    JsonType type = MathExpr.promote(value1, value2);
+    switch (type)
     {
-      double x = ((JsonNumeric)value1).doubleValue();
-      double y = ((JsonNumeric)value2).doubleValue();
+    case LONG:
+      return new JsonLong(pow(value1.longValue(), value2.longValue()));
+    case DOUBLE:
+      return new JsonDouble(Math.pow(value1.doubleValue(), value2.doubleValue()));
+    case DECFLOAT:
+      // TODO: How I hate Java's decimal support... get better decimal pow...
+      // Compute approximately using double because Java's Decimal128 support is so limited!
+      double x = value1.doubleValue();
+      double y = value2.doubleValue();
       double z = Math.pow(x, y);
-      return new JsonDouble(z);
+      return new JsonDecimal(new BigDecimal(z, MathContext.DECIMAL128));
     }
+    throw new IllegalStateException("cannot happen");
+  }
+  
+  /** Compute a long power */
+  public static long pow(long base, long exponent)
+  {
+    if (exponent < 0) throw new IllegalArgumentException("negative exponent not allowed for long powers");
     
-    // TODO: How I hate Java's decimal support... get better decimal pow...
-    if( value2 instanceof JsonLong )
-    {
-      long y = ((JsonLong)value2).get();
-      if( y >= Integer.MIN_VALUE && y <= Integer.MAX_VALUE )
+    long power = 1;    
+    while (exponent > 0) {
+      // if exponent is odd, multiply by base
+      if ((exponent & 1L) == 1L) 
       {
-        BigDecimal x = ((JsonNumber)value1).decimalValue();
-        BigDecimal z = x.pow((int)y, MathContext.DECIMAL128);
-        return new JsonDecimal(z);
+        power *= base;
       }
+      
+      // square base and divide exponent by 2
+      base *= base;
+      exponent /= 2;
     }
-    // Compute approximately using double because Java's Decimal128 support is so limited!
-    double x = ((JsonNumeric)value1).doubleValue();
-    double y = ((JsonNumeric)value2).doubleValue();
-    double z = Math.pow(x, y);
-    return new JsonDecimal(new BigDecimal(z, MathContext.DECIMAL128));
+    return power;
   }
   
   @Override
@@ -102,13 +112,11 @@ public class PowFn extends Expr
   {
     Schema in1 = exprs[0].getSchema();
     Schema in2 = exprs[1].getSchema();
-    boolean nullable = in1.is(NULL).maybe() || in2.is(NULL).maybe();
-    
-    if (in1.equals(SchemaFactory.doubleSchema()) || in1.equals(SchemaFactory.doubleOrNullSchema()))
+    Schema out = MathExpr.promote(in1, in2);
+    if (out == null)
     {
-      return nullable ? SchemaFactory.doubleOrNullSchema() : SchemaFactory.doubleSchema();
+      throw new RuntimeException("pow expects numbers as input");
     }
-    
-    return nullable ? SchemaFactory.numericOrNullSchema() : SchemaFactory.numericSchema();
+    return out;
   }
 }

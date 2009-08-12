@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.agg;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -77,12 +78,6 @@ public final class MaxAgg extends AlgebraicAggregate
   }
 
   @Override
-  public Schema getPartialSchema()
-  {
-    return getSchema();
-  }
-  
-  @Override
   public void addPartial(JsonValue value) throws Exception
   {
     addInitial(value);
@@ -94,6 +89,12 @@ public final class MaxAgg extends AlgebraicAggregate
     return max;
   }
   
+  @Override 
+  public Schema getPartialSchema()
+  {
+    return getSchema();
+  }
+  
   @Override
   public Schema getSchema()
   {
@@ -101,7 +102,11 @@ public final class MaxAgg extends AlgebraicAggregate
     Schema out = SchemaTransformation.arrayElements(in);
     if (out == null)
     {
-      return SchemaFactory.nonNullSchema();
+      if (in.isEmpty(JsonType.ARRAY, JsonType.NULL).maybe())
+      {
+        return SchemaFactory.nullSchema();
+      }
+      throw new RuntimeException("max aggregate expects array input");
     }
     return SchemaTransformation.addNullability(out);
   }

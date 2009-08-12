@@ -13,12 +13,12 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
@@ -66,9 +66,9 @@ public class DecfloatFn extends Expr
     {
       return (JsonDecimal)val;
     }
-    else if (val instanceof JsonNumeric)
+    else if (val instanceof JsonNumber)
     {
-      return new JsonDecimal(((JsonNumeric)val).decimalValue()); // TODO: memory
+      return new JsonDecimal(((JsonNumber)val).decimalValue()); // TODO: memory
     }
     else if (val instanceof JsonString)
     {

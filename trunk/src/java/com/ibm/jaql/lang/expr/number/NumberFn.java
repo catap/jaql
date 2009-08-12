@@ -13,39 +13,38 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
-
-import java.math.BigDecimal;
-import java.math.MathContext;
+package com.ibm.jaql.lang.expr.number;
 
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
 
 /**
- * natural logarithm
+ * 
  */
-@JaqlFn(fnName = "ln", minArgs = 1, maxArgs = 1)
-public class LnFn extends Expr
+@JaqlFn(fnName = "number", minArgs = 1, maxArgs = 1)
+public class NumberFn extends Expr
 {
   /**
+   * number(numeric or string)
+   * 
    * @param exprs
    */
-  public LnFn(Expr[] exprs)
+  public NumberFn(Expr[] exprs)
   {
     super(exprs);
   }
 
   /**
-   * @param expr1
+   * @param num
    */
-  public LnFn(Expr expr1)
+  public NumberFn(Expr num)
   {
-    super(new Expr[]{expr1});
+    super(num);
   }
 
   /*
@@ -53,24 +52,25 @@ public class LnFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(Context context) throws Exception
+  public JsonNumber eval(final Context context) throws Exception
   {
-    JsonValue value1 = exprs[0].eval(context);
-    if (value1 == null)
+    JsonValue val = exprs[0].eval(context);
+    if (val == null)
     {
       return null;
     }
-    BigDecimal n1, n2;
-    if (value1 instanceof JsonLong)
+    else if (val instanceof JsonNumber)
     {
-      n1 = new BigDecimal(((JsonLong) value1).get());
+      return (JsonNumber)val;
+    }
+    else if (val instanceof JsonString)
+    {
+      return new JsonDecimal(val.toString()); // TODO: memory
     }
     else
     {
-      n1 = ((JsonDecimal) value1).get();
+      throw new ClassCastException("cannot convert "
+          + val.getEncoding().getType().name() + " to number");
     }
-    // TODO: How I hate Java's decimal support... get better decimal log
-    n2 = new BigDecimal(Math.log(n1.doubleValue()), MathContext.DECIMAL128);
-    return new JsonDecimal(n2); // TODO: reuse
   }
 }
