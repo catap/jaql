@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -21,7 +21,6 @@ import java.math.MathContext;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonNumeric;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonDecimal;
@@ -75,20 +74,6 @@ public class ToNumberFn extends Expr
       {
         BigDecimal x = new BigDecimal(s, MathContext.DECIMAL128);
         jdec.set(x);
-        num = jdec;
-      }
-    }
-    else if (w instanceof JsonNumeric)
-    {
-      JsonNumeric n = (JsonNumeric)w;
-      try
-      {
-        jlong.set(n.longValueExact());
-        num = jlong;
-      }
-      catch(Exception ex)
-      {
-        jdec.set(n.decimalValue());
         num = jdec;
       }
     }

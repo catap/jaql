@@ -22,11 +22,11 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonDouble;
 
-class DoubleSerializer extends BinaryBasicSerializer<JsonNumeric>
+class DoubleSerializer extends BinaryBasicSerializer<JsonNumber>
 {
   private DoubleSchema schema;
   
@@ -57,7 +57,7 @@ class DoubleSerializer extends BinaryBasicSerializer<JsonNumeric>
 
 
   @Override
-  public void write(DataOutput out, JsonNumeric value) throws IOException
+  public void write(DataOutput out, JsonNumber value) throws IOException
   {
     // check match
     if (!schema.matches(value))

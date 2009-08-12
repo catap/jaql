@@ -18,7 +18,7 @@ package com.ibm.jaql.json.schema;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -53,9 +53,9 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
   public DoubleSchema(JsonRecord args)
   {
     this(
-        (JsonNumeric)getParameters().argumentOrDefault(PAR_MIN, args),
-        (JsonNumeric)getParameters().argumentOrDefault(PAR_MAX, args),
-        (JsonNumeric)getParameters().argumentOrDefault(PAR_VALUE, args));
+        (JsonNumber)getParameters().argumentOrDefault(PAR_MIN, args),
+        (JsonNumber)getParameters().argumentOrDefault(PAR_MAX, args),
+        (JsonNumber)getParameters().argumentOrDefault(PAR_VALUE, args));
   }
   
   DoubleSchema()
@@ -67,21 +67,21 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
     init(min, max, value);
   }
   
-  public DoubleSchema(JsonNumeric min, JsonNumeric max, JsonNumeric value)
+  public DoubleSchema(JsonNumber min, JsonNumber max, JsonNumber value)
   {
     this(convert(min), convert(max), convert(value));
   }
 
   
   /** Convert the specified numeric to a long or throw an exception */  
-  private static JsonDouble convert(JsonNumeric v)
+  private static JsonDouble convert(JsonNumber v)
   {
     if (v == null) return null;
-    if (v instanceof JsonNumeric)
+    if (v instanceof JsonNumber)
     {
       try 
       {
-        return new JsonDouble(((JsonNumeric)v).doubleValueExact());
+        return new JsonDouble(((JsonNumber)v).doubleValueExact());
       }
       catch (ArithmeticException e)
       {
@@ -109,7 +109,7 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
   @Override
   public boolean matches(JsonValue value)
   {
-    if (value == null || !value.getType().isNumeric())
+    if (value == null || !value.getType().isNumber())
     {
       return false;
     }
@@ -117,7 +117,7 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
     // convert to double
     try 
     {
-      temp.set( ((JsonNumeric)value).doubleValueExact() );
+      temp.set( ((JsonNumber)value).doubleValueExact() );
     }
     catch (ArithmeticException e)
     {

@@ -70,7 +70,7 @@ public class JsonUtil
     
     // compare types
     int cmp = v1.getType().compareTo(v2.getType());
-    if (cmp == 0 || (v1.getType().isNumeric() && v2.getType().isNumeric()))
+    if (cmp == 0 || (v1.getType().isNumber() && v2.getType().isNumber()))
     {
       return v1.compareTo(v2); 
     }

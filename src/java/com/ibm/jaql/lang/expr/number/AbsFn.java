@@ -13,12 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.numeric;
+package com.ibm.jaql.lang.expr.number;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -42,19 +44,31 @@ public class AbsFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumeric eval(final Context context) throws Exception
+  public JsonNumber eval(final Context context) throws Exception
   {
-  	JsonNumeric v = (JsonNumeric)exprs[0].eval(context);
+    JsonNumber v = (JsonNumber)exprs[0].eval(context);
   	if (v == null) {
   		return null;
   	} else if (v instanceof JsonDouble) {
     	return new JsonDouble(Math.abs(v.doubleValue()));
-    } else if (v instanceof JsonLong && v.longValue() != Long.MIN_VALUE) {
-    	// -Long.MIN_VALUE does not fit into a long --> convert to JDecimal	
+    } else if (v instanceof JsonLong) {
+    	// DISABLED DUE TO TYPE PROMOTION RULES: -Long.MIN_VALUE does not fit into a long --> convert to JDecimal	
     	return new JsonLong(Math.abs(v.longValue()));
     } else { 
     	// input type is JDecimal or JLong (w/ minimum value)
     	return new JsonDecimal(v.decimalValue().abs()); // TODO: reuse
     }
   }  
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    Schema out = SchemaTransformation.restrictToNumberTypesOrNull(in);
+    if (out == null)
+    {
+      throw new RuntimeException("abs expects number as input");
+    }
+    return out;
+  }
 }

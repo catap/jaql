@@ -81,7 +81,7 @@ public final class OrSchema extends Schema
   /** Combines its argument schemata. The resulting schema will match a value if and only if it
    * is matched by one of the provided schemata. The method does not necessarily return an 
    * instance or <code>OrSchema</code>. */
-  public static Schema or(List<Schema> schemata)
+  public static Schema make(List<Schema> schemata)
   {
     return make(schemata.toArray(new Schema[schemata.size()]));
   }

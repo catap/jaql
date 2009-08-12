@@ -20,7 +20,7 @@ import java.util.Map;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumeric;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -95,12 +95,12 @@ public class RangeExpr extends IterExpr
    */
   public JsonIterator iter(final Context context) throws Exception
   {
-    JsonNumeric v1 = (JsonNumeric) exprs[0].eval(context);
+    JsonNumber v1 = (JsonNumber) exprs[0].eval(context);
     if (v1 == null)
     {
       return JsonIterator.NULL;
     }
-    JsonNumeric v2 = (JsonNumeric) exprs[1].eval(context);
+    JsonNumber v2 = (JsonNumber) exprs[1].eval(context);
     if (v2 == null)
     {
       return JsonIterator.NULL;

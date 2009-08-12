@@ -18,7 +18,6 @@ package com.ibm.jaql.lang.expr.agg;
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.LongSchema;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
@@ -92,15 +91,17 @@ public class AvgAgg extends AlgebraicAggregate
   @Override
   public Schema getPartialSchema()
   {
+    Schema in = exprs[0].getSchema();
     return new ArraySchema(
-        SchemaFactory.numericOrNullSchema(), 
+        SumAgg.Summer.getSchema(in), 
         new LongSchema(JsonLong.ZERO, null, null));
   }
 
   @Override
   public Schema getSchema()
   {
-    return SchemaFactory.numericOrNullSchema();
+    Schema in = exprs[0].getSchema();
+    return SumAgg.Summer.getSchema(in);    // division does not promote
   }
   
   @Override

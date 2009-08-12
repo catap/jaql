@@ -95,7 +95,7 @@ public class SchemaTransformation
     }
     out.add(current);
     
-    return OrSchema.or(out);
+    return OrSchema.make(out);
   }
   
   
@@ -128,7 +128,7 @@ public class SchemaTransformation
       }
       if (outOrSchema.size() > 0)
       {
-        return OrSchema.or(outOrSchema);
+        return OrSchema.make(outOrSchema);
       }
       return null;
     }
@@ -168,30 +168,78 @@ public class SchemaTransformation
     return record != null ? record.elements() : null;
   }
 
-  /** Shortcut for <code>restrictTo(schema, SchemaType.ARRAY)</code> */
+  /** Shortcut for <code>restrictTo(schema, JsonType.ARRAY)</code> */
   public static Schema restrictToArray(Schema schema)
   {
     return restrictTo(schema, JsonType.ARRAY);
   }
 
-  /** Shortcut for <code>restrictTo(schema, SchemaType.ARRAY, SchemaType.NULL)</code> */
+  /** Shortcut for <code>restrictTo(schema, JsonType.ARRAY, JsonType.NULL)</code> */
   public static Schema restrictToArrayOrNull(Schema schema)
   {
     return restrictTo(schema, JsonType.ARRAY, JsonType.NULL);
   }
 
-  /** Shortcut for <code>restrictTo(schema, SchemaType.RECORD)</code> */
+  /** Shortcut for <code>restrictTo(schema, JsonType.RECORD)</code> */
   public static Schema restrictToRecord(Schema schema)
   {
     return restrictTo(schema, JsonType.RECORD);
   }
 
-  /** Shortcut for <code>restrictTo(schema, SchemaType.RECORD, SchemaType.NULL)</code> */
+  /** Shortcut for <code>restrictTo(schema, JsonType.RECORD, JsonType.NULL)</code> */
   public static Schema restrictToRecordOrNull(Schema schema)
   {
     return restrictTo(schema, JsonType.RECORD, JsonType.NULL);
   }
 
+  /** Shortcut for <code>restrictTo(schema, JsonType.LONG, JsonType.DOUBLE, JsonType.DECFLOAT)</code> */
+  public static Schema restrictToNumber(Schema schema)
+  {
+    return restrictTo(schema, JsonType.LONG, JsonType.DOUBLE, JsonType.DECFLOAT);
+  }
+  
+  /** Shortcut for <code>restrictTo(schema, JsonType.LONG, JsonType.DOUBLE, JsonType.DECFLOAT, JsonType.NULL)</code> */
+  public static Schema restrictToNumberOrNull(Schema schema)
+  {
+    return restrictTo(schema, JsonType.LONG, JsonType.DOUBLE, JsonType.DECFLOAT, JsonType.NULL);
+  }
+  
+  /** As {@link #restrictToNumber(Schema)} but removes modifiers of number schemata. */
+  public static Schema restrictToNumberTypes(Schema schema)
+  {
+    Schema s = restrictToNumberTypesOrNull(schema);
+    if (s==null) return null;
+    return removeNullability(s);
+  }
+  
+  /** As {@link #restrictToNumberOrNull(Schema)} but removes modifiers of number schemata. */
+  public static Schema restrictToNumberTypesOrNull(Schema schema)
+  {
+    // restrict schema to numeric types
+    List<Schema> restricted = new ArrayList<Schema>(4);
+    if (schema.is(JsonType.LONG).maybe())
+    {
+      restricted.add(SchemaFactory.longSchema());
+    }
+    if (schema.is(JsonType.DOUBLE).maybe())
+    {
+      restricted.add(SchemaFactory.doubleSchema());
+    }
+    if (schema.is(JsonType.DECFLOAT).maybe())
+    {
+      restricted.add(SchemaFactory.decfloatSchema());
+    }
+    if (schema.is(JsonType.NULL).maybe())
+    {
+      restricted.add(SchemaFactory.nullSchema());
+    }
+    if (restricted.size() > 0)
+    {
+      return OrSchema.make(restricted);
+    }
+    return null;
+  }
+  
   /** Returns a schema that matches the values that are (1) matched by the provided <code>schema</code> 
    * and (2) of one of the specified <code>types</code>, or <code>null</code> if no such restriction 
    * exists. For example,
@@ -222,7 +270,7 @@ public class SchemaTransformation
       }
       else
       {
-        return OrSchema.or(schemata);
+        return OrSchema.make(schemata);
       }      
     }
     else
@@ -277,7 +325,7 @@ public class SchemaTransformation
       {
         schemata.add(SchemaFactory.arraySchema());
       }
-      return OrSchema.or(schemata);
+      return OrSchema.make(schemata);
     }
     
     // otherwise we just know that it will be an array (or null)
@@ -309,7 +357,7 @@ public class SchemaTransformation
         Schema se = expandArrays(s);
         schemata.add(se);
       }
-      return OrSchema.or(schemata);
+      return OrSchema.make(schemata);
     }
     
     // fallback

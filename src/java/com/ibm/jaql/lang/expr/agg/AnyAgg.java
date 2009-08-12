@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
-import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -84,23 +84,26 @@ public final class AnyAgg extends AlgebraicAggregate
   {
     return result;
   }
+
+  @Override 
+  public Schema getPartialSchema()
+  {
+    return getSchema();
+  }
   
+  @Override
   public Schema getSchema()
   {
-    Schema inSchema = exprs[0].getSchema();
-    if (inSchema instanceof ArraySchema)
+    Schema in = exprs[0].getSchema();
+    Schema out = SchemaTransformation.arrayElements(in);
+    if (out == null)
     {
-      ArraySchema arraySchema = (ArraySchema)inSchema;
-      Schema valueSchema = arraySchema.elements();
-      if (arraySchema.isEmpty().maybe())
+      if (in.isEmpty(JsonType.ARRAY, JsonType.NULL).maybe())
       {
-        return SchemaTransformation.addNullability(valueSchema);
+        return SchemaFactory.nullSchema();
       }
-      else
-      {
-        return valueSchema;
-      }
+      throw new RuntimeException("any aggregate expects array input");
     }
-    return SchemaFactory.anySchema();
+    return out;
   }
 }
