@@ -18,13 +18,9 @@ package com.ibm.jaql.lang.expr.path;
 import java.io.PrintStream;
 import java.util.HashSet;
 
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -64,9 +60,9 @@ public class UnrollIndex extends UnrollStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonHolder expand(Context context, JsonHolder toExpand) throws Exception
+  public JsonValue eval(Context context, JsonValue arrayValue) throws Exception
   {
-    JsonArray arr = (JsonArray)toExpand.value;
+    JsonArray arr = (JsonArray)arrayValue;
     if( arr == null )
     {
       return null;
@@ -77,40 +73,7 @@ public class UnrollIndex extends UnrollStep
       return null;
     }
     long k = index.longValueExact();
-    JsonIterator iter = arr.iter();
-    JsonHolder hole = null;
-    JsonArray out;
-    if( arr instanceof BufferedJsonArray )
-    {
-      BufferedJsonArray fixed = new BufferedJsonArray((int)arr.count()); // TODO: memory
-      out = fixed;
-      long i = 0;
-      for (JsonValue value : iter)
-      {
-        if( i == k )
-        {
-          hole = new JsonHolder(value); // TODO: memory
-        }
-        fixed.set((int)i, value); // TODO: shouldn't add() be used here? 
-        i++;
-      }
-    }
-    else
-    {
-      SpilledJsonArray spill = new SpilledJsonArray(); // TODO: memory
-      out = spill;
-      long i = 0;
-      for (JsonValue value : iter)
-      {
-        if( i == k )
-        {
-          hole = new JsonHolder(value); // TODO: memory
-        }
-        spill.addCopy(value);
-        i++;
-      }
-    }
-    toExpand.value = out;
-    return hole;
+
+    return arr.get(k);
   }
 }

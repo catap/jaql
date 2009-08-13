@@ -1,0 +1,71 @@
+package com.ibm.jaql.lang.expr.io;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.UndeclaredThrowableException;
+
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobConfigurable;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.ReflectionUtils;
+
+import com.ibm.jaql.json.parser.JsonParser;
+import com.ibm.jaql.json.parser.ParseException;
+import com.ibm.jaql.json.type.JsonRecord;
+
+public class MapInputFormat<K1,V1,K2,V2> implements InputFormat<K2,V2>, JobConfigurable
+{
+  public static final String INPUT_KEY     = "mapred.input.mif.input";
+  public static final String MAP_CLASS_KEY = "mapred.input.mif.map.class";
+  
+  protected JobConf sourceConf;
+  protected InputFormat<K1,V1> sourceInputFormat;
+  protected RecordMapper<K1,V1,K2,V2> mapper;
+    
+  @Override
+  public void configure(JobConf conf)
+  {
+    try
+    {
+      String jsonRecord = conf.get(INPUT_KEY);
+      JsonParser parser = new JsonParser(new StringReader(jsonRecord));
+      JsonRecord jrec = (JsonRecord)parser.JsonVal();
+      sourceConf = new JobConf(conf);
+      ConvertInputFormat.updateJobConf(sourceConf, jrec);
+      sourceInputFormat = sourceConf.getInputFormat();
+      Class<? extends RecordMapper> mapClass = conf.getClass(MAP_CLASS_KEY, null, RecordMapper.class);
+      mapper = (RecordMapper<K1,V1,K2,V2>) ReflectionUtils.newInstance(mapClass, conf);
+    }
+    catch(ParseException pe)
+    {
+      throw new UndeclaredThrowableException(pe); // IOException(pe);
+    }
+  }
+  
+  @Deprecated @Override
+  public void validateInput(JobConf conf) throws IOException
+  {
+    sourceInputFormat.validateInput(conf);
+  }
+
+  @Override
+  public InputSplit[] getSplits(JobConf conf, int numSplits) throws IOException
+  {
+    return sourceInputFormat.getSplits(sourceConf, numSplits);
+  }
+
+  @Override
+  public RecordReader<K2,V2> getRecordReader(
+      InputSplit split, 
+      JobConf conf, 
+      Reporter reporter)
+     throws IOException
+  {
+    RecordReader<K1,V1> input = sourceInputFormat.getRecordReader(split, sourceConf, reporter);
+    return mapper.map(input);
+  }
+}
+

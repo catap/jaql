@@ -21,8 +21,8 @@ import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.HashSet;
 
-import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonAtom;
+import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
@@ -81,12 +81,13 @@ public class JaqlFunction extends JsonAtom
 
     try
     {
-      fn = (DefineFunctionExpr)parser.parse();
+      this.fn = (DefineFunctionExpr)parser.parse();
+      this.fnText = fnText;
     }
     catch(Exception e)
     {
-      fn = null;
-      fnText = null;
+      this.fn = null;
+      this.fnText = null;
       throw new UndeclaredThrowableException(e);
     }
     fn.annotate();
@@ -241,6 +242,35 @@ public class JaqlFunction extends JsonAtom
   }
   
   /**
+   * Evaluate function of one parameter
+   * 
+   * @param context
+   * @param v
+   * @return
+   * @throws Exception
+   */
+  public JsonValue eval(Context context, JsonValue arg0, JsonValue arg1) throws Exception
+  {
+    checkArgs(2);
+    fn.param(0).var.setValue(arg0);
+    fn.param(1).var.setValue(arg1);
+    return fn.body().eval(context);
+  }
+  
+  /**
+   * @param context
+   * @param iter
+   * @return
+   * @throws Exception
+   */
+  public JsonValue eval(Context context, JsonIterator iter) throws Exception
+  {
+    checkArgs(1);
+    fn.param(0).var.setIter(iter);
+    return fn.body().eval(context);
+  }
+
+  /**
    * @param context
    * @param args
    * @param start index of first args to use
@@ -254,6 +284,20 @@ public class JaqlFunction extends JsonAtom
     return fn.body().eval(context);
   }
 
+  /**
+   * @param context
+   * @param iter
+   * @param arg1
+   * @return
+   * @throws Exception 
+   */
+  public JsonValue eval(Context context, JsonIterator iter0, JsonValue arg1) throws Exception
+  {
+    checkArgs(2);
+    fn.param(0).var.setIter(iter0);
+    fn.param(1).var.setValue(arg1);
+    return fn.body().eval(context);
+  }
 
   /**
    * Requires:
@@ -384,7 +428,7 @@ public class JaqlFunction extends JsonAtom
     t.fnText = this.fnText;
     return t;
   }
-  
+
   public JaqlFunction getImmutableCopy()
   {
     // FIXME: copy is not immutable

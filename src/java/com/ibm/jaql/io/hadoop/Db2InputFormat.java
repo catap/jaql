@@ -48,6 +48,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonBinary;
 import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.json.type.MutableJsonDecimal;
+import com.ibm.jaql.json.type.MutableJsonDouble;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.type.MutableJsonString;
 
@@ -383,9 +384,11 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
           case Types.SMALLINT:
             values[i] = new MutableJsonLong();
             break;
-          case Types.DECIMAL: 
           case Types.DOUBLE: 
           case Types.FLOAT: 
+            values[i] = new MutableJsonDouble();
+            break;
+          case Types.DECIMAL: 
             values[i] = new MutableJsonDecimal();
             break;
           case Types.CHAR:

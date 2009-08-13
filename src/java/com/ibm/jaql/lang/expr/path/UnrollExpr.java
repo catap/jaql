@@ -15,12 +15,17 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
+import java.io.InvalidClassException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
-import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
@@ -64,65 +69,102 @@ public final class UnrollExpr extends IterExpr
 
   public final JsonIterator iter(final Context context) throws Exception
   {
-    JsonValue value = exprs[0].eval(context);
+    // Share as much of input item as possible
+    // but copy the expanded part so we can modify it.
+    final JsonValue value = exprs[0].eval(context);
     if( value == null )
     {
       return JsonIterator.NULL;
     }
-    final JsonHolder top = new JsonHolder(value);  // warning: top does not own (all of) item's value
-    JsonHolder hole = top;
+    final JsonValue[] path = new JsonValue[exprs.length]; // TODO: memory
+    path[0] = value;
     for(int i = 1 ; i < exprs.length ; i++)
     {
-      // Share as much of input item as possible
-      // but copy the expanded part so we can modify it.
-      hole = ((UnrollStep)exprs[i]).expand(context, hole); 
-      if( hole == null ) // input item doesn't have our path
+      path[i] = ((UnrollStep)exprs[i]).eval(context, path[i-1]);
+      if( path[i] == null ) // input item doesn't have our path
       {
         return new SingleJsonValueIterator(value);
       }
     }
-    // We found the path to expand.
-    final JsonHolder lastHole = hole;
+
+    JsonArray array = (JsonArray)path[exprs.length - 1];
+    // array is not null because of check inside the loop.
     
-    JsonArray array = (JsonArray)lastHole.value; // possible intentional cast error
+    if( array.isEmpty() )
+    {
+      // Return item with null value
+      JsonValue result = copyTree(value, path, 0, null);
+      return new SingleJsonValueIterator(result);
+    }
+
     
     final JsonIterator iter = (array != null) ? array.iter() : JsonIterator.EMPTY;
     
     return new JsonIterator()
     {
-      boolean atStart = true;
-      boolean eof = false;
-      
       @Override
       public boolean moveNext() throws Exception // TODO: somethign seems wrong here: lastHole is updated but not used
       {
         while( true )
         {
-          if (eof) 
-          {
-            return false;
-          }
           if (!iter.moveNext()) 
           {
-            eof = true;
-            if( atStart )
-            {
-              // Null or empty array.
-              // Return item with null value
-              atStart = false;
-              lastHole.value = null;
-              currentValue = top.value;
-              return true;
-            }
             return false;
           }
-          atStart = false;
-          lastHole.value = iter.current();
-          currentValue = top.value;
+          currentValue = copyTree(value, path, 0, iter.current());
           return true;
         }
       }
     };
+  }
+
+  protected JsonValue copyTree(JsonValue root, JsonValue[] path, int i, JsonValue newValue)
+    throws Exception
+  {
+    i++;
+    if( i == path.length )
+    {
+      return newValue;
+    }
+
+    JsonValue p = path[i];
+    if( root instanceof JsonRecord )
+    {
+      JsonRecord in = (JsonRecord)root;
+      BufferedJsonRecord out = new BufferedJsonRecord( in.size() ); // TODO: memory
+      // TODO: out = in.getShallowCopy(out);
+      for( Map.Entry<JsonString,JsonValue> e: in )
+      {
+        JsonString name = e.getKey();
+        JsonValue value = e.getValue();
+        if( value == p )
+        {
+          value = copyTree(value, path, i, newValue);
+        }
+        out.add(name, value);
+      }
+      return out;
+    }
+    else if( root instanceof JsonArray )
+    {
+      JsonArray in = (JsonArray)root;
+      BufferedJsonArray out = new BufferedJsonArray(); // TODO: memory, capacity=in.count() 
+      // TODO: out = in.getShallowCopy(out);
+      for( JsonValue value: in )
+      {
+        if( value == p )
+        {
+          value = copyTree(value, path, i, newValue);
+        }
+        out.add(value);
+      }
+      return out;
+    }
+    else
+    {
+      // we shouldn't get here
+      throw new InvalidClassException(root.getClass().getName(), "not supported");
+    }
   }
 }
 

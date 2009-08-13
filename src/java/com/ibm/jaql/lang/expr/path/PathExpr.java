@@ -27,6 +27,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.path.PathStep.PathStepSchema;
+import com.ibm.jaql.util.Bool3;
 
 /** A path expression. Composed of individual {@link PathStep}s. */
 public final class PathExpr extends Expr
@@ -80,6 +81,13 @@ public final class PathExpr extends Expr
   public PathStep getReturn() // TODO: Should this be a PathReturn?
   {
     return firstStep().getReturn();
+  }
+
+  
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return i == 0 ? Bool3.TRUE : Bool3.UNKNOWN;
   }
 
   /**

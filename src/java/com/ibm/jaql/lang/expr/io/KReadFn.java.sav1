@@ -1,0 +1,706 @@
+/*
+ * Copyright (C) IBM Corp. 2009.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+package com.ibm.jaql.lang.expr.io;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.StringReader;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.JobConfigurable;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.util.ReflectionUtils;
+
+import com.ibm.jaql.io.hadoop.HadoopSerializationDefault;
+import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.parser.JsonParser;
+import com.ibm.jaql.json.parser.ParseException;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
+import com.ibm.jaql.json.type.MutableJsonString;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.IterExpr;
+import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
+import com.ibm.jaql.lang.expr.hadoop.RecordReaderValueIter;
+
+
+/**
+ * 
+ */
+@JaqlFn(fnName = "kread", minArgs = 1, maxArgs = 1)
+public class KReadFn extends IterExpr
+{
+  /**
+   * @param inputs
+   */
+  public KReadFn(Expr[] inputs)
+  {
+    super(inputs);
+  }
+
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
+   */
+  @Override
+  public JsonIterator iter(Context context) throws Exception
+  {
+    JsonRecord args = (JsonRecord) exprs[0].eval(context);
+    final JobConf conf = new JobConf();
+    HadoopSerializationDefault.register(conf); // TODO: this should be set globally...
+    ConvertInputFormat.updateJobConf(conf, args);
+    final InputFormat<JsonHolder, JsonHolder> inputFormat = conf.getInputFormat();
+
+    return new JsonIterator() {
+      InputSplit[]             splits = inputFormat.getSplits(conf, 1);
+      int                      curSplit = 0;
+      RecordReader<JsonHolder, JsonHolder> reader;
+      JsonIterator             splitReader = JsonIterator.EMPTY;
+
+      @Override
+      public boolean moveNext() throws Exception
+      {
+        while (true)
+        {
+          if( splitReader.moveNext() )
+          {
+            currentValue = splitReader.current();
+            return true;
+          }
+
+          if( reader != null )
+          {
+            reader.close();
+            reader = null;
+          }
+          
+          if (curSplit >= splits.length)
+          {
+            splitReader = JsonIterator.EMPTY;
+            return false;
+          }
+          
+          reader = inputFormat.getRecordReader(splits[curSplit++], conf, Reporter.NULL);
+          splitReader = new RecordReaderValueIter(reader);
+        }
+      }
+    };
+  }
+
+}
+
+
+interface ValueConverter<S,T>
+{
+  /**
+   * Create a targetValue.
+   * This is the initial value passed as targetValue to convertValue().
+   * Prior to Hadoop 0.17 this is the value that must be returned by convertValue. 
+   * 
+   * @param sourceValue
+   * @return
+   */
+  T createValue(S sourceValue);
+  
+  /**
+   * Convert the sourceValue to the targetValue.
+   * 
+   * Under Hadoop 0.17 or later, convertValue may return targetValue or a different T.
+   * Prior versions require the return value to be targetValue. 
+   *  
+   * @param sourceValue
+   * @param targetValue
+   * @return
+   */
+  T convertValue(S sourceValue, T targetValue);  
+}
+
+
+class NullValueConverter<S,T> implements ValueConverter<S,T>
+{
+  public T createValue(S sourceValue)
+  {
+    return null;
+  }
+
+  public T convertValue(S sourceValue, T targetValue)
+  {
+    return null;
+  }
+}
+
+class IdentityConverter<T> implements ValueConverter<T,T>
+{
+  public T createValue(T sourceValue)
+  {
+    return sourceValue;
+  }
+
+  public T convertValue(T sourceValue, T targetValue)
+  {
+    assert sourceValue == targetValue;
+    return targetValue;
+  }
+}
+
+
+class TextToJsonConverter implements ValueConverter<Text, JsonHolder>
+{
+  MutableJsonString jstr = new MutableJsonString();
+  
+  public JsonHolder createValue(Text text)
+  {
+    return new JsonHolder(jstr);
+  }
+
+  public JsonHolder convertValue(Text text, JsonHolder target)
+  {
+    jstr.set(text.getBytes(), text.getLength());
+    return target;
+  }
+}
+
+class LongWritableToJsonConverter implements ValueConverter<LongWritable, JsonHolder>
+{
+  MutableJsonLong jlong = new MutableJsonLong();
+  
+  public JsonHolder createValue(LongWritable sourceValue)
+  {
+    return new JsonHolder(jlong);
+  }
+
+  public JsonHolder convertValue(LongWritable sourceValue, JsonHolder targetValue)
+  {
+    jlong.set( sourceValue.get() );
+    return targetValue;
+  }
+}
+
+class ConvertRecordReader<SK,SV,TK,TV> implements RecordReader<TK,TV>
+{
+  protected RecordReader<SK,SV> sourceRecordReader;
+  protected ValueConverter<SK,TK> keyConverter;
+  protected ValueConverter<SV,TV> valueConverter;
+  protected SK sourceKey;
+  protected SV sourceValue;
+  
+  
+  public ConvertRecordReader(
+      RecordReader<SK,SV> sourceRecordReader,
+      ValueConverter<SK,TK> keyConverter,
+      ValueConverter<SV,TV> valueConverter)
+  {
+    this.sourceRecordReader = sourceRecordReader;
+    this.keyConverter = keyConverter;
+    this.valueConverter = valueConverter;
+  }
+  
+  @Override
+  public void close() throws IOException
+  {
+    sourceRecordReader.close();
+  }
+
+  @Override
+  public TK createKey()
+  {
+    sourceKey = sourceRecordReader.createKey();
+    return keyConverter.createValue(sourceKey);
+  }
+
+  @Override
+  public TV createValue()
+  {
+    sourceValue = sourceRecordReader.createValue();
+    return valueConverter.createValue(sourceValue);
+  }
+
+  @Override
+  public long getPos() throws IOException
+  {
+    return sourceRecordReader.getPos();
+  }
+
+  @Override
+  public float getProgress() throws IOException
+  {
+    return sourceRecordReader.getProgress();
+  }
+
+  @Override
+  public boolean next(TK targetKey, TV targetValue) throws IOException
+  {
+    if( ! sourceRecordReader.next(sourceKey, sourceValue) )
+    {
+      return false;
+    }
+    keyConverter.convertValue(sourceKey, targetKey);
+    valueConverter.convertValue(sourceValue, targetValue);
+    return true;
+  }
+  
+}
+
+
+class ConvertInputFormat<SK,SV,TK,TV> implements InputFormat<TK,TV>, JobConfigurable
+{
+  public static final String INPUT_KEY       = "mapred.input.convert.input";
+  public static final String KEY_CONVERTER   = "mapred.input.convert.key.class";
+  public static final String VALUE_CONVERTER = "mapred.input.convert.value.class";
+  
+  protected JobConf sourceConf;
+  protected InputFormat<SK,SV> sourceInputFormat;
+    
+  @Override
+  public void configure(JobConf conf)
+  {
+    try
+    {
+      String jsonRecord = conf.get(INPUT_KEY);
+      JsonParser parser = new JsonParser(new StringReader(jsonRecord));
+      JsonRecord jrec = (JsonRecord)parser.JsonVal();
+      sourceConf = new JobConf(conf);
+      ConvertInputFormat.updateJobConf(sourceConf, jrec);
+      sourceInputFormat = sourceConf.getInputFormat();
+    }
+    catch(ParseException pe)
+    {
+      throw new UndeclaredThrowableException(pe); // IOException(pe);
+    }
+  }
+  
+  @Deprecated @Override
+  public void validateInput(JobConf conf) throws IOException
+  {
+    sourceInputFormat.validateInput(conf);
+  }
+
+  @Override
+  public InputSplit[] getSplits(JobConf conf, int numSplits) throws IOException
+  {
+    // If neither is specified, the result will be a lot of nulls
+    if( conf.getClass(VALUE_CONVERTER, null, ValueConverter.class) == null &&
+        conf.getClass(KEY_CONVERTER, null, ValueConverter.class) == null ) 
+    {
+      throw new IOException(
+          "at least one converter required in job configuration: "+
+          KEY_CONVERTER+" or "+VALUE_CONVERTER);
+    }
+    return sourceInputFormat.getSplits(sourceConf, numSplits);
+  }
+
+  @Override
+  public RecordReader<TK,TV> getRecordReader(InputSplit split, JobConf conf, Reporter reporter)
+     throws IOException
+  {
+    RecordReader<SK,SV> sourceRecordReader = sourceInputFormat.getRecordReader(split, conf, reporter);
+    
+    ValueConverter<SK,TK> keyConverter = getConverter(conf, KEY_CONVERTER);
+    ValueConverter<SV,TV> valueConverter = getConverter(conf, VALUE_CONVERTER);
+
+    if( keyConverter == null )
+    {
+      keyConverter = new NullValueConverter<SK,TK>(); 
+    }
+    if( valueConverter == null )
+    {
+      valueConverter = new NullValueConverter<SV,TV>(); 
+    }
+    
+    return new ConvertRecordReader<SK,SV,TK,TV>(sourceRecordReader, keyConverter, valueConverter);
+  }
+
+  // @SuppressWarnings("unchecked")
+  protected <S,T> ValueConverter<S,T> getConverter(JobConf conf, String confKey) 
+  {
+    Class<? extends ValueConverter> converterClass = conf.getClass(confKey, null, ValueConverter.class);
+    if( converterClass != null )
+    {
+      // TODO: is there a way to validate the type parameters here??
+      // TypeVariable<?>[] cparams = converterClass.getTypeParameters();
+      // Method thisMethod = ConvertInputFormat.class.getDeclaredMethod("getConverter", JobConf.class, String.class);
+      // TypeVariable<?>[] mparams = thisMethod.getTypeParameters();
+      // if( cparams[0].getBounds()[0].equals(mparams[0].getBounds()[0]) )
+      
+      // This is unsafe (warning supressed)
+      return (ValueConverter<S,T>)ReflectionUtils.newInstance(converterClass, conf);
+    }
+    return null;
+  }
+
+  // TODO: move these to util
+  public static void updateJobConf(JobConf conf, JsonRecord jrec)
+  {
+    for( Entry<JsonString, JsonValue> entry: jrec )
+    {
+      conf.set(entry.getKey().toString(), 
+               entry.getValue().toString());
+    }
+  }
+
+  public static void writeJobConf(DataOutput out, JobConf conf) throws IOException
+  {
+    for( Map.Entry<String,String> x: conf )
+    {
+      out.writeByte(1);
+      out.writeUTF(x.getKey());
+      out.writeUTF(x.getValue());
+    }
+    out.writeByte(0);
+  }
+
+  public static JobConf readJobConf(DataInput in) throws IOException
+  {
+    JobConf conf = new JobConf(new Configuration());
+    while( in.readByte() == 1 )
+    {
+      String key = in.readUTF();
+      String value = in.readUTF();
+      conf.set(key, value);
+    }
+    return conf;
+  }
+
+}
+
+final class CompositeInputFormat<K,V> implements InputFormat<K,V>, JobConfigurable
+{
+  public static final String INPUTS_KEY = "mapred.composite.inputs";
+  
+  ArrayList<Input<K,V>> inputs; 
+
+  @Override
+  public void configure(JobConf conf)
+  {
+    String jsonArray = conf.get(INPUTS_KEY);
+    try
+    {
+      inputs = new ArrayList<Input<K,V>>(); 
+      JsonParser parser = new JsonParser(new StringReader(jsonArray));
+      for( JsonValue item = parser.ArrayFirst() ; item != JsonParser.NIL ; item = parser.ArrayNext() )
+      {
+        JsonRecord jrec = (JsonRecord)item;
+        JobConf conf2 = new JobConf(conf);
+        ConvertInputFormat.updateJobConf(conf2, jrec);
+        InputFormat<K,V> inputFormat = (InputFormat<K,V>)conf2.getInputFormat();
+        inputs.add(new Input<K,V>(conf2, inputFormat));
+      }
+    }
+    catch(ParseException pe)
+    {
+      throw new UndeclaredThrowableException(pe); // IOException("couldn't parse "+INPUTS_KEY+" = "+jsonArray, pe);
+    }
+  }
+  
+  @Deprecated @Override
+  public void validateInput(JobConf conf) throws IOException
+  {
+    for(Input<K,V> input: inputs)
+    {
+      input.inputFormat.validateInput(conf);
+    }
+  }
+  
+  public InputSplit[] getSplits(JobConf conf, int numSplits) throws IOException
+  {
+    ArrayList<InputSplit> splits = new ArrayList<InputSplit>();
+
+    int numSubSplits = Math.min(1, numSplits / inputs.size());
+    for( Input<K,V> input: inputs )
+    {
+      InputSplit[] subSplits = input.inputFormat.getSplits(input.conf, numSubSplits);
+      for(InputSplit s: subSplits)
+      {
+        splits.add(new CompositeInputSplit(input.conf,s));
+      }
+    }
+    
+    return splits.toArray(new InputSplit[splits.size()]);
+  }
+
+  public RecordReader<K, V> getRecordReader(InputSplit split, JobConf conf, Reporter reporter) throws IOException
+  {
+    CompositeInputSplit csplit = (CompositeInputSplit)split;
+    InputFormat<K,V> format = csplit.conf.getInputFormat();
+    return format.getRecordReader(csplit.split, csplit.conf, reporter);
+  }
+  
+  protected static class Input<K,V>
+  {
+    JobConf conf;
+    InputFormat<K,V> inputFormat;
+    Input(JobConf conf, InputFormat<K,V> inputFormat)
+    {
+      this.conf = conf;
+      this.inputFormat = inputFormat;
+    }
+  }
+  
+  protected static class CompositeInputSplit implements InputSplit
+  {
+    protected JobConf conf;
+    protected InputSplit split;
+    
+    public CompositeInputSplit(JobConf conf, InputSplit split)
+    {
+      this.conf = conf;
+      this.split = split;
+    }
+    
+    public long getLength() throws IOException
+    {
+      return split.getLength();
+    }
+
+    public String[] getLocations() throws IOException
+    {
+      return split.getLocations();
+    }
+
+    public void readFields(DataInput in) throws IOException
+    {
+      try
+      {
+        String splitClassName = in.readUTF();
+        conf = ConvertInputFormat.readJobConf(in);
+        Class<? extends InputSplit> clazz = Class.forName(splitClassName).asSubclass(InputSplit.class);
+        split = (InputSplit)ReflectionUtils.newInstance(clazz, conf);
+        split.readFields(in);
+      }
+      catch (ClassNotFoundException e)
+      {
+        throw new UndeclaredThrowableException(e); // IOException(e);
+      };
+    }
+
+    public void write(DataOutput out) throws IOException
+    {
+      out.writeUTF(split.getClass().getName());
+      ConvertInputFormat.writeJobConf(out, conf);
+      split.write(out);
+    }
+  }
+}
+
+class JaqlRecordReader implements RecordReader<JsonHolder,JsonHolder>
+{
+  protected RecordReader<JsonHolder,JsonHolder> input;
+  protected JaqlFunction mapFn;
+  protected Context context;
+  protected JsonIterator iter;
+  
+  public JaqlRecordReader(RecordReader<JsonHolder,JsonHolder> input, JaqlFunction mapFn)
+  {
+    try
+    {
+      this.input = input;
+      this.mapFn = mapFn;
+      this.context = new Context();
+      this.iter = mapFn.iter(context, new RecordReaderValueIter(input));
+    }
+    catch(Exception ex)
+    {
+      throw new UndeclaredThrowableException(ex);
+    }
+  }
+  
+  @Override
+  public JsonHolder createKey()
+  {
+    return input.createKey();
+  }
+
+  @Override
+  public JsonHolder createValue()
+  {
+    return input.createValue();
+  }
+
+  @Override
+  public long getPos() throws IOException
+  {
+    return input.getPos();
+  }
+
+  @Override
+  public float getProgress() throws IOException
+  {
+    return input.getProgress();
+  }
+
+  @Override
+  public boolean next(JsonHolder key, JsonHolder value)
+      throws IOException
+  {
+    try
+    {
+      if( iter.moveNext() )
+      {
+        value.value = iter.current();
+        return true;
+      }
+    }
+    catch (Exception e)
+    {
+      throw new RuntimeException(e);
+    }
+    iter = JsonIterator.EMPTY; 
+    return false;
+  }
+  
+  @Override
+  public void close() throws IOException
+  {
+    if( input != null )
+    {
+      input.close();
+      input = null;
+    }
+    if( context != null )
+    {
+      context.reset();
+      context = null;
+    }
+  }
+
+};
+
+
+
+interface RecordMapper<K1,V1,K2,V2>
+{
+  RecordReader<K2,V2> map(RecordReader<K1,V1> input);
+}
+
+class JaqlRecordMapper 
+  implements RecordMapper<JsonHolder,JsonHolder,JsonHolder,JsonHolder>,
+             JobConfigurable
+{
+  public static final String MAP_FN_KEY   = "mapred.input.mif.map";
+  
+  protected JaqlFunction mapFn;
+  
+  @Override
+  public void configure(JobConf conf)
+  {
+    Context context = new Context();
+    mapFn = MapReduceBaseExpr.RemoteEval.compile(conf, MAP_FN_KEY, context);
+    context.reset();
+  }
+  
+  public RecordReader<JsonHolder,JsonHolder> map(RecordReader<JsonHolder,JsonHolder> input)
+  {
+    return new JaqlRecordReader(input, mapFn);
+  }
+}
+
+
+class PairRecordReader implements RecordReader<JsonHolder,JsonHolder>
+{
+  public static final JsonString KEY   = new JsonString("key");
+  public static final JsonString VALUE = new JsonString("value");
+  
+  protected RecordReader<JsonHolder, JsonHolder> input;
+  protected JsonHolder inputKey;
+  protected JsonHolder inputValue;
+  protected BufferedJsonRecord pair;
+  
+  public PairRecordReader(RecordReader<JsonHolder, JsonHolder> input)
+  {
+    this.input = input;
+    pair = new BufferedJsonRecord(2);
+  }
+
+  @Override
+  public JsonHolder createKey()
+  {
+    inputKey = input.createKey();
+    return new JsonHolder();
+  }
+
+  @Override
+  public JsonHolder createValue()
+  {
+    inputValue = input.createValue();
+    return new JsonHolder();
+  }
+
+  @Override
+  public long getPos() throws IOException
+  {
+    return input.getPos();
+  }
+
+  @Override
+  public float getProgress() throws IOException
+  {
+    return input.getProgress();
+  }
+
+  @Override
+  public boolean next(JsonHolder key, JsonHolder value)
+      throws IOException
+  {
+    if( input.next(inputKey, inputValue) )
+    {
+      pair.set(KEY,   inputKey.value);
+      pair.set(VALUE, inputValue.value);
+      key.value = null;
+      value.value = pair;
+      return true;
+    }
+    return false;
+  }
+  
+  @Override
+  public void close() throws IOException
+  {
+    if( input != null )
+    {
+      input.close();
+      input = null;
+    }
+  }
+}
+
+class PairRecordMapper implements RecordMapper<JsonHolder,JsonHolder,JsonHolder,JsonHolder>
+{
+  public RecordReader<JsonHolder,JsonHolder> map(RecordReader<JsonHolder,JsonHolder> input)
+  {
+    return new PairRecordReader(input);
+  }
+}
+

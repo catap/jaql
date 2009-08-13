@@ -27,8 +27,9 @@ import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
 
 /**
- * e0( (e1,...,e2), ..., e3) ==> (e1,..., e0(e2,...,e3)) 
+ * fn( (e1,...,e2), ..., e3) ==> ( e1, ..., fn(e2,...,e3) ) 
  *
+ * ( (e1,...,e2) )(e3,...) ==> 
  */
 public class DoPullup extends Rewrite
 {
