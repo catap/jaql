@@ -69,7 +69,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
   @SuppressWarnings("unchecked")
   protected void initializeFrom(JsonRecord args) throws Exception
   {
-    this.args = (BufferedJsonRecord) args;
+    this.args = (BufferedJsonRecord) args; // FIXME: shouldn't this be just (JsonRecord)? Who owns it? (ksb)
 
     // set the location
     this.location = AdapterStore.getStore().getLocation(args);
@@ -137,11 +137,12 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
 
     // write state to conf, pass in top-level args
     setSequential(conf);
-    configurator.setSequential(conf);
+    if( configurator != null )
+      configurator.setSequential(conf);
     Globals.setJobConf(conf);
     // initialize the format from conf
     if (iFormat instanceof JobConfigurable)
-      ((JobConfigurable) iFormat).configure(conf);
+     ((JobConfigurable) iFormat).configure(conf);
   }
 
   /*

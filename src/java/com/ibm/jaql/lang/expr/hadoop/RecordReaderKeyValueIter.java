@@ -18,24 +18,35 @@ package com.ibm.jaql.lang.expr.hadoop;
 import org.apache.hadoop.mapred.RecordReader;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 
 
-public class RecordReaderValueIter extends JsonIterator
+public class RecordReaderKeyValueIter extends JsonIterator
 {
+  public static final JsonString KEY   = new JsonString("key");
+  public static final JsonString VALUE = new JsonString("value");
+  
   protected RecordReader<JsonHolder, JsonHolder> reader;
   protected JsonHolder key;
   protected JsonHolder value;
+  protected BufferedJsonRecord pair;
   
-  public RecordReaderValueIter(RecordReader<JsonHolder, JsonHolder> reader)
+  public RecordReaderKeyValueIter(RecordReader<JsonHolder, JsonHolder> reader)
   {
     this.reader = reader;
     this.key = reader.createKey();
     this.value = reader.createValue();
+    if( key == null )
+    {
+      key = new JsonHolder();
+    }
     if( value == null )
     {
       value = new JsonHolder();
     }
+    pair = new BufferedJsonRecord(2);
   }
 
   @Override
@@ -43,7 +54,9 @@ public class RecordReaderValueIter extends JsonIterator
   {
     if( reader.next(key, value) )
     {
-      currentValue = value.value;
+      pair.set(KEY,   key.value);
+      pair.set(VALUE, value.value);
+      currentValue = pair;
       return true;
     }
     return false;

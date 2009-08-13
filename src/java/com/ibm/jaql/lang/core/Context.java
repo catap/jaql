@@ -34,8 +34,8 @@ public class Context
 {
   // protected HashMap<Var,Object> varValues = new HashMap<Var,Object>();
   // protected HashMap<Expr,Item>  tempArrays = new HashMap<Expr,Item>(); // TODO: we could use one hashmap
-  protected HashMap<Pair<Expr,JaqlFunction>,JaqlFunction> fnMap = new HashMap<Pair<Expr,JaqlFunction>,JaqlFunction>(); // TODO: this will be a compiled expr soon 
-  protected Pair<Expr,JaqlFunction> exprFnPair = new Pair<Expr, JaqlFunction>();
+  protected HashMap<Pair<Expr,String>,JaqlFunction> fnMap = new HashMap<Pair<Expr,String>,JaqlFunction>(); // TODO: this will be a compiled expr soon 
+  protected Pair<Expr,String> exprFnPair = new Pair<Expr, String>();
   protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
   // PyModule pyModule;
 
@@ -133,12 +133,12 @@ public class Context
   public JaqlFunction getCallable(Expr callSite, JaqlFunction fn) throws Exception
   {
     exprFnPair.a = callSite;
-    exprFnPair.b = fn;
+    exprFnPair.b = fn.getText();
     JaqlFunction fn2 = fnMap.get(exprFnPair);
     if( fn2 == null )
     {
       fn2 = JsonUtil.getCopy(fn, null); 
-      Pair<Expr,JaqlFunction> p = new Pair<Expr, JaqlFunction>(callSite, fn);
+      Pair<Expr,String> p = new Pair<Expr, String>(callSite, fn.getText());
       fnMap.put(p, fn2);
     }
     return fn2;

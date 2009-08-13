@@ -27,6 +27,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.Bool3;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -121,26 +122,20 @@ public class FunctionCallExpr extends Expr
     return exprs[i + 1];
   }
 
-  @Override
-  public Schema getSchema()
-  {
-    DefineFunctionExpr def = getDef();
-    if( def != null )
-    {
-      return def.body().getSchema();
-    }
-    return SchemaFactory.anySchema();
-  }
-  
   /** may return null */
-  private DefineFunctionExpr getDef()
+  protected DefineFunctionExpr getDef()
   {
     Expr fn = fnExpr();
     DefineFunctionExpr def = null;
-    if( fn instanceof DoExpr )
-    {
-      fn = ((DoExpr)fn).returnExpr();
-    }
+
+    // We cannot safely skip the DoExpr when looking for properties.
+    // Instead, we'll rely on the FunctionInline rewrite to push the call into the DoExpr.
+    // 
+    //    if( fn instanceof DoExpr )
+    //    {
+    //      fn = ((DoExpr)fn).returnExpr();
+    //    }
+    
     if( fn instanceof DefineFunctionExpr )
     {
       def = (DefineFunctionExpr)fn;
@@ -156,21 +151,62 @@ public class FunctionCallExpr extends Expr
     return def;
   }
 
+  /**
+   * We look into the function definition and our arguments for our properties.
+   */
+  @Override
+  public Bool3 getProperty(ExprProperty prop, boolean deep)
+  {
+    DefineFunctionExpr def = getDef();
+    Map<ExprProperty, Boolean> props = getProperties();
+    if (deep)
+    {
+      // We need to check inside the function body.
+      // If the function
+      Expr[] toCheck = exprs;
+      if( exprs[0] != def && def != null )
+      {
+        toCheck = exprs.clone();
+        toCheck[0] = def;
+      }
+      return getProperty(props, prop, toCheck);
+    }
+    else
+    {
+      return getProperty(props, prop, null);
+    }
+  }
+
+  /**
+   * If the properties of the function (namely the function body at this point) are not known, 
+   * then we are convervative. 
+   */
+  @Override
   public Map<ExprProperty, Boolean> getProperties()
   {
     DefineFunctionExpr def = getDef();
-    if (def != null)
+    if( def == null )
     {
-      return def.body().getProperties();
+      return ExprProperty.createSafeDefaults();
     }
-    else {
-      // FIXME: this is too optimistic
-//      Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-      Map<ExprProperty, Boolean> result = ExprProperty.createSafeDefaults();
-      return result;
+    else
+    {
+      return ExprProperty.createUnsafeDefaults();
     }
   }
-  
+
+
+  @Override
+  public Schema getSchema()
+  {
+    DefineFunctionExpr def = getDef();
+    if( def != null )
+    {
+      return def.body().getSchema();
+    }
+    return SchemaFactory.anySchema();
+  }
+
   /*
    * (non-Javadoc)
    * 

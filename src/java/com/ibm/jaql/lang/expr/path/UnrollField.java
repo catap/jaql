@@ -17,10 +17,7 @@ package com.ibm.jaql.lang.expr.path;
 
 import java.io.PrintStream;
 import java.util.HashSet;
-import java.util.Map.Entry;
 
-import com.ibm.jaql.io.hadoop.JsonHolder;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -62,9 +59,9 @@ public class UnrollField extends UnrollStep
    * @see com.ibm.jaql.lang.expr.core.ExpandStep#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonHolder expand(Context context, JsonHolder toExpand) throws Exception
+  public JsonValue eval(Context context, JsonValue recValue) throws Exception
   {
-    JsonRecord rec = (JsonRecord)toExpand.value;
+    JsonRecord rec = (JsonRecord)recValue;
     if( rec == null )
     {
       return null;
@@ -74,20 +71,6 @@ public class UnrollField extends UnrollStep
     {
       return null;
     }
-    int n = rec.size();
-    BufferedJsonRecord out = new BufferedJsonRecord(n); // TODO: memory
-    JsonHolder hole = null;
-    for (Entry<JsonString, JsonValue> e : rec)
-    {
-      JsonString name = e.getKey();
-      JsonValue value = e.getValue();
-      if( name.equals(ename) )
-      {
-        hole = new JsonHolder(value); // TODO: memory
-      }
-      out.add(name, value);
-    }
-    toExpand.value = out;
-    return hole;
+    return rec.get(ename);
   }
 }
