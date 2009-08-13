@@ -40,4 +40,23 @@ public class Pair<A, B>
     this.a = a;
     this.b = b;
   }
+
+  @Override
+  public int hashCode()
+  {
+    final int prime = 31;
+    int result = (a == null) ? 0 : System.identityHashCode(a);
+    result = prime * result + ((b == null) ? 0 : System.identityHashCode(b));
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj)
+  {
+    if (this == obj) return true;
+    if (obj == null) return false;
+    if (getClass() != obj.getClass()) return false;
+    Pair<A,B> other = (Pair<A,B>) obj;
+    return this.a == other.a && this.b == other.b;
+  }
 }

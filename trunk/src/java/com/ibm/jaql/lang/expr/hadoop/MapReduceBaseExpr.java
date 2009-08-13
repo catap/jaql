@@ -65,7 +65,7 @@ import com.ibm.jaql.util.ClassLoaderMgr;
  */
 public abstract class MapReduceBaseExpr extends Expr
 {
-  public final static String    BASE_NAME                  = "com.ibm.impliance.MapReduceExpr";
+  public final static String    BASE_NAME                  = "com.ibm.jaql.mapred";
   public final static String    STORE_REGISTRY_VAR_NAME    = BASE_NAME + ".sRegistry";
   public final static String    FUNC_REGISTRY_VAR_NAME     = BASE_NAME + ".fRegistry";
   public final static String    RNG_REGISTRY_VAR_NAME      = BASE_NAME + ".rRegistry";
@@ -73,13 +73,11 @@ public abstract class MapReduceBaseExpr extends Expr
   public final static String    NUM_INPUTS_NAME            = BASE_NAME + ".numInputs";
   public final static String    SCHEMA_NAME                = BASE_NAME + ".schema";
   
-  protected static final Logger LOG                  = Logger
-                                                         .getLogger(MapReduceFn.class
-                                                             .getName());
+  protected static final Logger LOG = Logger.getLogger(MapReduceFn.class.getName());
 
   protected int                 numInputs;
   protected JobConf             conf;
-  protected JsonValue              outArgs;
+  protected JsonValue           outArgs;
 
   /**
    * mapReduce( record args )
@@ -284,24 +282,11 @@ public abstract class MapReduceBaseExpr extends Expr
       }
     }
 
-    /**
-     * @param job
-     * @param fnName
-     * @param inId
-     * @return
-     */
-    public JaqlFunction compile(JobConf job, String fnName, int inId)
+    public static JaqlFunction compile(Context context, String exprText)
     {
       try
       {
-        String fullName = BASE_NAME + "." + fnName + "." + inId;
-        String exprText = job.get(fullName);
         // System.err.println("compiling: "+exprText);
-        if (exprText == null)
-        {
-          throw new RuntimeException("function not found in job conf: "
-              + fullName);
-        }
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
         JaqlParser parser = new JaqlParser(lexer);
         Expr expr = parser.parse();
@@ -312,6 +297,29 @@ public abstract class MapReduceBaseExpr extends Expr
       {
         throw new UndeclaredThrowableException(ex);
       }
+    }
+
+    public static JaqlFunction compile(JobConf job, String propName, Context context)
+    {
+      String exprText = job.get(propName);
+      // System.err.println("compiling: "+exprText);
+      if (exprText == null)
+      {
+        throw new RuntimeException("function not found in job conf: " + propName);
+      }
+      return compile(context, exprText);
+    }
+
+    /**
+     * @param job
+     * @param fnName
+     * @param inId
+     * @return
+     */
+    public JaqlFunction compile(JobConf job, String fnName, int inId)
+    {
+      String fullName = BASE_NAME + "." + fnName + "." + inId;
+      return compile(job, fullName, context);
     }
 
     public void close() throws IOException

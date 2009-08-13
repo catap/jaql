@@ -36,6 +36,12 @@ public class CopyRecord extends FieldExpr
     super(recExpr);
   }
 
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   /**
    * 
    */

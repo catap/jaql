@@ -71,6 +71,7 @@ import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.DatePartsFn;
 import com.ibm.jaql.lang.expr.date.NowFn;
 import com.ibm.jaql.lang.expr.db.JdbcExpr;
+import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
@@ -350,11 +351,12 @@ public class FunctionLib
     // lower level shell access
     add(HdfsShellExpr.class);
     add(HBaseShellExpr.class);
-    add(KeyLookupFn.class); // experimental
-    add(BuildLuceneFn.class); // TODO: TEMPORARY
-    add(ProbeLuceneFn.class); // TODO: TEMPORARY
+    add(KeyLookupFn.class); // TODO: experimental
+    add(BuildLuceneFn.class); // TODO: experimental
+    add(ProbeLuceneFn.class); // TODO: experimental
     add(BuildJIndexFn.class);
     add(ProbeJIndexFn.class);
+    add(BuildModelFn.class); // TODO: experimental
     // internal
     add(ExprTreeExpr.class);
     add(HashExpr.class);

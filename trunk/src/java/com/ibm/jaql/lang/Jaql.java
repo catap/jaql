@@ -312,6 +312,7 @@ public class Jaql
           }
           catch( Throwable error )
           {
+            expr = null;
             handleError(error);
           }
         }
@@ -325,7 +326,7 @@ public class Jaql
           JsonValue value = expr.eval(context);
           System.out.println(value);
         }
-        else
+        else if( expr != null )
         {
           return expr;
         }

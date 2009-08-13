@@ -118,6 +118,10 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
           }
           return true;
         }
+
+        // FIXME: A function definition with an effect in its body should not report the effect.
+        // FIXME: A function call should report no effects only when its body is known to have no effects.
+        // FIXME: solution: for "deep" getProperty: DefineFunction should not look at body, FunctionCall should skip definefunction all go to body (or report safe defaults) 
         
         if( valExpr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).maybe() ||
             valExpr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).maybe() )

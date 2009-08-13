@@ -47,7 +47,13 @@ public class ConstPragma extends Pragma
     // deep ignored deliberately
     return getProperty(getProperties(), prop, null);
   }
-  
+    
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   public Map<ExprProperty, Boolean> getProperties()
   {
     Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();

@@ -27,6 +27,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * exprs:
@@ -112,6 +113,16 @@ public final class DefineFunctionExpr extends Expr
   public Expr body()
   {
     return exprs[exprs.length-1];
+  }
+
+  /**
+   * The properties of a function definition do not include it's body properties.
+   * They are reported by a function call, however.
+   */
+  @Override
+  public Bool3 getProperty(ExprProperty prop, boolean deep)
+  {
+    return super.getProperty(prop, false);
   }
 
   @Override

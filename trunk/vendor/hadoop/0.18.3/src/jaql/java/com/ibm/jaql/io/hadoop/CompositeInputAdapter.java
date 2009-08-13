@@ -121,18 +121,13 @@ public class CompositeInputAdapter implements HadoopInputAdapter
       {
         while (true)
         {
-          if (idx > adapters.length) return false;
           if (baseReader == null)
           {
-            try
+            if (idx >= adapters.length)
             {
-              baseReader = adapters[idx++].iter();
+              return false;
             }
-            catch (Exception e)
-            {
-              /** silently move on to next adapter */
-              continue;
-            }
+            baseReader = adapters[idx++].iter();
           }
           if (baseReader.moveNext())
           {

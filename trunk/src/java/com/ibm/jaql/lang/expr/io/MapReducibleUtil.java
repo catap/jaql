@@ -23,6 +23,7 @@ import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -64,6 +65,7 @@ public class MapReducibleUtil
     }
 
     if (e instanceof AbstractHandleFn) return ((AbstractHandleFn) e).isMapReducible();
+    if (e instanceof ArrayExpr) return isMapReducible(input, (ArrayExpr) e);
     if (e instanceof JaqlTempFn) return ((JaqlTempFn) e).isMapReducible();
     if (e instanceof RecordExpr) return isMapReducible(input, (RecordExpr) e);
     if (e instanceof ConstExpr) return isMapReducible(input, ((ConstExpr) e).value);
@@ -166,6 +168,28 @@ public class MapReducibleUtil
     {
     }
     return false;
+  }
+  
+  /**
+   * An array descriptor is MapReducible if every descriptor in the array is.
+   * @param input
+   * @param arrayExpr
+   * @return
+   */
+  public static boolean isMapReducible(boolean input, ArrayExpr arrayExpr)
+  {
+    if( arrayExpr.numChildren() == 0 )
+    {
+      return false;
+    }
+    for( Expr e: arrayExpr.children() )
+    {
+      if( ! isMapReducible(input, e) )
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
   public static boolean isMapReducible(boolean input, JsonValue descriptor) // TODO: throws Exception

@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.util.Bool3;
 
 
 /**
@@ -67,6 +68,12 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
     Map<ExprProperty, Boolean> result = super.getProperties();
     result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
     return result;
+  }
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
   }
 
   /* (non-Javadoc)
