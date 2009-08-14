@@ -50,6 +50,11 @@ public final class SumAgg extends AlgebraicAggregate
     private double dblSum;
     private BigDecimal decSum;
 
+    public Summer()
+    {
+      init();
+    }
+    
     public void init()
     {
       hadData = false;
