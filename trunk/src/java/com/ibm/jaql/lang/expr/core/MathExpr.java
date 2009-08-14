@@ -322,7 +322,7 @@ public class MathExpr extends Expr
    * number type or null if impossible. */
   public static JsonType promote(JsonType type1, JsonType type2)
   {
-    switch (type2)
+    switch (type1)
     {
     case LONG:
       switch (type2)
