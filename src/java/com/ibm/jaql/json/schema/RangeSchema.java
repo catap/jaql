@@ -76,6 +76,12 @@ public abstract class RangeSchema<T extends JsonValue> extends Schema
   public abstract boolean matches(JsonValue value);
   
   
+  @Override
+  public boolean hasModifiers()
+  {
+    return min != null || max != null || value != null;
+  }
+  
   // -- getters -----------------------------------------------------------------------------------
   
   public final T getMin()

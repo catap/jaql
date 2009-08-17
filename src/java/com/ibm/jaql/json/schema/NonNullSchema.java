@@ -53,6 +53,12 @@ public final class NonNullSchema extends Schema
   }
 
   @Override
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
+  @Override
   public Bool3 isEmpty(JsonType type, JsonType ... types)
   {
     return is(type, types).and(Bool3.UNKNOWN);

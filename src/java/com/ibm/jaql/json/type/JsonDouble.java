@@ -46,9 +46,29 @@ public class JsonDouble extends JsonNumber
   *
   * @throws NumberFormatException when <code>value</code> does not represent a valid double
   */
-  public JsonDouble(String value) throws NumberFormatException
+  public JsonDouble(String value) 
   {
-    this.value = Double.parseDouble(value);
+    this(parseDouble(value));
+  }
+  
+  /** Constructs a new <code>JsonDouble</code> from the specified value. 
+  *
+  * @throws NumberFormatException when <code>value</code> does not represent a valid double
+  */
+  public JsonDouble(JsonString value) 
+  {
+    this(parseDouble(value));
+  }
+  
+  public static double parseDouble(String s)
+  {
+    return Double.parseDouble(s);    
+  }
+  
+  public static double parseDouble(JsonString s)
+  {
+    // TODO: make more efficient
+    return parseDouble(s.toString());
   }
 
   // -- getters -----------------------------------------------------------------------------------

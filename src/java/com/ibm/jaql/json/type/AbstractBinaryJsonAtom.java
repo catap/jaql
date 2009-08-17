@@ -74,7 +74,7 @@ abstract class AbstractBinaryJsonAtom extends JsonAtom
   public void writeBytes(int srcpos, byte[] dest, int destpos, int length)
   {
     ensureBytes();
-    if (srcpos<0 || srcpos+length>length) throw new ArrayIndexOutOfBoundsException();
+    if (srcpos<0 || srcpos+length>bytesLength()) throw new ArrayIndexOutOfBoundsException();
     System.arraycopy(this.bytes, srcpos, dest, destpos, length);
   }
 
@@ -82,7 +82,7 @@ abstract class AbstractBinaryJsonAtom extends JsonAtom
   public void writeBytes(DataOutput out) throws IOException
   {
     ensureBytes();
-    out.write(this.bytes, 0, bytesLength);
+    out.write(this.bytes, 0, bytesLength());
   }
   
   

@@ -163,8 +163,8 @@ read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
 ]
 
 
-readAdapterRegistry('registryTest2.dat');##
-"registryTest2.dat"
+readAdapterRegistry('data/registryTest2.dat');##
+"data/registryTest2.dat"
 
 
 [

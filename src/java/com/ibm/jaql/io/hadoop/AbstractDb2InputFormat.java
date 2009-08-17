@@ -20,7 +20,6 @@ import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.sql.Connection;
 import java.sql.Driver;
-import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Map.Entry;
@@ -89,7 +88,7 @@ public abstract class AbstractDb2InputFormat implements InputFormat<JsonHolder, 
       props.putAll(overrides);
     }
 
-    DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
+//    DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
 
     conn = driver.connect(url, null/*props*/);
   }
