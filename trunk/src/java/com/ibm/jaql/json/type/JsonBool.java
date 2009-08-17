@@ -42,7 +42,16 @@ public class JsonBool extends JsonAtom
     return value ? TRUE : FALSE;
   }
 
- 
+  public static JsonBool make(String string)
+  {
+    return make(Boolean.parseBoolean(string));
+  }
+
+  public static JsonBool make(JsonString string)
+  {
+    return make(Boolean.parseBoolean(string.toString()));
+  }
+
   // -- getters -----------------------------------------------------------------------------------
   
   /** Returns the boolean value */

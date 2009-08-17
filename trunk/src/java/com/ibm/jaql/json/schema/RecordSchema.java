@@ -144,6 +144,12 @@ public final class RecordSchema extends Schema
     this(fields.toArray(new Field[fields.size()]), additional);
   }
   
+  /** Construct a record having the specified fields (all non-optional). */ 
+  public RecordSchema(JsonString ... fieldNames)
+  {
+    this(namesToFields(fieldNames, false), null);
+  }
+  
   /** Matches any record */
   RecordSchema()
   {
@@ -164,7 +170,16 @@ public final class RecordSchema extends Schema
     }
   }
   
-
+  private static Field[] namesToFields(JsonString[] names, boolean optional)
+  {
+    Field[] fields = new Field[names.length];
+    for (int i=0; i<names.length; i++)
+    {
+      fields[i] = new Field(names[i], SchemaFactory.anySchema(), optional);
+    }
+    return fields;
+  }
+  
   // -- Schema methods ----------------------------------------------------------------------------
   
   @Override
@@ -173,6 +188,12 @@ public final class RecordSchema extends Schema
     return SchemaType.RECORD;
   }
 
+  @Override
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
   public Bool3 isEmpty()
   {
     Bool3 isEmpty = Bool3.FALSE;

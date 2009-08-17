@@ -72,6 +72,12 @@ public final class SchematypeSchema extends Schema
   }
 
   @Override
+  public boolean hasModifiers()
+  {
+    return value != null;
+  }
+  
+  @Override
   public boolean isConstant()
   {
     return value != null;

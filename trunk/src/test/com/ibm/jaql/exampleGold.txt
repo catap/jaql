@@ -2473,7 +2473,7 @@ read({type:'myHDFSFile', location:'example.jql'})
 // (see hbaseQueries.txt)
 // hbaseWrite('example', $q);
 
-read({type:"local", location:'build/test/cache/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
+read({type:"local", location:'build/test/cache/data/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
 [
   {
     "author": "J. K. Rowling",
@@ -2546,7 +2546,7 @@ hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;##
 0
 
 
-$lineRdr = read({type: "hdfs", location: "test", inoptions: {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.acme.extensions.data.FromLineConverter"}});##
+$lineRdr = read(lines("test"));##
 "$lineRdr"
 
 
@@ -2570,112 +2570,4 @@ $lineRdr
 -> count();##
 1341
 
-             
-hdfsShell("-copyFromLocal build/test/cache/delimited.dat delimited.dat") * 0;##
-0
 
-
-hdfsShell("-copyFromLocal build/test/cache/delimited.hdr delimited.hdr") * 0;##
-0
-
-
-$dhRead = fn($data,$header) 
-           read({type:"hdfs", location:$data,
-                 inoptions:{format: "org.apache.hadoop.mapred.TextInputFormat", 
-                            converter: "com.acme.extensions.data.FromDelimitConverter",
-                            header?: $header}});##
-"$dhRead"
-
-
-$dRead = fn($data) $dhRead($data, null);##
-"$dRead"
-
-
-$dRead("delimited.dat");##
-[
-  [
-    "1",
-    "2",
-    "3"
-  ],
-  [
-    "foo",
-    "bar",
-    "baz"
-  ],
-  [
-    "a longer example of a string",
-    "followed by another followed by a number",
-    "42"
-  ]
-]
-
-
-count($dRead("delimited.dat"));##
-3
-
-
-$dhRead("delimited.dat", ["a", "b", "c"]);##
-[
-  {
-    "a": "1",
-    "b": "2",
-    "c": "3"
-  },
-  {
-    "a": "foo",
-    "b": "bar",
-    "c": "baz"
-  },
-  {
-    "a": "a longer example of a string",
-    "b": "followed by another followed by a number",
-    "c": "42"
-  }
-]
-
-
-count($dhRead("delimited.dat", ["a", "b", "c"]));##
-3
-
-
-$dRead("delimited.hdr");##
-[
-  [
-    "a",
-    "b",
-    "c"
-  ]
-]
-
-
-$dRead("delimited.hdr")[0];##
-[
-  "a",
-  "b",
-  "c"
-]
-
-
-$dhRead("delimited.dat", $dRead("delimited.hdr")[0]);##
-[
-  {
-    "a": "1",
-    "b": "2",
-    "c": "3"
-  },
-  {
-    "a": "foo",
-    "b": "bar",
-    "c": "baz"
-  },
-  {
-    "a": "a longer example of a string",
-    "b": "followed by another followed by a number",
-    "c": "42"
-  }
-]
-
-
-count($dhRead("delimited.dat", $dRead("delimited.hdr")[0]));##
-3

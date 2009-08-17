@@ -87,6 +87,12 @@ public final class BinarySchema extends Schema
   }
 
   @Override
+  public boolean hasModifiers()
+  {
+    return (minLength != null && minLength.get() != 0) || maxLength != null;
+  }
+
+  @Override
   public boolean isConstant()
   {
     return false;

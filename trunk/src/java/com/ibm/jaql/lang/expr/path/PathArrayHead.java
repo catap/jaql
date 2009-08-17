@@ -38,7 +38,7 @@ public class PathArrayHead extends PathArray
   }
 
   /**
-   * @param index
+   * @param fieldIndex
    */
   public PathArrayHead(Expr end)
   {
@@ -46,7 +46,7 @@ public class PathArrayHead extends PathArray
   }
 
   /**
-   * @param index
+   * @param fieldIndex
    * @param next
    */
   public PathArrayHead(Expr end, Expr next)

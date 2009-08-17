@@ -36,6 +36,12 @@ public final class NullSchema extends Schema
   }
 
   @Override
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
+  @Override
   public boolean isConstant()
   {
     return true;

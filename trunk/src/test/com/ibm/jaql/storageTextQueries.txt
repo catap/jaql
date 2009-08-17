@@ -1,0 +1,90 @@
+hdfsShell("-rm delimited.del") * 0;
+hdfsShell("-rm delimited-invalid1.del.del") * 0;
+hdfsShell("-rm delimited-invalid2.del.del") * 0;
+hdfsShell("-rm delimited-invalid3.del.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid1.del delimited-invalid1.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited-invalid2.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;
+
+// test readers
+$f = "delimited.del";
+read(lines($f));
+read(del($f));
+read(del($f, { quoted: false }));
+read(del($f, { quoted: null })); // should fail
+read(del($f, { delimiter: null })); // should fail
+
+// test field information
+read(del($f, { fields: ["c1", "c2", "c3"] }));
+read(del($f, { fields: ["c3", "c1", "c2"] }));
+read(del($f, { fields: null }));
+
+read(del($f, { fields: { c1: schema string, c2:schema string, c3:schema string } })); // should fail
+read(del($f, { fields: ["c1", "c2", 3 ] })); // should fail
+read(del($f, { fields: ["c1", "c2", "c3", "c4"] })); // should fail
+
+// test invalid files
+$f = "delimited-invalid1.del";
+read(del($f));                      // should fail
+read(del($f, { quoted: false }));   // should work
+
+$f = "delimited-invalid2.del";
+read(del($f));                      // should fail
+read(del($f, { quoted: false }));   // should work
+
+$f = "delimited-invalid3.del";
+read(del($f));                      // should fail
+read(del($f, { quoted: false }));   // should fail
+
+// test conversion of atomic types
+convert("1", schema long);
+convert("1.123", schema double);
+convert("1.123", schema decfloat);
+convert("abcd", schema string);
+convert("true", schema boolean);
+convert("1", schema long?);
+convert("1.123", schema double?);
+convert("1.123", schema decfloat?);
+convert("abcd", schema string?);
+convert("true", schema boolean?);
+convert(null, schema long?);
+convert(null, schema double?);
+convert(null, schema decfloat?);
+convert(null, schema string?);
+convert(null, schema boolean?);
+convert(null, schema long); // should fail
+convert("1", schema long(min=0)); // should fail (for the moment)
+
+// test conversion of arrays
+convert(["a","1"], schema [ string, long ]);
+convert(["a","1"], schema [ string, long ]?);
+convert(null, schema [ string, long ]?);
+convert(["a","1"], schema [ string, long? ]);
+convert(["a",null], schema [ string, long? ]);
+
+convert(["a","1","1"], schema [ string, long ]); // should fail
+convert(["a"], schema [ string, long ]); // should fail
+convert(["a",1], schema [ string, long ]); // should fail
+convert(null, schema [ string, long ]); // should fail
+
+
+// test conversion of records
+convert({a:"a", b:"2"}, schema { a:string, b: long });
+convert({a:"a", b:"2"}, schema { a:string, b: long }?);
+convert(null, schema { a:string, b: long }?);
+convert({a:"a", b:"2"}, schema { a:string, b: long? });
+convert({a:"a", b:null}, schema { a:string, b: long? });
+
+convert({a:"a", b:"2", c:"1"}, schema { a:string, b: long }); // should fail
+convert({a:"a"}, schema { a:string, b: long }); // should fail
+convert({a:"a", b:1}, schema { a:string, b: long }); // should fail
+convert(null, schema { a:string, b: long }); // should fail
+
+// all together
+schemaof(read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } })));
+schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));
+
+read(del("delimited.del", { convert: schema [ string?, string?, long? ] }));
+schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));
+read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));

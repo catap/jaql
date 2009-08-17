@@ -38,7 +38,7 @@ public class PathArraySlice extends PathArray
   }
 
   /**
-   * @param index
+   * @param fieldIndex
    */
   public PathArraySlice(Expr start, Expr end)
   {
@@ -46,7 +46,7 @@ public class PathArraySlice extends PathArray
   }
 
   /**
-   * @param index
+   * @param fieldIndex
    * @param next
    */
   public PathArraySlice(Expr start, Expr end, Expr next)

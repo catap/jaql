@@ -44,6 +44,9 @@ public abstract class Schema implements Comparable<Schema>
   /** Returns the type represented by this schema. */
   public abstract SchemaType getSchemaType();
 
+  /** Checks whether this schema has any modifiers. */
+  public abstract boolean hasModifiers();
+  
   /** Checks whether this schema represents a constant value. 
    *  
    * Returns <code>true</code> if the schema matches only a single value.  

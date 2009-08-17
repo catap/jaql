@@ -33,7 +33,7 @@ read({type: 'hdfs', location: 'jaqlTest/test1.dat'});
 
 read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
 
-readAdapterRegistry('registryTest2.dat');
+readAdapterRegistry('data/registryTest2.dat');
 
 [
   { key: 0, g:0, text: 'zero' },
