@@ -191,15 +191,21 @@ public class JavaFnExpr extends Expr
     return ExprProperty.createSafeDefaults();
   }
 
-  @Override
+	@Override
   public Schema getSchema()
   {
-    Class<?> c = method.getReturnType();
-    if (JsonArray.class.isAssignableFrom(c) || JsonIterator.class.isAssignableFrom(c))
+    Class<?> c =  method.getReturnType();
+    //Handle JsonIterator as special case because it is no in the type hierarchy of JsonValue
+    if (JsonIterator.class.isAssignableFrom(c))
     {
       return SchemaFactory.arrayOrNullSchema();
     }
-    return SchemaFactory.anySchema();
+    
+    if(c.equals(JsonValue.class)) {
+    	return SchemaFactory.anySchema();
+    }
+    
+    return SchemaFactory.make((Class<? extends JsonValue>)c);
   }
 
   /*

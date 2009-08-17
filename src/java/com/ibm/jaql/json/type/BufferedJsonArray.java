@@ -35,7 +35,7 @@ public final class BufferedJsonArray extends JsonArray
   private int size;
 
   /** buffer that stores the content of the array */
-  private JsonValue[] values;
+  private JsonValue[] values = NO_VALUES;
   
   
   // -- construction ------------------------------------------------------------------------------
