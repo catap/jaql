@@ -111,6 +111,12 @@ public final class ArraySchema extends Schema
   }
   
   @Override
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
+  @Override
   public boolean isConstant()
   {
     boolean result = true;

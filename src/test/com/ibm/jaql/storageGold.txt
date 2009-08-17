@@ -560,7 +560,7 @@ read(hdfs('jaqlTest/test12b.dat'));##
 ]
 
 
-$path = "build/test/cache/";##
+$path = "build/test/cache/data/";##
 "$path"
 
 
@@ -570,7 +570,7 @@ $r1 = read(file($path + "books.json"));##
 
 $r1 -> write(file($path + "b1"));##
 {
-  "location": "build/test/cache/b1",
+  "location": "build/test/cache/data/b1",
   "type": "local"
 }
 
@@ -581,7 +581,7 @@ true
 
 $r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));##
 {
-  "location": "build/test/cache/b2",
+  "location": "build/test/cache/data/b2",
   "options": {
     "format": "com.ibm.jaql.io.stream.converter.JsonOutputStream"
   },
@@ -614,7 +614,7 @@ $v = {someField: "some value"};##
 
 [$v] -> write(file($path + "b2", {asArray: false}));##
 {
-  "location": "build/test/cache/b2",
+  "location": "build/test/cache/data/b2",
   "options": {
     "asArray": false
   },

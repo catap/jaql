@@ -44,30 +44,21 @@ public class JsonLong extends JsonNumber
   }
   
   /** Constructs a new <code>JsonLong</code> from the specified value. 
-   *
-   * @throws NumberFormatException when <code>value</code> does not represent a valid long
-   */
-  public JsonLong(String value) throws NumberFormatException
-  {
-    if (value.startsWith("0x") || value.startsWith("0X"))
-    {
-      // parseLong can't handle negative hex values - do we want it to?
-      this.value = Long.parseLong(value.substring(2), 16);
-    }
-    else
-    {
-      this.value = Long.parseLong(value);
-    }
-  }
-
-  /** Constructs a new <code>JsonLong</code> from the specified value. 
   *
   * @throws NumberFormatException when <code>value</code> does not represent a valid long
   */
-  public JsonLong(JsonString value) throws NumberFormatException
+  public JsonLong(String value) 
   {
-    // TODO: make this more efficient
-    this(value.toString());
+    this(parseLong(value));
+  }
+  
+  /** Constructs a new <code>JsonDecimal</code> from the specified value. 
+  *
+  * @throws NumberFormatException when <code>value</code> does not represent a valid long
+  */
+  public JsonLong(JsonString value) 
+  {
+    this(parseLong(value));
   }
   
   /** Returns an (immutable) {@link JsonLong} for the given value. Recommended for common
@@ -89,6 +80,24 @@ public class JsonLong extends JsonNumber
     return new JsonLong(i);
   }
 
+  public static long parseLong(String s)
+  {
+    if (s.startsWith("0x") || s.startsWith("0X"))
+    {
+      // parseLong can't handle negative hex values - do we want it to?
+      return Long.parseLong(s.substring(2), 16);
+    }
+    else
+    {
+      return Long.parseLong(s);
+    }
+  }
+  
+  public static long parseLong(JsonString s)
+  {
+    // TODO: make more efficient
+    return parseLong(s.toString());
+  }
   
   // -- getters -----------------------------------------------------------------------------------
   
@@ -176,7 +185,7 @@ public class JsonLong extends JsonNumber
   {
     return this;
   }
-
+  
   // -- comparison/hashing ------------------------------------------------------------------------
 
   /* @see com.ibm.jaql.json.type.JsonValue#compareTo(java.lang.Object) */

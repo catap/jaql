@@ -259,7 +259,7 @@ read(hdfs('jaqlTest/test12a.dat'));
 
 read(hdfs('jaqlTest/test12b.dat'));
 
-$path = "build/test/cache/";
+$path = "build/test/cache/data/";
 
 $r1 = read(file($path + "books.json"));
 

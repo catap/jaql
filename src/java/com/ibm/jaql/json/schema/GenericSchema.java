@@ -62,6 +62,13 @@ public final class GenericSchema extends Schema
     return SchemaType.GENERIC;
   }
 
+  
+  @Override
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
   @Override
   public boolean isConstant()
   {

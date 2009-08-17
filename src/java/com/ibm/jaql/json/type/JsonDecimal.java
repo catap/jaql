@@ -42,21 +42,41 @@ public class JsonDecimal extends JsonNumber
     this.value = value.value; // BigDecimal is immutable --> can share
   }
 
-  /** Copy constructs from the specified value.
-   *
-   * @throws NumberFormatException when the specified value cannot be parsed
-   */
-  public JsonDecimal(String value) throws NumberFormatException
+  /** Constructs a new <code>JsonDecimal</code> from the specified value. 
+  *
+  * @throws NumberFormatException when <code>value</code> does not represent a valid decimal
+  */
+  public JsonDecimal(String value) 
   {
-    this.value = new BigDecimal(value, MathContext.DECIMAL128);
+    this(parseDecimal(value));
   }
-
+  
+  /** Constructs a new <code>JsonDecimal</code> from the specified value. 
+  *
+  * @throws NumberFormatException when <code>value</code> does not represent a valid decimal
+  */
+  public JsonDecimal(JsonString value) 
+  {
+    this(parseDecimal(value));
+  }
+  
   /** Copy constructs from the specified value. */
   public JsonDecimal(long value)
   {
     this.value = new BigDecimal(value, MathContext.DECIMAL128);
   }
 
+  public static BigDecimal parseDecimal(String s)
+  {
+    return new BigDecimal(s, MathContext.DECIMAL128);
+  }
+  
+  public static BigDecimal parseDecimal(JsonString s)
+  {
+    // TODO: make more efficient
+    return parseDecimal(s.toString());
+  }
+  
   // -- getters -----------------------------------------------------------------------------------
 
   /* @see com.ibm.jaql.json.type.JsonNumeric#intValue() */

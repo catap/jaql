@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
@@ -82,6 +83,13 @@ public class ArrayExpr extends IterExpr
     return Bool3.TRUE;
   }
 
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  }
+  
   /*
    * (non-Javadoc)
    * 

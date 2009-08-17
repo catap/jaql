@@ -70,6 +70,12 @@ public final class BooleanSchema extends Schema
   }
 
   @Override
+  public boolean hasModifiers()
+  {
+    return value != null;
+  }
+  
+  @Override
   public boolean isConstant()
   {
     return value != null;

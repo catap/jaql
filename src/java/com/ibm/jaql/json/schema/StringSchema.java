@@ -134,6 +134,14 @@ public final class StringSchema extends Schema
     return SchemaType.STRING;
   }
 
+
+  @Override
+  public boolean hasModifiers()
+  {
+    return (minLength != null && minLength.get() != 0) || maxLength != null || value != null
+        || pattern != null;
+  }
+  
   @Override
   public boolean isConstant()
   {

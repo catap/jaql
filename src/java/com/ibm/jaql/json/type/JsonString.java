@@ -92,7 +92,7 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
 
   /** Makes sure that the bytes are computed from the string. */
   @Override
-  protected final void ensureBytes()
+  protected void ensureBytes()
   {
     if (hasBytes) return;
     assert cachedString != null;
@@ -109,7 +109,7 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
   }
   
   /** Makes sure that the cached Java string is computed from the bytes. */
-  protected final void ensureString()
+  protected void ensureString()
   {
     if (cachedString == null)
     {
@@ -217,16 +217,16 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
     JsonString s = (JsonString) x;
     ensureBytes();
     s.ensureBytes();
-    int len = Math.min(this.bytesLength, s.bytesLength);
+    int len = Math.min(this.bytesLength(), s.bytesLength());
     for (int i = 0; i < len; i++)
     {
-      int c = (int) (bytes[i] & 0xff) - (int) (s.bytes[i] & 0xff);
+      int c = (int) (this.get(i) & 0xff) - (int) (s.get(i) & 0xff);
       if (c != 0)
       {
         return c;
       }
     }
-    int c = this.bytesLength - s.bytesLength;
+    int c = this.bytesLength() - s.bytesLength();
     return c;
   }
   
@@ -237,12 +237,11 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
     if (cachedLongHashCode != null) return cachedLongHashCode;
 
     ensureBytes();
-    byte[] bs = bytes;
-    int n = bytesLength;
+    int n = bytesLength();
     long h = BaseUtil.GOLDEN_RATIO_64;
     for (int i = 0; i < n; i++)
     {
-      h ^= bs[i];
+      h ^= get(i);
       h *= BaseUtil.GOLDEN_RATIO_64;
     }
     cachedLongHashCode = h; // remember it

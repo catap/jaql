@@ -94,6 +94,17 @@ public final class OrSchema extends Schema
   {
     return SchemaType.OR;
   }
+
+  
+  @Override
+  public boolean hasModifiers()
+  {
+    for (Schema s : schemata)
+    {
+      if (s.hasModifiers()) return true;
+    }
+    return false;
+  }
   
   @SuppressWarnings("unchecked")
   @Override 
