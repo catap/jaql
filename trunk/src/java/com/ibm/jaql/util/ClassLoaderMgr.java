@@ -16,8 +16,16 @@
 package com.ibm.jaql.util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashSet;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
 
 import org.apache.hadoop.mapred.JobConf;
 
@@ -32,6 +40,7 @@ public class ClassLoaderMgr
 
   private static File        extendedJarPath = null;
   private static ClassLoader classLoader     = null;
+  private static HashSet<String> jarfiles = new HashSet<String>();
 
   /**
    * @param names
@@ -40,67 +49,103 @@ public class ClassLoaderMgr
    */
   public static File addExtensionJars(String[] names) throws Exception
   {
-    if (names == null || names.length == 0) return null;
+	if (names == null || names.length == 0)
+		return null;
 
-    // add the new jars to the classloader
-    classLoader = createClassLoader(names);
+	// add the new jars to the classloader
+	classLoader = createClassLoader(names);
+	
+	// set the current thread's classloader
+	Thread.currentThread().setContextClassLoader(classLoader);
+	
+	combineJars(names);
 
-    // set the current thread's classloader
-    Thread.currentThread().setContextClassLoader(classLoader);
-
-    // get this jar
-    JobConf job = new JobConf();
-    job.setJarByClass(JaqlUtil.class);
-    String thisJarName = job.getJar();
-
-    // make the temp directory
-    File tmpDir = new File(System.getProperty("java.io.tmpdir")
-        + File.separator + "jaql_" + System.nanoTime());
-    if (tmpDir.exists())
-    {
-      tmpDir.delete();
-    }
-    tmpDir.mkdir();
-    tmpDir.deleteOnExit();
-
-    File jarsDir = new File(tmpDir.getAbsolutePath() + File.separator + "jars");
-    jarsDir.mkdir();
-
-    // copy this jar and extension jars to temp and unjar them
-    unpackJar(thisJarName, jarsDir);
-
-    for (int i = 0; i < names.length; i++)
-    {
-      unpackJar(new File(names[i]).getAbsolutePath(), jarsDir);
-    }
-
-    // jar them into a new file; name = jaql_ts.jar
-    extendedJarPath = new File(tmpDir.getAbsoluteFile() + File.separator
-        + "jaql.jar");
-    packJar(jarsDir, extendedJarPath);
-
-    BaseUtil.LOG.info("jar for mapreduce at: " + extendedJarPath);
-
-    return extendedJarPath;
+	BaseUtil.LOG.info("jar for mapreduce at: " + extendedJarPath);
+	return extendedJarPath;
   }
 
-  /**
-   * @param srcFile
-   * @param tgtDir
-   * @throws Exception
-   */
-  private static void unpackJar(String srcFile, File tgtDir) throws Exception
-  {
-    BaseUtil.LOG.info("unpacking jar: " + srcFile + " -> "
-        + tgtDir.getAbsolutePath() + "...");
-    Runtime rt = Runtime.getRuntime();
-    Process p = rt.exec(new String[]{"jar", "-xf", srcFile}, null, tgtDir);
+	/**
+	 * Combines the extension jars and the original jar into one jar. When several
+	 * jars contain the same file/class the first version is used. The order in
+	 * which the jars are inserted into the new jar is first jaql, then the
+	 * extensions in the order in which they were defined.
+	 * 
+	 * @param extensions paths of the extension jars
+	 */
+	private static void combineJars(String[] extensions) {
+		File tmpDir = new File(System.getProperty("java.io.tmpdir")
+				+ File.separator + "jaql_" + System.nanoTime());
+		tmpDir.mkdir();
+		extendedJarPath = new File(tmpDir.getAbsoluteFile() + File.separator +
+		 "jaql.jar");
+		
+		try {
+			extendedJarPath.createNewFile();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 
-    p.waitFor();
+		// get the original jaql.jar
+		JobConf job = new JobConf();
+		job.setJarByClass(JaqlUtil.class);
+		String original = job.getJar();
+		File jaql = new File(original);
 
-    BaseUtil.LOG.info("unpacked!");
-  }
+		try {
+			//Copy content of jaql.jar to new jar
+			JarInputStream jin = new JarInputStream(new FileInputStream(jaql));
+			JarOutputStream jout = new JarOutputStream(new FileOutputStream(extendedJarPath),
+																									jin.getManifest());
+			copyJarFiles(jin, jout);
 
+			//Copy content of all extension jars to new jar
+			for (String extension : extensions) {
+				jin = new JarInputStream(new FileInputStream(extension));
+				copyJarFiles(jin, jout);
+			}
+
+			jout.close();
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+	
+	/**
+	 * Copies all files from JarInputStream to JarOutputStream which are not
+	 * already contained in JarOutputStream
+	 * 
+	 * @param jin		stream from which the files are copied
+	 * @param jout	target location for input files
+	 * @throws IOException
+	 */
+	private static void copyJarFiles(JarInputStream jin, JarOutputStream jout)
+			throws IOException {
+		ZipEntry entry;
+		byte[] chunk = new byte[8192];
+		int bytesRead;
+
+		while ((entry = jin.getNextEntry()) != null) {
+			if (!jarfiles.contains(entry.getName())) {
+				try {
+					jarfiles.add(entry.getName());
+					// Add file entry to output stream (meta data)
+					jout.putNextEntry(entry);
+					// Copy data to output stream (actual data)
+					if (!entry.isDirectory()) {
+						while ((bytesRead = jin.read(chunk)) != -1) {
+							jout.write(chunk, 0, bytesRead);
+						}
+					}
+				} catch (ZipException ex) {
+					System.out.println(entry.getName());
+					ex.printStackTrace();
+				}
+			} else {
+				System.out.println("blocked " + entry.getName());
+			}
+		}
+	}
+	
   /**
    * @param paths
    * @return
@@ -121,27 +166,6 @@ public class ClassLoaderMgr
         ? JsonValue.class.getClassLoader()
         : classLoader;
     return new URLClassLoader(urls, parent);
-  }
-
-  /**
-   * @param srcDir
-   * @param tgtFile
-   * @throws Exception
-   */
-  private static void packJar(File srcDir, File tgtFile) throws Exception
-  {
-    BaseUtil.LOG.info("packing final jar from: " + srcDir.getAbsolutePath()
-        + " -> " + tgtFile.getAbsolutePath() + "...");
-    BaseUtil.LOG.info("jar command: " + "jar " + " -cf "
-        + tgtFile.getAbsolutePath() + " * working dir= "
-        + srcDir.getAbsolutePath());
-    Runtime rt = Runtime.getRuntime();
-    Process p = rt.exec(new String[]{"jar", "-cf", tgtFile.getAbsolutePath(),
-        "."}, null, srcDir);
-
-    p.waitFor();
-
-    BaseUtil.LOG.info("packed!");
   }
 
   /**
