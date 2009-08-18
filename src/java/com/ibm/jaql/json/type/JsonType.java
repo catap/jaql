@@ -52,13 +52,13 @@ public enum JsonType
 
   private final Class<? extends JsonValue> mainClass;
   private final JsonString                 name;
-  private final boolean                    isNumeric;
+  private final boolean                    isNumber;
 
   JsonType(Class<? extends JsonValue> mainClass, String name)
   {
     this.mainClass = mainClass;
     this.name = new JsonString(name);
-    this.isNumeric = mainClass!=null && JsonNumber.class.isAssignableFrom(mainClass); 
+    this.isNumber = mainClass!=null && JsonNumber.class.isAssignableFrom(mainClass); 
   }
   
   public static JsonType getType(String name)
@@ -122,6 +122,6 @@ public enum JsonType
   
   public boolean isNumber()
   {
-    return isNumeric;
+    return isNumber;
   }
 }

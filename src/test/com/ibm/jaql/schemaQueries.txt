@@ -56,9 +56,8 @@ false instanceof $x;
 $x = schema long;
 $x;
 1 instanceof $x;
-1m instanceof $x;
-1d instanceof $x;
-1.1 instanceof $x; // incompatible
+1m instanceof $x;  // incompatible
+1d instanceof $x;  // incompatible
 "a" instanceof $x; // incompatible
 
 $x = schema long(5);
@@ -93,8 +92,8 @@ $x;
 schema long(max=9223372036854775808); // must fail: too large argument
 schema long(min=-9223372036854775809); // must fail: too large argument
 schema long(5,3); // must fail: invalid interval
-schema long(5d); // should be ok
-schema long(5m); // should be ok
+schema long(5d); // must fail: invalid argument
+schema long(5m); // must fail: invalid argument
 schema long(5.1); // must fail: invalid argument
 schema long(5, value=4); // must fail: invalid argument
 
@@ -104,9 +103,9 @@ schema long(5, value=4); // must fail: invalid argument
 $x = schema double;
 $x;
 1d instanceof $x;
-1 instanceof $x;
-1.1 instanceof $x;
-1.5m instanceof $x;
+1.1 instanceof $x;  
+1 instanceof $x;    // incompatible
+1.5m instanceof $x; // incompatible
 1.1m instanceof $x; // incompatible
 "a" instanceof $x; // incompatible
 
@@ -137,7 +136,7 @@ $x;
 5.001d instanceof $x;  // incompatible
 
 schema double(5d,3d); // must fail: invalid interval
-schema double(5);     // should be ok
+schema double(5);     // must fail: invalid argument
 schema double(5.0);  // should be ok
 schema double(5.1m); // must fail: invalid argument
 schema double(5d, value=4d); // must fail: invalid argument
@@ -146,41 +145,42 @@ schema double(5d, value=4d); // must fail: invalid argument
 
 $x = schema decfloat;
 $x;
-1 instanceof $x;   
-1.1d instanceof $x;
+1m instanceof $x;
 1.1m instanceof $x;
-"a" instanceof $x; // incompatible
+1 instanceof $x;    // incompatible
+1.1d instanceof $x; // incompatible
+"a" instanceof $x;  // incompatible
 
-$x = schema decfloat(5);
+$x = schema decfloat(5m);
 $x;
-4 instanceof $x;  // incompatible
-5 instanceof $x;
+4m instanceof $x;  // incompatible
+5m instanceof $x;
 5.001m instanceof $x;
 
-$x = schema decfloat(max=5);
+$x = schema decfloat(max=5m);
 $x;
-4 instanceof $x;  
-5 instanceof $x;
+4m instanceof $x;  
+5m instanceof $x;
 5.001m instanceof $x; // incompatible
 
-$x = schema decfloat(-1,1);
+$x = schema decfloat(-1m,1m);
 $x;
 -1.001m instanceof $x; // incompatible
--1 instanceof $x;
-0 instanceof $x;
-1 instanceof $x;
+-1m instanceof $x;
+0m instanceof $x;
+1m instanceof $x;
 1.001m instanceof $x; // incompatible
 
-$x = schema decfloat(value=5);
+$x = schema decfloat(value=5m);
 $x;
 4.999m instanceof $x;  // incompatible
 5m instanceof $x;
 5.001m instanceof $x;  // incompatible
 
-// TODO: uncomment next line when parser is fixed to accept big decimals
-// schema decfloat(-9223372036854775809, 9223372036854775808); // should work (outside long range)
+
+schema decfloat(-9223372036854775809m, 9223372036854775808m); // should work (outside long range)
 schema decfloat(5,3); // must fail: invalid interval
-schema decfloat(5d); // should be ok
+schema decfloat(5d); // must fail: invalid argument
 schema decfloat(5, value=4d); // must fail: invalid argument
 
 
@@ -544,22 +544,22 @@ mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04
               schema date(value=date('2001-06-04T12:08:56Z')));
 
 mergeSchemata(schema decfloat, schema decfloat);
-mergeSchemata(schema decfloat, schema decfloat(value=1.0));
-mergeSchemata(schema decfloat(min=1.0, max=5.0),
-              schema decfloat(min=2.0, max=6.0));
-mergeSchemata(schema decfloat(min=1.0, max=5.0),
-              schema decfloat(min=0.0, max=4.0));
-mergeSchemata(schema decfloat(min=1.0, max=5.0),
-              schema decfloat(value=0.0));
+mergeSchemata(schema decfloat, schema decfloat(value=1m));
+mergeSchemata(schema decfloat(min=1m, max=5m),
+              schema decfloat(min=2m, max=6m));
+mergeSchemata(schema decfloat(min=1m, max=5m),
+              schema decfloat(min=0m, max=4m));
+mergeSchemata(schema decfloat(min=1m, max=5m),
+              schema decfloat(value=0m));
 
 mergeSchemata(schema double, schema double);
-mergeSchemata(schema double, schema double(value=1.0d));
-mergeSchemata(schema double(min=1.0d, max=5.0d),
-              schema double(min=2.0d, max=6.0d));
-mergeSchemata(schema double(min=1.0d, max=5.0d),
-              schema double(min=0.0d, max=4.0d));
-mergeSchemata(schema double(min=1.0d, max=5.0d),
-              schema double(value=0.0d));
+mergeSchemata(schema double, schema double(value=1.0));
+mergeSchemata(schema double(min=1.0, max=5.0),
+              schema double(min=2.0, max=6.0));
+mergeSchemata(schema double(min=1.0, max=5.0),
+              schema double(min=0.0, max=4.0));
+mergeSchemata(schema double(min=1.0, max=5.0),
+              schema double(value=0.0));
 
 mergeSchemata(schema long, schema long);
 mergeSchemata(schema long, schema long(value=1));
@@ -630,22 +630,22 @@ compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-
               schema date(value=date('2001-06-04T12:08:56Z')));
 
 compactSchemata(schema decfloat, schema decfloat);
-compactSchemata(schema decfloat, schema decfloat(value=1.0));
-compactSchemata(schema decfloat(min=1.0, max=5.0),
-              schema decfloat(min=2.0, max=6.0));
-compactSchemata(schema decfloat(min=1.0, max=5.0),
-              schema decfloat(min=0.0, max=4.0));
-compactSchemata(schema decfloat(min=1.0, max=5.0),
-              schema decfloat(value=0.0));
+compactSchemata(schema decfloat, schema decfloat(value=1m));
+compactSchemata(schema decfloat(min=1m, max=5m),
+              schema decfloat(min=2m, max=6m));
+compactSchemata(schema decfloat(min=1m, max=5m),
+              schema decfloat(min=0m, max=4m));
+compactSchemata(schema decfloat(min=1m, max=5m),
+              schema decfloat(value=0m));
 
 compactSchemata(schema double, schema double);
-compactSchemata(schema double, schema double(value=1.0d));
-compactSchemata(schema double(min=1.0d, max=5.0d),
-              schema double(min=2.0d, max=6.0d));
-compactSchemata(schema double(min=1.0d, max=5.0d),
-              schema double(min=0.0d, max=4.0d));
-compactSchemata(schema double(min=1.0d, max=5.0d),
-              schema double(value=0.0d));
+compactSchemata(schema double, schema double(value=1.0));
+compactSchemata(schema double(min=1.0, max=5.0),
+              schema double(min=2.0, max=6.0));
+compactSchemata(schema double(min=1.0, max=5.0),
+              schema double(min=0.0, max=4.0));
+compactSchemata(schema double(min=1.0, max=5.0),
+              schema double(value=0.0));
 
 compactSchemata(schema long, schema long);
 compactSchemata(schema long, schema long(value=1));

@@ -29,6 +29,8 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.ReflectionUtils;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -69,6 +71,14 @@ public class MRAggregate extends MapReduceBaseExpr
     this(new Expr[]{args});
   }
 
+  @Override
+  public Schema getSchema()
+  {
+    Schema in = exprs[0].getSchema();
+    Schema out = in.element(new JsonString("output"));
+    return out != null ? out : SchemaFactory.anySchema();
+  }
+  
   /*
    * (non-Javadoc)
    * 

@@ -118,14 +118,10 @@ $s = schema long;##
   9223372036854775807
 ]
 
-( [ -9223372036854775808m, 0d, 9867796d ] -> $w($s), $r($s) );##
-[
-  -9223372036854775808,
-  0,
-  9867796
-]
- // decimals and doubles are matched
-[ 1.5 ] -> $w($s);##
+[ 1d ] -> $w($s);##
+FAILURE
+ // should fail: non-integer
+[ 1m ] -> $w($s);##
 FAILURE
  // should fail: non-integer
 
@@ -146,7 +142,7 @@ FAILURE
 $s = schema long(value=22);##
 "$s"
 
-( [ 22, 22d, 22m ] -> $w($s), $r($s) );##
+( [ 22, 22, 22 ] -> $w($s), $r($s) );##
 [
   22,
   22,
@@ -170,13 +166,12 @@ $s = schema decfloat;##
   9223372036854775807m
 ]
 
-( [ -9223372036854775807-1, 0.5d, 9223372036854775807 ] -> $w($s), $r($s) );##
-[
-  -9223372036854775808m,
-  0.5m,
-  9223372036854775807m
-]
-  // doubles and longs are matched
+[ 1 ] -> $w($s);##
+FAILURE
+   // should fail: non-decimal
+[ 1.0 ] -> $w($s);##
+FAILURE
+ // should fail: non-decimal
 
 $s = schema decfloat(min=-100.1m);##
 "$s"
@@ -195,7 +190,7 @@ FAILURE
 $s = schema decfloat(value=22m);##
 "$s"
 
-( [ 22, 22d, 22m ] -> $w($s), $r($s) );##
+( [ 22m, 22m, 22m ] -> $w($s), $r($s) );##
 [
   22m,
   22m,
@@ -219,16 +214,12 @@ $s = schema double;##
   9.223372036854776E18
 ]
 
-( [ 1, 1m, 1.5m ] -> $w($s), $r($s) );##
-[
-  1.0,
-  1.0,
-  1.5
-]
- // long and decimal are matched, if representable
-[ 1.1m ] -> $w($s);##
+[ 1 ] -> $w($s);##
 FAILURE
- // should fail (not representable)
+   // should fail: non-double
+[ 1m ] -> $w($s);##
+FAILURE
+  // should fail: non-double
 
 $s = schema double(min=-100.1d);##
 "$s"
@@ -247,7 +238,7 @@ FAILURE
 $s = schema double(value=22d);##
 "$s"
 
-( [ 22, 22d, 22m ] -> $w($s), $r($s) );##
+( [ 22d, 22d, 22d ] -> $w($s), $r($s) );##
 [
   22.0,
   22.0,
@@ -793,59 +784,57 @@ FAILURE
 // -- or ------------------------------------------------------------------------------------------
 
 // some tricky cases
-$s = schema long(min=0) | decfloat(max=0);##
+$s = schema long(min=0) | decfloat(max=0m);##
 "$s"
 
-( [ -1.5, -1, 0, 1, -1.0, 0.0, 1.0] -> $w($s), $r($s) );##
+( [ -1.5m, -1m, 0m, 1, 0 ] -> $w($s), $r($s) );##
 [
   -1.5m,
   -1m,
-  0,
+  0m,
   1,
-  -1m,
-  0,
-  1
+  0
 ]
 
 [ null ]  -> $w($s);##
 FAILURE
  // should fail
-[ 1.5 ]  -> $w($s);##
+[ -1 ]    -> $w($s);##
 FAILURE
  // should fail
 
-$s = schema long(min=0) | decfloat(max=0) | nonnull;##
+$s = schema long(min=0) | decfloat(max=0m) | nonnull;##
 "$s"
 
-( [ -1.5, -1, 0, 1, -1.0, 0.0, 1.0, 1.5] -> $w($s), $r($s) );##
+( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1 ] -> $w($s), $r($s) );##
 [
   -1.5m,
   -1m,
-  0,
+  0m,
   1,
-  -1m,
   0,
-  1,
-  1.5
-]
-
-[ null ]  -> $w($s);##
-FAILURE
- // should fail
-
-$s = schema long(min=0) | decfloat(max=0) | any;##
-"$s"
-
-( [ -1.5, -1, 0, 1, -1.0, 0.0, 1.0, 1.5, null ] -> $w($s), $r($s) );##
-[
-  -1.5m,
-  -1m,
-  0,
-  1,
-  -1m,
-  0,
-  1,
+  1m,
   1.5,
+  -1
+]
+
+[ null ]  -> $w($s);##
+FAILURE
+ // should fail
+
+$s = schema long(min=0) | decfloat(max=0m) | any;##
+"$s"
+
+( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1, null ] -> $w($s), $r($s) );##
+[
+  -1.5m,
+  -1m,
+  0m,
+  1,
+  0,
+  1m,
+  1.5,
+  -1,
   null
 ]
 
@@ -947,7 +936,7 @@ $sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], sche
   9.223372036854776E18
 ]
 
-$sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat(max=0) | decfloat(min=0));##
+$sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat(max=0m) | decfloat(min=0m));##
 [
   -9223372036854775808m,
   -45346m,
@@ -1187,7 +1176,7 @@ $sort([ {b: 1}, {b: 1, c:1}, {b:1, c:0}, {b:2}, {b:0}, {} ], schema { *:long });
 ]
 
 
-$sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b:long, c?:decfloat });##
+$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, c?:decfloat });##
 [
   {
     "b": 0
@@ -1209,7 +1198,7 @@ $sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b:long, c
   }
 ]
 
-$sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b?:long, c?:decfloat });##
+$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, c?:decfloat });##
 [
   {
     "b": 0
@@ -1231,7 +1220,7 @@ $sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b?:long, 
   }
 ]
 
-$sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b:long, *:decfloat });##
+$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, *:decfloat });##
 [
   {
     "b": 0
@@ -1253,7 +1242,7 @@ $sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b:long, *
   }
 ]
 
-$sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b?:long, *:decfloat });##
+$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, *:decfloat });##
 [
   {
     "b": 0
@@ -1276,7 +1265,7 @@ $sort([ {b: 1, c:1}, {b: 1, c:2}, {b:1, c:0}, {b:2}, {b:0} ], schema { b?:long, 
 ]
 
 
-$sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { b?:decfloat, c:long });##
+$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c:long });##
 [
   {
     "b": 0m,
@@ -1298,7 +1287,7 @@ $sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { b?:decflo
   }
 ]
 
-$sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { b?:decfloat, c?:long });##
+$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c?:long });##
 [
   {
     "b": 0m,
@@ -1320,7 +1309,7 @@ $sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { b?:decflo
   }
 ]
 
-$sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { c:long, *:decfloat });##
+$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c:long, *:decfloat });##
 [
   {
     "b": 0m,
@@ -1342,7 +1331,7 @@ $sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { c:long, *
   }
 ]
 
-$sort([ {c: 1, b:1}, {c: 1, b:2}, {c:1, b:0}, {c:2}, {c:0} ], schema { c?:long, *:decfloat });##
+$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c?:long, *:decfloat });##
 [
   {
     "b": 0m,

@@ -20,6 +20,7 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Parameters;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.Bool3;
 
 /** Generic schema used for types that do not have parameters */
 public final class GenericSchema extends Schema
@@ -81,6 +82,25 @@ public final class GenericSchema extends Schema
     return type.getMainClass().isInstance(value);
   }
 
+  public Bool3 is(JsonType type, JsonType ... types)
+  {
+    JsonType myType = getType();
+    assert myType != null; // schemata with myType == null override this method
+    boolean first = type == myType;
+    if (first)
+    {
+      return Bool3.TRUE;
+    }
+    else
+    {
+      // test whether all are false
+      for (int i=0; i<types.length; i++)
+      {
+        if (types[i] == myType) return Bool3.TRUE;
+      }
+      return Bool3.FALSE;
+    }
+  }
   
   // -- getters -----------------------------------------------------------------------------------
   
