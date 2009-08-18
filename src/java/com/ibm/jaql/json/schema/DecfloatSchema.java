@@ -16,13 +16,10 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.MutableJsonDecimal;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a 128 bit decimal float value */
@@ -45,9 +42,7 @@ public final class DecfloatSchema extends RangeSchema<JsonDecimal>
     return parameters;
   }
 
-  // used for matching
-  private MutableJsonDecimal temp = new MutableJsonDecimal();
-  
+ 
   //-- construction ------------------------------------------------------------------------------
   
   public DecfloatSchema(JsonRecord args)
@@ -102,26 +97,16 @@ public final class DecfloatSchema extends RangeSchema<JsonDecimal>
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { JsonDecimal.class, JsonLong.class, JsonDouble.class }; 
+    return new Class[] { JsonDecimal.class }; 
   }
 
   public boolean matches(JsonValue value)
   {
-    if (value == null || !value.getType().isNumber())
+    if (!(value instanceof JsonDecimal))
     {
       return false;
     }
     
-    // convert to decimal
-    try 
-    {
-      temp.set( ((JsonNumber)value).decimalValueExact() );
-    }
-    catch (ArithmeticException e)
-    {
-      return false;
-    }
-
     // match
     if (this.value != null)
     {

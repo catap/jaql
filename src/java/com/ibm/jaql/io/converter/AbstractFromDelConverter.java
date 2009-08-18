@@ -39,13 +39,17 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * Base class for converters that convert a delimited file into JSON. The default implementation
  * can be found in the vendor package.
  * 
- * Incoming lines are first tokenized and then converted into either a JSON type. The JSON type 
- * depends on whether field names have been provided to the converter. If so, the converter 
- * produces a record for each input line; otherwise, it produces an array. 
+ * Incoming lines are first tokenized using an ASCII delimiter and then, optionally,
+ * converted into a JSON type. The output depends on whether field names have been provided to 
+ * the converter. If so, the converter produces a record for each input line; otherwise, it 
+ * produces an array. 
  * 
- * The converted has support for quoted values in the input data. It can be parametrized
- * by a quote character (defaults to <code>'"'</code>). Quotes may be escaped using double-quoting,
- * i.e. <code>"te""st"</code> will produce a single string <code>"te\"st"</code>.
+ * The converter has support for quoted values in the input data. It can be parametrized
+ * by an ASCII quote character (defaults to <code>'"'</code>). Quotes may be escaped using 
+ * double-quoting, i.e. <code>"te""st"</code> will produce a single string <code>"te\"st"</code>.
+ * 
+ * This converter is UTF-8 compatible. (This is due to the fact that ASCII characters
+ * cannot occur within a multi-byte UTF-8 codepoint).
  */
 public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K, V> {
   
@@ -345,7 +349,7 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
     // check that we got the right number of fields
     if (field != noFields || start < length) 
     {
-      throw new RuntimeException("Wrong number of fields on input at line at position " + position);
+      throw new RuntimeException("Wrong number of fields on input at position " + position);
     }
 
     // done

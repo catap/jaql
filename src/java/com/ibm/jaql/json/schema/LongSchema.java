@@ -15,14 +15,11 @@
  */
 package com.ibm.jaql.json.schema;
 
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.expr.core.Parameters;
 
 /** Schema for a 64 bit integer */
@@ -44,9 +41,6 @@ public final class LongSchema extends RangeSchema<JsonLong>
     }
     return parameters;
   }
-  
-  // used for matching
-  private MutableJsonLong temp = new MutableJsonLong();
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -103,27 +97,17 @@ public final class LongSchema extends RangeSchema<JsonLong>
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { JsonLong.class, JsonDouble.class, JsonDecimal.class }; 
+    return new Class[] { JsonLong.class }; 
   }
   
   @Override
   public boolean matches(JsonValue value)
   {
-    if (value == null || !value.getType().isNumber())
+    if (!(value instanceof JsonLong))
     {
       return false;
     }
     
-    // convert to long
-    try 
-    {
-      temp.set( ((JsonNumber)value).longValueExact() );
-    }
-    catch (ArithmeticException e)
-    {
-      return false;
-    }
-
     // match
     if (this.value != null)
     {

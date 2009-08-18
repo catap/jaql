@@ -21,7 +21,6 @@ import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.lang.core.Env;

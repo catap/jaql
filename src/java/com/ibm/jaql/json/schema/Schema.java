@@ -65,7 +65,7 @@ public abstract class Schema implements Comparable<Schema>
    */
   public Bool3 is(JsonType type, JsonType ... types)
   {
-    // default implementation uses getSchemaType(); overridden in NonNullSchema and OrSchema
+    // default implementation uses getSchemaType(); overridden in NonNullSchema and OrSchema and GenericSchema
     JsonType myType = getSchemaType().getJsonType();
     assert myType != null; // schemata with myType == null override this method
     boolean first = type == myType;
