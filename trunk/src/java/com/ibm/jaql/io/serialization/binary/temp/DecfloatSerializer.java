@@ -23,11 +23,10 @@ import java.math.BigDecimal;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.DecfloatSchema;
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonDecimal;
 
-class DecfloatSerializer extends BinaryBasicSerializer<JsonNumber>
+class DecfloatSerializer extends BinaryBasicSerializer<JsonDecimal>
 {
   private DecfloatSchema schema;
   
@@ -57,7 +56,7 @@ class DecfloatSerializer extends BinaryBasicSerializer<JsonNumber>
   }
 
   @Override
-  public void write(DataOutput out, JsonNumber value) throws IOException
+  public void write(DataOutput out, JsonDecimal value) throws IOException
   {
     // check match
     if (!schema.matches(value))
@@ -72,7 +71,7 @@ class DecfloatSerializer extends BinaryBasicSerializer<JsonNumber>
     }
     
     // write
-    String str = value.decimalValue().toString();
+    String str = value.get().toString();
     out.writeUTF(str);
   }
   
