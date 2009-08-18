@@ -201,8 +201,11 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       // we do not HAVE to sort the names/values in the record, but it is much cheaper to 
       // do that now because we can exploit the knowledge that the additional names and 
       // required/optional names are sorted among themselves
-      merge(names, values, noAdditional, n);
-      t.set(names, values, n, true);
+      
+      // FIXME: there is a bug in the merge code...
+      // merge(names, values, noAdditional, n);
+      // t.set(names, values, n, true);
+      t.set(names, values, n, false);
     }
     else
     {
@@ -219,6 +222,8 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   {
     NameValue temp = new NameValue(); // when temp.name != null, stores a value to be inserted
     int p0=0, p1=noAdditional; 
+    
+    
     while (p0<p1 && p1<n)
     {
       // check whether p0 reached a position that we marked unused
