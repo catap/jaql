@@ -227,6 +227,9 @@ $s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
 [ { a: true, d:"!", b:null } ] -> $w($s); // should fail
 [ { a: true, d:"!", e:null } ] -> $w($s); // should fail
 
+$s = schema { a: long, b: long, c: long, *: long };
+( [ { d:4, e:5, a: 1, b:2, c:3 } ] -> $w($s), $r($s) ); 
+
 
 // -- or ------------------------------------------------------------------------------------------
 
