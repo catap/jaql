@@ -84,6 +84,16 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       Arrays.fill(bytes, (byte)0);
     }
     
+    public String toString()
+    {
+      String s = "";
+      for(int i=0; i<bytes.length*8; i++)
+      {
+        s += get(i) ? "1" : "0";
+      }
+      return s;
+    }
+    
     public void set(int bit)
     {
       bytes[bit/8] |= MASK[bit % 8];
@@ -100,6 +110,11 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   {
     JsonString name = null;
     JsonValue value = null;
+    
+    public String toString()
+    {
+      return name + ": " + value;
+    }
   }
   
   // -- construction ------------------------------------------------------------------------------
@@ -191,7 +206,7 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     JsonValue[] values = t.getInternalValuesArray();
 
     // read the data
-    readAdditional(in, names, values, 0, noAdditional, false);    
+    readAdditional(in, names, values, 0, noAdditional);    
     int noPresent = readRequiredOptional(in, names, values, noAdditional, optionalBits);
     int n = noAdditional + noPresent;
     
@@ -201,11 +216,11 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       // we do not HAVE to sort the names/values in the record, but it is much cheaper to 
       // do that now because we can exploit the knowledge that the additional names and 
       // required/optional names are sorted among themselves
+      merge(names, values, noAdditional, n);
+      t.set(names, values, n, true);   
       
-      // FIXME: there is a bug in the merge code...
-      // merge(names, values, noAdditional, n);
-      // t.set(names, values, n, true);
-      t.set(names, values, n, false);
+      // alternatively, do not sort
+      // t.set(names, values, n, false);
     }
     else
     {
@@ -220,6 +235,7 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
    * fact that the intervals [0...noAdditional-1] and [noAdditional...n-1] are both sorted. */
   private void merge(JsonString[] names, JsonValue[] values, int noAdditional, int n)
   {
+
     NameValue temp = new NameValue(); // when temp.name != null, stores a value to be inserted
     int p0=0, p1=noAdditional; 
     
@@ -262,11 +278,14 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
           // temp < p1 < p0
           swap(names, values, p0, temp);
         }
-        else
+        else 
         {
-          // p1 < p0, p1 < temp 
+          // p1 < temp, p1 < p0
           swap(names, values, p0, p1);
-          p1++;
+
+          // now the value at p1 might be in a wrong place; move it to the right place
+          // this should be rare/inexpensive in common cases
+          insertionSort(names, values, p1, n);
         }
         p0++;
       }
@@ -277,11 +296,12 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     {
       names[p0] = temp.name;
       values[p0] = temp.value;
+      insertionSort(names, values, p0, n);
     }     
   }
   
   /** Exchanges name/value pairs at positions i and j */
-  private void swap(JsonString[] names, JsonValue[] values, int i, int j)
+  private final void swap(JsonString[] names, JsonValue[] values, int i, int j)
   {
     JsonString tn = names[i];
     JsonValue tv = values[i];
@@ -292,7 +312,7 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   }
 
   /** Exchanges name/value pair at positions i with t */
-  private void swap(JsonString[] names, JsonValue[] values, int i, NameValue t)
+  private final void swap(JsonString[] names, JsonValue[] values, int i, NameValue t)
   {
     JsonString tn = names[i];
     JsonValue tv = values[i];
@@ -301,12 +321,31 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     t.name = tn;
     t.value = tv;
   }
+  
+  /** Requires that [i+1,n) is sorted, ensures that [i,n) is sorted. */
+  private final void insertionSort(JsonString[] names, JsonValue[] values, int i, int n)
+  {
+    int p = Arrays.binarySearch(names, i+1, n, names[i]);
+    assert p<0;
+    p = -(p+1);
+    if (p > i+1) // not at beginning
+    {
+      p--;
+      JsonString ts = names[i];
+      JsonValue tv = values[i];
+      int l = p-i;
+      System.arraycopy(names, i+1, names, i, l);
+      System.arraycopy(values, i+1, values, i, l);
+      names[p] = ts;
+      values[p] = tv;
+    }
+  }
 
   /** Read <code>length</code> additional fields from the provided input stream into the 
    * <code>names</code> and <code>values</code> arrays at the specified <code>offset</code>. 
    * The arrays have to be sufficiently large. */
   private void readAdditional(DataInput in, JsonString[] names, JsonValue[] values, int offset, 
-      int length, boolean reuseNames) 
+      int length) 
   throws IOException
   {
     // read the additional fields
@@ -315,8 +354,7 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       for (int i=0; i<length; i++)
       {
         int j = offset+i;
-        // TODO: reuse 
-        names[j] = (JsonString)nameSerializer.read(in, reuseNames ? names[j] : null);
+        names[j] = (JsonString)nameSerializer.read(in, names[j]);
         values[j] = additionalSerializer.read(in, values[j]);
       }
     }
@@ -539,8 +577,8 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       ensureCacheCapacity2(noAdditional2);
       
       // and read
-      readAdditional(in1, additionalNamesCache1, additionalValuesCache1, 0, noAdditional1, true);
-      readAdditional(in2, additionalNamesCache2, additionalValuesCache2, 0, noAdditional2, true);
+      readAdditional(in1, additionalNamesCache1, additionalValuesCache1, 0, noAdditional1);
+      readAdditional(in2, additionalNamesCache2, additionalValuesCache2, 0, noAdditional2);
     }
     
     // start the comparison process

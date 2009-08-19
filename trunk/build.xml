@@ -130,6 +130,7 @@
         <mkdir dir="${test.log.dir}" />
         <delete dir="${test.cache.data}" />
         <mkdir dir="${test.cache.data}" />
+        <mkdir dir="${test.cache.data}/data" />
         <delete dir="${test.conf.override.dir}" />
         <mkdir dir="${test.conf.override.dir}" />
         <copy todir="${test.cache.data}">
@@ -139,16 +140,10 @@
             <fileset dir="${test.src.dir}" includes="*.jar" />
         </copy>
         <copy todir="${test.cache.data}">
-            <fileset dir="${test.src.dir}" includes="*.dat" />
-        </copy>
-        <copy todir="${test.cache.data}">
-            <fileset dir="${test.src.dir}" includes="*.hdr" />
-        </copy>
-        <copy todir="${test.cache.data}">
             <fileset dir="${test.src.dir}" includes="*.jql" />
         </copy>
-        <copy todir="${test.cache.data}">
-            <fileset dir="${test.src.dir}" includes="*.json" />
+        <copy todir="${test.cache.data}/data">
+            <fileset dir="${test.src.dir}/data" />
         </copy>
         <mkdir dir="${test.classes.dir}" />
         <unjar src="${build.dir}/jaql.jar" dest="${build.dir}/classes" />
