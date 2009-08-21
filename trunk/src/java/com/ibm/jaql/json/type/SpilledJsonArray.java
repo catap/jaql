@@ -324,10 +324,17 @@ public class SpilledJsonArray extends JsonArray
   }
   
   @Override
-  public SpilledJsonArray getImmutableCopy() throws Exception
+  public JsonArray getImmutableCopy() throws Exception
   {
     // FIXME: copy is not immutable
-    return getCopy(null);
+    if (count() < cacheSize)
+    {
+      return new BufferedJsonArray(cache, (int)count(), true);
+    }
+    else
+    {
+      return getCopy(null);
+    }
   }
   
   /** Returns {@link JsonEncoding#ARRAY_SPILLED}.
