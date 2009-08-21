@@ -58,7 +58,7 @@ public final class AnyAgg extends AlgebraicAggregate
   @Override
   public void addInitial(JsonValue value) throws Exception
   {
-    if( result == null  )
+    if( result == null && value != null )
     {
       result = value.getCopy(null);
     }
@@ -73,7 +73,7 @@ public final class AnyAgg extends AlgebraicAggregate
   @Override
   public void addPartial(JsonValue value) throws Exception
   {
-    if( result == null  )
+    if( result == null && value != null )
     {
       result = value.getCopy(null);
     }
