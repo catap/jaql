@@ -55,6 +55,7 @@ public final class BufferedJsonArray extends JsonArray
   {
     if (copy)
     {
+      values = new JsonValue[size];
       setCopy(values, size);
     }
     else
@@ -165,7 +166,7 @@ public final class BufferedJsonArray extends JsonArray
     for (int i = 0; i < size; i++)
     {
       JsonValue v = values[i]; 
-      t.values[i] = v==null ? null : v.getCopy(values[i]);
+      t.values[i] = JsonUtil.getCopy(v, values[i]);
     }
     return t;
   }
@@ -173,8 +174,12 @@ public final class BufferedJsonArray extends JsonArray
   @Override
   public JsonArray getImmutableCopy() throws Exception
   {
-    // FIXME: copy is not immutable
-    return getCopy(null);
+    BufferedJsonArray t = new BufferedJsonArray(this.size);
+    for (int i = 0; i < size; i++)
+    {
+      t.values[i] = JsonUtil.getImmutableCopy(values[i]);
+    }
+    return t;
   }
   
   // -- mutation ----------------------------------------------------------------------------------

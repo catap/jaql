@@ -90,8 +90,8 @@ public class KeyLookupFn extends IterExpr
     {
       JsonArray a = JaqlUtil.enforceNonNull((JsonArray)av);
       a.getAll(keyval);
-      JsonValue key = JsonUtil.getCopy(keyval[0], null);
-      JsonValue val = JsonUtil.getCopy(keyval[1], null);
+      JsonValue key = JsonUtil.getImmutableCopy(keyval[0]);
+      JsonValue val = JsonUtil.getImmutableCopy(keyval[1]);
       inner.put(key, val);
     }
     
