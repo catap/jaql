@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter;
-import com.ibm.jaql.io.hadoop.FromDelConverter;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -25,7 +25,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
-import java.util.Map.Entry;
 
 /**
  * An expression that constructs an I/O descriptor for HDFS file access.
@@ -33,7 +32,7 @@ import java.util.Map.Entry;
 @JaqlFn(fnName="del", minArgs=1, maxArgs=2)
 public class DelFn extends AbstractHandleFn
 {
-  private final static JsonValue TYPE = new JsonString("hdfs");
+  private final static JsonValue TYPE = new JsonString("del");
   /**
    * exprs[0]: path
    * exprs[1]: options 
@@ -69,11 +68,13 @@ public class DelFn extends AbstractHandleFn
   @Override
   public JsonRecord eval(Context context) throws Exception
   {
-    BufferedJsonRecord options = new BufferedJsonRecord();
-    options.add(Adapter.FORMAT_NAME, FromDelConverter.FORMAT);
-    options.add(DefaultHadoopInputAdapter.CONVERTER_NAME, FromDelConverter.CONVERTER_NAME);
+    BufferedJsonRecord descriptor = new BufferedJsonRecord();
+    descriptor.add(Adapter.TYPE_NAME, getType());
+    descriptor.add(Adapter.LOCATION_NAME, location().eval(context));
+    
     if (exprs.length > 1)
     {
+      BufferedJsonRecord options = new BufferedJsonRecord();
       JsonValue customOptions = exprs[1].eval(context);
       if (!(customOptions instanceof JsonRecord))
       {
@@ -83,12 +84,11 @@ public class DelFn extends AbstractHandleFn
       {
         options.add(option.getKey(), option.getValue());
       }
+      // TODO: fields is an i/o option, schema is a input-only option 
+      descriptor.add(Adapter.INOPTIONS_NAME, options);
+      descriptor.add(Adapter.OUTOPTIONS_NAME, options);
     }
 
-    BufferedJsonRecord descriptor = new BufferedJsonRecord();
-    descriptor.add(Adapter.TYPE_NAME, getType());
-    descriptor.add(Adapter.LOCATION_NAME, location().eval(context));
-    descriptor.add(Adapter.INOPTIONS_NAME, options);
     return descriptor;
   }
 }
