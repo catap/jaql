@@ -23,6 +23,7 @@ import static com.ibm.jaql.json.type.JsonType.LONG;
 import static com.ibm.jaql.json.type.JsonType.NULL;
 import static com.ibm.jaql.json.type.JsonType.RECORD;
 import static com.ibm.jaql.json.type.JsonType.STRING;
+import static com.ibm.jaql.json.type.JsonType.DATE;
 
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.json.type.MutableJsonDecimal;
 import com.ibm.jaql.json.type.MutableJsonDouble;
 import com.ibm.jaql.json.type.MutableJsonLong;
@@ -213,6 +215,10 @@ public class StringConverter
       out.type = STRING;
       emptyTarget = null; // unused
       break;
+    case DATE:
+      out.type = DATE;
+      emptyTarget = new MutableJsonDate();
+      break;
     case ARRAY:
     case RECORD:
       return false;
@@ -247,6 +253,9 @@ public class StringConverter
       return target;
     case STRING:
       return in;      
+    case DATE:
+      ((MutableJsonDate)target).set(in.toString());
+      return target;
     default:
       throw new IllegalArgumentException("type conversion to " + out.type.getName() + " unsupported.");
     }

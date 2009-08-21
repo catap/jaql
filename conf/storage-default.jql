@@ -33,6 +33,20 @@
        			           configurator : 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}}
 },
 
+// deliminated data (CSV)
+{key: 'del',
+ val: { inoptions: {
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+          format:       'org.apache.hadoop.mapred.TextInputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.FromDelConverter' },
+        outoptions: { 
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+          format:       'org.apache.hadoop.mapred.TextOutputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.ToDelConverter' }}
+},
+
 // jaqltemp data
 {key:   'jaqltemp',
  val: {inoptions  : {adapter      : 'com.ibm.jaql.io.hadoop.TempHadoopInputAdapter', 
