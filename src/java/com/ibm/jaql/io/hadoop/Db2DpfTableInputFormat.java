@@ -121,7 +121,7 @@ public class Db2DpfTableInputFormat extends AbstractDb2InputFormat
     {
       DpfSplit dpfSplit = (DpfSplit)split;
       Properties props = new Properties();
-      props.setProperty("CONNECTNODE", Integer.toString(dpfSplit.partitionId));
+      props.setProperty("connectNode", Integer.toString(dpfSplit.partitionId));
       init(conf, props);
       
       Statement s = conn.createStatement();

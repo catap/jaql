@@ -219,6 +219,8 @@ class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       merge(names, values, noAdditional, n);
       t.set(names, values, n, true);   
       
+      merge(names, values, noAdditional, n);
+      t.set(names, values, n, true);
       // alternatively, do not sort
       // t.set(names, values, n, false);
     }

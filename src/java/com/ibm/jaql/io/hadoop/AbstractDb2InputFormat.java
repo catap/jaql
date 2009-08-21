@@ -31,7 +31,6 @@ import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 
@@ -74,7 +73,7 @@ public abstract class AbstractDb2InputFormat implements InputFormat<JsonHolder, 
         {
           JsonString key = f.getKey();
           JsonValue value = f.getValue();
-          props.setProperty(key.toString(), JsonUtil.printToString(value));
+          props.setProperty(key.toString(), value.toString());
         }
       }
       catch(ParseException pe)
@@ -90,7 +89,7 @@ public abstract class AbstractDb2InputFormat implements InputFormat<JsonHolder, 
 
 //    DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
 
-    conn = driver.connect(url, null/*props*/);
+    conn = driver.connect(url, props);
   }
   
   protected void init(JobConf conf) throws IOException, SQLException
