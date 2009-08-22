@@ -105,7 +105,8 @@ public class BufferedJsonRecord extends JsonRecord {
   public JsonRecord getImmutableCopy() throws Exception
   {
     // FIXME: copy is not immutable
-    BufferedJsonRecord t = new BufferedJsonRecord(this.size);
+    BufferedJsonRecord t = new BufferedJsonRecord(size);
+    t.resize(size);
     for (int i = 0; i < size; i++)
     {
       t.names[i] = (JsonString)JsonUtil.getImmutableCopy(names[i]); 
