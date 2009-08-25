@@ -216,7 +216,7 @@ if $cygwin; then
   HADOOP_HOME=`cygpath -d "$HADOOP_HOME"`
   HADOOP_CONF_DIR=`cygpath -d "$HADOOP_CONF_DIR"`
   HADOOP_CONF_OVERRIDE_DIR=`cygpath -d "$HADOOP_CONF_OVERRIDE_DIR"`
-  HADOOP_LOG_DIR=`cygpath -d "$HADOOP_LOG_DIR"`
+  HADOOP_LOG_DIR=`cygpath -w "$HADOOP_LOG_DIR"`
 fi
 # setup 'java.library.path' for native-hadoop code if necessary
 JAVA_LIBRARY_PATH=''
