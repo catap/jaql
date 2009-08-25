@@ -45,7 +45,7 @@ Let's start off with an example of an application log:
     msg: "Hello, world! was interesting, but lets start a new topic please" 
   },
   { from: 81, 
-    to: [201, 94 40],
+    to: [201, 94, 40],
     ts: 1243361567,
     msg: "Agreed, this topic is not for Joe, but more suitable for Ann" 
   },
