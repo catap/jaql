@@ -19,3 +19,14 @@ for version 0.19.0, you use ant as follows:
   # ant jar -Dhadoop.version="0.19.0"
 
 We currently support Hadoop versions 0.17.1, 0.18.1, 0.18.3, and 0.19.0.
+
+= Eclipse Setup =
+The source code is a common Eclipse java project. It can be imported into 
+Eclipse. It needs JDK 1.6 to compile. SUN JDK is preferred since hadoop prefers 
+SUN JDK. `jaql/.classpath` contains all the Java libraries from multiple 
+versions of hadoop and hbase. And `jaql/.project` contains stuff related to 
+antlr and JavaCC. Eclipse `Content Assist` does not work with this `.classpath` 
+file.  `jaql/eclipse` directory contains `.classpath` file working with a 
+specific version of hadoop and `.project` without antlr and JavaCC stuff. These
+`.classpath` and `.project` are preferred if you wan to work with only a 
+specific version of hadoop and don't want to use antlr and JavaCC plugin. 
