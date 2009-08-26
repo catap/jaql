@@ -155,6 +155,7 @@ import com.ibm.jaql.lang.expr.span.SpanOverlapsFn;
 import com.ibm.jaql.lang.expr.span.TokenizeFn;
 import com.ibm.jaql.lang.expr.string.ConvertFn;
 import com.ibm.jaql.lang.expr.string.EndsWithFn;
+import com.ibm.jaql.lang.expr.string.JsonFn;
 import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.StrJoinFn;
@@ -280,6 +281,7 @@ public class FunctionLib
     add(StrSplitNFn.class);
     add(StrJoinFn.class);
     add(ConvertFn.class);
+    add(JsonFn.class);
     add(RecordFn.class);
     add(ArityFn.class);
     add(PairwiseFn.class);
