@@ -32,6 +32,7 @@ public class JsonConstructor
   static
   {
     add(new JMethod("date", DateConstructors.class, "date", 1));
+    add(new JMethod("span", SpanConstructors.class, "span", 2));
   }
 
   /**
