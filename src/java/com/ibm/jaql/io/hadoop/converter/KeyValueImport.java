@@ -47,7 +47,7 @@ public interface KeyValueImport<K,V> {
    * 
    * @param key
    * @param val
-   * @param tgt
+   * @param target
    */
   JsonValue convert(K key, V val, JsonValue target);
   
