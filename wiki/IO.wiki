@@ -45,8 +45,8 @@ and process it in parallel using Hadoop's map/reduce framework.
 
 Examples using Hadoop are provided below.
 Our second example writes to an HDFS 
-[http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/SequenceFile.html SequenceFile].
-A SequenceFile is a collection of key-value pairs. 
+[http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/io/SequenceFile.html SequenceFile].
+A !SequenceFile is a collection of key-value pairs. 
 Jaql's hdfsWrite() function only writes data into the value field, leaving the key field empty.
 In example 2, the input data is represented as a literal, but in general the input
 can be an expression that is the result of a Jaql query.
