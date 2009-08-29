@@ -20,17 +20,23 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * Merge multiple pipes into one pipe in arbitrary order (like SQL's UNION ALL) 
  * 
  * @author kbeyer
  */
-@JaqlFn(fnName="merge", minArgs=1, maxArgs=Expr.UNLIMITED_EXPRS)
 public class MergeFn extends IterExpr // TODO: add intersect, union, difference, concat
 {
-
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par1u
+  {
+    public Descriptor()
+    {
+      super("merge", MergeFn.class);
+    }
+  }
+  
   public MergeFn(Expr[] inputs)
   {
     super(inputs);

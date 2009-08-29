@@ -21,14 +21,21 @@ import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "now", minArgs = 0, maxArgs = 0)
 public class NowFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par00
+  {
+    public Descriptor()
+    {
+      super("now", NowFn.class);
+    }
+  }
+  
   /**
    * 
    */

@@ -320,12 +320,25 @@ public abstract class JaqlBaseTestCase extends TestCase
   {
     // rewrite expr
     RewriteEngine rewriter = new RewriteEngine();
-    expr = rewriter.run(parser.env, expr);
-    captures.clear();
-    System.err.println("\nRewritten query:");
-    expr.decompile(System.err, captures);
-    System.err.println(";\nEnd rewritten query");
-    context.reset();
+    try
+    {
+      expr = rewriter.run(parser.env, expr);
+      captures.clear();
+      System.err.println("\nRewritten query:");
+      expr.decompile(System.err, captures);
+      System.err.println(";\nEnd rewritten query");
+      context.reset();
+    }
+    catch (Exception e)
+    {
+      printHeader(str);
+      queryFailure(e);
+      str.print(FAILURE);
+      printFooter(str);
+      str.flush();
+      return;
+    }
+    
     // eval
     formatResult(-1, expr, context, str);
   }

@@ -5,7 +5,7 @@ package com.ibm.jaql.json.type;
 
 import java.util.HashMap;
 
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.Function;
 
 /** Enumeration of all JSON types. */
 public enum JsonType
@@ -26,7 +26,7 @@ public enum JsonType
   BINARY(JsonBinary.class, "binary"),
   DATE(JsonDate.class, "date"),
   SCHEMA(JsonSchema.class, "schematype"),
-  FUNCTION(JaqlFunction.class, "function"),
+  FUNCTION(Function.class, "function"),
 
   // Extensiblity for writable java objects, but the class name is written on every instance!
 

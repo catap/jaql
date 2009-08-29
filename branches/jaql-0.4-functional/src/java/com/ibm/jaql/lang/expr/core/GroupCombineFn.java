@@ -29,7 +29,8 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.BaseUtil;
@@ -43,17 +44,24 @@ import com.ibm.jaql.util.LongArray;
  *    partialFn = fn($k,$P) => $P
  *    finalFn = fn($k,$P) => $Y
  */
-@JaqlFn(fnName="groupCombine", minArgs=4, maxArgs=4)
 public class GroupCombineFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par44
+  {
+    public Descriptor()
+    {
+      super("groupCombine", GroupCombineFn.class);
+    }
+  }
+  
   public static final long memoryLimit = 32 * 1024 * 1024;  // TODO: make configurable
   public static final long keyLimit    =  1 * 1024 * 1024;  // TODO: make configurable
   protected JsonHashTable initialHT;
   protected JsonHashTable partialHT;
   protected JsonValue[] pair = new JsonValue[2];
-  protected JaqlFunction initialFn;
-  protected JaqlFunction partialFn;
-  protected JaqlFunction finalFn;
+  protected Function initialFn;
+  protected Function partialFn;
+  protected Function finalFn;
   protected File spillFileHandle;
   protected RandomAccessFile spillFile;
   protected LongArray spillOffsets;
@@ -140,10 +148,10 @@ public class GroupCombineFn extends IterExpr
   }
 
 
-  private JaqlFunction getFunction(Context context, Expr expr) throws Exception
+  private Function getFunction(Context context, Expr expr) throws Exception
   {
-    JaqlFunction f = JaqlUtil.enforceNonNull((JaqlFunction)expr.eval(context));
-    if( f.getNumParameters() != 2 )
+    Function f = JaqlUtil.enforceNonNull((Function)expr.eval(context));
+    if( f.canBeCalledWith(2) )
     {
       throw new RuntimeException("function must have two parameters: "+f);
     }
@@ -157,7 +165,8 @@ public class GroupCombineFn extends IterExpr
     while( tempIter.next() )
     {
       JsonValue key = tempIter.key();
-      JsonIterator iter = initialFn.iter(context, key, tempIter.values(0));
+      initialFn.setArguments(key, tempIter.values(0));
+      JsonIterator iter = initialFn.iter(context);
       for (JsonValue value : iter)
       {
         partialHT.add(0, key, value);
@@ -205,10 +214,10 @@ public class GroupCombineFn extends IterExpr
             return false;
           }
           JsonValue key = tempIter.key();
-          inner = 
-            finalFn.iter(context, key,
-                partialFn.iter(context, key, 
-                    initialFn.iter(context, key, tempIter.values(0))));
+          initialFn.setArguments(key, tempIter.values(0));
+          partialFn.setArguments(key, initialFn.iter(context));
+          finalFn.setArguments(key, partialFn.iter(context));
+          inner = finalFn.iter(context);
         }
       }
     };
@@ -236,9 +245,9 @@ public class GroupCombineFn extends IterExpr
             return false;
           }
           JsonValue key = tempIter.key();
-          inner = 
-            finalFn.iter(context, key,
-                partialFn.iter(context, key, tempIter.values(0)));
+          partialFn.setArguments(key, tempIter.values(0));
+          finalFn.setArguments(key, partialFn.iter(context));
+          inner = finalFn.iter(context);
         }
       }
     };
@@ -267,7 +276,8 @@ public class GroupCombineFn extends IterExpr
             return false;
           }
           
-          inner = finalFn.iter(context, merger.currentKey(), merger);
+          finalFn.setArguments(merger.currentKey(), merger);
+          inner = finalFn.iter(context);
         }
       }
     };

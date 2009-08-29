@@ -15,12 +15,12 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.JaqlFunction;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
-import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
+import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * Compose a function definition and a function call.
@@ -49,22 +49,28 @@ public class FunctionInline extends Rewrite
   {
     FunctionCallExpr call = (FunctionCallExpr) expr;
     Expr callFn = call.fnExpr();
-    DefineFunctionExpr f;
-    if (callFn instanceof DefineFunctionExpr)
+    int length = call.numChildren()-1;
+
+    // rewrite when we know the function at compile time
+    if (callFn.isCompileTimeComputable().always())
     {
-      f = (DefineFunctionExpr)callFn;
-    }
-    else if (callFn instanceof ConstExpr)
-    {
-      ConstExpr c = (ConstExpr) callFn;
-      if( !(c.value instanceof JaqlFunction) )
+      try
       {
-        throw new RuntimeException("function expected, found: "+c.value);
+        Function function = (Function)callFn.eval(Env.getCompileTimeContext());
+        function = (Function)function.getImmutableCopy();
+        function.setArguments(call.children(), 1, length, true);
+        Expr inlinedFunction = function.inline();
+        call.replaceInParent(inlinedFunction);
+        return true;
       }
-      JaqlFunction jf = (JaqlFunction) c.value;
-      f =(DefineFunctionExpr)cloneExpr(jf.getFunction());
+      catch (Exception e)
+      {
+        JaqlUtil.rethrow(e);
+      }
     }
-    else if( callFn instanceof DoExpr )
+    
+    // rewrite do expressiosn
+    if (callFn instanceof DoExpr )
     {
       // Push call into DoExpr return:
       //     (..., e2)(e3)
@@ -76,35 +82,7 @@ public class FunctionInline extends Rewrite
       call.setChild(0, ret);
       return true;
     }
-    else
-    {
-      return false;
-    }
-
-    int numParams = f.numParams();
-    if (numParams != call.numArgs())
-    {
-      throw new RuntimeException(
-          "invalid number of arguments to function. expected:" + numParams
-              + " got:" + call.numArgs());
-    }
     
-    // TODO: Don't inline (potentially) recursive functions
-
-    // Inline zero-arg function by just its function body. 
-    if (numParams == 0)
-    {
-      call.replaceInParent(f.body());
-      return true;
-    }
-
-    // For functions with args, create a let to evaluate the args. 
-    for (int i = 0; i < numParams; i++)
-    {
-      f.param(i).addChild(call.arg(i));
-    }
-    DoExpr let = new DoExpr(f.children());
-    call.replaceInParent(let);
-    return true;
+    return false;
   }
 }

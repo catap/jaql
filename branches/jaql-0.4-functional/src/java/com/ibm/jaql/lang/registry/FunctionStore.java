@@ -156,7 +156,7 @@ public class FunctionStore extends Registry<JsonString, JsonString>
   public void register(JsonString fnName, JsonString className)
   {
     Class<?> c = ClassLoaderMgr.resolveClass(className.toString());
-    FunctionLib.add(fnName.toString(), c);
+//    FunctionLib.add(fnName.toString(), c);
     super.register(fnName, className);
   }
 }

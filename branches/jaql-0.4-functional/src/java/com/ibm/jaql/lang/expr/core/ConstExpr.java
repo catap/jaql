@@ -29,9 +29,9 @@ import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.function.Function;
 
 /**
  * 
@@ -74,7 +74,7 @@ public final class ConstExpr extends Expr
     boolean annotate = 
       value instanceof JsonArray    || 
       value instanceof JsonRecord   || 
-      value instanceof JaqlFunction || // TODO: JValue.getType().isExtendedJson()
+      value instanceof Function || // TODO: JValue.getType().isExtendedJson()
       value instanceof JsonDate     || // TODO: parser should recognize constructors and eval during parse
       value instanceof JsonRegex;
     if (annotate) exprText.print("const("); // FIXME: remove

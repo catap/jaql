@@ -21,13 +21,25 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /**
  * 
  */
-public @JaqlFn(fnName = "compare", minArgs = 2, maxArgs = 2)
-class CompareFn extends Expr
+public class CompareFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor
+  {
+    public Descriptor()
+    {
+      super("compare",
+            CompareFn.class,
+            new JsonValueParameters("x", "y"),
+            new LongSchema(JsonLong.MINUS_ONE, JsonLong.ONE, null));
+    }
+  }
+  
   /**
    * @param exprs
    */

@@ -21,7 +21,7 @@ import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
@@ -31,9 +31,16 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * If you want nulls, use firstNonNull(e,'how nulls appear').
  * 
  */
-@JaqlFn(fnName = "strJoin", minArgs = 2, maxArgs = 2)
 public class StrJoinFn extends Expr // TODO: make Aggregate?
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("strJoin", StrJoinFn.class);
+    }
+  }
+  
   protected StringBuilder builder;
   protected MutableJsonString text;
   

@@ -16,12 +16,19 @@
 package com.ibm.jaql.lang.expr.core;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 
-@JaqlFn(fnName="perPartition", minArgs=2, maxArgs=2)
 public class PerPartitionFn extends IterExpr
 {
-
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("perPartition", PerPartitionFn.class);
+    }
+  }
+  
   public PerPartitionFn(Expr[] inputs)
   {
     super(inputs);
@@ -48,7 +55,8 @@ public class PerPartitionFn extends IterExpr
   @Override
   public JsonIterator iter(final Context context) throws Exception
   {
-    JaqlFunction fn = (JaqlFunction)exprs[1].eval(context);
-    return fn.iter(context, new Expr[] {exprs[0]});
+    Function fn = (Function)exprs[1].eval(context);
+    fn.setArguments(exprs[0]);
+    return fn.iter(context);
   }
 }

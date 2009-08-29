@@ -72,6 +72,7 @@ public class AssignExpr extends TopExpr
   public JsonValue eval(Context context) throws Exception
   {
     var.expr = exprs[0];
+    var.isDefined = true;
     return new JsonString(var.name());
 //    var.expr = exprs[0]; // TODO: hack: this is just signalling to use the value
 //    var.value = new Item(); // TODO: memory

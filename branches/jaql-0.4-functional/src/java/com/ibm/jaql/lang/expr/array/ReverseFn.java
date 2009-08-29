@@ -22,18 +22,25 @@ import com.ibm.jaql.lang.expr.core.CmpSingle;
 import com.ibm.jaql.lang.expr.core.CmpSpec;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.SortExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "reverse", minArgs = 1, maxArgs = 1)
 public class ReverseFn extends MacroExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("reverse", ReverseFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

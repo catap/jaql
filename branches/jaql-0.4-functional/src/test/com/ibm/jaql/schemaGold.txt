@@ -338,9 +338,9 @@ false
 schema double(5d,3d)##
 FAILURE
 ; // must fail: invalid interval
-schema double(5);##
-schema double(min=5.0)
-     // must fail: invalid argument
+schema double(5)##
+FAILURE
+;     // must fail: invalid argument
 schema double(5.0);##
 schema double(min=5.0)
   // should be ok

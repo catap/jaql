@@ -26,14 +26,21 @@ import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "randomLong", minArgs = 0, maxArgs = 1)
 public class RandomLongFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par01
+  {
+    public Descriptor()
+    {
+      super("randomLong", RandomLongFn.class);
+    }
+  }
+  
   private Random rng;
   private MutableJsonLong  longType = new MutableJsonLong();
 
@@ -73,15 +80,15 @@ public class RandomLongFn extends Expr
     // FIXME: This class does not work in recursion...
     if (rng == null)
     {
-      if( exprs.length == 0 )
+      JsonNumber seedItem = (JsonNumber) exprs[0].eval(context);
+      if (seedItem != null)
       {
-        rng = new Random();
+        long seed = seedItem.longValue();
+        rng = new Random(seed);
       }
       else
       {
-        JsonNumber seedItem = (JsonNumber) exprs[0].eval(context);
-        long seed = seedItem.longValue();
-        rng = new Random(seed);
+        rng = new Random();
       }
     }
     longType.set(rng.nextLong() & 0x7FFFFFFFFFFFFFFFL);

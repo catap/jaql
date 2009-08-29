@@ -19,14 +19,21 @@ import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "regex", minArgs = 1, maxArgs = 2)
 public class RegexFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("regex", RegexFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -47,15 +54,8 @@ public class RegexFn extends Expr
     {
       return null;
     }
-    JsonString flags = JsonString.EMPTY;
-    if (exprs.length == 2)
-    {
-      flags = (JsonString) exprs[1].eval(context);
-      if (flags == null)
-      {
-        flags = JsonString.EMPTY;
-      }
-    }
+    JsonString flags = (JsonString) exprs[1].eval(context);
+    flags = JsonString.EMPTY;
     return new JsonRegex(regex, flags); // TODO: memory!
   }
 }

@@ -974,6 +974,152 @@ into {$i, $j};##
 
 //-------------------------- FUNCTIONS ----------------------------
 
+// built-ins and call-by-name
+compare(1,2);##
+-1
+
+compare(1,y=2);##
+-1
+
+compare(x=1,y=2);##
+-1
+
+compare(y=2,x=1);##
+-1
+
+compare(1)##
+FAILURE
+; // fails
+compare(1,2,3)##
+FAILURE
+; // fails
+compare(1,x=1)##
+FAILURE
+; // fails
+compare(1,2,x=1)##
+FAILURE
+; // fails
+
+// jaql functions and call-by-name
+$f = fn($) $;##
+"$f"
+
+$f(1);##
+1
+
+$f($=1);##
+1
+
+
+$f = fn($x) $x;##
+"$f"
+
+$f(1);##
+1
+
+$f($x=1);##
+1
+
+$f(x=1);##
+1
+
+
+$f = fn(x) $x;##
+"$f"
+
+$f(1);##
+1
+
+$f($x=1);##
+1
+
+$f(x=1);##
+1
+
+
+$f = fn(x,y) compare($x,$y);##
+"$f"
+
+$f(1,2);##
+-1
+
+$f(1,y=2);##
+-1
+
+$f(x=1,y=2);##
+-1
+
+$f($x=1,$y=2);##
+-1
+
+$f(y=2,x=1);##
+-1
+
+$f(1);##
+FAILURE
+ // fails
+$f(1,2,3);##
+FAILURE
+ // fails
+$f(1,x=1);##
+FAILURE
+ // fails
+$f(1,2,x=1);##
+FAILURE
+ // fails
+
+$f = fn(a="a",b="b") [ $a, $b ];##
+"$f"
+
+$f();##
+[
+  "a",
+  "b"
+]
+
+$f("A");##
+[
+  "A",
+  "b"
+]
+
+$f(a="A");##
+[
+  "A",
+  "b"
+]
+
+$f("A", "B");##
+[
+  "A",
+  "B"
+]
+
+$f(b="B");##
+[
+  "a",
+  "B"
+]
+
+
+$f = fn(a, b="b", c="c") [ $a, $b, $c ];##
+"$f"
+
+$f("A");##
+[
+  "A",
+  "b",
+  "c"
+]
+
+$f(b="B", a="A");##
+[
+  "A",
+  "B",
+  "c"
+]
+
+
 // continuations & multiple call sites:
 
 $f = fn($i) [$i,$i];##
@@ -1235,6 +1381,7 @@ range(0,11) -> transform $fib($);##
   55,
   89
 ]
+
 
 
 //-------------------------- QUIT ---------------------------------

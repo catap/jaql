@@ -19,15 +19,22 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
-@JaqlFn(fnName = "registerFunction", minArgs = 2, maxArgs = 2)
 public class RegisterFunctionExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("registerFunction", RegisterFunctionExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

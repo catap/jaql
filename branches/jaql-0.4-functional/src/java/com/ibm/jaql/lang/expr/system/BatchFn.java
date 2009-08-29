@@ -21,10 +21,10 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -32,9 +32,16 @@ import com.ibm.jaql.util.Bool3;
  * invokes fn
  *
  */
-@JaqlFn(fnName = "batch", minArgs = 3, maxArgs = 3)
 public class BatchFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par33
+  {
+    public Descriptor()
+    {
+      super("batch", BatchFn.class);
+    }
+  }
+  
   public BatchFn(Expr[] exprs)
   {
     super(exprs);
@@ -77,7 +84,7 @@ public class BatchFn extends IterExpr
     {
       SpilledJsonArray batch = new SpilledJsonArray(bufferSize);
       JsonIterator iter = exprs[0].iter(context);
-      JaqlFunction fn = (JaqlFunction)exprs[2].eval(context);
+      Function fn = (Function)exprs[2].eval(context);
       JsonIterator batchIter = JsonIterator.EMPTY;
       JsonIterator fnIter = JsonIterator.EMPTY;
 
@@ -122,7 +129,8 @@ public class BatchFn extends IterExpr
           
           // invoke the function on the batch
           batchIter = batch.iter();
-          fnIter = fn.iter(context, batch);
+          fn.setArguments(batch);
+          fnIter = fn.iter(context);
         }
       }
     };

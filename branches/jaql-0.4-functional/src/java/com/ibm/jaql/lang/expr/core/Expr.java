@@ -15,24 +15,31 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.core.FunctionLib;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 import com.ibm.jaql.util.Bool3;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 /** Superclass for all JAQL expressions.
  * 
@@ -78,7 +85,7 @@ public abstract class Expr
   /**
    * @param exprs
    */
-  public Expr(ArrayList<? extends Expr> exprs)
+  public Expr(List<? extends Expr> exprs)
   {
     this(exprs.toArray(new Expr[exprs.size()]));
   }
@@ -97,7 +104,7 @@ public abstract class Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    JaqlFn fn = this.getClass().getAnnotation(JaqlFn.class);
+    BuiltInFunctionDescriptor d = FunctionLib.getBuiltInFunctionDescriptor(this.getClass());
     int i = 0;
     String end = "";
     if( exprs.length > 0 && 
@@ -109,14 +116,40 @@ public abstract class Expr
       i++;
       end = " )";
     }
-    exprText.print(fn.fnName());
+    exprText.print("builtin(" + d.getClass().getName() + ")");
     exprText.print("(");
     String sep = "";
+    JsonValueParameters p = d.getParameters();
     for( ; i < exprs.length ; i++ )
     {
-      exprText.print(sep);
-      exprs[i].decompile(exprText, capturedVars);
-      sep = ", ";
+      if (i<p.noRequiredParameters() || p.hasRepeatingParameter())
+      {
+        exprText.print(sep);
+        exprs[i].decompile(exprText, capturedVars);
+        sep = ", ";
+      }
+      else
+      {
+        if (exprs[i].isCompileTimeComputable().always())
+        {
+          if (!JsonUtil.equals(p.defaultOf(i), exprs[i].eval(Env.getCompileTimeContext())))
+          {
+            exprText.print(sep);
+            exprText.print(p.nameOf(i));
+            exprText.print("=");
+            exprs[i].decompile(exprText, capturedVars);
+            sep = ", ";
+          }
+        }
+        else
+        {
+          exprText.print(sep);
+          exprText.print(p.nameOf(i));
+          exprText.print("=");
+          exprs[i].decompile(exprText, capturedVars);
+          sep = ", ";
+        }
+      }
     }
     exprText.print(")");
     exprText.print(end);

@@ -18,7 +18,7 @@ package com.ibm.jaql.lang.expr.agg;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
@@ -29,10 +29,17 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * @author kbeyer
  *
  */
-@JaqlFn(fnName = "singleton", minArgs = 1, maxArgs = 1)
 public final class SingletonAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {
   protected JsonValue saved;
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("singleton", SingletonAgg.class);
+    }
+  }
   
   /**
    * @param exprs

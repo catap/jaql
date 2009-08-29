@@ -378,7 +378,7 @@ $s = schema function;##
 
 ( [ fn($x) $x ] -> $w($s), $r($s) );##
 [
-  fn($x) ( $x )
+  fn(x) ( $x )
 
 ]
 

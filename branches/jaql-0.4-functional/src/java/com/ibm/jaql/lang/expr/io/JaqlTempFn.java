@@ -25,14 +25,21 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression that constructs an I/O descriptor for jaqls temp file access.
  */
-@JaqlFn(fnName="jaqltemp", minArgs=2, maxArgs=2)
 public class JaqlTempFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("jaqltemp", JaqlTempFn.class);
+    }
+  }
+  
   private final static JsonValue TYPE = new JsonString("jaqltemp");
   /**
    * exprs[0]: path

@@ -24,8 +24,8 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 
@@ -108,8 +108,9 @@ public class SplitExpr extends Expr
       //if( ! temps[i].isEmpty() ) // TODO: should empty flow?
       {
         args[0]= temps[i];
-        JaqlFunction f = (JaqlFunction)ifs[i].trueExpr().eval(context);
-        f.eval(context, args);
+        Function f = (Function)ifs[i].trueExpr().eval(context);
+        f.setArguments(args);
+        f.eval(context);
       }
     }
 

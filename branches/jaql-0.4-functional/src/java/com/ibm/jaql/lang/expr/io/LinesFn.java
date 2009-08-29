@@ -24,14 +24,21 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression that constructs an I/O descriptor for HDFS file access.
  */
-@JaqlFn(fnName="lines", minArgs=1, maxArgs=1)
 public class LinesFn extends AbstractHandleFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("lines", LinesFn.class);
+    }
+  }
+  
   private final static JsonValue TYPE = new JsonString("hdfs");
   /**
    * exprs[0]: path

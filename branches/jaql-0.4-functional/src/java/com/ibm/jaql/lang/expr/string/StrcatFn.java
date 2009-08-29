@@ -20,14 +20,21 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "strcat", minArgs = 0, maxArgs = Expr.UNLIMITED_EXPRS)
 public class StrcatFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par0u
+  {
+    public Descriptor()
+    {
+      super("strcat", StrcatFn.class);
+    }
+  }
+  
   protected StringBuilder builder;
   protected MutableJsonString text;
   

@@ -22,14 +22,21 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
  */
-@JaqlFn(fnName = "values", minArgs = 1, maxArgs = 1)
 public class ValuesFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("values", ValuesFn.class);
+    }
+  }
+  
   /**
    * values(rec) values(exprs[0])
    * 

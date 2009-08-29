@@ -23,14 +23,21 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.agg.SumAgg.Summer;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * vectorSum(array x) = [sum(x1), sum(x2), ..., sum(xn)]
  */
-@JaqlFn(fnName = "vectorSum", minArgs = 1, maxArgs = 1)
 public class VectorSumAgg extends AlgebraicAggregate
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("vectorSum", VectorSumAgg.class);
+    }
+  }
+  
   private ArrayList<Summer> summers;
   
   /**

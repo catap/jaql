@@ -23,15 +23,22 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * Replace fields in oldRec with fields in newRec only if the field name exists in oldRec.
  * Unlike remap, this only replaces existing fields.
  */
-@JaqlFn(fnName = "replaceFields", minArgs = 2, maxArgs = 2)
 public class ReplaceFieldsFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("replaceFields", ReplaceFieldsFn.class);
+    }
+  }
+  
   /**
    * replaceFields(oldRec, newRec)
    * 

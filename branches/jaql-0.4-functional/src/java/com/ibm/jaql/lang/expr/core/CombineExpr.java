@@ -19,16 +19,24 @@ import java.util.Arrays;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
-@JaqlFn(fnName="combine", minArgs=2, maxArgs=2)
 public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr // TODO: kill PushAggExpr code
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("combine", CombineExpr.class);
+    }
+  }
+  
   /**
    * BindingExpr in, Expr using, Expr init
    * 
@@ -113,7 +121,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   protected final JsonValue[] agg = new JsonValue[2];
   protected Context context;
   protected int bufIdx = 0;
-  protected JaqlFunction combiner;
+  protected Function combiner;
   protected final JsonValue[] args = new JsonValue[2];
 
       
@@ -122,7 +130,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   {
     this.context = context;
     bufIdx = 0;
-    combiner = JaqlUtil.enforceNonNull((JaqlFunction)exprs[1].eval(context));
+    combiner = JaqlUtil.enforceNonNull((Function)exprs[1].eval(context));
     Arrays.fill(agg, null);
     // context.setVar(binding().var2, agg[0]);
   }
@@ -143,7 +151,8 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
     else
     {
       args[1] = value;
-      combined = combiner.eval(context, args);
+      combiner.setArguments(args);
+      combined = combiner.eval(context);
       // context.setVar(b.var, item);
       // combined = usingExpr().eval(context);
       if (combined == null )

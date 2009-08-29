@@ -22,14 +22,21 @@ import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  *  Convert an ascii/utf8 base64 string into a binary string
  */
-@JaqlFn(fnName="base64", minArgs=1, maxArgs=1)
 public class Base64Fn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("base64", Base64Fn.class);
+    }
+  }
+  
   protected Base64 codec = new Base64();
 
   /**

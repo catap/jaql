@@ -21,6 +21,7 @@ import java.util.*;
 
 import com.ibm.jaql.lang.core.*;
 import com.ibm.jaql.lang.expr.core.*;
+import com.ibm.jaql.lang.expr.function.*;
 import com.ibm.jaql.lang.expr.top.*;
 import com.ibm.jaql.lang.expr.path.*;
 import com.ibm.jaql.lang.expr.schema.*;
@@ -107,15 +108,15 @@ parse returns [Expr r=null]
 stmtOrFn returns [Expr r=null]
     : r=stmt (SEMI|EOF)
     | SEMI
-    | r=functionDef
+//    | r=functionDef
     ;
     
 stmt returns [Expr r=null]
-    { String v; }
+    { Var v; }
     : r=topAssign
     | "explain" r=topAssign  { r = new ExplainExpr(r); }
-    | "materialize" v=var    { r = new MaterializeExpr(env.inscope(v)); }
-    | "quit"                 { done = true; }
+    | "materialize" v=var    { r = new MaterializeExpr(v); }
+    | "quit"                 { r = null; done = true; }
     ;
 
 //assign2 returns [Expr r=null]
@@ -171,38 +172,35 @@ block returns [Expr r=null]
 
 pipe returns [Expr r=null]
     { String n = "$"; } // TODO: should var source define name? eg, $x -> filter $x.y > 3
-    : r=expr ( "->" r=op[r] )*
+    : r=function
+    | r=expr r=subpipe[r]
     | r=pipeFn
-    | r=function
-    ;
-    
-  
-subpipe[Var inVar] returns [Expr r=null]
-    {
-        inVar.hidden = true;
-        r= new VarExpr(inVar);
-    }
-    : ( "->" r=op[r] )+
     ;
 
+subpipe[Expr e] returns [Expr r=e]
+    : ( "->" ) => "->" r=op[r] r=subpipe[r]
+                | ()
+    ;
+   
 pipeFn returns [Expr r=null]
     {
         Var v = env.makeVar("$");
+        v.hidden = true;
+        r = new VarExpr(v);
     }
-    : r=subpipe[v]
+    : "->" r=op[r] r=subpipe[r]
     {
         ArrayList<Var> p = new ArrayList<Var>();
         p.add(v);
-        r = new DefineFunctionExpr(p, r); // TODO: use a diff class
+        r = new CaptureExpr(p, r); // TODO: use a diff class
     }
     ;
 
-    
 vpipe returns [BindingExpr r=null]
-    { String v; Expr e=null; }
-    : v=var ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
+    { Var v; Expr e=null; }
+    : v=var ( /*empty*/   { e = new VarExpr(v); }
             | "in" e=expr )
-    { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e); }
+    { r = new BindingExpr(BindingExpr.Type.IN, v, null, e); }
     ;
 
 // A pipe must end with a binding, with the name still in scope
@@ -248,15 +246,15 @@ vpipe returns [BindingExpr r=null]
 //    ;
 
 aggregate[Expr in] returns [Expr r=null]
-    { String v="$"; BindingExpr b; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
+    { String v="$"; BindingExpr b=null; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
 //    : ("aggregate" | "agg") b=each[in] r=expr
 //       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
-    : ("aggregate" | "agg") ("as" v=var)?
+    : ("aggregate" | "agg") ("as" v=id)?
          {
            //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
            b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
          }
-      ( "into" r=expr { r = AggregateFullExpr.make(env, b, r, false); }
+      ( "into"    r=expr { r = AggregateFullExpr.make(env, b, r, false); }
       | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
       | "initial" aa=algAggList { r = new AggregateInitialExpr(b, aa); }
       | "partial" aa=algAggList { r = new AggregatePartialExpr(b, aa); }
@@ -270,7 +268,7 @@ aggList returns [ArrayList<Aggregate> r = new ArrayList<Aggregate>()]
     : "[" ( a=aggFn { r.add(a); } ("," a=aggFn { r.add(a); } )* )? "]"
     ;
 
-aggFn returns [Aggregate agg]
+aggFn returns [Aggregate agg=null]
     { Expr e; }
     : e = expr
       {
@@ -287,7 +285,7 @@ algAggList returns [ArrayList<AlgebraicAggregate> r = new ArrayList<AlgebraicAgg
     : "[" ( a=algAggFn { r.add(a); } ("," a=algAggFn { r.add(a); } )* )? "]"
     ;
 
-algAggFn returns [AlgebraicAggregate agg]
+algAggFn returns [AlgebraicAggregate agg=null]
     { Expr e; }
     : e = expr
       {
@@ -301,13 +299,13 @@ algAggFn returns [AlgebraicAggregate agg]
 
 group returns [Expr r=null]
     { 
-      BindingExpr in;
+      BindingExpr in = null;
       BindingExpr by = null;
       Expr c=null;
       String v = "$";
       ArrayList<Var> as = new ArrayList<Var>();
     }
-    : "group" ("each" v=var "in")? 
+    : "group" ("each" v=id "in")? 
         { 
           in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
         }
@@ -333,7 +331,7 @@ group returns [Expr r=null]
 
 groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [BindingExpr by]
     { Expr e; String v=null; }
-    : e=expr { env.scope(in.var); } by=groupBy[prevBy] ( "as" v=var )?    
+    : e=expr { env.scope(in.var); } by=groupBy[prevBy] ( "as" v=id )?    
         {
           if( v == null )
           {
@@ -361,7 +359,11 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
 
 groupBy[BindingExpr by] returns [BindingExpr b=null]
     { String v = null; Expr e=null; }
-    : ( "by" (v=avar "=")? e=expr )?
+    : ( "by" 
+        ( (id "=") => (v=id "=") e=expr
+                    | e=expr
+        ) 
+      )?
     {
       if( e == null )
       {
@@ -403,11 +405,11 @@ groupReturn returns [Expr r=null]
 groupPipe[Expr in] returns [Expr r=null]
     { 
       BindingExpr b; BindingExpr by=null; Expr key=null;  Expr c; 
-      String v="$"; Var asVar; 
+      String v="$"; Var asVar = null; 
     }
     : "group" b=each[in] 
       by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
-      ( "as" v=var )?        { asVar=env.scope(v, SchemaFactory.arraySchema()); }
+      ( "as" v=id )?        { asVar=env.scope(v, SchemaFactory.arraySchema()); }
       ( "using" c=comparator { oops("comparators on group by NYI"); } )?
       r=groupReturn
         {
@@ -421,21 +423,21 @@ comparator returns [Expr r=null]
     { String s; Expr e; }
     : r=cmpArrayFn["$"]
     //  | "default"      { r = new DefaultComparatorExpr(); }
-    | (s=name|s=str)     { oops("named comparators NYI: "+s); } // r=new InvokeBuiltinCmp(ctx, e);
+//    | (s=name|s=str)     { oops("named comparators NYI: "+s); } // r=new InvokeBuiltinCmp(ctx, e);
     | r=cmpFnExpr
     | r=varExpr
     | r=parenExpr 
     ;
 
 cmpExpr returns [Expr r=null]
-    { String v; Var var; }
-    : "cmp" ( "(" v=var ")" r=cmpArrayFn[v]
+    { String v; }
+    : "cmp" ( "(" v=id ")" r=cmpArrayFn[v]
             | r=cmpArray )
     ;
 
 cmpFnExpr returns [Expr r=null]
-    { String v; Var var; }
-    : "cmp" "(" v=var ")" r=cmpArrayFn[v]
+    { String v; }
+    : "cmp" "(" v=id ")" r=cmpArrayFn[v]
     ;
 
 cmpArrayFn[String vn] returns [Expr r=null]
@@ -443,7 +445,7 @@ cmpArrayFn[String vn] returns [Expr r=null]
     : r=cmpArray
     {
       env.unscope(var);
-      r = new DefineFunctionExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
+      r = new CaptureExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
     }
     ;
 
@@ -525,7 +527,7 @@ join returns [Expr r=null]
 
 joinIn returns [BindingExpr b=null]
     { boolean p = false; }
-    : ("preserve" { p = true; })? b=vpipe
+    : ( "preserve" { p = true; })? b=vpipe
       {
         b.preserve = p;
       }
@@ -575,9 +577,7 @@ split[Expr in] returns [Expr r=null]
 //         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JsonBool.trueItem), e) ); } )?
 //       ")"
     : "split" b=each[in]     { es.add( b ); } 
-         ( "if"              { b.var.hidden=false; } 
-              "(" p=expr ")" { b.var.hidden=true; }
-                e=expr       { es.add(new IfExpr(p,e)); } )*
+         splitIfs[b, es]
          ( "else"            { b.var.hidden=true; } 
                 e=expr       { es.add(new IfExpr(new ConstExpr(JsonBool.TRUE), e) ); } )?
       {
@@ -586,6 +586,17 @@ split[Expr in] returns [Expr r=null]
       }
     ;
 
+splitIfs[BindingExpr b, ArrayList<Expr> es]
+    : ( splitIf[b,es] ) => splitIf[b, es] splitIfs[b,es]
+                         | ()
+    ;
+
+splitIf[BindingExpr b, ArrayList<Expr> es]
+    { Expr p, e; }
+    : "if"              { b.var.hidden=false; } 
+       "(" p=expr ")"   { b.var.hidden=true; }
+       e=expr           { es.add(new IfExpr(p,e)); }
+       ;
 
 op[Expr in] returns [Expr r=null]
     { BindingExpr b=null; } 
@@ -593,14 +604,14 @@ op[Expr in] returns [Expr r=null]
     | "transform" b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
     | "expand"  b=each[in] ( r=expr
                            | /*empty*/ { r = new VarExpr(b.var); } )
-                                     { r = new ForExpr(b, r);       env.unscope(b.var); }
+                                       { r = new ForExpr(b, r);       env.unscope(b.var); }
     | r=groupPipe[in]
     | r=sort[in]
     | r=top[in]
     //| r=tee[in]
     | r=split[in]
     | r=aggregate[in]
-    | r=call[in]
+    | r=callPipe[in]
     // | r=partition[in]
     // TODO: add rename path
     // | r=window[in]
@@ -608,25 +619,46 @@ op[Expr in] returns [Expr r=null]
 
 each[Expr in] returns [BindingExpr b=null]
     { String v = "$"; }
-    : ( "each" v=var )?
+    : ( "each" v=id )?
     { 
 //      b = new BindingExpr(BindingExpr.Type.IN, env.scope(v, in.getSchema().elements()), null, in); 
       b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in);
     }
     ;
 
-//assignOrCall[Expr in] returns [Expr r]
-call[Expr in] returns [Expr r=null]
-    { String n; ArrayList<Expr> args; }
-    : n=var ( // /*empty*/          { r = new AssignExpr( env.sessionEnv().scopeGlobal(n), in); }
-              // |
-              args=fnArgs        { args.add(0, in); r = new FunctionCallExpr(new VarExpr(env.inscope(n)), args); }
-               ( args=fnArgs     { r = new FunctionCallExpr(r, args); } )*
-            )
-    | n=name args=fnArgs         { args.add(0, in); r = FunctionLib.lookup(env, n, args); }
-               ( args=fnArgs     { r = new FunctionCallExpr(r, args); }    )*
+call returns [Expr r=null]
+    { 
+      List<Expr> positionalArgs = new ArrayList<Expr>(); 
+      Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>(); 
+    }
+    : r=basic
+      r=callRepeat[r,positionalArgs, namedArgs] 
     ;
 
+callPipe[Expr in] returns [Expr r=null]
+    { 
+      List<Expr> positionalArgs = new ArrayList<Expr>(); 
+      positionalArgs.add(0, in);
+      Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
+    }
+    : r=callFirst[positionalArgs, namedArgs]
+      r=callRepeat[r, positionalArgs, namedArgs]
+    ;
+    
+callFirst[List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] returns [Expr r=null]
+    { Expr f; }
+    : f=basic args[positionalArgs, namedArgs] 
+      { r = new FunctionCallExpr(f, positionalArgs, namedArgs); }
+    ;
+
+callRepeat[Expr f, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] returns [Expr r=f]
+    : ( "(" ) => { positionalArgs.clear(); namedArgs.clear(); } 
+                 args[positionalArgs, namedArgs]
+                 { r = new FunctionCallExpr(r, positionalArgs, namedArgs); }
+                 r = callRepeat[r, positionalArgs, namedArgs]
+               | () 
+    ;    
+    
 //bindOrCall[BindingExpr in] returns [Expr r]
 //    { String n; ArrayList<Expr> args; }
 //    : n=var ( /*empty*/          { r = new BindingExpr(BindingExpr.Type.IN, env.scope(n), null, in.inExpr()); }
@@ -746,15 +778,15 @@ top[Expr in] returns [Expr r=null]
 //    ;
 
 
-unroll returns [Expr r=null]
-    { ArrayList<Expr> args = new ArrayList<Expr>(); }
-    : "unroll" r=fnCall  { args.add(r); }
-          ( r=estep      { args.add(r); } )+
-          // TODO: as name
-      {
-        r = new UnrollExpr(args);
-      }
-    ;
+//unroll returns [Expr r=null]
+//    { ArrayList<Expr> args = new ArrayList<Expr>(); }
+//    : "unroll" r=call  { args.add(r); }
+//          ( r=estep      { args.add(r); } )+
+//          // TODO: as name
+//      {
+//        r = new UnrollExpr(args);
+//      }
+//    ;
 
 
 estep returns [Expr r = null] // TOD: Unify step expressions
@@ -766,31 +798,34 @@ estep returns [Expr r = null] // TOD: Unify step expressions
 
 assign returns [Expr r=null]
     { String v; }
-    : v=avar "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
-    | r=pipe "=>" v=var    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
+    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
+                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
     ;
 
 optAssign returns [Expr r=null]
     { String v; }
-    : v=avar "=" r=rvalue  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-    | r=pipe 
-         ( "=>" v=var      { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
+    : (id "=") => v=id "=" r=rvalue  
+                  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
+                 | r=pipe ( "=>" v=id      
+                            { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
+                          )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
     ;
 
 // Same as optAssign but creates global variables on assigment, and inlines referenced globals
-topAssign returns [Expr r=null]
+topAssign returns [Expr r]
     { String v; }
-    : ( v=avar "=" r=rvalue  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: expr name should reflect global var
-      | r=pipe
-         ( /*empty*/         { r = env.importGlobals(r); } 
-         | "=>" v=var        { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } )
-      )
+    : (id "=") => v=id "=" r=rvalue  
+                  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: expr name should reflect global var
+                | r=pipe ( /*empty*/        
+                           { r = env.importGlobals(r); } 
+                         | "=>" v=id        
+                           { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } 
+                         )
     ;
 
 rvalue returns [Expr r = null]
     : r=pipe
 //    | r=collection
-    // | r=function
     | r=extern
     ;
     
@@ -801,29 +836,75 @@ rvalue returns [Expr r = null]
 
 extern returns [Expr r = null]
     { String lang; }
-    : "extern" lang=name "fn" r=expr
+    : "extern" lang=id "fn" r=expr
       { r = new ExternFunctionExpr(lang, r); }
     ;
       
 function returns [Expr r = null]
-    { ArrayList<Var> p; }
-    : "fn" p=params r=pipe
-    { 
-      r = new DefineFunctionExpr(p, r);
-      for( Var v: p )
-      {
-        env.unscope(v);
-      }
+    { List<Var> vs = new ArrayList<Var>();
+      List<Expr> es = new ArrayList<Expr>();
     }
+    : "fn" 
+      params[vs,es] { for (Var v: vs) v.hidden = false; }
+      r=pipe
+      { 
+        r = new CaptureExpr(vs, es, r);
+        for( Var v: vs )
+        {
+          env.unscope(v);
+        }
+      }
     ;
 
+// used externally to parse functions
+functionLit returns [Function f=null] throws Exception
+    { Expr r; }
+    : ( r=function 
+      | r=registeredFunction
+      )
+      { 
+      	if (!r.isCompileTimeComputable().always())
+      	{
+      		throw new IllegalStateException("not a function literal");
+      	}
+      	f = (Function)r.eval(Env.getCompileTimeContext());
+      }
+    ;
 
-params returns [ArrayList<Var> p = new ArrayList<Var>()]
-    { String v; }
-    : "(" ( v=var          { p.add(env.scope(v)); }
-             ( "," v=var   { p.add(env.scope(v)); } )*
-          )?
+params[List<Var> vs, List<Expr> es]
+    { Expr e = null; }
+    : "(" allParams[vs,es] 
+      {
+      	Set<String> names = new HashSet<String>();
+      	for (Var v : vs) {
+      		if (names.contains(v.name())) 
+      		    throw new IllegalArgumentException("duplicate argument: " + v.name());
+            names.add(v.name());      		
+      	}; 
+      } 
       ")"
+    ;
+    
+allParams[List<Var> vs, List<Expr> es]
+    { Expr e; }   
+    : paramVar[vs] ( "=" e=pipe { es.add(e); } ( "," optionalParams[vs,es] ) *
+                   | "," { es.add(null); } allParams[vs,es]
+                   | () { es.add(null); } 
+                   )
+    | ()
+    ;
+
+optionalParams[List<Var> vs, List<Expr> es]
+    { Expr e; }
+    : paramVar[vs] "=" e=pipe { es.add(e); }
+    ;
+
+paramVar[List<Var> vs]
+    { String n; Schema s=SchemaFactory.anySchema(); Expr e=null; }
+    : ( ( id ( "," | "=" | ")" ) ) => n=id 
+        | ( ("schema")? s=schema n=id )
+      )
+      { Var v = new Var(n, s); env.scope(v); v.hidden=true; vs.add(v); }
     ;
 
 //exceptions
@@ -834,19 +915,19 @@ params returns [ArrayList<Var> p = new ArrayList<Var>()]
 //  : "return" ( r=topExpr )? // ("," var)* )?
 //  ;
     
-functionDef returns [Expr r=null]
-    { String lang; String s; String body; Expr e; }
-    // : "function" name "(" (var ("," var)*)? ")" block
-    : "script" lang=name body=str
-      {
-        r = new ScriptBlock(lang, body);
-      }
-    | "import" lang=name s=name e=expr (SEMI|EOF)
-      {
-        if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
-        r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
-      }
-    ;
+//functionDef returns [Expr r=null]
+//    { String lang; String s; String body; Expr e; }
+//    // : "function" name "(" (var ("," var)*)? ")" block
+//    : "script" lang=name body=str
+//      {
+//        r = new ScriptBlock(lang, body);
+//      }
+//    | "import" lang=name s=name e=expr (SEMI|EOF)
+//      {
+//        if( ! "java".equals(lang.toLowerCase()) ) oops("only java functions supported right now");
+//        r = new RegisterFunctionExpr(new ConstExpr(new JsonString(s)), e);
+//      }
+//    ;
     
 forExpr returns [Expr r = null]
     { 
@@ -874,7 +955,7 @@ forDef[ArrayList<BindingExpr> bindings]
 //    {
 //      bindings.add(b);
 //    }
-    : v=var ( /*( "at" v2=var )?*/  "in" e=pipe { t = BindingExpr.Type.IN; }
+    : v=id ( /*( "at" v2=var )?*/  "in" e=pipe { t = BindingExpr.Type.IN; }
             // | ":" v2=var "in" e=pipe        { t = BindingExpr.Type.INREC; }
             // | "="  e=expr                { t = BindingExpr.Type.EQ; }
             )
@@ -925,7 +1006,7 @@ sort[Expr in] returns [Expr r=null]
 
 sortCmp returns [Expr r=null]
     { String v="$"; }
-    : ("each" v=var)? "by" r=cmpArrayFn[v]
+    : ("each" v=id)? "by" r=cmpArrayFn[v]
     | "using" r=comparator
     ;
     
@@ -950,7 +1031,7 @@ record returns [Expr r = null]
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
     { Expr e = null; Expr v=null; boolean required = true; }
-    : e=fname ( "?" { required = false; } )?  v=fieldValue  
+    : (idExpr ("?" | ":")) => e=idExpr ( "?" { required = false; } )?  v=fieldValue  
       { 
         f = new NameValueBinding(e, v, required); 
       }
@@ -1010,10 +1091,10 @@ expr returns [Expr r]
     : r=group
     | r=join
     | r=equijoin
+    | r=ifExpr
     | r=forExpr
     // | r=taggedMerge
-    | r=ifExpr
-    | r=unroll
+//    | r=unroll
     // | r=combineExpr
    // | r=function
     | r=orExpr
@@ -1055,7 +1136,7 @@ isnullExpr returns [Expr r]
 
 isdefinedExpr returns [Expr r]
     { Expr n; }
-    : "isdefined" r=fnCall n=projName // TODO: this should be a path expression
+    : "isdefined" r=call n=projName // TODO: this should be a path expression
     { r = new IsdefinedExpr(r,n); }
     ;
 
@@ -1086,15 +1167,18 @@ compareOp returns [int r = -1]
 
 // TODO: add astype operator?
 // TODO: replace instanceof is istype?
-instanceOfExpr returns [Expr r = null]
+instanceOfExpr returns [Expr r]
     { Expr s; }
     : r=addExpr 
-    ( "instanceof" s=addExpr { r = new InstanceOfExpr(r,s); } )? 
+      ( "instanceof" s=addExpr { r = new InstanceOfExpr(r,s); } )? 
     ;
 
-addExpr returns [Expr r = null]
+addExpr returns [Expr r]
     { Expr s; int op; }
-    : r=multExpr ( op=addOp s=multExpr  { r = new MathExpr(op,r,s); } )*
+    : r=multExpr 
+      ( (addOp) => op=addOp s=addExpr  { r = new MathExpr(op,r,s); }
+                 | () 
+      ) 
     ;
 
 addOp returns [int op=0]
@@ -1102,7 +1186,7 @@ addOp returns [int op=0]
     | "-" { op=MathExpr.MINUS; }
     ;
 
-multExpr returns [Expr r = null]
+multExpr returns [Expr r]
     { Expr s; int op; }
     : r=unaryAdd ( op=multOp s=unaryAdd  { r = new MathExpr(op,r,s); } )*
     ;
@@ -1114,29 +1198,30 @@ multOp returns [int op=0]
 
 // TODO: there is a bug handling negative numbers minLong (= -maxLong -1) doesn't parse
 // TODO: there is a bug parsing large integers that can fit into a decimal
-unaryAdd returns [Expr r = null]
+unaryAdd returns [Expr r]
     : "-" r=typeExpr { r = MathExpr.negate(r); } 
     | ("+")? r=typeExpr 
     ;
     
-typeExpr returns [Expr r = null]
+typeExpr returns [Expr r=null]
     { Schema s; }
     : "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
     | r=path
     ;   
 
-path returns [Expr r=null]
+path returns [Expr r]
     { PathStep s=null; }
-    : r=fnCall 
-       ( s=step             { r = new PathExpr(r,s); }
-         steps[s]
-       )?
+    : r=call
+      ( ( step ) => s=step { r = new PathExpr(r,s); }
+                    steps[s]
+                  | ()
+      )
     ;
 
 steps[PathStep p]
     { PathStep s; }
-    : ( s=step  { p.setNext(s); p = s; }
-      )*
+    : ( step ) => s=step { p.setNext(s); p = s; } steps[p] 
+                | ()
     ;
 
 step returns [PathStep r = null]
@@ -1195,30 +1280,19 @@ projName returns [Expr r=null]
     | DOT r=basic
     ;
 
-
-fnCall returns [Expr r=null]
-    { String s; ArrayList<Expr> args; }
-    : ( r=basic 
-      | r=builtinCall )
-         ( args=fnArgs    { r = new FunctionCallExpr(r, args); } )*
-    ;
-
-builtinCall returns [Expr r=null]
-    { String s; ArrayList<Expr> args; }
-    : s=name args=fnArgs
-    { 
-      r = FunctionLib.lookup(env, s, args);
-    }
-    ;
-    
 basic returns [Expr r=null]
     : r=constant
     | r=record
     | r=array
+    | r=registeredFunction
     | r=varExpr
     | r=cmpExpr
     | r=parenExpr
     ;
+    
+registeredFunction returns [Expr e = null]
+    { Expr c; }
+    : "builtin" "(" c=expr ")" { e=new BuiltInExpr(c); };  
     
 parenExpr returns [Expr r=null]
 //    : "(" r=letExpr ")"
@@ -1262,32 +1336,12 @@ parenExpr returns [Expr r=null]
 //     e=basic "(" args=exprList ")"  { r = new FunctionCallExpr(e, args); }
 //    ;   
 
-varExpr returns [Expr r = null]
-    { String v; }
-    : v=var 
-    { r = new VarExpr( env.inscope(v) ); }
-    ;
-
-
 array returns [Expr r=null]
     { ArrayList<Expr> a; }
     : "[" a=exprList2 "]"
     { r = new ArrayExpr(a); }
     ;
 
-
-fnArgs returns [ArrayList<Expr> r = new ArrayList<Expr>()]
-    : "(" r=exprList ")"
-    { 
-        for(Expr e: r)
-        {
-            if( e instanceof AssignExpr )
-            {
-                oops("Call by name NYI");
-            }
-        }
-    }    
-    ;
 
 exprList returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     { Expr e; }
@@ -1301,19 +1355,39 @@ exprList2 returns [ArrayList<Expr> r = new ArrayList<Expr>()]
     { Expr e; }
     : ( e=pipe  { r.add(e); } )? ("," ( e=pipe  { r.add(e); } )? )*
     ;
-
-args[Parameters descriptor] returns [ ArgumentExpr r=null ]
-    { ArrayList<Expr> a = new ArrayList<Expr>(); }
-    : "(" ( arg[a] ("," arg[a])* )? ")" { r=new ArgumentExpr(descriptor, a); }
+    
+args[List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] 
+    { List<Expr> l=positionalArgs; Map<JsonString, Expr> m=namedArgs; }
+    : "(" (
+            (narg[m]) => (narg[m] ("," narg[m])*)
+          | (parg[l] moreArgs[l,m] )
+          | ()
+          )
+      ")"      
     ;
-
-arg[ArrayList<Expr> r]
-    { Expr name = null; Expr value; String v; }
-    : ( (id:AID { name = new ConstExpr(new JsonString(id.getText())); } "=")? value=pipe )
-      { if (name==null) r.add(value); else r.add(new NameValueBinding(name, value)); }
-      // not using AssignExpr because argument name might be computed (later)
+    //( ( parg[l] ( "," parg[l] )* ) ( "," narg[m] ( "," narg[m] )* )? )
+    
+    
+moreArgs[List<Expr> l, Map<JsonString, Expr> m]
+    : ()
+    | "," ( (narg[m]) => (narg[m] ("," narg[m])*) 
+          | parg[l] moreArgs[l,m] )
     ;
-
+  
+parg[List<Expr> p]
+    { Expr e; }
+    : e=pipe { p.add(e); }
+    ;
+    
+narg[Map<JsonString, Expr> m]
+    { JsonString name = null; Expr e; }
+    : name=idJson { 
+  	    if (m.containsKey(name)) throw new IllegalArgumentException("repeated argument: " + name);
+      }
+      "=" 
+      e=pipe { m.put(name, e); }
+    ;
+    
 constant returns [Expr r=null]
     { String s; JsonNumber n; JsonBool b;}
     : s=str      { r = new ConstExpr(new JsonString(s)); }
@@ -1343,68 +1417,18 @@ decLit returns [ JsonDecimal v=null]
     : n:DEC      { v = new JsonDecimal(n.getText()); }
     ;
 
-
-// not to be used in terms!    
-signedNumericLit returns [ JsonNumber v = null ]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      ( i:INT    { v = parseLong(i.getText(), isNegative); }
-      | j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
-      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
-      )
-    ;
-
-// not to be used in terms!    
-signedNumberLit returns [ JsonNumber v = null ]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      ( i:INT    { v = parseLong(i.getText(), isNegative); }
-      | k:DEC    { v = parseDecimal(k.getText(), isNegative); }
-      )
-    ;
-// not to be used in terms!
-signedIntLit returns [ JsonLong v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      i:INT    { v = parseLong(i.getText(), isNegative); } 
-    ;
-
-// not to be used in terms! 
-signedDoubleLit returns [ JsonDouble v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      j:DOUBLE { v = parseDouble(j.getText(), isNegative); }
-    ;
-     
-// not to be used in terms!     
-signedDecLit returns [ JsonDecimal v=null]
-    { boolean isNegative = false; }
-    : ( "-" { isNegative = !isNegative; }
-      | "+"
-      )*
-      k:DEC    { v = parseDecimal(k.getText(), isNegative); }       
-    ;     
-    
 strLit returns [ JsonString v=null]
     { String s; }
     : s=str      { v = new JsonString(s); }
     ;
     
 boolLit returns [JsonBool b=null]
-    : "true"     { b = JsonBool.TRUE; }
-    | "false"    { b = JsonBool.FALSE; }
+    : "true"   { b = JsonBool.TRUE; }
+    | "false"  { b = JsonBool.FALSE; }
     ;
     
 nullExpr returns [Expr r=null]
-    : "null"     { r = new ConstExpr(null); }
+    : "null"   { r = new ConstExpr(null); }
     ;
     
 str returns [String r=null]
@@ -1412,19 +1436,12 @@ str returns [String r=null]
     | h:HERE_STRING     { r = h.getText(); }
     ;
     
-avar returns [String r=null]: n:AVAR { r = n.getText(); }; //  TODO: move to ID
-var returns [String r=null]: n:VAR { r = n.getText(); }; // TODO: move to ID
-name returns [String r=null]: n:ID { r = n.getText(); };
 dotName returns [Expr r = null]
     : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
     ;
 
-fname returns [Expr r=null] 
-    : i:FNAME     { r = new ConstExpr(new JsonString(i.getText())); }
-    ;
-
 simpleField returns [Expr f=null]
-    : ( f=fname | "(" f=pipe ")" ) ":"
+    : ( f=idExpr | "(" f=pipe ")" ) ":"
     ;
 
 schema returns [Schema s = null]
@@ -1452,18 +1469,23 @@ aSchema returns [Schema s = null]
     ;
 
 atomSchema returns [Schema s = null]
-    { JsonRecord args; Parameters p; }
-    : "null"       { s = SchemaFactory.nullSchema(); }
-    | i:ID         { p=SchemaFactory.getParameters(i.getText()); }
-        args=atomSchemaArgs[p]
-                   { s = SchemaFactory.make(i.getText(), args); }
+    { String id; JsonRecord args; JsonValueParameters p=null; }
+    : "null"                   { s = SchemaFactory.nullSchema(); }
+    | id=id                    { p=SchemaFactory.getParameters(id); }
+      args=atomSchemaArgs[p]   { s = SchemaFactory.make(id, args); }
     ;
 
-atomSchemaArgs[Parameters d] returns [ JsonRecord args=null ]
-    { ArgumentExpr argsExpr; }
-    : ( argsExpr=args[d]
-        { args = argsExpr.constEval(); }
-      )?
+atomSchemaArgs[JsonValueParameters d] returns [ JsonRecord args=null ]
+    { 
+      List<Expr> positionalArgs = new ArrayList<Expr>();
+      Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
+    }
+    : ( "(" ) => args[positionalArgs,namedArgs]
+                 { 
+                   ArgumentExpr e = new ArgumentExpr(d, positionalArgs, namedArgs);
+                   args = e.constEval(); 
+                 }
+               | ()
     ;
 
 arraySchema returns [ArraySchema s = null]
@@ -1492,11 +1514,11 @@ arraySchemaRepeat returns [Pair<JsonLong, JsonLong> p = null; ]
         | "+"                         { minRest = JsonLong.ONE; }
         | "<" 
             ( "*"                     
-            | minRest=signedIntLit
+            | minRest=intLit
             ) 
             ( /*empty*/               { maxRest = minRest; }
             | "," ( "*"             
-                    | maxRest=signedIntLit 
+                    | maxRest=intLit 
                   )
             )
           ">"
@@ -1544,17 +1566,42 @@ recordSchemaField returns [RecordSchema.Field s = null]
       }
     ;
     
-recordSchemaFieldSchema returns [Schema s]
+recordSchemaFieldSchema returns [Schema s = null]
     : /*empty*/   { s = SchemaFactory.anySchema(); }
     | ":" s=schema
     ;
 
 recordSchemaFieldName returns [String s=null]
-    : i:ID      { s = i.getText(); }
-    | j:FNAME   { s = j.getText(); }
+    : s=id
     | s=str
     ;
+    
+// for the moment does not match keywords    
+id returns [String s=null]
+    : i:ID { s = i.getText(); }
+    ;
+    
 
+idJson returns [JsonString js=null]
+    { String s; } 
+    : s=id { js = new JsonString(s); }
+    ;
+
+idExpr returns [Expr e=null]
+    { JsonString s; }
+    : s=idJson { e = new ConstExpr(s); }
+    ;
+
+var returns [Var v = null]
+    { String i; }
+    : i=id { v = env.inscope(i); }
+    ;
+
+varExpr returns [Expr e = null]
+    { Var v; }
+    : v=var { e = new VarExpr(v); }
+    ;
+    
 class JaqlLexer extends Lexer;
 
 options {
@@ -1706,17 +1753,10 @@ HERE_STRING
     : '<'! '<'! HERE_TAG (HERE_LINE)+
     ;
 
-protected VAR1
-    : '$' ('_'|LETTER|DIGIT)*
-    ;
 
-VAR
-    options { ignore=WS; }
-    : (VAR1 '=' ('='|'>')) => VAR1
-    | (VAR1 '=') => VAR1     { $setType(AVAR); }
-    | VAR1 
-    ;
-
+    
+ID options { testLiterals=true; } : ('$'|LETTER|'_') (LETTER|'_'|DIGIT)* ;
+    
 SYM
     options { testLiterals=true; }
     : '(' | ')' | '[' | ']' | ',' 
@@ -1826,22 +1866,9 @@ DOTTY
     | '.'                    {$setType(DOT);}
     ;
 
-protected IDWORD
-    : ('@'|'_'|LETTER) ('@'|'_'|'#'|LETTER|DIGIT)*
-    ;
-
-ID
-    options { ignore=WS; }
-    : (IDWORD ('?')? ':') => IDWORD {$setType(FNAME);}
-    | (IDWORD '=') => IDWORD {$setType(AID);}
-    // | (IDWORD '*') => IDWORD
-    // | (IDWORD '=') => IDWORD {$setType(AVAR);}
-    | IDWORD { _ttype = testLiteralsTable(_ttype); }
-    
-    ;
 
 protected DOT_ID
-    : '.'! IDWORD
+    : '.'! ID
     ;
 
 protected DOT_STAR

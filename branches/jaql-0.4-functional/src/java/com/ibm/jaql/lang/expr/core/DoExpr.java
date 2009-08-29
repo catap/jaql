@@ -35,24 +35,9 @@ import com.ibm.jaql.util.Bool3;
 public class DoExpr extends Expr
 {
 
-  public DoExpr(Expr[] exprs)
+  public DoExpr(Expr ... exprs)
   {
     super(exprs);
-  }
-
-  public DoExpr(Expr expr0)
-  {
-    super(expr0);
-  }
-
-  public DoExpr(Expr expr0, Expr expr1)
-  {
-    super(expr0, expr1);
-  }
-
-  public DoExpr(Expr expr0, Expr expr1, Expr expr2)
-  {
-    super(expr0, expr1, expr2);
   }
 
   public DoExpr(ArrayList<? extends Expr> exprs)

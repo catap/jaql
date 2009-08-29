@@ -18,8 +18,8 @@ package com.ibm.jaql.lang.expr.udf;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -72,7 +72,7 @@ public class JavaFnExpr extends Expr
    * @param cls
    * @param exprList
    */
-  public JavaFnExpr(String fnName, Class<?> cls, ArrayList<Expr> exprList)
+  public JavaFnExpr(String fnName, Class<?> cls, List<Expr> exprList)
   {
     super(exprList);
     try
@@ -191,7 +191,8 @@ public class JavaFnExpr extends Expr
     return ExprProperty.createSafeDefaults();
   }
 
-	@Override
+	@SuppressWarnings("unchecked")
+  @Override
   public Schema getSchema()
   {
     Class<?> c =  method.getReturnType();

@@ -22,14 +22,27 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Picks any value. If there is at least one non-null values, picks a non-null value.
  * 
  */
-@JaqlFn(fnName = "any", minArgs = 1, maxArgs = 1)
 public final class AnyAgg extends AlgebraicAggregate
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor
+  {
+    public Descriptor()
+    {
+      super(
+          "any",
+          AnyAgg.class,
+          new JsonValueParameters(new JsonValueParameter("a", SchemaFactory.arrayOrNullSchema())),
+          SchemaFactory.anySchema());
+    }
+  }
+  
   private JsonValue result;
   
   /**

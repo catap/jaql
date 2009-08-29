@@ -31,7 +31,7 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * A very rough cut at calling R from Jaql.
@@ -46,9 +46,16 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * @author kbeyer
  *
  */
-@JaqlFn(fnName = "R", minArgs = 2, maxArgs = Expr.UNLIMITED_EXPRS)
 public class RFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par2u
+  {
+    public Descriptor()
+    {
+      super("R", RFn.class);
+    }
+  }
+  
   protected static String program = System.getProperty("R.home", "R");
   protected static String args = "--no-save --no-restore --slave --ess";
   protected static String cmd = program + " " + args;

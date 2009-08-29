@@ -29,14 +29,21 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "jaqlGet", minArgs = 1, maxArgs = 2)
 public class JaqlGetFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("jaqlGet", JaqlGetFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -62,25 +69,21 @@ public class JaqlGetFn extends Expr
   {
     JsonString urlText = (JsonString) exprs[0].eval(context);
     String urlStr = urlText.toString();
-    // TODO: memory!!
-    if (exprs.length == 2)
+    JsonRecord args = (JsonRecord) exprs[1].eval(context);
+    if (args != null)
     {
-      JsonRecord args = (JsonRecord) exprs[1].eval(context);
-      if (args != null)
+      String sep = "?";
+      for (Entry<JsonString, JsonValue> e : args)
       {
-        String sep = "?";
-        for (Entry<JsonString, JsonValue> e : args)
+        JsonString name = e.getKey();          
+        JsonValue w = e.getValue();
+        if (w != null)
         {
-          JsonString name = e.getKey();          
-          JsonValue w = e.getValue();
-          if (w != null)
-          {
-            String s = w.toString();
-            // System.out.println(name + "=" + s);
-            s = URLEncoder.encode(s, "UTF-8");
-            urlStr += sep + name + "=" + s;
-            sep = "&";
-          }
+          String s = w.toString();
+          // System.out.println(name + "=" + s);
+          s = URLEncoder.encode(s, "UTF-8");
+          urlStr += sep + name + "=" + s;
+          sep = "&";
         }
       }
     }

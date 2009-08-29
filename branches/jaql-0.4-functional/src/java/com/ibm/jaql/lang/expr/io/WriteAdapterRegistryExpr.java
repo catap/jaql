@@ -19,7 +19,7 @@ import com.ibm.jaql.io.registry.RegistryUtil;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -27,9 +27,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * 
  * writeAdapterRegistry(string filename) returns null
  */
-@JaqlFn(fnName = "writeAdapterRegistry", minArgs = 1, maxArgs = 1)
 public class WriteAdapterRegistryExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("writeAdapterRegistry", WriteAdapterRegistryExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

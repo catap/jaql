@@ -17,17 +17,22 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.JaqlFunction;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -35,7 +40,33 @@ import com.ibm.jaql.util.Bool3;
  */
 public class FunctionCallExpr extends Expr
 {
-  // protected Item[] args;
+  private static final Map<JsonString, Expr> NO_NAMED_ARGS 
+    = Collections.unmodifiableMap(new HashMap<JsonString, Expr>(0));
+  
+  /** Pseudo-expression used for parameters that do not have a name */
+  private static final class NoNameExpr extends Expr
+  {
+    public NoNameExpr(Expr ... exprs)
+    {
+      super();
+    }
+    
+    @Override
+    public Map<ExprProperty, Boolean> getProperties()
+    {
+      Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+      result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+      return result;
+    }
+    
+    @Override
+    public JsonValue eval(Context context) throws Exception
+    {
+      return null; // null means positional
+    }
+  }
+
+  // [ fn, ( nameExpr, valueExpr )* ]
   protected Expr[] args;
 
   /**
@@ -43,13 +74,24 @@ public class FunctionCallExpr extends Expr
    * @param args
    * @return
    */
-  private static Expr[] makeExprs(Expr fn, ArrayList<Expr> args)
+  public static Expr[] makeExprs(Expr fn, List<Expr> args, Map<JsonString, Expr> namedArgs)
   {
-    Expr[] exprs = new Expr[args.size() + 1];
+    int np = args.size(); 
+    int nn = namedArgs.size();
+    int n = np+nn;
+    Expr[] exprs = new Expr[2*n + 1];
     exprs[0] = fn;
-    for (int i = 1; i < exprs.length; i++)
+    for (int i = 0; i < np; i++)
     {
-      exprs[i] = args.get(i - 1);
+      exprs[2*i+1] = new NoNameExpr();
+      exprs[2*i+1+1] = args.get(i);
+    }
+    Iterator<Entry<JsonString, Expr>> it = namedArgs.entrySet().iterator();
+    for (int i = 0; it.hasNext(); i++)
+    {
+      Entry<JsonString, Expr> e = it.next();
+      exprs[2*(i+np)+1] = new ConstExpr(e.getKey());
+      exprs[2*(i+np)+1+1] = e.getValue();
     }
     return exprs;
   }
@@ -62,7 +104,6 @@ public class FunctionCallExpr extends Expr
   public FunctionCallExpr(Expr[] exprs)
   {
     super(exprs);
-    // args = new Item[exprs.length - 1];
     args = new Expr[exprs.length - 1];
   }
   
@@ -70,9 +111,9 @@ public class FunctionCallExpr extends Expr
    * @param fn
    * @param args
    */
-  public FunctionCallExpr(Expr fn, ArrayList<Expr> args)
+  public FunctionCallExpr(Expr fn, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs)
   {
-    this(makeExprs(fn, args));
+    this(makeExprs(fn, positionalArgs, namedArgs));
   }
 
   /**
@@ -80,23 +121,21 @@ public class FunctionCallExpr extends Expr
    * @param fn
    * @param arg0
    */
-  public FunctionCallExpr(Expr fn, Expr arg1)
+  public FunctionCallExpr(Expr fn, Expr ... positionalArgs)
   {
-    super(fn,arg1);
+    this(makeExprs(fn, toList(positionalArgs), NO_NAMED_ARGS));
   }
-
-  /**
-   * 
-   * @param fn
-   * @param arg1
-   * @param arg2
-   */
-  public FunctionCallExpr(Expr fn, Expr arg1, Expr arg2)
-  {
-    super(fn,arg1,arg2);
-  }
-
   
+  private static List<Expr> toList(Expr ... exprs)
+  {
+    List<Expr> exprList = new ArrayList<Expr>(exprs.length);
+    for (int i=0; i<exprs.length; i++)
+    {
+      exprList.add(exprs[i]);
+    }
+    return exprList;
+  }
+
   /**
    * @return
    */
@@ -110,103 +149,102 @@ public class FunctionCallExpr extends Expr
    */
   public final int numArgs()
   {
-    return exprs.length - 1;
-  }
-
-  /**
-   * @param i
-   * @return
-   */
-  public final Expr arg(int i)
-  {
-    return exprs[i + 1];
+    return (exprs.length - 1)/2;
   }
 
   /** may return null */
-  protected DefineFunctionExpr getDef()
+  protected Function getFunction()
   {
-    Expr fn = fnExpr();
-    DefineFunctionExpr def = null;
-
-    // We cannot safely skip the DoExpr when looking for properties.
-    // Instead, we'll rely on the FunctionInline rewrite to push the call into the DoExpr.
-    // 
-    //    if( fn instanceof DoExpr )
-    //    {
-    //      fn = ((DoExpr)fn).returnExpr();
-    //    }
-    
-    if( fn instanceof DefineFunctionExpr )
+    if (fnExpr().isCompileTimeComputable().always())
     {
-      def = (DefineFunctionExpr)fn;
-    }
-    else if( fn instanceof ConstExpr )
-    {
-      JaqlFunction jf = (JaqlFunction)((ConstExpr)fn).value;
-      if( fn != null )
+      try
       {
-        def = jf.getFunction();
+        return (Function)fnExpr().eval(Env.getCompileTimeContext());
+      } catch (Exception e)
+      {
+        return null;
       }
     }
-    return def;
+    return null;
   }
 
-  /**
-   * We look into the function definition and our arguments for our properties.
-   */
-  @Override
-  public Bool3 getProperty(ExprProperty prop, boolean deep)
+//  /**
+//   * We look into the function definition and our arguments for our properties.
+//   */
+//  @Override
+//  public Bool3 getProperty(ExprProperty prop, boolean deep)
+//  {
+//    Function f = getFunction();
+//    Map<ExprProperty, Boolean> props = getProperties();
+//    if (deep)
+//    {
+//      // We need to check inside the function body.
+//      // If the function
+//      Expr[] toCheck = exprs;
+//      if( exprs[0] != def && def != null )
+//      {
+//        toCheck = exprs.clone();
+//        toCheck[0] = def;
+//      }
+//      return getProperty(props, prop, toCheck);
+//    }
+//    else
+//    {
+//      return getProperty(props, prop, null);
+//    }
+//  }
+//
+//  /**
+//   * If the properties of the function (namely the function body at this point) are not known, 
+//   * then we are conservative. 
+//   */
+//  @Override
+//  public Map<ExprProperty, Boolean> getProperties()
+//  {
+//    CaptureExpr def = getDef();
+//    if( def == null )
+//    {
+//      return ExprProperty.createSafeDefaults();
+//    }
+//    else
+//    {
+//      return ExprProperty.createUnsafeDefaults();
+//    }
+//  }
+//
+//
+//  @Override
+//  public Schema getSchema()
+//  {
+//    CaptureExpr def = getDef();
+//    if( def != null )
+//    {
+//      return def.body().getSchema();
+//    }
+//    return SchemaFactory.anySchema();
+//  }
+
+  
+  public int noArgs()
   {
-    DefineFunctionExpr def = getDef();
-    Map<ExprProperty, Boolean> props = getProperties();
-    if (deep)
-    {
-      // We need to check inside the function body.
-      // If the function
-      Expr[] toCheck = exprs;
-      if( exprs[0] != def && def != null )
-      {
-        toCheck = exprs.clone();
-        toCheck[0] = def;
-      }
-      return getProperty(props, prop, toCheck);
-    }
-    else
-    {
-      return getProperty(props, prop, null);
-    }
+    return (exprs.length-1)/2;
   }
-
-  /**
-   * If the properties of the function (namely the function body at this point) are not known, 
-   * then we are convervative. 
-   */
-  @Override
-  public Map<ExprProperty, Boolean> getProperties()
+  
+  public Expr arg(int i)
   {
-    DefineFunctionExpr def = getDef();
-    if( def == null )
-    {
-      return ExprProperty.createSafeDefaults();
-    }
-    else
-    {
-      return ExprProperty.createUnsafeDefaults();
-    }
+    return exprs[2*i+1+1];
   }
-
-
-  @Override
-  public Schema getSchema()
+  
+  public boolean hasName(int i)
   {
-    DefineFunctionExpr def = getDef();
-    if( def != null )
-    {
-      return def.body().getSchema();
-    }
-    return SchemaFactory.anySchema();
+    return !(exprs[2*i+1] instanceof NoNameExpr);
   }
-
+  
+  public Expr name(int i)
+  {
+    assert hasName(i);
+    return exprs[2*i+1];
+  }
   /*
    * (non-Javadoc)
    * 
@@ -218,15 +256,20 @@ public class FunctionCallExpr extends Expr
       throws Exception
   {
     exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
+    fnExpr().decompile(exprText, capturedVars);
     exprText.print(")");
     exprText.print("(");
     char sep = ' ';
-    for (int i = 1; i < exprs.length; i++)
+    for (int i = 0; i < noArgs(); i++)
     {
       exprText.print(sep);
+      if (hasName(i))
+      {
+        exprText.print((JsonString)((ConstExpr)name(i)).value); // TODO: change this if more general expr are allowed
+        exprText.print("=");
+      }
       exprText.print("(");
-      exprs[i].decompile(exprText, capturedVars);
+      arg(i).decompile(exprText, capturedVars);
       exprText.print(")");
       sep = ',';
     }
@@ -241,16 +284,14 @@ public class FunctionCallExpr extends Expr
   @Override
   public JsonValue eval(Context context) throws Exception
   {
-    JsonValue fnVal = exprs[0].eval(context);
-    if( fnVal == null )
+    Function fn = (Function)exprs[0].eval(context);
+    if( fn == null )
     {
       return null;
     }
-    // if( fnVal instanceof JaqlFunction  )
-    {
-      JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
-      return fn.eval(context, exprs, 1, exprs.length - 1);
-    }
+    fn = context.getCallable(this, fn);
+    fn.setArguments(exprs, 1, exprs.length - 1, true);
+    return fn.eval(context);
 //    else if( fnVal instanceof JString )
 //    {
 //      //PythonInterpreter interp = new PythonInterpreter();
@@ -333,12 +374,16 @@ public class FunctionCallExpr extends Expr
   @Override
   public JsonIterator iter(Context context) throws Exception
   {
-    JsonValue fnVal = exprs[0].eval(context);
-    if (fnVal == null)
+    Function fn = (Function)exprs[0].eval(context);
+    if( fn == null )
     {
       return JsonIterator.NULL;
     }
-    JaqlFunction fn = context.getCallable(this, (JaqlFunction)fnVal);
-    return fn.iter(context, exprs, 1, exprs.length - 1);
+    if( fn instanceof JaqlFunction  )
+    {
+      fn = context.getCallable(this, (JaqlFunction)fn);
+    }
+    fn.setArguments(exprs, 1, exprs.length - 1, true);
+    return fn.iter(context);
   }
 }

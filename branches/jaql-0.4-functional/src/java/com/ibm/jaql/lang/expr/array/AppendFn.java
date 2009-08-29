@@ -19,7 +19,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 // TODO: make append macro?
 
@@ -30,9 +30,17 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * append(null, null) be null? it would break any unnest definition... Push
  * unnest into ListExpr?
  */
-@JaqlFn(fnName = "append", minArgs = 1, maxArgs = Expr.UNLIMITED_EXPRS)
 public class AppendFn extends IterExpr
 {
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par1u
+  {
+    public Descriptor()
+    {
+      super("append", AppendFn.class);
+    }
+  }
+  
   /**
    * append(array1, array2, ...)
    * 

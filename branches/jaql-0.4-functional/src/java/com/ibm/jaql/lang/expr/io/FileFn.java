@@ -18,14 +18,21 @@ package com.ibm.jaql.lang.expr.io;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression that constructs an I/O descriptor for local file access.
  */
-@JaqlFn(fnName="file", minArgs=1, maxArgs=2)
 public class FileFn extends AbstractHandleFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("file", FileFn.class);
+    }
+  }
+  
   private final static JsonValue TYPE = new JsonString("local");
   
   /**

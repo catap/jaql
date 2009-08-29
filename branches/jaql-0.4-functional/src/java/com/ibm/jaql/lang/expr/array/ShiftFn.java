@@ -24,12 +24,18 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
-@JaqlFn(fnName="shift",minArgs=2,maxArgs=3)
 public class ShiftFn extends IterExpr
 {
-
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par23
+  {
+    public Descriptor()
+    {
+      super("shift", ShiftFn.class);
+    }
+  }
+  
   // input expr, num before, (num after)?
   public ShiftFn(Expr[] inputs)
   {
@@ -89,24 +95,17 @@ public class ShiftFn extends IterExpr
     }
 
     final long after;
-    if( exprs.length == 2 )
+    JsonNumber afterNum = (JsonNumber)exprs[2].eval(context);
+    if( afterNum == null )
     {
       after = 0;
     }
     else
     {
-      JsonNumber afterNum = (JsonNumber)exprs[2].eval(context);
-      if( afterNum == null )
+      after = afterNum.longValueExact();
+      if( after < 0 )
       {
-        after = 0;
-      }
-      else
-      {
-        after = afterNum.longValueExact();
-        if( after < 0 )
-        {
-          throw new RuntimeException("shift after must be >= 0 got "+after);
-        }
+        throw new RuntimeException("shift after must be >= 0 got "+after);
       }
     }
 

@@ -18,35 +18,33 @@ package com.ibm.jaql.io.serialization.binary.def;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.lang.reflect.UndeclaredThrowableException;
+import java.io.StringReader;
 
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.parser.JaqlLexer;
+import com.ibm.jaql.lang.parser.JaqlParser;
 
-class JaqlFunctionSerializer extends BinaryBasicSerializer<JaqlFunction>
+class FunctionSerializer extends BinaryBasicSerializer<Function>
 {
   @Override
-  public JaqlFunction read(DataInput in, JsonValue target) throws IOException
+  public Function read(DataInput in, JsonValue target) throws IOException
   {
-    JaqlFunction t;
-    if (target==null || !(target instanceof JaqlFunction)) {
-      t = new JaqlFunction();
-    } else {
-      t = (JaqlFunction)target;
-    }
-      
     String fnText = in.readUTF();
-    try {
-      t.set(fnText);
-    } catch (Exception e) {
-      throw new UndeclaredThrowableException(e);
+    JaqlLexer lexer = new JaqlLexer(new StringReader(fnText));
+    JaqlParser parser = new JaqlParser(lexer);
+    try
+    {
+      return parser.functionLit();
+    } catch (Exception e)
+    {
+      throw new IOException(e);
     }
-    return t;
   }
 
   @Override
-  public void write(DataOutput out, JaqlFunction value) throws IOException
+  public void write(DataOutput out, Function value) throws IOException
   {
     out.writeUTF(value.getText());
   }

@@ -24,17 +24,24 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MathExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "avg", minArgs = 1, maxArgs = 1)
 public class AvgAgg extends AlgebraicAggregate
 {
   private SumAgg.Summer summer = new SumAgg.Summer();
   private long count = 0;
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("avg", AvgAgg.class);
+    }
+  }
   
   /**
    * one arg

@@ -22,16 +22,23 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "pickN", minArgs = 2, maxArgs = 2)
 public final class PickNAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {
   private SpilledJsonArray array = new SpilledJsonArray();
   private long limit;
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("pickN", PickNAgg.class);
+    }
+  }
   
   /**
    * Expr aggInput, Expr N

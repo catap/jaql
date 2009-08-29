@@ -19,14 +19,21 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "substring", minArgs = 2, maxArgs = 3)
 public class SubstringFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par23
+  {
+    public Descriptor()
+    {
+      super("substring", SubstringFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -48,26 +55,18 @@ public class SubstringFn extends Expr
       return null;
     }
     JsonNumber n = (JsonNumber) exprs[1].eval(context);
+    long start = n!=null ? n.longValueExact() : 0;
+    String s = text.toString(); // TODO: add JString.substring() methods with target buffer
+
+    n = (JsonNumber) exprs[2].eval(context);
     if (n == null)
     {
-      return null;
-    }
-    String s = text.toString(); // TODO: add JString.substring() methods with target buffer
-    long start = n.longValueExact();
-
-    if (exprs.length == 3)
-    {
-      n = (JsonNumber) exprs[2].eval(context);
-      if (n == null)
-      {
-        return null;
-      }
-      long end = n.longValueExact();
-      s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?
+      s = s.substring((int) start); // TODO: switch to python/js semantics?
     }
     else
     {
-      s = s.substring((int) start); // TODO: switch to python/js semantics?
+      long end = n.longValueExact();
+      s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?
     }
 
     JsonString js = new JsonString(s); // TODO: memory

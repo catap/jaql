@@ -217,7 +217,6 @@ public class Env
 
   public Var makeVar(String name, Schema schema) // FIXME: replace other scope()/unscope calls with this
   {
-    assert name.charAt(0) == '$';
     assert schema != null;
     Var var = scope(name, schema);
     unscope(var);
@@ -283,6 +282,12 @@ public class Env
   }
 
   /** Preliminary method. Used to obtain a context at compile time. */
+  // FIXME: We require a context here! The context should be passed in to this function.
+  // The context cannot be reset after this call because parts of the result may be in the context
+  // temp space.  The temp space needs to live as long as the expression tree lives.  (This is true of
+  // all constants in the tree.)  As a temporary HACK, we are using a null context.  If there is a expr that
+  // reports isConst and requires the context, we will get a null pointer exception, which is a bug on our part.
+  // Either we need to pass a context around during parsing, or we need to defer this evaluation to after parsing.
   private static Context compileTimeContext = new Context();
   public static Context getCompileTimeContext()
   {
