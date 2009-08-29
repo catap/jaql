@@ -1,0 +1,614 @@
+hdfsShell("-rm delimited.del") * 0;##
+0
+
+hdfsShell("-rm delimited-invalid1.del.del") * 0;##
+0
+
+hdfsShell("-rm delimited-invalid2.del.del") * 0;##
+0
+
+hdfsShell("-rm delimited-invalid3.del.del") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid1.del delimited-invalid1.del") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited-invalid2.del") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;##
+0
+
+
+// test readers
+$f = "delimited.del";##
+"$f"
+
+read(lines($f));##
+[
+  "HELLO,world,1",
+  "hello , world,2",
+  "\"hello\",\"world\",3",
+  "\"hello\",\"\"\"world\"\"\",4",
+  "\"\",\"\"\"\",5",
+  "\"\"\"\"\"\",\"\"\"\"\"\"\"\",6",
+  "a,a,",
+  "a,,",
+  ",,"
+]
+
+read(del($f));##
+[
+  [
+    "HELLO",
+    "world",
+    "1"
+  ],
+  [
+    "hello ",
+    " world",
+    "2"
+  ],
+  [
+    "hello",
+    "world",
+    "3"
+  ],
+  [
+    "hello",
+    "\"world\"",
+    "4"
+  ],
+  [
+    "",
+    "\"",
+    "5"
+  ],
+  [
+    "\"\"",
+    "\"\"\"",
+    "6"
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ]
+]
+
+read(del($f, { quoted: false }));##
+[
+  [
+    "HELLO",
+    "world",
+    "1"
+  ],
+  [
+    "hello ",
+    " world",
+    "2"
+  ],
+  [
+    "\"hello\"",
+    "\"world\"",
+    "3"
+  ],
+  [
+    "\"hello\"",
+    "\"\"\"world\"\"\"",
+    "4"
+  ],
+  [
+    "\"\"",
+    "\"\"\"\"",
+    "5"
+  ],
+  [
+    "\"\"\"\"\"\"",
+    "\"\"\"\"\"\"\"\"",
+    "6"
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ]
+]
+
+read(del($f, { quoted: null }));##
+FAILURE
+ // should fail
+read(del($f, { delimiter: null }));##
+FAILURE
+ // should fail
+
+// test field information
+read(del($f, { fields: ["c1", "c2", "c3"] }));##
+[
+  {
+    "c1": "HELLO",
+    "c2": "world",
+    "c3": "1"
+  },
+  {
+    "c1": "hello ",
+    "c2": " world",
+    "c3": "2"
+  },
+  {
+    "c1": "hello",
+    "c2": "world",
+    "c3": "3"
+  },
+  {
+    "c1": "hello",
+    "c2": "\"world\"",
+    "c3": "4"
+  },
+  {
+    "c1": "",
+    "c2": "\"",
+    "c3": "5"
+  },
+  {
+    "c1": "\"\"",
+    "c2": "\"\"\"",
+    "c3": "6"
+  },
+  {
+    "c1": "a",
+    "c2": "a",
+    "c3": null
+  },
+  {
+    "c1": "a",
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  }
+]
+
+read(del($f, { fields: ["c3", "c1", "c2"] }));##
+[
+  {
+    "c1": "world",
+    "c2": "1",
+    "c3": "HELLO"
+  },
+  {
+    "c1": " world",
+    "c2": "2",
+    "c3": "hello "
+  },
+  {
+    "c1": "world",
+    "c2": "3",
+    "c3": "hello"
+  },
+  {
+    "c1": "\"world\"",
+    "c2": "4",
+    "c3": "hello"
+  },
+  {
+    "c1": "\"",
+    "c2": "5",
+    "c3": ""
+  },
+  {
+    "c1": "\"\"\"",
+    "c2": "6",
+    "c3": "\"\""
+  },
+  {
+    "c1": "a",
+    "c2": null,
+    "c3": "a"
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": "a"
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  }
+]
+
+read(del($f, { fields: null }));##
+[
+  [
+    "HELLO",
+    "world",
+    "1"
+  ],
+  [
+    "hello ",
+    " world",
+    "2"
+  ],
+  [
+    "hello",
+    "world",
+    "3"
+  ],
+  [
+    "hello",
+    "\"world\"",
+    "4"
+  ],
+  [
+    "",
+    "\"",
+    "5"
+  ],
+  [
+    "\"\"",
+    "\"\"\"",
+    "6"
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ]
+]
+
+
+read(del($f, { fields: { c1: schema string, c2:schema string, c3:schema string } }));##
+FAILURE
+ // should fail
+read(del($f, { fields: ["c1", "c2", 3 ] }));##
+FAILURE
+ // should fail
+read(del($f, { fields: ["c1", "c2", "c3", "c4"] }));##
+FAILURE
+ // should fail
+
+// test invalid files
+$f = "delimited-invalid1.del";##
+"$f"
+
+read(del($f));##
+FAILURE
+                      // should fail
+read(del($f, { quoted: false }));##
+[
+  [
+    "hello",
+    "\"wo",
+    "1"
+  ]
+]
+   // should work
+
+$f = "delimited-invalid2.del";##
+"$f"
+
+read(del($f));##
+FAILURE
+                      // should fail
+read(del($f, { quoted: false }));##
+[
+  [
+    "hello",
+    "\"wo\"\"",
+    "1"
+  ]
+]
+   // should work
+
+$f = "delimited-invalid3.del";##
+"$f"
+
+read(del($f));##
+FAILURE
+                      // should fail
+read(del($f, { quoted: false }));##
+FAILURE
+   // should fail
+
+// test conversion of atomic types
+convert("1", schema long);##
+1
+
+convert("1.123", schema double);##
+1.123
+
+convert("1.123", schema decfloat);##
+1.123m
+
+convert("abcd", schema string);##
+"abcd"
+
+convert("true", schema boolean);##
+true
+
+convert("1", schema long?);##
+1
+
+convert("1.123", schema double?);##
+1.123
+
+convert("1.123", schema decfloat?);##
+1.123m
+
+convert("abcd", schema string?);##
+"abcd"
+
+convert("true", schema boolean?);##
+true
+
+convert(null, schema long?);##
+null
+
+convert(null, schema double?);##
+null
+
+convert(null, schema decfloat?);##
+null
+
+convert(null, schema string?);##
+null
+
+convert(null, schema boolean?);##
+null
+
+convert(null, schema long);##
+FAILURE
+ // should fail
+convert("1", schema long(min=0));##
+FAILURE
+ // should fail (for the moment)
+
+// test conversion of arrays
+convert(["a","1"], schema [ string, long ]);##
+[
+  "a",
+  1
+]
+
+convert(["a","1"], schema [ string, long ]?);##
+[
+  "a",
+  1
+]
+
+convert(null, schema [ string, long ]?);##
+null
+
+convert(["a","1"], schema [ string, long? ]);##
+[
+  "a",
+  1
+]
+
+convert(["a",null], schema [ string, long? ]);##
+[
+  "a",
+  null
+]
+
+
+convert(["a","1","1"], schema [ string, long ]);##
+FAILURE
+ // should fail
+convert(["a"], schema [ string, long ]);##
+FAILURE
+ // should fail
+convert(["a",1], schema [ string, long ]);##
+FAILURE
+ // should fail
+convert(null, schema [ string, long ]);##
+FAILURE
+ // should fail
+
+
+// test conversion of records
+convert({a:"a", b:"2"}, schema { a:string, b: long });##
+{
+  "a": "a",
+  "b": 2
+}
+
+convert({a:"a", b:"2"}, schema { a:string, b: long }?);##
+{
+  "a": "a",
+  "b": 2
+}
+
+convert(null, schema { a:string, b: long }?);##
+null
+
+convert({a:"a", b:"2"}, schema { a:string, b: long? });##
+{
+  "a": "a",
+  "b": 2
+}
+
+convert({a:"a", b:null}, schema { a:string, b: long? });##
+{
+  "a": "a",
+  "b": null
+}
+
+
+convert({a:"a", b:"2", c:"1"}, schema { a:string, b: long });##
+FAILURE
+ // should fail
+convert({a:"a"}, schema { a:string, b: long });##
+FAILURE
+ // should fail
+convert({a:"a", b:1}, schema { a:string, b: long });##
+FAILURE
+ // should fail
+convert(null, schema { a:string, b: long });##
+FAILURE
+ // should fail
+
+// all together
+schemaof(read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } })));##
+schema [
+         {
+           "c1": string?,
+           "c2": string?,
+           "c3": long?
+         }<0,*>
+       ]
+
+schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));##
+schema [
+         [
+           string?,
+           string?,
+           long?
+         ]<0,*>
+       ]
+
+
+read(del("delimited.del", { convert: schema [ string?, string?, long? ] }));##
+[
+  [
+    "HELLO",
+    "world",
+    1
+  ],
+  [
+    "hello ",
+    " world",
+    2
+  ],
+  [
+    "hello",
+    "world",
+    3
+  ],
+  [
+    "hello",
+    "\"world\"",
+    4
+  ],
+  [
+    "",
+    "\"",
+    5
+  ],
+  [
+    "\"\"",
+    "\"\"\"",
+    6
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ]
+]
+
+schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));##
+schema [
+         [
+           string?,
+           string?,
+           long?
+         ]<0,*>
+       ]
+
+read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));##
+[
+  {
+    "c1": "HELLO",
+    "c2": "world",
+    "c3": 1
+  },
+  {
+    "c1": "hello ",
+    "c2": " world",
+    "c3": 2
+  },
+  {
+    "c1": "hello",
+    "c2": "world",
+    "c3": 3
+  },
+  {
+    "c1": "hello",
+    "c2": "\"world\"",
+    "c3": 4
+  },
+  {
+    "c1": "",
+    "c2": "\"",
+    "c3": 5
+  },
+  {
+    "c1": "\"\"",
+    "c2": "\"\"\"",
+    "c3": 6
+  },
+  {
+    "c1": "a",
+    "c2": "a",
+    "c3": null
+  },
+  {
+    "c1": "a",
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  }
+]
+

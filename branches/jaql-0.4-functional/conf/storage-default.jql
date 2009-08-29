@@ -1,0 +1,83 @@
+//
+// Copyright (C) IBM Corp. 2008.
+// 
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not
+// use this file except in compliance with the License. You may obtain a copy of
+// the License at
+// 
+// http://www.apache.org/licenses/LICENSE-2.0
+// 
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+// License for the specific language governing permissions and limitations under
+// the License.
+//
+
+[
+// local file data
+{key: 'local',
+ val: {inoptions : 	{adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+				                 format  : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'},
+       outoptions: 	{adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                     format  : 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}}
+},
+				 
+// hdfs data
+{key:	'hdfs',
+ val: {inoptions  :	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+        		           format       : 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+        		           configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'},
+       outoptions :	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+       			           format       : 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+       			           configurator : 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}}
+},
+
+// deliminated data (CSV)
+{key: 'del',
+ val: { inoptions: {
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+          format:       'org.apache.hadoop.mapred.TextInputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.FromDelConverter' },
+        outoptions: { 
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+          format:       'org.apache.hadoop.mapred.TextOutputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.ToDelConverter' }}
+},
+
+// jaqltemp data
+{key:   'jaqltemp',
+ val: {inoptions  : {adapter      : 'com.ibm.jaql.io.hadoop.TempHadoopInputAdapter', 
+                           format       : 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                           configurator : 'com.ibm.jaql.io.hadoop.TempFileInputConfigurator'},
+       outoptions : {adapter      : 'com.ibm.jaql.io.hadoop.TempHadoopOutputAdapter', 
+                           format       : 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                           configurator : 'com.ibm.jaql.io.hadoop.TempFileOutputConfigurator'}}
+},
+
+// hbase data
+{key:	'hbase',
+ val: {inoptions  :	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+       			           format       : 'com.ibm.jaql.io.hbase.JaqlTableInputFormat', 
+       			           configurator : 'com.ibm.jaql.io.hbase.TableInputConfigurator'},
+       outoptions :	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+       			           format       : 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat', 
+       			           configurator : 'com.ibm.jaql.io.hbase.TableOutputConfigurator'}}
+},
+                 			     
+// task list 
+{key:	'array',
+	val: {inoptions  : {adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+				                 format       : 'com.ibm.jaql.io.hadoop.ArrayInputFormat',
+				                 configurator : 'com.ibm.jaql.io.hadoop.ArrayInputConfigurator'}}
+},
+				                           
+// http data
+{key: 'uri',
+ val: {inoptions  : {adapter      : 'com.ibm.jaql.io.stream.StreamInputAdapter',
+                     format       : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream',
+                     asArray      : false}}
+}
+]
