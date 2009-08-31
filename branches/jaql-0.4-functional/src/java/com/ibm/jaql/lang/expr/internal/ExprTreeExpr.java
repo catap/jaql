@@ -18,7 +18,7 @@ public class ExprTreeExpr extends Expr
   {
     public Descriptor()
     {
-      super("exprTree", ExprTreeExpr.class);
+      super("exprtree", ExprTreeExpr.class);
     }
   }
   

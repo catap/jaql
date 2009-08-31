@@ -5,7 +5,10 @@ import java.lang.reflect.Constructor;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescriptor
@@ -40,6 +43,7 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
   private JsonValueParameters parameters;
   private Schema resultSchema;
   private Constructor<? extends Expr> constructor;
+  private static final VarMap EMPTY_VAR_MAP = new VarMap();
   
   public DefaultBuiltInFunctionDescriptor(String name, Class<? extends Expr> implementingClass,
       JsonValueParameters parameters, Schema resultSchema)
@@ -121,7 +125,18 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
   {
     try
     {
-      Expr e = constructor.newInstance(new Object[] { positionalArgs });
+      // cloning necessary because object construction changes parent field in expr's
+      Expr[] clonedArgs = new Expr[positionalArgs.length];
+      for (int i=0; i<positionalArgs.length; i++)
+      {
+        clonedArgs[i] = positionalArgs[i].clone(EMPTY_VAR_MAP);
+      }
+      Expr e = constructor.newInstance(new Object[] { clonedArgs });
+      if (e instanceof MacroExpr)
+      {
+        // should be rare because variables are usually inlined
+        e = ((MacroExpr)e).expand(new Env());
+      }
       return e;
     } catch (Exception e)
     {

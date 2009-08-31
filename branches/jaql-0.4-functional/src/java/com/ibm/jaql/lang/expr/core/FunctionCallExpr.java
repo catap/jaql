@@ -67,7 +67,6 @@ public class FunctionCallExpr extends Expr
   }
 
   // [ fn, ( nameExpr, valueExpr )* ]
-  protected Expr[] args;
 
   /**
    * @param fn
@@ -104,7 +103,6 @@ public class FunctionCallExpr extends Expr
   public FunctionCallExpr(Expr[] exprs)
   {
     super(exprs);
-    args = new Expr[exprs.length - 1];
   }
   
   /**

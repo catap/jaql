@@ -20,7 +20,10 @@ import java.util.HashMap;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -65,7 +68,7 @@ public class Env
    */
   public void makeUnique(Var var)
   {
-    var.name = var.name + "__" + varId;
+    var.setName(var.name() + "__" + varId);
     varId++;
   }
 
@@ -83,8 +86,8 @@ public class Env
    */
   public void scope(Var var)
   {
-    var.varStack = nameMap.get(var.name);
-    nameMap.put(var.name, var);
+    var.varStack = nameMap.get(var.name());
+    nameMap.put(var.name(), var);
   }
 
   /** Creates a new variable with the specified name and puts it into the local scope.
@@ -135,7 +138,7 @@ public class Env
    * @param varName
    * @return
    */
-  public Var scopeGlobal(String varName, Schema varSchema)
+  public Var scopeGlobal(String varName, Expr expr)
   {
     if (globalEnv != null)
     {
@@ -147,13 +150,26 @@ public class Env
     {
       unscope(var); // TODO: varName might still be on the globals scope... 
     }
-    var = scope(varName, varSchema);
+    var = new Var(varName, expr.getSchema(), expr, true);
+    scope(var);
     return var;
   }
 
-  public Var scopeGlobal(String varName)
+  public Var scopeGlobal(String varName, JsonValue value)
   {
-    return scopeGlobal(varName, SchemaFactory.anySchema());
+    if (globalEnv != null)
+    {
+      throw new RuntimeException(
+          "scopeGlobal should only be called on the global scope");
+    }
+    Var var = nameMap.get(varName);
+    if (var != null)
+    {
+      unscope(var); // TODO: varName might still be on the globals scope... 
+    }
+    var = new Var(varName, SchemaFactory.schemaOf(value), value, true);
+    scope(var);
+    return var;
   }
   
   /** Removes the most recent definition of the specified variable from this scope. 
@@ -163,7 +179,7 @@ public class Env
    */
   public void unscope(Var var)
   {
-    nameMap.put(var.name, var.varStack);
+    nameMap.put(var.name(), var.varStack);
     // TODO: we should be able to reduce the index and reuse space
     // index--;
   }
@@ -197,7 +213,7 @@ public class Env
         throw new IndexOutOfBoundsException("variable not defined: " + varName);
       }
     }
-    if (var.hidden)
+    if (var.isHidden())
     {
       throw new IndexOutOfBoundsException("variable is hidden in this scope: "
           + varName);
@@ -245,22 +261,31 @@ public class Env
           Var localVar = globalToLocal.get(var);
           if (localVar == null)
           {
-            localVar = makeVar(var.name);
+            localVar = makeVar(var.name());
             globalToLocal.put(var, localVar);
-            Expr val;
-// TODO: make global context and import from there.
+            Expr e;
+            switch (var.type())
+            {
+            case EXPR:
+           // TODO: make global context and import from there.
 //            if (var.value != null)
 //            {
 //              val = new ConstExpr(var.value);
 //            }
 //            else
-            {
-              varMap.clear();
-              val = var.expr.clone(varMap);
-              val = importGlobals(val);
+              {
+                varMap.clear();
+                e = var.expr().clone(varMap);
+                e = importGlobals(e);
+              }
+              break;
+            case VALUE:
+              e = new ConstExpr(JsonUtil.getCopyUnchecked(var.value(), null));
+              break;
+            default:
+              throw new IllegalStateException("global variables have to have be of type value or expr");
             }
-            bindings.add(new BindingExpr(BindingExpr.Type.EQ, localVar, null,
-                val));
+            bindings.add(new BindingExpr(BindingExpr.Type.EQ, localVar, null, e));
           }
           ve.setVar(localVar);
         }

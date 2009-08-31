@@ -27,34 +27,41 @@ import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * 
  */
-public class Var extends Object
+public final class Var extends Object
 {
   public enum Usage
   {
-    EVAL(), // Variable may be referenced multiple times (value must be stored)
-    STREAM(), // Variable is an array that is only referenced once (value may be
-              // streamed)
-    UNUSED()
-    // Variable is never referenced
+    EVAL,     // Variable may be referenced multiple times (value must be stored)
+    STREAM(), // Variable is an array that is only referenced once (value may be streamed)
+    UNUSED()  // Variable is never referenced
   };
+  
+  public enum Type
+  {
+    UNDEFINED,
+    VALUE,
+    ITERATOR,
+    EXPR
+  }
 
   public static final Var[] NO_VARS = new Var[0];
   public static final Var UNUSED = new Var("$__unused__");
 
-  public String name;
-  public boolean hidden = false; // variable not accessible in current parse
+  private String name;
+  private boolean hidden = false; // variable not accessible in current parse
                                  // context (this could reuse Usage)
   public Var varStack; // Used during parsing for vars of the same name;
                        // contains the a list of previous definitions of this
                        // variable
-  public Expr expr; // only for global variables
-  public Usage usage = Usage.EVAL;
-
-  public boolean isDefined = false; // variable defined?
-  public Object value; // Runtime value: JsonValue (null allowed) or
+  private Expr expr; // only for global variables
+  private Usage usage = Usage.EVAL;
+  private Type type = Type.UNDEFINED;
+  
+  private Object value; // Runtime value: JsonValue (null allowed) or
                        // JsonIterator(null disallowed)
   private Schema schema; // schema of the variable; not to be changed at runtime
-
+  private boolean isGlobal;
+  
   public Var(String name, final Schema schema)
   {
     assert schema != null;
@@ -62,12 +69,41 @@ public class Var extends Object
     this.schema = schema;
   }
 
-  /**
-   * @param name
-   */
   public Var(String name)
   {
     this(name, SchemaFactory.anySchema());
+  }
+
+  public Var(String name, Expr expr, boolean isGlobal)
+  {
+    this(name, SchemaFactory.anySchema());
+    this.expr = expr;
+    this.type = Type.EXPR;
+    this.isGlobal = isGlobal;
+  }
+
+  public Var(String name, JsonValue value, boolean isGlobal)
+  {
+    this(name, SchemaFactory.anySchema());
+    this.value = value;
+    this.type = Type.VALUE;
+    this.isGlobal = isGlobal;
+  }
+  
+  public Var(String name, Schema schema, Expr expr, boolean isGlobal)
+  {
+    this(name, schema);
+    this.expr = expr;
+    this.type = Type.EXPR;
+    this.isGlobal = isGlobal;
+  }
+
+  public Var(String name, Schema schema, JsonValue value, boolean isGlobal)
+  {
+    this(name, schema);
+    this.value = value;
+    this.type = Type.VALUE;
+    this.isGlobal = isGlobal;
   }
 
   /**
@@ -78,12 +114,17 @@ public class Var extends Object
     return name;
   }
 
+  public void setName(String name)
+  {
+    this.name = name;
+  }
+  
   /**
    * @return
    */
   public boolean isGlobal()
   {
-    return expr != null;
+    return isGlobal;
   }
 
   /***
@@ -126,7 +167,7 @@ public class Var extends Object
   public void undefine()
   {
     this.value = null;
-    isDefined = false;
+    this.type = Type.UNDEFINED;
   }
 
   /**
@@ -136,12 +177,20 @@ public class Var extends Object
    */
   public void setValue(JsonValue value)
   {
+    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
     assert schema.matchesUnsafe(value) : name + " has invalid schema: "
         + "found " + value + ", expected " + schema;
     this.value = value;
-    isDefined = true;
+    this.type = Type.VALUE;
   }
 
+  public void setExpr(Expr expr)
+  {
+    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
+    this.expr = expr;
+    this.type = Type.EXPR;
+  }
+  
   /**
    * Set the runtime value.
    * 
@@ -150,10 +199,11 @@ public class Var extends Object
    */
   public void setIter(JsonIterator iter)
   {
+    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
     assert iter != null;
     assert schema.is(ARRAY).maybe();
     value = iter;
-    isDefined = true;
+    type = Type.ITERATOR;
   }
 
   /**
@@ -168,6 +218,7 @@ public class Var extends Object
    */
   public void setEval(Expr expr, Context context) throws Exception
   {
+    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
     if (usage == Usage.STREAM && expr.getSchema().is(ARRAY, NULL).always())
     {
       setIter(expr.iter(context));
@@ -208,17 +259,12 @@ public class Var extends Object
    */
   public JsonValue getValue(Context context) throws Exception
   {
-    if (!isDefined)
+    switch (type)
     {
-      throw new NullPointerException("undefined variable: " + name());
-    }
-
-    if (value instanceof JsonValue)
-    {
+    case VALUE:
       // assert schema.matchesUnsafe(v); // already checked
       return (JsonValue) value;
-    } else if (value instanceof JsonIterator)
-    {
+    case ITERATOR:
       JsonIterator iter = (JsonIterator) value;
       JsonValue result;
       if (iter.isNull())
@@ -235,19 +281,14 @@ public class Var extends Object
       assert schema.matchesUnsafe(result);
       value = result;
       return result;
-    } else if (expr != null) // TODO: merge value and expr? value is run-time;
-                             // expr is compile-time
-    {
+    case EXPR:
       JsonValue v = expr.eval(context);
       expr = null;
       value = v;
       assert schema.matchesUnsafe(v);
       return v;
-    } else if (value == null) // value has been set to null explicitly
-    {
-      return null;
     }
-    throw new InternalError("bad variable value: " + name() + "=" + value);
+    throw new IllegalStateException("undefined variable: " + name());
   }
 
   /**
@@ -260,7 +301,7 @@ public class Var extends Object
    */
   public JsonIterator iter(Context context) throws Exception
   {
-    if (usage == Usage.STREAM && value instanceof JsonIterator)
+    if (usage == Usage.STREAM && type == Type.ITERATOR)
     {
       JsonIterator iter = (JsonIterator) value;
       value = null; // set undefined
@@ -285,5 +326,40 @@ public class Var extends Object
   {
     assert schema != null;
     this.schema = schema;
+  }
+  
+  public Usage usage()
+  {
+    return usage;
+  }
+  
+  public void setUsage(Usage usage)
+  {
+    this.usage = usage;
+  }
+  
+  public Type type()
+  {
+    return type;
+  }
+  
+  public JsonValue value()
+  {
+    return (JsonValue)value;
+  }
+  
+  public Expr expr()
+  {
+    return expr;
+  }
+  
+  public boolean isHidden()
+  {
+    return hidden;
+  }
+  
+  public void setHidden(boolean hide)
+  {
+    this.hidden = hide;
   }
 }

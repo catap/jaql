@@ -35,6 +35,12 @@ public class ArgumentExpr extends Expr
 {
   private BufferedJsonRecord target;
   private JsonValueParameters pars;
+
+  public ArgumentExpr(Expr[] e) 
+  { 
+    // this is just to make the other constructor work
+    throw new IllegalStateException("constructor must not be used");
+  };
   
   public ArgumentExpr(JsonValueParameters pars, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs)
   {

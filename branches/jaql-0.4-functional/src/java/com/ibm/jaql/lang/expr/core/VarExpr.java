@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
@@ -77,7 +78,7 @@ public class VarExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(var.name);
+    exprText.print(var.name());
     capturedVars.add(var);
   }
 
@@ -92,6 +93,26 @@ public class VarExpr extends Expr
     return new VarExpr(v);
   }
 
+  
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    if (var.isGlobal())
+    {
+      switch (var.type())
+      {
+      case VALUE:
+        Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+        result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+        return result;
+      case EXPR:
+        return var.expr().getProperties();
+      default:
+        throw new IllegalStateException("global variable not of type VALUE or EXRP");
+      }
+    }
+    return super.getProperties();
+  }
+  
   /*
    * (non-Javadoc)
    * 

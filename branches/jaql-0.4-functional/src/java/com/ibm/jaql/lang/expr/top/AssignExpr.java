@@ -20,10 +20,10 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 /**
@@ -37,15 +37,26 @@ public class AssignExpr extends TopExpr
    * @param varName
    * @param valExpr
    */
-  public AssignExpr(Var var, Expr valExpr)
+  public AssignExpr(Var var)
   {
-    super(new Expr[]{valExpr});
+    if (!var.isGlobal()) throw new IllegalArgumentException();
     this.var = var;
   }
 
   public Map<ExprProperty, Boolean> getProperties()
   {
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+    Map<ExprProperty, Boolean> result;
+    switch (var.type())
+    {
+    case VALUE:
+      result = ExprProperty.createUnsafeDefaults();
+      break;
+    case EXPR:
+      result = var.expr().getProperties();
+      break;
+    default:
+      throw new IllegalStateException();
+    }
     result.put(ExprProperty.HAS_CAPTURES, true);
     return result;
   }
@@ -61,7 +72,17 @@ public class AssignExpr extends TopExpr
   {
     exprText.print(var.name()); // TODO: expr -> $var when var is pipe var
     exprText.print(" = ");
-    exprs[0].decompile(exprText, capturedVars);
+    switch (var.type())
+    {
+    case VALUE:
+      JsonUtil.print(exprText, var.value());
+      break;
+    case EXPR:
+      var.expr().decompile(exprText, capturedVars);
+      break;
+    default:
+      throw new IllegalStateException();
+    }
   }
 
   /*
@@ -71,13 +92,6 @@ public class AssignExpr extends TopExpr
    */
   public JsonValue eval(Context context) throws Exception
   {
-    var.expr = exprs[0];
-    var.isDefined = true;
     return new JsonString(var.name());
-//    var.expr = exprs[0]; // TODO: hack: this is just signalling to use the value
-//    var.value = new Item(); // TODO: memory
-//    var.value.copy(exprs[0].eval(context)); // TODO: need deferred evaluation for top var defs; 
-//    // TODO: we can avoid copy when this is a top assignment and we own the entire expr tree (so nobody reevals) 
-//    return Item.nil;
   }
 }

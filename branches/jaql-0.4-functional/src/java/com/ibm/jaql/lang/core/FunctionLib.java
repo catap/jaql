@@ -18,8 +18,6 @@ package com.ibm.jaql.lang.core;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMaxAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMinAgg;
@@ -56,7 +54,6 @@ import com.ibm.jaql.lang.expr.binary.Base64Fn;
 import com.ibm.jaql.lang.expr.binary.HexFn;
 import com.ibm.jaql.lang.expr.core.CombineExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
@@ -70,7 +67,6 @@ import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.DatePartsFn;
 import com.ibm.jaql.lang.expr.date.NowFn;
 import com.ibm.jaql.lang.expr.db.JdbcExpr;
-import com.ibm.jaql.lang.expr.function.BuiltInExpr;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
@@ -207,11 +203,9 @@ public class FunctionLib
     }
     
     // register
-    Var v = env.scopeGlobal(descriptor.getName(), SchemaFactory.functionSchema());
+    env.scopeGlobal(descriptor.getName(), new BuiltInFunction(descriptor));
     descriptorMap.put(descriptorClassName, descriptor);
     implementationMap.put(descriptor.getImplementingClass(), descriptor);
-    v.expr = new BuiltInExpr(new ConstExpr(new JsonString(descriptorClassName)));
-    v.isDefined = true;
   }
   
   public static void registerAll(Env env)

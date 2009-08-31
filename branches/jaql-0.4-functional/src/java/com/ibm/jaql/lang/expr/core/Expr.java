@@ -807,8 +807,8 @@ public abstract class Expr
         if (c instanceof BindingExpr)
         {
           BindingExpr b = (BindingExpr) c;
-          if (varName.equals(b.var.name)
-              || (b.var2 != null && varName.equals(b.var2.name)))
+          if (varName.equals(b.var.name())
+              || (b.var2 != null && varName.equals(b.var2.name())))
           {
             return b;
           }

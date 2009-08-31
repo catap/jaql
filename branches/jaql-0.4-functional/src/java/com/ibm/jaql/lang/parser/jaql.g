@@ -185,7 +185,7 @@ subpipe[Expr e] returns [Expr r=e]
 pipeFn returns [Expr r=null]
     {
         Var v = env.makeVar("$");
-        v.hidden = true;
+        v.setHidden(true);
         r = new VarExpr(v);
     }
     : "->" r=op[r] r=subpipe[r]
@@ -337,7 +337,7 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
           {
             if( e instanceof VarExpr )
             {
-              v = ((VarExpr)e).var().name;
+              v = ((VarExpr)e).var().name();
             }
             else
             {
@@ -346,7 +346,7 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
           }
           for( Var as: asVars ) 
           {
-            if( as.name.equals(v) )
+            if( as.name().equals(v) )
             {
               oops("duplicate group \"as\" variable: "+v);
             }
@@ -382,14 +382,14 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
         }
         b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
       }
-      else if( v == null || (by.var != Var.UNUSED && by.var.name.equals(v)) )
+      else if( v == null || (by.var != Var.UNUSED && by.var.name().equals(v)) )
       {
         by.addChild(e);
         b = by;
       }
       else
       {
-        oops("all group by variables must have the same name:" +by.var.name+" != "+v);
+        oops("all group by variables must have the same name:" +by.var.name()+" != "+v);
       }
     }
     ;
@@ -505,12 +505,12 @@ join returns [Expr r=null]
       Expr p; 
       BindingExpr b;
     }
-    : "join" b=joinIn     { in.add(b); b.var.hidden=true; }
-            ("," b=joinIn { in.add(b); b.var.hidden=true; } )+  
+    : "join" b=joinIn     { in.add(b); b.var.setHidden(true); }
+            ("," b=joinIn { in.add(b); b.var.setHidden(true); } )+  
       {
         for( BindingExpr b2: in )
         {
-          b2.var.hidden = false;
+          b2.var.setHidden(false);
         }
       }
       "where" p=expr
@@ -544,7 +544,7 @@ equijoin returns [Expr r=null]
       {
         for( BindingExpr b: in )
         {
-          b.var.hidden = false;
+          b.var.setHidden(false);
         }
       }
       ( "into" r=expr     { r = new ArrayExpr(r); }
@@ -561,7 +561,7 @@ equijoin returns [Expr r=null]
 ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
     { Expr e; BindingExpr b; }
     : b=joinIn       { in.add(b); } 
-      "on" e=expr    { on.add(e); b.var.hidden=true; }
+      "on" e=expr    { on.add(e); b.var.setHidden(true); }
     ;
 
 
@@ -578,7 +578,7 @@ split[Expr in] returns [Expr r=null]
 //       ")"
     : "split" b=each[in]     { es.add( b ); } 
          splitIfs[b, es]
-         ( "else"            { b.var.hidden=true; } 
+         ( "else"            { b.var.setHidden(true); } 
                 e=expr       { es.add(new IfExpr(new ConstExpr(JsonBool.TRUE), e) ); } )?
       {
         r = new SplitExpr(es);
@@ -593,8 +593,8 @@ splitIfs[BindingExpr b, ArrayList<Expr> es]
 
 splitIf[BindingExpr b, ArrayList<Expr> es]
     { Expr p, e; }
-    : "if"              { b.var.hidden=false; } 
-       "(" p=expr ")"   { b.var.hidden=true; }
+    : "if"              { b.var.setHidden(false); } 
+       "(" p=expr ")"   { b.var.setHidden(true); }
        e=expr           { es.add(new IfExpr(p,e)); }
        ;
 
@@ -798,8 +798,8 @@ estep returns [Expr r = null] // TOD: Unify step expressions
 
 assign returns [Expr r=null]
     { String v; }
-    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
-                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: var.type = non-pipe, do-block scope
+    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r)); } // TODO: var.type = non-pipe, do-block scope
+                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r)); } // TODO: var.type = non-pipe, do-block scope
     ;
 
 optAssign returns [Expr r=null]
@@ -815,11 +815,11 @@ optAssign returns [Expr r=null]
 topAssign returns [Expr r]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
-                  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } // TODO: expr name should reflect global var
+                  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r) ); } // TODO: expr name should reflect global var
                 | r=pipe ( /*empty*/        
                            { r = env.importGlobals(r); } 
                          | "=>" v=id        
-                           { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r.getSchema()), r); } 
+                           { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r) ); } 
                          )
     ;
 
@@ -845,7 +845,7 @@ function returns [Expr r = null]
       List<Expr> es = new ArrayList<Expr>();
     }
     : "fn" 
-      params[vs,es] { for (Var v: vs) v.hidden = false; }
+      params[vs,es] { for (Var v: vs) v.setHidden(false); }
       r=pipe
       { 
         r = new CaptureExpr(vs, es, r);
@@ -904,7 +904,7 @@ paramVar[List<Var> vs]
     : ( ( id ( "," | "=" | ")" ) ) => n=id 
         | ( ("schema")? s=schema n=id )
       )
-      { Var v = new Var(n, s); env.scope(v); v.hidden=true; vs.add(v); }
+      { Var v = new Var(n, s); env.scope(v); v.setHidden(true); vs.add(v); }
     ;
 
 //exceptions

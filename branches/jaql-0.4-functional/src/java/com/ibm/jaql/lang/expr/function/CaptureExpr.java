@@ -229,12 +229,12 @@ public final class CaptureExpr extends Expr
     {
       uses.clear();
       BindingExpr b = pars.get(i).getBinding();
-      b.var.usage = Var.Usage.EVAL;
+      b.var.setUsage(Var.Usage.EVAL);
       body.getVarUses(b.var, uses);
       int n = uses.size();
       if( n == 0 )
       {
-        b.var.usage = Var.Usage.UNUSED;
+        b.var.setUsage(Var.Usage.UNUSED);
       }
       else if( n == 1 )
       {
@@ -249,7 +249,7 @@ public final class CaptureExpr extends Expr
         }
         if( e == body )
         {
-          b.var.usage = Var.Usage.STREAM;
+          b.var.setUsage(Var.Usage.STREAM);
         }
       }
     }

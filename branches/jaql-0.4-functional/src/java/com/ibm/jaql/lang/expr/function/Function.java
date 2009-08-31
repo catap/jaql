@@ -12,6 +12,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 public abstract class Function extends JsonAtom

@@ -55,7 +55,7 @@ public final class BufferedJsonArray extends JsonArray
   {
     if (copy)
     {
-      values = new JsonValue[size];
+      this.values = new JsonValue[size];
       setCopy(values, size);
     }
     else
