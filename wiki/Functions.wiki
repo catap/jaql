@@ -19,7 +19,7 @@ A simple example of a function definition and its invocation are as follows:
 {{{
   // define a function referenced by variable $myNewFn
   $myNewFn = fn($a, $b) (
-    $a + $b;
+    $a + $b
   );
 
   // invoke $myNewFn
