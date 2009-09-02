@@ -27,7 +27,7 @@ if [ "$DFLT_HADOOP_VERSION" = "" ]; then
 	DFLT_HADOOP_VERSION=0.18.3
 fi
 if [ "$DFLT_HBASE_VERSION" = "" ]; then
- DFLT_HBASE_VERSION=0.18.3
+ DFLT_HBASE_VERSION=0.18.1
 fi
 
 if [ "$JAQL_HOME" = "" ]; then
