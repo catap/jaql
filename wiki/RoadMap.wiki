@@ -4,7 +4,7 @@ There is no shortage of interesting problems left to solve in Jaql,
 and we welcome help on it. These include:
 
   * Enable bindings to other programming languages besides Java
-so Jaql clients and functions can be written in, say, Python or JavaScript.
+so Jaql clients and functions can be written in, say, Python or !JavaScript.
 
   * Investigate how schema may be specified for JSON data and how it can be exploited
 for storage and query processing.
