@@ -244,28 +244,26 @@ public class JaqlShell extends AbstractJaqlShell
   }
 
   /**
-   * @param mrc
-   * @throws Exception
-   */
-  private static void stopMRCluster(MiniMRCluster mrc) throws Exception
-  {
-    mrc.shutdown();
-
-    // clean up the temp conf dir
-    cleanupOverride();
-  }
-
-  /**
    * @throws Exception
    */
   public void close() throws Exception
   {
+    if (m_mr != null)
+    {
+      m_mr.shutdown();
+      m_mr = null;
+    }
     if (m_base != null)
     {
-      stopMRCluster(m_mr);
       m_base.shutdown();
-      cleanupOverride();
+      m_base = null;
     }
+    if (m_fs != null)
+    {
+      m_fs.shutdown();
+      m_fs = null;
+    }
+    cleanupOverride();
   }
 
   public static void main(String[] args) throws Exception {
