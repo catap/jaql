@@ -232,6 +232,8 @@ public class JaqlShell extends AbstractJaqlShell
   }
 
   /**
+   * Removes the default configurations for hadoop and hbase.
+   * 
    * @throws Exception
    */
   private static void cleanupOverride() throws Exception
