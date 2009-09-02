@@ -81,7 +81,6 @@ public abstract class AbstractJaqlShell {
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
       }
-      shell.close();
     }
     catch (Exception e)
     {
