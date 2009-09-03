@@ -258,16 +258,16 @@ public class Jaql
 //  }
 
   /**
-   * Prepare the next evaluable statement.
+   * Prepares the next evaluable statement.
    * 
-   * If the next statement is an assigment, explain, or empty statement, it is
+   * If the next statement is an assignment, explain, or empty statement, it is
    * processed and the next statement considered.
    * 
    * If there is trouble parsing or compiling the statement, handleError()
    * is called to process the error.  handleError() may rethrow the exception
    * or it may simply log the error and prepareNext() move on to the next statement. 
    * 
-   * Returns null at end of script.
+   * Returns <tt>null</tt> at end of script.
    * 
    * @return
    * @throws Exception
@@ -389,8 +389,7 @@ public class Jaql
    * handleError may rethrow the exception. 
    * It is safe to call run again to resume the script.
    * 
-   * @param query
-   * @return true if we hit the end of the script (otherwise exception)
+   * @return <tt>true</tt> if we hit the end of the script (otherwise exception)
    * @throws Exception 
    */
   public boolean run() throws Exception
