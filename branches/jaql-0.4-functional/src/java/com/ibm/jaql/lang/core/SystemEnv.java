@@ -1,24 +1,8 @@
-/*
- * Copyright (C) IBM Corp. 2008.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- */
 package com.ibm.jaql.lang.core;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMaxAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMinAgg;
@@ -76,10 +60,8 @@ import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
 import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
-import com.ibm.jaql.lang.expr.index.BuildLuceneFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
-import com.ibm.jaql.lang.expr.index.ProbeLuceneFn;
 import com.ibm.jaql.lang.expr.internal.ExprTreeExpr;
 import com.ibm.jaql.lang.expr.internal.HashExpr;
 import com.ibm.jaql.lang.expr.internal.LongHashExpr;
@@ -106,6 +88,9 @@ import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.UnregisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.WriteAdapterRegistryExpr;
 import com.ibm.jaql.lang.expr.io.WriteFn;
+import com.ibm.jaql.lang.expr.module.ExamplesFn;
+import com.ibm.jaql.lang.expr.module.ListExportsFn;
+//import com.ibm.jaql.lang.expr.module.TestFn;
 import com.ibm.jaql.lang.expr.net.JaqlGetFn;
 import com.ibm.jaql.lang.expr.nil.DenullFn;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
@@ -165,34 +150,37 @@ import com.ibm.jaql.lang.expr.system.BatchFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
-/** Global libary of JAQL functions. Maps function names to implementing classes. 
- * 
+/**
+ * TODO:
+ * Deprecate when proper module loading is implemented. This would be moved into a module.
+ *
  */
-public class FunctionLib
-{
-  /** descriptor class name to built in function */
-  public static final Map<String, BuiltInFunctionDescriptor> descriptorMap 
-      = new HashMap<String, BuiltInFunctionDescriptor>();
+public class SystemEnv {
+	static boolean initializing = false;
+	static NamespaceEnv system;
+	
+//	public synchronized static NamespaceEnv getSystemNamespace() {
+//		if(system == null && !initializing) {
+//			initializing = true;
+//			system = new NamespaceEnv(true);
+//			registerAll(system);
+//			NamespaceEnv.NamespaceLoader.addNamespaceToLib("system", system);
+//		}
+//		return system;
+//	}
   
   /** implementing class name to built in function */
-  public static final Map<Class<? extends Expr>, BuiltInFunctionDescriptor> implementationMap 
+  private static final Map<Class<? extends Expr>, BuiltInFunctionDescriptor> implementationMap 
       = new HashMap<Class<? extends Expr>, BuiltInFunctionDescriptor>();
   
   /** Adds a built-in function to the library. The argument is required to carry the 
    * {@link JaqlFn} annotation. The name of the function is extracted from this annotation. 
    * @param cls
    */
-  static void register(Env env, BuiltInFunctionDescriptor descriptor)
+  private static void register(NamespaceEnv env, BuiltInFunctionDescriptor descriptor)
   {
     // check args
-    String descriptorClassName = descriptor.getClass().getName();
-    if (descriptorMap.containsKey(descriptorClassName))
-    {
-      // repeated registration is ok
-      return;
-    }
     if (implementationMap.containsKey(descriptor.getImplementingClass()))
     {
       throw new IllegalArgumentException("implementing class " 
@@ -203,14 +191,11 @@ public class FunctionLib
     }
     
     // register
-    Var v = env.scopeGlobal(descriptor.getName(),SchemaFactory.functionSchema());
-    v.setValue(new BuiltInFunction(descriptor));
-    v.finalize();
-    descriptorMap.put(descriptorClassName, descriptor);
+    env.scopeNamespace(descriptor.getName(), new BuiltInFunction(descriptor));
     implementationMap.put(descriptor.getImplementingClass(), descriptor);
   }
   
-  public static void registerAll(Env env)
+  public static void registerAll(NamespaceEnv env)
   {
     // TODO: add "import extension" that loads the functions in some jar (and loads types?)
     // schema
@@ -219,7 +204,6 @@ public class FunctionLib
     register(env, new CheckFn.Descriptor());
     register(env, new AssertFn.Descriptor());
     //    
-    register(env, new JavaUdfExpr.Descriptor());    
     register(env, new CompareFn.Descriptor());
     register(env, new ExistsFn.Descriptor());
     register(env, new Lag1Fn.Descriptor());
@@ -362,8 +346,8 @@ public class FunctionLib
     register(env, new HdfsShellExpr.Descriptor());
     register(env, new HBaseShellExpr.Descriptor());
     register(env, new KeyLookupFn.Descriptor()); // TODO: experimental
-    register(env, new BuildLuceneFn.Descriptor()); // TODO: experimental
-    register(env, new ProbeLuceneFn.Descriptor()); // TODO: experimental
+    //register(env, new BuildLuceneFn.Descriptor()); // TODO: experimental
+    //register(env, new ProbeLuceneFn.Descriptor()); // TODO: experimental
     register(env, new BuildJIndexFn.Descriptor());
     register(env, new ProbeJIndexFn.Descriptor());
     register(env, new BuildModelFn.Descriptor()); // TODO: experimental
@@ -371,202 +355,9 @@ public class FunctionLib
     register(env, new ExprTreeExpr.Descriptor());
     register(env, new HashExpr.Descriptor());
     register(env, new LongHashExpr.Descriptor());
+    register(env, new JavaUdfExpr.Descriptor());
+    register(env, new ExamplesFn.Descriptor());
+    //register(env, new TestFn.Descriptor());
+    register(env, new ListExportsFn.Descriptor());
   }
-  
-  public static BuiltInFunction getBuiltInFunction(String descriptorClassName)
-  {
-    BuiltInFunctionDescriptor d = descriptorMap.get(descriptorClassName);
-    if (d == null)
-    {
-      try
-      {
-        Class<?> c = Class.forName(descriptorClassName);
-        d = (BuiltInFunctionDescriptor)c.newInstance();
-                
-      } catch (Exception e)
-      {
-        throw JaqlUtil.rethrow(e);
-      }
-      descriptorMap.put(descriptorClassName, d);      
-    }
-    return new BuiltInFunction(d);
-  }
-
-//  /** Adds a user-defined function to the library using the specified function name.
-//   * 
-//   * @param fnName
-//   * @param cls
-//   */
-//  @SuppressWarnings("unchecked")
-//  public static void add(String fnName, Class<?> cls)
-//  {
-//    if (Expr.class.isAssignableFrom(cls))
-//    {
-//      Class<? extends Expr> c = (Class<? extends Expr>)cls;
-//      BuiltInFunction f = new BuiltInFunction(c);
-//      if (!f.getName().equals(fnName))
-//      {
-//        throw new IllegalArgumentException("function names do not match: " + fnName + " " + f.getName());
-//      }
-//      builtInFunctions.put(f.getName(), f);
-//    }
-//    else
-//    {
-//      userFunctions.put(fnName, cls);
-//    }
-//  }
-//
-//  static
-//  {
-//  }
-//
-//  /** Creates an instance of the function represented by the given class, passing the 
-//   * specified arguments.
-//   *  
-//   * @param c
-//   * @param env
-//   * @param args
-//   * @return
-//   */
-//  private static Expr lookupExpr(BuiltInFunction f, Env env, List<Expr> positionalArgs,
-//      Map<JsonString, Expr> namedArgs)
-//  {
-//    // get description of function
-//    BuiltInFunctionDescriptor d = f.getDescriptor();
-//    Parameters p = d.getParameters();
-//    Expr[] exprs = argsToExprs(p, positionalArgs, namedArgs);
-//    
-//    // construct the desired expression
-//    try
-//    {
-//      Constructor<? extends Expr> constructor = 
-//        f.getImplementingClass().getConstructor(Expr[].class);
-//      Expr expr = constructor.newInstance(new Object[]{ exprs }); // TODO: memory
-//
-//      // TODO: Good chance I will want to defer macro expansion until some rewrites happen.
-//      if (expr instanceof MacroExpr)
-//      {
-//        MacroExpr macro = (MacroExpr) expr;
-//        expr = macro.expand(env);
-//      }
-//      
-//      // FIXME: This a a MAJOR HACK to get d'...' and date('...') or x'...' and hex('...') to behave the same.
-//      // FIXME: We need to unify JSON constructors and our functions.
-//      if( ( expr instanceof DateFn || 
-//            expr instanceof HexFn ||
-//            expr instanceof Base64Fn ) &&
-//          expr.isCompileTimeComputable().always() )
-//      {
-//        JsonValue val = expr.eval(null); // more HACKS: context not required for these functions
-//        expr = new ConstExpr(val);
-//      }
-//
-//      return expr;
-//    }
-//    catch (Exception ex)
-//    {
-//      throw (ex instanceof RuntimeException)
-//          ? (RuntimeException) ex
-//          : new java.lang.reflect.UndeclaredThrowableException(ex);
-//    }
-//  }
-//
-//  /** Takes a list of positional and named args of a function and creates the expressions for
-//   * each of its parameters. */
-//  public static Expr[] argsToExprs(Parameters pars, List<Expr> positionalArgs,
-//      Map<JsonString, Expr> namedArgs)
-//  {
-//    // check number of positional arguments
-//    int n = positionalArgs.size();
-//    int m = pars.noParameters();
-//    if (n > m || (n == m && pars.hasRepeatingParameter()))
-//    {
-//      if (!namedArgs.isEmpty())
-//      {
-//        throw new IllegalArgumentException("named arguments disallowed when repeating parameter used");
-//      }
-//      if (!pars.hasRepeatingParameter())
-//      {
-//        throw new IllegalArgumentException("too many arguments provided");
-//      }
-//      m = n;
-//    }
-//    else
-//    {
-//      // repeating parameter is not used
-//      if (pars.hasRepeatingParameter())
-//      {
-//        --m;
-//      }
-//    }
-//    Expr[] exprs = new Expr[m];
-//
-//    
-//    // copy positional arguments
-//    int i=0;
-//    for (; i<n; i++)
-//    {
-//      exprs[i] = positionalArgs.get(i);
-//      assert exprs[i] != null;
-//      // TODO: validate schema?
-//    }
-//    
-//    // copy named required arguments
-//    for (; i<pars.noRequiredParameters(); i++)
-//    {
-//      JsonString name = pars.nameOf(i);
-//      if (!namedArgs.containsKey(name))
-//      {
-//        throw new IllegalArgumentException("missing value of parameter \"" + name + "\"");
-//      }
-//      exprs[i] = namedArgs.remove(name);
-//    }
-//    
-//    // copy named optional arguments
-//    for (; i<m; i++)      
-//    {
-//      JsonString name = pars.nameOf(i);
-//      if (namedArgs.containsKey(name))
-//      {
-//        exprs[i] = namedArgs.remove(name);
-//      }
-//      else
-//      {
-//        exprs[i] = new ConstExpr(pars.defaultOf(i));
-//      }
-//      assert exprs[i] != null;
-//    }
-//    
-//    // check if we still have arguments    
-//    if (!namedArgs.isEmpty())
-//    {
-//      throw new IllegalArgumentException("invalid or repeated argument: " + namedArgs.keySet());
-//    }
-//    
-//    return exprs;
-//  }
-//
-//  /** Performs a lookup for the function represented by the given name and arguments in 
-//   * the global library, and, if found, creates an instance passing the specified arguments.
-//   * 
-//   * @param env
-//   * @param name
-//   * @param args
-//   * @return
-//   */
-//  public static Expr lookup(Env env, String name, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs)
-//  {
-//    BuiltInFunction f = builtInFunctions.get(name);
-//    if (f != null)
-//    {
-//      return lookupExpr(f, env, positionalArgs, namedArgs);
-//    }
-//    Class<?> c = userFunctions.get(name);
-//    if (c != null)
-//    {
-//      if (!namedArgs.isEmpty()) throw new IllegalArgumentException("Call by name not (yet) supported for java functions");
-//      return new JavaFnExpr(name, c, positionalArgs); // use reflection to find method
-//    }
-//    throw new RuntimeException("function not found: " + name);
-//  }
 }

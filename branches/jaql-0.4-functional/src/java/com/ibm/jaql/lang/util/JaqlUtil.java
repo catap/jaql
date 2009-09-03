@@ -31,8 +31,6 @@ import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
-import com.ibm.jaql.lang.core.FunctionLib;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.util.PagedFile;
@@ -121,16 +119,9 @@ public class JaqlUtil
   // we need a way to find it from the current Thread.
   private static PagedFile       queryPagedFile;
   private static PagedFile       sessionPagedFile;
-  private static Env             sessionEnv;
   private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
   private static RNGStore        rngStore;
 
-  static
-  {
-    sessionEnv = new Env();
-    FunctionLib.registerAll(sessionEnv);
-  }
-  
   /**
    * @return
    */
@@ -208,14 +199,6 @@ public class JaqlUtil
   /**
    * @return
    */
-  public static Env getSessionEnv()
-  {
-    return sessionEnv;
-  }
-
-  /**
-   * @return
-   */
   public static Context getSessionContext()
   {
     return sessionContext;
@@ -259,6 +242,6 @@ public class JaqlUtil
     else
     {
       return new RuntimeException(e);
-    }    
+    }
   }
 }

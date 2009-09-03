@@ -8,10 +8,11 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.FunctionLib;
+import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.util.ClassLoaderMgr;
 
 /** built in functions */
 public class BuiltInExpr extends Expr
@@ -37,14 +38,28 @@ public class BuiltInExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
   {
-    exprText.print("builtin(");
-    exprs[0].decompile(exprText, capturedVars);
-    exprText.print(")");
+  	if(isSystemExpr) {
+  		exprText.print(Module.SYSTEM_MODULE+"::");
+  		exprText.print(getDescriptor(null).getName());
+  	}
+  	else {
+	    exprText.print("builtin(");
+	    exprs[0].decompile(exprText, capturedVars);
+	    exprText.print(")");
+  	}
   }
   
   @Override
   public BuiltInFunction eval(Context context) throws Exception
   {
-    return FunctionLib.getBuiltInFunction(((JsonString)exprs[0].eval(context)).toString());
+		BuiltInFunctionDescriptor descriptor = getDescriptor(context);
+  	return new BuiltInFunction(descriptor);
+  }
+  
+  private BuiltInFunctionDescriptor getDescriptor(Context context) throws Exception {
+  	String cls = ((JsonString)exprs[0].eval(context)).toString();
+		Class<? extends BuiltInFunctionDescriptor> c = 
+			(Class<? extends BuiltInFunctionDescriptor>) ClassLoaderMgr.resolveClass(cls);
+		return c.newInstance(); 
   }
 }

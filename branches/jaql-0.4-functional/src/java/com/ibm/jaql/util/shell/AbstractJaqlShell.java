@@ -18,6 +18,8 @@ package com.ibm.jaql.util.shell;
 
 import java.io.InputStream;
 
+import com.ibm.jaql.lang.core.DefaultModule;
+
 /** Base class for version-specific shells. */
 public abstract class AbstractJaqlShell {
   /** Initialize the shell using an existing cluster */
@@ -64,6 +66,9 @@ public abstract class AbstractJaqlShell {
 
     try
     {
+    	//Set module search path
+    	DefaultModule.setSearchPath(jaqlArgs.searchPath);
+    	
       if (!jaqlArgs.batchMode) {
         // TODO startup text
         System.out.println("\nInitializing Jaql.");

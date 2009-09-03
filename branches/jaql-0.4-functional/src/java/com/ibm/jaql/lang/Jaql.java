@@ -31,6 +31,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.DefaultModule;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
@@ -46,6 +47,8 @@ public class Jaql
 {
   public static void main(String args[]) throws Exception
   {
+  	DefaultModule.setSearchPath(new String[] { "modules/" });
+  	
     InputStream in;
     if (args.length > 0) {
         in = new FileInputStream(args[0]);
@@ -175,7 +178,7 @@ public class Jaql
    */
   public void setVar(String varName, JsonValue value) 
   {
-    Var v = parser.env.sessionEnv().scopeGlobal(varName);
+    Var v = parser.env.namespaceEnv().scopeNamespace(varName, value);    
     v.setValue(value);
     v.finalize();
   }
@@ -215,7 +218,7 @@ public class Jaql
    */
   public JsonValue getVarValue(String varName) throws Exception 
   {
-    Var var = parser.env.sessionEnv().inscope(varName);
+    Var var = parser.env.namespaceEnv().inscope(varName);
     materializeVar(var);
     JsonValue value = var.getValue(context); // TODO: use global context?
     return value;
@@ -230,7 +233,7 @@ public class Jaql
    */
   public JsonIterator getVarIter(String varName) throws Exception 
   {
-    Var var = parser.env.sessionEnv().inscope(varName);
+    Var var = parser.env.namespaceEnv().inscope(varName);
     if( var.type() != Var.Type.EXPR )
     {
       JsonIterator iter = var.iter(context);

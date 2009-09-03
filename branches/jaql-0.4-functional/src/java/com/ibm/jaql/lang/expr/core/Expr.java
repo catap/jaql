@@ -32,6 +32,7 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
@@ -53,7 +54,9 @@ public abstract class Expr
   protected Expr             parent;					 
   
   /** list of subexpressions (e.g., arguments) */
-  protected Expr[]           exprs           = NO_EXPRS; 
+  protected Expr[]           exprs           = NO_EXPRS;
+	protected Module module;
+	protected boolean isSystemExpr; 
 
   /**
    * @param exprs
@@ -104,7 +107,7 @@ public abstract class Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    BuiltInFunctionDescriptor d = BuiltInFunction.getDescriptor(this.getClass());
+  	BuiltInFunctionDescriptor d = BuiltInFunction.getDescriptor(this.getClass());
     int i = 0;
     String end = "";
     if( exprs.length > 0 && 
@@ -116,7 +119,13 @@ public abstract class Expr
       i++;
       end = " )";
     }
-    exprText.print("builtin('" + d.getClass().getName() + "')");
+    
+    if(isSystemExpr) {
+    	exprText.print(Module.SYSTEM_MODULE + "::" + d.getName());
+    } else {
+    	exprText.print("builtin('" + d.getClass().getName() + "')");
+    }
+    
     exprText.print("(");
     String sep = "";
     JsonValueParameters p = d.getParameters();
@@ -317,6 +326,14 @@ public abstract class Expr
   public final Bool3 isEvaluatedOnceByParent()
   {
     return parent.evaluatesChildOnce(getChildSlot());
+  }
+  
+  public boolean needsModuleInformation() {
+  	return false;
+  }
+  
+  public void setModule(Module m) {
+  	module = m;
   }
 
   /**
@@ -638,7 +655,9 @@ public abstract class Expr
     {
       Constructor<? extends Expr> cons = this.getClass().getConstructor(
           Expr[].class);
-      return cons.newInstance(new Object[]{es});
+      Expr e = cons.newInstance(new Object[]{es});
+      e.isSystemExpr = isSystemExpr;
+      return e;
     }
     catch (Exception e)
     {
@@ -829,6 +848,10 @@ public abstract class Expr
     // Var not found...
     return null;
   }
+
+	public void setSystemExpr(boolean b) {
+		isSystemExpr = b;
+	}
   
 //  /**
 //   * Return true iff var is defined above this Expr, including globally.

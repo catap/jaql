@@ -36,9 +36,8 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
  */
 public class Env
 {
-  private Env                  globalEnv;
-  private HashMap<String, Var> nameMap = new HashMap<String, Var>();
-  //  private HashMap<Var, Var> globalVars = new HashMap<Var, Var>(); // global vars imported into this local scope as this local var
+  protected NamespaceEnv         namespaceEnv = null;
+  protected HashMap<String, Var> nameMap = new HashMap<String, Var>();
   private int                  varId   = 0;
 
   /** Initializes an local environment. The global environment corresponding to this
@@ -47,10 +46,15 @@ public class Env
    */
   public Env()
   {
-    globalEnv = JaqlUtil.getSessionEnv();
+  	namespaceEnv = new NamespaceEnv();
+  }
+  
+  public Env(boolean t) {
+  	//Dummy placeholder to avoid infite recursion when creating
+  	//the namespace environment
   }
 
-  /**
+	/**
    * 
    */
   public void reset()
@@ -114,62 +118,22 @@ public class Env
     scope(var);
     return var;
   }
-
-  /** Returns the global environment. Must not be called from the instance of
+  
+    /** Returns the global environment. Must not be called from the instance of
    * Env that represents the global environment.
    * 
    * @return
    */
-  public Env sessionEnv()
+  public NamespaceEnv namespaceEnv()
   {
-    if (globalEnv == null)
+    if (namespaceEnv == null)
     {
       throw new RuntimeException(
-          "sessionEnv should only be called on a local scope");
+          "namespaceEnv should only be called on a local scope");
     }
-    return globalEnv;
+    return namespaceEnv;
   }
 
-  /** Creates a new variable with the specified name and puts it into the global scope. 
-   * The most recent definition of the variable of the specified name is overwritten. This 
-   * method has to be called from the instance of Env that represents the global environment.
-   * 
-   * @param varName
-   * @return
-   */
-  public Var scopeGlobal(String varName, Schema schema)
-  {
-    if (globalEnv != null)
-    {
-      throw new RuntimeException(
-          "scopeGlobal should only be called on the global scope");
-    }
-    Var var = nameMap.get(varName);
-    if (var != null)
-    {
-      unscope(var);  
-    }
-    var = new Var(varName, schema, true);
-    scope(var);
-    return var;
-  }
-
-  public Var scopeGlobal(String varName)
-  {
-    if (globalEnv != null)
-    {
-      throw new RuntimeException(
-          "scopeGlobal should only be called on the global scope");
-    }
-    Var var = nameMap.get(varName);
-    if (var != null)
-    {
-      unscope(var);  
-    }
-    var = new Var(varName, SchemaFactory.anySchema(), true);
-    scope(var);
-    return var;
-  }
   
   /** Removes the most recent definition of the specified variable from this scope. 
    * The most recent but one definition of the specified variable, if existent, 
@@ -195,21 +159,14 @@ public class Env
     Var var = nameMap.get(varName);
     if (var == null)
     {
-      if (globalEnv != null)
+      if (namespaceEnv != null)
       {
-        var = globalEnv.inscope(varName);
-        //        Var globalVar = globalEnv.inscope(varName);
-        //        var = globalVars.get(globalVar);
-        //        if( var == null )
-        //        {
-        //          var = makeVar(varName); 
-        //          globalVars.put(globalVar, var);
-        //        }
+        var = namespaceEnv.inscope(varName);
       }
       else
       // this is the global env, so varName is not defined.
       {
-        throw new IndexOutOfBoundsException("variable not defined: " + varName);
+    	throw new IndexOutOfBoundsException("variable not defined: " + varName);
       }
     }
     if (var.isHidden())

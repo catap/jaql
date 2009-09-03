@@ -103,22 +103,40 @@ parse returns [Expr r=null]
     : r=stmtOrFn
     | EOF { done = true; }
     ;
-    
-
+	
+	
 stmtOrFn returns [Expr r=null]
     : r=stmt (SEMI|EOF)
     | SEMI
 //    | r=functionDef
     ;
-    
+	
 stmt returns [Expr r=null]
     { Var v; }
-    : r=topAssign
+    : r=imprt
+    | r=topAssign
     | "explain" r=topAssign  { r = new ExplainExpr(r); }
     | "materialize" v=var    { r = new MaterializeExpr(v); }
     | "quit"                 { r = null; done = true; }
     ;
 
+
+imprt returns [Expr r=null]
+	{ boolean loadAll = false; String v; String var; 
+		ArrayList<String> names = new ArrayList<String>();}
+	: "import" v=id {
+		env.namespaceEnv().imprt(v);
+	} 
+	| "from" v=id "import" ( 
+		"*" {
+				env.namespaceEnv().include(v);
+			}
+		| var=id {names.add(var);} ("," var=id {names.add(var);})* {
+				env.namespaceEnv().include(v, names);	
+			}
+		)
+	;
+	
 //assign2 returns [Expr r=null]
 //   // { String v; }
 //    : r=pipe  // TODO: keep this?
@@ -293,7 +311,7 @@ aggFn returns [Aggregate agg=null]
                     }
                 } 
                 catch (Exception e1)
-                {
+      {
                     // ignore
                 }
             }
@@ -805,15 +823,15 @@ top[Expr in] returns [Expr r=null]
 //    ;
 
 
-//unroll returns [Expr r=null]
-//    { ArrayList<Expr> args = new ArrayList<Expr>(); }
-//    : "unroll" r=call  { args.add(r); }
-//          ( r=estep      { args.add(r); } )+
-//          // TODO: as name
-//      {
-//        r = new UnrollExpr(args);
-//      }
-//    ;
+unroll returns [Expr r=null]
+    { ArrayList<Expr> args = new ArrayList<Expr>(); }
+    : "unroll" r=call  { args.add(r); }
+         ( r=estep      { args.add(r); } )+
+          // TODO: as name
+      {
+        r = new UnrollExpr(args);
+      }
+    ;
 
 
 estep returns [Expr r = null] // TOD: Unify step expressions
@@ -822,31 +840,30 @@ estep returns [Expr r = null] // TOD: Unify step expressions
     // TODO: add [*], .*
     ;
     
-
-assign returns [Expr r=null]
-    { String v; }
-    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
-                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
-    ;
+//assign returns [Expr r=null]
+//    { String v; }
+//    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r)); } // TODO: var.type = non-pipe, do-block scope
+//                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r)); } // TODO: var.type = non-pipe, do-block scope
+//    ;
 
 optAssign returns [Expr r=null]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
                   { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-                | r=pipe ( "=>" v=id      
-                           { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-                         )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
+                 | r=pipe ( "=>" v=id      
+                            { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
+                          )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
     ;
 
 // Same as optAssign but creates global variables on assigment, and inlines referenced globals
 topAssign returns [Expr r]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
-                  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } // TODO: expr name should reflect global var
+                  { r = new AssignExpr( env.namespaceEnv().scopeNamespace(v), r ); } // TODO: expr name should reflect global var
                 | r=pipe ( /*empty*/        
                            { r = env.importGlobals(r); } 
                          | "=>" v=id        
-                           { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } 
+                           { r = new AssignExpr( env.namespaceEnv().scopeNamespace(v), r ); } 
                          )
                 | r=registerFunction
     ;
@@ -861,7 +878,7 @@ registerFunction returns [Expr e = null]
             throw new IllegalArgumentException("variable name has to be a constant");
           }
           String name = varName.eval(env.getCompileTimeContext()).toString();
-          e = new AssignExpr(env.sessionEnv().scopeGlobal(name), new JavaUdfExpr(className));
+          e = new AssignExpr(env.namespaceEnv().scopeNamespace(name), new JavaUdfExpr(className));
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
         }
@@ -899,6 +916,7 @@ function returns [Expr r = null]
         }
       }
     ;
+
 
 params[List<Var> vs, List<Expr> es]
     { Expr e = null; }
@@ -1124,7 +1142,7 @@ expr returns [Expr r]
     | r=ifExpr
     | r=forExpr
     // | r=taggedMerge
-//    | r=unroll
+    | r=unroll
     // | r=combineExpr
    // | r=function
     | r=orExpr
@@ -1319,7 +1337,7 @@ basic returns [Expr r=null]
     | r=cmpExpr
     | r=parenExpr
     ;
-    
+
 builtinFunction returns [Expr e = null]
     { Expr c; }
     : "builtin" "(" c=expr ")" { e=new BuiltInExpr(c); };  
@@ -1365,6 +1383,7 @@ parenExpr returns [Expr r=null]
 //    :// s=name "(" args=exprList ")" { r = FunctionLib.lookup(env, s, args); }
 //     e=basic "(" args=exprList ")"  { r = new FunctionCallExpr(e, args); }
 //    ;   
+
 
 array returns [Expr r=null]
     { ArrayList<Expr> a; }
@@ -1470,9 +1489,11 @@ dotName returns [Expr r = null]
     : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
     ;
 
+/*
 simpleField returns [Expr f=null]
     : ( f=idExpr | "(" f=pipe ")" ) ":"
     ;
+*/
 
 schema returns [Schema s = null]
     { List<Schema> alternatives = new ArrayList<Schema>(); Schema s2; }
@@ -1608,7 +1629,7 @@ recordSchemaFieldName returns [String s=null]
     
 // for the moment does not match keywords    
 id returns [String s=null]
-    : i:ID              { s = i.getText(); }
+    : i:ID { s = i.getText(); }
     | s=softkw
     ;
 
@@ -1626,6 +1647,7 @@ softkw returns [String s=null]
     | "on"              { s = "on"; }
     | "schema"          { s = "schema"; }    
     | "sort"            { s = "sort"; }
+    | "import"            { s = "import"; }
     ;
 
 hardkw
@@ -1684,8 +1706,9 @@ idExpr returns [Expr e=null]
     ;
 
 var returns [Var v = null]
-    { String i; }
-    : i=id { v = env.inscope(i); }
+    { String i; String m; }
+    : (id MOD_SEP) => m=id MOD_SEP i=id { v = env.namespaceEnv().loadedNamespace(m).exportedVar(i); }
+    |	i=id { v = env.inscope(i); }
     ;
 
 varExpr returns [Expr e = null]
@@ -1752,6 +1775,9 @@ ML_COMMENT
         {$setType(Token.SKIP);}
     ;
 
+MOD_SEP
+	: "::"
+	;
 
     
 protected BLOCK_LINE1
@@ -1848,7 +1874,7 @@ HERE_STRING
 protected IDWORD
     : ('$'|LETTER|'_'|'@') (LETTER|'_'|DIGIT)*
     ;
-
+    
 ID
     options { ignore=WS; }
     : (IDWORD ('?')? ':') => IDWORD
@@ -1964,7 +1990,6 @@ DOTTY
     | (DOT_STAR) => DOT_STAR {$setType(DOT_STAR); }
     | '.'                    {$setType(DOT);}
     ;
-
 
 protected DOT_ID
     : '.'! ID
