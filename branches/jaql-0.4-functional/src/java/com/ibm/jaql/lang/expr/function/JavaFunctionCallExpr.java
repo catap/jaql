@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.udf;
+package com.ibm.jaql.lang.expr.function;
 
 import java.io.PrintStream;
 import java.lang.reflect.Method;
@@ -38,9 +38,8 @@ import com.ibm.jaql.util.Bool3;
 /** Wrapper for functions implemented in Java.
  * 
  */
-public class JavaFnExpr extends Expr
+public class JavaFunctionCallExpr extends Expr
 {
-  private String      fnName;
   private Object      instance;               // FIXME: this doesn't work in recursion
   private Method      method;
   private Class<?>[]  paramTypes;
@@ -57,14 +56,15 @@ public class JavaFnExpr extends Expr
    * @throws InstantiationException
    * @throws IllegalAccessException
    */
-  public JavaFnExpr(String fnName, Class<?> cls, Method method, Expr[] exprs)
+  public JavaFunctionCallExpr(Class<?> cls, Method method, Expr[] exprs)
     throws InstantiationException,
       IllegalAccessException
   {
     super(exprs);
-    setup(fnName, cls, method);
+    setup(cls, method);
   }
-
+	
+  
   /** Uses the eval(...) method with exprList.size() arguments, if existant and unique. 
    * Otherwise, throws RuntimeException
    *  
@@ -72,7 +72,7 @@ public class JavaFnExpr extends Expr
    * @param cls
    * @param exprList
    */
-  public JavaFnExpr(String fnName, Class<?> cls, List<Expr> exprList)
+  public JavaFunctionCallExpr(Class<?> cls, List<Expr> exprList)
   {
     super(exprList);
     try
@@ -101,7 +101,7 @@ public class JavaFnExpr extends Expr
         throw new RuntimeException("no eval method on class " + cls.getName()
             + " with " + exprs.length + " arguments");
       }
-      setup(fnName, cls, method);
+      setup(cls, method);
     }
     catch (Exception ex)
     {
@@ -116,10 +116,9 @@ public class JavaFnExpr extends Expr
    * @throws InstantiationException
    * @throws IllegalAccessException
    */
-  private void setup(String fnName, Class<?> cls, Method method)
+  private void setup(Class<?> cls, Method method)
       throws InstantiationException, IllegalAccessException
   {
-    this.fnName = fnName;
     this.instance = cls.newInstance();
     this.method = method;
     this.paramTypes = method.getParameterTypes();
@@ -165,7 +164,7 @@ public class JavaFnExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(fnName);
+    exprText.print("builtin('com.ibm.jaql.lang.expr.function.JavaUdfExpr$Descriptor')('" + instance.getClass().getName() + "')");
     String sep = "( ";
     for (Expr e : exprs)
     {
@@ -219,7 +218,7 @@ public class JavaFnExpr extends Expr
   {
     try
     {
-      return new JavaFnExpr(fnName, instance.getClass(), method,
+      return new JavaFunctionCallExpr(instance.getClass(), method,
           cloneChildren(varMap));
     }
     catch (Exception ex)

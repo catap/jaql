@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.core;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.lang.expr.agg.AnyAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMaxAgg;
 import com.ibm.jaql.lang.expr.agg.ArgMinAgg;
@@ -69,6 +70,7 @@ import com.ibm.jaql.lang.expr.date.NowFn;
 import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
 import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
@@ -163,9 +165,7 @@ import com.ibm.jaql.lang.expr.system.BatchFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
-import com.ibm.jaql.lang.registry.ReadFunctionRegistryExpr;
-import com.ibm.jaql.lang.registry.RegisterFunctionExpr;
-import com.ibm.jaql.lang.registry.WriteFunctionRegistryExpr;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /** Global libary of JAQL functions. Maps function names to implementing classes. 
  * 
@@ -203,7 +203,9 @@ public class FunctionLib
     }
     
     // register
-    env.scopeGlobal(descriptor.getName(), new BuiltInFunction(descriptor));
+    Var v = env.scopeGlobal(descriptor.getName(),SchemaFactory.functionSchema());
+    v.setValue(new BuiltInFunction(descriptor));
+    v.finalize();
     descriptorMap.put(descriptorClassName, descriptor);
     implementationMap.put(descriptor.getImplementingClass(), descriptor);
   }
@@ -217,6 +219,7 @@ public class FunctionLib
     register(env, new CheckFn.Descriptor());
     register(env, new AssertFn.Descriptor());
     //    
+    register(env, new JavaUdfExpr.Descriptor());    
     register(env, new CompareFn.Descriptor());
     register(env, new ExistsFn.Descriptor());
     register(env, new Lag1Fn.Descriptor());
@@ -351,10 +354,6 @@ public class FunctionLib
     register(env, new UnregisterAdapterExpr.Descriptor());
     register(env, new WriteAdapterRegistryExpr.Descriptor());
     register(env, new ReadAdapterRegistryExpr.Descriptor());
-    // function registration expressions
-    register(env, new RegisterFunctionExpr.Descriptor());
-    register(env, new WriteFunctionRegistryExpr.Descriptor());
-    register(env, new ReadFunctionRegistryExpr.Descriptor());
     // rand expressions
     register(env, new RegisterRNGExpr.Descriptor());
     register(env, new SampleRNGExpr.Descriptor());
@@ -374,15 +373,22 @@ public class FunctionLib
     register(env, new LongHashExpr.Descriptor());
   }
   
-  public static BuiltInFunctionDescriptor getBuiltInFunctionDescriptor(Class<? extends Expr> implementingClass)
-  {
-    BuiltInFunctionDescriptor d = implementationMap.get(implementingClass);
-    return d;
-  }
-  
   public static BuiltInFunction getBuiltInFunction(String descriptorClassName)
   {
     BuiltInFunctionDescriptor d = descriptorMap.get(descriptorClassName);
+    if (d == null)
+    {
+      try
+      {
+        Class<?> c = Class.forName(descriptorClassName);
+        d = (BuiltInFunctionDescriptor)c.newInstance();
+                
+      } catch (Exception e)
+      {
+        throw JaqlUtil.rethrow(e);
+      }
+      descriptorMap.put(descriptorClassName, d);      
+    }
     return new BuiltInFunction(d);
   }
 

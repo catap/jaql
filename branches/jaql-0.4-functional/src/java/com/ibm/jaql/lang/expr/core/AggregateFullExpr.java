@@ -22,6 +22,9 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
+import com.ibm.jaql.lang.expr.function.BuiltInFunction;
+import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 
 
 public class AggregateFullExpr extends AggregateExpr
@@ -49,8 +52,36 @@ public class AggregateFullExpr extends AggregateExpr
       {
         throw new RuntimeException("the aggregation variable must be inside an aggregate");
       }
+      return expr;
     }
-    else if( expr instanceof Aggregate )
+    
+    if ( expr instanceof FunctionCallExpr )
+    {
+      // force inline of calls to aggregate functions
+      FunctionCallExpr call = (FunctionCallExpr)expr;
+      if (call.fnExpr().isCompileTimeComputable().always())
+      {
+        try
+        {
+          Function ff = (Function)call.fnExpr().eval(Env.getCompileTimeContext());
+          if (ff instanceof BuiltInFunction)
+          {
+            BuiltInFunction f = (BuiltInFunction)ff;
+            if (Aggregate.class.isAssignableFrom(f.getDescriptor().getImplementingClass()))
+            {
+              Expr inline = call.inline();
+              expr.replaceInParent(inline);
+              expr = inline;
+            }
+          }
+        } catch (Exception e1)
+        {
+          // ignore
+        }
+      }
+    }
+    
+    if( expr instanceof Aggregate )
     {
       Aggregate agg = (Aggregate)expr;
       int i = aggs.size();
@@ -64,13 +95,12 @@ public class AggregateFullExpr extends AggregateExpr
       {
         agg.replaceInParent(e);
       }
+      return expr;
     }
-    else
+
+    for( Expr e: expr.exprs )
     {
-      for( Expr e: expr.exprs )
-      {
-        splitExpr(aggVar, outVar, e, aggs);
-      }
+      splitExpr(aggVar, outVar, e, aggs);
     }
     return expr;
   }

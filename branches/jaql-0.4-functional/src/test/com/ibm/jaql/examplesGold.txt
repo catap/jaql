@@ -1,6 +1,6 @@
 // the data
 
-$books = [
+books = [
     {publisher: 'Scholastic',
      author: 'J. K. Rowling',
      title: 'Deathly Hallows',
@@ -35,7 +35,7 @@ $books = [
      title: 'The Secret of Kane',
      year: 1930}
   ];##
-"$books"
+"books"
 
   
 // Example 1. Write to a file named 'hey.dat'. DIFF
@@ -142,7 +142,7 @@ read(hdfs('orders.dat'));##
 // Read it back... (see hbaseQueries.txt)
 
 // Write the books collection from data above. DIFF
-$books -> write(hdfs('books'));##
+books -> write(hdfs('books'));##
 {
   "location": "books",
   "type": "hdfs"
@@ -292,8 +292,8 @@ read(hdfs('books'))
 
 // Query 6. Show how many books each publisher has published. DIFF
 read(hdfs('books'))
--> group by $p = ($.publisher)
-    into {publisher: $p, num: count($)}
+-> group by p = ($.publisher)
+    into {publisher: p, num: count($)}
 -> sort by [$.publisher];##
 [
   {
@@ -309,8 +309,8 @@ read(hdfs('books'))
   
 // Query 7. Find the publisher who published the most books. DIFF
 read(hdfs('books'))
--> group by $p = ($.publisher)
-    into {publisher: $p, num: count($)}
+-> group by p = ($.publisher)
+    into {publisher: p, num: count($)}
 -> top 1 by [$.num desc];##
 [
   {
@@ -348,15 +348,15 @@ read(hdfs('books'))
 
 
 // Query 8. Co-group X and Y. DIFF
-$x = read(hdfs('X'));##
-"$x"
+x = read(hdfs('X'));##
+"x"
 
-$y = read(hdfs('Y'));##
-"$y"
+y = read(hdfs('Y'));##
+"y"
 
-group $x by $g = ($.a),
-      $y by $g = ($.c)
- into {g: $g, b: $x[*].b, d: $y[*].d}
+group x by g = ($.a),
+      y by g = ($.c)
+ into {g: g, b: x[*].b, d: y[*].d}
 -> sort by [$];##
 [
   {
@@ -390,9 +390,9 @@ group $x by $g = ($.a),
 
 
 // Query 9. Join X and Y. DIFF: sort to ensure order
-join $x, $y
-where $x.a == $y.c
-into {$x.a, $x.b, $y.c, $y.d}
+join x, y
+where x.a == y.c
+into {x.a, x.b, y.c, y.d}
 -> sort by [$];##
 [
   {
@@ -442,40 +442,40 @@ into {$x.a, $x.b, $y.c, $y.d}
 
 
 
-  $median = fn($items) (
-    $sorted = $items -> sort by [$],
+  median = fn(items) (
+    sorted = items -> sort by [$],
 
-    $sorted[long(count($sorted)/2)]
+    sorted[long(count(sorted)/2)]
   );##
-"$median"
+"median"
 
 
-  $median( [ 1, 4, 5, 3, 2 ] );##
+  median( [ 1, 4, 5, 3, 2 ] );##
 3
  // 3
 
-  $var = fn($items) (
-    $init = 
-       $items
+  var = fn(items) (
+    init = 
+       items
        -> filter not isnull($)
        -> transform { n: 1, s1: $, s2: $*$ },
 
-    $combined =
-       $init 
-       -> combine( fn($a,$b)
-              { n:  $a.n  + $b.n,
-               s1: $a.s1 + $b.s1,
-               s2: $a.s2 + $b.s2 }),
+    combined =
+       init 
+       -> combine( fn(a,b)
+              { n:  a.n  + b.n,
+               s1: a.s1 + b.s1,
+               s2: a.s2 + b.s2 }),
 
-    $E_X  = $combined.s1 / $combined.n,
-    $E_X2 = $combined.s2 / $combined.n,
+    E_X  = combined.s1 / combined.n,
+    E_X2 = combined.s2 / combined.n,
 
-    $E_X2 - $E_X * $E_X
+    E_X2 - E_X * E_X
   );##
-"$var"
+"var"
 
 
-  $var( [ 1, 4, 5, 3, 2 ] );##
+  var( [ 1, 4, 5, 3, 2 ] );##
 2
  // 2
 
@@ -484,8 +484,8 @@ into {$x.a, $x.b, $y.c, $y.d}
 mapReduce( 
     { input:  {type: 'hdfs', location: 'sample.dat'}, 
       output: {type: 'hdfs', location: 'results.dat'}, 
-      map:    fn($v) ( $v -> transform [$.x, 1] ),
-      reduce: fn($x, $v) ( $v -> aggregate into {x: $x, num: count($)} )
+      map:    fn(v) ( v -> transform [$.x, 1] ),
+      reduce: fn(x, v) ( v -> aggregate into {x: x, num: count($)} )
     });##
 {
   "location": "results.dat",
@@ -508,47 +508,47 @@ read(hdfs('results.dat'));##
 
 // Define a function that returns the most recent book
 // written by a given author. DIFF
-  $mostRecent = 
-    fn($author) (
+  mostRecent = 
+    fn(author) (
          read(hdfs('books'))
-         -> filter $.author == $author
+         -> filter $.author == author
          -> top 1 by [$.year desc]
          -> transform $.title
          -> singleton()
     );##
-"$mostRecent"
+"mostRecent"
 
 
   // Invoke the function.
-  $mostRecent('J. K. Rowling');##
+  mostRecent('J. K. Rowling');##
 "Deathly Hallows"
 
 
 // non-deterministic function-- do not test this for now...
 // Get albums recorded by "The Police" using Freebase.  DIFF
 // (
-//    $artist = "The Police",
-//    $freebase = 
+//    artist = "The Police",
+//    freebase = 
 //      httpGet('http://www.freebase.com/api/service/mqlread', 
 //        { queries: 
 //           serialize(
 //              { myquery: 
 //                { query:
 //                  [{ type: "/music/artist",
-//                     name: $artist,
+//                     name: artist,
 //                     album: []
 //                   }] 
 //                }
 //              }
 //            ) }) [0],
 //  
-//    $freebase.myquery.result[*].album -> expand
+//    freebase.myquery.result[*].album -> expand
 //  );
 
 // non-deterministic function-- do not test this for now...  
 // Get traffic incidents from Yahoo!. DIFF
 // (
-//    $trafficData = 
+//    trafficData = 
 //      httpGet('http://local.yahooapis.com/MapsService/V1/trafficData',
 //        { appid:  "YahooDemo",
 //          street: "701 First Street",
@@ -557,19 +557,19 @@ read(hdfs('results.dat'));##
 //          output: "json"
 //        })[0],
 //  
-//    $trafficData.ResultSet.Result[*].title
+//    trafficData.ResultSet.Result[*].title
 // );
 
 // ====== SPLIT1 ======
 
-    registerFunction("split1", "com.acme.extensions.fn.Split1");##
+    split1 = javaudf("com.acme.extensions.fn.Split1");##
 "split1"
 
-    $path = '/home/mystuff/stuff';##
-"$path"
+    path = '/home/mystuff/stuff';##
+"path"
 
 
-    split1($path, "/");##
+    split1(path, "/");##
 [
   "",
   "home",
@@ -579,26 +579,26 @@ read(hdfs('results.dat'));##
 
     // [ "", "home", "mystuff", "stuff" ]
 
-    count(split1($path, "/"));##
+    count(split1(path, "/"));##
 4
 
     // 4
 
-    split1($path, "/")[1];##
+    split1(path, "/")[1];##
 "home"
  
     // "home"
 
 // ====== SPLIT2 ======
 
-    registerFunction("split2", "com.acme.extensions.fn.Split2");##
+    split2 = javaudf("com.acme.extensions.fn.Split2");##
 "split2"
 
-    $path = '/home/mystuff/stuff';##
-"$path"
+    path = '/home/mystuff/stuff';##
+"path"
 
 
-    split2($path, "/");##
+    split2(path, "/");##
 [
   "",
   "home",
@@ -608,26 +608,26 @@ read(hdfs('results.dat'));##
 
     // [ "", "home", "mystuff", "stuff"]
 
-    count(split2($path, "/"));##
+    count(split2(path, "/"));##
 4
 
     // 4
 
-    split2($path, "/")[1];##
+    split2(path, "/")[1];##
 "home"
 
     // "home"
 
 // ====== GREP ======
 
-    registerFunction("grep", "com.acme.extensions.fn.Grep");##
+    grep = javaudf("com.acme.extensions.fn.Grep");##
 "grep"
 
-    $data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];##
-"$data"
+    data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];##
+"data"
 
 
-    grep("a\\d*b", $data);##
+    grep("a\\d*b", data);##
 [
   "a1b",
   "a3b",
@@ -637,7 +637,7 @@ read(hdfs('results.dat'));##
 
     // [ "a1b", "a3b", "a5b", "a7b" ]
 
-    grep("a\\d*b", null, $data );##
+    grep("a\\d*b", null, data );##
 [
   "a1b",
   "a3b",
@@ -647,7 +647,7 @@ read(hdfs('results.dat'));##
 
     // [ "a1b", "a3b", "a5b", "a7b" ]
 
-    grep("a\\d*b", "g", $data );##
+    grep("a\\d*b", "g", data );##
 [
   "a1b",
   "a2b",
@@ -663,7 +663,7 @@ read(hdfs('results.dat'));##
 
 // ====== GCD ======
 
-    registerFunction("gcd1", "com.acme.extensions.fn.GCD1");##
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");##
 "gcd1"
 
     gcd1(null);##
@@ -704,7 +704,7 @@ FAILURE
  // 31*3 = 93
 
 
-    registerFunction("gcd2", "com.acme.extensions.fn.GCD2");##
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");##
 "gcd2"
 
 
@@ -719,28 +719,28 @@ FAILURE
  // 6
 
 
-    $gcd = fn($nums) combine($nums, fn($a,$b) gcd2($a,$b));##
-"$gcd"
+    gcd = fn(nums) combine(nums, fn(a,b) gcd2(a,b));##
+"gcd"
 
 
-    $gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
 93
  // 31*3 = 93
 
 
-    $gcd = fn($nums) ($nums -> combine( fn($a,$b) gcd1( [$a,$b] ) ));##
-"$gcd"
+    gcd = fn(nums) (nums -> combine( fn(a,b) gcd1( [a,b] ) ));##
+"gcd"
 
 
-    $gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
 93
  // 31*3 = 93
 
 
     range(1,100)
-    -> expand each $i (
+    -> expand each i (
          range(1,100)
-         -> transform each $j { a: $i, b: $i * $j }
+         -> transform each j { a: i, b: i * j }
        )
     -> write(hdfs('/temp/nums'));##
 {
@@ -749,17 +749,17 @@ FAILURE
 }
 
 
-    registerFunction("gcd1", "com.acme.extensions.fn.GCD1");##
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");##
 "gcd1"
 
-    $gcd = fn($nums) gcd1( $nums );##
-"$gcd"
+    gcd = fn(nums) gcd1( nums );##
+"gcd"
 
 
 // DIFF: sort added for stabilty
 read(hdfs('/temp/nums'))
--> group by $a = ($.a)
-    into { a: $a, g: $gcd($[*].b) }
+-> group by a = ($.a)
+    into { a: a, g: gcd($[*].b) }
 -> sort by [$.a];##
 [
   {
@@ -1167,18 +1167,18 @@ read(hdfs('/temp/nums'))
 // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
 
 
-    registerFunction("gcd2", "com.acme.extensions.fn.GCD2");##
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");##
 "gcd2"
 
-    $gcd = fn($nums) ( $nums -> combine( fn($a,$b) gcd2( $a,$b ) ) );##
-"$gcd"
+    gcd = fn(nums) ( nums -> combine( fn(a,b) gcd2( a,b ) ) );##
+"gcd"
 
 
 // DIFF: sort added for stabilty
 
 read(hdfs('/temp/nums'))
--> group by $a = ($.a)
-    into { a: $a, g: $gcd($[*].b) }
+-> group by a = ($.a)
+    into { a: a, g: gcd($[*].b) }
 -> sort by [$.a];##
 [
   {
@@ -1588,15 +1588,15 @@ read(hdfs('/temp/nums'))
 // DIFF: this is unstable during testing (because of different options):
 //  explain 
 // read(hdfs('/temp/nums'))
-// -> group by $a = ($.a)
-//     into { a: $a, g: $gcd($[*].b) }
+// -> group by a = ($.a)
+//     into { a: a, g: gcd($[*].b) }
 
       mrAggregate( {
          input: { type: "hdfs", location: "/temp/nums" }, 
          output: HadoopTemp(),
          map: fn ($) ( $ -> transform [ $.a, $ ] ),
-         aggregate: fn ($k, $) [ combine($[*].b, fn($a,$b) gcd2( $a,$b ) ) ],
-         final: fn ($k, $aggs) [{ a:$k, g: $aggs[0] }]
+         aggregate: fn (k, $) [ combine($[*].b, fn(a,b) gcd2( a,b ) ) ],
+         final: fn (k, aggs) [{ a:k, g: aggs[0] }]
      } )
      -> read()
      -> sort by [$.a];##
@@ -2006,11 +2006,11 @@ read(hdfs('/temp/nums'))
 
 // ======== EveryType ==========
 
-    registerFunction("everyType", "com.acme.extensions.fn.EveryType");##
+    everyType = javaudf("com.acme.extensions.fn.EveryType");##
 "everyType"
 
 
-    $data = [
+    data = [
       null, 
       [0,1,2,3,4], 
       { x:1, y:[2,"two"], z: { a:3, b:"four" } },
@@ -2020,16 +2020,16 @@ read(hdfs('/temp/nums'))
       38.9,
       x'ADEADFAD',
       d'2008-03-14T12:15:00Z',
-      fn($x) $x + 1
+      fn(x) x + 1
     ];##
-"$data"
+"data"
 
 
     everyType( null );##
 null
 
 
-    pairwise(everyType( $data ), $data);##
+    pairwise(everyType( data ), data);##
 [
   [
     null,
@@ -2100,10 +2100,8 @@ null
     date('2008-03-14T12:15:00Z')
   ],
   [
-    fn(x) ( ($x)+(1) )
-,
-    fn(x) ( ($x)+(1) )
-
+    fn(x) ((x)+(1)),
+    fn(x) ((x)+(1))
   ]
 ]
 
@@ -2111,7 +2109,7 @@ null
 // =============================================================================
 
 // DIFF: not in docs
-$books -> write(hdfs('books.jqlb'));##
+books -> write(hdfs('books.jqlb'));##
 {
   "location": "books.jqlb",
   "type": "hdfs"
@@ -2189,7 +2187,7 @@ read(hdfs('books.jqlb'));##
 
 
 // DIFF: not in docs
-$books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
+books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
                               converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
 {
   "location": "example.jql",
@@ -2277,13 +2275,13 @@ read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.ha
 ]
 
 
-$myRead = fn($path) read({type:'hdfs', location:$path, 
+myRead = fn(path) read({type:'hdfs', location:path, 
                           inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
                                       converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
-"$myRead"
+"myRead"
 
                                 
-$myRead('example.jql');##
+myRead('example.jql');##
 [
   {
     "author": "J. K. Rowling",
@@ -2471,7 +2469,7 @@ read({type:'myHDFSFile', location:'example.jql'})
 // hbaseWrite('example', []);
 
 // (see hbaseQueries.txt)
-// hbaseWrite('example', $q);
+// hbaseWrite('example', q);
 
 read({type:"local", location:'build/test/cache/data/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
 [
@@ -2546,27 +2544,27 @@ hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;##
 0
 
 
-$lineRdr = read(lines("test"));##
-"$lineRdr"
+lineRdr = read(lines("test"));##
+"lineRdr"
 
 
-registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");##
+splitArr = builtin("com.acme.extensions.expr.SplitIterExpr$Descriptor");##
 "splitArr"
 
 
-$lineRdr
+lineRdr
 -> expand splitArr($, " ")
 -> transform [$,1]
--> group by $w = ($[0])
-    into [$w, sum($[*][1])]
+-> group by w = ($[0])
+    into [w, sum($[*][1])]
 -> count();##
 1341
 
 
-$lineRdr
+lineRdr
 -> expand splitArr($, " ")
--> group by $w = ($)
-    into [$w, count($)]
+-> group by w = ($)
+    into [w, count($)]
 -> count();##
 1341
 

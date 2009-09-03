@@ -24,6 +24,8 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 /**
@@ -32,32 +34,21 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 public class AssignExpr extends TopExpr
 {
   public Var var;
-
+  
   /**
    * @param varName
    * @param valExpr
    */
-  public AssignExpr(Var var)
+  public AssignExpr(Var var, Expr valueExpr)
   {
-    if (!var.isGlobal()) throw new IllegalArgumentException();
+    super(valueExpr);
     this.var = var;
   }
-
+  
   public Map<ExprProperty, Boolean> getProperties()
   {
-    Map<ExprProperty, Boolean> result;
-    switch (var.type())
-    {
-    case VALUE:
-      result = ExprProperty.createUnsafeDefaults();
-      break;
-    case EXPR:
-      result = var.expr().getProperties();
-      break;
-    default:
-      throw new IllegalStateException();
-    }
-    result.put(ExprProperty.HAS_CAPTURES, true);
+    Map<ExprProperty, Boolean> result = super.getProperties();
+//    result.put(ExprProperty.HAS_CAPTURES, true);
     return result;
   }
 
@@ -72,19 +63,22 @@ public class AssignExpr extends TopExpr
   {
     exprText.print(var.name()); // TODO: expr -> $var when var is pipe var
     exprText.print(" = ");
-    switch (var.type())
+    if (numChildren() > 0)
     {
-    case VALUE:
+      exprs[0].decompile(exprText, capturedVars);
+    }
+    else
+    {
       JsonUtil.print(exprText, var.value());
-      break;
-    case EXPR:
-      var.expr().decompile(exprText, capturedVars);
-      break;
-    default:
-      throw new IllegalStateException();
     }
   }
 
+  public Expr clone(VarMap varMap)
+  {
+    Var newVar = varMap.remap(var);
+    return new AssignExpr(newVar, exprs[0].clone(varMap));
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -92,6 +86,7 @@ public class AssignExpr extends TopExpr
    */
   public JsonValue eval(Context context) throws Exception
   {
+    var.setExpr(exprs[0]);
     return new JsonString(var.name());
   }
 }

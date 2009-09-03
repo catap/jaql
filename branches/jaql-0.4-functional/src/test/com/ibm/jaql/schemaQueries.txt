@@ -1,90 +1,90 @@
 // -- parsing and matching: simple schemata -------------------------------------------------------
 
-$x = schema null;
-$x;
-null instanceof $x;
-1 instanceof $x;   // incompatible
+x = schema null;
+x;
+null instanceof x;
+1 instanceof x;   // incompatible
 
-$x = schema nonnull;
-$x;
-null instanceof $x;
-1 instanceof $x;
+x = schema nonnull;
+x;
+null instanceof x;
+1 instanceof x;
 
-$x = schema any;
-$x;
-null instanceof $x;
-1 instanceof $x;
+x = schema any;
+x;
+null instanceof x;
+1 instanceof x;
 
-$x = schema function;
-$x;
-(fn($) $) instanceof $x;
-1 instanceof $x;  // incompatible
+x = schema function;
+x;
+(fn(x) x) instanceof x;
+1 instanceof x;  // incompatible
 
 // -- parsing and matching: schema ----------------------------------------------------------------
 
-$x = schema schematype;
-schema long instanceof $x;
-1 instanceof $x;  // incompatible
+x = schema schematype;
+schema long instanceof x;
+1 instanceof x;  // incompatible
 
-$x = schema schematype(value=schema long);
-schema long instanceof $x;   
-schema boolean instanceof $x; // incompatible
+x = schema schematype(value=schema long);
+schema long instanceof x;   
+schema boolean instanceof x; // incompatible
 
 
 // -- parsing and matching: boolean ---------------------------------------------------------------
 
-$x = schema boolean;
-$x;
-true instanceof $x;
-false instanceof $x;
-1 instanceof $x;        // incompatible
+x = schema boolean;
+x;
+true instanceof x;
+false instanceof x;
+1 instanceof x;        // incompatible
 
-$x = schema boolean(true);
-$x;
-true instanceof $x;
-false instanceof $x;    // incompatible
+x = schema boolean(true);
+x;
+true instanceof x;
+false instanceof x;    // incompatible
 
-$x = schema boolean(false);
-$x;
-true instanceof $x;     // incompatible
-false instanceof $x; 
+x = schema boolean(false);
+x;
+true instanceof x;     // incompatible
+false instanceof x; 
 
 
 
 // -- parsing and matching: long ------------------------------------------------------------------
 
-$x = schema long;
-$x;
-1 instanceof $x;
-1m instanceof $x;  // incompatible
-1d instanceof $x;  // incompatible
-"a" instanceof $x; // incompatible
+x = schema long;
+x;
+1 instanceof x;
+1m instanceof x;  // incompatible
+1d instanceof x;  // incompatible
+"a" instanceof x; // incompatible
 
-$x = schema long(5);
-$x;
-4 instanceof $x;  // incompatible
-5 instanceof $x;
-6 instanceof $x;
+x = schema long(5);
+x;
+4 instanceof x;  // incompatible
+5 instanceof x;
+6 instanceof x;
 
-$x = schema long(max=5);
-$x;
-4 instanceof $x;  
-5 instanceof $x;
-6 instanceof $x; // incompatible
+x = schema long(max=5);
+x;
+4 instanceof x;  
+5 instanceof x;
+6 instanceof x; // incompatible
 
-$x = schema long(-1,1);
-$x;
--2 instanceof $x; // incompatible
--1 instanceof $x;
-0 instanceof $x;
-1 instanceof $x;
-2 instanceof $x; // incompatible
+x = schema long(-1,1);
+x;
+-2 instanceof x; // incompatible
+-1 instanceof x;
+0 instanceof x;
+1 instanceof x;
+2 instanceof x; // incompatible
 
-$x = schema long(value=5);
-$x;
-4 instanceof $x;  // incompatible
-5 instanceof $x;
-6 instanceof $x;  // incompatible
+x = schema long(value=5);
+x;
+4 instanceof x;  // incompatible
+5 instanceof x;
+6 instanceof x;  // incompatible
 
 
 // TODO: uncomment next line when parser is fixed to accept Long.MIN
@@ -100,40 +100,40 @@ schema long(5, value=4); // must fail: invalid argument
 
 // -- parsing and matching: double ----------------------------------------------------------------
 
-$x = schema double;
-$x;
-1d instanceof $x;
-1.1 instanceof $x;  
-1 instanceof $x;    // incompatible
-1.5m instanceof $x; // incompatible
-1.1m instanceof $x; // incompatible
-"a" instanceof $x; // incompatible
+x = schema double;
+x;
+1d instanceof x;
+1.1 instanceof x;  
+1 instanceof x;    // incompatible
+1.5m instanceof x; // incompatible
+1.1m instanceof x; // incompatible
+"a" instanceof x; // incompatible
 
-$x = schema double(5d);
-$x;
-4d instanceof $x;  // incompatible
-5d instanceof $x;
-5.001d instanceof $x;
+x = schema double(5d);
+x;
+4d instanceof x;  // incompatible
+5d instanceof x;
+5.001d instanceof x;
 
-$x = schema double(max=5d);
-$x;
-4d instanceof $x;  
-5d instanceof $x;
-5.001d instanceof $x; // incompatible
+x = schema double(max=5d);
+x;
+4d instanceof x;  
+5d instanceof x;
+5.001d instanceof x; // incompatible
 
-$x = schema double(-1d,1d);
-$x;
--1.001d instanceof $x; // incompatible
--1d instanceof $x;
-0d instanceof $x;
-1d instanceof $x;
-1.001d instanceof $x; // incompatible
+x = schema double(-1d,1d);
+x;
+-1.001d instanceof x; // incompatible
+-1d instanceof x;
+0d instanceof x;
+1d instanceof x;
+1.001d instanceof x; // incompatible
 
-$x = schema double(value=5d);
-$x;
-4.999d instanceof $x;  // incompatible
-5d instanceof $x;
-5.001d instanceof $x;  // incompatible
+x = schema double(value=5d);
+x;
+4.999d instanceof x;  // incompatible
+5d instanceof x;
+5.001d instanceof x;  // incompatible
 
 schema double(5d,3d); // must fail: invalid interval
 schema double(5);     // must fail: invalid argument
@@ -143,39 +143,39 @@ schema double(5d, value=4d); // must fail: invalid argument
 
 // -- parsing and matching: decfloat --------------------------------------------------------------
 
-$x = schema decfloat;
-$x;
-1m instanceof $x;
-1.1m instanceof $x;
-1 instanceof $x;    // incompatible
-1.1d instanceof $x; // incompatible
-"a" instanceof $x;  // incompatible
+x = schema decfloat;
+x;
+1m instanceof x;
+1.1m instanceof x;
+1 instanceof x;    // incompatible
+1.1d instanceof x; // incompatible
+"a" instanceof x;  // incompatible
 
-$x = schema decfloat(5m);
-$x;
-4m instanceof $x;  // incompatible
-5m instanceof $x;
-5.001m instanceof $x;
+x = schema decfloat(5m);
+x;
+4m instanceof x;  // incompatible
+5m instanceof x;
+5.001m instanceof x;
 
-$x = schema decfloat(max=5m);
-$x;
-4m instanceof $x;  
-5m instanceof $x;
-5.001m instanceof $x; // incompatible
+x = schema decfloat(max=5m);
+x;
+4m instanceof x;  
+5m instanceof x;
+5.001m instanceof x; // incompatible
 
-$x = schema decfloat(-1m,1m);
-$x;
--1.001m instanceof $x; // incompatible
--1m instanceof $x;
-0m instanceof $x;
-1m instanceof $x;
-1.001m instanceof $x; // incompatible
+x = schema decfloat(-1m,1m);
+x;
+-1.001m instanceof x; // incompatible
+-1m instanceof x;
+0m instanceof x;
+1m instanceof x;
+1.001m instanceof x; // incompatible
 
-$x = schema decfloat(value=5m);
-$x;
-4.999m instanceof $x;  // incompatible
-5m instanceof $x;
-5.001m instanceof $x;  // incompatible
+x = schema decfloat(value=5m);
+x;
+4.999m instanceof x;  // incompatible
+5m instanceof x;
+5.001m instanceof x;  // incompatible
 
 
 schema decfloat(-9223372036854775809m, 9223372036854775808m); // should work (outside long range)
@@ -186,36 +186,36 @@ schema decfloat(5, value=4d); // must fail: invalid argument
 
 // -- parsing and matching: date ------------------------------------------------------------------
 
-$x = schema date;
-$x;
-date('2000-01-01T12:00:00Z') instanceof $x;
-'2000-01-01T12:00:00Z' instanceof $x; // incompatible, that's a string
+x = schema date;
+x;
+date('2000-01-01T12:00:00Z') instanceof x;
+'2000-01-01T12:00:00Z' instanceof x; // incompatible, that's a string
 
-$x = schema date(date('2000-01-01T12:00:00Z'));
-$x;
-date('2000-01-01T11:59:59Z') instanceof $x;  // incompatible
-date('2000-01-01T12:00:00Z') instanceof $x;
-date('2000-01-01T12:00:01Z') instanceof $x;
+x = schema date(date('2000-01-01T12:00:00Z'));
+x;
+date('2000-01-01T11:59:59Z') instanceof x;  // incompatible
+date('2000-01-01T12:00:00Z') instanceof x;
+date('2000-01-01T12:00:01Z') instanceof x;
 
-$x = schema date(max=date('2000-01-01T12:00:00Z'));
-$x;
-date('2000-01-01T11:59:59Z') instanceof $x;  
-date('2000-01-01T12:00:00Z') instanceof $x;
-date('2000-01-01T12:00:01Z') instanceof $x;   // incompatible
+x = schema date(max=date('2000-01-01T12:00:00Z'));
+x;
+date('2000-01-01T11:59:59Z') instanceof x;  
+date('2000-01-01T12:00:00Z') instanceof x;
+date('2000-01-01T12:00:01Z') instanceof x;   // incompatible
 
-$x = schema date(date('2000-01-01T12:00:00Z'), date('2000-02-01T12:00:00Z'));
-$x;
-date('2000-01-01T11:59:59Z') instanceof $x;  // incompatible
-date('2000-01-01T12:00:00Z') instanceof $x;
-date('2000-01-02T13:00:00Z') instanceof $x;
-date('2000-02-01T12:00:00Z') instanceof $x;
-date('2000-02-01T12:00:01Z') instanceof $x;   // incompatible
+x = schema date(date('2000-01-01T12:00:00Z'), date('2000-02-01T12:00:00Z'));
+x;
+date('2000-01-01T11:59:59Z') instanceof x;  // incompatible
+date('2000-01-01T12:00:00Z') instanceof x;
+date('2000-01-02T13:00:00Z') instanceof x;
+date('2000-02-01T12:00:00Z') instanceof x;
+date('2000-02-01T12:00:01Z') instanceof x;   // incompatible
 
-$x = schema date(value=date('2000-01-01T12:00:00Z'));
-$x;
-date('2000-01-01T11:59:59Z') instanceof $x;   // incompatible
-date('2000-01-01T12:00:00Z') instanceof $x;
-date('2000-01-01T12:00:01Z') instanceof $x;   // incompatible
+x = schema date(value=date('2000-01-01T12:00:00Z'));
+x;
+date('2000-01-01T11:59:59Z') instanceof x;   // incompatible
+date('2000-01-01T12:00:00Z') instanceof x;
+date('2000-01-01T12:00:01Z') instanceof x;   // incompatible
 
 schema date(date('2000-01-01T12:00:00Z'), date('2000-01-01T11:00:00Z')); // must fail: invalid interval
 schema date(date('2000-01-01T12:00:00Z'), value=date('2000-01-01T11:00:00Z')); // must fail: invalid argument
@@ -223,43 +223,43 @@ schema date(date('2000-01-01T12:00:00Z'), value=date('2000-01-01T11:00:00Z')); /
 
 // -- parsing and matching: string ----------------------------------------------------------------
 
-$x = schema string;
-$x;
-"1" instanceof $x;
-1 instanceof $x;
+x = schema string;
+x;
+"1" instanceof x;
+1 instanceof x;
 
-$x = schema string(5);
-$x;
-"1234" instanceof $x;  // incompatible
-"12345" instanceof $x;
-"123456" instanceof $x;
+x = schema string(5);
+x;
+"1234" instanceof x;  // incompatible
+"12345" instanceof x;
+"123456" instanceof x;
 
-$x = schema string(maxLength=5);
-$x;
-"1234" instanceof $x;
-"12345" instanceof $x;
-"123456" instanceof $x;  // incompatible
+x = schema string(maxLength=5);
+x;
+"1234" instanceof x;
+"12345" instanceof x;
+"123456" instanceof x;  // incompatible
 
-$x = schema string(4,6);
-$x;
-"123" instanceof $x;  // incompatible
-"1234" instanceof $x;
-"12345" instanceof $x;
-"123456" instanceof $x;
-"1234567" instanceof $x;  // incompatible
+x = schema string(4,6);
+x;
+"123" instanceof x;  // incompatible
+"1234" instanceof x;
+"12345" instanceof x;
+"123456" instanceof x;
+"1234567" instanceof x;  // incompatible
 
 schema string(-1); // must fail: invalid interval
 schema string(5,3); // must fail: invalid interval
 
-$x = schema string(pattern="ba*b");
-$x;
-"baaab" instanceof $x;
-"babab" instanceof $x;  // incompatible
+x = schema string(pattern="ba*b");
+x;
+"baaab" instanceof x;
+"babab" instanceof x;  // incompatible
 
-$x = schema string(value="ba*b");
-$x;
-"ba*b" instanceof $x;
-"baaab" instanceof $x;  // incompatible
+x = schema string(value="ba*b");
+x;
+"ba*b" instanceof x;
+"baaab" instanceof x;  // incompatible
 
 
 schema string(5, pattern="[ab]*");
@@ -279,64 +279,64 @@ schema binary(5,3); // must fail: invalid interval
 
 // -- parsing and matching: arrays ----------------------------------------------------------------
 
-$x = schema [];
-$x;
-[] instanceof $x;
-[ null ] instanceof $x;    // incompatible
-1 instanceof $x;           // incompatible
-{} instanceof $x;          // incompatible
+x = schema [];
+x;
+[] instanceof x;
+[ null ] instanceof x;    // incompatible
+1 instanceof x;           // incompatible
+{} instanceof x;          // incompatible
 
-$x = schema [ null ];
-$x;
-[ null ] instanceof $x;
-null instanceof $x;       // incompatible
-[] instanceof $x;       // incompatible
-[ 1 ] instanceof $x;    // incompatible
+x = schema [ null ];
+x;
+[ null ] instanceof x;
+null instanceof x;       // incompatible
+[] instanceof x;       // incompatible
+[ 1 ] instanceof x;    // incompatible
 
-$x = schema [ long(0,10), string(pattern="a*"), boolean ];
-$x;
-[ 1, "a", true ] instanceof $x;
-[ 1, "a", true, 1 ] instanceof $x;  // incompatible
-[ 11, "a", true ] instanceof $x;  // incompatible
-[ 1, "b", true ] instanceof $x;   // incompatible
-[ 1, "a", null ] instanceof $x;   // incompatible
+x = schema [ long(0,10), string(pattern="a*"), boolean ];
+x;
+[ 1, "a", true ] instanceof x;
+[ 1, "a", true, 1 ] instanceof x;  // incompatible
+[ 11, "a", true ] instanceof x;  // incompatible
+[ 1, "b", true ] instanceof x;   // incompatible
+[ 1, "a", null ] instanceof x;   // incompatible
 
-$x = schema [ long, boolean<2,3> ];
-$x;
-[ 1, true ] instanceof $x; // incompatible
-[ 1, true, true ] instanceof $x;
-[ 1, true, true, true ] instanceof $x;
-[ 1, true, true, true, true ] instanceof $x; // incompatible
+x = schema [ long, boolean<2,3> ];
+x;
+[ 1, true ] instanceof x; // incompatible
+[ 1, true, true ] instanceof x;
+[ 1, true, true, true ] instanceof x;
+[ 1, true, true, true, true ] instanceof x; // incompatible
 
-$x = schema [ long, boolean* ];
-$x;
-[ 1 ] instanceof $x; 
-[ 1, true ] instanceof $x;
-[ 1, true, true ] instanceof $x;  
-[ 1, 1 ] instanceof $x; // incompatible
+x = schema [ long, boolean* ];
+x;
+[ 1 ] instanceof x; 
+[ 1, true ] instanceof x;
+[ 1, true, true ] instanceof x;  
+[ 1, 1 ] instanceof x; // incompatible
 
-$x = schema [ long, boolean+ ];
-$x;
-[ 1 ] instanceof $x;  // incompatible
-[ 1, true ] instanceof $x;
-[ 1, true, true ] instanceof $x;  
-[ 1, 1 ] instanceof $x; // incompatible
+x = schema [ long, boolean+ ];
+x;
+[ 1 ] instanceof x;  // incompatible
+[ 1, true ] instanceof x;
+[ 1, true, true ] instanceof x;  
+[ 1, 1 ] instanceof x; // incompatible
 
-$x = schema [ long, boolean<2,*> ];
-$x;
-[ 1 ] instanceof $x;  // incompatible
-[ 1, true ] instanceof $x;  // incompatible
-[ 1, true, true ] instanceof $x;
-[ 1, true, true, true ] instanceof $x;    
-[ 1, 1 ] instanceof $x; // incompatible
+x = schema [ long, boolean<2,*> ];
+x;
+[ 1 ] instanceof x;  // incompatible
+[ 1, true ] instanceof x;  // incompatible
+[ 1, true, true ] instanceof x;
+[ 1, true, true, true ] instanceof x;    
+[ 1, 1 ] instanceof x; // incompatible
 
-$x = schema [ long, boolean<*,2> ];
-$x;
-[ 1 ] instanceof $x;  
-[ 1, true ] instanceof $x;  
-[ 1, true, true ] instanceof $x;
-[ 1, true, true, true ] instanceof $x; // incompatible    
-[ 1, 1 ] instanceof $x; // incompatible
+x = schema [ long, boolean<*,2> ];
+x;
+[ 1 ] instanceof x;  
+[ 1, true ] instanceof x;  
+[ 1, true, true ] instanceof x;
+[ 1, true, true, true ] instanceof x; // incompatible    
+[ 1, 1 ] instanceof x; // incompatible
 
 
 schema [ null* ];
@@ -366,78 +366,78 @@ schema [ long(5,3) ]; // must fail: invalid internal schema
 
 // -- parsing and matching: records ---------------------------------------------------------------
 
-$x = schema {};
-$x;
-{} instanceof $x;
-[] instanceof $x;               // incompatible
-{ a: null } instanceof $x;      // incompatible
-1 instanceof $x;                // incompatible
+x = schema {};
+x;
+{} instanceof x;
+[] instanceof x;               // incompatible
+{ a: null } instanceof x;      // incompatible
+1 instanceof x;                // incompatible
 
-$x = schema { a };
-$x;
-{ a: 1 } instanceof $x;
-{ "a": 1 } instanceof $x;
-{ } instanceof $x;              // incompatible
-{ a: 1, b: 1 } instanceof $x;   // incompatible
-{ b: 1 } instanceof $x;         // incompatible
+x = schema { a };
+x;
+{ a: 1 } instanceof x;
+{ "a": 1 } instanceof x;
+{ } instanceof x;              // incompatible
+{ a: 1, b: 1 } instanceof x;   // incompatible
+{ b: 1 } instanceof x;         // incompatible
 
-$x = schema { "a" };
-$x;
-{ a: 1 } instanceof $x;
-{ "a": 1 } instanceof $x;
-{ } instanceof $x;              // incompatible
-{ b: 1 } instanceof $x;         // incompatible
+x = schema { "a" };
+x;
+{ a: 1 } instanceof x;
+{ "a": 1 } instanceof x;
+{ } instanceof x;              // incompatible
+{ b: 1 } instanceof x;         // incompatible
 
-$x = schema { a? };
-$x;
-{ } instanceof $x; 
-{ a: 1 } instanceof $x; 
-{ b: 1 } instanceof $x;         // incompatible
+x = schema { a? };
+x;
+{ } instanceof x; 
+{ a: 1 } instanceof x; 
+{ b: 1 } instanceof x;         // incompatible
 
-$x = schema { a: long };
-$x;
-{ a: 1 } instanceof $x;
-{ a: "1" } instanceof $x;       // incompatible
+x = schema { a: long };
+x;
+{ a: 1 } instanceof x;
+{ a: "1" } instanceof x;       // incompatible
 
-$x = schema { a: nonnull };
-$x;
-{ a: 1 } instanceof $x;
-{ a: "1" } instanceof $x;
+x = schema { a: nonnull };
+x;
+{ a: 1 } instanceof x;
+{ a: "1" } instanceof x;
 
-$x = schema { * };
-$x;
-{ } instanceof $x;
-{ a: 1 } instanceof $x;
-{ a: 1, b: 1 } instanceof $x;
+x = schema { * };
+x;
+{ } instanceof x;
+{ a: 1 } instanceof x;
+{ a: 1, b: 1 } instanceof x;
 
-$x = schema { a: long, * };
-$x;
-{ a: 1 } instanceof $x;
-{ a: 1, b: 1 } instanceof $x;
-{ b: 1 } instanceof $x;         // incompatible
+x = schema { a: long, * };
+x;
+{ a: 1 } instanceof x;
+{ a: 1, b: 1 } instanceof x;
+{ b: 1 } instanceof x;         // incompatible
 
-$x = schema { a?: long, * };
-$x;
-{ a: 1 } instanceof $x;
-{ a: 1, b: 1 } instanceof $x;
-{ b: 1 } instanceof $x;
-{ a: "1" } instanceof $x;       // incompatible
+x = schema { a?: long, * };
+x;
+{ a: 1 } instanceof x;
+{ a: 1, b: 1 } instanceof x;
+{ b: 1 } instanceof x;
+{ a: "1" } instanceof x;       // incompatible
 
-$x = schema { a: long, *: long };
-$x;
-{ a: 1 } instanceof $x;
-{ a: 1, b: 1 } instanceof $x;
-{ a: 1, b: "1" } instanceof $x; // incompatible
+x = schema { a: long, *: long };
+x;
+{ a: 1 } instanceof x;
+{ a: 1, b: 1 } instanceof x;
+{ a: 1, b: "1" } instanceof x; // incompatible
 
-$x = schema { a?: long, *: string };
-$x;
-{ a: 1 } instanceof $x;
-{ a: 1, b: "1" } instanceof $x;
-{ b: "1" } instanceof $x;
-{ a: "1" } instanceof $x;       // incompatible
+x = schema { a?: long, *: string };
+x;
+{ a: 1 } instanceof x;
+{ a: 1, b: "1" } instanceof x;
+{ b: "1" } instanceof x;
+{ a: "1" } instanceof x;       // incompatible
 
-// keyword checks
-// schema { for }; // does not work currently 
+// keyword checks (disabled; enable when soft keyword implemented)
+// schema { for }; // does not work currently
 schema { for: nonnull };
 schema { "for" };
 // schema { null }; // does not work currently
@@ -451,39 +451,39 @@ schema { a, b, c, a, * }; // must fail: field name occurs twice
 
 // -- parsing and matching: alternatives ----------------------------------------------------------
 
-$x = schema null?;
-$x;
-null instanceof $x;
-1 instanceof $x;        // incompatible
+x = schema null?;
+x;
+null instanceof x;
+1 instanceof x;        // incompatible
 
-$x = schema long?;
-$x;
-null instanceof $x;
-1 instanceof $x;        
-"1" instanceof $x;      // incompatible
+x = schema long?;
+x;
+null instanceof x;
+1 instanceof x;        
+"1" instanceof x;      // incompatible
 
-$x = schema null | long;
-$x;
-null instanceof $x;
-1 instanceof $x;        
-"1" instanceof $x;      // incompatible
+x = schema null | long;
+x;
+null instanceof x;
+1 instanceof x;        
+"1" instanceof x;      // incompatible
 
-$x = schema string(pattern="a*") | string(pattern="b*") | long;
-$x;
-"aaa" instanceof $x;
-"bbb" instanceof $x;
-1 instanceof $x;
-null instanceof $x;     // incompatible
-"c" instanceof $x;      // incompatible
+x = schema string(pattern="a*") | string(pattern="b*") | long;
+x;
+"aaa" instanceof x;
+"bbb" instanceof x;
+1 instanceof x;
+null instanceof x;     // incompatible
+"c" instanceof x;      // incompatible
 
 
-$x = schema string(pattern="a*") | string(pattern="b*") | long?;
-$x;
-"aaa" instanceof $x;
-"bbb" instanceof $x;
-1 instanceof $x;
-null instanceof $x;
-"c" instanceof $x;      // incompatible
+x = schema string(pattern="a*") | string(pattern="b*") | long?;
+x;
+"aaa" instanceof x;
+"bbb" instanceof x;
+1 instanceof x;
+null instanceof x;
+"c" instanceof x;      // incompatible
 
 
 //-------------------------- SCHEMAOF -----------------------------
@@ -501,7 +501,7 @@ schemaof([ 1, "2" ]);
 
 // -- schema comparison ---------------------------------------------------------------------------
 
-$x = [ schema nonnull, 
+x = [ schema nonnull, 
        schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string<*> ],
        schema binary, 
        schema boolean, 
@@ -515,13 +515,13 @@ $x = [ schema nonnull,
        schema any,
        schema decfloat | long, schema date | double  
 ];
-$x -> sort by [$];
-$x -> sort by [$ desc];
+x -> sort by [$];
+x -> sort by [$ desc];
 
 
 // -- schema merging ------------------------------------------------------------------------------
 
-registerFunction('mergeSchemata', 'com.ibm.jaql.udf.MergeSchemataUdf');
+mergeSchemata = javaudf('com.ibm.jaql.udf.MergeSchemataUdf');
 
 mergeSchemata(schema binary, schema binary);
 mergeSchemata(schema binary(minLength=5,maxLength=10), schema binary);
@@ -607,7 +607,7 @@ mergeSchemata(schema { a: long, *:date }, schema { a: long, *:null });
 
 // -- schema compaction ---------------------------------------------------------------------------
 
-registerFunction('compactSchemata', 'com.ibm.jaql.udf.CompactSchemataUdf');
+compactSchemata = javaudf('com.ibm.jaql.udf.CompactSchemataUdf');
 
 compactSchemata(schema binary, schema binary);
 compactSchemata(schema binary(minLength=5,maxLength=10), schema binary);
@@ -773,34 +773,34 @@ schemaof([ [ {a: [1, 2, "a", null] } ], null ] -> transform $[].a);
 
 // -- group by-------------------------------------------------------------------------------------
 
-schemaof(null -> group by $k=$ as $ into $);
-schemaof([] -> group by $k=$ as $ into $);
-schemaof([ {a: 1, b: "b1"}, {a: 1, b: "b2"} ] -> group by $k=$.a into { key: $k, values: $ });
-schemaof([ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] -> group by $k=$.a into { key: $k, values: $ });
-schemaof([ {a: 1, b: "b1"}, {b:"b2"} ] -> group by $k=$.a into { key: $k, values: $ });
+schemaof(null -> group by k=$ as $ into $);
+schemaof([] -> group by k=$ as $ into $);
+schemaof([ {a: 1, b: "b1"}, {a: 1, b: "b2"} ] -> group by k=$.a into { key: k, values: $ });
+schemaof([ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] -> group by k=$.a into { key: k, values: $ });
+schemaof([ {a: 1, b: "b1"}, {b:"b2"} ] -> group by k=$.a into { key: k, values: $ });
 
-schemaof(group null by $k=$ as $ into $);
-schemaof(group []  by $k=$ as $ into $);
-schemaof(group [ {a: 1, b: "b1"}, {a: 1, b: "b1"} ] by $k=$.a as $g1 into { key: $k, values: $g1 });
-schemaof(group [ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] by $k=$.a as $g1 into { key: $k, values: $g1 });
-schemaof(group [ {a: 1, b: "b1"}, {b: "b1"} ] by $k=$.a as $g1 into { key: $k, values: $g1 });
+schemaof(group null by k=$ as $ into $);
+schemaof(group []  by k=$ as $ into $);
+schemaof(group [ {a: 1, b: "b1"}, {a: 1, b: "b1"} ] by k=$.a as g1 into { key: k, values: g1 });
+schemaof(group [ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] by k=$.a as g1 into { key: k, values: g1 });
+schemaof(group [ {a: 1, b: "b1"}, {b: "b1"} ] by k=$.a as g1 into { key: k, values: g1 });
 
-schemaof(group null by $k=$ as $g1, null by $k=$ as $g2 
-         into { key: $k, values1: $g1, values2: $g2 });
-schemaof(group []  by $k=$ as $g1, []  by $k=$ as $g2 
-         into { key: $k, values1: $g1, values2: $g2 });
-schemaof(group []  by $k=$ as $g1, null  by $k=$ as $g2 
-         into { key: $k, values1: $g1, values2: $g2 });
+schemaof(group null by k=$ as g1, null by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+schemaof(group []  by k=$ as g1, []  by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+schemaof(group []  by k=$ as g1, null  by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
 
-schemaof(group null by $k=$ as $g1, [ 1 ] by $k=$ as $g2 
-         into { key: $k, values1: $g1, values2: $g2 });
-schemaof(group [] by $k=$ as $g1, [ 1 ] by $k=$ as $g2 
-         into { key: $k, values1: $g1, values2: $g2 });
+schemaof(group null by k=$ as g1, [ 1 ] by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+schemaof(group [] by k=$ as g1, [ 1 ] by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
 
 schemaof(
-  group [ {a: 1, b:"b1"}, {a: 1, b: "b2"} ] by $k=$.a as $g1,
-        [ {c: 3, d:"d1"}, {c: 4, b: "bbb"} ] by $k=$.c as $g2
-  into { key: $k, values1: $g1, values2: $g2 });
+  group [ {a: 1, b:"b1"}, {a: 1, b: "b2"} ] by k=$.a as g1,
+        [ {c: 3, d:"d1"}, {c: 4, b: "bbb"} ] by k=$.c as g2
+  into { key: k, values1: g1, values2: g2 });
 
 
 // -- filter/sort/expand --------------------------------------------------------------------------

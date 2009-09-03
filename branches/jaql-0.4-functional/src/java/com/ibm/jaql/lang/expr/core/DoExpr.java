@@ -24,6 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -83,6 +84,10 @@ public class DoExpr extends Expr
       if( e instanceof BindingExpr )
       {
         capturedVars.remove(((BindingExpr)e).var);
+      }
+      if( e instanceof AssignExpr )
+      {
+        capturedVars.remove(((AssignExpr)e).var);
       }
     }
   }

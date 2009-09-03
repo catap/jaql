@@ -26,6 +26,7 @@ import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.expr.function.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.JavaUdfFunction;
 import com.ibm.jaql.lang.expr.function.VarParameter;
 import com.ibm.jaql.lang.expr.function.VarParameters;
 
@@ -76,6 +77,10 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
       {
         throw new IOException(e);
       }
+    }
+    else if (value instanceof JavaUdfFunction) {
+      JavaUdfFunction f = (JavaUdfFunction)value;
+      out.print("javaudf('" + f.getClassName() + "')");
     }
     else
     {

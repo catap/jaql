@@ -27,7 +27,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
 import com.ibm.jaql.util.Bool3;
 
 /** Converts arguments of a function into a record of (argument name, value) pairs */

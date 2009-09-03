@@ -21,7 +21,6 @@ import java.util.HashMap;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
-import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -138,7 +137,7 @@ public class Env
    * @param varName
    * @return
    */
-  public Var scopeGlobal(String varName, Expr expr)
+  public Var scopeGlobal(String varName, Schema schema)
   {
     if (globalEnv != null)
     {
@@ -148,14 +147,14 @@ public class Env
     Var var = nameMap.get(varName);
     if (var != null)
     {
-      unscope(var); // TODO: varName might still be on the globals scope... 
+      unscope(var);  
     }
-    var = new Var(varName, expr.getSchema(), expr, true);
+    var = new Var(varName, schema, true);
     scope(var);
     return var;
   }
 
-  public Var scopeGlobal(String varName, JsonValue value)
+  public Var scopeGlobal(String varName)
   {
     if (globalEnv != null)
     {
@@ -165,9 +164,9 @@ public class Env
     Var var = nameMap.get(varName);
     if (var != null)
     {
-      unscope(var); // TODO: varName might still be on the globals scope... 
+      unscope(var);  
     }
-    var = new Var(varName, SchemaFactory.schemaOf(value), value, true);
+    var = new Var(varName, SchemaFactory.anySchema(), true);
     scope(var);
     return var;
   }

@@ -23,7 +23,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  */
 public class LocalWriteFn extends AbstractWriteExpr
 {
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
   {
     public Descriptor()
     {

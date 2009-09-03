@@ -31,10 +31,11 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.util.Bool3;
 
-public final class CaptureExpr extends Expr
+public final class DefineJaqlFunctionExpr extends Expr
 {
-  private final JaqlFunction f;
+  private VarParameters parameters;
   
   protected static VarParameters makeParameters(Var[] params, Expr[] defaults)
   {
@@ -42,14 +43,13 @@ public final class CaptureExpr extends Expr
     VarParameter[] pars = new VarParameter[params.length];
     for(int i = 0 ; i < params.length ; i++)
     {
-      BindingExpr binding = new BindingExpr(BindingExpr.Type.EQ, params[i], null, Expr.NO_EXPRS);
       if (defaults[i] == null)
       {
-        pars[i] = new VarParameter(binding);
+        pars[i] = new VarParameter(params[i]);
       }
       else
       {
-        pars[i] = new VarParameter(binding, defaults[i]);
+        pars[i] = new VarParameter(params[i], defaults[i]);
       }
     }
     return new VarParameters(pars);
@@ -61,7 +61,7 @@ public final class CaptureExpr extends Expr
         defaults.toArray(new Expr[defaults.size()]));
   }
 
-  public CaptureExpr(Var[] params, Expr body)
+  public DefineJaqlFunctionExpr(Var[] params, Expr body)
   {
     this(params, new Expr[params.length], body);
   }
@@ -70,10 +70,9 @@ public final class CaptureExpr extends Expr
    * @param params
    * @param body
    */
-  public CaptureExpr(Var[] params, Expr[] defaults, Expr body)
+  public DefineJaqlFunctionExpr(Var[] params, Expr[] defaults, Expr body)
   {
-    this.f = new JaqlFunction(makeParameters(params, defaults), body);
-    annotate();
+    this(makeParameters(params, defaults), body);
   }
 
   /**
@@ -81,23 +80,23 @@ public final class CaptureExpr extends Expr
    * @param params
    * @param body
    */
-  public CaptureExpr(List<Var> params, List<Expr> defaults, Expr body)
+  public DefineJaqlFunctionExpr(List<Var> params, List<Expr> defaults, Expr body)
   {
-    this.f = new JaqlFunction(makeParameters(params, defaults), body);
-    annotate(); 
+    this(makeParameters(params, defaults), body);
   }
   
-  public CaptureExpr(List<Var> params, Expr body)
+  public DefineJaqlFunctionExpr(VarParameters parameters, Expr body)
+  {
+    super(body);
+    this.parameters = parameters;
+    annotate();
+  }
+  
+  public DefineJaqlFunctionExpr(List<Var> params, Expr body)
   {
     this(params, emptyList(params), body);
   }
   
-  public CaptureExpr(JaqlFunction f)
-  {
-    this.f = f;
-    annotate(); 
-  }
-
   private static List<Expr> emptyList(List<Var> var) 
   {
     List<Expr> l = new ArrayList<Expr>(var.size());
@@ -105,20 +104,26 @@ public final class CaptureExpr extends Expr
     return l;
   }
   
-
-  /**
-   * @return
-   */
-  public JaqlFunction getFunction()
+  private JaqlFunction getFunction()
   {
-    return f;
+    return new JaqlFunction(parameters, body());
   }
 
+  public Expr body()
+  {
+    return exprs[0];
+  }
+  
+  public Bool3 getProperty(ExprProperty prop, boolean deep)
+  {
+    return super.getProperty(prop, false); // no deep property checks
+  }
+  
   @Override
   public Map<ExprProperty, Boolean> getProperties() 
   {
     Map<ExprProperty, Boolean> result = super.getProperties();
-    if (f.hasCaptures()) {
+    if (getFunction().hasCaptures()) {
       result.put(ExprProperty.HAS_CAPTURES, true);
     }
     else
@@ -138,17 +143,14 @@ public final class CaptureExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
+    JaqlFunction f = getFunction();
     exprText.print(f.getText());
-    VarParameters pars = f.getParameters();
-    for(int i = 0 ; i < pars.noParameters(); i++)
-    {
-      capturedVars.remove(pars.get(i).getVar());
-    }
+    capturedVars.addAll(f.getCapturedVars());    
   }
   
   public HashSet<Var> getCapturedVars()
   {
-    return f.getCapturedVars();
+    return getFunction().getCapturedVars();
   }
 
   /*
@@ -159,7 +161,7 @@ public final class CaptureExpr extends Expr
   @Override
   public JaqlFunction eval(Context context) throws Exception
   {
-    JaqlFunction f = this.f;
+    JaqlFunction f = getFunction();
     HashSet<Var> capturedVars = getCapturedVars();
     int n = capturedVars.size();
     if( n > 0 )
@@ -185,7 +187,8 @@ public final class CaptureExpr extends Expr
       for( Var v: capturedVars )
       {
         JsonValue val = JsonUtil.getCopy(v.getValue(context), null);
-        es[i++] = new BindingExpr(BindingExpr.Type.EQ, varMap.get(v), null, new ConstExpr(val));
+        Var newVar = varMap.get(v);
+        es[i++] = new BindingExpr(BindingExpr.Type.EQ, newVar, null, new ConstExpr(val));
       }
       es[n] = newBody;
       
@@ -197,7 +200,7 @@ public final class CaptureExpr extends Expr
 
   private VarParameter[] cloneParameters(VarMap varMap)
   {
-    VarParameters pars = f.getParameters();
+    VarParameters pars = parameters;
     VarParameter[] newPars = new VarParameter[pars.noParameters()];
     for (int i=0; i<pars.noParameters(); i++)
     {
@@ -209,7 +212,7 @@ public final class CaptureExpr extends Expr
       else
       {
         Expr newDefaultValue = p.getDefaultValue().clone(varMap);
-        newPars[i] = new VarParameter(p.getBinding(), newDefaultValue);
+        newPars[i] = new VarParameter(p.getVar(), newDefaultValue);
       }
     }
     return newPars;
@@ -217,24 +220,24 @@ public final class CaptureExpr extends Expr
   
   public void annotate()
   {
-    VarParameters pars = f.getParameters();
+    VarParameters pars = parameters;
     int p = pars.noParameters();
     if( p == 0 )
     {
       return;
     }
     ArrayList<Expr> uses = new ArrayList<Expr>();
-    Expr body = f.body();
+    Expr body = body();
     for(int i = 0 ; i < p ; i++)
     {
       uses.clear();
-      BindingExpr b = pars.get(i).getBinding();
-      b.var.setUsage(Var.Usage.EVAL);
-      body.getVarUses(b.var, uses);
+      Var var = pars.get(i).getVar();
+      var.setUsage(Var.Usage.EVAL);
+      body.getVarUses(var, uses);
       int n = uses.size();
       if( n == 0 )
       {
-        b.var.setUsage(Var.Usage.UNUSED);
+        var.setUsage(Var.Usage.UNUSED);
       }
       else if( n == 1 )
       {
@@ -249,7 +252,7 @@ public final class CaptureExpr extends Expr
         }
         if( e == body )
         {
-          b.var.setUsage(Var.Usage.STREAM);
+          var.setUsage(Var.Usage.STREAM);
         }
       }
     }
@@ -259,7 +262,7 @@ public final class CaptureExpr extends Expr
   {
     // clone parameters and body
     VarParameter[] newPars = cloneParameters(varMap);
-    Expr newBody = f.body().clone(varMap);
-    return new CaptureExpr(new JaqlFunction(new VarParameters(newPars), newBody));
+    Expr newBody = body().clone(varMap);
+    return new DefineJaqlFunctionExpr(new VarParameters(newPars), newBody);
   }
 }

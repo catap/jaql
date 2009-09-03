@@ -12,7 +12,6 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 public abstract class Function extends JsonAtom
@@ -22,7 +21,7 @@ public abstract class Function extends JsonAtom
   @Override
   public int compareTo(Object o)
   {
-    throw new IllegalStateException("functions cannot be compared");
+    throw new IllegalStateException(formatError("functions cannot be compared"));
   }
 
   @Override
@@ -34,16 +33,18 @@ public abstract class Function extends JsonAtom
   @Override
   public long longHashCode()
   {
-    throw new IllegalStateException("functions cannot be hashed");
+    throw new IllegalStateException(formatError("functions cannot be hashed"));
   }
   
-  public abstract Function getCopy(JsonValue target) throws Exception;
+  public abstract Function getCopy(JsonValue target);
 
-  public abstract Function getImmutableCopy() throws Exception;
+  public abstract Function getImmutableCopy();
   
   // -- self-description --------------------------------------------------------------------------
   
   public abstract Parameters<?> getParameters();
+  
+  public abstract String formatError(String message);
   
   public String getText()
   {
@@ -54,7 +55,7 @@ public abstract class Function extends JsonAtom
         this.fnText = JsonUtil.printToString(this);
       } catch (IOException e)
       {
-        JaqlUtil.rethrow(e);
+        throw JaqlUtil.rethrow(e);
       }
     }
     return fnText;
@@ -62,19 +63,19 @@ public abstract class Function extends JsonAtom
   
   // -- evaluation --------------------------------------------------------------------------------
 
-  public abstract Expr inline();
+  public abstract Expr inline(boolean eval);
 
   public abstract void prepare(int numArgs);
   
   public JsonValue eval(Context context) throws Exception
   {
-    Expr f = inline(); 
+    Expr f = inline(true); 
     return f.eval(context);
   }
 
   public JsonIterator iter(Context context) throws Exception
   {
-    Expr f = inline();  
+    Expr f = inline(true);
     return f.iter(context);
   }
   
@@ -133,9 +134,9 @@ public abstract class Function extends JsonAtom
   
   public void setArguments(JsonValue[] args, int start, int length)
   {
-    if (!canBeCalledWith(1))
+    if (!canBeCalledWith(length))
     {
-      throw new IllegalArgumentException("invalid number of arguments provided");
+      throw new IllegalArgumentException(formatError("invalid number of arguments provided"));
     }
     int n = numPositionalArgs(length);
     prepare(n);
@@ -149,7 +150,7 @@ public abstract class Function extends JsonAtom
   {
     if (!canBeCalledWith(1))
     {
-      throw new IllegalArgumentException("invalid number of arguments provided");
+      throw new IllegalArgumentException(formatError("invalid number of arguments provided"));
     }
     int n = numPositionalArgs(1);
     prepare(n);
@@ -164,7 +165,7 @@ public abstract class Function extends JsonAtom
   {
     if (!canBeCalledWith(2))
     {
-      throw new IllegalArgumentException("invalid number of arguments provided");
+      throw new IllegalArgumentException(formatError("invalid number of arguments provided"));
     }
     int n = numPositionalArgs(2);
     prepare(n);
@@ -179,7 +180,7 @@ public abstract class Function extends JsonAtom
   public void setArguments(JsonIterator arg0, JsonIterator arg1)
   {
     if (!canBeCalledWith(2))    {
-      throw new IllegalArgumentException("invalid number of arguments provided");
+      throw new IllegalArgumentException(formatError("invalid number of arguments provided"));
     }
     int n = numPositionalArgs(2);
     prepare(n);
@@ -194,7 +195,7 @@ public abstract class Function extends JsonAtom
   public void setArguments(JsonValue arg0, JsonIterator arg1)
   {
     if (!canBeCalledWith(2))    {
-      throw new IllegalArgumentException("invalid number of arguments provided");
+      throw new IllegalArgumentException(formatError("invalid number of arguments provided"));
     }
     int n = numPositionalArgs(2);
     prepare(n);
@@ -217,7 +218,7 @@ public abstract class Function extends JsonAtom
     // check if there are too many arguments
     if (!hasRepeatingArgs && n>numParams)
     {
-      throw new IllegalArgumentException("too many arguments provided");
+      throw new IllegalArgumentException(formatError("invalid number of arguments provided"));
     }
     
     // copy over all arguments
@@ -232,7 +233,7 @@ public abstract class Function extends JsonAtom
     {
       if (!pars.hasDefault(i))
       {
-        throw new IllegalArgumentException("missing value for parameter: " + pars.nameOf(i));
+        throw new IllegalArgumentException(formatError("missing value for parameter " + pars.nameOf(i))); 
       }
       setDefault(i);
     }
@@ -254,7 +255,7 @@ public abstract class Function extends JsonAtom
     // check if there are too many arguments
     if (!hasRepeatingArgs && n>numParams)
     {
-      throw new IllegalArgumentException("too many arguments provided");
+      throw new IllegalArgumentException(formatError("too many arguments provided"));
     }
     
     // copy over all arguments
@@ -269,13 +270,13 @@ public abstract class Function extends JsonAtom
         name = (JsonString)nameExpr.eval(Env.getCompileTimeContext());
       } catch (Exception e)
       {
-        JaqlUtil.rethrow(e);
+        throw JaqlUtil.rethrow(e);
       }
       if (name == null)
       {
         if (hasNamed) 
         {
-          throw new IllegalArgumentException("found positional argument after named argument");
+          throw new IllegalArgumentException(formatError("found positional argument after named argument"));
         }
         setArgument(i, args[argsStart+2*i+1]);
         initializedArgs.set(i);
@@ -284,13 +285,14 @@ public abstract class Function extends JsonAtom
       {
         if (hasRepeatingArgs)
         {
-          throw new IllegalArgumentException("named arguments disallowed when repeating parameter is used");
+          throw new IllegalArgumentException(formatError("named arguments disallowed when repeating parameter"
+              + "is used"));
         }
         int p = pars.positionOf(name);
-        if (p<0) throw new IllegalArgumentException("invalid argument: " + name);
+        if (p<0) throw new IllegalArgumentException(formatError("invalid argument: " + name));
         if (initializedArgs.get(p))
         {
-          throw new IllegalArgumentException("duplicate argument: " + name);
+          throw new IllegalArgumentException(formatError("duplicate argument: " + name));
         }
         setArgument(p, args[argsStart+2*i+1]);
         initializedArgs.set(p);
@@ -303,7 +305,7 @@ public abstract class Function extends JsonAtom
     {
       if (!pars.hasDefault(i))
       {
-        throw new IllegalArgumentException("missing value for parameter: " + pars.nameOf(i));
+        throw new IllegalArgumentException(formatError("missing value for parameter: " + pars.nameOf(i)));
       }
       setDefault(i);
     }

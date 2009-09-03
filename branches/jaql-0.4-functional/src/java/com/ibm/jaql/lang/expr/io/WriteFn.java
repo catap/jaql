@@ -68,7 +68,7 @@ public final class WriteFn extends AbstractWriteExpr implements PotentialMapRedu
    */
   public boolean isMapReducible()
   {
-    return MapReducibleUtil.isMapReducible(true, descriptor());
+    return MapReducibleUtil.isMapReducible(false, descriptor());
   }
 
   /*

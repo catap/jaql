@@ -1,23 +1,25 @@
 package com.ibm.jaql.lang.expr.function;
 
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 public class VarParameter extends Parameter<Expr>
 {
-  BindingExpr binding;
+  Var var;
+  Expr defaultValue;
   
-  public VarParameter(BindingExpr binding, Expr defaultValue)
+  public VarParameter(Var var, Expr defaultValue)
   {
-    super(binding.var.name(), binding.var.getSchema(), defaultValue);
-    this.binding = binding;
+    super(var.name(), var.getSchema(), defaultValue);
+    this.var = var;
+    this.defaultValue = defaultValue;
   }
   
-  public VarParameter(BindingExpr binding)
+  public VarParameter(Var var)
   {
-    super(binding.var.name(), binding.var.getSchema());
-    this.binding = binding;
+    super(var.name(), var.getSchema());
+    this.var = var;
+    this.defaultValue = null;
   }
 
   @Override
@@ -26,14 +28,8 @@ public class VarParameter extends Parameter<Expr>
     return value;
   }
   
-  public BindingExpr getBinding()
-  {
-    return binding;
-  }
-  
   public Var getVar()
   {
-    return binding.var;
+    return var;
   }
-
 }

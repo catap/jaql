@@ -96,7 +96,7 @@ public class VarExpr extends Expr
   
   public Map<ExprProperty, Boolean> getProperties() 
   {
-    if (var.isGlobal())
+    if (var.isFinal())
     {
       switch (var.type())
       {
@@ -107,7 +107,7 @@ public class VarExpr extends Expr
       case EXPR:
         return var.expr().getProperties();
       default:
-        throw new IllegalStateException("global variable not of type VALUE or EXRP");
+        throw new IllegalStateException("final variable not of type VALUE or EXRP");
       }
     }
     return super.getProperties();

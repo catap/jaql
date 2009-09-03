@@ -22,6 +22,7 @@ import java.io.StringReader;
 
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -36,7 +37,13 @@ class FunctionSerializer extends BinaryBasicSerializer<Function>
     JaqlParser parser = new JaqlParser(lexer);
     try
     {
-      return parser.functionLit();
+      Expr fe = parser.parse();
+      if (!fe.isCompileTimeComputable().always())
+      {
+        throw new IOException("input value is not a function literal");
+      }
+      return (Function)fe.eval(null);
+      
     } catch (Exception e)
     {
       throw new IOException(e);

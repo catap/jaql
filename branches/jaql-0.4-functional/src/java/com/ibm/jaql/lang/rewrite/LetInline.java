@@ -21,10 +21,10 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
-import com.ibm.jaql.lang.expr.function.CaptureExpr;
+import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
 import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.io.ReadFn;
 import com.ibm.jaql.lang.walk.ExprWalker;
 
@@ -156,7 +156,7 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         {
           // Do not inline a function variable that passes itself to itself (dynamic recursion)
           // conservative method: Inline only if every var usage goes directly into a function call. 
-          if( valExpr instanceof CaptureExpr   // TODO: we could try to make a Def into a Const
+          if( valExpr instanceof DefineJaqlFunctionExpr   // TODO: we could try to make a Def into a Const
               || (valExpr instanceof ConstExpr && 
                   ((ConstExpr)valExpr).value instanceof Function) ) // TODO: we could inline Const fns because the fn is still shared via the const, but fn inline would need to check 
           {

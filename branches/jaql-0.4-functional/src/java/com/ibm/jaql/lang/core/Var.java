@@ -32,8 +32,8 @@ public final class Var extends Object
   public enum Usage
   {
     EVAL,     // Variable may be referenced multiple times (value must be stored)
-    STREAM(), // Variable is an array that is only referenced once (value may be streamed)
-    UNUSED()  // Variable is never referenced
+    STREAM,   // Variable is an array that is only referenced once (value may be streamed)
+    UNUSED    // Variable is never referenced
   };
   
   public enum Type
@@ -60,9 +60,11 @@ public final class Var extends Object
   private Object value; // Runtime value: JsonValue (null allowed) or
                        // JsonIterator(null disallowed)
   private Schema schema; // schema of the variable; not to be changed at runtime
-  private boolean isGlobal;
+
+  private boolean isGlobal = false;   // the variable is global, i.e., it
+  private boolean isFinal = false;
   
-  public Var(String name, final Schema schema)
+  public Var(String name, Schema schema)
   {
     assert schema != null;
     this.name = name;
@@ -74,35 +76,18 @@ public final class Var extends Object
     this(name, SchemaFactory.anySchema());
   }
 
-  public Var(String name, Expr expr, boolean isGlobal)
+  /** Constant variable */
+  public Var(String name, boolean isGlobal)
   {
     this(name, SchemaFactory.anySchema());
-    this.expr = expr;
-    this.type = Type.EXPR;
+    this.type = Type.UNDEFINED;
     this.isGlobal = isGlobal;
   }
 
-  public Var(String name, JsonValue value, boolean isGlobal)
-  {
-    this(name, SchemaFactory.anySchema());
-    this.value = value;
-    this.type = Type.VALUE;
-    this.isGlobal = isGlobal;
-  }
-  
-  public Var(String name, Schema schema, Expr expr, boolean isGlobal)
+  public Var(String name, Schema schema, boolean isGlobal)
   {
     this(name, schema);
-    this.expr = expr;
-    this.type = Type.EXPR;
-    this.isGlobal = isGlobal;
-  }
-
-  public Var(String name, Schema schema, JsonValue value, boolean isGlobal)
-  {
-    this(name, schema);
-    this.value = value;
-    this.type = Type.VALUE;
+    this.type = Type.UNDEFINED;
     this.isGlobal = isGlobal;
   }
 
@@ -127,14 +112,20 @@ public final class Var extends Object
     return isGlobal;
   }
 
-  /***
-   * Returns the name of this variable without the leading $, if present.
-   */
-  public String nameAsField()
+  public boolean isFinal()
   {
-    return name.charAt(0) == '$' ? name.substring(1) : name;
+    return isFinal;
   }
 
+  public void finalize()
+  {
+    if (type != Type.VALUE && type != Type.EXPR)
+    {
+      throw new IllegalStateException("final variables must be of type VALUE or EXPR");
+    }
+    isFinal = true;
+  }
+  
   /**
    * @param varMap
    * @return
@@ -145,13 +136,13 @@ public final class Var extends Object
     v.usage = usage;
     // Cloning a Var does NOT clone its value!
     // It is NOT safe to share an iter unless one var is never evaluated.
-    if (expr != null)
-    {
+    //if (type == Type.EXPR)
+    //{
       // TODO: do we need to clone a Var with an expr? Do we need to clone the
       // Expr?
-      throw new RuntimeException("cannot clone variable with Expr");
+      //throw new RuntimeException("cannot clone variable with Expr");
       // v.expr = expr.clone(varMap); // TODO: could we share the expr?
-    }
+    //}
     return v;
   }
 
@@ -177,7 +168,7 @@ public final class Var extends Object
    */
   public void setValue(JsonValue value)
   {
-    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
     assert schema.matchesUnsafe(value) : name + " has invalid schema: "
         + "found " + value + ", expected " + schema;
     this.value = value;
@@ -186,7 +177,7 @@ public final class Var extends Object
 
   public void setExpr(Expr expr)
   {
-    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
     this.expr = expr;
     this.type = Type.EXPR;
   }
@@ -199,7 +190,7 @@ public final class Var extends Object
    */
   public void setIter(JsonIterator iter)
   {
-    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
     assert iter != null;
     assert schema.is(ARRAY).maybe();
     value = iter;
@@ -218,7 +209,7 @@ public final class Var extends Object
    */
   public void setEval(Expr expr, Context context) throws Exception
   {
-    if (isGlobal()) throw new IllegalStateException("global variables cannot be modified");
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
     if (usage == Usage.STREAM && expr.getSchema().is(ARRAY, NULL).always())
     {
       setIter(expr.iter(context));
@@ -279,12 +270,20 @@ public final class Var extends Object
       // TODO: remove assertion? check can be expensive when large arrays are
       // put in var's
       assert schema.matchesUnsafe(result);
-      value = result;
+      if (!isGlobal())
+      {
+        value = result;
+        type = Type.VALUE;
+      }
       return result;
     case EXPR:
       JsonValue v = expr.eval(context);
-      expr = null;
-      value = v;
+      if (!isGlobal())
+      {
+        expr = null;
+        value = v;
+        type = Type.VALUE;
+      }
       assert schema.matchesUnsafe(v);
       return v;
     }

@@ -21,7 +21,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
@@ -35,7 +35,6 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 public class JaqlFunction extends Function
 {
   private int noArgs = -1;
-  private int noExprArgs = -1;
   private VarParameters parameters;
   private Expr body;
   
@@ -48,46 +47,27 @@ public class JaqlFunction extends Function
     this.body = body;
   }
 
-  
   @Override
-  public Expr inline()
+  public Expr inline(boolean eval)
   {
-    return inline(false);
-  }
-  
-  public JsonValue eval(Context context) throws Exception
-  {
-    Expr f = inline(true); 
-    return f.eval(context);
-  }
-
-  public JsonIterator iter(Context context) throws Exception
-  {
-    Expr f = inline(true);  
-    return f.iter(context);
-  }
-  
-  protected Expr inline(boolean eval)
-  {
-    assert noExprArgs >= 0;
-    assert eval || noExprArgs == noArgs;
-    
-    // For functions with args, create a let to evaluate the args then call the body
-    // TODO: Don't inline (potentially) recursive functions
-    Expr[] doExprs = new Expr[noExprArgs+1];
-    int p = 0;
-    for (int i=0; i<noArgs; i++)
+    if (eval)
     {
-      BindingExpr binding = parameters.get(i).getBinding();
-      if (binding.numChildren() == 1) // all expressions!
-      {
-        doExprs[p] = binding;
-        ++p;
-      }
+      return body;
     }
-    assert p == noExprArgs;
-    doExprs[noArgs] = body;
-    return new DoExpr(doExprs);
+    else
+    {
+      // For functions with args, create a let to evaluate the args then call the body
+      // TODO: Don't inline (potentially) recursive functions
+      Expr[] doExprs = new Expr[noArgs+1];
+      for (int i=0; i<noArgs; i++)
+      {
+        Var var = parameters.get(i).getVar();
+        assert var.type() == Var.Type.EXPR; // all arguments are expressions at compile time
+        doExprs[i] = new BindingExpr(BindingExpr.Type.EQ, var, null, var.expr());
+      }
+      doExprs[noArgs] = body;
+      return new DoExpr(doExprs);
+    }
   }
   
   @Override
@@ -118,8 +98,7 @@ public class JaqlFunction extends Function
     }
     catch (Exception e)
     {
-      JaqlUtil.rethrow(e);
-      return null;
+      throw JaqlUtil.rethrow(e);
     }
   }
   
@@ -131,6 +110,52 @@ public class JaqlFunction extends Function
   public Expr body()
   {
     return body;
+  }
+  
+  // when body = (binding (, binding*) e), return e; else return body
+  public JaqlFunction evalConstBindings()
+  {
+    JaqlFunction f = getCopy(null);
+    f.body = evalConstBindings(f.body);
+    return f;
+  }
+  
+  private Expr evalConstBindings(Expr e)
+  {
+    if (e instanceof DoExpr)
+    {
+      Expr[] es = ((DoExpr)e).children();
+      
+      // test if right shape
+      for (int i=0; i<es.length-1; i++)
+      {
+        if (!(es[i] instanceof BindingExpr))
+        {
+          return e;
+        }
+        BindingExpr be = (BindingExpr)es[i];
+        if (be.type != BindingExpr.Type.EQ || be.eqExpr().isCompileTimeComputable().maybeNot())
+        {
+          return e;
+        }
+      }
+      
+      // go
+      for (int i=0; i<es.length-1; i++)
+      {
+        BindingExpr be = (BindingExpr)es[i];
+        try
+        {
+          be.var.setValue(be.eqExpr().eval(Env.getCompileTimeContext()));
+          be.var.finalize();
+        } catch (Exception e1)
+        {
+          throw JaqlUtil.rethrow(e1);
+        }
+      }
+      return evalConstBindings(es[es.length-1]);
+    }
+    return e;
   }
   
   @Override
@@ -145,14 +170,13 @@ public class JaqlFunction extends Function
       Var oldVar = par.getVar();
       Var newVar = new Var(oldVar.name(), oldVar.getSchema());
       varMap.put(oldVar, newVar);
-      BindingExpr binding = new BindingExpr(BindingExpr.Type.EQ, newVar, null, Expr.NO_EXPRS);
       if (par.isRequired())
       {
-        newPars[i] = new VarParameter(binding);
+        newPars[i] = new VarParameter(newVar);
       }
       else
       {
-        newPars[i] = new VarParameter(binding, par.getDefaultValue());
+        newPars[i] = new VarParameter(newVar, par.getDefaultValue());
       }
     }
     Expr newBody = body.clone(varMap);
@@ -160,7 +184,7 @@ public class JaqlFunction extends Function
   }
 
   @Override
-  public Function getImmutableCopy() throws Exception
+  public Function getImmutableCopy()
   {
     return getCopy(null);
   }
@@ -169,46 +193,47 @@ public class JaqlFunction extends Function
   public void prepare(int noArgs)
   {
     this.noArgs = noArgs;
-    this.noExprArgs = 0;
   }
 
   @Override
   protected void setArgument(int pos, JsonValue value)
   {
-    BindingExpr binding = parameters.get(pos).getBinding();
-    while (binding.numChildren() > 1)
-    {
-      binding.removeChild(0);
-    }
-    binding.var.setValue(value);
+    parameters.get(pos).getVar().setValue(value);
   }
 
   @Override
   protected void setArgument(int pos, JsonIterator it)
   {
-    BindingExpr binding = parameters.get(pos).getBinding();
-    while (binding.numChildren() > 1)
-    {
-      binding.removeChild(0);
-    }
-    binding.var.setIter(it);
+    parameters.get(pos).getVar().setIter(it);
   }
 
   @Override
   protected void setArgument(int pos, Expr expr)
   {
-    ++this.noExprArgs;
-    BindingExpr binding = parameters.get(pos).getBinding();
-    while (binding.numChildren() > 1)
-    {
-      binding.removeChild(0);
-    }
-    binding.addChild(expr);
+    parameters.get(pos).getVar().setExpr(expr);
   }
 
   @Override
   protected void setDefault(int pos)
   {
     setArgument(pos, parameters.defaultOf(pos));
+  }
+  
+  public String formatError(String msg)
+  {
+    String result = "In call of Jaql function with signature fn(";  
+    String sep="";
+    for(int i=0; i<parameters.noParameters(); i++)
+    {
+      VarParameter p = parameters.get(i);
+      result += sep + p.getName();
+      if (p.isOptional())
+      {
+        result += "=??";
+      }
+      sep = ", ";
+    }
+    result += "): " + msg;
+    return result;
   }
 }

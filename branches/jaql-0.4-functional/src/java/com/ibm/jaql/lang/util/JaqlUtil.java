@@ -34,7 +34,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.FunctionLib;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.registry.FunctionStore;
 import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.util.PagedFile;
 
@@ -124,7 +123,6 @@ public class JaqlUtil
   private static PagedFile       sessionPagedFile;
   private static Env             sessionEnv;
   private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
-  private static FunctionStore   functionStore;
   private static RNGStore        rngStore;
 
   static
@@ -133,19 +131,6 @@ public class JaqlUtil
     FunctionLib.registerAll(sessionEnv);
   }
   
-  /**
-   * @return
-   */
-  public static FunctionStore getFunctionStore()
-  {
-    if (functionStore == null)
-    {
-      functionStore = new FunctionStore(
-          new FunctionStore.DefaultRegistryFormat());
-    }
-    return functionStore;
-  }
-
   /**
    * @return
    */
@@ -265,15 +250,15 @@ public class JaqlUtil
     return Collections.unmodifiableList(toList(array));
   }
   
-  public static void rethrow(Exception e)
+  public static RuntimeException rethrow(Exception e)
   {
     if (e instanceof RuntimeException)
     {
-      throw (RuntimeException)e;
+      return (RuntimeException)e;
     }
     else
     {
-      throw new UndeclaredThrowableException(e);
-    }
+      return new RuntimeException(e);
+    }    
   }
 }

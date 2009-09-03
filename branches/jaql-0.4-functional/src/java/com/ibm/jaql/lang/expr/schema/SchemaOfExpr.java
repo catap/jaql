@@ -15,9 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.schema;
 
+import java.util.Map;
+
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
 
@@ -52,6 +55,13 @@ public class SchemaOfExpr extends Expr
     return Bool3.TRUE;
   }
 
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
+    //result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  }
 
   /*
    * (non-Javadoc)

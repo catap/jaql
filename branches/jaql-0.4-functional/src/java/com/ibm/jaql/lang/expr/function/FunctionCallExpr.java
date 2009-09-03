@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.core;
+package com.ibm.jaql.lang.expr.function;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -25,14 +25,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.function.Function;
-import com.ibm.jaql.lang.expr.function.JaqlFunction;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -44,7 +49,7 @@ public class FunctionCallExpr extends Expr
     = Collections.unmodifiableMap(new HashMap<JsonString, Expr>(0));
   
   /** Pseudo-expression used for parameters that do not have a name */
-  private static final class NoNameExpr extends Expr
+  public static final class NoNameExpr extends Expr
   {
     public NoNameExpr(Expr ... exprs)
     {
@@ -62,7 +67,7 @@ public class FunctionCallExpr extends Expr
     @Override
     public JsonValue eval(Context context) throws Exception
     {
-      return null; // null means positional
+      return null; // means positional
     }
   }
 
@@ -80,6 +85,23 @@ public class FunctionCallExpr extends Expr
     int n = np+nn;
     Expr[] exprs = new Expr[2*n + 1];
     exprs[0] = fn;
+
+    // automatically inline global variables bound to builtin functions
+    if (fn instanceof VarExpr && fn.isCompileTimeComputable().always())
+    {
+      Var v = ((VarExpr)fn).var();
+      if (v.isGlobal() && v.isFinal())
+      {
+        try
+        {
+          exprs[0] = new ConstExpr(v.getValue(Env.getCompileTimeContext()));
+        } catch (Exception e)
+        {
+          throw JaqlUtil.rethrow(e);
+        } 
+      }
+    }
+
     for (int i = 0; i < np; i++)
     {
       exprs[2*i+1] = new NoNameExpr();
@@ -166,6 +188,34 @@ public class FunctionCallExpr extends Expr
     return null;
   }
 
+  @Override
+  public Map<ExprProperty, Boolean> getProperties()
+  {
+    Function f = getFunction();
+    if (f instanceof BuiltInFunction || f instanceof JaqlFunction)
+    {
+      f = f.getCopy(null);
+      f.setArguments(exprs, 1, exprs.length - 1, true);
+      Expr e = f.inline(true);
+      return e.getProperties();
+    }
+    return ExprProperty.createUnsafeDefaults();
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Function f = getFunction();
+    if (f instanceof BuiltInFunction)
+    {
+      f = f.getCopy(null);
+      f.setArguments(exprs, 1, exprs.length - 1, true);
+      Expr e = f.inline(true);
+      return e.getSchema();
+    }
+    return SchemaFactory.anySchema();
+  }
+  
 //  /**
 //   * We look into the function definition and our arguments for our properties.
 //   */
@@ -235,7 +285,19 @@ public class FunctionCallExpr extends Expr
   
   public boolean hasName(int i)
   {
-    return !(exprs[2*i+1] instanceof NoNameExpr);
+    Expr e = exprs[2*i+1];
+    if (e instanceof NoNameExpr) return false;
+    try
+    {
+      if (e.isCompileTimeComputable().always() && e.eval(Env.getCompileTimeContext())==null)
+      {
+        return false;
+      }
+    } catch (Exception e1)
+    {
+      JaqlUtil.rethrow(e1);
+    }
+    return true;
   }
   
   public Expr name(int i)
@@ -243,6 +305,43 @@ public class FunctionCallExpr extends Expr
     assert hasName(i);
     return exprs[2*i+1];
   }
+  
+  public Expr inline() 
+  {
+    if (exprs[0].isCompileTimeComputable().maybeNot()) 
+    {
+      throw new IllegalStateException("only functions known at compile time can be inlined");
+    }
+    try
+    {
+      Function f = (Function)exprs[0].eval(Env.getCompileTimeContext());
+      if( f == null )
+      {
+        return new ConstExpr(null);
+      }
+      f = f.getCopy(null);
+      f.setArguments(exprs, 1, exprs.length - 1, true);
+      return f.inline(false);      
+    }
+    catch (Exception e)
+    {
+      throw JaqlUtil.rethrow(e);
+    }
+  }
+  
+  public static Expr inlineIfPossible(Expr e)
+  {
+    if (e instanceof FunctionCallExpr)
+    {
+      FunctionCallExpr fe = (FunctionCallExpr)e;
+      if (fe.fnExpr().isCompileTimeComputable().always())
+      {
+        return fe.inline();
+      }
+    }
+    return e;
+  }
+  
   /*
    * (non-Javadoc)
    * 

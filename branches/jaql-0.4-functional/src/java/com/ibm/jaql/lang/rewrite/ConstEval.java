@@ -43,8 +43,8 @@ public class ConstEval extends Rewrite
   @Override
   public boolean rewrite(Expr expr) throws Exception
   {
-    // TODO: we need to be careful computing small functions that produce large results.
-    // For now such functions mark themselves as non-constant. Is that the best way?
+    // We need to be careful computing small functions that produce large results.
+    // Those functions mark themselves as not compile time computable.
     if (expr instanceof ConstExpr || expr instanceof BindingExpr
         || expr instanceof FieldExpr || expr.isCompileTimeComputable().maybeNot())
     {

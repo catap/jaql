@@ -192,18 +192,20 @@ pipeFn returns [Expr r=null]
     {
         ArrayList<Var> p = new ArrayList<Var>();
         p.add(v);
-        r = new CaptureExpr(p, r); // TODO: use a diff class
+        r = new DefineJaqlFunctionExpr(p, r); // TODO: use a diff class
     }
     ;
 
+// A pipe must end with a binding, with the name still in scope
 vpipe returns [BindingExpr r=null]
-    { Var v; Expr e=null; }
-    : v=var ( /*empty*/   { e = new VarExpr(v); }
-            | "in" e=expr )
-    { r = new BindingExpr(BindingExpr.Type.IN, v, null, e); }
+    { String v; Expr e=null; }
+    : v=id  ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
+            | "in" e=expr  
+            )
+    { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e); }
     ;
 
-// A pipe must end with a binding, with the name still in scope
+
 //vpipe returns [BindingExpr r=null]
 //    : v=var ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
 //      {
@@ -249,7 +251,7 @@ aggregate[Expr in] returns [Expr r=null]
     { String v="$"; BindingExpr b=null; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
 //    : ("aggregate" | "agg") b=each[in] r=expr
 //       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
-    : ("aggregate" | "agg") ("as" v=id)?
+    : "aggregate" ("as" v=id)?
          {
            //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
            b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
@@ -269,14 +271,39 @@ aggList returns [ArrayList<Aggregate> r = new ArrayList<Aggregate>()]
     ;
 
 aggFn returns [Aggregate agg=null]
-    { Expr e; }
-    : e = expr
+    { Expr expr; }
+    : expr = expr
       {
-        if( !( e instanceof Aggregate ) )
+        if ( expr instanceof FunctionCallExpr )
+        {
+            // force inline of calls to aggregate functions
+            FunctionCallExpr call = (FunctionCallExpr)expr;
+            if (call.fnExpr().isCompileTimeComputable().always())
+            {
+                try
+                {
+                    Function ff = (Function)call.fnExpr().eval(Env.getCompileTimeContext());
+                    if (ff instanceof BuiltInFunction)
+                    {
+                        BuiltInFunction f = (BuiltInFunction)ff;
+                        if (Aggregate.class.isAssignableFrom(f.getDescriptor().getImplementingClass()))
+                        {
+                            expr = call.inline();
+                        }
+                    }
+                } 
+                catch (Exception e1)
+                {
+                    // ignore
+                }
+            }
+        }
+      
+        if( !( expr instanceof Aggregate ) )
         {
           oops("Aggregate required");
         }
-        agg = (Aggregate)e;
+        agg = (Aggregate)expr;
       }
     ;
 
@@ -445,7 +472,7 @@ cmpArrayFn[String vn] returns [Expr r=null]
     : r=cmpArray
     {
       env.unscope(var);
-      r = new CaptureExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
+      r = new DefineJaqlFunctionExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
     }
     ;
 
@@ -606,11 +633,11 @@ op[Expr in] returns [Expr r=null]
                            | /*empty*/ { r = new VarExpr(b.var); } )
                                        { r = new ForExpr(b, r);       env.unscope(b.var); }
     | r=groupPipe[in]
-    | r=sort[in]
+    | ("sort" kw) => r=sort[in]
     | r=top[in]
     //| r=tee[in]
     | r=split[in]
-    | r=aggregate[in]
+    | ("aggregate" kw) => r=aggregate[in]
     | r=callPipe[in]
     // | r=partition[in]
     // TODO: add rename path
@@ -798,31 +825,48 @@ estep returns [Expr r = null] // TOD: Unify step expressions
 
 assign returns [Expr r=null]
     { String v; }
-    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r)); } // TODO: var.type = non-pipe, do-block scope
-                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v, r)); } // TODO: var.type = non-pipe, do-block scope
+    : (id "=") => v=id "=" r=rvalue  { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
+                | r=pipe "=>" v=id    { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } // TODO: var.type = non-pipe, do-block scope
     ;
 
 optAssign returns [Expr r=null]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
                   { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-                 | r=pipe ( "=>" v=id      
-                            { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-                          )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
+                | r=pipe ( "=>" v=id      
+                           { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
+                         )?  // { r = new AssignExpr(env.sessionEnv().scopeGlobal(v), r); } )?
     ;
 
 // Same as optAssign but creates global variables on assigment, and inlines referenced globals
 topAssign returns [Expr r]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
-                  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r) ); } // TODO: expr name should reflect global var
+                  { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } // TODO: expr name should reflect global var
                 | r=pipe ( /*empty*/        
                            { r = env.importGlobals(r); } 
                          | "=>" v=id        
-                           { r = new AssignExpr( env.sessionEnv().scopeGlobal(v, r) ); } 
+                           { r = new AssignExpr( env.sessionEnv().scopeGlobal(v), r); } 
                          )
+                | r=registerFunction
     ;
 
+// backwards compatibility
+registerFunction returns [Expr e = null]
+    { Expr varName, className; }
+    : "registerFunction" "(" varName=expr "," className=expr ")" {
+        try {
+          if (!varName.isCompileTimeComputable().always())
+          {
+            throw new IllegalArgumentException("variable name has to be a constant");
+          }
+          String name = varName.eval(env.getCompileTimeContext()).toString();
+          e = new AssignExpr(env.sessionEnv().scopeGlobal(name), new JavaUdfExpr(className));
+        } catch(Exception ex) {
+            throw new RuntimeException(ex); 
+        }
+    };  
+    
 rvalue returns [Expr r = null]
     : r=pipe
 //    | r=collection
@@ -848,26 +892,11 @@ function returns [Expr r = null]
       params[vs,es] { for (Var v: vs) v.setHidden(false); }
       r=pipe
       { 
-        r = new CaptureExpr(vs, es, r);
+        r = new DefineJaqlFunctionExpr(vs, es, r);
         for( Var v: vs )
         {
           env.unscope(v);
         }
-      }
-    ;
-
-// used externally to parse functions
-functionLit returns [Function f=null] throws Exception
-    { Expr r; }
-    : ( r=function 
-      | r=registeredFunction
-      )
-      { 
-      	if (!r.isCompileTimeComputable().always())
-      	{
-      		throw new IllegalStateException("not a function literal");
-      	}
-      	f = (Function)r.eval(Env.getCompileTimeContext());
       }
     ;
 
@@ -902,7 +931,8 @@ optionalParams[List<Var> vs, List<Expr> es]
 paramVar[List<Var> vs]
     { String n; Schema s=SchemaFactory.anySchema(); Expr e=null; }
     : ( ( id ( "," | "=" | ")" ) ) => n=id 
-        | ( ("schema")? s=schema n=id )
+        |             ( "schema" ) => "schema" s=schema n=id 
+        |                             s=schema n=id
       )
       { Var v = new Var(n, s); env.scope(v); v.setHidden(true); vs.add(v); }
     ;
@@ -1205,7 +1235,7 @@ unaryAdd returns [Expr r]
     
 typeExpr returns [Expr r=null]
     { Schema s; }
-    : "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
+    : ("schema" (id|"null"|"["|"{")) => "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
     | r=path
     ;   
 
@@ -1284,13 +1314,13 @@ basic returns [Expr r=null]
     : r=constant
     | r=record
     | r=array
-    | r=registeredFunction
+    | r=builtinFunction
     | r=varExpr
     | r=cmpExpr
     | r=parenExpr
     ;
     
-registeredFunction returns [Expr e = null]
+builtinFunction returns [Expr e = null]
     { Expr c; }
     : "builtin" "(" c=expr ")" { e=new BuiltInExpr(c); };  
     
@@ -1578,7 +1608,68 @@ recordSchemaFieldName returns [String s=null]
     
 // for the moment does not match keywords    
 id returns [String s=null]
-    : i:ID { s = i.getText(); }
+    : i:ID              { s = i.getText(); }
+    | s=softkw
+    ;
+
+softkw returns [String s=null]
+    : "aggregate"       { s = "aggregate"; }
+    | "as"              { s = "as"; }
+    | "asc"             { s = "asc"; }
+    | "by"              { s = "by"; }
+    | "desc"            { s = "desc"; }
+    | "final"           { s = "final"; }
+    | "full"            { s = "full"; }
+    | "in"              { s = "in"; }
+    | "initial"         { s = "initial"; }
+    | "partial"         { s = "partial"; }
+    | "on"              { s = "on"; }
+    | "schema"          { s = "schema"; }    
+    | "sort"            { s = "sort"; }
+    ;
+
+hardkw
+    : 
+    // keywords that should be hard keywords
+    | "and"
+    | "false"
+    | "fn"
+    | "not" 
+    | "null"
+    | "or"
+    | "true"
+    // keywords that we might want to make soft / functions
+    | "group"
+    | "transform"
+    | "for"
+    | "equijoin"
+    | "expand"
+    | "preserve"
+    | "isnull"
+    | "flatten"
+    | "instanceof"
+    | "where"
+    | "builtin"
+    | "into"
+    | "each"
+    | "materialize"
+    | "registerFunction"
+    | "extern"
+    | "top"
+    | "quit"
+    | "filter"
+    | "if"
+    | "isdefined"
+    | "using"
+    | "join"
+    | "else"
+    | "explain"
+    ;
+
+kw
+    { String s; }
+    : hardkw
+    | s=softkw
     ;
     
 
@@ -1754,8 +1845,16 @@ HERE_STRING
     ;
 
 
-    
-ID options { testLiterals=true; } : ('$'|LETTER|'_') (LETTER|'_'|DIGIT)* ;
+protected IDWORD
+    : ('$'|LETTER|'_'|'@') (LETTER|'_'|DIGIT)*
+    ;
+
+ID
+    options { ignore=WS; }
+    : (IDWORD ('?')? ':') => IDWORD
+    | (IDWORD '=')        => IDWORD
+    |                        IDWORD { _ttype = testLiteralsTable(_ttype); }
+    ;
     
 SYM
     options { testLiterals=true; }

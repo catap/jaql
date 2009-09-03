@@ -29,7 +29,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  */
 public class ReadConfExpr extends Expr
 {
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
   {
     public Descriptor()
     {

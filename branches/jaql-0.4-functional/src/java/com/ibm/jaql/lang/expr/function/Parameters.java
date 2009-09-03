@@ -267,6 +267,4 @@ public abstract class Parameters<T>
   {
     return schemaOf(positionOf(name));
   }
-  
-
 }

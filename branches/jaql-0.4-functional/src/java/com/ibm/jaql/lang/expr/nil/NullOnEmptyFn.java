@@ -30,7 +30,7 @@ public class NullOnEmptyFn extends IterExpr
   {
     public Descriptor()
     {
-      super("nullOnEmptyFn", NullOnEmptyFn.class);
+      super("nullOnEmpty", NullOnEmptyFn.class);
     }
   }
   

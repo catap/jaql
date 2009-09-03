@@ -15,11 +15,9 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
-import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -49,23 +47,19 @@ public class FunctionInline extends Rewrite
   {
     FunctionCallExpr call = (FunctionCallExpr) expr;
     Expr callFn = call.fnExpr();
-    int length = call.numChildren()-1;
 
     // rewrite when we know the function at compile time
     if (callFn.isCompileTimeComputable().always())
     {
       try
       {
-        Function function = (Function)callFn.eval(Env.getCompileTimeContext());
-        function = (Function)function.getImmutableCopy();
-        function.setArguments(call.children(), 1, length, true);
-        Expr inlinedFunction = function.inline();
+        Expr inlinedFunction = call.inline();
         call.replaceInParent(inlinedFunction);
         return true;
       }
       catch (Exception e)
       {
-        JaqlUtil.rethrow(e);
+        throw JaqlUtil.rethrow(e);
       }
     }
     

@@ -67,7 +67,6 @@ public abstract class MapReduceBaseExpr extends Expr
 {
   public final static String    BASE_NAME                  = "com.ibm.jaql.mapred";
   public final static String    STORE_REGISTRY_VAR_NAME    = BASE_NAME + ".sRegistry";
-  public final static String    FUNC_REGISTRY_VAR_NAME     = BASE_NAME + ".fRegistry";
   public final static String    RNG_REGISTRY_VAR_NAME      = BASE_NAME + ".rRegistry";
   public final static String    REGISTRY_VAR_NAM           = BASE_NAME + ".registry";
   public final static String    NUM_INPUTS_NAME            = BASE_NAME + ".numInputs";
@@ -193,8 +192,6 @@ public abstract class MapReduceBaseExpr extends Expr
     // write out various static registries
     RegistryUtil.writeConf(conf, HadoopAdapter.storeRegistryVarName, JaqlUtil
         .getAdapterStore());
-    RegistryUtil.writeConf(conf, FUNC_REGISTRY_VAR_NAME, JaqlUtil
-        .getFunctionStore());
     RegistryUtil.writeConf(conf, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
 
     return args;
@@ -269,8 +266,6 @@ public abstract class MapReduceBaseExpr extends Expr
         //AdapterManager.readRegistryFromConf(storeRegistryVarName, job);
         RegistryUtil.readConf(job, HadoopAdapter.storeRegistryVarName, JaqlUtil
             .getAdapterStore());
-        RegistryUtil.readConf(job, FUNC_REGISTRY_VAR_NAME, JaqlUtil
-            .getFunctionStore());
         RegistryUtil.readConf(job, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
         //FunctionStore.readRegistryFromConf(funcRegistryVarName, job);
         //RNGStore.readFromConf(rngRegistryVarName, job);

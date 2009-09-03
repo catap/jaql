@@ -44,6 +44,7 @@ import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.function.JaqlFunction;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -134,7 +135,7 @@ public class MRAggregate extends MapReduceBaseExpr
     AlgebraicAggregate[] aggs = new AlgebraicAggregate[numAggs];
     for(int i = 0 ; i < numAggs ; i++)
     {
-      Expr c = e.child(i);
+      Expr c = FunctionCallExpr.inlineIfPossible(e.child(i));
       if( !(c instanceof AlgebraicAggregate) )
       {
         throw new RuntimeException("aggregate function must be an array of AlgebraicAggregate functions");
@@ -165,7 +166,7 @@ public class MRAggregate extends MapReduceBaseExpr
       super.configure(job);
       mapFn = compile(job, "map", 0);
       aggFn = (JaqlFunction)compile(job, "aggregate", 0);
-      
+      aggFn = aggFn.evalConstBindings();
       keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputKeyClass(), job);
       aggArrayHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputValueClass(), job);
     }
@@ -251,6 +252,7 @@ public class MRAggregate extends MapReduceBaseExpr
     {
       super.configure(job);
       aggFn = (JaqlFunction)compile(job, "aggregate", 0);
+      aggFn = aggFn.evalConstBindings();
       if( aggFn.getParameters().noParameters() != 2 )
       {
         throw new RuntimeException("aggregate function must have exactly two parameters");
