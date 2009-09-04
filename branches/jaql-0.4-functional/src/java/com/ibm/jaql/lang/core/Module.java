@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.ibm.jaql.lang.core;
 
 import java.io.File;
@@ -6,8 +21,9 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
@@ -18,16 +34,9 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
-import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.function.BuiltInExpr;
-import com.ibm.jaql.lang.expr.function.BuiltInFunction;
-import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
-import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
-import com.ibm.jaql.util.ClassLoaderMgr;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 public abstract class Module {
-	public static final String SYSTEM_MODULE = "system";
 	protected static final String JAQL_DIRECTORY = "scripts";
 	protected static final String JAR_DIRECTORY = "jars";
 	protected static final String EXAMPLE_DIRECTORY = "examples";
@@ -42,8 +51,6 @@ public abstract class Module {
 	protected static String[] searchPath = null;
 	protected static Schema namespaceSchema = null;
 	protected static Schema descriptionSchema = null;
-	protected static Schema javaUDFSchema = null;
-	protected static Schema builtinUDFSchema = null;
 	
 	public static void initSchemas() {
 		try {
@@ -67,15 +74,8 @@ public abstract class Module {
 					"license?: string," +
 					"url?: string" +
 					"}");
-			
-			Module.javaUDFSchema = SchemaFactory.parse("{type?: string(value=\"javaudf\"), " +
-					"\"class\": string, " +
-					"\"name\": string }");
-			
-			Module.builtinUDFSchema = SchemaFactory.parse("{type: string(value=\"builtin\"), " +
-					"\"class\": string }");
-			
 		} catch (IOException e) {
+		  throw JaqlUtil.rethrow(e);
 		}
 	}
 	
@@ -84,10 +84,6 @@ public abstract class Module {
 	}	
 	
 	public static Module findModule(String name) {
-		if(name.equals(Module.SYSTEM_MODULE)) {
-			return new SystemModule();
-		}
-		
 		FileFilter filter = new FileFilter() {
 			@Override
 			public boolean accept(File dir) {
@@ -190,93 +186,45 @@ public abstract class Module {
 		meta = parseMetaData(getMetaDataStream());
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.ibm.jaql.lang.core.IModule#getUDFs()
-	 */
-	public HashMap<String, Expr> getUDFs() throws Exception {
-		ensureMetaData();
-		HashMap<String, Expr> udfs = new HashMap<String, Expr>();
-		
-		//When no udf's are declared just return the emtpy set
-		if(!meta.containsKey(UDF_FN_FIELD)) {
-			return udfs;
-		}
-		
-		JsonArray entries = (JsonArray) meta.get(UDF_FN_FIELD);
-		for (JsonValue entry : entries) {
-			JsonRecord udf = (JsonRecord) entry;
-			String name = null;
-			Expr e = null;
-			//Figure out which type of udf it is
-			if(builtinUDFSchema.matches(udf)) {
-				String cls = udf.get(new JsonString("class")).toString();
-				Class<? extends Expr> c = (Class<? extends Expr>) ClassLoaderMgr.resolveClass(cls);
-				BuiltInFunctionDescriptor d = BuiltInFunction.getDescriptor(c);
-				JsonString descriptorClass = new JsonString(d.getClass().getName());
-				name = d.getName();
-				e = new BuiltInExpr(new ConstExpr(descriptorClass));
-			}
-			else if(javaUDFSchema.matches(udf)) {
-				JsonValue cls = udf.get(new JsonString("class"));
-				name = udf.get(new JsonString("name")).toString();
-				e = new JavaUdfExpr(new ConstExpr(cls));
-			}
-			else {
-				throw new RuntimeException("Invalid udf function list entry " + udf.toString());
-			}
-			
-			//Do sanity check, every function name should be in the list only once
-			if(udfs.containsKey(name)) {
-				throw new RuntimeException("Duplicate entry for udf " + name);
-			}
-			
-			udfs.put(name, e);
-		}
-		
-		return udfs;
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.ibm.jaql.lang.core.IModule#getNamespaceDescription()
-	 */
+
 	public JsonRecord getNamespaceDescription() {
 		ensureMetaData();
 		return meta;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.ibm.jaql.lang.core.IModule#getExportedFunctions()
-	 */
-	public HashSet<String> getExportedFunctions() {
+
+	public Set<String> exports() {
 		ensureMetaData();
-		if(!meta.containsKey(EXPORT_FIELD)) {
-			return null;
+		if (!meta.containsKey(EXPORT_FIELD)) {
+			return Collections.emptySet();
 		}
-		else {
+		else 
+		{
 			HashSet<String> ids = new HashSet<String>();
 			JsonArray values = (JsonArray) meta.get(EXPORT_FIELD);
 			for (JsonValue value : values) {
 				ids.add(value.toString());
 			}
-			return ids;
+			return Collections.unmodifiableSet(ids);
 		}
 	}
 	
 	/* (non-Javadoc)
 	 * @see com.ibm.jaql.lang.core.IModule#loadImports(com.ibm.jaql.lang.core.NamespaceEnv)
 	 */
-	public void loadImports(NamespaceEnv namespace) {
+	public void loadImports(Namespace namespace) {
 		ensureMetaData();
 		if(!meta.containsKey(IMPORT_FIELD)) {
 			return;
 		} else {
-			JsonArray values = (JsonArray) meta.get(IMPORT_FIELD);
-			for (JsonValue val : values) {
-				if(val instanceof JsonString) {
-					namespace.imprt(val.toString());
+			JsonArray imports = (JsonArray) meta.get(IMPORT_FIELD);
+			for (JsonValue i : imports) {
+				if (i instanceof JsonString) 
+				{
+					namespace.importNamespace(Namespace.get(i.toString()));
 				}
-				else if(val instanceof JsonRecord) {
-					JsonRecord rec = (JsonRecord) val;
+				else if(i instanceof JsonRecord) {
+					JsonRecord rec = (JsonRecord) i;
 					String name = rec.get(new JsonString("module")).toString();
 					JsonArray vars = (JsonArray) rec.get(new JsonString("vars"));
 					ArrayList<String> ids = new ArrayList<String>();
@@ -288,17 +236,13 @@ public abstract class Module {
 					 * or a list of function names
 					 */
 					if(ids.size() == 1 && ids.get(0).equals("*")) {
-						namespace.include(name);
+						namespace.importAllFrom(Namespace.get(name));
 					} else {
-						namespace.include(name, ids);
+						namespace.importFrom(Namespace.get(name), ids);
 					}
 				}
 			}
 		}
-	}
-	
-	public boolean isSystemModule() {
-		return false;
 	}
 	
 	public abstract File[] getJaqlFiles();

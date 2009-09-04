@@ -10,7 +10,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Module;
-import com.ibm.jaql.lang.core.NamespaceEnv;
+import com.ibm.jaql.lang.core.Namespace;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.TeeInputStream;
@@ -31,7 +31,7 @@ public class ExamplesFn extends Expr {
 	@Override
 	public JsonValue eval(Context context) throws Exception {
 		String name = ((JsonString)exprs[0].eval(context)).toString();
-		NamespaceEnv namespace = NamespaceEnv.getNamespace(name);
+		Namespace namespace = Namespace.get(name);
 		Module module = namespace.getModule();
 		File[] examples = module.getExampleFiles();
 		

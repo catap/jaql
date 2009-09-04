@@ -178,7 +178,7 @@ public class Jaql
    */
   public void setVar(String varName, JsonValue value) 
   {
-    Var v = parser.env.namespaceEnv().scopeNamespace(varName, value);    
+    Var v = parser.env.scopeGlobal(varName, value);    
     v.setValue(value);
     v.finalize();
   }
@@ -218,7 +218,7 @@ public class Jaql
    */
   public JsonValue getVarValue(String varName) throws Exception 
   {
-    Var var = parser.env.namespaceEnv().inscope(varName);
+    Var var = parser.env.inscope(varName);
     materializeVar(var);
     JsonValue value = var.getValue(context); // TODO: use global context?
     return value;
@@ -233,7 +233,7 @@ public class Jaql
    */
   public JsonIterator getVarIter(String varName) throws Exception 
   {
-    Var var = parser.env.namespaceEnv().inscope(varName);
+    Var var = parser.env.inscope(varName);
     if( var.type() != Var.Type.EXPR )
     {
       JsonIterator iter = var.iter(context);

@@ -35,9 +35,8 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.util.Bool3;
 
-/** Wrapper for functions implemented in Java.
- * 
- */
+/** Wrapper for functions implemented in Java. */
+// TODO: there is significant room for improvement (e.g., automatic conversion of types)
 public class JavaFunctionCallExpr extends Expr
 {
   private Object      instance;               // FIXME: this doesn't work in recursion

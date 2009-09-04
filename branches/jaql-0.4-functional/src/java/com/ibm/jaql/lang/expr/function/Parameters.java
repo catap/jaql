@@ -24,9 +24,11 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 
-/** Describes the formal parameters of a function. Each function has up to a number of required 
- * parameters, followed by a number of non-required parameters OR a repeating parameter. All 
- * parameters are named and non-required parameters have a default value.
+/** Describes the formal parameters of a function. Each function has a list of required 
+ * parameters, followed by either a list of optional parameters or a repeating parameter. All 
+ * parameters are named and optional parameters have a default value.
+ * 
+ * @param T type of the default value
  */
 @SuppressWarnings("unchecked")
 public abstract class Parameters<T>
@@ -35,13 +37,14 @@ public abstract class Parameters<T>
   private static final Map<JsonString, Integer> NO_PARS_MAP 
     = Collections.unmodifiableMap(new HashMap<JsonString, Integer>(0));
   
-  private Parameter<T>[] parameters = NO_PARS;      // all arguments
-  private int noRequired = 0;
-  private Map<JsonString, Integer> positions = NO_PARS_MAP;   // all arguments
+  /** List of formal parameters in order */
+  private Parameter<T>[] parameters = NO_PARS;                
   
-  protected abstract Parameter<T> createParameter(JsonString name, Schema schema);
-  protected abstract Parameter<T> createParameter(JsonString name, Schema schema, T defaultValue);
-  protected abstract T[] newArrayOfT(int size);
+  /** Number of required parameters */
+  private int noRequired = 0;
+  
+  /** Map from paramter names to positions */
+  private Map<JsonString, Integer> positions = NO_PARS_MAP;   
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -187,25 +190,35 @@ public abstract class Parameters<T>
     System.arraycopy(parameters, 0, this.parameters, 0, parameters.length);
   }
   
+  /** Create a required parameter. */
+  protected abstract Parameter<T> createParameter(JsonString name, Schema schema);
+  
+  /** Create an optional parameter. */
+  protected abstract Parameter<T> createParameter(JsonString name, Schema schema, T defaultValue);
+  
+  /** Create an array of the specified size. */
+  protected abstract T[] newArrayOfT(int size);
+  
   
   // -- getters -----------------------------------------------------------------------------------
 
     
   /** Total number of parameters */
-  public int noParameters()
+  public int numParameters()
   {
     return parameters.length;
   }
 
   /** Number of required parameters */
-  public int noRequiredParameters()
+  public int numRequiredParameters()
   {
     return noRequired;
   }
   
+  /** Checks whether the last parameter is repeating. */
   public boolean hasRepeatingParameter()
   {
-    return noParameters() > 0 && parameters[parameters.length-1].isRepeating();
+    return numParameters() > 0 && parameters[parameters.length-1].isRepeating();
   }
   
   /** Retrieve a parameter */

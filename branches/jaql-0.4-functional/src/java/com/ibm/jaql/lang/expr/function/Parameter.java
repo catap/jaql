@@ -7,7 +7,10 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 
-/** A formal parameter of a function */
+/** A formal parameter of a function 
+ * 
+ * @param T type of default value 
+ */
 public abstract class Parameter<T>
 {
   public enum Type { REQUIRED, OPTIONAL, REPEATING };
@@ -26,7 +29,7 @@ public abstract class Parameter<T>
     this.name = (JsonString)JsonUtil.getImmutableCopyUnchecked(name);
     this.schema = schema != null ? schema : SchemaFactory.anySchema();
     this.type = Type.OPTIONAL;
-    this.defaultValue = processDefaultValue(defaultValue);
+    this.defaultValue = processDefault(defaultValue);
   }
   
   public Parameter(String name, Schema schema, T defaultValue)
@@ -47,7 +50,7 @@ public abstract class Parameter<T>
       throw new IllegalArgumentException(e);
     }
     this.type = Type.OPTIONAL;
-    this.defaultValue = processDefaultValue(defaultValue);
+    this.defaultValue = processDefault(defaultValue);
   }
   
   public Parameter(String name, String schema, T defaultValue)
@@ -110,7 +113,9 @@ public abstract class Parameter<T>
     this(new JsonString(name));
   }
   
-  protected abstract T processDefaultValue(T value);
+  /** Validate and, if necessary, copy the default value of this parameter. */
+  protected abstract T processDefault(T value);
+  
   
   // -- getters -----------------------------------------------------------------------------------
   

@@ -35,6 +35,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.core.SystemNamespace;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
@@ -55,8 +56,7 @@ public abstract class Expr
   
   /** list of subexpressions (e.g., arguments) */
   protected Expr[]           exprs           = NO_EXPRS;
-	protected Module module;
-	protected boolean isSystemExpr; 
+  protected Module module;
 
   /**
    * @param exprs
@@ -120,10 +120,13 @@ public abstract class Expr
       end = " )";
     }
     
-    if(isSystemExpr) {
-    	exprText.print(Module.SYSTEM_MODULE + "::" + d.getName());
-    } else {
-    	exprText.print("builtin('" + d.getClass().getName() + "')");
+    if (SystemNamespace.getInstance().isSystemExpr(this.getClass()))
+    {
+      exprText.print(SystemNamespace.NAME + "::" + d.getName());
+    }
+    else
+    {
+      exprText.print("builtin('" + d.getClass().getName() + "')");
     }
     
     exprText.print("(");
@@ -131,7 +134,7 @@ public abstract class Expr
     JsonValueParameters p = d.getParameters();
     for( ; i < exprs.length ; i++ )
     {
-      if (i<p.noRequiredParameters() || p.hasRepeatingParameter())
+      if (i<p.numRequiredParameters() || p.hasRepeatingParameter())
       {
         exprText.print(sep);
         exprs[i].decompile(exprText, capturedVars);
@@ -655,9 +658,7 @@ public abstract class Expr
     {
       Constructor<? extends Expr> cons = this.getClass().getConstructor(
           Expr[].class);
-      Expr e = cons.newInstance(new Object[]{es});
-      e.isSystemExpr = isSystemExpr;
-      return e;
+      return cons.newInstance(new Object[]{es});
     }
     catch (Exception e)
     {
@@ -848,10 +849,6 @@ public abstract class Expr
     // Var not found...
     return null;
   }
-
-	public void setSystemExpr(boolean b) {
-		isSystemExpr = b;
-	}
   
 //  /**
 //   * Return true iff var is defined above this Expr, including globally.

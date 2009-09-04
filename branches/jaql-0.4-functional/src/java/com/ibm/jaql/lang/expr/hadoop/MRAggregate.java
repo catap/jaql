@@ -253,7 +253,7 @@ public class MRAggregate extends MapReduceBaseExpr
       super.configure(job);
       aggFn = (JaqlFunction)compile(job, "aggregate", 0);
       aggFn = aggFn.evalConstBindings();
-      if( aggFn.getParameters().noParameters() != 2 )
+      if( aggFn.getParameters().numParameters() != 2 )
       {
         throw new RuntimeException("aggregate function must have exactly two parameters");
       }

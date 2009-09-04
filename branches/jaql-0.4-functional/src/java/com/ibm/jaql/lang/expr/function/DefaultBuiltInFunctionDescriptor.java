@@ -10,8 +10,10 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
+/** Default descriptor for built-in functions. */
 public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescriptor
 {
+  // Parij = function that takes between i and j arguments, j=u stand for unlimited
   public static class Par00 extends DefaultBuiltInFunctionDescriptor { public Par00(String name, Class<? extends Expr> c) { super(name,c,0,0); } };
   public static class Par01 extends DefaultBuiltInFunctionDescriptor { public Par01(String name, Class<? extends Expr> c) { super(name,c,0,1); } };
   public static class Par02 extends DefaultBuiltInFunctionDescriptor { public Par02(String name, Class<? extends Expr> c) { super(name,c,0,2); } };
@@ -43,6 +45,7 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
   private Schema resultSchema;
   private Constructor<? extends Expr> constructor;
   
+  /** Construct a function descriptor from detailed information about the function. */
   public DefaultBuiltInFunctionDescriptor(String name, Class<? extends Expr> implementingClass,
       JsonValueParameters parameters, Schema resultSchema)
   {
@@ -50,7 +53,9 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
     this.parameters = parameters;
     this.resultSchema = resultSchema;
   }
-      
+  
+  /** Construct a function descriptor for a function that takes between <code>min</code> 
+   * and <code>max</code> arguments of arbitrary type. */
   public DefaultBuiltInFunctionDescriptor(String name, Class<? extends Expr> implementingClass,
       int min, int max)
   {
@@ -65,7 +70,8 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
     resultSchema = SchemaFactory.anySchema();
   }
   
-  // last one is repeating
+  /** Construct a function descriptor for a function that takes at least <code>min</code> 
+   * arguments of arbitrary type (without a restiction on the maximum number of arguments). */
   public DefaultBuiltInFunctionDescriptor(String name, Class<? extends Expr> implementingClass,
       int min)
   {

@@ -29,54 +29,80 @@ import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
-/**
- * 
+/** 
+ * Value that stores a function implemented in Jaql.
  */
 public class JaqlFunction extends Function
 {
-  private int noArgs = -1;
+  /** Number of intialized arguments. */
+  private Integer numArgs = -1;
+  
+  /** Parameters of the function. */
   private VarParameters parameters;
+  
+  /** Body of the function. */
   private Expr body;
   
-  /**
-   * 
-   */
+  
+  // -- construction ------------------------------------------------------------------------------
+  
+  /** Constructs from the specified parameters and body. The body refers to a certain parameter
+   * by using the variable corresponding to that parameter. */
   public JaqlFunction(VarParameters parameters, Expr body)
   {
     this.parameters = parameters;
     this.body = body;
   }
-
-  @Override
-  public Expr inline(boolean eval)
-  {
-    if (eval)
-    {
-      return body;
-    }
-    else
-    {
-      // For functions with args, create a let to evaluate the args then call the body
-      // TODO: Don't inline (potentially) recursive functions
-      Expr[] doExprs = new Expr[noArgs+1];
-      for (int i=0; i<noArgs; i++)
-      {
-        Var var = parameters.get(i).getVar();
-        assert var.type() == Var.Type.EXPR; // all arguments are expressions at compile time
-        doExprs[i] = new BindingExpr(BindingExpr.Type.EQ, var, null, var.expr());
-      }
-      doExprs[noArgs] = body;
-      return new DoExpr(doExprs);
-    }
-  }
   
+  
+  // -- self-description --------------------------------------------------------------------------
+
   @Override
   public VarParameters getParameters()
   {
     return parameters;
   }
+
+  @Override
+  protected String formatError(String msg)
+  {
+    String result = "In call of Jaql function with signature fn(";  
+    String sep="";
+    for(int i=0; i<parameters.numParameters(); i++)
+    {
+      VarParameter p = parameters.get(i);
+      result += sep + p.getName();
+      if (p.isOptional())
+      {
+        result += "=??";
+      }
+      sep = ", ";
+    }
+    result += "): " + msg;
+    return result;
+  }
   
-  public HashSet<Var> getCapturedVars()
+  /** Returns the body of this function. */
+  public Expr body()
+  {
+    return body;
+  }
+  
+  // -- evaluation / inlining ---------------------------------------------------------------------
+
+
+  /** Determines whether this function captures variables. Function arguments have to be 
+   * set using one of the <code>setArguments</code> functions before this method is called. */ 
+  public boolean hasCaptures()
+  {
+    return !getCaptures().isEmpty();
+  }
+  
+  /** Returns the set of variables captured in the body of this function. Function arguments have to be 
+   * set using one of the <code>setArguments</code> functions before this method is called. 
+   * @return
+   */
+  public HashSet<Var> getCaptures()
   {
     // TODO: make more efficient
     HashSet<Var> capturedVars = new HashSet<Var>();
@@ -85,7 +111,7 @@ public class JaqlFunction extends Function
     try
     {
       body.decompile(exprText, capturedVars);
-      for (int i=0; i<parameters.noParameters(); i++)
+      for (int i=0; i<parameters.numParameters(); i++)
       {
         VarParameter par = parameters.get(i);
         capturedVars.remove(par.getVar());
@@ -101,25 +127,72 @@ public class JaqlFunction extends Function
       throw JaqlUtil.rethrow(e);
     }
   }
-  
-  public boolean hasCaptures()
+
+  @Override
+  public void prepare(int numArgs)
   {
-    return !getCapturedVars().isEmpty();
+    this.numArgs = numArgs;
+  }
+
+  @Override
+  protected void setArgument(int pos, JsonValue value)
+  {
+    parameters.get(pos).getVar().setValue(value);
+  }
+
+  @Override
+  protected void setArgument(int pos, JsonIterator it)
+  {
+    parameters.get(pos).getVar().setIter(it);
+  }
+
+  @Override
+  protected void setArgument(int pos, Expr expr)
+  {
+    parameters.get(pos).getVar().setExpr(expr);
+  }
+
+  @Override
+  protected void setDefault(int pos)
+  {
+    setArgument(pos, parameters.defaultOf(pos));
   }
   
-  public Expr body()
+  @Override
+  public Expr inline(boolean forEval)
   {
-    return body;
+    if (forEval)
+    {
+      return body;
+    }
+    else
+    {
+      // For functions with args, create a let to evaluate the args then call the body
+      // TODO: Don't inline (potentially) recursive functions
+      Expr[] doExprs = new Expr[numArgs+1];
+      for (int i=0; i<numArgs; i++)
+      {
+        Var var = parameters.get(i).getVar();
+        assert var.type() == Var.Type.EXPR; // all arguments are expressions at compile time
+        doExprs[i] = new BindingExpr(BindingExpr.Type.EQ, var, null, var.expr());
+      }
+      doExprs[numArgs] = body;
+      return new DoExpr(doExprs);
+    }
   }
+
   
-  // when body = (binding (, binding*) e), return e; else return body
+  /** When the body is of form <code>(binding (, binding*) e)</code> and all the bindings 
+   * associate a constant to their variable, evaluates the bindings and returns <code>e</code>.
+   */
   public JaqlFunction evalConstBindings()
   {
     JaqlFunction f = getCopy(null);
     f.body = evalConstBindings(f.body);
     return f;
   }
-  
+
+  // helper for evalConstBindings()
   private Expr evalConstBindings(Expr e)
   {
     if (e instanceof DoExpr)
@@ -158,11 +231,13 @@ public class JaqlFunction extends Function
     return e;
   }
   
+  // -- copying -----------------------------------------------------------------------------------
+  
   @Override
   public JaqlFunction getCopy(JsonValue target)
   {
     VarMap varMap = new VarMap();
-    int n = parameters.noParameters();
+    int n = parameters.numParameters();
     VarParameter[] newPars = new VarParameter[n];
     for (int i=0; i<n; i++)
     {
@@ -187,53 +262,5 @@ public class JaqlFunction extends Function
   public Function getImmutableCopy()
   {
     return getCopy(null);
-  }
-
-  @Override
-  public void prepare(int noArgs)
-  {
-    this.noArgs = noArgs;
-  }
-
-  @Override
-  protected void setArgument(int pos, JsonValue value)
-  {
-    parameters.get(pos).getVar().setValue(value);
-  }
-
-  @Override
-  protected void setArgument(int pos, JsonIterator it)
-  {
-    parameters.get(pos).getVar().setIter(it);
-  }
-
-  @Override
-  protected void setArgument(int pos, Expr expr)
-  {
-    parameters.get(pos).getVar().setExpr(expr);
-  }
-
-  @Override
-  protected void setDefault(int pos)
-  {
-    setArgument(pos, parameters.defaultOf(pos));
-  }
-  
-  public String formatError(String msg)
-  {
-    String result = "In call of Jaql function with signature fn(";  
-    String sep="";
-    for(int i=0; i<parameters.noParameters(); i++)
-    {
-      VarParameter p = parameters.get(i);
-      result += sep + p.getName();
-      if (p.isOptional())
-      {
-        result += "=??";
-      }
-      sep = ", ";
-    }
-    result += "): " + msg;
-    return result;
   }
 }

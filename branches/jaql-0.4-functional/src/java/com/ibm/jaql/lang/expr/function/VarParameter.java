@@ -3,6 +3,7 @@ package com.ibm.jaql.lang.expr.function;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
+/** An implementation of {@link Parameter} associated with a variable. */
 public class VarParameter extends Parameter<Expr>
 {
   Var var;
@@ -23,7 +24,7 @@ public class VarParameter extends Parameter<Expr>
   }
 
   @Override
-  protected Expr processDefaultValue(Expr value)
+  protected Expr processDefault(Expr value)
   {
     return value;
   }

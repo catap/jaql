@@ -17,7 +17,9 @@ public interface BuiltInFunctionDescriptor
    * {@link Expr#getSchema()} will be used. */
   public Schema getSchema();
   
+  /** Returns the class that implements the function */
   public Class<? extends Expr> getImplementingClass();
   
+  /** Constructs an expression for calling the function with the specified arguments. */
   public Expr construct(Expr[] positionalArgs);
 }

@@ -11,13 +11,24 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
+/** 
+ * A built-in function value. Built-in functions are implemented using {@link Expr}s, i.e.,
+ * they integrate into Jaql's AST. 
+ */
 public final class BuiltInFunction extends Function
 {
   private static final Expr[] NO_ARGS = new Expr[0];
-  private Expr[] args = NO_ARGS;
-  private BuiltInFunctionDescriptor descriptor;
-  private JsonValueParameters parameters;
+ 
+  /** Data structure that holds arguments for evaluation/inlining */
+  private transient Expr[] args = NO_ARGS;
   
+  /** Descriptor of the function */
+  private BuiltInFunctionDescriptor descriptor;
+
+  
+  // -- construction ------------------------------------------------------------------------------
+  
+  /** Constructs from the specified function descriptor. */
   public BuiltInFunction(BuiltInFunctionDescriptor descriptor)
   {
     if (descriptor == null)
@@ -25,55 +36,72 @@ public final class BuiltInFunction extends Function
       throw new IllegalArgumentException("descriptor must not be null");
     }
     this.descriptor = descriptor;
-    this.parameters = descriptor.getParameters();
   }
   
-  @Override
-  public BuiltInFunction getCopy(JsonValue target)
-  {
-    return new BuiltInFunction(descriptor);
-  }
-
-  @Override
-  public Function getImmutableCopy()
-  {
-    return new BuiltInFunction(descriptor);
-  }
   
+  // -- self-description --------------------------------------------------------------------------
+  
+  /** Returns the descriptor of this function. */
   public BuiltInFunctionDescriptor getDescriptor()
   {
     return descriptor;
   }
-
-  public Expr inline(boolean eval)
-  {
-    if (eval)
-    {
-      // cloning necessary because object construction changes parent field in expr's
-      Expr[] clonedArgs = new Expr[args.length];
-      VarMap varMap = new VarMap();
-      for (int i=0; i<args.length; i++)
-      {
-        HashSet<Var> vars = args[i].getCapturedVars();
-        for (Var v : vars) 
-        {
-          varMap.put(v, v);
-        }
-        clonedArgs[i] = args[i].clone(varMap);
-      }
-      return descriptor.construct(clonedArgs);
-    }
-    return descriptor.construct(args);
-  }
-
+  
   @Override
   public JsonValueParameters getParameters()
   {
-    return parameters;  
+    return getDescriptor().getParameters();  
+  }
+  
+  @Override
+  protected String formatError(String msg)
+  {
+    return "In call of builtin function " + descriptor.getName() + ": " + msg;
   }
 
+  /** Tries to return a descriptor for the function implemented by the specified class.
+   * To do so, checks whether the class has an inner class the implements 
+   * {@link BuiltInFunctionDescriptor} and, if so, returns an instance of this class.
+   * 
+   * @throws IllegalArgumentException if no unique, instantiable descriptor has been found
+   */
+  public static BuiltInFunctionDescriptor getDescriptor(Class<? extends Expr> cls) 
+  {
+    BuiltInFunctionDescriptor descriptor = null;
+    Class<?>[] inners = cls.getDeclaredClasses();
+    for (int i = 0; i < inners.length; i++)
+    {
+      Class<?> c = inners[i];
+      if (BuiltInFunctionDescriptor.class.isAssignableFrom(c))
+      {
+        if (descriptor != null)
+        {
+          throw new IllegalArgumentException(cls + " contains two descriptor classes");
+        }
+        try
+        {
+          descriptor = (BuiltInFunctionDescriptor) c.newInstance();
+        } catch (InstantiationException e)
+        {
+          // ignore
+        } catch (IllegalAccessException e)
+        {
+          // ignore
+        }
+      }
+    }
+    if (descriptor == null)
+    {
+      throw new IllegalArgumentException(cls + " does not have an inner descriptor class");
+    }
+    return descriptor;
+  }
+  
+  
+  // -- evaluation / inlining ---------------------------------------------------------------------
+
   @Override
-  public void prepare(int numArgs)
+  protected void prepare(int numArgs)
   {
     if (args.length != numArgs)
     {
@@ -112,40 +140,49 @@ public final class BuiltInFunction extends Function
   @Override
   protected void setDefault(int pos)
   {
-    setArgument(pos, parameters.defaultOf(pos));
+    setArgument(pos, getParameters().defaultOf(pos));
   }
   
-  Expr[] getArgs()
+  @Override
+  public Expr inline(boolean forEval)
+  {
+    if (forEval)
+    {
+      // cloning necessary because object construction changes parent field in expr's
+      Expr[] clonedArgs = new Expr[args.length];
+      VarMap varMap = new VarMap();
+      for (int i=0; i<args.length; i++)
+      {
+        HashSet<Var> vars = args[i].getCapturedVars();
+        for (Var v : vars) 
+        {
+          varMap.put(v, v);
+        }
+        clonedArgs[i] = args[i].clone(varMap);
+      }
+      return descriptor.construct(clonedArgs);
+    }
+    return descriptor.construct(args);
+  }
+
+  /** Returns the arguments of this function. The arguments have to be set using one of the 
+   * <code>setArguments</code> functions. */
+  public Expr[] getArguments()
   {
     return args;
   }
   
-  public String formatError(String msg)
-  {
-    return "In call of builtin function " + descriptor.getName() + ": " + msg;
-  }
+  // -- copying ----------------------------------------------------------------------------------- 
   
-  public static BuiltInFunctionDescriptor getDescriptor(Class<? extends Expr> cls) 
-  throws InstantiationException, IllegalAccessException
+  @Override
+  public BuiltInFunction getCopy(JsonValue target)
   {
-    BuiltInFunctionDescriptor descriptor = null;
-    Class<?>[] inners = cls.getDeclaredClasses();
-    for (int i = 0; i < inners.length; i++)
-    {
-      Class<?> c = inners[i];
-      if (BuiltInFunctionDescriptor.class.isAssignableFrom(c))
-      {
-        if (descriptor != null)
-        {
-          throw new IllegalArgumentException(cls + " contains two descriptor classes");
-        }
-        descriptor = (BuiltInFunctionDescriptor) c.newInstance();
-      }
-    }
-    if (descriptor == null)
-    {
-      throw new IllegalArgumentException(cls + " does not have an inner descriptor class");
-    }
-    return descriptor;
+    return new BuiltInFunction(descriptor);
+  }
+
+  @Override
+  public Function getImmutableCopy()
+  {
+    return new BuiltInFunction(descriptor);
   }
 }

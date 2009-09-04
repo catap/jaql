@@ -1,12 +1,12 @@
 package com.ibm.jaql.lang.expr.module;
 
-import java.util.HashSet;
+import java.util.Set;
 
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.NamespaceEnv;
+import com.ibm.jaql.lang.core.Namespace;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
@@ -25,8 +25,8 @@ public class ListExportsFn extends Expr {
 	@Override
 	public JsonValue eval(Context context) throws Exception {
 		String module = ((JsonString)exprs[0].eval(context)).toString();
-		NamespaceEnv namespace = NamespaceEnv.getNamespace(module);
-		HashSet<String> exports = namespace.getExports();
+		Namespace namespace = Namespace.get(module);
+		Set<String> exports = namespace.exports();
 		
 		BufferedJsonArray arr = new BufferedJsonArray();
 		for (String name : exports) {

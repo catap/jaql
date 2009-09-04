@@ -145,12 +145,12 @@ public final class DefineJaqlFunctionExpr extends Expr
   {
     JaqlFunction f = getFunction();
     exprText.print(f.getText());
-    capturedVars.addAll(f.getCapturedVars());    
+    capturedVars.addAll(f.getCaptures());    
   }
   
   public HashSet<Var> getCapturedVars()
   {
-    return getFunction().getCapturedVars();
+    return getFunction().getCaptures();
   }
 
   /*
@@ -201,8 +201,8 @@ public final class DefineJaqlFunctionExpr extends Expr
   private VarParameter[] cloneParameters(VarMap varMap)
   {
     VarParameters pars = parameters;
-    VarParameter[] newPars = new VarParameter[pars.noParameters()];
-    for (int i=0; i<pars.noParameters(); i++)
+    VarParameter[] newPars = new VarParameter[pars.numParameters()];
+    for (int i=0; i<pars.numParameters(); i++)
     {
       VarParameter p = pars.get(i);
       if (p.isRequired())
@@ -221,7 +221,7 @@ public final class DefineJaqlFunctionExpr extends Expr
   public void annotate()
   {
     VarParameters pars = parameters;
-    int p = pars.noParameters();
+    int p = pars.numParameters();
     if( p == 0 )
     {
       return;

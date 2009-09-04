@@ -5,6 +5,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
+/** A parameters with JSON default values. */
 public class JsonValueParameters extends Parameters<JsonValue>
 {
   public JsonValueParameters()

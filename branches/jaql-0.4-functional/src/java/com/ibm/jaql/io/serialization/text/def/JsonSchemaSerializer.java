@@ -355,13 +355,13 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeArgs(PrintStream out, int indent, 
       JsonValueParameters parameters, JsonValue[] values ) throws IOException
   {
-    assert values.length == parameters.noParameters();
+    assert values.length == parameters.numParameters();
     String sep="(";
     boolean printed = false;
     for (int i=0; i<values.length; i++)
     {
       
-      if (i<parameters.noRequiredParameters())
+      if (i<parameters.numRequiredParameters())
       {
         out.print(sep);
         JsonUtil.print(out, values[i], indent);

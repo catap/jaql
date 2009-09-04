@@ -58,7 +58,7 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
       while (true)
       {
         parsing = true;
-        Expr expr = parser.parse();
+        Expr expr = parser.stmt();
         // FIXME: restrict exprs to be of type RegisterAdapterExpr
         parsing = false;
         if (parser.done) break;

@@ -48,11 +48,11 @@ public class ArgumentExpr extends Expr
     BuiltInFunction f = new BuiltInFunction(d);
     Expr[] exprs = FunctionCallExpr.makeExprs(null, positionalArgs, namedArgs);
     f.setArguments(exprs, 1, exprs.length-1, true);
-    this.exprs = f.getArgs();
+    this.exprs = f.getArguments();
     
     // initialize rest of variables
     this.pars = pars;
-    int n = pars.noParameters();
+    int n = pars.numParameters();
     target = new BufferedJsonRecord(n);
     for (int i=0; i<n; i++)
     {

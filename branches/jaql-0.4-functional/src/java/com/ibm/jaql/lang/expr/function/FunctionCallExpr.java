@@ -41,7 +41,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
- * 
+ * An expression representing a function call.
  */
 public class FunctionCallExpr extends Expr
 {

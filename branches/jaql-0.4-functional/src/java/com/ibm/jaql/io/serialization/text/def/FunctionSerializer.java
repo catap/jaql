@@ -21,6 +21,7 @@ import java.util.HashSet;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.lang.core.SystemNamespace;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
@@ -41,7 +42,14 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
     {
       BuiltInFunction f = (BuiltInFunction)value;
       BuiltInFunctionDescriptor d = f.getDescriptor();
-      out.print("builtin('" + d.getClass().getName() + "')");
+      if (SystemNamespace.getInstance().isSystemExpr(d.getImplementingClass()))
+      {
+        out.print(SystemNamespace.NAME + "::" + d.getName());
+      }
+      else
+      {
+        out.print("builtin('" + d.getClass().getName() + "')");
+      }
     }
     else if (value instanceof JaqlFunction)
     {
@@ -52,7 +60,7 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
         HashSet<Var> capturedVars = new HashSet<Var>();
         out.print("fn(");
         String del = "";
-        for (int i=0; i<pars.noParameters(); i++)
+        for (int i=0; i<pars.numParameters(); i++)
         {
           VarParameter par = pars.get(i);
           out.print(del);
@@ -80,7 +88,7 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
     }
     else if (value instanceof JavaUdfFunction) {
       JavaUdfFunction f = (JavaUdfFunction)value;
-      out.print("javaudf('" + f.getClassName() + "')");
+      out.print("javaudf('" + f.getImplementingClass().getName() + "')");
     }
     else
     {

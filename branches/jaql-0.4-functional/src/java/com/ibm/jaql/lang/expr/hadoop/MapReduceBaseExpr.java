@@ -222,7 +222,7 @@ public abstract class MapReduceBaseExpr extends Expr
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(outStream);
 
-    if (fn.getParameters().noParameters() < numArgs || fn.getParameters().noRequiredParameters() > numArgs)
+    if (fn.getParameters().numParameters() < numArgs || fn.getParameters().numRequiredParameters() > numArgs)
     {
       throw new RuntimeException(fnName + " function must be callable with "
           + numArgs + " positional argument(s)");
@@ -283,7 +283,7 @@ public abstract class MapReduceBaseExpr extends Expr
         // System.err.println("compiling: "+exprText);
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
         JaqlParser parser = new JaqlParser(lexer);
-        Expr expr = parser.parse();
+        Expr expr = parser.stmt();
         Function fn = JaqlUtil.enforceNonNull((Function) expr.eval(context));
         return fn;
       }

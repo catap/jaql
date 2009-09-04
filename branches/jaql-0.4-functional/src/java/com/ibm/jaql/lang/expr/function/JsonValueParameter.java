@@ -5,6 +5,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
+/** A parameter that takes a JSON value as default value. */
 public class JsonValueParameter extends Parameter<JsonValue>
 {
   public JsonValueParameter(JsonString name, Schema schema, boolean isRepeating)
@@ -82,7 +83,7 @@ public class JsonValueParameter extends Parameter<JsonValue>
   }
 
   @Override
-  protected JsonValue processDefaultValue(JsonValue value)
+  protected JsonValue processDefault(JsonValue value)
   {
      JsonValue v = JsonUtil.getImmutableCopyUnchecked(value);
      if (!(getSchema().matchesUnsafe(v))) 

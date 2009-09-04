@@ -63,6 +63,7 @@ public final class Var extends Object
 
   private boolean isGlobal = false;   // the variable is global, i.e., it
   private boolean isFinal = false;
+  private Namespace namespace = null;
   
   public Var(String name, Schema schema)
   {
@@ -360,5 +361,19 @@ public final class Var extends Object
   public void setHidden(boolean hide)
   {
     this.hidden = hide;
+  }
+  
+  public Namespace getNamespace()
+  {
+    return namespace;
+  }
+  
+  public void setNamespace(Namespace namespace)
+  {
+    if (this.namespace != null && this.namespace != namespace)
+    {
+      throw new IllegalStateException("variable already has a namespace");
+    }
+    this.namespace = namespace;
   }
 }

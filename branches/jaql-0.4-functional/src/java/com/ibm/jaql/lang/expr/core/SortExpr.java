@@ -111,7 +111,7 @@ public class SortExpr extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     JaqlFunction cmpFn = (JaqlFunction)cmpExpr().eval(context);
-    if( cmpFn.getParameters().noParameters() != 1 || !(cmpFn.body() instanceof CmpExpr) )
+    if( cmpFn.getParameters().numParameters() != 1 || !(cmpFn.body() instanceof CmpExpr) )
     {
       throw new RuntimeException("invalid comparator function");
     }

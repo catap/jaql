@@ -9,6 +9,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 
+/** An expression that constructs a JSON value for a Java UDF */
 public class JavaUdfExpr extends Expr {
 	public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
 	{

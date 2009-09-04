@@ -60,7 +60,7 @@ implements org.apache.hadoop.io.serializer.Serialization<JsonHolder>
       {
         JaqlLexer lexer = new JaqlLexer(new StringReader(text));
         JaqlParser parser = new JaqlParser(lexer);
-        Expr expr = parser.parse();
+        Expr expr = parser.stmt();
         value = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
       } catch (Exception e)
       {

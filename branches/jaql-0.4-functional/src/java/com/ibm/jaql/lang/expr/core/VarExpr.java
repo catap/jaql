@@ -78,6 +78,17 @@ public class VarExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
+    if (var.isGlobal())
+    {
+      if (var.getNamespace() == null)
+      {
+        exprText.print("::");
+      }
+      else
+      {
+        exprText.print(var.getNamespace().getName() + "::");
+      }
+    }
     exprText.print(var.name());
     capturedVars.add(var);
   }
