@@ -20,6 +20,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.CmpSingle;
 import com.ibm.jaql.lang.expr.core.CmpSpec;
+import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
@@ -55,9 +56,9 @@ public class ReverseFn extends MacroExpr
     Var v = env.makeVar("$");
     BindingExpr b = new BindingExpr(BindingExpr.Type.IN, v, null, e);
     CmpSingle by = new CmpSingle(new CmpSpec(new IndexExpr(new VarExpr(v), 0), CmpSpec.Order.DESC));
-    e = new SortExpr(b, by);
-    v = env.makeVar("$");
-    b = new BindingExpr(BindingExpr.Type.IN, v, null, e);
+    DefineFunctionExpr cmp = new DefineFunctionExpr(new Var[] { v }, by);
+    SortExpr sort = new SortExpr(b, cmp);
+    b = new BindingExpr(BindingExpr.Type.IN, v, null, sort);
     e = new TransformExpr(b, new IndexExpr(new VarExpr(v), 1));
     return e;
   }
