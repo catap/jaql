@@ -243,18 +243,46 @@ public class StringConverter
     case BOOLEAN:
       return JsonBool.make(in);
     case LONG:
-      ((MutableJsonLong)target).set(JsonLong.parseLong(in));
+      if (target == null)
+      {
+        target = new MutableJsonLong(JsonLong.parseLong(in));
+      }
+      else
+      {
+        ((MutableJsonLong)target).set(JsonLong.parseLong(in));
+      }
       return target;
     case DOUBLE:
-      ((MutableJsonDouble)target).set(JsonDouble.parseDouble(in));
+      if (target == null)
+      {
+        target = new MutableJsonDouble(JsonDouble.parseDouble(in));
+      }
+      else
+      { 
+        ((MutableJsonDouble)target).set(JsonDouble.parseDouble(in));
+      }
       return target;
     case DECFLOAT:
-      ((MutableJsonDecimal)target).set(JsonDecimal.parseDecimal(in));
+      if (target == null)
+      {
+        target = new MutableJsonDecimal(JsonDecimal.parseDecimal(in));
+      }
+      else
+      { 
+        ((MutableJsonDecimal)target).set(JsonDecimal.parseDecimal(in));
+      }
       return target;
     case STRING:
       return in;      
     case DATE:
-      ((MutableJsonDate)target).set(in.toString());
+      if (target == null)
+      {
+        target = new MutableJsonDate(in.toString());
+      }
+      else
+      {
+        ((MutableJsonDate)target).set(in.toString());
+      }
       return target;
     default:
       throw new IllegalArgumentException("type conversion to " + out.type.getName() + " unsupported.");

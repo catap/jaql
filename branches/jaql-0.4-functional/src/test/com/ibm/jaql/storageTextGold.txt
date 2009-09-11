@@ -485,6 +485,20 @@ convert(null, schema { a:string, b: long });##
 FAILURE
  // should fail
 
+[ { a: "1" }, {a: null}, {a: "1"} ] -> transform convert($, schema { a: long? });##
+[
+  {
+    "a": 1
+  },
+  {
+    "a": null
+  },
+  {
+    "a": 1
+  }
+]
+
+
 // all together
 schemaof(read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } })));##
 schema [
