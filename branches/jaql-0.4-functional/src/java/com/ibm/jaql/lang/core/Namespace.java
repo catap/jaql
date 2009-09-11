@@ -342,19 +342,20 @@ public class Namespace {
 		  	
 		  	// set exports
 		  	Set<String> varNames = module.exports();
-	  		for (String varName : varNames) {
-	  			try 
-	  			{
-	  				if (namespace.variables.containsKey(varName)) 
-	  				{
-	  					namespace.exportedVariables.add(name);
-	  					continue;
-	  				}
-	  			} catch(Exception e) 
-	  			{
-	  				throw new RuntimeException("export " + name + " does not exist", e);
-	  			}
-	  		}
+		  	if(!varNames.isEmpty()) {
+		  		for (String varName : varNames) {
+		  				if (namespace.variables.containsKey(varName)) 
+		  				{
+		  					namespace.exportedVariables.add(varName);
+		  					continue;
+		  				}
+		  				else {
+		  					throw new RuntimeException("export " + name + " does not exist");
+		  				}
+		  		}
+		  	} else {
+		  		namespace.exportedVariables.addAll(namespace.variables.keySet());
+		  	}
 		  	
 		  	// finalize
 		  	namespace.finalize();		  	

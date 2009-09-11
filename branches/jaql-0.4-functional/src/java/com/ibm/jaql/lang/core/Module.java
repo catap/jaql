@@ -144,14 +144,15 @@ public abstract class Module {
 	
 	protected JsonRecord parseMetaData(InputStream in) {
 		JsonRecord meta = new BufferedJsonRecord();
-  	
-		JsonParser p = new JsonParser(in);
-  	JsonValue data = null;
+		JsonValue data = null;
+		JsonParser p = null;
+		
+
 		try {
-			data = p.JsonVal();
-			//if(p.JsonVal() != null) {
-			//	throw new RuntimeException("Only one record allowed in namespace file");
-			//}
+			if(in != null) {
+				p = new JsonParser(in);
+				data = p.JsonVal();
+			}
 		} catch (ParseException e) {
 			throw new RuntimeException("Error in metadata file", e);
 		}
@@ -226,6 +227,7 @@ public abstract class Module {
 				else if(i instanceof JsonRecord) {
 					JsonRecord rec = (JsonRecord) i;
 					String name = rec.get(new JsonString("module")).toString();
+					namespace.importNamespace(Namespace.get(name.toString()));
 					JsonArray vars = (JsonArray) rec.get(new JsonString("vars"));
 					ArrayList<String> ids = new ArrayList<String>();
 					for (JsonValue id : vars) {

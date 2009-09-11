@@ -78,7 +78,7 @@ parse returns [Expr r=null]
 // a statement without statement delimiter
 stmt returns [Expr r=null]
     { Var v; }
-    : ( ("import" | "from") id ) => ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(v); }
+    : ( "import" id ) => ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(v); }
                                   | ("import" id) => r=importExpr
                                   | r=topAssign
                                   | "explain" r=topAssign  { r = new ExplainExpr(r); }                                  
@@ -89,18 +89,21 @@ stmt returns [Expr r=null]
 importExpr returns [Expr r=null]
     { boolean loadAll = false; String v; String var; 
         ArrayList<String> names = new ArrayList<String>();}
-    : "import" v=id {
-        env.importNamespace(Namespace.get(v));
-    } 
-    | "from" v=id "import" ( 
-        "*" {
-                env.importAllFrom(Namespace.get(v));
-            }
-        | var=id {names.add(var);} ("," var=id {names.add(var);})* {
-                env.importFrom(Namespace.get(v), names);
-            }
-        )
-    ;
+    : "import" v=id (
+    	{env.importNamespace(Namespace.get(v));
+    	} 
+    	| "(" (
+    		"*" ")" {
+    			env.importNamespace(Namespace.get(v));
+    			env.importAllFrom(Namespace.get(v));
+    		}
+    		| var=id {names.add(var);} ("," var=id {names.add(var);})* ")" {
+    			env.importNamespace(Namespace.get(v));
+    			env.importFrom(Namespace.get(v), names);
+    		}
+    	)
+    )
+	;
     
 // top level assignment, creates global variables and inlines referenced globals
 topAssign returns [Expr r]

@@ -106,7 +106,7 @@ import com.ibm.jaql.lang.expr.io.WriteAdapterRegistryExpr;
 import com.ibm.jaql.lang.expr.io.WriteFn;
 import com.ibm.jaql.lang.expr.module.ExamplesFn;
 import com.ibm.jaql.lang.expr.module.ListExportsFn;
-//import com.ibm.jaql.lang.expr.module.TestFn;
+import com.ibm.jaql.lang.expr.module.TestFn;
 import com.ibm.jaql.lang.expr.net.JaqlGetFn;
 import com.ibm.jaql.lang.expr.nil.DenullFn;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
@@ -405,6 +405,7 @@ public final class SystemNamespace extends Namespace {
     register(new ExamplesFn.Descriptor());
     //register(new TestFn.Descriptor());
     register(new ListExportsFn.Descriptor());
+    register(new TestFn.Descriptor());
   } 
 
 }

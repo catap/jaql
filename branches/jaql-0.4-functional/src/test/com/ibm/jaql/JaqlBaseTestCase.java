@@ -98,6 +98,23 @@ public abstract class JaqlBaseTestCase extends TestCase
     m_rewriteName = System.getProperty("test.cache.data") + File.separator
         + prefix + "Rewrite.txt";
   }
+  
+  /**
+   * @param prefix
+   */
+  protected void setFilePrefix(File dir, String prefix)
+  {
+    m_queryFileName = dir + File.separator
+        + prefix + "Queries.txt";
+    m_tmpFileName = dir+ File.separator
+        + prefix + "Tmp.txt";
+    m_goldFileName = dir + File.separator
+        + prefix + "Gold.txt";
+    m_decompileName = dir + File.separator
+        + prefix + "Decompile.txt";
+    m_rewriteName = dir + File.separator
+        + prefix + "Rewrite.txt";
+  }
 
   /*
    * (non-Javadoc)
