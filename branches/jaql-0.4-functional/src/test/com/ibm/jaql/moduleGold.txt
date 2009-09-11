@@ -50,19 +50,19 @@ roundUp(0.1);##
 qgram("ab");##
 [
   [
-    "§§a",
+    "Â§Â§a",
     1
   ],
   [
-    "§ab",
+    "Â§ab",
     1
   ],
   [
-    "ab§",
+    "abÂ§",
     1
   ],
   [
-    "b§§",
+    "bÂ§Â§",
     1
   ]
 ]
@@ -149,7 +149,7 @@ listExports("fuzzy_join");##
 
 listExports("meta");##
 [
-  "$fuzzy_join",
+  "fuzzy_join",
   "$normalize",
   "cleanTitle"
 ]
@@ -180,5 +180,5 @@ FAILURE
 
 
 //Test examples function
-examples("module_foo");##
+examples("fuzzy_join");##
 null

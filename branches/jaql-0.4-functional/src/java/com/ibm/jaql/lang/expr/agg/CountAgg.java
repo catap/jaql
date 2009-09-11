@@ -70,13 +70,13 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     count = 0;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     count++;
   }
@@ -88,7 +88,7 @@ public final class CountAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonLong n = (JsonLong)value;
     count += n.get();

@@ -58,14 +58,14 @@ public class AvgAgg extends AlgebraicAggregate
   }
   
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     summer.init();
     count = 0;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null  )
     {
@@ -85,7 +85,7 @@ public class AvgAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonArray arr = (JsonArray)value;
     JsonValue[] pair = new JsonValue[2];

@@ -231,10 +231,12 @@
         <copy todir="${build.src}/test">
             <fileset dir="${basedir}/src/test">
                 <include name="**/*.java" />
+            	<include name="**/*.jar" />
                 <include name="**/*.txt" />
                 <include name="**/*.dat" />
                 <include name="**/*.jql" />
-                <include name="**/*.json" />
+            	<include name="**/*.jaql" />
+                <include name="**/*.json" />            	
             </fileset>
         </copy>
     </target>

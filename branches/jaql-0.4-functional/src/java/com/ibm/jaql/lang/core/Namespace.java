@@ -350,7 +350,7 @@ public class Namespace {
 		  					continue;
 		  				}
 		  				else {
-		  					throw new RuntimeException("export " + name + " does not exist");
+		  					throw new RuntimeException("export " + varName + " does not exist");
 		  				}
 		  		}
 		  	} else {

@@ -78,11 +78,11 @@ parse returns [Expr r=null]
 // a statement without statement delimiter
 stmt returns [Expr r=null]
     { Var v; }
-    : ( "import" id ) => ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(v); }
-                                  | ("import" id) => r=importExpr
-                                  | r=topAssign
-                                  | "explain" r=topAssign  { r = new ExplainExpr(r); }                                  
-                                  | "quit"                 { r = null; done = true; }
+    : ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(v); }
+    |       ("import" id) => r=importExpr
+                           | r=topAssign
+                           | "explain" r=topAssign  { r = new ExplainExpr(r); }                                  
+                           | "quit"                 { r = null; done = true; }
     ;
 
 // namespace import

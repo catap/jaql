@@ -65,14 +65,14 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
   
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     tuple = null;
     sum = null;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null  )
     {
@@ -128,7 +128,7 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonArray arr = (JsonArray)value;
     if( sum == null )

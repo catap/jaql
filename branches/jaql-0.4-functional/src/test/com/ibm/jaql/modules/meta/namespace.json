@@ -3,5 +3,5 @@
 	import: [
 		{ module: "fuzzy_join",	vars: ["*"] }
 	],
-	export:		["$fuzzy_join", "$normalize", "cleanTitle"]
+	export:		["fuzzy_join", "$normalize", "cleanTitle"]
 }

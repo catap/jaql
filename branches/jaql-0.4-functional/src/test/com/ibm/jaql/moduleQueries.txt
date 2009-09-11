@@ -67,4 +67,4 @@ meta::cleanTitle = 2;
 
 
 //Test examples function
-examples("module_foo");
+examples("fuzzy_join");

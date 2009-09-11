@@ -13,13 +13,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.core;
+package com.ibm.jaql.lang.expr.agg;
 
 import java.util.Arrays;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
+import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -126,7 +126,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
 
       
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     this.context = context;
     bufIdx = 0;
@@ -136,7 +136,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null )
     {
@@ -175,9 +175,9 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
-    addInitial(value);
+    accumulate(value);
   }
 
   @Override

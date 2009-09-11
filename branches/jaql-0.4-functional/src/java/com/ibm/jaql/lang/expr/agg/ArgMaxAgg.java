@@ -59,7 +59,7 @@ public final class ArgMaxAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     this.context = context;
     max = null;
@@ -68,7 +68,7 @@ public final class ArgMaxAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null )
     {
@@ -96,9 +96,9 @@ public final class ArgMaxAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
-    addInitial(value);
+    accumulate(value);
   }
 
   @Override

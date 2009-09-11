@@ -63,13 +63,13 @@ public final class AnyAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     result = null;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( result == null && value != null )
     {
@@ -84,7 +84,7 @@ public final class AnyAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     if( result == null && value != null )
     {

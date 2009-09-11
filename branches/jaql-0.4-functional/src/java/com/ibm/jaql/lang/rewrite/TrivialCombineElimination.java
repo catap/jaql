@@ -15,10 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.expr.core.ArrayExpr;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.CombineExpr;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.agg.CombineExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
@@ -57,42 +54,42 @@ public class TrivialCombineElimination extends Rewrite
   @Override
   public boolean rewrite(Expr expr)
   {
-    CombineExpr ce = (CombineExpr) expr;
+//    CombineExpr ce = (CombineExpr) expr;
+//
+//    BindingExpr bind = null;// ce.binding();
+//    Expr inExpr = bind.inExpr();
+//
+//    // combine $a,$b in null ... => null
+//    if (inExpr instanceof ConstExpr && ((ConstExpr) inExpr).value == null)
+//    {
+//      ce.replaceInParent(inExpr);
+//      return true;
+//    }
+//
+//    if (!(inExpr instanceof ArrayExpr) || inExpr.numChildren() > 1)
+//    {
+//      return false;
+//    }
+//
+//    Expr replaceBy;
+//    if (inExpr.numChildren() == 0)
+//    {
+//      // combine $a,$b in [] ... => null
+//      replaceBy = new ConstExpr(null);
+//      //      replaceBy = ce.emptyExpr();
+//    }
+//    else
+//    // arrayExpr.numChildren() == 1
+//    {
+//      replaceBy = inExpr.child(0);
+//      //      if( replaceBy.isNullable() )
+//      //      {
+//      //        replaceBy = new FirstNonNullFn(replaceBy, ce.emptyExpr());
+//      //      }
+//    }
+//    expr.replaceInParent(replaceBy);
+//    return true;
 
-    if( true ) return false; // TODO: re-enable with function api?
-
-    BindingExpr bind = null;// ce.binding();
-    Expr inExpr = bind.inExpr();
-
-    // combine $a,$b in null ... => null
-    if (inExpr instanceof ConstExpr && ((ConstExpr) inExpr).value == null)
-    {
-      ce.replaceInParent(inExpr);
-      return true;
-    }
-
-    if (!(inExpr instanceof ArrayExpr) || inExpr.numChildren() > 1)
-    {
-      return false;
-    }
-
-    Expr replaceBy;
-    if (inExpr.numChildren() == 0)
-    {
-      // combine $a,$b in [] ... => null
-      replaceBy = new ConstExpr(null);
-      //      replaceBy = ce.emptyExpr();
-    }
-    else
-    // arrayExpr.numChildren() == 1
-    {
-      replaceBy = inExpr.child(0);
-      //      if( replaceBy.isNullable() )
-      //      {
-      //        replaceBy = new FirstNonNullFn(replaceBy, ce.emptyExpr());
-      //      }
-    }
-    expr.replaceInParent(replaceBy);
-    return true;
+    return false;
   }
 }

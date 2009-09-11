@@ -16,6 +16,9 @@
 package com.ibm.jaql.lang.registry;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Iterator;
+import java.util.Map;
 
 import antlr.collections.impl.BitSet;
 
@@ -58,7 +61,7 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
       while (true)
       {
         parsing = true;
-        Expr expr = parser.stmt();
+        Expr expr = parser.parse();
         // FIXME: restrict exprs to be of type RegisterAdapterExpr
         parsing = false;
         if (parser.done) break;
@@ -94,4 +97,10 @@ public abstract class JaqlRegistryFormat<K, V> extends JsonRegistryFormat<K, V>
     }
   }
 
+  public void writeRegistry(OutputStream out, Iterator<Map.Entry<K, V>> iter)
+  throws Exception
+  {
+    super.writeRegistry(out, iter);
+    out.write(';');
+  }
 }

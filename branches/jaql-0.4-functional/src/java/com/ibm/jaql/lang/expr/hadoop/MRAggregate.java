@@ -207,8 +207,8 @@ public class MRAggregate extends MapReduceBaseExpr
             for( int i = 0 ; i < aggs.length ; i++ )
             {
               AlgebraicAggregate agg = aggs[i];
-              agg.initInitial(context);
-              aggs[i].evalInitial(context);
+              agg.init(context);
+              aggs[i].evalInitialized(context);
               JsonValue part = agg.getPartial();
               aggArray.set(i, part);
             }
@@ -280,7 +280,7 @@ public class MRAggregate extends MapReduceBaseExpr
       {
         for(int i = 0 ; i < aggs.length ; i++)
         {
-          aggs[i].initPartial(context);
+          aggs[i].init(context);
         }
 
         keyVar.setValue(key.value);
@@ -291,7 +291,7 @@ public class MRAggregate extends MapReduceBaseExpr
           JsonArray partArray = (JsonArray) values.next().value;
           for(int i = 0 ; i < aggs.length ; i++)
           {
-            aggs[i].addPartial(partArray.get(i));
+            aggs[i].combine(partArray.get(i));
           }
         }
         processAggs(keyHolder, output);

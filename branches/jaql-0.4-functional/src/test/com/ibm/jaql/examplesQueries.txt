@@ -379,6 +379,7 @@ read(hdfs('/temp/nums'))
      -> read()
      -> sort by [$.a];
 
+
 // ======== EveryType ==========
 
     everyType = javaudf("com.acme.extensions.fn.EveryType");
@@ -466,4 +467,31 @@ lineRdr
 -> group by w = ($)
     into [w, count($)]
 -> count();
+
+// -- user-defined aggregates ---------------------------------------------------------------------
+
+f = hdfs("/temp/nums");                                    // defined above
+
+// create a UDA using combine()
+myavg1 = fn($) (
+  p = $ -> transform [ $, 1 ]
+        -> combine( fn(p, q) [ p[0]+q[0], p[1]+q[1] ] ),
+  p[0] / p[1]
+);
+read(f) -> group by (1) into myavg1($[*].b);
+
+// create a UDA using uda()
+myavg2 = uda(fn()     [ 0        , 0         ],            // init
+             fn(p, v) [ p[0]+v   , p[1]+1    ],            // accumulate
+             fn(p, q) [ p[0]+q[0], p[1]+q[1] ],            // combine
+             fn(p)    p[0]/p[1] );                         // final
+read(f) -> group by (1) into myavg2($[*].b);
+
+// create a UDA using javauda()
+myavg3 = javauda("com.ibm.jaql.udf.LongAvgUda");
+read(f) -> group by (1) into myavg3($[*].b);
+
+// try out argument passing
+myavg4 = javauda("com.ibm.jaql.udf.LongAvgUda", 2);        // average of squares
+read(f) -> group by (1) into myavg4($[*].b);     
 
