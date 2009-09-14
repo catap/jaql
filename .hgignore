@@ -1,0 +1,10 @@
+# use glob syntax.
+syntax: glob
+
+**.svn
+build**
+eclipseBuild**
+.antlr-eclipse
+
+# switch to regexp syntax.
+syntax: regexp
