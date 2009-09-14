@@ -214,7 +214,7 @@ After cleaning there are 529927 unique titles from the IMDB dataset and 17346 un
 
 = Running the fuzzy join =
 
-All the scripts and files that are necessary to run fuzzyJoin are available in a special package in the download section http://jaql.googlecode.com/files/fuzzyJoin.tgz
+All the scripts and files that are necessary to run fuzzyJoin are available in a special package in the download section http://jaql.googlecode.com/files/fuzzyJoin_new.tgz
 
 Fuzzy join uses  new features that are not yet supported by any released version. We tested it with r273 and advise users who want to try the fuzzy join to use that specific revision. A compiled version of the jaql.jar of that version is included in the download package. To use it just replace the original one in the jaql directory. 
 We also advise to use jaql with an existing hadoop cluster by using the –c (--cluster) option.
