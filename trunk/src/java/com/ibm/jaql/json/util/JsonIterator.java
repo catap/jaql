@@ -129,7 +129,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
     return this == NULL;
   }
 
-  // -- Java-style interation ---------------------------------------------------------------------
+  // -- Java-style iteration ---------------------------------------------------------------------
   
   /** Equivalent to {@link JsonIterator#moveNext()}. This method is marked deprecated because it 
    * diverts slightly from the standard Java iterator contract. It will not be removed in 
