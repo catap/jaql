@@ -57,9 +57,7 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
   @Override
   public JsonValue convert(LongWritable key, Text value, JsonValue target)
   {
-    System.out.print(key + ":" + value.toString() + ": ");
     ((MutableJsonString)target).set(value.getBytes(), value.getLength());
-    System.out.println(target);
     return target;
   }      
       
