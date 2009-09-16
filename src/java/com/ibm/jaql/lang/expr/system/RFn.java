@@ -52,7 +52,7 @@ public class RFn extends Expr
 {
   protected static String program = System.getProperty("R.home", "R");
   protected static String args = System.getProperty("R.args",
-      "--no-save --no-restore --slave --q");
+      "--no-save --no-restore --slave -q");
   protected static String cmd = program + " " + args;
   protected Process proc;
   protected BufferedReader stdout;
