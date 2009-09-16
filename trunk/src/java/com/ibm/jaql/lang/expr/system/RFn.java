@@ -41,7 +41,8 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * A single R process is forked per RFn instance (i.e., call site in the query).
  * The R process is forked and the init string is passed to R only on the first invocation.
  * 
- * To configure R, add -DR.home=<path to R> to the VM arguments. // TODO: need jaql.conf
+ * To configure R, add -DR.home=<path to R> and -DR.args=<args to R> to the VM arguments. 
+ * // TODO: need jaql.conf
  * 
  * @author kbeyer
  *
@@ -50,14 +51,14 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 public class RFn extends Expr
 {
   protected static String program = System.getProperty("R.home", "R");
-  protected static String args = "--no-save --no-restore --slave --ess";
+  protected static String args = System.getProperty("R.args",
+      "--no-save --no-restore --slave --q");
   protected static String cmd = program + " " + args;
   protected Process proc;
   protected BufferedReader stdout;
   protected PrintStream stdin;
   protected Throwable error;
   protected JsonParser parser;
-
 
   public RFn(Expr[] exprs)
   {
