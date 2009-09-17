@@ -1,11 +1,11 @@
-hdfsShell("-rm delimited.del") * 0;
-hdfsShell("-rm delimited-invalid1.del.del") * 0;
-hdfsShell("-rm delimited-invalid2.del.del") * 0;
-hdfsShell("-rm delimited-invalid3.del.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid1.del delimited-invalid1.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited-invalid2.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/lines.txt lines.txt") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/lines-boolean.txt lines-boolean.txt") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/lines-invalid.txt lines-invalid.txt") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/lines-numeric.txt lines-numeric.txt") * 0;
 
 // test readers
 $f = "delimited.del";
@@ -88,3 +88,53 @@ schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ]
 read(del("delimited.del", { convert: schema [ string?, string?, long? ] }));
 schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));
 read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));
+
+// Tests for the lines() interface method
+$l = "lines.txt";
+$lb = "lines-boolean.txt";
+$li = "lines-invalid.txt";
+$ln = "lines-numeric.txt";
+
+// Test read(lines()) which should return an array of strings. This should succeed for all the files.
+read(lines($l));
+read(lines($lb));
+read(lines($li));
+read(lines($ln));
+read(lines($lwn));
+
+// Test read(lines()) with the convert option.
+read(lines($l,{convert: schema string})); // Test for the default schema.
+read(lines($l,{convert: schema long})); // This should fail since the file is mixture of multiple types.
+read(lines($li,{convert: schema long})); // This should fail since the file has non-numeric characters.
+read(lines($ln,{convert: schema long}));
+read(lines($ln,{convert: schema double}));
+read(lines($lb,{convert: schema boolean}));
+read(lines($lb,{convert: schema long})); // This should fail since the input file contains booleans.
+
+// Test for invalid arguments to the convert option.
+read(lines($l,{convert: schema [long]}));
+read(lines($l,{convert: schema {f1: long}}));
+
+$out = "tmpout/out-file.txt";
+
+// Test for write(lines()) and checking whether the written files have data in the specified format
+[1,2,3,4,5,6,7,8,9,10,100,1000,10000,100000] -> write(lines($out));
+read(lines($out,{convert: schema long}));
+read(lines($out,{convert: schema double}));
+
+[true,false,false,false,true,true,false] -> write(lines($out));
+read(lines($out,{convert: schema boolean}));
+
+[1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));
+read(lines($out));
+
+// -- Remove all the temporary files created.
+hdfsShell("-rm delimited.del") * 0;
+hdfsShell("-rm delimited-invalid1.del") * 0;
+hdfsShell("-rm delimited-invalid2.del") * 0;
+hdfsShell("-rm delimited-invalid3.del") * 0;
+hdfsShell("-rm lines.txt") * 0;
+hdfsShell("-rm lines-boolean.txt") * 0;
+hdfsShell("-rm lines-invalid.txt") * 0;
+hdfsShell("-rm lines-numeric.txt") * 0;
+hdfsShell("-rmr tmpout") * 0;
