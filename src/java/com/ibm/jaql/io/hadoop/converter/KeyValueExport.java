@@ -19,40 +19,44 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * Export a JSON Item and convert it to a Hadoop record, composed of a key K and value V
+ * Export a JSON Item and convert it to a Hadoop record, composed of a key K and
+ * value V.
  * 
- * @param <K>
- * @param <V>
+ * @param <K> Type of Hadoop record key
+ * @param <V> Type of Hadoop record value
  */
 public interface KeyValueExport<K, V> {
-  
+
   /**
-   * Initialize the exporter based on options represented using a JSON record
+   * Initializes the exporter based on options represented using a JSON record.
    * 
    * @param options
    */
   void init(JsonRecord options);
-  
+
   /**
-   * Construct the target Key K from which values from the source JSON Item is converted
+   * Constructs the target Key K whose value is from the source JSON Item being
+   * converted.
    * 
    * @return
    */
   K createKeyTarget();
-  
+
   /**
-   * Construct the target Value V from which values from the source JSON Item is converted
+   * Construct the target Value V whose value is from the source JSON Item being
+   * converted
    * 
-   * @return
+   * @return Hadoop record value
    */
   V createValueTarget();
-  
+
   /**
-   * Export a source JSOn value into a target Hadoop Record key K, value V (assumed to be constructed using createTarget)
+   * Export a source JSON value into a target Hadoop Record key K, value V
+   * (assumed to be constructed using createTarget).
    * 
-   * @param src
-   * @param key
-   * @param val
+   * @param src A JSON value
+   * @param key Hadoop record key
+   * @param val Hadoop record value
    */
   void convert(JsonValue src, K key, V val);
 }
