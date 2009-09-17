@@ -15,9 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import java.util.Map.Entry;
+
 import com.ibm.jaql.io.Adapter;
-import com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter;
-import com.ibm.jaql.io.hadoop.FromLinesConverter;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -29,18 +29,16 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
 /**
  * An expression that constructs an I/O descriptor for HDFS file access.
  */
-@JaqlFn(fnName="lines", minArgs=1, maxArgs=1)
-public class LinesFn extends AbstractHandleFn
-{
-  private final static JsonValue TYPE = new JsonString("hdfs");
+@JaqlFn(fnName="lines", minArgs=1, maxArgs=2)
+public class LinesFn extends AbstractHandleFn {
+  private final static JsonValue TYPE = new JsonString("lines");
   /**
    * exprs[0]: path
    * exprs[1]: options 
    * 
    * @param exprs
    */
-  public LinesFn(Expr[] exprs)
-  {
+  public LinesFn(Expr[] exprs) {
     super(exprs);
   }
 
@@ -48,8 +46,7 @@ public class LinesFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#getType()
    */
   @Override
-  protected JsonValue getType()
-  {
+  protected JsonValue getType() {
     return TYPE;
   }
 
@@ -57,8 +54,7 @@ public class LinesFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#isMapReducible()
    */
   @Override
-  public boolean isMapReducible()
-  {
+  public boolean isMapReducible() {
     return true;
   }
   
@@ -66,15 +62,23 @@ public class LinesFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonRecord eval(Context context) throws Exception
-  {
-    BufferedJsonRecord options = new BufferedJsonRecord();
-    options.add(Adapter.FORMAT_NAME, FromLinesConverter.FORMAT);
-    options.add(DefaultHadoopInputAdapter.CONVERTER_NAME, FromLinesConverter.CONVERTER_NAME);
+  public JsonRecord eval(Context context) throws Exception {
+    BufferedJsonRecord options = null;
+    if (exprs.length > 1) {
+      options = new BufferedJsonRecord();
+      JsonValue customOptions = exprs[1].eval(context);
+      if (!(customOptions instanceof JsonRecord)) {
+        throw new RuntimeException("options for lines() function has to be a record");
+      }
+      for (Entry<JsonString, JsonValue> option : (JsonRecord)customOptions) {
+        options.add(option.getKey(), option.getValue());
+      }
+    }
     BufferedJsonRecord descriptor = new BufferedJsonRecord();
     descriptor.add(Adapter.TYPE_NAME, getType());
     descriptor.add(Adapter.LOCATION_NAME, location().eval(context));
-    descriptor.add(Adapter.INOPTIONS_NAME, options);
+    if (options != null)
+      descriptor.add(Adapter.INOPTIONS_NAME, options);
     return descriptor;
   }
 }
