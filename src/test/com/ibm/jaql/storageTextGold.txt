@@ -1,15 +1,3 @@
-hdfsShell("-rm delimited.del") * 0;##
-0
-
-hdfsShell("-rm delimited-invalid1.del.del") * 0;##
-0
-
-hdfsShell("-rm delimited-invalid2.del.del") * 0;##
-0
-
-hdfsShell("-rm delimited-invalid3.del.del") * 0;##
-0
-
 hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;##
 0
 
@@ -20,6 +8,18 @@ hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited
 0
 
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/lines.txt lines.txt") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/lines-boolean.txt lines-boolean.txt") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/lines-invalid.txt lines-invalid.txt") * 0;##
+0
+
+hdfsShell("-copyFromLocal build/test/cache/data/lines-numeric.txt lines-numeric.txt") * 0;##
 0
 
 
@@ -612,3 +612,271 @@ read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:str
   }
 ]
 
+
+// Tests for the lines() interface method
+$l = "lines.txt";##
+"$l"
+
+$lb = "lines-boolean.txt";##
+"$lb"
+
+$li = "lines-invalid.txt";##
+"$li"
+
+$ln = "lines-numeric.txt";##
+"$ln"
+
+
+// Test read(lines()) which should return an array of strings. This should succeed for all the files.
+read(lines($l));##
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "Hello",
+  "8",
+  "World",
+  "0.78"
+]
+
+read(lines($lb));##
+[
+  "true",
+  "false",
+  "false",
+  "false",
+  "true",
+  "true",
+  "false"
+]
+
+read(lines($li));##
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7,8"
+]
+
+read(lines($ln));##
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "100",
+  "1000",
+  "10000",
+  "100000"
+]
+
+read(lines($lwn)##
+FAILURE
+);
+
+// Test read(lines()) with the convert option.
+read(lines($l,{convert: schema string}));##
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "Hello",
+  "8",
+  "World",
+  "0.78"
+]
+ // Test for the default schema.
+read(lines($l,{convert: schema long}));##
+FAILURE
+ // This should fail since the file is mixture of multiple types.
+read(lines($li,{convert: schema long}));##
+FAILURE
+ // This should fail since the file has non-numeric characters.
+read(lines($ln,{convert: schema long}));##
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  100,
+  1000,
+  10000,
+  100000
+]
+
+read(lines($ln,{convert: schema double}));##
+[
+  1.0,
+  2.0,
+  3.0,
+  4.0,
+  5.0,
+  6.0,
+  7.0,
+  8.0,
+  9.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0
+]
+
+read(lines($lb,{convert: schema boolean}));##
+[
+  true,
+  false,
+  false,
+  false,
+  true,
+  true,
+  false
+]
+
+read(lines($lb,{convert: schema long}));##
+FAILURE
+ // This should fail since the input file contains booleans.
+
+// Test for invalid arguments to the convert option.
+read(lines($l,{convert: schema [long]}));##
+FAILURE
+
+read(lines($l,{convert: schema {f1: long}}));##
+FAILURE
+
+
+$out = "tmpout/out-file.txt";##
+"$out"
+
+
+// Test for write(lines()) and checking whether the written files have data in the specified format
+[1,2,3,4,5,6,7,8,9,10,100,1000,10000,100000] -> write(lines($out));##
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+read(lines($out,{convert: schema long}));##
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  100,
+  1000,
+  10000,
+  100000
+]
+
+read(lines($out,{convert: schema double}));##
+[
+  1.0,
+  2.0,
+  3.0,
+  4.0,
+  5.0,
+  6.0,
+  7.0,
+  8.0,
+  9.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0
+]
+
+
+[true,false,false,false,true,true,false] -> write(lines($out));##
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+read(lines($out,{convert: schema boolean}));##
+[
+  true,
+  false,
+  false,
+  false,
+  true,
+  true,
+  false
+]
+
+
+[1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));##
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+read(lines($out));##
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "\"Hello\"",
+  "8",
+  "\"World\"",
+  "0.78"
+]
+
+
+// -- Remove all the temporary files created.
+hdfsShell("-rm delimited.del") * 0;##
+0
+
+hdfsShell("-rm delimited-invalid1.del") * 0;##
+0
+
+hdfsShell("-rm delimited-invalid2.del") * 0;##
+0
+
+hdfsShell("-rm delimited-invalid3.del") * 0;##
+0
+
+hdfsShell("-rm lines.txt") * 0;##
+0
+
+hdfsShell("-rm lines-boolean.txt") * 0;##
+0
+
+hdfsShell("-rm lines-invalid.txt") * 0;##
+0
+
+hdfsShell("-rm lines-numeric.txt") * 0;##
+0
+
+hdfsShell("-rmr tmpout") * 0;##
+0
