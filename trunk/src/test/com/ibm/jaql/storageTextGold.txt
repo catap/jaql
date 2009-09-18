@@ -22,6 +22,9 @@ hdfsShell("-copyFromLocal build/test/cache/data/lines-invalid.txt lines-invalid.
 hdfsShell("-copyFromLocal build/test/cache/data/lines-numeric.txt lines-numeric.txt") * 0;##
 0
 
+hdfsShell("-copyFromLocal build/test/cache/data/lines-with-null.txt lines-with-null.txt") * 0;##
+0
+
 
 // test readers
 $f = "delimited.del";##
@@ -626,6 +629,9 @@ $li = "lines-invalid.txt";##
 $ln = "lines-numeric.txt";##
 "$ln"
 
+$lwn = "lines-with-null.txt";##
+"$lwn"
+
 
 // Test read(lines()) which should return an array of strings. This should succeed for all the files.
 read(lines($l));##
@@ -682,9 +688,22 @@ read(lines($ln));##
   "100000"
 ]
 
-read(lines($lwn)##
-FAILURE
-);
+read(lines($lwn));##
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  null,
+  "7",
+  null,
+  "9",
+  "10",
+  "100",
+  "1000"
+]
+
 
 // Test read(lines()) with the convert option.
 read(lines($l,{convert: schema string}));##
@@ -757,6 +776,25 @@ read(lines($lb,{convert: schema boolean}));##
 read(lines($lb,{convert: schema long}));##
 FAILURE
  // This should fail since the input file contains booleans.
+read(lines($lwn,{convert: schema string}));##
+FAILURE
+ // This should fail since the input file has nulls.
+read(lines($lwn,{convert: schema long?}));##
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  null,
+  7,
+  null,
+  9,
+  10,
+  100,
+  1000
+]
+
 
 // Test for invalid arguments to the convert option.
 read(lines($l,{convert: schema [long]}));##
@@ -853,6 +891,50 @@ read(lines($out));##
 ]
 
 
+[1,2,3,4,null,6] -> write(lines($out));##
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+read(lines($out));##
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  null,
+  "6"
+]
+
+read(lines($out,{convert: schema long?}));##
+[
+  1,
+  2,
+  3,
+  4,
+  null,
+  6
+]
+
+read(lines($out,{convert: schema long}));##
+FAILURE
+ // This should fail since the file contains null.
+
+[true, false, null] -> write(lines($out));##
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+read(lines($out, {convert: schema boolean?}));##
+[
+  true,
+  false,
+  null
+]
+
+
 // -- Remove all the temporary files created.
 hdfsShell("-rm delimited.del") * 0;##
 0
@@ -876,6 +958,9 @@ hdfsShell("-rm lines-invalid.txt") * 0;##
 0
 
 hdfsShell("-rm lines-numeric.txt") * 0;##
+0
+
+hdfsShell("-rm lines-with-null.txt") * 0;##
 0
 
 hdfsShell("-rmr tmpout") * 0;##
