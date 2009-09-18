@@ -253,10 +253,6 @@ HADOOP_OPTS="$HADOOP_OPTS -Dhadoop.home.dir=$HADOOP_HOME"
 HADOOP_OPTS="$HADOOP_OPTS -Dhadoop.id.str=$HADOOP_IDENT_STRING"
 HADOOP_OPTS="$HADOOP_OPTS -Dhadoop.root.logger=${HADOOP_ROOT_LOGGER:-INFO,DRFA}"
 HADOOP_OPTS="$HADOOP_OPTS -Dhadoop.conf.override=${HADOOP_CONF_OVERRIDE_DIR}"
-if $cygwin; then
-	#HADOOP_OPTS="$HADOOP_OPTS -Djline.terminal=jline.UnixTerminal"
-	HADOOP_OPTS="$HADOOP_OPTS -Djline.terminal=jline.UnsupportedTerminal"
-fi
 if [ "x$JAVA_LIBRARY_PATH" != "x" ]; then
   HADOOP_OPTS="$HADOOP_OPTS -Djava.library.path=$JAVA_LIBRARY_PATH"
 fi  
