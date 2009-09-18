@@ -45,6 +45,7 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
   
   private Schema schema;
   private StringConverter converter;
+  private String nullString;
   
   /** Initializes this converter. */
   @Override
@@ -55,7 +56,7 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
     }
     
     // Check for a converter.
-    schema = SchemaFactory.stringSchema();
+    schema = SchemaFactory.stringOrNullSchema();
     JsonValue arg = options.get(CONVERT_NAME);
     if (arg != null) {
       schema = ((JsonSchema)arg).get();
@@ -65,6 +66,7 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
       }
     }
     converter = new StringConverter(schema);
+    nullString = System.getProperty("text.nullstring", "");
   }
 
   /** Creates a fresh target. */
@@ -76,6 +78,14 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
   /** Converts the given line into a JSON value. */
   @Override
   public JsonValue convert(LongWritable key, Text value, JsonValue target) {
+    String text = value.toString();
+    if (text.equals(nullString)) {
+      if (converter.isNullable()) {
+        return null;
+      } else {
+        throw new RuntimeException("found null value, expected " + converter.getType());
+      }
+    }
     target = converter.convert(new JsonString(value.toString()), target);
     return target;
   }

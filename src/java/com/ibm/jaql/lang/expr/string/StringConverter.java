@@ -55,7 +55,7 @@ import com.ibm.jaql.json.type.MutableJsonLong;
  * the specified types. */
 public class StringConverter
 {
-  // -- variables ---------------------------------------------------------------------------------
+//-- variables ---------------------------------------------------------------------------------
   
   /** Holder for various informations about desired output */
   private static class Descriptor
@@ -64,14 +64,14 @@ public class StringConverter
     boolean isNullable;
     int fieldIndex;
   }
-  
+ 
   Schema schema = null;
   Descriptor main;
   boolean mainIsAtomic;
   JsonValue emptyTarget;
   Descriptor[] sub;
   Map<JsonString, Descriptor> fieldMap;
-  
+ 
 
   // -- construction ------------------------------------------------------------------------------
 
@@ -83,7 +83,7 @@ public class StringConverter
     init(schema);
   }
 
-  
+ 
   // -- initialization ----------------------------------------------------------------------------
 
   /** Parse and validate the input schema and populate the internal data structures for efficient
@@ -94,9 +94,9 @@ public class StringConverter
     {
       throw new IllegalArgumentException("type modifiers are currently not allowed for conversion");
     }
-    
-    this.schema = schema; 
-    
+   
+    this.schema = schema;
+   
     // check whether we are given an atomic type
     main = new Descriptor();
     mainIsAtomic = true;
@@ -104,11 +104,11 @@ public class StringConverter
     {
       return;
     }
-    
-    // we are not atomic 
+   
+    // we are not atomic
     mainIsAtomic = false;
     schema = SchemaTransformation.removeNullability(schema); // will never produce null
-    
+   
     // check whether we are given an array
     if (schema instanceof ArraySchema)
     {
@@ -155,10 +155,10 @@ public class StringConverter
         fieldMap.put(fields.get(i).getName(), sub[i]);
       }
       r.sort();
-      
+     
       for (int i=0; i<n; i++)
       {
-        
+       
         RecordSchema.Field field = fields.get(i);
         if (field.isOptional())
         {
@@ -176,11 +176,11 @@ public class StringConverter
       emptyTarget = r;
       return;
     }
-    
+   
     throw new IllegalArgumentException("invalid input schema");
   }
-  
-  
+ 
+ 
   /** Initializes the given descriptor for the given schema. Returns false is the input
    * schema is an array or record. Throws an exception if the input schema is unsupported. */
   boolean initAtomic(Schema schema, Descriptor out)
@@ -192,7 +192,7 @@ public class StringConverter
       out.type = NULL;
       return true;
     }
-    
+   
     switch (schema.getSchemaType())
     {
     case BOOLEAN:
@@ -227,7 +227,8 @@ public class StringConverter
     }
     return true;
   }
-  
+ 
+
 
   // -- conversion --------------------------------------------------------------------------------
 
@@ -235,7 +236,7 @@ public class StringConverter
   {
     assert out != null;
     assert in != null;
-    
+   
     switch (out.type)
     {
     case NULL:
@@ -243,31 +244,59 @@ public class StringConverter
     case BOOLEAN:
       return JsonBool.make(in);
     case LONG:
-      ((MutableJsonLong)target).set(JsonLong.parseLong(in));
+      if (target == null)
+      {
+        target = new MutableJsonLong(JsonLong.parseLong(in));
+      }
+      else
+      {
+        ((MutableJsonLong)target).set(JsonLong.parseLong(in));
+      }
       return target;
     case DOUBLE:
-      ((MutableJsonDouble)target).set(JsonDouble.parseDouble(in));
+      if (target == null)
+      {
+        target = new MutableJsonDouble(JsonDouble.parseDouble(in));
+      }
+      else
+      {
+        ((MutableJsonDouble)target).set(JsonDouble.parseDouble(in));
+      }
       return target;
     case DECFLOAT:
-      ((MutableJsonDecimal)target).set(JsonDecimal.parseDecimal(in));
+      if (target == null)
+      {
+        target = new MutableJsonDecimal(JsonDecimal.parseDecimal(in));
+      }
+      else
+      {
+        ((MutableJsonDecimal)target).set(JsonDecimal.parseDecimal(in));
+      }
       return target;
     case STRING:
       return in;      
     case DATE:
-      ((MutableJsonDate)target).set(in.toString());
+      if (target == null)
+      {
+        target = new MutableJsonDate(in.toString());
+      }
+      else
+      {
+        ((MutableJsonDate)target).set(in.toString());
+      }
       return target;
     default:
       throw new IllegalArgumentException("type conversion to " + out.type.getName() + " unsupported.");
     }
   }
-  
+ 
   private JsonValue convertArray(JsonArray in, JsonValue targetValue)
   {
     if (in.count() != sub.length)
     {
       throw new RuntimeException("input array has invalid length");
     }
-    
+   
     BufferedJsonArray target = (BufferedJsonArray)targetValue;
     int i=0;
     for (JsonValue value : in)
@@ -291,14 +320,14 @@ public class StringConverter
     }    
     return target;
   }
-  
+ 
   private JsonValue convertRecord(JsonRecord in, JsonValue targetValue)
   {
     if (in.size() != sub.length)
     {
       throw new RuntimeException("input record has invalid number of fields");
     }
-    
+   
     BufferedJsonRecord target = (BufferedJsonRecord)targetValue;
     int i=0;
     for (Entry<JsonString, JsonValue> entry : in)
@@ -328,18 +357,18 @@ public class StringConverter
     }    
     return target;
   }
-  
-  
+ 
+ 
   // -- evaluation --------------------------------------------------------------------------------
-  
+ 
   public JsonValue createTarget()
   {
     return JsonUtil.getCopyUnchecked(emptyTarget, null);
   }
-  
+ 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   public JsonValue convert(JsonValue value, JsonValue target)
@@ -370,9 +399,35 @@ public class StringConverter
 
     throw new IllegalStateException("should not happen");
   }
-  
+ 
   public Schema getSchema()
   {
     return schema;
+  }
+  
+  /**
+   * Return true if the entire object being converted by the present instance of
+   * the converter is nullable.
+   * 
+   * @return true if nullable, or false otherwise.
+   */
+  public boolean isNullable() {
+    return main.isNullable;
+  }
+  
+  /**
+   * Return true if the objects converted by the string converted are atomic. 
+   * @return
+   */
+  public boolean isAtomic() {
+    return mainIsAtomic;
+  }
+  
+  /**
+   * Return the expected type of the main object as parsed from the schema.
+   * @return
+   */
+  public JsonType getType() {
+    return main.type;
   }
 }

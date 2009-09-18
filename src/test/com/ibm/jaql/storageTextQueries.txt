@@ -6,6 +6,7 @@ hdfsShell("-copyFromLocal build/test/cache/data/lines.txt lines.txt") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/lines-boolean.txt lines-boolean.txt") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/lines-invalid.txt lines-invalid.txt") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/lines-numeric.txt lines-numeric.txt") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/lines-with-null.txt lines-with-null.txt") * 0;
 
 // test readers
 $f = "delimited.del";
@@ -94,6 +95,7 @@ $l = "lines.txt";
 $lb = "lines-boolean.txt";
 $li = "lines-invalid.txt";
 $ln = "lines-numeric.txt";
+$lwn = "lines-with-null.txt";
 
 // Test read(lines()) which should return an array of strings. This should succeed for all the files.
 read(lines($l));
@@ -110,6 +112,8 @@ read(lines($ln,{convert: schema long}));
 read(lines($ln,{convert: schema double}));
 read(lines($lb,{convert: schema boolean}));
 read(lines($lb,{convert: schema long})); // This should fail since the input file contains booleans.
+read(lines($lwn,{convert: schema string})); // This should fail since the input file has nulls.
+read(lines($lwn,{convert: schema long?}));
 
 // Test for invalid arguments to the convert option.
 read(lines($l,{convert: schema [long]}));
@@ -128,6 +132,14 @@ read(lines($out,{convert: schema boolean}));
 [1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));
 read(lines($out));
 
+[1,2,3,4,null,6] -> write(lines($out));
+read(lines($out));
+read(lines($out,{convert: schema long?}));
+read(lines($out,{convert: schema long})); // This should fail since the file contains null.
+
+[true, false, null] -> write(lines($out));
+read(lines($out, {convert: schema boolean?}));
+
 // -- Remove all the temporary files created.
 hdfsShell("-rm delimited.del") * 0;
 hdfsShell("-rm delimited-invalid1.del") * 0;
@@ -137,4 +149,5 @@ hdfsShell("-rm lines.txt") * 0;
 hdfsShell("-rm lines-boolean.txt") * 0;
 hdfsShell("-rm lines-invalid.txt") * 0;
 hdfsShell("-rm lines-numeric.txt") * 0;
+hdfsShell("-rm lines-with-null.txt") * 0;
 hdfsShell("-rmr tmpout") * 0;
