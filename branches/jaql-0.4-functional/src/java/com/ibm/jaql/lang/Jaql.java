@@ -32,6 +32,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.DefaultModule;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
@@ -115,14 +116,18 @@ public class Jaql
   public void setInput(String filename, InputStream in)
   {
     lexer = new JaqlLexer(in);
+    Env env = parser != null ? parser.env : null;
     parser = new JaqlParser(lexer);
+    if (env != null) parser.env = env;
     lexer.setFilename(filename);
   }
   
   public void setInput(String filename, Reader in)
   {
     lexer = new JaqlLexer(in);
+    Env env = parser != null ? parser.env : null;
     parser = new JaqlParser(lexer);
+    if (env != null) parser.env = env;
     lexer.setFilename(filename);
   }
   
