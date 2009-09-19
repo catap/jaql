@@ -742,9 +742,9 @@ FAILURE
          range(1,100)
          -> transform each j { a: i, b: i * j }
        )
-    -> write(hdfs('/temp/nums'));##
+    -> write(hdfs('nums'));##
 {
-  "location": "/temp/nums",
+  "location": "nums",
   "type": "hdfs"
 }
 
@@ -757,7 +757,7 @@ FAILURE
 
 
 // DIFF: sort added for stabilty
-read(hdfs('/temp/nums'))
+read(hdfs('nums'))
 -> group by a = ($.a)
     into { a: a, g: gcd($[*].b) }
 -> sort by [$.a];##
@@ -1176,7 +1176,7 @@ read(hdfs('/temp/nums'))
 
 // DIFF: sort added for stabilty
 
-read(hdfs('/temp/nums'))
+read(hdfs('nums'))
 -> group by a = ($.a)
     into { a: a, g: gcd($[*].b) }
 -> sort by [$.a];##
@@ -1587,12 +1587,12 @@ read(hdfs('/temp/nums'))
 
 // DIFF: this is unstable during testing (because of different options):
 //  explain 
-// read(hdfs('/temp/nums'))
+// read(hdfs('nums'))
 // -> group by a = ($.a)
 //     into { a: a, g: gcd($[*].b) }
 
       mrAggregate( {
-         input: { type: "hdfs", location: "/temp/nums" }, 
+         input: { type: "hdfs", location: "nums" }, 
          output: HadoopTemp(),
          map: fn ($) ( $ -> transform [ $.a, $ ] ),
          aggregate: fn (k, $) [ combine($[*].b, fn(a,b) gcd2( a,b ) ) ],
@@ -2541,11 +2541,11 @@ read({type:"local", location:'build/test/cache/data/books.json', inoptions:{form
 ]
 
 
-hdfsShell("-copyFromLocal docs/jaql-overview.html test") * 0;##
+hdfsShell("-copyFromLocal docs/jaql-overview.html lines") * 0;##
 0
 
 
-lineRdr = read(lines("test"));##
+lineRdr = read(lines("lines"));##
 "lineRdr"
 
 
@@ -2572,7 +2572,7 @@ lineRdr
 
 // -- user-defined aggregates ---------------------------------------------------------------------
 
-f = hdfs("/temp/nums");##
+f = hdfs("nums");##
 "f"
                                     // defined above
 

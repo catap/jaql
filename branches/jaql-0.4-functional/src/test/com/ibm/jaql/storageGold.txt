@@ -714,7 +714,7 @@ mapReduce( {
     'map'   : fn($) ( $ -> transform [ null, $ ] ),
     'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
   })
--> read();##
+-> read() -> sort by [$];##
 [
   1,
   2,
@@ -729,7 +729,7 @@ mapReduce( {
                 fn($) ($ -> transform [ null, $ + 20 ]) ],
     'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
   })
--> read();##
+-> read() -> sort by [$];##
 [
   11,
   12,

@@ -31,7 +31,7 @@
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <!-- Default version is 0.18.3. Other supported versions include: 0.18.1 -->
+    <!-- Default version is 0.18.3. For other supported versions, see vendor/hadoop/ -->
     <property name="hadoop.version" value="0.18.3" />
 
     <property name="hadoop.dir"
@@ -381,18 +381,9 @@
         <copy todir="${tmp.dir}/com/ibm/jaql/util">
             <fileset dir="${build.dir}/classes/com/ibm/jaql/util" />
         </copy>
-        <copy todir="${tmp.dir}/com/ibm/jaql/util">
-            <fileset dir="${build.dir}/test/classes/com/ibm/jaql/util" />
-        </copy>
 
         <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
         <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
-
-        <unjar dest="${tmp.dir}">
-            <fileset dir="${hbase.dir}">
-                <include name="hbase*.jar" />
-            </fileset>
-        </unjar>
 
         <!-- make the jar -->
         <jar jarfile="${build.dir}/jaql.jar" basedir="${tmp.dir}">

@@ -50,7 +50,7 @@ public class HadoopSerializationTemp extends HadoopSerialization
   }
   
   /** Register this class as an additional serializer in the provided <code>conf</code>. */
-  protected static void register(JobConf conf) {
+  public static void register(JobConf conf) {
     register(conf, HadoopSerializationTemp.class);
   }
   

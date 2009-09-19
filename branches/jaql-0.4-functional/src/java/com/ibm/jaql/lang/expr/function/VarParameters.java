@@ -7,7 +7,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 /** Parameters associated with variables. */
 public class VarParameters extends Parameters<Expr>
 {
-  public VarParameters(VarParameter[] parameters)
+  public VarParameters(VarParameter ... parameters)
   {
     super(parameters);
   }

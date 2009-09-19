@@ -113,7 +113,7 @@ public abstract class Function extends JsonAtom
   public boolean canBeCalledWith(int numPositionalArgs)
   {
     Parameters<?> pars = getParameters();
-    if (pars.numParameters() < numPositionalArgs || pars.numRequiredParameters() > numPositionalArgs)
+    if (( pars.numParameters() < numPositionalArgs && !pars.hasRepeatingParameter() ) || pars.numRequiredParameters() > numPositionalArgs)
     {
       return false;
     }

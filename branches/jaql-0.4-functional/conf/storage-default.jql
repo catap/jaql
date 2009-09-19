@@ -47,6 +47,22 @@
           converter:    'com.ibm.jaql.io.hadoop.ToDelConverter' }}
 },
 
+// ordinary text data
+{key: 'lines',
+ val: { inoptions: {
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+          format:       'org.apache.hadoop.mapred.TextInputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.FromLinesConverter' },
+        outoptions: { 
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+          format:       'org.apache.hadoop.mapred.TextOutputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.ToLinesConverter' 
+        }
+      }
+},
+
 // jaqltemp data
 {key:   'jaqltemp',
  val: {inoptions  : {adapter      : 'com.ibm.jaql.io.hadoop.TempHadoopInputAdapter', 
