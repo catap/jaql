@@ -31,10 +31,14 @@ import com.ibm.jaql.json.type.JsonValue;
  */
 public class ToLinesConverter implements KeyValueExport<NullWritable, Text> {
   
+  private String nullString;
+  
   @Override
   public void convert(JsonValue src, NullWritable key, Text val) {
     try {
-      if (src instanceof JsonAtom) {
+      if (src == null) {
+        val.set(nullString);
+      } else if (src instanceof JsonAtom) {
         val.set(JsonUtil.printToString(src));
       } else {
         throw new ClassCastException("Only convert atomic types using lines()");
@@ -56,7 +60,7 @@ public class ToLinesConverter implements KeyValueExport<NullWritable, Text> {
 
   @Override
   public void init(JsonRecord options) {
-    // Nothing to initialize.
+    nullString = System.getProperty("text.nullstring", "");
   }
 
 }
