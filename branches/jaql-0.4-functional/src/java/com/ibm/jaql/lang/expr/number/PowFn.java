@@ -34,7 +34,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  */
 public class PowFn extends Expr
 {
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
   {
     public Descriptor()
     {
