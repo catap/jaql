@@ -5,6 +5,7 @@ syntax: glob
 build**
 eclipseBuild**
 .antlr-eclipse
+vendor/hadoop/0.18.3/logs**
 
 # switch to regexp syntax.
 syntax: regexp
