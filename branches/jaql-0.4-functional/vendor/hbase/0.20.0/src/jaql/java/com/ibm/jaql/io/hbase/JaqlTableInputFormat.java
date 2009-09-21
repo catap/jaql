@@ -244,12 +244,14 @@ public class JaqlTableInputFormat
       if (lowKey == null)
       {
         // add all splits if no starting point was given
-        splitList.add(new TableSplit(tableName, start.getBytes(), end.getBytes(), null));
+        String regionLocation = table.getRegionLocation(startKeys[i]).getServerAddress().getHostname();
+        splitList.add(new TableSplit(tableName, start.getBytes(), end.getBytes(), regionLocation));
       }
       else if (lowKey.compareTo(new JsonString(end)) < 0)
       {
         // add a split if its end point is greater than the given starting point
-        splitList.add(new TableSplit(tableName, start.getBytes(), end.getBytes(), null));
+        String regionLocation = table.getRegionLocation(startKeys[i]).getServerAddress().getHostname();
+        splitList.add(new TableSplit(tableName, start.getBytes(), end.getBytes(), regionLocation));
         LOG.debug("split: " + i + "->" + splits[i]);
       }
     }

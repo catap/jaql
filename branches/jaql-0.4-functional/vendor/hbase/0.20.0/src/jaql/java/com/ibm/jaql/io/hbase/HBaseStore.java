@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Scanner;
 import org.apache.hadoop.hbase.io.BatchUpdate;
@@ -353,23 +354,20 @@ public class HBaseStore
     {
       // TODO: mismatch between Text and JString
       // start the transaction
-      BatchUpdate xact = new BatchUpdate(key.toString());
+      Delete xact = new Delete(key.getCopy());
 
       try
       {
-        if (columns == null)
-        {
-          // TODO: hbase needs a delete all columns method.
-          RowResult row = table.getRow(key.toString());
-          columns = row.keySet().toArray(columns);
-        }
-        for (MutableJsonString col : columns)
-        {
-          // int start = col.find(HBASE_CF_SEPARATOR_CHAR) + 1;
-          xact.delete(col.get());
+        if (columns != null)
+        { 
+          for (MutableJsonString col : columns)
+          {
+            // int start = col.find(HBASE_CF_SEPARATOR_CHAR) + 1;
+            xact.deleteColumn(col.get());
+          }
         }
         // end the transaction
-        table.commit(xact);
+        table.delete(xact);
       }
       catch (Exception e)
       {

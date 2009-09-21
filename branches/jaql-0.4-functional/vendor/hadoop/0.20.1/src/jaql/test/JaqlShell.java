@@ -18,6 +18,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -27,7 +28,9 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.MiniHBaseCluster;
+import org.apache.hadoop.hbase.MiniZooKeeperCluster;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.mapred.JobConf;
@@ -48,6 +51,7 @@ public class JaqlShell extends AbstractJaqlShell
   private MiniHBaseCluster m_base;
   private MiniMRCluster    m_mr;
   private MiniDFSCluster   m_fs;
+  private MiniZooKeeperCluster zooKeeperCluster;
   private HBaseAdmin       m_admin;
 
   private JaqlShell() { };
@@ -65,19 +69,14 @@ public class JaqlShell extends AbstractJaqlShell
     m_conf = new HBaseConfiguration();
 
     // setup conf according to the Hadoop version
-//    if (vInfo.indexOf("0.16") >= 0 || vInfo.indexOf("0.17") >= 0 || vInfo.indexOf("0.18") >= 0)
-//    {
-//      m_conf.set(HConstants.MASTER_ADDRESS, "local");
-//    }
-//    else if (vInfo.indexOf("0.15") >= 0)
-//    {
-//      m_conf.set(HConstants.MASTER_ADDRESS, "localhost:0");
-//      m_conf.set(HConstants.REGIONSERVER_ADDRESS, "localhost:0");
-//    }
-//    else
-//    {
-//      throw new Exception("Unsupported Hadoop version: " + vInfo);
-//    }
+    if (vInfo.indexOf("0.20") >= 0)
+    {
+      m_conf.set(HConstants.CLUSTER_IS_LOCAL, "true");
+    }
+    else
+    {
+      throw new Exception("Unsupported Hadoop version: " + vInfo);
+    }
     m_conf.set("hbase.master.info.port", "-1");
     m_conf.set("hbase.regionserver.info.port", "-1");
     //setupOverride();
@@ -92,12 +91,20 @@ public class JaqlShell extends AbstractJaqlShell
     
     try
     {
-      // hbase 0.1.3 is compatible w/ 0.16
       String hbvInfo = org.apache.hadoop.hbase.util.VersionInfo.getVersion();
-      if (hbvInfo.indexOf("0.18") >= 0 && vInfo.indexOf("0.18") >= 0)
+      if (hbvInfo.indexOf("0.20") >= 0)
       {
+        this.zooKeeperCluster = new MiniZooKeeperCluster();
+        int clientPort = this.zooKeeperCluster.startup(new File(dir));
+        m_conf.set("hbase.zookeeper.property.clientPort", Integer.toString(clientPort));
+
+        // start the mini cluster
+        m_base = new MiniHBaseCluster((HBaseConfiguration)m_conf, numNodes);
+
+        // opening the META table ensures that cluster is running
+        new HTable((HBaseConfiguration)m_conf, HConstants.META_TABLE_NAME);
         m_base = new MiniHBaseCluster((HBaseConfiguration) m_conf, numNodes);
-        setupOverride();
+        //setupOverride();
       }
     }
     catch (Exception e)
