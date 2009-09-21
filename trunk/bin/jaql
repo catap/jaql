@@ -110,13 +110,15 @@ fi
 
 if [ -e "${JAQL_HOME}/jaql.jar" ]; then
   CLASSPATH=${CLASSPATH}:${JAQL_HOME}/jaql.jar
+elif [ -e "${JAQL_HOME}/build/jaql.jar" ]; then
+  CLASSPATH=${CLASSPATH}:${JAQL_HOME}/build/jaql.jar
+elif [ -d "${JAQL_HOME}/build/classes" ] && [ -d "${JAQL_HOME}/build/test/classes" ]; then
+  CLASSPATH=${CLASSPATH}:${JAQL_HOME}/build/classes:${JAQL_HOME}/build/test/classes
+elif [ -d "${JAQL_HOME}/eclipseBuild" ]; then
+  CLASSPATH=${CLASSPATH}:${JAQL_HOME}/eclipseBuild
 else
-  if [ -e "${JAQL_HOME}/build/jaql.jar" ]; then
-    CLASSPATH=${CLASSPATH}:${JAQL_HOME}/build/jaql.jar
-  else
-    echo "Error, jaql.jar not found"
-	   exit 1
-	 fi
+  echo "Error, neither jaql.jar nor jaql class folders can be found"
+  exit 1
 fi
 
 # for developers, add Hadoop classes to CLASSPATH
