@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;

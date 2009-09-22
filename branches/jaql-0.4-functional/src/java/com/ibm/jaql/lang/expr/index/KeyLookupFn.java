@@ -106,7 +106,6 @@ public class KeyLookupFn extends IterExpr
     final BufferedJsonArray resultArray = new BufferedJsonArray(3);
     return new JsonIterator(resultArray)
     {
-      
       JsonIterator iter = exprs[0].iter(context);
       
       @Override

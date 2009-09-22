@@ -138,7 +138,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     {
       writer.close((Reporter) reporter);
       OutputCommitter committer = conf.getOutputCommitter();
-      if(committer instanceof FileOutputCommitter) {
+      if (committer instanceof FileOutputCommitter) {
        
         // for this case, only one file is expected
         String fileName = new Path(location).getName();

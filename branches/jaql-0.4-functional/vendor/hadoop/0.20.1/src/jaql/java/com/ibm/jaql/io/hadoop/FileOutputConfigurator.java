@@ -64,7 +64,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
     FileOutputFormat.setOutputPath(conf, outPath.getParent());
     
     // HACK: copied from FileOutputFormat since it is package protected.
-    Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath);
+    Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath.getName());
     conf.set("mapred.work.output.dir", workOutputDir.toString());
     if (!fs.exists(workOutputDir))
     {
@@ -103,10 +103,16 @@ public class FileOutputConfigurator implements InitializableConfSetter
     // For map-reduce, multiple files can be produced, so the location is their
     // parent directory.
     Path outPath = new Path(location);
-    outPath.getFileSystem(conf).delete(outPath, true);
+    FileSystem fs = outPath.getFileSystem(conf);
+    fs.delete(outPath, true);
     FileOutputFormat.setOutputPath(conf, outPath);
     // HACK: copied from FileOutputFormat since it is package protected.
-    Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath);
-    conf.set("mapred.work.output.dir", workOutputDir.toString());
+//    Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath);
+//    conf.set("mapred.work.output.dir", workOutputDir.toString());
+//    if (!fs.exists(workOutputDir))
+//    {
+//      if (!fs.mkdirs(workOutputDir))
+//        throw new IllegalStateException("could not create work output directory: " + workOutputDir);
+//    }
   }
 }

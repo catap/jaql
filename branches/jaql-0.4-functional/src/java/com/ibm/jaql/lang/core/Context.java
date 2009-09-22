@@ -105,7 +105,9 @@ public class Context
   {
     try
     {
-      reset();
+      // FIXME: uncommenting the following line leads to ConcurrentModificationExceptions
+      // on page files
+//      reset();
     }
     finally
     {
