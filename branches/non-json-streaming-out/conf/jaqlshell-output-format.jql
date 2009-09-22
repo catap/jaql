@@ -1,0 +1,5 @@
+[
+{json: {type: 'json'}},
+{csv: {type: 'csv'}},
+{xml: {type: 'xml'}}
+]

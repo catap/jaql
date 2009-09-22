@@ -15,6 +15,15 @@
 //
 
 [
+// JSON
+{key: 'json',
+ val: {outoptions: {adapter : 'com.ibm.jaql.io.stream.StreamOutputAdapter',
+                    format  : 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}}
+},
+{key: 'csv',
+ val: {outoptions: {adapter : 'com.ibm.jaql.io.stream.StreamOutputAdapter',
+                    format  : 'com.ibm.jaql.io.stream.converter.CsvTextOutputStream.JsonTextOutputStream'}}
+},
 // local file data
 {key: 'local',
  val: {inoptions : 	{adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
