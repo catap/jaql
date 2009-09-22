@@ -18,8 +18,11 @@ package com.ibm.jaql.util.shell;
 
 import java.io.InputStream;
 
+import com.ibm.jaql.io.stream.StreamOutputAdapter;
+
 /** Base class for version-specific shells. */
 public abstract class AbstractJaqlShell {
+  
   /** Initialize the shell using an existing cluster */
   public abstract void init() throws Exception;
 
@@ -28,7 +31,7 @@ public abstract class AbstractJaqlShell {
 
   /** Shutdown */
   public abstract void close() throws Exception;
-
+  
   /**
    * @param jars
    * @throws Exception
@@ -41,11 +44,11 @@ public abstract class AbstractJaqlShell {
   /**
    * @throws Exception
    */
-  public void runInteractively(InputStream in) throws Exception
+  public void runInteractively(InputStream in, StreamOutputAdapter oa) throws Exception
   {
     try
     {
-      com.ibm.jaql.lang.Jaql.run("<unknown>", in);   // TODO: get filename   
+      com.ibm.jaql.lang.Jaql.run("<unknown>", in, oa);   // TODO: get filename   
     }
     catch (Exception e)
     {
@@ -61,13 +64,10 @@ public abstract class AbstractJaqlShell {
   {
     //  parse arguments
     JaqlShellArguments jaqlArgs = JaqlShellArguments.parseArgs(args);
-
+    jaqlArgs.enableStdout(false);
     try
     {
-      if (!jaqlArgs.batchMode) {
-        // TODO startup text
-        System.out.println("\nInitializing Jaql.");
-      }
+      System.out.println("\nInitializing Jaql.");
       if (jaqlArgs.useExistingCluster) 
       {
         shell.init();
@@ -77,7 +77,9 @@ public abstract class AbstractJaqlShell {
         shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
       }
       if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
-      shell.runInteractively(jaqlArgs.in);
+      jaqlArgs.enableStdout(true);
+      shell.runInteractively(jaqlArgs.chainedIn, jaqlArgs.getStreamOutputAdapter());
+      jaqlArgs.enableStdout(false);
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
       }
@@ -90,5 +92,7 @@ public abstract class AbstractJaqlShell {
     {
       shell.close();
     }
+    StdoutEnabler.enable(true);
   }
+  
 }

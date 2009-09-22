@@ -80,12 +80,16 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
       {
         formatter.close();
       }
+      
+      @Override
+      public void finish() {
+        formatter.printArrayClose();
+      }
 
       public void write(JsonValue value) throws IOException
       {
         formatter.write(value);
       }
-
     };
     return writer;
   }
@@ -102,16 +106,23 @@ public class StreamOutputAdapter extends AbstractOutputAdapter
   }
 
   /**
-   * @param location
-   * @return
+   * Opens a output stream to the give URL string. If <code>null</code> is given
+   * , <code>System.out</code> will be returned.
+   * 
+   * @param location A URL string
+   * @return The output stream
    * @throws Exception
    */
   protected OutputStream openStream(String location) throws Exception
   {
-    // make a URI from location.
-    URI uri = new URI(location);
-    URL url = uri.toURL();
-    URLConnection c = url.openConnection();
-    return c.getOutputStream();
+    if (location == null) {
+      return System.out;
+    } else {
+      // make a URI from location.
+      URI uri = new URI(location);
+      URL url = uri.toURL();
+      URLConnection c = url.openConnection();
+      return c.getOutputStream();
+    }
   }
 }

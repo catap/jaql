@@ -50,6 +50,11 @@ public interface JsonToStream<T extends JsonValue>
    * @throws IOException
    */
   void write(T i) throws IOException;
+  
+  /**
+   * Prints array close string.
+   */
+  void printArrayClose();
 
   /**
    * @throws IOException

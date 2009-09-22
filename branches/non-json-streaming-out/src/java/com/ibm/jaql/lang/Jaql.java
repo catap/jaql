@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,6 +29,8 @@ import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
 import antlr.collections.impl.BitSet;
 
+import com.ibm.jaql.io.ClosableJsonWriter;
+import com.ibm.jaql.io.stream.StreamOutputAdapter;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -40,7 +45,6 @@ import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.util.ClassLoaderMgr;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 public class Jaql
 {
@@ -56,14 +60,25 @@ public class Jaql
             in = System.in;
         }
     }
-    run("<stdin>",in);
+    run("<stdin>", in, null); 
     // System.exit(0); // possible jvm 1.6 work around for "JDWP Unable to get JNI 1.2 environment"
   }
-
-  public static void run(String filename, InputStream in) throws Exception
+  
+  /**
+   * Runs the Jaql engine.
+   * 
+   * @param filename A file name for the input to Jaql engine
+   * @param in An input stream to Jaql engine
+   * @param soa A stream output adapter for jaql engine to send its output. If
+   *          <code>null</code>, jaql engine will send its output to STDOUT.
+   * @throws Exception
+   */
+  public static void run(String filename,
+                         InputStream in,
+                         StreamOutputAdapter soa) throws Exception 
   {
     Jaql engine = new Jaql(filename, in);
-    engine.setOutput(System.out);
+    engine.setStreamOutputAdapter(soa);
     engine.run();
   }
 
@@ -80,8 +95,9 @@ public class Jaql
   protected Context context = new Context();
   protected boolean doRewrite = true;
   protected boolean stopOnException = false;
-  protected PrintStream output = null;  // TODO: should generalize to generic output handler
+  protected PrintStream output = System.out;
   protected String prompt = "\njaql> ";
+  protected StreamOutputAdapter soa;
   
   static
   {
@@ -131,6 +147,10 @@ public class Jaql
   public void setOutput(PrintStream output)
   {
     this.output = output;
+  }
+  
+  public void setStreamOutputAdapter(StreamOutputAdapter soa) {
+    this.soa = soa;
   }
 
   /**
@@ -281,7 +301,7 @@ public class Jaql
       context.reset(); // close the last query, if still open
       try
       {
-        if( output != null )
+        if( soa == null )
         {
           output.print(prompt);
         }
@@ -395,22 +415,31 @@ public class Jaql
   public boolean run() throws Exception
   {
     Expr expr;
+    ClosableJsonWriter writer = null;
+    if (soa != null)
+      writer = soa.getWriter();
+    boolean written;
     while( (expr = prepareNext()) != null )
     {
       try
       {
-        if (expr.getSchema().is(ARRAY, NULL).always())
-        {
-          JsonIterator iter = expr.iter(context);
-          iter.print(output);
-        }
-        else
-        {
+        if (writer == null) {
+          if (expr.getSchema().is(ARRAY, NULL).always())
+          {
+            JsonIterator iter = expr.iter(context);
+            iter.print(output);
+          }
+          else
+          {
+            JsonValue value = expr.eval(context);
+            JsonUtil.print(output, value);
+          }
+          output.println();
+          output.flush();
+        } else {
           JsonValue value = expr.eval(context);
-          JsonUtil.print(output, value);
+          writer.write(value);
         }
-        output.println();
-        output.flush();
       }
       catch( Throwable error )
       {
@@ -421,6 +450,8 @@ public class Jaql
         context.reset(); 
       }
     }
+    if (writer != null)
+      writer.finish();
     return true;
   }
 

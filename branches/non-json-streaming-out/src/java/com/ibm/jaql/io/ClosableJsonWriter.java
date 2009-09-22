@@ -32,6 +32,15 @@ public abstract class ClosableJsonWriter implements Closeable
    */
   public abstract void write(JsonValue value) throws IOException;
   
+  /**
+   * Finishes the using of this writer. It does not close the underlining ouput 
+   * stream. By default, it does nothing.
+   */
+  public void finish() {};
+  
+  /**
+   * Closes this writer. The underlying ouput target will be closed.
+   */
   public void close() throws IOException
   {
   }

@@ -71,6 +71,13 @@ public class JsonOutputStream implements JsonToStream<JsonValue>
     serializer.write(output, i);
   }
 
+  /**
+   * Unsupported.
+   */
+  public void printArrayClose() {
+    throw new UnsupportedOperationException();
+  }
+  
   /*
    * (non-Javadoc)
    * 

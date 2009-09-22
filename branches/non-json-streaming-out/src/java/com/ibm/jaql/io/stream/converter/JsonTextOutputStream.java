@@ -31,6 +31,7 @@ public class JsonTextOutputStream implements JsonToStream<JsonValue>
   private PrintStream output;
   private boolean     arrAcc = true;
   private boolean     seenFirst = false;
+  private boolean     arrClosePrinted = false;
   private String      ARR_OPEN  = "[";
   private String      ARR_CLOSE = "]";
   private String      ARR_SEP   = ",";
@@ -66,8 +67,8 @@ public class JsonTextOutputStream implements JsonToStream<JsonValue>
   public void write(JsonValue i) throws IOException
   {
     try {
-      if(seenFirst && !arrAcc)
-        throw new RuntimeException("Expected only one value when not in array mode");
+//      if(seenFirst && !arrAcc)
+//        throw new RuntimeException("Expected only one value when not in array mode");
       if(!seenFirst && arrAcc) {
         output.print(ARR_OPEN);
       }
@@ -81,6 +82,11 @@ public class JsonTextOutputStream implements JsonToStream<JsonValue>
     }
   }
 
+  public void printArrayClose() {
+    arrClosePrinted = true;
+    output.print(ARR_CLOSE);
+  }
+  
   /*
    * (non-Javadoc)
    * 
@@ -90,7 +96,7 @@ public class JsonTextOutputStream implements JsonToStream<JsonValue>
   {
     if (output != null)
     {
-      if(seenFirst && arrAcc)
+      if(seenFirst && arrAcc && !arrClosePrinted)
         output.print(ARR_CLOSE);
       output.flush();
       output.close();
