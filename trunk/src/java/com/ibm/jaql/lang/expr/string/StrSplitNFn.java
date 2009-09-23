@@ -24,7 +24,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 
@@ -32,9 +32,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * strSplitN(string src, string sep, int n) ==> [string1, string2, ..., stringn]
  * sep is a string of one charater.
  */
-@JaqlFn(fnName = "strSplitN", minArgs = 3, maxArgs = 3)
 public class StrSplitNFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par33
+  {
+    public Descriptor()
+    {
+      super("strSplitN", StrSplitNFn.class);
+    }
+  }
+  
   protected BufferedJsonArray tuple = new BufferedJsonArray();
   protected MutableJsonString[] resultStrings = new MutableJsonString[0];
   

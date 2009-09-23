@@ -23,14 +23,21 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression that constructs an I/O descriptor for local file access.
  */
-@JaqlFn(fnName="http", minArgs=1, maxArgs=3)
 public class HttpFn extends AbstractHandleFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par13
+  {
+    public Descriptor()
+    {
+      super("http", HttpFn.class);
+    }
+  }
+  
   private final static JsonValue TYPE = new JsonString("uri");
   
   /**
@@ -73,13 +80,12 @@ public class HttpFn extends AbstractHandleFn
     rec.add(Adapter.TYPE_NAME, getType());
     rec.add(Adapter.LOCATION_NAME, location().eval(context));
     
-    if(exprs.length > 1) {
-      BufferedJsonRecord opts = null;
-      if(exprs.length > 2) 
-        opts = (BufferedJsonRecord)exprs[2].eval(context);
-      else
-        opts = new BufferedJsonRecord();
-      opts.add(StreamInputAdapter.ARGS_NAME, exprs[1].eval(context));
+    JsonValue args = exprs[1].eval(context);
+    BufferedJsonRecord opts = (BufferedJsonRecord)exprs[2].eval(context);
+    if (args != null || opts != null)
+    {
+      if (opts == null) opts = new BufferedJsonRecord();
+      if (args != null) opts.add(StreamInputAdapter.ARGS_NAME, exprs[1].eval(context));
       rec.add(Adapter.INOPTIONS_NAME, opts);
     }
     

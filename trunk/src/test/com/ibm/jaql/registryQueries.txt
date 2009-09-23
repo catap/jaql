@@ -94,7 +94,7 @@ mapReduce( {
 -> read();
 
 //-- test user defined storage registration
-registerFunction('heyya', 'com.foobar.function.MyNewFunction');
+heyya = javaudf('com.foobar.function.MyNewFunction');
 
 heyya('world');
 

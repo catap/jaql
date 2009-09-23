@@ -17,17 +17,24 @@ package com.ibm.jaql.lang.expr.random;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
-@JaqlFn(fnName = "registerRNG", minArgs = 2, maxArgs = 2)
 public class RegisterRNGExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("registerRNG", RegisterRNGExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -45,7 +52,7 @@ public class RegisterRNGExpr extends Expr
   public JsonValue eval(Context context) throws Exception
   {
     JsonValue key = exprs[0].eval(context);
-    JaqlFunction seed = (JaqlFunction) exprs[1].eval(context);
+    Function seed = (Function) exprs[1].eval(context);
 
     JaqlUtil.getRNGStore().register(key, seed);
 

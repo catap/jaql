@@ -155,7 +155,7 @@ public class PostOrderExprWalker extends ExprWalker
       while (slot < cur.numChildren())
       {
         Expr child = cur.child(slot);
-        assert child.parent() == cur;
+        assert child.parent() == cur : cur.getClass() + " not parent of " + child.getClass();
         cur = child;
         slots.add(slot);
         slot = 0;

@@ -18,26 +18,26 @@ package com.ibm.jaql.json.schema;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a 128 bit decimal float value */
 public final class DecfloatSchema extends RangeSchema<JsonDecimal>
 {
   // -- schema parameters -------------------------------------------------------------------------
   
-  private static Parameters parameters = null; 
+  private static JsonValueParameters parameters = null; 
   
-  public static Parameters getParameters()
+  public static JsonValueParameters getParameters()
   {
     if (parameters == null)
     {
-      Schema schema = new DecfloatSchema();
-      parameters = new Parameters(
-          new JsonString[] { PAR_MIN, PAR_MAX, PAR_VALUE },
-          new Schema[]     { schema , schema , schema    },
-          new JsonValue[]  { null   , null   , null      });
+      Schema schema = SchemaFactory.decfloatOrNullSchema();
+      parameters = new JsonValueParameters(
+          new JsonValueParameter(PAR_MIN, schema, null),
+          new JsonValueParameter(PAR_MAX, schema, null),
+          new JsonValueParameter(PAR_VALUE, schema, null));
     }
     return parameters;
   }

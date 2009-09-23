@@ -19,15 +19,21 @@ import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  *  Convert a hexadecimal string into a binary string
  */
-@JaqlFn(fnName="hex", minArgs=1, maxArgs=1)
 public class HexFn extends Expr
 {
-
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("hex", HexFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

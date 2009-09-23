@@ -169,7 +169,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
   {
     for(int i = 0 ; i < aggs.length ; i++)
     {
-      aggs[i].initInitial(context);
+      aggs[i].init(context);
     }
 
     boolean hadInput = false;
@@ -182,7 +182,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
       in.var.setValue(tmpArray);
       for(int i = 0 ; i < aggs.length ; i++)
       {
-        aggs[i].evalInitial(context);
+        aggs[i].evalInitialized(context);
       }
     }
     

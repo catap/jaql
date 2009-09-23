@@ -20,14 +20,21 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "replaceElement", minArgs = 3, maxArgs = 3)
 public class ReplaceElementFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par33
+  {
+    public Descriptor()
+    {
+      super("replaceElement", ReplaceElementFn.class);
+    }
+  }
+  
   /**
    * replaceElement(array, index, value)
    * 

@@ -17,15 +17,15 @@ package com.ibm.jaql.lang.registry;
 
 import java.lang.reflect.UndeclaredThrowableException;
 
-import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.converter.FromJson;
+import com.ibm.jaql.io.converter.ToJson;
 import com.ibm.jaql.io.registry.Registry;
 import com.ibm.jaql.io.registry.RegistryFormat;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.Function;
 
 /**
  * 
@@ -38,7 +38,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
    */
   public static class RNGEntry
   {
-    JaqlFunction seed;
+    Function seed;
     Object    rng;
 
     /**
@@ -51,7 +51,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
     /**
      * @param seed
      */
-    RNGEntry(JaqlFunction seed)
+    RNGEntry(Function seed)
     {
       this.seed = seed;
       this.rng = null;
@@ -60,7 +60,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
     /**
      * @return
      */
-    public JaqlFunction getSeed()
+    public Function getSeed()
     {
       return seed;
     }
@@ -68,7 +68,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
     /**
      * @param seed
      */
-    public void setSeed(JaqlFunction seed)
+    public void setSeed(Function seed)
     {
       this.seed = seed;
     }
@@ -148,15 +148,15 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
         public RNGEntry convert(JsonValue src, RNGEntry tgt)
         {
           JsonValue val = src;
-          if (val != null && val instanceof JaqlFunction)
+          if (val != null && val instanceof Function)
           {
-            tgt.setSeed((JaqlFunction) val);
+            tgt.setSeed((Function) val);
             return tgt;
           }
           else
           {
             throw new UndeclaredThrowableException(new Exception(
-                "Expected non-null JFunction, got: " + val));
+                "Expected non-null Function, got: " + val));
           }
         }
 
@@ -214,7 +214,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
 
         public JsonValue convert(RNGEntry src, JsonValue tgt)
         {
-          JaqlFunction seed = src.getSeed();
+          Function seed = src.getSeed();
           if (seed == null)
             throw new UndeclaredThrowableException(new Exception(
                 "seed function is null"));
@@ -246,7 +246,7 @@ public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry>
    * @param key
    * @param seed
    */
-  public void register(JsonValue key, JaqlFunction seed)
+  public void register(JsonValue key, Function seed)
   {
     JsonValue nkey;
     try

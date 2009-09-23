@@ -41,12 +41,18 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
-@JaqlFn(fnName = "probeLucene", minArgs = 2, maxArgs = 3)
 public class ProbeLuceneFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par23
+  {
+    public Descriptor()
+    {
+      super("probeLucene", ProbeLuceneFn.class);
+    }
+  }
   private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   public ProbeLuceneFn(Expr[] exprs)
@@ -79,20 +85,17 @@ public class ProbeLuceneFn extends IterExpr
     }
     
     HashSet<String> fields = null;
-    if( exprs.length > 2 )
+    JsonIterator iter = exprs[2].iter(context);
+    for (JsonValue sv : iter)
     {
-      JsonIterator iter = exprs[2].iter(context);
-      for (JsonValue sv : iter)
+      JsonString s = (JsonString)sv;
+      if( s != null )
       {
-        JsonString s = (JsonString)sv;
-        if( s != null )
+        if( fields == null )
         {
-          if( fields == null )
-          {
-            fields = new HashSet<String>();
-          }
-          fields.add(s.toString());
+          fields = new HashSet<String>();
         }
+        fields.add(s.toString());
       }
     }
     final FieldSelector fieldSelector = ( fields == null ) ? null

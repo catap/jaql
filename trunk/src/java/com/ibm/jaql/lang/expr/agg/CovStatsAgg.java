@@ -26,7 +26,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * covStats(array x) = sum [1 x1 x2 ... xn] * [1 x1 x2 ... xn]^T
@@ -36,12 +36,19 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  *       ...                                          ,
  *                                         sum(xn*xn) ]
  */
-@JaqlFn(fnName = "covStats", minArgs = 1, maxArgs = 1)
 public class CovStatsAgg extends AlgebraicAggregate
 {
   private JsonValue[]       tuple; // [n]
   private BigDecimal[]   vec;   // [n+1]
   private BigDecimal[][] sum;   // [n+1][n+1]
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("covStats", CovStatsAgg.class);
+    }
+  }
   
   /**
    * one arg
@@ -58,14 +65,14 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
   
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     tuple = null;
     sum = null;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null  )
     {
@@ -121,7 +128,7 @@ public class CovStatsAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonArray arr = (JsonArray)value;
     if( sum == null )

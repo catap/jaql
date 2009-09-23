@@ -20,12 +20,19 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 
-@JaqlFn(fnName="tee", minArgs=1, maxArgs=Expr.UNLIMITED_EXPRS)
 public class TeeExpr extends IterExpr
 {
-
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par1u
+  {
+    public Descriptor()
+    {
+      super("tee", TeeExpr.class);
+    }
+  }
+  
   public TeeExpr(Expr[] inputs)
   {
     super(inputs);
@@ -48,8 +55,9 @@ public class TeeExpr extends IterExpr
     JsonArray arr = (JsonArray)args[0];
     for(int i = 1 ; i < exprs.length ; i++)
     {
-      JaqlFunction f = (JaqlFunction)exprs[i].eval(context);
-      f.eval(context, args);
+      Function f = (Function)exprs[i].eval(context);
+      f.setArguments(args, 0, args.length);
+      f.eval(context);
     }
     return arr.iter();
 //    BindingExpr b = (BindingExpr)exprs[0];

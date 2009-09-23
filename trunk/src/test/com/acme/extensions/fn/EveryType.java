@@ -18,19 +18,19 @@ package com.acme.extensions.fn;
 import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.MutableJsonBinary;
-import com.ibm.jaql.json.type.MutableJsonBool;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.MutableJsonBinary;
+import com.ibm.jaql.json.type.MutableJsonBool;
 import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.json.type.MutableJsonDecimal;
 import com.ibm.jaql.json.type.MutableJsonDouble;
@@ -38,7 +38,7 @@ import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.Function;
 
 /**
  * 
@@ -64,7 +64,7 @@ public class EveryType
       MutableJsonString       str  = new MutableJsonString();
       MutableJsonBinary       bin  = new MutableJsonBinary();
       MutableJsonDate         date = new MutableJsonDate();
-      JaqlFunction     fn   = new JaqlFunction();
+      Function     fn;
 
       // These are encodings of JArray
       SpilledJsonArray   arrs = new SpilledJsonArray();
@@ -186,12 +186,12 @@ public class EveryType
           date.set(d.get() + 60 * 60 * 1000);
           currentValue = date;
         }
-        else if (v instanceof JaqlFunction)
+        else if (v instanceof Function)
         {
           // TODO: Java functions need the context to be evaluated, and take Item arguments...
-          JaqlFunction f = (JaqlFunction) v;
-          fn = f.getCopy(fn);
-          currentValue = f;
+          Function f = (Function) v;
+          fn = f.getCopy(null);
+          currentValue = fn;
         }
         else
         {

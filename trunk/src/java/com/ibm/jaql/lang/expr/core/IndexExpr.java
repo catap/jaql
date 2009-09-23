@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
@@ -24,16 +27,23 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import static com.ibm.jaql.json.type.JsonType.*;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * element(array, index) is the same as array[index], but it captures a simpler 
  * case that doesn't use path expressions. array[index] is transformed to use the
  * element function for better performance.
  */
-@JaqlFn(fnName="index", minArgs=2, maxArgs=2)
 public class IndexExpr extends Expr // TODO: rename to IndexFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("index", IndexExpr.class);
+    }
+  }
+  
   public IndexExpr(Expr[] exprs)
   {
     super(exprs);

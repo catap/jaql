@@ -21,25 +21,32 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "array", minArgs = 1, maxArgs = 1)
 public final class ArrayAgg extends AlgebraicAggregate
 {
   private SpilledJsonArray array = new SpilledJsonArray();
   
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("array", ArrayAgg.class);
+    }
+  }
+
   @Override
   public JsonValue eval(Context context) throws Exception
   {
     JsonIterator iter = exprs[0].iter(context);
-    initInitial(context);
+    init(context);
     
     for (JsonValue arg : iter) 
     {
-      addInitial(arg);
+      accumulate(arg);
     }
     
     return getFinal();
@@ -49,10 +56,10 @@ public final class ArrayAgg extends AlgebraicAggregate
    * Override to handle nulls.
    */
   @Override
-  public void evalInitial(Context context) throws Exception
+  public void evalInitialized(Context context) throws Exception
   {
     JsonValue arg = exprs[0].eval(context);
-    addInitial(arg);
+    accumulate(arg);
   }
 
   /**
@@ -72,13 +79,13 @@ public final class ArrayAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     array.clear();
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     array.addCopy(value);
   }
@@ -90,7 +97,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonArray array2 = (JsonArray)value;
     array.addCopyAll(array2.iter());

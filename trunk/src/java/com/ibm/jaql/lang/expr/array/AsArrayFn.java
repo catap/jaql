@@ -21,14 +21,21 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * This function ensures that input returns an array.
  */
-@JaqlFn(fnName = "asArray", minArgs = 1, maxArgs = 1)
 public class AsArrayFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("asArray", AsArrayFn.class);
+    }
+  }
+  
   /**
    * asArray(array)
    * 

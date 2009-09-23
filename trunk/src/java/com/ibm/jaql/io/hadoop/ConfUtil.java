@@ -75,7 +75,7 @@ public class ConfUtil
 //    JsonValue data = parser.TopVal();
     JaqlLexer lexer = new JaqlLexer(input);
     JaqlParser parser = new JaqlParser(lexer);
-    Expr expr = parser.parse();
+    Expr expr = parser.stmt();
     JsonValue data = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
 
     return (JsonRecord) data;
@@ -99,7 +99,7 @@ public class ConfUtil
     //    JsonValue data = parser.TopVal();
     JaqlLexer lexer = new JaqlLexer(input);
     JaqlParser parser = new JaqlParser(lexer);
-    Expr expr = parser.parse();
+    Expr expr = parser.stmt();
     JsonValue data = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
     return (JsonArray) data;
   }

@@ -40,9 +40,9 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -58,9 +58,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  *  })
  * -> model
  */
-@JaqlFn(fnName = "buildModel", minArgs = 1, maxArgs = 1)
 public class BuildModelFn extends MapReduceBaseExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("buildModel", BuildModelFn.class);
+    }
+  }
+  
   public final static String MODEL_NAME = BASE_NAME + ".model";
 
   public BuildModelFn(Expr[] exprs)
@@ -83,9 +90,9 @@ public class BuildModelFn extends MapReduceBaseExpr
     JsonRecord args = baseSetup(context);
 
     JsonValue model = args.getRequired(new JsonString("initial"));
-    JaqlFunction partialFn = (JaqlFunction)args.getRequired(new JsonString("partial"));
-    JaqlFunction combineFn = (JaqlFunction)args.getRequired(new JsonString("combine"));
-    JaqlFunction doneFn = (JaqlFunction)args.getRequired(new JsonString("done"));
+    Function partialFn = (Function)args.getRequired(new JsonString("partial"));
+    Function combineFn = (Function)args.getRequired(new JsonString("combine"));
+    Function doneFn = (Function)args.getRequired(new JsonString("done"));
     JsonNumber jmaxIterations = (JsonNumber)args.getRequired(new JsonString("maxIterations"));
 
     JaqlUtil.enforceNonNull(partialFn);
@@ -132,10 +139,12 @@ public class BuildModelFn extends MapReduceBaseExpr
       final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(outArgs);
       adapter.open();
       ClosableJsonIterator reader = adapter.iter();
-      model = combineFn.eval(context, reader, oldModel);
+      combineFn.setArguments(reader, oldModel);
+      model = combineFn.eval(context);
       reader.close();
       
-      converged = (JsonBool)doneFn.eval(context, oldModel, model);
+      doneFn.setArguments(oldModel, model);
+      converged = (JsonBool)doneFn.eval(context);
     }
     while( ! JaqlUtil.ebv( converged ));
     
@@ -163,7 +172,7 @@ public class BuildModelFn extends MapReduceBaseExpr
   public static class PartialEval extends RemoteEval
       implements MapRunnable<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
-    protected JaqlFunction partialFn;
+    protected Function partialFn;
     protected JsonValue oldModel;
 
     /*
@@ -198,8 +207,7 @@ public class BuildModelFn extends MapReduceBaseExpr
     {
       try
       {
-        partialFn.param(0).setIter(new RecordReaderValueIter(input));
-        partialFn.param(1).setValue(oldModel);
+        partialFn.setArguments(new RecordReaderValueIter(input), oldModel);
         JsonValue newModel = partialFn.eval(context);
         output.collect(new JsonHolder(), new JsonHolder(newModel));
       }

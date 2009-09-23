@@ -48,7 +48,6 @@ import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.TeeInputStream;
-import com.ibm.jaql.util.UtilForTest;
 import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
@@ -96,6 +95,23 @@ public abstract class JaqlBaseTestCase extends TestCase
     m_decompileName = System.getProperty("test.cache.data") + File.separator
         + prefix + "Decompile.txt";
     m_rewriteName = System.getProperty("test.cache.data") + File.separator
+        + prefix + "Rewrite.txt";
+  }
+  
+  /**
+   * @param prefix
+   */
+  protected void setFilePrefix(File dir, String prefix)
+  {
+    m_queryFileName = dir + File.separator
+        + prefix + "Queries.txt";
+    m_tmpFileName = dir+ File.separator
+        + prefix + "Tmp.txt";
+    m_goldFileName = dir + File.separator
+        + prefix + "Gold.txt";
+    m_decompileName = dir + File.separator
+        + prefix + "Decompile.txt";
+    m_rewriteName = dir + File.separator
         + prefix + "Rewrite.txt";
   }
 
@@ -296,7 +312,7 @@ public abstract class JaqlBaseTestCase extends TestCase
         JaqlLexer lexer = new JaqlLexer(new ByteArrayInputStream(buf
             .toByteArray()));
         JaqlParser parser = new JaqlParser(lexer);
-        dexpr = parser.parse();
+        dexpr = parser.stmt();
       }
       formatResult(-1, dexpr, context, str);
     }
@@ -320,12 +336,25 @@ public abstract class JaqlBaseTestCase extends TestCase
   {
     // rewrite expr
     RewriteEngine rewriter = new RewriteEngine();
-    expr = rewriter.run(parser.env, expr);
-    captures.clear();
-    System.err.println("\nRewritten query:");
-    expr.decompile(System.err, captures);
-    System.err.println(";\nEnd rewritten query");
-    context.reset();
+    try
+    {
+      expr = rewriter.run(parser.env, expr);
+      captures.clear();
+      System.err.println("\nRewritten query:");
+      expr.decompile(System.err, captures);
+      System.err.println(";\nEnd rewritten query");
+      context.reset();
+    }
+    catch (Exception e)
+    {
+      printHeader(str);
+      queryFailure(e);
+      str.print(FAILURE);
+      printFooter(str);
+      str.flush();
+      return;
+    }
+    
     // eval
     formatResult(-1, expr, context, str);
   }
@@ -387,17 +416,17 @@ public abstract class JaqlBaseTestCase extends TestCase
       if (runResult)
       {
         assertTrue("Found difference between current and expected output",
-            UtilForTest.compareResults(m_tmpFileName, m_goldFileName, LOG));
+            compareResults(m_tmpFileName, m_goldFileName, LOG));
       }
       if (runDecompileResult)
       {
         assertTrue("Found differences between decompiles and expected ouput",
-            UtilForTest.compareResults(m_decompileName, m_goldFileName, LOG));
+            compareResults(m_decompileName, m_goldFileName, LOG));
       }
       if (runRewriteResult)
       {
         assertTrue("Found difference between rewrite and expected output",
-            UtilForTest.compareResults(m_rewriteName, m_goldFileName, LOG));
+            compareResults(m_rewriteName, m_goldFileName, LOG));
       }
     }
     catch (IOException e)
@@ -405,5 +434,33 @@ public abstract class JaqlBaseTestCase extends TestCase
       e.printStackTrace(System.err);
       fail();
     }
+  }
+  
+  /**
+   * @param testFileName
+   * @param goldFileName
+   * @param LOG
+   * @return
+   * @throws IOException
+   */
+  public static boolean compareResults(String testFileName,
+      String goldFileName, Log LOG) throws IOException
+  {
+    // use unix 'diff', ignoring whitespace
+    Runtime rt = Runtime.getRuntime();
+    Process p = rt.exec(new String[]{"diff", "-w", testFileName, goldFileName});
+    InputStream str = p.getInputStream();
+
+    byte[] b = new byte[1024];
+    int numRead = 0;
+    StringBuilder sb = new StringBuilder();
+    while ((numRead = str.read(b)) > 0)
+    {
+      sb.append(new String(b, 0, numRead, "US-ASCII"));
+    }
+    if (sb.length() > 0)
+      LOG.error("\ndiff -w " + testFileName + " " + goldFileName + "\n" + sb);
+
+    return sb.length() == 0;
   }
 }

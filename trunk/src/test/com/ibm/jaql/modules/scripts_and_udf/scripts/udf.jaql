@@ -1,0 +1,7 @@
+cleanTitle = javaudf("com.ibm.jaql.udf.CleanTitle");
+qgram = javaudf("com.ibm.jaql.udf.QGram"); 
+roundUp = javaudf("com.ibm.jaql.udf.RoundUp");
+jaccard = javaudf("com.ibm.jaql.udf.Jaccard"); 
+nullToZero = javaudf("com.ibm.jaql.udf.NullToZero"); 
+memHashMap = javaudf("com.ibm.jaql.udf.MemHashMap");
+pi=3;

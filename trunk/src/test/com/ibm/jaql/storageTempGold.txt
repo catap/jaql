@@ -7,11 +7,11 @@ jaqltemp("tempfile", schema null);##
   "type": "jaqltemp"
 }
 
-$r = fn($schema) read(jaqltemp("tempfile", $schema));##
-"$r"
+r = fn(schema) read(jaqltemp("tempfile", schema));##
+"r"
 
-$w = fn($what, $schema) $what -> write(jaqltemp("tempfile", $schema));##
-"$w"
+w = fn(what, schema) what -> write(jaqltemp("tempfile", schema));##
+"w"
 
 
 // -- test schema reporting of read ---------------------------------------------------------------
@@ -24,44 +24,44 @@ schema [
 
 // BELOW: COMMENTED OUT BECAUSE ONLY WORKS WITH REWRITE
 
-//$s = schema null | long(min=0) | nonnull;
-//schemaof(read(jaqltemp("tempfile", $s)));
+//s = schema null | long(min=0) | nonnull;
+//schemaof(read(jaqltemp("tempfile", s)));
 
-//schemaof($r(schema null | long(min=0) | nonnull));
+//schemaof(r(schema null | long(min=0) | nonnull));
 
 
 // -- null ----------------------------------------------------------------------------------------
 
-$s = schema null;##
-"$s"
+s = schema null;##
+"s"
 
-( [ ] -> $w($s), $r($s) );##
+( [ ] -> w(s), r(s) );##
 []
 
-( [ null, null ] -> $w($s), $r($s) );##
+( [ null, null ] -> w(s), r(s) );##
 [
   null,
   null
 ]
 
-( [ null, null, null ] -> $w($s), $r($s) );##
+( [ null, null, null ] -> w(s), r(s) );##
 [
   null,
   null,
   null
 ]
 
-[ 1 ] -> $w($s);##
+[ 1 ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- nonnull -----------------------------------------------------------------------------------------
 
-$s = schema nonnull;##
-"$s"
+s = schema nonnull;##
+"s"
 
-( [ 1, "abc", { a: 5 }, [ 1, true ] ] -> $w($s), $r($s) );##
+( [ 1, "abc", { a: 5 }, [ 1, true ] ] -> w(s), r(s) );##
 [
   1,
   "abc",
@@ -74,17 +74,17 @@ $s = schema nonnull;##
   ]
 ]
 
-[ null ] -> $w($s);##
+[ null ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- boolean -------------------------------------------------------------------------------------
 
-$s = schema boolean;##
-"$s"
+s = schema boolean;##
+"s"
 
-( [ true, false, true ] -> $w($s), $r($s) );##
+( [ true, false, true ] -> w(s), r(s) );##
 [
   true,
   false,
@@ -92,307 +92,306 @@ $s = schema boolean;##
 ]
 
 
-$s = schema boolean(value = true);##
-"$s"
+s = schema boolean(value = true);##
+"s"
 
-( [ true, true ] -> $w($s), $r($s) );##
+( [ true, true ] -> w(s), r(s) );##
 [
   true,
   true
 ]
 
-[ true, false ] -> $w($s);##
+[ true, false ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- long ----------------------------------------------------------------------------------------
 
-$s = schema long;##
-"$s"
+s = schema long;##
+"s"
 
-( [ -9223372036854775807-1, 0, 9223372036854775807 ] -> $w($s), $r($s) );##
+( [ -9223372036854775807-1, 0, 9223372036854775807 ] -> w(s), r(s) );##
 [
   -9223372036854775808,
   0,
   9223372036854775807
 ]
 
-[ 1d ] -> $w($s);##
+[ 1d ] -> w(s);##
 FAILURE
  // should fail: non-integer
-[ 1m ] -> $w($s);##
+[ 1m ] -> w(s);##
 FAILURE
  // should fail: non-integer
 
-$s = schema long(min=-100);##
-"$s"
+s = schema long(min=-100);##
+"s"
 
-( [ -100, 0, 9223372036854775807 ] -> $w($s), $r($s) );##
+( [ -100, 0, 9223372036854775807 ] -> w(s), r(s) );##
 [
   -100,
   0,
   9223372036854775807
 ]
 
-[ -101 ] -> $w($s);##
+[ -101 ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema long(value=22);##
-"$s"
+s = schema long(value=22);##
+"s"
 
-( [ 22, 22, 22 ] -> $w($s), $r($s) );##
+( [ 22, 22, 22 ] -> w(s), r(s) );##
 [
   22,
   22,
   22
 ]
 
-[ -101 ] -> $w($s);##
+[ -101 ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- decfloat ------------------------------------------------------------------------------------
 
-$s = schema decfloat;##
-"$s"
+s = schema decfloat;##
+"s"
 
-( [ -9223372036854775808m, 0.5m, 9223372036854775807m ] -> $w($s), $r($s) );##
+( [ -9223372036854775808m, 0.5m, 9223372036854775807m ] -> w(s), r(s) );##
 [
   -9223372036854775808m,
   0.5m,
   9223372036854775807m
 ]
 
-[ 1 ] -> $w($s);##
+[ 1 ] -> w(s);##
 FAILURE
    // should fail: non-decimal
-[ 1.0 ] -> $w($s);##
+[ 1.0 ] -> w(s);##
 FAILURE
  // should fail: non-decimal
 
-$s = schema decfloat(min=-100.1m);##
-"$s"
+s = schema decfloat(min=-100.1m);##
+"s"
 
-( [ -100.1m, 0.0m, 9223372036854775807.0m ] -> $w($s), $r($s) );##
+( [ -100.1m, 0.0m, 9223372036854775807.0m ] -> w(s), r(s) );##
 [
   -100.1m,
   0.0m,
   9223372036854775807.0m
 ]
 
-[ -101.2m ] -> $w($s);##
+[ -101.2m ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema decfloat(value=22m);##
-"$s"
+s = schema decfloat(value=22m);##
+"s"
 
-( [ 22m, 22m, 22m ] -> $w($s), $r($s) );##
+( [ 22m, 22m, 22m ] -> w(s), r(s) );##
 [
   22m,
   22m,
   22m
 ]
 
-[ -101m ] -> $w($s);##
+[ -101m ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- double --------------------------------------------------------------------------------------
 
-$s = schema double;##
-"$s"
+s = schema double;##
+"s"
 
-( [ -9223372036854775807d-1d, 0.5d, 9223372036854775807d ] -> $w($s), $r($s) );##
+( [ -9223372036854775807d-1d, 0.5d, 9223372036854775807d ] -> w(s), r(s) );##
 [
   -9.223372036854776E18,
   0.5,
   9.223372036854776E18
 ]
 
-[ 1 ] -> $w($s);##
+[ 1 ] -> w(s);##
 FAILURE
    // should fail: non-double
-[ 1m ] -> $w($s);##
+[ 1m ] -> w(s);##
 FAILURE
   // should fail: non-double
 
-$s = schema double(min=-100.1d);##
-"$s"
+s = schema double(min=-100.1d);##
+"s"
 
-( [ -100.1d, 0d, 9223372036854d ] -> $w($s), $r($s) );##
+( [ -100.1d, 0d, 9223372036854d ] -> w(s), r(s) );##
 [
   -100.1,
   0.0,
   9.223372036854E12
 ]
 
-[ -101.2d ] -> $w($s);##
+[ -101.2d ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema double(value=22d);##
-"$s"
+s = schema double(value=22d);##
+"s"
 
-( [ 22d, 22d, 22d ] -> $w($s), $r($s) );##
+( [ 22d, 22d, 22d ] -> w(s), r(s) );##
 [
   22.0,
   22.0,
   22.0
 ]
 
-[ -101d ] -> $w($s);##
+[ -101d ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- string --------------------------------------------------------------------------------------
 
-$s = schema string;##
-"$s"
+s = schema string;##
+"s"
 
-( [ "abc", "", "!@#dsggb34" ] -> $w($s), $r($s) );##
+( [ "abc", "", "!@#dsggb34" ] -> w(s), r(s) );##
 [
   "abc",
   "",
   "!@#dsggb34"
 ]
 
-[ 1 ] -> $w($s);##
+[ 1 ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema string(minLength=2);##
-"$s"
+s = schema string(minLength=2);##
+"s"
 
-( [ "ab", "abc", "abcd" ] -> $w($s), $r($s) );##
+( [ "ab", "abc", "abcd" ] -> w(s), r(s) );##
 [
   "ab",
   "abc",
   "abcd"
 ]
 
-[ "a" ] -> $w($s);##
+[ "a" ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema string(value="abc");##
-"$s"
+s = schema string(value="abc");##
+"s"
 
-( [ "abc", "abc", "abc" ] -> $w($s), $r($s) );##
+( [ "abc", "abc", "abc" ] -> w(s), r(s) );##
 [
   "abc",
   "abc",
   "abc"
 ]
 
-[ "abd" ] -> $w($s);##
+[ "abd" ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- binary --------------------------------------------------------------------------------------
 
-$s = schema binary;##
-"$s"
+s = schema binary;##
+"s"
 
-( [ hex(""), hex("11"), hex("11AA") ] -> $w($s), $r($s) );##
+( [ hex(""), hex("11"), hex("11AA") ] -> w(s), r(s) );##
 [
   hex(''),
   hex('11'),
   hex('11AA')
 ]
 
-[ "" ] -> $w($s);##
+[ "" ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema binary(minLength=2);##
-"$s"
+s = schema binary(minLength=2);##
+"s"
 
-( [ hex("11AA"), hex("11AABB"), hex("11AACCBB") ] -> $w($s), $r($s) );##
+( [ hex("11AA"), hex("11AABB"), hex("11AACCBB") ] -> w(s), r(s) );##
 [
   hex('11AA'),
   hex('11AABB'),
   hex('11AACCBB')
 ]
 
-[ hex("11") ] -> $w($s);##
+[ hex("11") ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- date ----------------------------------------------------------------------------------------
 
-$s = schema date;##
-"$s"
+s = schema date;##
+"s"
 
-( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> $w($s), $r($s) );##
+( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> w(s), r(s) );##
 [
   date('2000-01-01T11:59:59Z'),
   date('2000-01-01T12:00:00Z'),
   date('2000-01-01T12:00:01Z')
 ]
 
-[ 1 ] -> $w($s);##
+[ 1 ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema date(min=date('2000-01-01T11:59:59Z'));##
-"$s"
+s = schema date(min=date('2000-01-01T11:59:59Z'));##
+"s"
 
-( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> $w($s), $r($s) );##
+( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> w(s), r(s) );##
 [
   date('2000-01-01T11:59:59Z'),
   date('2000-01-01T12:00:00Z'),
   date('2000-01-01T12:00:01Z')
 ]
 
-[ date('2000-01-01T11:59:58Z') ] -> $w($s);##
+[ date('2000-01-01T11:59:58Z') ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema date(value=date('2000-01-01T11:59:59Z'));##
-"$s"
+s = schema date(value=date('2000-01-01T11:59:59Z'));##
+"s"
 
-( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z') ] -> $w($s), $r($s) );##
+( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z') ] -> w(s), r(s) );##
 [
   date('2000-01-01T11:59:59Z'),
   date('2000-01-01T11:59:59Z'),
   date('2000-01-01T11:59:59Z')
 ]
 
-[ date('2000-01-01T11:59:60Z') ] -> $w($s);##
+[ date('2000-01-01T11:59:60Z') ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- generics ------------------------------------------------------------------------------------
 
-$s = schema function;##
-"$s"
+s = schema function;##
+"s"
 
-( [ fn($x) $x ] -> $w($s), $r($s) );##
+( [ fn(x) x ] -> w(s), r(s) );##
 [
-  fn($x) ( $x )
-
+  fn(x) (x)
 ]
 
-[ schema long ] -> $w($s);##
+[ schema long ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- schema --------------------------------------------------------------------------------------
 
-$s = schema schematype;##
-"$s"
+s = schema schematype;##
+"s"
 
-( [ schema long, schema [ long, boolean<2,18> ], schema null ] -> $w($s), $r($s) );##
+( [ schema long, schema [ long, boolean<2,18> ], schema null ] -> w(s), r(s) );##
 [
   schema long,
   schema [
@@ -402,44 +401,44 @@ $s = schema schematype;##
   schema null
 ]
 
-[ fn($x) $x ] -> $w($s);##
+[ fn(x) x ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema schematype(schema long);##
-"$s"
+s = schema schematype(schema long);##
+"s"
 
-( [ schema long, schema long ] -> $w($s), $r($s) );##
+( [ schema long, schema long ] -> w(s), r(s) );##
 [
   schema long,
   schema long
 ]
 
-[ schema boolean ] -> $w($s);##
+[ schema boolean ] -> w(s);##
 FAILURE
  // should fail
 
 
 // -- arrays --------------------------------------------------------------------------------------
 
-$s = schema [ ];##
-"$s"
+s = schema [ ];##
+"s"
 
-( [ [], [], [] ] -> $w($s), $r($s) );##
+( [ [], [], [] ] -> w(s), r(s) );##
 [
   [],
   [],
   []
 ]
 
-[ [1] ] -> $w($s);##
+[ [1] ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema [ any<*> ];##
-"$s"
+s = schema [ any<*> ];##
+"s"
 
-( [ [], [0], [1,"a"], [2,"b",true], [3,"c",null] ] -> $w($s), $r($s) );##
+( [ [], [0], [1,"a"], [2,"b",true], [3,"c",null] ] -> w(s), r(s) );##
 [
   [],
   [
@@ -461,14 +460,14 @@ $s = schema [ any<*> ];##
   ]
 ]
 
-[ 1 ] -> $w($s);##
+[ 1 ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema [ long, boolean ];##
-"$s"
+s = schema [ long, boolean ];##
+"s"
 
-( [ [1,true], [2,false], [3,true] ] -> $w($s), $r($s) );##
+( [ [1,true], [2,false], [3,true] ] -> w(s), r(s) );##
 [
   [
     1,
@@ -484,26 +483,26 @@ $s = schema [ long, boolean ];##
   ]
 ]
 
-[ [1] ] -> $w($s);##
+[ [1] ] -> w(s);##
 FAILURE
  // should fail
-[ [1,true,0] ] -> $w($s);##
+[ [1,true,0] ] -> w(s);##
 FAILURE
  // should fail
-[ [true,1] ] -> $w($s);##
+[ [true,1] ] -> w(s);##
 FAILURE
  // should fail
-[ [1,1] ] -> $w($s);##
+[ [1,1] ] -> w(s);##
 FAILURE
  // should fail
-[ [true,true] ] -> $w($s);##
+[ [true,true] ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema [ long<2> ];##
-"$s"
+s = schema [ long<2> ];##
+"s"
 
-( [ [1,2], [3,4], [4,5] ] -> $w($s), $r($s) );##
+( [ [1,2], [3,4], [4,5] ] -> w(s), r(s) );##
 [
   [
     1,
@@ -519,20 +518,20 @@ $s = schema [ long<2> ];##
   ]
 ]
 
-[ [1] ] -> $w($s);##
+[ [1] ] -> w(s);##
 FAILURE
  // should fail
-[ [1,1,1] ] -> $w($s);##
+[ [1,1,1] ] -> w(s);##
 FAILURE
  // should fail
-[ [true,true] ] -> $w($s);##
+[ [true,true] ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema [ long<1,3> ];##
-"$s"
+s = schema [ long<1,3> ];##
+"s"
 
-( [ [1], [3,4], [4,5,6] ] -> $w($s), $r($s) );##
+( [ [1], [3,4], [4,5,6] ] -> w(s), r(s) );##
 [
   [
     1
@@ -548,20 +547,20 @@ $s = schema [ long<1,3> ];##
   ]
 ]
 
-[ [] ] -> $w($s);##
+[ [] ] -> w(s);##
 FAILURE
  // should fail
-[ [ 1,2,3,4 ] ] -> $w($s);##
+[ [ 1,2,3,4 ] ] -> w(s);##
 FAILURE
  // should fail
-[ [ true ] ] -> $w($s);##
+[ [ true ] ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema [ long(min=0), long(max=0)<0,2> ];##
-"$s"
+s = schema [ long(min=0), long(max=0)<0,2> ];##
+"s"
 
-( [ [1], [3,-4], [4,-5,-6] ] -> $w($s), $r($s) );##
+( [ [1], [3,-4], [4,-5,-6] ] -> w(s), r(s) );##
 [
   [
     1
@@ -577,16 +576,16 @@ $s = schema [ long(min=0), long(max=0)<0,2> ];##
   ]
 ]
 
-[ [] ] -> $w($s);##
+[ [] ] -> w(s);##
 FAILURE
  // should fail
-[ [ -1 ] ] -> $w($s);##
+[ [ -1 ] ] -> w(s);##
 FAILURE
  // should fail
-[ [ 1,1 ] ] -> $w($s);##
+[ [ 1,1 ] ] -> w(s);##
 FAILURE
  // should fail
-[ [ 1,-1,-1,-1 ] ] -> $w($s);##
+[ [ 1,-1,-1,-1 ] ] -> w(s);##
 FAILURE
  // should fail
 
@@ -594,25 +593,25 @@ FAILURE
 // -- records -------------------------------------------------------------------------------------
 
 // empty record
-$s = schema { };##
-"$s"
+s = schema { };##
+"s"
 
-( [ {}, {}, {} ] -> $w($s), $r($s) );##
+( [ {}, {}, {} ] -> w(s), r(s) );##
 [
   {},
   {},
   {}
 ]
 
-[ { a: 1 } ] -> $w($s);##
+[ { a: 1 } ] -> w(s);##
 FAILURE
  // should fail
 
 // only required fields
-$s = schema { b: boolean, a: long, c:string };##
-"$s"
+s = schema { b: boolean, a: long, c:string };##
+"s"
 
-( [ { a:1, b:true, c:"!" }, { a:-1, c:"?", b:false } ] -> $w($s), $r($s) );##
+( [ { a:1, b:true, c:"!" }, { a:-1, c:"?", b:false } ] -> w(s), r(s) );##
 [
   {
     "a": 1,
@@ -626,27 +625,27 @@ $s = schema { b: boolean, a: long, c:string };##
   }
 ]
 
-[ {} ] -> $w($s);##
+[ {} ] -> w(s);##
 FAILURE
  // should fail
-[ { a:1, b:true, c:"!",d:null } ] -> $w($s);##
+[ { a:1, b:true, c:"!",d:null } ] -> w(s);##
 FAILURE
  // should fail
-[ { a:true, b:true, c:"!"} ] -> $w($s);##
+[ { a:true, b:true, c:"!"} ] -> w(s);##
 FAILURE
  // should fail
-[ { a:1, b:1, c:"!"} ] -> $w($s);##
+[ { a:1, b:1, c:"!"} ] -> w(s);##
 FAILURE
  // should fail
-[ { a:1, b:true, c:true} ] -> $w($s);##
+[ { a:1, b:true, c:true} ] -> w(s);##
 FAILURE
  // should fail
 
 // only optional fields
-$s = schema { b?: boolean, a?: long, c?:string };##
-"$s"
+s = schema { b?: boolean, a?: long, c?:string };##
+"s"
 
-( [ {}, { a:1, c:"!", b:true }, { a:-1 }, { a:-1, c:"!" } ] -> $w($s), $r($s) );##
+( [ {}, { a:1, c:"!", b:true }, { a:-1 }, { a:-1, c:"!" } ] -> w(s), r(s) );##
 [
   {},
   {
@@ -663,24 +662,24 @@ $s = schema { b?: boolean, a?: long, c?:string };##
   }
 ]
 
-[ { a:1, b:true, c:"!",d:null } ] -> $w($s);##
+[ { a:1, b:true, c:"!",d:null } ] -> w(s);##
 FAILURE
  // should fail
-[ { a:null, b:true, c:"!"} ] -> $w($s);##
+[ { a:null, b:true, c:"!"} ] -> w(s);##
 FAILURE
  // should fail
-[ { a:1, b:null, c:"!"} ] -> $w($s);##
+[ { a:1, b:null, c:"!"} ] -> w(s);##
 FAILURE
  // should fail
-[ { a:1, b:true, c:null} ] -> $w($s);##
+[ { a:1, b:true, c:null} ] -> w(s);##
 FAILURE
  // should fail
 
 // only rest fields
-$s = schema { *: long };##
-"$s"
+s = schema { *: long };##
+"s"
 
-( [ {}, { a:1, c:3, b:2 }, { a:-1 }, { a:-1, c:2 } ] -> $w($s), $r($s) );##
+( [ {}, { a:1, c:3, b:2 }, { a:-1 }, { a:-1, c:2 } ] -> w(s), r(s) );##
 [
   {},
   {
@@ -697,20 +696,20 @@ $s = schema { *: long };##
   }
 ]
 
-[ { a: null } ] -> $w($s);##
+[ { a: null } ] -> w(s);##
 FAILURE
  // should fail
 
 // wild mix
-$s = schema { a: boolean, b?: long, d:string, f?:null, *:double };##
-"$s"
+s = schema { a: boolean, b?: long, d:string, f?:null, *:double };##
+"s"
 
 ( [ { a: true, d:"!" }, { a: true, d:"!", b: 1 }, 
     { a: true, d:"!", f:null }, { a: true, d:"!", f:null, b:3 },
     { a: true, d:"!", c:1d }, { a: true, d:"!", b: 1, c:1d, e:1d }, 
     { a: true, d:"!", f:null, "0":1d, g:2d }, { a: true, d:"!", f:null, b:3, c:1d },
     {a: true, d: "d", "0": 1d, "c":2d, "g":3d }
-    ] -> $w($s), $r($s) );##
+    ] -> w(s), r(s) );##
 [
   {
     "a": true,
@@ -767,23 +766,23 @@ $s = schema { a: boolean, b?: long, d:string, f?:null, *:double };##
   }
 ]
 
-[ { a:true, d:null } ] -> $w($s);##
+[ { a:true, d:null } ] -> w(s);##
 FAILURE
  // should fail
-[ { a:null, d:"!" } ] -> $w($s);##
+[ { a:null, d:"!" } ] -> w(s);##
 FAILURE
  // should fail
-[ { a: true, d:"!", b:null } ] -> $w($s);##
+[ { a: true, d:"!", b:null } ] -> w(s);##
 FAILURE
  // should fail
-[ { a: true, d:"!", e:null } ] -> $w($s);##
+[ { a: true, d:"!", e:null } ] -> w(s);##
 FAILURE
  // should fail
 
-$s = schema { a: long, b: long, c: long, *: long };##
-"$s"
+s = schema { a: long, b: long, c: long, *: long };##
+"s"
 
-( [ { d:4, e:5, a: 1, b:2, c:3 } ] -> $w($s), $r($s) );##
+( [ { d:4, e:5, a: 1, b:2, c:3 } ] -> w(s), r(s) );##
 [
   {
     "a": 1,
@@ -799,10 +798,10 @@ $s = schema { a: long, b: long, c: long, *: long };##
 // -- or ------------------------------------------------------------------------------------------
 
 // some tricky cases
-$s = schema long(min=0) | decfloat(max=0m);##
-"$s"
+s = schema long(min=0) | decfloat(max=0m);##
+"s"
 
-( [ -1.5m, -1m, 0m, 1, 0 ] -> $w($s), $r($s) );##
+( [ -1.5m, -1m, 0m, 1, 0 ] -> w(s), r(s) );##
 [
   -1.5m,
   -1m,
@@ -811,17 +810,17 @@ $s = schema long(min=0) | decfloat(max=0m);##
   0
 ]
 
-[ null ]  -> $w($s);##
+[ null ]  -> w(s);##
 FAILURE
  // should fail
-[ -1 ]    -> $w($s);##
+[ -1 ]    -> w(s);##
 FAILURE
  // should fail
 
-$s = schema long(min=0) | decfloat(max=0m) | nonnull;##
-"$s"
+s = schema long(min=0) | decfloat(max=0m) | nonnull;##
+"s"
 
-( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1 ] -> $w($s), $r($s) );##
+( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1 ] -> w(s), r(s) );##
 [
   -1.5m,
   -1m,
@@ -833,14 +832,14 @@ $s = schema long(min=0) | decfloat(max=0m) | nonnull;##
   -1
 ]
 
-[ null ]  -> $w($s);##
+[ null ]  -> w(s);##
 FAILURE
  // should fail
 
-$s = schema long(min=0) | decfloat(max=0m) | any;##
-"$s"
+s = schema long(min=0) | decfloat(max=0m) | any;##
+"s"
 
-( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1, null ] -> $w($s), $r($s) );##
+( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1, null ] -> w(s), r(s) );##
 [
   -1.5m,
   -1m,
@@ -858,22 +857,22 @@ $s = schema long(min=0) | decfloat(max=0m) | any;##
 // -- binary comparison ---------------------------------------------------------------------------
 
 // hack: sort using MR and one reducer (enforces usage of binary comparators)
-$sort = fn($what, $schema) (
-    $what -> write(jaqltemp("tempfile", $schema)),
+sort = fn(what, schema) (
+    what -> write(jaqltemp("tempfile", schema)),
     mapReduce({
-        input: jaqltemp("tempfile", $schema),
-        output: jaqltemp("tempfile_sorted", $schema),
+        input: jaqltemp("tempfile", schema),
+        output: jaqltemp("tempfile_sorted", schema),
         map: fn($) $ -> transform [$, null],
-        reduce: fn($k, $v) [ $k ],
-        schema: { key: $schema, value: schema null }
+        reduce: fn(k, v) [ k ],
+        schema: { key: schema, value: schema null }
     }),
-    read(jaqltemp("tempfile_sorted", $schema))
+    read(jaqltemp("tempfile_sorted", schema))
 );##
-"$sort"
+"sort"
  
 
 // single schemata
-$sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long);##
+sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long);##
 [
   -9223372036854775808,
   -45346,
@@ -882,7 +881,7 @@ $sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema
   9223372036854775807
 ]
 
-$sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double);##
+sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double);##
 [
   -9.223372036854776E18,
   -45346.0,
@@ -891,7 +890,7 @@ $sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], sche
   9.223372036854776E18
 ]
 
-$sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat);##
+sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat);##
 [
   -9223372036854775808m,
   -45346m,
@@ -902,7 +901,7 @@ $sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -922337203685
   9223372036854775807m
 ]
 
-$sort([ "abcc", "abc", "bcd", "abcd" ], schema string);##
+sort([ "abcc", "abc", "bcd", "abcd" ], schema string);##
 [
   "abc",
   "abcc",
@@ -910,20 +909,20 @@ $sort([ "abcc", "abc", "bcd", "abcd" ], schema string);##
   "bcd"
 ]
 
-$sort([ true, false ], schema boolean);##
+sort([ true, false ], schema boolean);##
 [
   false,
   true
 ]
 
-$sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), ], schema date);##
+sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), ], schema date);##
 [
   date('2000-01-01T11:59:59Z'),
   date('2000-01-01T12:00:00Z'),
   date('2000-01-01T12:00:01Z')
 ]
 
-$sort([ hex("abcc"), hex("abc0"), hex("bcd0"), hex("abcd") ], schema binary);##
+sort([ hex("abcc"), hex("abc0"), hex("bcd0"), hex("abcd") ], schema binary);##
 [
   hex('ABC0'),
   hex('ABCC'),
@@ -933,7 +932,7 @@ $sort([ hex("abcc"), hex("abc0"), hex("bcd0"), hex("abcd") ], schema binary);##
 
 
 // single type
-$sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long(max=0) | long(min=0));##
+sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long(max=0) | long(min=0));##
 [
   -9223372036854775808,
   -45346,
@@ -942,7 +941,7 @@ $sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema
   9223372036854775807
 ]
 
-$sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double(max=0d) | double(min=0d));##
+sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double(max=0d) | double(min=0d));##
 [
   -9.223372036854776E18,
   -45346.0,
@@ -951,7 +950,7 @@ $sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], sche
   9.223372036854776E18
 ]
 
-$sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat(max=0m) | decfloat(min=0m));##
+sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat(max=0m) | decfloat(min=0m));##
 [
   -9223372036854775808m,
   -45346m,
@@ -962,7 +961,7 @@ $sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -922337203685
   9223372036854775807m
 ]
 
-$sort([ "abcc", "abc", "bcd", "abcd" ], schema string(maxLength=3) | string(minLength=4));##
+sort([ "abcc", "abc", "bcd", "abcd" ], schema string(maxLength=3) | string(minLength=4));##
 [
   "abc",
   "abcc",
@@ -970,13 +969,13 @@ $sort([ "abcc", "abc", "bcd", "abcd" ], schema string(maxLength=3) | string(minL
   "bcd"
 ]
 
-$sort([ true, false ], schema boolean(value=true) | boolean(value=false));##
+sort([ true, false ], schema boolean(value=true) | boolean(value=false));##
 [
   false,
   true
 ]
 
-$sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:00Z') ], schema date(min=date('2000-01-01T12:00:00Z')) | date(max=date('2000-01-01T12:00:00Z')));##
+sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:00Z') ], schema date(min=date('2000-01-01T12:00:00Z')) | date(max=date('2000-01-01T12:00:00Z')));##
 [
   date('2000-01-01T11:59:59Z'),
   date('2000-01-01T12:00:00Z'),
@@ -985,7 +984,7 @@ $sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-0
 
 
 // arrays
-$sort([ [5], [4], [1], [3], [2] ], schema [ long ]);##
+sort([ [5], [4], [1], [3], [2] ], schema [ long ]);##
 [
   [
     1
@@ -1004,7 +1003,7 @@ $sort([ [5], [4], [1], [3], [2] ], schema [ long ]);##
   ]
 ]
 
-$sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long<*> ]);##
+sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long<*> ]);##
 [
   [],
   [
@@ -1031,7 +1030,7 @@ $sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long<*> ]);##
   ]
 ]
 
-$sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean ]);##
+sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean ]);##
 [
   [
     1,
@@ -1059,7 +1058,7 @@ $sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], sc
   ]
 ]
 
-$sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean<*> ]);##
+sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean<*> ]);##
 [
   [
     1,
@@ -1089,7 +1088,7 @@ $sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], sc
 
 
 // records
-$sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a:long });##
+sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a:long });##
 [
   {
     "a": 1
@@ -1108,7 +1107,7 @@ $sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a:long });##
   }
 ]
 
-$sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a?:long });##
+sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a?:long });##
 [
   {
     "a": 1
@@ -1127,7 +1126,7 @@ $sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a?:long });##
   }
 ]
 
-$sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2}, {} ], schema { *:long });##
+sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2}, {} ], schema { *:long });##
 [
   {},
   {
@@ -1148,7 +1147,7 @@ $sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2}, {} ], schema { *:long });##
 ]
 
 
-$sort([ {c: 5}, {d: 4}, {b:1}, {c:3}, {c:2}, {} ], schema { *:long });##
+sort([ {c: 5}, {d: 4}, {b:1}, {c:3}, {c:2}, {} ], schema { *:long });##
 [
   {},
   {
@@ -1168,7 +1167,7 @@ $sort([ {c: 5}, {d: 4}, {b:1}, {c:3}, {c:2}, {} ], schema { *:long });##
   }
 ]
 
-$sort([ {b: 1}, {b: 1, c:1}, {b:1, c:0}, {b:2}, {b:0}, {} ], schema { *:long });##
+sort([ {b: 1}, {b: 1, c:1}, {b:1, c:0}, {b:2}, {b:0}, {} ], schema { *:long });##
 [
   {},
   {
@@ -1191,7 +1190,7 @@ $sort([ {b: 1}, {b: 1, c:1}, {b:1, c:0}, {b:2}, {b:0}, {} ], schema { *:long });
 ]
 
 
-$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, c?:decfloat });##
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, c?:decfloat });##
 [
   {
     "b": 0
@@ -1213,7 +1212,7 @@ $sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long
   }
 ]
 
-$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, c?:decfloat });##
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, c?:decfloat });##
 [
   {
     "b": 0
@@ -1235,7 +1234,7 @@ $sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:lon
   }
 ]
 
-$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, *:decfloat });##
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, *:decfloat });##
 [
   {
     "b": 0
@@ -1257,7 +1256,7 @@ $sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long
   }
 ]
 
-$sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, *:decfloat });##
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, *:decfloat });##
 [
   {
     "b": 0
@@ -1280,7 +1279,7 @@ $sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:lon
 ]
 
 
-$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c:long });##
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c:long });##
 [
   {
     "b": 0m,
@@ -1302,7 +1301,7 @@ $sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:dec
   }
 ]
 
-$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c?:long });##
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c?:long });##
 [
   {
     "b": 0m,
@@ -1324,7 +1323,7 @@ $sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:dec
   }
 ]
 
-$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c:long, *:decfloat });##
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c:long, *:decfloat });##
 [
   {
     "b": 0m,
@@ -1346,7 +1345,7 @@ $sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c:long
   }
 ]
 
-$sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c?:long, *:decfloat });##
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c?:long, *:decfloat });##
 [
   {
     "b": 0m,
@@ -1370,7 +1369,7 @@ $sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c?:lon
 
 
 // encodings
-$sort([ 1, 3, 2, "b", "a", "c", false, true, null ], schema long | boolean | string | null );##
+sort([ 1, 3, 2, "b", "a", "c", false, true, null ], schema long | boolean | string | null );##
 [
   null,
   false,
@@ -1383,7 +1382,7 @@ $sort([ 1, 3, 2, "b", "a", "c", false, true, null ], schema long | boolean | str
   3
 ]
 
-$sort([ 1, 3, 2, "b", "a", "c", false, true, null, {}, [] ], schema long(max=2) | boolean(value=true) | string | any );##
+sort([ 1, 3, 2, "b", "a", "c", false, true, null, {}, [] ], schema long(max=2) | boolean(value=true) | string | any );##
 [
   null,
   [],

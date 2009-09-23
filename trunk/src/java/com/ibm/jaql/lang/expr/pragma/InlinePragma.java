@@ -18,14 +18,20 @@ package com.ibm.jaql.lang.expr.pragma;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * This is a pragma function to force let/global inlining.
  */
-@JaqlFn(fnName = "inline", minArgs = 1, maxArgs = 1)
 public class InlinePragma extends Pragma
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("inline", InlinePragma.class);
+    }
+  }
 
   /**
    * @param exprs

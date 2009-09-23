@@ -31,7 +31,6 @@ import com.ibm.jaql.lang.expr.core.AggregateExpr;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
-import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
@@ -40,6 +39,7 @@ import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.io.HadoopTempExpr;
@@ -225,7 +225,7 @@ public class ToMapReduce extends Rewrite
     valVar = env.makeVar("$vals", reader.getSchema());
     Expr input = reader.descriptor(); //reader.rewriteToMapReduce(new RecordExpr(Expr.NO_EXPRS));
     reader.replaceInParent(new VarExpr(valVar));
-    Expr mapFn = new DefineFunctionExpr(new Var[]{valVar}, expr);    
+    Expr mapFn = new DefineJaqlFunctionExpr(new Var[]{valVar}, expr);    
 
     // derive aggregate expression
     keyVar = env.makeVar(group.byVar().name(), mapOutputKeySchema);
@@ -253,7 +253,7 @@ public class ToMapReduce extends Rewrite
     {
       valVar = env.makeVar("$unused");
     }
-    Expr aggFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, expr);
+    Expr aggFn = new DefineJaqlFunctionExpr(new Var[]{keyVar,valVar}, expr);
     
     // final
     keyVar = env.makeVar(group.byVar().name(), mapOutputKeySchema);
@@ -295,7 +295,7 @@ public class ToMapReduce extends Rewrite
       Schema s = lastExpr.getSchema().elements();
       output = new HadoopTempExpr(new ConstExpr(new JsonSchema(s)));
     }
-    Expr finalFn = new DefineFunctionExpr(new Var[]{keyVar,valVar}, lastExpr);
+    Expr finalFn = new DefineJaqlFunctionExpr(new Var[]{keyVar,valVar}, lastExpr);
 
     RecordExpr args = new RecordExpr(
         new NameValueBinding("input", input),
@@ -406,7 +406,7 @@ public class ToMapReduce extends Rewrite
       byExpr.replaceVar(b.var, v);
       Expr keyValPair = new ArrayExpr(byExpr, new VarExpr(v));
       Expr forExpr = new ForExpr(v, inExpr, new ArrayExpr(keyValPair));
-      mapFns[i] = new DefineFunctionExpr(new Var[]{inputState.mapIn}, forExpr);
+      mapFns[i] = new DefineJaqlFunctionExpr(new Var[]{inputState.mapIn}, forExpr);
       mapOutputKeySchemata[i] = byExpr.getSchema();
       mapOutputValueSchemata[i] = v.getSchema();
     }
@@ -452,7 +452,7 @@ public class ToMapReduce extends Rewrite
       reduce = lastExpr;
     }
     JsonSchema reduceOutputValueSchema = new JsonSchema(reduce.getSchema().elements());
-    reduce = new DefineFunctionExpr(reduceParams, reduce);
+    reduce = new DefineJaqlFunctionExpr(reduceParams, reduce);
     
     if (writing)
     {
@@ -593,7 +593,7 @@ public class ToMapReduce extends Rewrite
     
 //    if (1==1) throw new IllegalStateException(expr.getSchema().toString());
     
-    Expr mapFn = new DefineFunctionExpr(new Var[]{mapIn}, expr);
+    Expr mapFn = new DefineJaqlFunctionExpr(new Var[]{mapIn}, expr);
 
     expr = new MapReduceFn(new RecordExpr(
         new NameValueBinding("input", input),
@@ -785,7 +785,7 @@ public class ToMapReduce extends Rewrite
         seg = new Segment(Segment.Type.SEQUENTIAL, seg);
       }
     }
-    else if (expr instanceof DefineFunctionExpr)
+    else if (expr instanceof DefineJaqlFunctionExpr)
     {
       // Run sequentially and don't segment the function body
       seg = new Segment(Segment.Type.SEQUENTIAL);

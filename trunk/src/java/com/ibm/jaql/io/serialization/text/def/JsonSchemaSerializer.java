@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.schema.NonNullSchema;
 import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.SchemaType;
-import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.schema.BooleanSchema;
 import com.ibm.jaql.json.schema.DateSchema;
@@ -30,11 +27,14 @@ import com.ibm.jaql.json.schema.DecfloatSchema;
 import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.schema.GenericSchema;
 import com.ibm.jaql.json.schema.LongSchema;
+import com.ibm.jaql.json.schema.NonNullSchema;
 import com.ibm.jaql.json.schema.NullSchema;
 import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.RangeSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaType;
+import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
@@ -43,7 +43,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
 {
@@ -353,15 +353,15 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   // -- helpers -----------------------------------------------------------------------------------
   
   private static void writeArgs(PrintStream out, int indent, 
-      Parameters parameters, JsonValue[] values ) throws IOException
+      JsonValueParameters parameters, JsonValue[] values ) throws IOException
   {
-    assert values.length == parameters.noParameters();
+    assert values.length == parameters.numParameters();
     String sep="(";
     boolean printed = false;
     for (int i=0; i<values.length; i++)
     {
       
-      if (i<parameters.noRequiredParamters())
+      if (i<parameters.numRequiredParameters())
       {
         out.print(sep);
         JsonUtil.print(out, values[i], indent);
@@ -385,7 +385,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   }
   
   private static <T extends JsonValue> void writeRangeArgs(
-      PrintStream out, int indent,  Parameters parameters, RangeSchema<T> schema) 
+      PrintStream out, int indent,  JsonValueParameters parameters, RangeSchema<T> schema) 
   throws IOException
   {
     T min = schema.getMin();

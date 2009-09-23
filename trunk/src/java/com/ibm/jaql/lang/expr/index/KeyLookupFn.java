@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.index;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.util.HashMap;
 
 import com.ibm.jaql.json.schema.ArraySchema;
@@ -30,10 +32,9 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
-import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * [ [key,value1] ] -> keyLookup([ [key,value2] ]) ==> [ [key, value1, value2] ]
  * 
@@ -53,9 +54,16 @@ import static com.ibm.jaql.json.type.JsonType.*;
  * 
  * @author kbeyer
  */
-@JaqlFn(fnName = "keyLookup", minArgs = 2, maxArgs = 2)
 public class KeyLookupFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("keyLookup", KeyLookupFn.class);
+    }
+  }
+  
   public KeyLookupFn(Expr[] exprs)
   {
     super(exprs);
@@ -98,7 +106,6 @@ public class KeyLookupFn extends IterExpr
     final BufferedJsonArray resultArray = new BufferedJsonArray(3);
     return new JsonIterator(resultArray)
     {
-      
       JsonIterator iter = exprs[0].iter(context);
       
       @Override

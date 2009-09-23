@@ -18,10 +18,10 @@ package com.ibm.jaql.json.schema;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a binary value */
 public final class BinarySchema extends Schema 
@@ -34,16 +34,15 @@ public final class BinarySchema extends Schema
   
   // -- schema parameters -------------------------------------------------------------------------
   
-  private static Parameters parameters = null; 
+  private static JsonValueParameters parameters = null; 
   
-  public static Parameters getParameters()
+  public static JsonValueParameters getParameters()
   {
     if (parameters == null)
     {
-      parameters = new Parameters(
-          new JsonString[] { PAR_MIN_LENGTH, PAR_MAX_LENGTH },
-          new String[]     { "long(min=0)" , "long(min=0)" },
-          new JsonValue[]  { JsonLong.ZERO , null });
+      parameters = new JsonValueParameters(
+          new JsonValueParameter(PAR_MIN_LENGTH, "long(min=0)?", JsonLong.ZERO),
+          new JsonValueParameter(PAR_MAX_LENGTH, "long(min=0)?", null));
     }
     return parameters;
   }

@@ -125,7 +125,7 @@ public class PathFieldValue extends PathStep
    */
   public static Expr byVarName(Var recVar, Var fieldNameVar)
   {
-    return byName(recVar, fieldNameVar.nameAsField());
+    return byName(recVar, fieldNameVar.name());
   }
   
   // -- schema ------------------------------------------------------------------------------------

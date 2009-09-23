@@ -24,14 +24,21 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * raise base of natural log (e) to arg: e^a pow(x,y) = exp( y * ln(x) )
  */
-@JaqlFn(fnName = "exp", minArgs = 1, maxArgs = 1)
 public class ExpFn extends AbstractRealFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("exp", ExpFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

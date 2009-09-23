@@ -30,14 +30,29 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 import com.ibm.jaql.util.DeleteFileTask;
 
 /** Creates a file descriptor for temporary files used by Jaql. Takes a schema argument that
  * describes the schema of the individual values written to the file. */
-@JaqlFn(fnName = "HadoopTemp", minArgs = 0, maxArgs = 1)
 public class HadoopTempExpr extends Expr
 {
+  public static final class Descriptor extends DefaultBuiltInFunctionDescriptor
+  {
+    public Descriptor()
+    {
+      super(
+          "HadoopTemp",
+          HadoopTempExpr.class,
+          new JsonValueParameters(
+              new JsonValueParameter("schema", SchemaFactory.schematypeSchema(), new JsonSchema(SchemaFactory.anySchema()))),
+          SchemaFactory.recordSchema());
+    }
+  }
+  
+  
   /**
    * @param exprs
    */
@@ -68,7 +83,7 @@ public class HadoopTempExpr extends Expr
     // determine options 
     RecordSchema.Field options[] = new RecordSchema.Field[1];
     options[0] = new RecordSchema.Field(new JsonString("schema"), SchemaFactory.schematypeSchema(), false);
-    if (exprs.length == 1 && exprs[0].isCompileTimeComputable().always())
+    if (exprs[0].isCompileTimeComputable().always())
     {
       try
       {
@@ -110,14 +125,8 @@ public class HadoopTempExpr extends Expr
     r.add(Adapter.TYPE_NAME, new JsonString("jaqltemp"));
     r.add(Adapter.LOCATION_NAME, new JsonString(filename));
     BufferedJsonRecord options = new BufferedJsonRecord();
-    if (exprs.length > 0)
-    {
-      options.add(new JsonString("schema"), (JsonSchema)exprs[0].eval(context));
-    }
-    else
-    {
-      options.add(new JsonString("schema"), new JsonSchema(SchemaFactory.nonNullSchema()));
-    }
+    JsonSchema schema = (JsonSchema)exprs[0].eval(context);
+    options.add(new JsonString("schema"), schema);
     r.add(Adapter.OPTIONS_NAME, options);
     context.doAtReset(new DeleteFileTask(filename));
     return r; // TODO: memory
