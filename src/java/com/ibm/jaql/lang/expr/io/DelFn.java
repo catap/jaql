@@ -24,14 +24,22 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+
 
 /**
  * An expression that constructs an I/O descriptor for HDFS file access.
  */
-@JaqlFn(fnName="del", minArgs=1, maxArgs=2)
 public class DelFn extends AbstractHandleFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("del", DelFn.class);
+    }
+  }
+  
   private final static JsonValue TYPE = new JsonString("del");
   /**
    * exprs[0]: path
@@ -72,10 +80,10 @@ public class DelFn extends AbstractHandleFn
     descriptor.add(Adapter.TYPE_NAME, getType());
     descriptor.add(Adapter.LOCATION_NAME, location().eval(context));
     
-    if (exprs.length > 1)
+    JsonValue customOptions = exprs[1].eval(context);
+    if (customOptions != null)
     {
       BufferedJsonRecord options = new BufferedJsonRecord();
-      JsonValue customOptions = exprs[1].eval(context);
       if (!(customOptions instanceof JsonRecord))
       {
         throw new RuntimeException("options for del() function has to be a record");
@@ -88,7 +96,6 @@ public class DelFn extends AbstractHandleFn
       descriptor.add(Adapter.INOPTIONS_NAME, options);
       descriptor.add(Adapter.OUTOPTIONS_NAME, options);
     }
-
     return descriptor;
   }
 }

@@ -43,6 +43,7 @@ import org.apache.commons.cli2.validation.NumberValidator;
 public class JaqlShellArguments {
   boolean useExistingCluster = false;
   String[] jars = new String[0];
+  String[] searchPath = new String[0];
   String hdfsDir = "/tmp/jaql/dfs";
   int numNodes = 1;
   InputStream in;
@@ -75,6 +76,16 @@ public class JaqlShellArguments {
         .create())
         .create();
 
+    Option optSearchPath = obuilder
+    .withShortName("jp")
+    .withLongName("jaql-path")
+    .withDescription("colon seperated list of all search path entries")
+    .withArgument(abuilder
+        .withName("args")
+        .withMinimum(1).withMaximum(1)
+        .create())
+        .create();
+    
     Option optBatch= obuilder
     .withShortName("b")
     .withLongName("batch")
@@ -139,6 +150,7 @@ public class JaqlShellArguments {
     .withName("options")
     .withOption(optHelp)
     .withOption(optJars)
+    .withOption(optSearchPath)
     .withOption(optBatch)
     .withOption(optEval)
     .withOption(optInputFiles)
@@ -191,6 +203,17 @@ public class JaqlShellArguments {
       for (String jar : result.jars) {
         if (!new File(jar).exists()) {
           printHelp("Jar file " + jar + " not found", options);
+          System.exit(1);
+        }
+      }
+    }
+    
+    // search path directories
+    if (cl.hasOption(optSearchPath)) {
+      result.searchPath = ((String)cl.getValue(optJars)).split(":");
+      for (String dir : result.searchPath) {
+        if (!new File(dir).exists() || !new File(dir).isDirectory()) {
+          printHelp("Search-path entry " + dir + " not found or is no directory", options);
           System.exit(1);
         }
       }

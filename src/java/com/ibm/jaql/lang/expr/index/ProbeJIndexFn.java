@@ -23,12 +23,19 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
-@JaqlFn(fnName = "probeJIndex", minArgs = 2, maxArgs = 2)
 public class ProbeJIndexFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("probeJIndex", ProbeJIndexFn.class);
+    }
+  }
+  
   protected JIndexReader index;
   
   public ProbeJIndexFn(Expr[] exprs)

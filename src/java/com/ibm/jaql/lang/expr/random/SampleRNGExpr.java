@@ -24,19 +24,26 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
  */
-@JaqlFn(fnName = "sampleRNG", minArgs = 1, maxArgs = 1)
 public class SampleRNGExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("sampleRNG", SampleRNGExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -76,8 +83,9 @@ public class SampleRNGExpr extends Expr
     Random rng = (Random) entry.getRng();
     if (rng == null)
     {
-      JaqlFunction f = entry.getSeed();
-      JsonValue seedValue = f.eval(context, new JsonValue[]{});
+      Function f = entry.getSeed();
+      f.setArguments(new JsonValue[0]); // empty
+      JsonValue seedValue = f.eval(context);
       long seed = 0;
       if (seedValue.getEncoding() == JsonEncoding.LONG)
       {

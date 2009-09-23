@@ -74,7 +74,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer
     serializers.put(JsonEncoding.LONG, new JsonLongSerializer());
     serializers.put(JsonEncoding.DECFLOAT, new JsonDecimalSerializer());
     serializers.put(JsonEncoding.DATE, new JsonDateSerializer());
-    serializers.put(JsonEncoding.FUNCTION, new JaqlFunctionSerializer());
+    serializers.put(JsonEncoding.FUNCTION, new FunctionSerializer());
     serializers.put(JsonEncoding.SCHEMA, new JsonSchemaSerializer());
 //    serializers.put(JsonEncoding.JAVAOBJECT_CLASSNAME, new JsonJavaObjectSerializer());
     serializers.put(JsonEncoding.REGEX, new JsonRegexSerializer(jstringSerializer));

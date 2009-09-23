@@ -16,8 +16,8 @@
 package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.core.PerPartitionFn;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 
 
 /**

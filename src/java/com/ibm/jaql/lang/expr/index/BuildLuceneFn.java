@@ -34,14 +34,21 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
 
 
-@JaqlFn(fnName = "buildLucene", minArgs = 3, maxArgs = 4)
 public class BuildLuceneFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par34
+  {
+    public Descriptor()
+    {
+      super("buildLucene", BuildLuceneFn.class);
+    }
+  }
+  
   private BinaryFullSerializer serializer = DefaultBinaryFullSerializer.getInstance();
   
   public BuildLuceneFn(Expr[] exprs)
@@ -67,12 +74,12 @@ public class BuildLuceneFn extends Expr
     {
       return null;
     }
-    JaqlFunction keyFn = (JaqlFunction)exprs[2].eval(context);
+    Function keyFn = (Function)exprs[2].eval(context);
     if( keyFn == null )
     {
       return null;
     }
-    JaqlFunction valFn = (JaqlFunction)exprs[3].eval(context);
+    Function valFn = (Function)exprs[3].eval(context);
     JsonIterator iter = exprs[0].iter(context);
     JsonValue[] fnArgs = new JsonValue[1];
     Analyzer analyzer = new StandardAnalyzer();
@@ -88,7 +95,8 @@ public class BuildLuceneFn extends Expr
     for (JsonValue value : iter)
     {
       fnArgs[0] = value;
-      JsonIterator keyIter = keyFn.iter(context, fnArgs);
+      keyFn.setArguments(fnArgs);
+      JsonIterator keyIter = keyFn.iter(context);
       Document doc = null;
       for (JsonValue key : keyIter)
       {
@@ -104,7 +112,8 @@ public class BuildLuceneFn extends Expr
       {
         if( valFn != null )
         {
-          JsonIterator valIter = valFn.iter(context, fnArgs);
+          valFn.setArguments(fnArgs);
+          JsonIterator valIter = valFn.iter(context);
           for (JsonValue val : valIter)
           {
             JsonRecord jrec = (JsonRecord)val;

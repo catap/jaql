@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
@@ -33,37 +35,38 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
- * 
+ * import com.ibm.jaql.lang.expr.index.ProbeLuceneFn;
  */
 public class ClassLoaderMgr
 {
-
-  private static File        extendedJarPath = null;
   private static ClassLoader classLoader     = null;
-  private static HashSet<String> jarfiles = new HashSet<String>();
-
+  private final static JarCreator creator = new JarCreator();
+  
+  static {
+  	creator.setDaemon(true);
+  	creator.start();
+  }
+  
   /**
+   * This function should only be used during startup, because it does not use
+   * the searchpath (yet?).
    * @param names
    * @return
    * @throws Exception
    */
-  public static File addExtensionJars(String[] names) throws Exception
+  public static void addExtensionJars(String[] names) throws Exception
   {
-	if (names == null || names.length == 0)
-		return null;
-
-	// add the new jars to the classloader
-	classLoader = createClassLoader(names);
+		if (names == null || names.length == 0)
+			return;
+		
+		for (String extension : names) {
+			File jar = new File(extension);
+			addExtensionJar(jar);
+		}
 	
-	// set the current thread's classloader
-	Thread.currentThread().setContextClassLoader(classLoader);
-	
-	combineJars(names);
-
-	BaseUtil.LOG.info("jar for mapreduce at: " + extendedJarPath);
-	return extendedJarPath;
+		BaseUtil.LOG.info("jars added to classloader: " + names);
   }
-
+  
 	/**
 	 * Combines the extension jars and the original jar into one jar. When several
 	 * jars contain the same file/class the first version is used. The order in
@@ -72,108 +75,28 @@ public class ClassLoaderMgr
 	 * 
 	 * @param extensions paths of the extension jars
 	 */
-	private static void combineJars(String[] extensions) {
-		File tmpDir = new File(System.getProperty("java.io.tmpdir")
-				+ File.separator + "jaql_" + System.nanoTime());
-		tmpDir.mkdir();
-		extendedJarPath = new File(tmpDir.getAbsoluteFile() + File.separator +
-		 "jaql.jar");
+	public static void addExtensionJar(File jar) throws Exception {
+		if(!jar.exists())
+			return;
 		
-		try {
-			extendedJarPath.createNewFile();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-
-		// get the original jaql.jar
-		JobConf job = new JobConf();
-		job.setJarByClass(JaqlUtil.class);
-		String original = job.getJar();
-		File jaql = new File(original);
-
-		try {
-			//Copy content of jaql.jar to new jar
-			JarInputStream jin = new JarInputStream(new FileInputStream(jaql));
-			JarOutputStream jout = new JarOutputStream(new FileOutputStream(extendedJarPath),
-																									jin.getManifest());
-			copyJarFiles(jin, jout);
-
-			//Copy content of all extension jars to new jar
-			for (String extension : extensions) {
-				jin = new JarInputStream(new FileInputStream(extension));
-				copyJarFiles(jin, jout);
-			}
-
-			jout.close();
-		} catch (IOException ex) {
-			throw new RuntimeException(ex);
-		}
+		// add the new jar to the classloader
+		classLoader = createClassLoader(jar);
+		// set the current thread's classloader
+		Thread.currentThread().setContextClassLoader(classLoader);
+		
+		//Lazy complete jar creation
+		creator.addExtensionJar(jar);
+		
+		return;
 	}
-	
-	/**
-	 * Copies all files from JarInputStream to JarOutputStream which are not
-	 * already contained in JarOutputStream
-	 * 
-	 * @param jin		stream from which the files are copied
-	 * @param jout	target location for input files
-	 * @throws IOException
-	 */
-	private static void copyJarFiles(JarInputStream jin, JarOutputStream jout)
-			throws IOException {
-		ZipEntry entry;
-		byte[] chunk = new byte[8192];
-		int bytesRead;
-
-		while ((entry = jin.getNextEntry()) != null) {
-			if (!jarfiles.contains(entry.getName())) {
-				try {
-					jarfiles.add(entry.getName());
-					// Add file entry to output stream (meta data)
-					jout.putNextEntry(entry);
-					// Copy data to output stream (actual data)
-					if (!entry.isDirectory()) {
-						while ((bytesRead = jin.read(chunk)) != -1) {
-							jout.write(chunk, 0, bytesRead);
-						}
-					}
-				} catch (ZipException ex) {
-					System.out.println(entry.getName());
-					ex.printStackTrace();
-				}
-			} else {
-				System.out.println("blocked " + entry.getName());
-			}
-		}
-	}
-	
-  /**
-   * @param paths
-   * @return
-   * @throws Exception
-   */
-  private static ClassLoader createClassLoader(String[] paths) throws Exception
-  {
-    if (paths == null) return null;
-    int numPaths = paths.length;
-    if (numPaths == 0) return null;
-
-    URL[] urls = new URL[numPaths];
-    for (int i = 0; i < numPaths; i++)
-    {
-      urls[i] = new URL("file:" + paths[i]);
-    }
-    ClassLoader parent = (classLoader == null)
-        ? JsonValue.class.getClassLoader()
-        : classLoader;
-    return new URLClassLoader(urls, parent);
-  }
 
   /**
    * @return
+   * @throws IOException 
    */
-  public static File getExtensionJar()
+  public static File getExtensionJar() throws IOException
   {
-    return extendedJarPath;
+  	return creator.getExtensionJar();
   }
 
   /**
@@ -224,4 +147,183 @@ public class ClassLoaderMgr
     }
     return cl;
   }
+  
+  /**
+   * @param paths
+   * @return
+   * @throws Exception
+   */
+  private static URLClassLoader createClassLoader(File jar) throws Exception
+  {
+  	//There are no file checks done at this point it has to be valid
+    URL[] urls = {jar.toURI().toURL()};
+    ClassLoader parent = (classLoader == null)
+        ? JsonValue.class.getClassLoader()
+        : classLoader;
+    return new URLClassLoader(urls, parent);
+  }
+}
+
+/**
+ * Delayed jar loading is not possible because then metadata cannot be read in time. It IS possible
+ * because metadata can be loaded with getResource("...") Statement
+ * @author kaufmannm
+ *
+ */
+final class JarCreator extends Thread {
+  private HashSet<String> jarfiles = new HashSet<String>();
+  private JarOutputStream extendedJarStream = null;
+  private File extendedJarPath = null;
+  private Queue<File> jarFileQueue = new LinkedBlockingQueue<File>();
+  private boolean working = false;
+  
+  {
+  	//This file is created when the Outputstream gets initialized
+  	jarfiles.add("META-INF/MANIFEST.MF");
+  }
+  
+	public void addExtensionJar(File jar) {
+		//System.out.println(System.nanoTime() + ": start jar copying");
+	   synchronized(jarFileQueue) {
+	  	 jarFileQueue.add(jar);
+	  	 working = true;
+	  	 jarFileQueue.notifyAll();
+	    }
+	}
+	
+	@Override
+	public void run() {
+		while(true) {
+			File jar = null;
+			synchronized(jarFileQueue) {
+	      while (jarFileQueue.isEmpty()) {
+	       	try {
+	       		working = false;
+	       		jarFileQueue.notifyAll();
+	       		//System.out.println(System.nanoTime() + ": End jar copying");
+						jarFileQueue.wait();
+					} catch (InterruptedException e) {
+					}
+	      }
+	      jar = jarFileQueue.remove();
+	    }
+      copyExtensionJar(jar);
+		}
+	}
+	
+  /**
+   * @return
+   * @throws IOException 
+   */
+  public File getExtensionJar() throws IOException
+  {
+  	synchronized(jarFileQueue) {
+  		while(working) {
+  			try {
+					jarFileQueue.wait();
+				} catch (InterruptedException e) {
+				}
+  		}
+  		
+    	//Finalize file before returning the handle
+    	if(extendedJarStream!=null) {
+    		extendedJarStream.close();
+    		extendedJarStream = null;
+    	}
+  	}
+  	
+    return extendedJarPath;
+  }
+  
+  private void copyExtensionJar(File jar) {
+		JarOutputStream jout = getJarOutputStream();
+		try {
+			JarInputStream jin = new JarInputStream(new FileInputStream(jar));
+			copyJarFile(jin, jout);
+		} catch (IOException ex) {
+			throw new RuntimeException(ex);
+		}
+  }
+  
+	/**
+	 * Copies all files from JarInputStream to JarOutputStream which are not
+	 * already contained in JarOutputStream
+	 * 
+	 * @param jin		stream from which the files are copied
+	 * @param jout	target location for input files
+	 * @throws IOException
+	 */
+	private void copyJarFile(JarInputStream jin, JarOutputStream jout)
+			throws IOException {
+		ZipEntry entry;
+		byte[] chunk = new byte[32768];
+		int bytesRead;
+		
+		while ((entry = jin.getNextEntry()) != null) {
+			if (!jarfiles.contains(entry.getName())) {
+				try {
+					jarfiles.add(entry.getName());
+					// Add file entry to output stream (meta data)
+					jout.putNextEntry(entry);
+					// Copy data to output stream (actual data)
+					if (!entry.isDirectory()) {
+						while ((bytesRead = jin.read(chunk)) != -1) {
+							jout.write(chunk, 0, bytesRead);
+						}
+					}
+				} catch (ZipException ex) {
+					System.out.println(entry.getName());
+					ex.printStackTrace();
+				}
+			} else {
+				//TODO: Debug log print which files were blocked
+				//System.out.println("blocked " + entry.getName());
+			}
+		}
+	}
+	
+	private JarOutputStream getJarOutputStream() {
+		//If we have a existing jar stream just use it
+		if(extendedJarStream != null) {
+			return extendedJarStream;
+		}
+		
+	  //Otherwise create a new jar and outputstream in which new jars
+		//can be appended
+		File baseJar = null;
+		if(extendedJarPath != null) {
+			baseJar = extendedJarPath;
+		} else {
+			JobConf job = new JobConf();
+			job.setJarByClass(JaqlUtil.class);
+			String original = job.getJar();
+			if(original != null) {
+				baseJar = new File(original);
+			}
+		}
+		
+		//Creat new temp jaql file
+		File tmpDir = new File(System.getProperty("java.io.tmpdir")
+				+ File.separator + "jaql_" + System.nanoTime());
+		tmpDir.mkdir();
+		extendedJarPath = new File(tmpDir.getAbsoluteFile() + File.separator +
+		 "jaql.jar");
+		
+		//Copy files over into new file
+		try {
+			JarOutputStream jout = null;
+			if(baseJar != null) {
+				JarInputStream jin = new JarInputStream(new FileInputStream(baseJar));
+				jout = new JarOutputStream(new FileOutputStream(extendedJarPath), jin.getManifest());
+				copyJarFile(jin, jout);
+			} else {
+				jout = new JarOutputStream(new FileOutputStream(extendedJarPath));
+			}
+			extendedJarStream = jout;
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		return extendedJarStream;
+	}
 }

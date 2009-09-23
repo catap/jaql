@@ -26,15 +26,22 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MathExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * raise a number to power
  */
-@JaqlFn(fnName = "pow", minArgs = 2, maxArgs = 2)
 public class PowFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("pow", PowFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

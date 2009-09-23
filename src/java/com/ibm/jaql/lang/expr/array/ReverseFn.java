@@ -20,21 +20,31 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.CmpSingle;
 import com.ibm.jaql.lang.expr.core.CmpSpec;
-import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.SortExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.VarParameter;
+import com.ibm.jaql.lang.expr.function.VarParameters;
 
 /**
  * 
  */
-@JaqlFn(fnName = "reverse", minArgs = 1, maxArgs = 1)
 public class ReverseFn extends MacroExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("reverse", ReverseFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -56,7 +66,8 @@ public class ReverseFn extends MacroExpr
     Var v = env.makeVar("$");
     BindingExpr b = new BindingExpr(BindingExpr.Type.IN, v, null, e);
     CmpSingle by = new CmpSingle(new CmpSpec(new IndexExpr(new VarExpr(v), 0), CmpSpec.Order.DESC));
-    DefineFunctionExpr cmp = new DefineFunctionExpr(new Var[] { v }, by);
+    ConstExpr cmp = new ConstExpr(
+        new JaqlFunction(new VarParameters(new VarParameter(v)), by));
     SortExpr sort = new SortExpr(b, cmp);
     b = new BindingExpr(BindingExpr.Type.IN, v, null, sort);
     e = new TransformExpr(b, new IndexExpr(new VarExpr(v), 1));

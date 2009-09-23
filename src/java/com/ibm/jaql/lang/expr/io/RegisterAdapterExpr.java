@@ -22,7 +22,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -30,9 +30,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * 
  * registerAdapter({type: string, inOptions: {}, outOptions: {}})
  */
-@JaqlFn(fnName = "registerAdapter", minArgs = 1, maxArgs = 1)
 public class RegisterAdapterExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("registerAdapter", RegisterAdapterExpr.class);
+    }
+  }
+  
   public RegisterAdapterExpr(Expr[] exprs)
   {
     super(exprs);

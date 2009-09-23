@@ -27,40 +27,69 @@ import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * 
  */
-public class Var extends Object
+public final class Var extends Object
 {
   public enum Usage
   {
-    EVAL(),    // Variable may be referenced multiple times (value must be stored) 
-    STREAM(),  // Variable is an array that is only referenced once (value may be streamed)
-    UNUSED()   // Variable is never referenced
+    EVAL,     // Variable may be referenced multiple times (value must be stored)
+    STREAM,   // Variable is an array that is only referenced once (value may be streamed)
+    UNUSED    // Variable is never referenced
   };
   
+  public enum Type
+  {
+    UNDEFINED,
+    VALUE,
+    ITERATOR,
+    EXPR
+  }
+
   public static final Var[] NO_VARS = new Var[0];
   public static final Var UNUSED = new Var("$__unused__");
 
-  public String             name;
-  public boolean            hidden  = false;     // variable not accessible in current parse context (this could reuse Usage)
-  public Var                varStack;            // Used during parsing for vars of the same name; contains the a list of previous definitions of this variable
-  public Expr               expr;                // only for global variables
-  public Usage              usage = Usage.EVAL;
+  private String name;
+  private boolean hidden = false; // variable not accessible in current parse
+                                 // context (this could reuse Usage)
+  public Var varStack; // Used during parsing for vars of the same name;
+                       // contains the a list of previous definitions of this
+                       // variable
+  private Expr expr; // only for global variables
+  private Usage usage = Usage.EVAL;
+  private Type type = Type.UNDEFINED;
   
-  public boolean            isDefined = false;   // variable defined?
-  public Object             value;               // Runtime value: JsonValue (null allowed) or JsonIterator(null disallowed)
-  private Schema       schema;             // schema of the variable; not to be changed at runtime
+  private Object value; // Runtime value: JsonValue (null allowed) or
+                       // JsonIterator(null disallowed)
+  private Schema schema; // schema of the variable; not to be changed at runtime
+
+  private boolean isGlobal = false;   // the variable is global, i.e., it
+  private boolean isFinal = false;
+  private Namespace namespace = null;
   
-  public Var(String name, final Schema schema)
+  public Var(String name, Schema schema)
   {
     assert schema != null;
     this.name = name;
     this.schema = schema;
   }
-  /**
-   * @param name
-   */
+
   public Var(String name)
   {
     this(name, SchemaFactory.anySchema());
+  }
+
+  /** Constant variable */
+  public Var(String name, boolean isGlobal)
+  {
+    this(name, SchemaFactory.anySchema());
+    this.type = Type.UNDEFINED;
+    this.isGlobal = isGlobal;
+  }
+
+  public Var(String name, Schema schema, boolean isGlobal)
+  {
+    this(name, schema);
+    this.type = Type.UNDEFINED;
+    this.isGlobal = isGlobal;
   }
 
   /**
@@ -70,22 +99,34 @@ public class Var extends Object
   {
     return name;
   }
+
+  public void setName(String name)
+  {
+    this.name = name;
+  }
   
   /**
    * @return
    */
   public boolean isGlobal()
   {
-    return expr != null;
+    return isGlobal;
   }
 
-  /*** Returns the name of this variable without the leading $, if present.
-   */
-  public String nameAsField()
+  public boolean isFinal()
   {
-    return name.charAt(0) == '$' ? name.substring(1) : name;
+    return isFinal;
   }
 
+  public void finalize()
+  {
+    if (type != Type.VALUE && type != Type.EXPR)
+    {
+      throw new IllegalStateException("final variables must be of type VALUE or EXPR");
+    }
+    isFinal = true;
+  }
+  
   /**
    * @param varMap
    * @return
@@ -96,12 +137,13 @@ public class Var extends Object
     v.usage = usage;
     // Cloning a Var does NOT clone its value!
     // It is NOT safe to share an iter unless one var is never evaluated.
-    if (expr != null)
-    {
-      // TODO: do we need to clone a Var with an expr? Do we need to clone the Expr?
-      throw new RuntimeException("cannot clone variable with Expr");
-      // v.expr = expr.clone(varMap); // TODO: could we share the expr? 
-    }
+    //if (type == Type.EXPR)
+    //{
+      // TODO: do we need to clone a Var with an expr? Do we need to clone the
+      // Expr?
+      //throw new RuntimeException("cannot clone variable with Expr");
+      // v.expr = expr.clone(varMap); // TODO: could we share the expr?
+    //}
     return v;
   }
 
@@ -117,9 +159,9 @@ public class Var extends Object
   public void undefine()
   {
     this.value = null;
-    isDefined = false;
+    this.type = Type.UNDEFINED;
   }
-  
+
   /**
    * Set the runtime value.
    * 
@@ -127,11 +169,20 @@ public class Var extends Object
    */
   public void setValue(JsonValue value)
   {
-    assert schema.matchesUnsafe(value) : name + " has invalid schema: " + "found " + value + ", expected " + schema;
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
+    assert schema.matchesUnsafe(value) : name + " has invalid schema: "
+        + "found " + value + ", expected " + schema;
     this.value = value;
-    isDefined = true;
+    this.type = Type.VALUE;
   }
 
+  public void setExpr(Expr expr)
+  {
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
+    this.expr = expr;
+    this.type = Type.EXPR;
+  }
+  
   /**
    * Set the runtime value.
    * 
@@ -140,17 +191,18 @@ public class Var extends Object
    */
   public void setIter(JsonIterator iter)
   {
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
     assert iter != null;
     assert schema.is(ARRAY).maybe();
     value = iter;
-    isDefined = true;
+    type = Type.ITERATOR;
   }
 
   /**
-   * Set the variable's value to the result of the expression.
-   * If the variable is unused, the expression is not evaluated.
-   * If the variable is streamable and the expression is known to produce an array,
-   *   the expr is evaluated lazily using an Iter. 
+   * Set the variable's value to the result of the expression. If the variable
+   * is unused, the expression is not evaluated. If the variable is streamable
+   * and the expression is known to produce an array, the expr is evaluated
+   * lazily using an Iter.
    * 
    * @param expr
    * @param context
@@ -158,16 +210,16 @@ public class Var extends Object
    */
   public void setEval(Expr expr, Context context) throws Exception
   {
-    if( usage == Usage.STREAM && expr.getSchema().is(ARRAY,NULL).always() ) 
+    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
+    if (usage == Usage.STREAM && expr.getSchema().is(ARRAY, NULL).always())
     {
       setIter(expr.iter(context));
-    }
-    else if( usage != Usage.UNUSED )
+    } else if (usage != Usage.UNUSED)
     {
       setValue(expr.eval(context));
     }
   }
-  
+
   /**
    * 
    * @param var
@@ -176,25 +228,21 @@ public class Var extends Object
    */
   public void setGeneral(Object value, Context context) throws Exception
   {
-    if( value instanceof JsonValue )
+    if (value instanceof JsonValue)
     {
-      setValue((JsonValue)value);
-    }
-    else if( value instanceof JsonIterator )
+      setValue((JsonValue) value);
+    } else if (value instanceof JsonIterator)
     {
-      setIter((JsonIterator)value);
-    }
-    else if( value instanceof Expr )
+      setIter((JsonIterator) value);
+    } else if (value instanceof Expr)
     {
-      setEval((Expr)value, context);
-    }
-    else
+      setEval((Expr) value, context);
+    } else
     {
-      throw new InternalError("invalid variable value: "+value);
+      throw new InternalError("invalid variable value: " + value);
     }
   }
 
-  
   /**
    * Get the runtime value of the variable.
    * 
@@ -203,68 +251,65 @@ public class Var extends Object
    */
   public JsonValue getValue(Context context) throws Exception
   {
-    if (!isDefined)
+    switch (type)
     {
-      throw new NullPointerException("undefined variable: "+name());
-    }
-    
-    if( value instanceof JsonValue )
-    {
+    case VALUE:
       // assert schema.matchesUnsafe(v); // already checked
-      return (JsonValue)value; 
-    }
-    else if( value instanceof JsonIterator )
-    {
-      JsonIterator iter = (JsonIterator)value;
+      return (JsonValue) value;
+    case ITERATOR:
+      JsonIterator iter = (JsonIterator) value;
       JsonValue result;
-      if( iter.isNull() )
+      if (iter.isNull())
       {
         result = null;
-      }
-      else
+      } else
       {
         SpilledJsonArray arr = new SpilledJsonArray();
         arr.setCopy(iter);
         result = arr;
       }
-      // TODO: remove assertion? check can be expensive when large arrays are put in var's
-      assert schema.matchesUnsafe(result); 
-      value = result;
+      // TODO: remove assertion? check can be expensive when large arrays are
+      // put in var's
+      assert schema.matchesUnsafe(result);
+      if (!isGlobal())
+      {
+        value = result;
+        type = Type.VALUE;
+      }
       return result;
-    }
-    else if( expr != null ) // TODO: merge value and expr? value is run-time; expr is compile-time
-    {
+    case EXPR:
       JsonValue v = expr.eval(context);
-      expr = null;
-      value = v;
+      if (!isGlobal())
+      {
+        expr = null;
+        value = v;
+        type = Type.VALUE;
+      }
       assert schema.matchesUnsafe(v);
       return v;
     }
-    else if( value == null ) // value has been set to null explicitly 
-    {
-      return null;
-    }
-    throw new InternalError("bad variable value: "+name()+"="+value);
+    throw new IllegalStateException("undefined variable: " + name());
   }
-  
+
   /**
-   * Return an iterator over the (array) value.
-   * If the value is not an array, an exception is raised.
-   * If this variable has STREAM usage, it is NOT safe to request the value multiple times.
+   * Return an iterator over the (array) value. If the value is not an array, an
+   * exception is raised. If this variable has STREAM usage, it is NOT safe to
+   * request the value multiple times.
    * 
    * @return
    * @throws Exception
    */
   public JsonIterator iter(Context context) throws Exception
   {
-    if( usage == Usage.STREAM && value instanceof JsonIterator )
+    if (usage == Usage.STREAM && type == Type.ITERATOR)
     {
-      JsonIterator iter = (JsonIterator)value;
+      JsonIterator iter = (JsonIterator) value;
       value = null; // set undefined
       return iter;
     }
-    JsonArray arr = (JsonArray) getValue(context); // cast error intentionally possible
-    if( arr == null )
+    JsonArray arr = (JsonArray) getValue(context); // cast error intentionally
+                                                   // possible
+    if (arr == null)
     {
       return JsonIterator.NULL;
     }
@@ -275,11 +320,60 @@ public class Var extends Object
   {
     return schema;
   }
-  
+
   /** Don't use at runtime! */
   public void setSchema(Schema schema)
   {
     assert schema != null;
     this.schema = schema;
+  }
+  
+  public Usage usage()
+  {
+    return usage;
+  }
+  
+  public void setUsage(Usage usage)
+  {
+    this.usage = usage;
+  }
+  
+  public Type type()
+  {
+    return type;
+  }
+  
+  public JsonValue value()
+  {
+    return (JsonValue)value;
+  }
+  
+  public Expr expr()
+  {
+    return expr;
+  }
+  
+  public boolean isHidden()
+  {
+    return hidden;
+  }
+  
+  public void setHidden(boolean hide)
+  {
+    this.hidden = hide;
+  }
+  
+  public Namespace getNamespace()
+  {
+    return namespace;
+  }
+  
+  public void setNamespace(Namespace namespace)
+  {
+    if (this.namespace != null && this.namespace != namespace)
+    {
+      throw new IllegalStateException("variable already has a namespace");
+    }
+    this.namespace = namespace;
   }
 }

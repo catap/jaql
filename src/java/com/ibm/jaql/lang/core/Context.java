@@ -24,6 +24,7 @@ import java.util.HashMap;
 
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Pair;
 
@@ -34,7 +35,7 @@ public class Context
 {
   // protected HashMap<Var,Object> varValues = new HashMap<Var,Object>();
   // protected HashMap<Expr,Item>  tempArrays = new HashMap<Expr,Item>(); // TODO: we could use one hashmap
-  protected HashMap<Pair<Expr,String>,JaqlFunction> fnMap = new HashMap<Pair<Expr,String>,JaqlFunction>(); // TODO: this will be a compiled expr soon 
+  protected HashMap<Pair<Expr,String>,Function> fnMap = new HashMap<Pair<Expr,String>,Function>(); // TODO: this will be a compiled expr soon 
   protected Pair<Expr,String> exprFnPair = new Pair<Expr, String>();
   protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
   // PyModule pyModule;
@@ -104,7 +105,9 @@ public class Context
   {
     try
     {
-      reset();
+      // FIXME: uncommenting the following line leads to ConcurrentModificationExceptions
+      // on page files
+//      reset();
     }
     finally
     {
@@ -130,11 +133,11 @@ public class Context
     });
   }
 
-  public JaqlFunction getCallable(Expr callSite, JaqlFunction fn) throws Exception
+  public Function getCallable(Expr callSite, Function fn) throws Exception
   {
     exprFnPair.a = callSite;
     exprFnPair.b = fn.getText();
-    JaqlFunction fn2 = fnMap.get(exprFnPair);
+    Function fn2 = fnMap.get(exprFnPair);
     if( fn2 == null )
     {
       fn2 = JsonUtil.getCopy(fn, null); 

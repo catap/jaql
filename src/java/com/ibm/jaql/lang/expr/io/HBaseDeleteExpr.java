@@ -25,7 +25,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -37,9 +37,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * Delete all column values for the given tuple identified by the keyExpr in the
  * table defined by tableExpr.
  */
-@JaqlFn(fnName = "hbaseDelete", minArgs = 3, maxArgs = 3)
 public class HBaseDeleteExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par33
+  {
+    public Descriptor()
+    {
+      super("hbaseDelete", HBaseDeleteExpr.class);
+    }
+  }
+  
   /**
    * hbaseDelete( string table, array keys, array columns )
    * 

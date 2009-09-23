@@ -24,14 +24,21 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * natural logarithm
  */
-@JaqlFn(fnName = "ln", minArgs = 1, maxArgs = 1)
 public class LnFn extends AbstractRealFn
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("ln", LnFn.class);
+    }
+  }
+  
   public LnFn(Expr ... exprs)
   {
     super(exprs);

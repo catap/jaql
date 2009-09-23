@@ -20,17 +20,24 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "hbaseWrite", minArgs = 2, maxArgs = 3)
 public class HBaseWriteExpr extends MacroExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par23
+  {
+    public Descriptor()
+    {
+      super("hbaseWrite", HBaseWriteExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -53,12 +60,8 @@ public class HBaseWriteExpr extends MacroExpr
     NameValueBinding lField = new NameValueBinding(Adapter.LOCATION_NAME,
         exprs[1]);
     RecordExpr rec = new RecordExpr(new Expr[]{tField, lField});
-    if (exprs.length == 3)
-    {
-      NameValueBinding oField = new NameValueBinding(Adapter.OUTOPTIONS_NAME,
-          exprs[2]);
-      rec.addChild(oField);
-    }
+    NameValueBinding oField = new NameValueBinding(Adapter.OUTOPTIONS_NAME, exprs[2], false);
+    rec.addChild(oField);
     return new WriteFn(exprs[0], rec);
   }
 }

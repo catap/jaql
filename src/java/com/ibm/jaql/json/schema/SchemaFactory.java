@@ -36,7 +36,7 @@ import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 
@@ -344,12 +344,12 @@ public class SchemaFactory
    * @param typeConstructorName
    * @return The paramater descriptor for the constructor function with the specified type name.
    */
-  public static Parameters getParameters(String typeConstructorName)
+  public static JsonValueParameters getParameters(String typeConstructorName)
   {
     // TODO: this code should be table-driven. It requires Parameter factory classes.
     if( typeConstructorName.equals("nonnull") )
     {
-      return new Parameters();
+      return new JsonValueParameters();
     } 
     else if( typeConstructorName.equals("binary") )
     {
@@ -389,7 +389,7 @@ public class SchemaFactory
     }
     else if( typeConstructorName.equals("any") )
     {
-      return new Parameters();
+      return new JsonValueParameters();
     }
     else 
     throw new RuntimeException("undefined type: " + typeConstructorName);

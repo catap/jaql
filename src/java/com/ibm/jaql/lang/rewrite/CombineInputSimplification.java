@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.expr.core.CombineExpr;
+import com.ibm.jaql.lang.expr.agg.CombineExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 /**

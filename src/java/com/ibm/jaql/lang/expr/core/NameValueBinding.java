@@ -112,7 +112,7 @@ public class NameValueBinding extends FieldExpr
    */
   public NameValueBinding(Var var, boolean required)
   {
-    this(var.nameAsField(), new VarExpr(var), required);
+    this(var.name(), new VarExpr(var), required);
   }
 
   /*

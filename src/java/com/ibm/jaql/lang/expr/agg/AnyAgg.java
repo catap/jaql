@@ -22,14 +22,27 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Picks any value. If there is at least one non-null values, picks a non-null value.
  * 
  */
-@JaqlFn(fnName = "any", minArgs = 1, maxArgs = 1)
 public final class AnyAgg extends AlgebraicAggregate
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor
+  {
+    public Descriptor()
+    {
+      super(
+          "any",
+          AnyAgg.class,
+          new JsonValueParameters(new JsonValueParameter("a", SchemaFactory.arrayOrNullSchema())),
+          SchemaFactory.anySchema());
+    }
+  }
+  
   private JsonValue result;
   
   /**
@@ -50,13 +63,13 @@ public final class AnyAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     result = null;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( result == null && value != null )
     {
@@ -71,7 +84,7 @@ public final class AnyAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     if( result == null && value != null )
     {

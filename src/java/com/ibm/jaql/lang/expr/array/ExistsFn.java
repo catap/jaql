@@ -15,14 +15,16 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
-import static com.ibm.jaql.json.type.JsonType.*;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 // TODO: redefine this for JSON; add empty()
 /**
@@ -30,9 +32,16 @@ import static com.ibm.jaql.json.type.JsonType.*;
  * has at least one element (even a null) exists(...) = true, when the argument
  * is not an array or a null
  */
-@JaqlFn(fnName = "exists", minArgs = 1, maxArgs = 1)
 public class ExistsFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("exists", ExistsFn.class);
+    }
+  }
+  
   /**
    * exists(array)
    * 

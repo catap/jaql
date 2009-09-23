@@ -28,7 +28,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -43,9 +43,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * case, the result that is returned is as follows: {key: value, column: [v1,
  * v2, ...], column: [...]}
  */
-@JaqlFn(fnName = "hbaseFetch", minArgs = 2, maxArgs = 4)
 public class HBaseFetchExpr extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par24
+  {
+    public Descriptor()
+    {
+      super("hbaseFetch", HBaseFetchExpr.class);
+    }
+  }
+  
   /**
    * hbaseFetch( tableExpr, keysExpr, (, columnsExpr)? (, argsExpr)? )
    * 
@@ -74,9 +81,10 @@ public class HBaseFetchExpr extends IterExpr
     JsonString tableName = JaqlUtil.enforceNonNull((JsonString) exprs[0].eval(context));
 
     JsonArray jcolumns = null;
-    JsonRecord args = JsonRecord.EMPTY;
-    if (exprs.length == 3)
+    JsonRecord args = (JsonRecord) exprs[3].eval(context);
+    if (args == null)
     {
+      args = JsonRecord.EMPTY;
       JsonValue w = exprs[2].eval(context);
       if (w != null)
       {
@@ -96,10 +104,9 @@ public class HBaseFetchExpr extends IterExpr
         }
       }
     }
-    else if (exprs.length == 4)
+    else 
     {
       jcolumns = (JsonArray) exprs[2].eval(context);
-      args = (JsonRecord) exprs[3].eval(context);
     }
     // get the arguments
     JsonLong timestampValue = (JsonLong) args.get(new JsonString("timestamp"));

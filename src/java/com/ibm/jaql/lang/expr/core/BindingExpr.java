@@ -175,7 +175,7 @@ public class BindingExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(var.name);
+    exprText.print(var.name());
     exprText.print(" = ");
     if( exprs.length == 0 )
     {

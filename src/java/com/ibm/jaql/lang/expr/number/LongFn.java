@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.number;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
@@ -23,15 +25,21 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
-import static com.ibm.jaql.json.type.JsonType.*;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "long", minArgs = 1, maxArgs = 1)
 public class LongFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("long", LongFn.class);
+    }
+  }
+  
   /**
    * int(num)
    * 

@@ -22,14 +22,21 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "readConf", minArgs = 1, maxArgs = 2)
 public class ReadConfExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("readConf", ReadConfExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -50,10 +57,7 @@ public class ReadConfExpr extends Expr
     JsonValue dflt = null;
     if (conf == null)
     {
-      if (exprs.length == 2)
-      {
-        dflt = exprs[1].eval(context);
-      }
+      dflt = exprs[1].eval(context);
       return dflt;
     }
 
@@ -61,10 +65,7 @@ public class ReadConfExpr extends Expr
     String val = conf.get(name.toString());
     if (val == null)
     {
-      if (exprs.length == 2)
-      {
-        dflt = exprs[1].eval(context);
-      }
+      dflt = exprs[1].eval(context);
       return dflt;
     }
 

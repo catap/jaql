@@ -22,14 +22,21 @@ import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "regex_test", minArgs = 2, maxArgs = 2)
 public class RegexTestFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("regex_test", RegexTestFn.class);
+    }
+  }
+  
   /**
    * @param args
    */

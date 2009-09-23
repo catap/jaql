@@ -44,7 +44,7 @@ public class MaterializeExpr extends TopExpr
   {
     super(new Expr[]{expr.clone(new VarMap())});
     this.var = var;
-    var.expr = expr;
+    var.setExpr(expr);
   }
 
   /**
@@ -56,7 +56,7 @@ public class MaterializeExpr extends TopExpr
    */
   public MaterializeExpr(Var var)
   {
-    this(var, var.expr);
+    this(var, var.expr());
   }
 
   public Map<ExprProperty, Boolean> getProperties()
@@ -89,7 +89,7 @@ public class MaterializeExpr extends TopExpr
   public JsonBool eval(Context context) throws Exception
   {
     JsonBool result = JsonBool.FALSE;
-    if( var.value == null )
+    if( var.type() != Var.Type.VALUE )
     {
       result = JsonBool.TRUE;
       Context gctx = JaqlUtil.getSessionContext();

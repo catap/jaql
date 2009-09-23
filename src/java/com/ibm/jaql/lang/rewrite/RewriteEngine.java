@@ -105,9 +105,9 @@ public class RewriteEngine
     // new CogroupToMapReduce(phase);
     // new ForToMapReduce(phase);
 
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 0);
+    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);
     new ConstEval(phase); // TODO: run bottom-up/post-order
-    // new ConstFunction(phase);
+    //new ConstFunction(phase);
 
     // phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);

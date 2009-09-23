@@ -17,13 +17,13 @@ package com.ibm.jaql.lang.expr.string;
 
 import static com.ibm.jaql.json.type.JsonType.ARRAY;
 import static com.ibm.jaql.json.type.JsonType.BOOLEAN;
+import static com.ibm.jaql.json.type.JsonType.DATE;
 import static com.ibm.jaql.json.type.JsonType.DECFLOAT;
 import static com.ibm.jaql.json.type.JsonType.DOUBLE;
 import static com.ibm.jaql.json.type.JsonType.LONG;
 import static com.ibm.jaql.json.type.JsonType.NULL;
 import static com.ibm.jaql.json.type.JsonType.RECORD;
 import static com.ibm.jaql.json.type.JsonType.STRING;
-import static com.ibm.jaql.json.type.JsonType.DATE;
 
 import java.util.HashMap;
 import java.util.List;

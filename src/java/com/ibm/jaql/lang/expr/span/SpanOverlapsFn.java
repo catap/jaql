@@ -19,14 +19,21 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "span_overlaps", minArgs = 2, maxArgs = 2)
 public class SpanOverlapsFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("span_overlaps", SpanOverlapsFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

@@ -82,7 +82,7 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
   {
     for(int i = 0 ; i < aggs.length ; i++)
     {
-      aggs[i].initPartial(context);
+      aggs[i].init(context);
     }
 
     boolean hadInput = false;
@@ -96,7 +96,7 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
       arr.getAll(tempAggs);
       for(int i = 0 ; i < aggs.length ; i++)
       {
-        aggs[i].addPartial(tempAggs[i]);
+        aggs[i].combine(tempAggs[i]);
       }
     }
 

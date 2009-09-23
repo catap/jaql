@@ -25,7 +25,7 @@ public abstract class TopExpr extends Expr
   /**
    * @param exprs
    */
-  public TopExpr(Expr[] exprs)
+  public TopExpr(Expr ... exprs)
   {
     super(exprs);
   }

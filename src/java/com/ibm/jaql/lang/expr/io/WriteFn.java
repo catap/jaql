@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression used for writing external data. It is called as follows:
@@ -34,9 +34,16 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * option fields will be used. If there are duplicate names, then the query
  * options will be used as an override.
  */
-@JaqlFn(fnName = "write", minArgs = 2, maxArgs = 2)
 public final class WriteFn extends AbstractWriteExpr implements PotentialMapReducible
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("write", WriteFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */
@@ -61,7 +68,7 @@ public final class WriteFn extends AbstractWriteExpr implements PotentialMapRedu
    */
   public boolean isMapReducible()
   {
-    return MapReducibleUtil.isMapReducible(true, descriptor());
+    return MapReducibleUtil.isMapReducible(false, descriptor());
   }
 
   /*

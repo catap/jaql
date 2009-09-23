@@ -15,25 +15,41 @@
  */
 package com.ibm.jaql.lang.expr.agg;
 
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /**
  * 
  */
-@JaqlFn(fnName = "argmin", minArgs = 2, maxArgs = 2)
 public final class ArgMinAgg extends AlgebraicAggregate
 {
   private boolean noMin;
   private JsonValue min;
   private JsonValue arg;
-  private JaqlFunction keyFn;
+  private Function keyFn;
   private JsonValue[] fnArgs = new JsonValue[1];
   private Context context;
   
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor
+  {
+    public Descriptor()
+    {
+      super(
+          "argmin",
+          ArgMinAgg.class,
+          new JsonValueParameters(
+              new JsonValueParameter("a", SchemaFactory.arrayOrNullSchema()),
+              new JsonValueParameter("f", SchemaFactory.functionSchema())),
+            SchemaFactory.anySchema());
+    }
+  }
+
   
   /**
    * @param exprs 
@@ -44,22 +60,23 @@ public final class ArgMinAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     this.context = context;
     noMin = true;
-    keyFn = (JaqlFunction)exprs[1].eval(context);
+    keyFn = (Function)exprs[1].eval(context);
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null )
     {
       return;
     }
     fnArgs[0] = value;
-    JsonValue key = keyFn.eval(context,fnArgs);
+    keyFn.setArguments(fnArgs);
+    JsonValue key = keyFn.eval(context);
     if( noMin || key.compareTo(min) < 0 )
     {
       noMin = false;
@@ -75,9 +92,9 @@ public final class ArgMinAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
-    addInitial(value);
+    accumulate(value);
   }
 
   @Override

@@ -29,6 +29,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
@@ -36,9 +37,16 @@ import com.ibm.jaql.lang.core.Context;
  * @author kbeyer
  *
  */
-@JaqlFn(fnName="mergeContainers", minArgs=1, maxArgs=Expr.UNLIMITED_EXPRS)
 public class MergeContainersFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par1u
+  {
+    public Descriptor()
+    {
+      super("mergeContainers", MergeContainersFn.class);
+    }
+  }
+  
   public MergeContainersFn(Expr[] inputs)
   {
     super(inputs);

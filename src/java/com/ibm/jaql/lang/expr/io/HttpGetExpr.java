@@ -21,19 +21,25 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.record.RemapFn;
 
 /**
  * 
  */
-@JaqlFn(fnName = "httpGet", minArgs = 1, maxArgs = 3)
 public class HttpGetExpr extends MacroExpr
 {
-
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par13
+  {
+    public Descriptor()
+    {
+      super("httpGet", HttpGetExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

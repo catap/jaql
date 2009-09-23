@@ -22,14 +22,21 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /** Converts an input value (string, array of strings or record with string values) to 
  * the specified types. */
-@JaqlFn(fnName = "convert", minArgs = 2, maxArgs = 2)
 public class ConvertFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("convert", ConvertFn.class);
+    }
+  }
+  
   // -- variables ---------------------------------------------------------------------------------
   
   Schema schema = null;
