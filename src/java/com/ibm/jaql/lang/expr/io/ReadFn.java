@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression used for reading data into jaql. It is called as follows:
@@ -31,9 +31,16 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  * will be used. If there are duplicate names, then the query options will be
  * used as an override.
  */
-@JaqlFn(fnName = "read", minArgs = 1, maxArgs = 1)
 public final class ReadFn extends AbstractReadExpr implements PotentialMapReducible
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("read", ReadFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

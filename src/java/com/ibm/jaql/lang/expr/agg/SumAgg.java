@@ -32,16 +32,23 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MathExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
  * 
  */
-@JaqlFn(fnName = "sum", minArgs = 1, maxArgs = 1)
 public final class SumAgg extends AlgebraicAggregate
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("sum", SumAgg.class);
+    }
+  }
+  
   public static final class Summer
   {
     boolean hadData;
@@ -197,13 +204,13 @@ public final class SumAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     summer.init();
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     summer.add(value);
   }
@@ -215,7 +222,7 @@ public final class SumAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     summer.add(value);
   }

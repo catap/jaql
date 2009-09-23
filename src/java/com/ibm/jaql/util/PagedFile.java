@@ -193,7 +193,8 @@ public final class PagedFile
   {
     if( expectedVersion != version )
     {
-      throw new ConcurrentModificationException();
+      throw new ConcurrentModificationException("expected version " + expectedVersion 
+          + " but found " + version);
     }
     int n = freeList.position() - 8;
     assert n >= 0;
@@ -239,7 +240,8 @@ public final class PagedFile
   {
     if( expectedVersion != version )
     {
-      throw new ConcurrentModificationException();
+      throw new ConcurrentModificationException("expected version " + expectedVersion 
+          + " but found " + version);
     }
     buffer.clear(); // write the whole page
     file.write(buffer, offset);
@@ -267,7 +269,8 @@ public final class PagedFile
   {
     if( expectedVersion != version )
     {
-      throw new ConcurrentModificationException();
+      throw new ConcurrentModificationException("expected version " + expectedVersion 
+          + " but found " + version);
     }
     buffer.clear();
     file.read(buffer, offset);

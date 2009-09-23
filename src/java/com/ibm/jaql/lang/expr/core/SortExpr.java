@@ -25,9 +25,9 @@ import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.core.JsonComparator;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.function.JaqlFunction;
 import com.ibm.jaql.lang.util.JsonSorter;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
@@ -111,12 +111,12 @@ public class SortExpr extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     JaqlFunction cmpFn = (JaqlFunction)cmpExpr().eval(context);
-    if( cmpFn.getNumParameters() != 1 || !(cmpFn.getBody() instanceof CmpExpr) )
+    if( cmpFn.getParameters().numParameters() != 1 || !(cmpFn.body() instanceof CmpExpr) )
     {
       throw new RuntimeException("invalid comparator function");
     }
-    Var cmpVar = cmpFn.param(0);
-    CmpExpr cmp = (CmpExpr)cmpFn.getBody();
+    Var cmpVar = cmpFn.getParameters().get(0).getVar();
+    CmpExpr cmp = (CmpExpr)cmpFn.body();
     JsonComparator comparator = cmp.getComparator(context);
 
     final JsonSorter temp = new JsonSorter(comparator);

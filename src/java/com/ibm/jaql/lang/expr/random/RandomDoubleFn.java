@@ -26,14 +26,21 @@ import com.ibm.jaql.json.type.MutableJsonDouble;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "randomDouble", minArgs = 0, maxArgs = 1)
 public class RandomDoubleFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par01
+  {
+    public Descriptor()
+    {
+      super("randomDouble", RandomDoubleFn.class);
+    }
+  }
+  
   private Random rng;
   private MutableJsonDouble jdouble = new MutableJsonDouble();
 
@@ -85,15 +92,15 @@ public class RandomDoubleFn extends Expr
   {
     if (rng == null)
     {
-      if( exprs.length == 0 )
+      JsonNumber seedItem = (JsonNumber) exprs[0].eval(context);
+      if (seedItem != null)
       {
-        rng = new Random();
+        long seed = seedItem.longValue();
+        rng = new Random(seed);
       }
       else
       {
-        JsonNumber seedItem = (JsonNumber) exprs[0].eval(context);
-        long seed = seedItem.longValue();
-        rng = new Random(seed);
+        rng = new Random();
       }
     }
     jdouble.set(rng.nextDouble());

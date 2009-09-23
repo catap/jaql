@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -22,15 +24,21 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
-import static com.ibm.jaql.json.type.JsonType.*;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "fields", minArgs = 1, maxArgs = 1)
 public final class FieldsFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("fields", FieldsFn.class);
+    }
+  }
+  
   /**
    * Expr record
    * 

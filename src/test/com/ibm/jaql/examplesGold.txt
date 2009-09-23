@@ -1,0 +1,2625 @@
+// the data
+
+books = [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     reviews: [
+       {rating: 10, user: 'joe', review: 'The best ...'},
+       {rating: 6, user: 'mary', review: 'Average ...'}]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1998},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1997, 
+     reviews: [
+       {rating: 8, user: 'rob', review: 'High on my list...'}, 
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
+        discussion:
+          [{user: 'ben', text: 'This is too harsh...'}, 
+           {user: 'jill', text: 'I agree ...'}]}]},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1930}
+  ];##
+"books"
+
+  
+// Example 1. Write to a file named 'hey.dat'. DIFF
+[{text: 'Hello World'}] -> localWrite(file('build/test/cache/hey.dat'));##
+{
+  "location": "build/test/cache/hey.dat",
+  "type": "local"
+}
+
+	
+// Read it back... DIFF
+read(file('build/test/cache/hey.dat'));##
+[
+  {
+    "text": "Hello World"
+  }
+]
+
+
+// Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
+[
+    {order: 1, cust: 'c1', items: [ 
+      {item: 1, qty: 2},
+      {item: 3, qty: 6},
+      {item: 5, qty: 10}]},
+    {order: 2, cust: 'c2', items: [
+      {item: 2, qty: 1},
+      {item: 5, qty: 2},
+      {item: 7, qty: 3}]},
+    {order: 3, cust: 'c1', items: [
+      {item: 1, qty: 2},
+      {item: 7, qty: 14},
+      {item: 5, qty: 10}]} 
+] 
+-> write(hdfs('orders.dat'));##
+{
+  "location": "orders.dat",
+  "type": "hdfs"
+}
+
+
+// Read it back...
+read(hdfs('orders.dat'));##
+[
+  {
+    "cust": "c1",
+    "items": [
+      {
+        "item": 1,
+        "qty": 2
+      },
+      {
+        "item": 3,
+        "qty": 6
+      },
+      {
+        "item": 5,
+        "qty": 10
+      }
+    ],
+    "order": 1
+  },
+  {
+    "cust": "c2",
+    "items": [
+      {
+        "item": 2,
+        "qty": 1
+      },
+      {
+        "item": 5,
+        "qty": 2
+      },
+      {
+        "item": 7,
+        "qty": 3
+      }
+    ],
+    "order": 2
+  },
+  {
+    "cust": "c1",
+    "items": [
+      {
+        "item": 1,
+        "qty": 2
+      },
+      {
+        "item": 7,
+        "qty": 14
+      },
+      {
+        "item": 5,
+        "qty": 10
+      }
+    ],
+    "order": 3
+  }
+]
+
+
+// Example 3. Write to an HBase table named 'webcrawl'. (see hbaseQueries.txt)
+	
+// Read it back... (see hbaseQueries.txt)
+
+// Write the books collection from data above. DIFF
+books -> write(hdfs('books'));##
+{
+  "location": "books",
+  "type": "hdfs"
+}
+
+  
+// Query 1. Return the publisher and title of each book. DIFF
+read(hdfs('books'))
+-> transform {$.publisher, $.title};##
+[
+  {
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows"
+  },
+  {
+    "publisher": "Scholastic",
+    "title": "Chamber of Secrets"
+  },
+  {
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone"
+  },
+  {
+    "publisher": "Scholastic",
+    "title": "Monster Blood IV"
+  },
+  {
+    "publisher": "Grosset",
+    "title": "The Secret of Kane"
+  }
+]
+
+  
+// Query 2. Find the authors and titles of books that have received 
+// a review. DIFF
+read(hdfs('books'))
+-> filter exists($.reviews)
+-> transform {$.author, $.title};##
+[
+  {
+    "author": "J. K. Rowling",
+    "title": "Chamber of Secrets"
+  },
+  {
+    "author": "R. L. Stine",
+    "title": "Monster Blood IV"
+  }
+]
+
+
+// Query 3a. Project the title from each book using the short-hand
+// projection notation. DIFF
+read(hdfs('books'))[*].title;##
+[
+  "Deathly Hallows",
+  "Chamber of Secrets",
+  "Sorcerers Stone",
+  "Monster Blood IV",
+  "The Secret of Kane"
+]
+
+
+// Query 3a-alt. Or using equivalent the long-hand notation. DIFF
+read(hdfs('books'))
+-> transform $.title;##
+[
+  "Deathly Hallows",
+  "Chamber of Secrets",
+  "Sorcerers Stone",
+  "Monster Blood IV",
+  "The Secret of Kane"
+]
+
+  
+// Query 3b. Project the user from each review of each book using the short-hand
+// projection notation.  The double-stars flattens the contained arrays.
+// TODO: lost this notation; bring it back?
+// read(hdfs('books'))[**].reviews[*].user;
+read(hdfs('books'))[*].reviews[*].user -> expand;##
+[
+  "joe",
+  "mary",
+  "rob",
+  "mike"
+]
+
+
+// Query 3b-alt. Or using equivalent the long-hand notation.
+read(hdfs('books'))
+-> expand $.reviews
+-> transform $.user;##
+[
+  "joe",
+  "mary",
+  "rob",
+  "mike"
+]
+
+
+// Query 4. Find authors, titles, and reviews of books where a review
+// prompted a discussion by the user 'ben'. DIFF
+read(hdfs('books'))
+-> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
+-> transform { $.author, $.title, $.reviews };##
+[
+  {
+    "author": "R. L. Stine",
+    "reviews": [
+      {
+        "rating": 8,
+        "review": "High on my list...",
+        "user": "rob"
+      },
+      {
+        "discussion": [
+          {
+            "text": "This is too harsh...",
+            "user": "ben"
+          },
+          {
+            "text": "I agree ...",
+            "user": "jill"
+          }
+        ],
+        "rating": 2,
+        "review": "Not worth the paper ...",
+        "user": "mike"
+      }
+    ],
+    "title": "Monster Blood IV"
+  }
+]
+
+
+// Query 5. Find the authors and titles of books that had an
+// average review rating over 5. DIFF
+read(hdfs('books'))
+-> filter avg($.reviews[*].rating) > 5
+-> transform {$.author, $.title};##
+[
+  {
+    "author": "J. K. Rowling",
+    "title": "Chamber of Secrets"
+  }
+]
+
+
+// Query 6. Show how many books each publisher has published. DIFF
+read(hdfs('books'))
+-> group by p = ($.publisher)
+    into {publisher: p, num: count($)}
+-> sort by [$.publisher];##
+[
+  {
+    "num": 1,
+    "publisher": "Grosset"
+  },
+  {
+    "num": 4,
+    "publisher": "Scholastic"
+  }
+]
+
+  
+// Query 7. Find the publisher who published the most books. DIFF
+read(hdfs('books'))
+-> group by p = ($.publisher)
+    into {publisher: p, num: count($)}
+-> top 1 by [$.num desc];##
+[
+  {
+    "num": 4,
+    "publisher": "Scholastic"
+  }
+]
+
+
+// Setup for co-group example DIFF
+[
+  {a:1, b:1}, 
+  {a:1, b:2}, 
+  {a:2, b:3}, 
+  {a:2, b:4}
+]
+-> write(hdfs('X'));##
+{
+  "location": "X",
+  "type": "hdfs"
+}
+
+
+[
+  {c:2, d:1}, 
+  {c:2, d:2}, 
+  {c:3, d:3}, 
+  {c:3, d:4}
+]
+-> write(hdfs('Y'));##
+{
+  "location": "Y",
+  "type": "hdfs"
+}
+
+
+// Query 8. Co-group X and Y. DIFF
+x = read(hdfs('X'));##
+"x"
+
+y = read(hdfs('Y'));##
+"y"
+
+group x by g = ($.a),
+      y by g = ($.c)
+ into {g: g, b: x[*].b, d: y[*].d}
+-> sort by [$];##
+[
+  {
+    "b": [],
+    "d": [
+      3,
+      4
+    ],
+    "g": 3
+  },
+  {
+    "b": [
+      1,
+      2
+    ],
+    "d": [],
+    "g": 1
+  },
+  {
+    "b": [
+      3,
+      4
+    ],
+    "d": [
+      1,
+      2
+    ],
+    "g": 2
+  }
+]
+
+
+// Query 9. Join X and Y. DIFF: sort to ensure order
+join x, y
+where x.a == y.c
+into {x.a, x.b, y.c, y.d}
+-> sort by [$];##
+[
+  {
+    "a": 2,
+    "b": 3,
+    "c": 2,
+    "d": 1
+  },
+  {
+    "a": 2,
+    "b": 3,
+    "c": 2,
+    "d": 2
+  },
+  {
+    "a": 2,
+    "b": 4,
+    "c": 2,
+    "d": 1
+  },
+  {
+    "a": 2,
+    "b": 4,
+    "c": 2,
+    "d": 2
+  }
+]
+
+
+// Write to an HDFS file called 'sample'.
+[
+    {x: 0, text: 'zero'},
+    {x: 1, text: 'one'},
+    {x: 0, text: 'two'},
+    {x: 1, text: 'three'},
+    {x: 0, text: 'four'},
+    {x: 1, text: 'five'},
+    {x: 0, text: 'six'},
+    {x: 1, text: 'seven'},
+    {x: 0, text: 'eight'}
+]
+-> write(hdfs('sample.dat'));##
+{
+  "location": "sample.dat",
+  "type": "hdfs"
+}
+
+
+
+  median = fn(items) (
+    sorted = items -> sort by [$],
+
+    sorted[long(count(sorted)/2)]
+  );##
+"median"
+
+
+  median( [ 1, 4, 5, 3, 2 ] );##
+3
+ // 3
+
+  var = fn(items) (
+    init = 
+       items
+       -> filter not isnull($)
+       -> transform { n: 1, s1: $, s2: $*$ },
+
+    combined =
+       init 
+       -> combine( fn(a,b)
+              { n:  a.n  + b.n,
+               s1: a.s1 + b.s1,
+               s2: a.s2 + b.s2 }),
+
+    E_X  = combined.s1 / combined.n,
+    E_X2 = combined.s2 / combined.n,
+
+    E_X2 - E_X * E_X
+  );##
+"var"
+
+
+  var( [ 1, 4, 5, 3, 2 ] );##
+2
+ // 2
+
+// Run a map/reduce job that counts the number objects
+// for each 'x' value. DIFF
+mapReduce( 
+    { input:  {type: 'hdfs', location: 'sample.dat'}, 
+      output: {type: 'hdfs', location: 'results.dat'}, 
+      map:    fn(v) ( v -> transform [$.x, 1] ),
+      reduce: fn(x, v) ( v -> aggregate into {x: x, num: count($)} )
+    });##
+{
+  "location": "results.dat",
+  "type": "hdfs"
+}
+
+    
+read(hdfs('results.dat'));##
+[
+  {
+    "num": 5,
+    "x": 0
+  },
+  {
+    "num": 4,
+    "x": 1
+  }
+]
+
+
+// Define a function that returns the most recent book
+// written by a given author. DIFF
+  mostRecent = 
+    fn(author) (
+         read(hdfs('books'))
+         -> filter $.author == author
+         -> top 1 by [$.year desc]
+         -> transform $.title
+         -> singleton()
+    );##
+"mostRecent"
+
+
+  // Invoke the function.
+  mostRecent('J. K. Rowling');##
+"Deathly Hallows"
+
+
+// non-deterministic function-- do not test this for now...
+// Get albums recorded by "The Police" using Freebase.  DIFF
+// (
+//    artist = "The Police",
+//    freebase = 
+//      httpGet('http://www.freebase.com/api/service/mqlread', 
+//        { queries: 
+//           serialize(
+//              { myquery: 
+//                { query:
+//                  [{ type: "/music/artist",
+//                     name: artist,
+//                     album: []
+//                   }] 
+//                }
+//              }
+//            ) }) [0],
+//  
+//    freebase.myquery.result[*].album -> expand
+//  );
+
+// non-deterministic function-- do not test this for now...  
+// Get traffic incidents from Yahoo!. DIFF
+// (
+//    trafficData = 
+//      httpGet('http://local.yahooapis.com/MapsService/V1/trafficData',
+//        { appid:  "YahooDemo",
+//          street: "701 First Street",
+//          city:   "Sunnyvale",
+//          state:  "CA",
+//          output: "json"
+//        })[0],
+//  
+//    trafficData.ResultSet.Result[*].title
+// );
+
+// ====== SPLIT1 ======
+
+    split1 = javaudf("com.acme.extensions.fn.Split1");##
+"split1"
+
+    path = '/home/mystuff/stuff';##
+"path"
+
+
+    split1(path, "/");##
+[
+  "",
+  "home",
+  "mystuff",
+  "stuff"
+]
+
+    // [ "", "home", "mystuff", "stuff" ]
+
+    count(split1(path, "/"));##
+4
+
+    // 4
+
+    split1(path, "/")[1];##
+"home"
+ 
+    // "home"
+
+// ====== SPLIT2 ======
+
+    split2 = javaudf("com.acme.extensions.fn.Split2");##
+"split2"
+
+    path = '/home/mystuff/stuff';##
+"path"
+
+
+    split2(path, "/");##
+[
+  "",
+  "home",
+  "mystuff",
+  "stuff"
+]
+
+    // [ "", "home", "mystuff", "stuff"]
+
+    count(split2(path, "/"));##
+4
+
+    // 4
+
+    split2(path, "/")[1];##
+"home"
+
+    // "home"
+
+// ====== GREP ======
+
+    grep = javaudf("com.acme.extensions.fn.Grep");##
+"grep"
+
+    data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];##
+"data"
+
+
+    grep("a\\d*b", data);##
+[
+  "a1b",
+  "a3b",
+  "a5b",
+  "a7b"
+]
+
+    // [ "a1b", "a3b", "a5b", "a7b" ]
+
+    grep("a\\d*b", null, data );##
+[
+  "a1b",
+  "a3b",
+  "a5b",
+  "a7b"
+]
+
+    // [ "a1b", "a3b", "a5b", "a7b" ]
+
+    grep("a\\d*b", "g", data );##
+[
+  "a1b",
+  "a2b",
+  "a3b",
+  "a4b",
+  "a5b",
+  "a6b",
+  "a7b",
+  "a8b"
+]
+
+    // [ "a1b", "a2b", "a3b", "a4b", "a5b", "a6b", "a7b", "a8b" ]
+
+// ====== GCD ======
+
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");##
+"gcd1"
+
+    gcd1(null);##
+null
+ // null
+    gcd1([]);##
+null
+ // null
+    gcd1(3);##
+FAILURE
+ // correctly produces cast error: array expected
+    gcd1([3]);##
+3
+ // 3
+    gcd1([0,0]);##
+0
+ // 0
+    gcd1([3,0]);##
+3
+ // 3
+    gcd1([0,3]);##
+3
+ // 3
+    gcd1([17,13]);##
+1
+ // 1
+    gcd1([12,18]);##
+6
+ // 6
+    gcd1([36,18]);##
+18
+ // 18
+    gcd1([36,18,12]);##
+6
+ // 6
+    gcd1(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+93
+ // 31*3 = 93
+
+
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");##
+"gcd2"
+
+
+    gcd2("x","y");##
+FAILURE
+ // correctly produces error: numbers expected
+    gcd2(17,13);##
+1
+ // 1
+    gcd2(12,18);##
+6
+ // 6
+
+
+    gcd = fn(nums) combine(nums, fn(a,b) gcd2(a,b));##
+"gcd"
+
+
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+93
+ // 31*3 = 93
+
+
+    gcd = fn(nums) (nums -> combine( fn(a,b) gcd1( [a,b] ) ));##
+"gcd"
+
+
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+93
+ // 31*3 = 93
+
+
+    range(1,100)
+    -> expand each i (
+         range(1,100)
+         -> transform each j { a: i, b: i * j }
+       )
+    -> write(hdfs('nums'));##
+{
+  "location": "nums",
+  "type": "hdfs"
+}
+
+
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");##
+"gcd1"
+
+    gcd = fn(nums) gcd1( nums );##
+"gcd"
+
+
+// DIFF: sort added for stabilty
+read(hdfs('nums'))
+-> group by a = ($.a)
+    into { a: a, g: gcd($[*].b) }
+-> sort by [$.a];##
+[
+  {
+    "a": 1,
+    "g": 1
+  },
+  {
+    "a": 2,
+    "g": 2
+  },
+  {
+    "a": 3,
+    "g": 3
+  },
+  {
+    "a": 4,
+    "g": 4
+  },
+  {
+    "a": 5,
+    "g": 5
+  },
+  {
+    "a": 6,
+    "g": 6
+  },
+  {
+    "a": 7,
+    "g": 7
+  },
+  {
+    "a": 8,
+    "g": 8
+  },
+  {
+    "a": 9,
+    "g": 9
+  },
+  {
+    "a": 10,
+    "g": 10
+  },
+  {
+    "a": 11,
+    "g": 11
+  },
+  {
+    "a": 12,
+    "g": 12
+  },
+  {
+    "a": 13,
+    "g": 13
+  },
+  {
+    "a": 14,
+    "g": 14
+  },
+  {
+    "a": 15,
+    "g": 15
+  },
+  {
+    "a": 16,
+    "g": 16
+  },
+  {
+    "a": 17,
+    "g": 17
+  },
+  {
+    "a": 18,
+    "g": 18
+  },
+  {
+    "a": 19,
+    "g": 19
+  },
+  {
+    "a": 20,
+    "g": 20
+  },
+  {
+    "a": 21,
+    "g": 21
+  },
+  {
+    "a": 22,
+    "g": 22
+  },
+  {
+    "a": 23,
+    "g": 23
+  },
+  {
+    "a": 24,
+    "g": 24
+  },
+  {
+    "a": 25,
+    "g": 25
+  },
+  {
+    "a": 26,
+    "g": 26
+  },
+  {
+    "a": 27,
+    "g": 27
+  },
+  {
+    "a": 28,
+    "g": 28
+  },
+  {
+    "a": 29,
+    "g": 29
+  },
+  {
+    "a": 30,
+    "g": 30
+  },
+  {
+    "a": 31,
+    "g": 31
+  },
+  {
+    "a": 32,
+    "g": 32
+  },
+  {
+    "a": 33,
+    "g": 33
+  },
+  {
+    "a": 34,
+    "g": 34
+  },
+  {
+    "a": 35,
+    "g": 35
+  },
+  {
+    "a": 36,
+    "g": 36
+  },
+  {
+    "a": 37,
+    "g": 37
+  },
+  {
+    "a": 38,
+    "g": 38
+  },
+  {
+    "a": 39,
+    "g": 39
+  },
+  {
+    "a": 40,
+    "g": 40
+  },
+  {
+    "a": 41,
+    "g": 41
+  },
+  {
+    "a": 42,
+    "g": 42
+  },
+  {
+    "a": 43,
+    "g": 43
+  },
+  {
+    "a": 44,
+    "g": 44
+  },
+  {
+    "a": 45,
+    "g": 45
+  },
+  {
+    "a": 46,
+    "g": 46
+  },
+  {
+    "a": 47,
+    "g": 47
+  },
+  {
+    "a": 48,
+    "g": 48
+  },
+  {
+    "a": 49,
+    "g": 49
+  },
+  {
+    "a": 50,
+    "g": 50
+  },
+  {
+    "a": 51,
+    "g": 51
+  },
+  {
+    "a": 52,
+    "g": 52
+  },
+  {
+    "a": 53,
+    "g": 53
+  },
+  {
+    "a": 54,
+    "g": 54
+  },
+  {
+    "a": 55,
+    "g": 55
+  },
+  {
+    "a": 56,
+    "g": 56
+  },
+  {
+    "a": 57,
+    "g": 57
+  },
+  {
+    "a": 58,
+    "g": 58
+  },
+  {
+    "a": 59,
+    "g": 59
+  },
+  {
+    "a": 60,
+    "g": 60
+  },
+  {
+    "a": 61,
+    "g": 61
+  },
+  {
+    "a": 62,
+    "g": 62
+  },
+  {
+    "a": 63,
+    "g": 63
+  },
+  {
+    "a": 64,
+    "g": 64
+  },
+  {
+    "a": 65,
+    "g": 65
+  },
+  {
+    "a": 66,
+    "g": 66
+  },
+  {
+    "a": 67,
+    "g": 67
+  },
+  {
+    "a": 68,
+    "g": 68
+  },
+  {
+    "a": 69,
+    "g": 69
+  },
+  {
+    "a": 70,
+    "g": 70
+  },
+  {
+    "a": 71,
+    "g": 71
+  },
+  {
+    "a": 72,
+    "g": 72
+  },
+  {
+    "a": 73,
+    "g": 73
+  },
+  {
+    "a": 74,
+    "g": 74
+  },
+  {
+    "a": 75,
+    "g": 75
+  },
+  {
+    "a": 76,
+    "g": 76
+  },
+  {
+    "a": 77,
+    "g": 77
+  },
+  {
+    "a": 78,
+    "g": 78
+  },
+  {
+    "a": 79,
+    "g": 79
+  },
+  {
+    "a": 80,
+    "g": 80
+  },
+  {
+    "a": 81,
+    "g": 81
+  },
+  {
+    "a": 82,
+    "g": 82
+  },
+  {
+    "a": 83,
+    "g": 83
+  },
+  {
+    "a": 84,
+    "g": 84
+  },
+  {
+    "a": 85,
+    "g": 85
+  },
+  {
+    "a": 86,
+    "g": 86
+  },
+  {
+    "a": 87,
+    "g": 87
+  },
+  {
+    "a": 88,
+    "g": 88
+  },
+  {
+    "a": 89,
+    "g": 89
+  },
+  {
+    "a": 90,
+    "g": 90
+  },
+  {
+    "a": 91,
+    "g": 91
+  },
+  {
+    "a": 92,
+    "g": 92
+  },
+  {
+    "a": 93,
+    "g": 93
+  },
+  {
+    "a": 94,
+    "g": 94
+  },
+  {
+    "a": 95,
+    "g": 95
+  },
+  {
+    "a": 96,
+    "g": 96
+  },
+  {
+    "a": 97,
+    "g": 97
+  },
+  {
+    "a": 98,
+    "g": 98
+  },
+  {
+    "a": 99,
+    "g": 99
+  },
+  {
+    "a": 100,
+    "g": 100
+  }
+]
+
+// [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
+
+
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");##
+"gcd2"
+
+    gcd = fn(nums) ( nums -> combine( fn(a,b) gcd2( a,b ) ) );##
+"gcd"
+
+
+// DIFF: sort added for stabilty
+
+read(hdfs('nums'))
+-> group by a = ($.a)
+    into { a: a, g: gcd($[*].b) }
+-> sort by [$.a];##
+[
+  {
+    "a": 1,
+    "g": 1
+  },
+  {
+    "a": 2,
+    "g": 2
+  },
+  {
+    "a": 3,
+    "g": 3
+  },
+  {
+    "a": 4,
+    "g": 4
+  },
+  {
+    "a": 5,
+    "g": 5
+  },
+  {
+    "a": 6,
+    "g": 6
+  },
+  {
+    "a": 7,
+    "g": 7
+  },
+  {
+    "a": 8,
+    "g": 8
+  },
+  {
+    "a": 9,
+    "g": 9
+  },
+  {
+    "a": 10,
+    "g": 10
+  },
+  {
+    "a": 11,
+    "g": 11
+  },
+  {
+    "a": 12,
+    "g": 12
+  },
+  {
+    "a": 13,
+    "g": 13
+  },
+  {
+    "a": 14,
+    "g": 14
+  },
+  {
+    "a": 15,
+    "g": 15
+  },
+  {
+    "a": 16,
+    "g": 16
+  },
+  {
+    "a": 17,
+    "g": 17
+  },
+  {
+    "a": 18,
+    "g": 18
+  },
+  {
+    "a": 19,
+    "g": 19
+  },
+  {
+    "a": 20,
+    "g": 20
+  },
+  {
+    "a": 21,
+    "g": 21
+  },
+  {
+    "a": 22,
+    "g": 22
+  },
+  {
+    "a": 23,
+    "g": 23
+  },
+  {
+    "a": 24,
+    "g": 24
+  },
+  {
+    "a": 25,
+    "g": 25
+  },
+  {
+    "a": 26,
+    "g": 26
+  },
+  {
+    "a": 27,
+    "g": 27
+  },
+  {
+    "a": 28,
+    "g": 28
+  },
+  {
+    "a": 29,
+    "g": 29
+  },
+  {
+    "a": 30,
+    "g": 30
+  },
+  {
+    "a": 31,
+    "g": 31
+  },
+  {
+    "a": 32,
+    "g": 32
+  },
+  {
+    "a": 33,
+    "g": 33
+  },
+  {
+    "a": 34,
+    "g": 34
+  },
+  {
+    "a": 35,
+    "g": 35
+  },
+  {
+    "a": 36,
+    "g": 36
+  },
+  {
+    "a": 37,
+    "g": 37
+  },
+  {
+    "a": 38,
+    "g": 38
+  },
+  {
+    "a": 39,
+    "g": 39
+  },
+  {
+    "a": 40,
+    "g": 40
+  },
+  {
+    "a": 41,
+    "g": 41
+  },
+  {
+    "a": 42,
+    "g": 42
+  },
+  {
+    "a": 43,
+    "g": 43
+  },
+  {
+    "a": 44,
+    "g": 44
+  },
+  {
+    "a": 45,
+    "g": 45
+  },
+  {
+    "a": 46,
+    "g": 46
+  },
+  {
+    "a": 47,
+    "g": 47
+  },
+  {
+    "a": 48,
+    "g": 48
+  },
+  {
+    "a": 49,
+    "g": 49
+  },
+  {
+    "a": 50,
+    "g": 50
+  },
+  {
+    "a": 51,
+    "g": 51
+  },
+  {
+    "a": 52,
+    "g": 52
+  },
+  {
+    "a": 53,
+    "g": 53
+  },
+  {
+    "a": 54,
+    "g": 54
+  },
+  {
+    "a": 55,
+    "g": 55
+  },
+  {
+    "a": 56,
+    "g": 56
+  },
+  {
+    "a": 57,
+    "g": 57
+  },
+  {
+    "a": 58,
+    "g": 58
+  },
+  {
+    "a": 59,
+    "g": 59
+  },
+  {
+    "a": 60,
+    "g": 60
+  },
+  {
+    "a": 61,
+    "g": 61
+  },
+  {
+    "a": 62,
+    "g": 62
+  },
+  {
+    "a": 63,
+    "g": 63
+  },
+  {
+    "a": 64,
+    "g": 64
+  },
+  {
+    "a": 65,
+    "g": 65
+  },
+  {
+    "a": 66,
+    "g": 66
+  },
+  {
+    "a": 67,
+    "g": 67
+  },
+  {
+    "a": 68,
+    "g": 68
+  },
+  {
+    "a": 69,
+    "g": 69
+  },
+  {
+    "a": 70,
+    "g": 70
+  },
+  {
+    "a": 71,
+    "g": 71
+  },
+  {
+    "a": 72,
+    "g": 72
+  },
+  {
+    "a": 73,
+    "g": 73
+  },
+  {
+    "a": 74,
+    "g": 74
+  },
+  {
+    "a": 75,
+    "g": 75
+  },
+  {
+    "a": 76,
+    "g": 76
+  },
+  {
+    "a": 77,
+    "g": 77
+  },
+  {
+    "a": 78,
+    "g": 78
+  },
+  {
+    "a": 79,
+    "g": 79
+  },
+  {
+    "a": 80,
+    "g": 80
+  },
+  {
+    "a": 81,
+    "g": 81
+  },
+  {
+    "a": 82,
+    "g": 82
+  },
+  {
+    "a": 83,
+    "g": 83
+  },
+  {
+    "a": 84,
+    "g": 84
+  },
+  {
+    "a": 85,
+    "g": 85
+  },
+  {
+    "a": 86,
+    "g": 86
+  },
+  {
+    "a": 87,
+    "g": 87
+  },
+  {
+    "a": 88,
+    "g": 88
+  },
+  {
+    "a": 89,
+    "g": 89
+  },
+  {
+    "a": 90,
+    "g": 90
+  },
+  {
+    "a": 91,
+    "g": 91
+  },
+  {
+    "a": 92,
+    "g": 92
+  },
+  {
+    "a": 93,
+    "g": 93
+  },
+  {
+    "a": 94,
+    "g": 94
+  },
+  {
+    "a": 95,
+    "g": 95
+  },
+  {
+    "a": 96,
+    "g": 96
+  },
+  {
+    "a": 97,
+    "g": 97
+  },
+  {
+    "a": 98,
+    "g": 98
+  },
+  {
+    "a": 99,
+    "g": 99
+  },
+  {
+    "a": 100,
+    "g": 100
+  }
+]
+
+    // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
+
+// DIFF: this is unstable during testing (because of different options):
+//  explain 
+// read(hdfs('nums'))
+// -> group by a = ($.a)
+//     into { a: a, g: gcd($[*].b) }
+
+      mrAggregate( {
+         input: { type: "hdfs", location: "nums" }, 
+         output: HadoopTemp(),
+         map: fn ($) ( $ -> transform [ $.a, $ ] ),
+         aggregate: fn (k, $) [ combine($[*].b, fn(a,b) gcd2( a,b ) ) ],
+         final: fn (k, aggs) [{ a:k, g: aggs[0] }]
+     } )
+     -> read()
+     -> sort by [$.a];##
+[
+  {
+    "a": 1,
+    "g": 1
+  },
+  {
+    "a": 2,
+    "g": 2
+  },
+  {
+    "a": 3,
+    "g": 3
+  },
+  {
+    "a": 4,
+    "g": 4
+  },
+  {
+    "a": 5,
+    "g": 5
+  },
+  {
+    "a": 6,
+    "g": 6
+  },
+  {
+    "a": 7,
+    "g": 7
+  },
+  {
+    "a": 8,
+    "g": 8
+  },
+  {
+    "a": 9,
+    "g": 9
+  },
+  {
+    "a": 10,
+    "g": 10
+  },
+  {
+    "a": 11,
+    "g": 11
+  },
+  {
+    "a": 12,
+    "g": 12
+  },
+  {
+    "a": 13,
+    "g": 13
+  },
+  {
+    "a": 14,
+    "g": 14
+  },
+  {
+    "a": 15,
+    "g": 15
+  },
+  {
+    "a": 16,
+    "g": 16
+  },
+  {
+    "a": 17,
+    "g": 17
+  },
+  {
+    "a": 18,
+    "g": 18
+  },
+  {
+    "a": 19,
+    "g": 19
+  },
+  {
+    "a": 20,
+    "g": 20
+  },
+  {
+    "a": 21,
+    "g": 21
+  },
+  {
+    "a": 22,
+    "g": 22
+  },
+  {
+    "a": 23,
+    "g": 23
+  },
+  {
+    "a": 24,
+    "g": 24
+  },
+  {
+    "a": 25,
+    "g": 25
+  },
+  {
+    "a": 26,
+    "g": 26
+  },
+  {
+    "a": 27,
+    "g": 27
+  },
+  {
+    "a": 28,
+    "g": 28
+  },
+  {
+    "a": 29,
+    "g": 29
+  },
+  {
+    "a": 30,
+    "g": 30
+  },
+  {
+    "a": 31,
+    "g": 31
+  },
+  {
+    "a": 32,
+    "g": 32
+  },
+  {
+    "a": 33,
+    "g": 33
+  },
+  {
+    "a": 34,
+    "g": 34
+  },
+  {
+    "a": 35,
+    "g": 35
+  },
+  {
+    "a": 36,
+    "g": 36
+  },
+  {
+    "a": 37,
+    "g": 37
+  },
+  {
+    "a": 38,
+    "g": 38
+  },
+  {
+    "a": 39,
+    "g": 39
+  },
+  {
+    "a": 40,
+    "g": 40
+  },
+  {
+    "a": 41,
+    "g": 41
+  },
+  {
+    "a": 42,
+    "g": 42
+  },
+  {
+    "a": 43,
+    "g": 43
+  },
+  {
+    "a": 44,
+    "g": 44
+  },
+  {
+    "a": 45,
+    "g": 45
+  },
+  {
+    "a": 46,
+    "g": 46
+  },
+  {
+    "a": 47,
+    "g": 47
+  },
+  {
+    "a": 48,
+    "g": 48
+  },
+  {
+    "a": 49,
+    "g": 49
+  },
+  {
+    "a": 50,
+    "g": 50
+  },
+  {
+    "a": 51,
+    "g": 51
+  },
+  {
+    "a": 52,
+    "g": 52
+  },
+  {
+    "a": 53,
+    "g": 53
+  },
+  {
+    "a": 54,
+    "g": 54
+  },
+  {
+    "a": 55,
+    "g": 55
+  },
+  {
+    "a": 56,
+    "g": 56
+  },
+  {
+    "a": 57,
+    "g": 57
+  },
+  {
+    "a": 58,
+    "g": 58
+  },
+  {
+    "a": 59,
+    "g": 59
+  },
+  {
+    "a": 60,
+    "g": 60
+  },
+  {
+    "a": 61,
+    "g": 61
+  },
+  {
+    "a": 62,
+    "g": 62
+  },
+  {
+    "a": 63,
+    "g": 63
+  },
+  {
+    "a": 64,
+    "g": 64
+  },
+  {
+    "a": 65,
+    "g": 65
+  },
+  {
+    "a": 66,
+    "g": 66
+  },
+  {
+    "a": 67,
+    "g": 67
+  },
+  {
+    "a": 68,
+    "g": 68
+  },
+  {
+    "a": 69,
+    "g": 69
+  },
+  {
+    "a": 70,
+    "g": 70
+  },
+  {
+    "a": 71,
+    "g": 71
+  },
+  {
+    "a": 72,
+    "g": 72
+  },
+  {
+    "a": 73,
+    "g": 73
+  },
+  {
+    "a": 74,
+    "g": 74
+  },
+  {
+    "a": 75,
+    "g": 75
+  },
+  {
+    "a": 76,
+    "g": 76
+  },
+  {
+    "a": 77,
+    "g": 77
+  },
+  {
+    "a": 78,
+    "g": 78
+  },
+  {
+    "a": 79,
+    "g": 79
+  },
+  {
+    "a": 80,
+    "g": 80
+  },
+  {
+    "a": 81,
+    "g": 81
+  },
+  {
+    "a": 82,
+    "g": 82
+  },
+  {
+    "a": 83,
+    "g": 83
+  },
+  {
+    "a": 84,
+    "g": 84
+  },
+  {
+    "a": 85,
+    "g": 85
+  },
+  {
+    "a": 86,
+    "g": 86
+  },
+  {
+    "a": 87,
+    "g": 87
+  },
+  {
+    "a": 88,
+    "g": 88
+  },
+  {
+    "a": 89,
+    "g": 89
+  },
+  {
+    "a": 90,
+    "g": 90
+  },
+  {
+    "a": 91,
+    "g": 91
+  },
+  {
+    "a": 92,
+    "g": 92
+  },
+  {
+    "a": 93,
+    "g": 93
+  },
+  {
+    "a": 94,
+    "g": 94
+  },
+  {
+    "a": 95,
+    "g": 95
+  },
+  {
+    "a": 96,
+    "g": 96
+  },
+  {
+    "a": 97,
+    "g": 97
+  },
+  {
+    "a": 98,
+    "g": 98
+  },
+  {
+    "a": 99,
+    "g": 99
+  },
+  {
+    "a": 100,
+    "g": 100
+  }
+]
+
+
+
+// ======== EveryType ==========
+
+    everyType = javaudf("com.acme.extensions.fn.EveryType");##
+"everyType"
+
+
+    data = [
+      null, 
+      [0,1,2,3,4], 
+      { x:1, y:[2,"two"], z: { a:3, b:"four" } },
+      true,
+      "world",
+      23,
+      38.9,
+      x'ADEADFAD',
+      d'2008-03-14T12:15:00Z',
+      fn(x) x + 1
+    ];##
+"data"
+
+
+    everyType( null );##
+null
+
+
+    pairwise(everyType( data ), data);##
+[
+  [
+    null,
+    null
+  ],
+  [
+    [
+      4,
+      3,
+      2,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      2,
+      3,
+      4
+    ]
+  ],
+  [
+    {
+      "my_x": 1,
+      "my_y": [
+        2,
+        "two"
+      ],
+      "my_z": {
+        "a": 3,
+        "b": "four"
+      }
+    },
+    {
+      "x": 1,
+      "y": [
+        2,
+        "two"
+      ],
+      "z": {
+        "a": 3,
+        "b": "four"
+      }
+    }
+  ],
+  [
+    false,
+    true
+  ],
+  [
+    "hi, world",
+    "world"
+  ],
+  [
+    -23m,
+    23
+  ],
+  [
+    -38.0,
+    38.9
+  ],
+  [
+    hex('ABADDEEDADEADFAD'),
+    hex('ADEADFAD')
+  ],
+  [
+    date('2008-03-14T13:15:00Z'),
+    date('2008-03-14T12:15:00Z')
+  ],
+  [
+    fn(x) ((x)+(1)),
+    fn(x) ((x)+(1))
+  ]
+]
+
+
+// =============================================================================
+
+// DIFF: not in docs
+books -> write(hdfs('books.jqlb'));##
+{
+  "location": "books.jqlb",
+  "type": "hdfs"
+}
+
+
+// DIFF
+read(hdfs('books.jqlb'));##
+[
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 10,
+        "review": "The best ...",
+        "user": "joe"
+      },
+      {
+        "rating": 6,
+        "review": "Average ...",
+        "user": "mary"
+      }
+    ],
+    "title": "Chamber of Secrets",
+    "year": 1999
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1998
+  },
+  {
+    "author": "R. L. Stine",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 8,
+        "review": "High on my list...",
+        "user": "rob"
+      },
+      {
+        "discussion": [
+          {
+            "text": "This is too harsh...",
+            "user": "ben"
+          },
+          {
+            "text": "I agree ...",
+            "user": "jill"
+          }
+        ],
+        "rating": 2,
+        "review": "Not worth the paper ...",
+        "user": "mike"
+      }
+    ],
+    "title": "Monster Blood IV",
+    "year": 1997
+  },
+  {
+    "author": "Carolyn Keene",
+    "publisher": "Grosset",
+    "title": "The Secret of Kane",
+    "year": 1930
+  }
+]
+
+
+// DIFF: not in docs
+books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
+                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
+{
+  "location": "example.jql",
+  "outoptions": {
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter",
+    "format": "org.apache.hadoop.mapred.TextOutputFormat"
+  },
+  "type": "hdfs"
+}
+
+
+// DIFF
+read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}});##
+FAILURE
+
+
+// DIFF
+read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
+                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+[
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 10,
+        "review": "The best ...",
+        "user": "joe"
+      },
+      {
+        "rating": 6,
+        "review": "Average ...",
+        "user": "mary"
+      }
+    ],
+    "title": "Chamber of Secrets",
+    "year": 1999
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1998
+  },
+  {
+    "author": "R. L. Stine",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 8,
+        "review": "High on my list...",
+        "user": "rob"
+      },
+      {
+        "discussion": [
+          {
+            "text": "This is too harsh...",
+            "user": "ben"
+          },
+          {
+            "text": "I agree ...",
+            "user": "jill"
+          }
+        ],
+        "rating": 2,
+        "review": "Not worth the paper ...",
+        "user": "mike"
+      }
+    ],
+    "title": "Monster Blood IV",
+    "year": 1997
+  },
+  {
+    "author": "Carolyn Keene",
+    "publisher": "Grosset",
+    "title": "The Secret of Kane",
+    "year": 1930
+  }
+]
+
+
+myRead = fn(path) read({type:'hdfs', location:path, 
+                          inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
+                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+"myRead"
+
+                                
+myRead('example.jql');##
+[
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 10,
+        "review": "The best ...",
+        "user": "joe"
+      },
+      {
+        "rating": 6,
+        "review": "Average ...",
+        "user": "mary"
+      }
+    ],
+    "title": "Chamber of Secrets",
+    "year": 1999
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1998
+  },
+  {
+    "author": "R. L. Stine",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 8,
+        "review": "High on my list...",
+        "user": "rob"
+      },
+      {
+        "discussion": [
+          {
+            "text": "This is too harsh...",
+            "user": "ben"
+          },
+          {
+            "text": "I agree ...",
+            "user": "jill"
+          }
+        ],
+        "rating": 2,
+        "review": "Not worth the paper ...",
+        "user": "mike"
+      }
+    ],
+    "title": "Monster Blood IV",
+    "year": 1997
+  },
+  {
+    "author": "Carolyn Keene",
+    "publisher": "Grosset",
+    "title": "The Secret of Kane",
+    "year": 1930
+  }
+]
+
+
+// DIFF
+registerAdapter({type     :	'myHDFSFile',
+                 inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                             format       : 'org.apache.hadoop.mapred.TextInputFormat', 
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
+{
+  "inoptions": {
+    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter",
+    "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
+    "converter": "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter",
+    "format": "org.apache.hadoop.mapred.TextInputFormat"
+  },
+  "type": "myHDFSFile"
+}
+
+
+read({type:'myHDFSFile', location:'example.jql'});##
+[
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 10,
+        "review": "The best ...",
+        "user": "joe"
+      },
+      {
+        "rating": 6,
+        "review": "Average ...",
+        "user": "mary"
+      }
+    ],
+    "title": "Chamber of Secrets",
+    "year": 1999
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1998
+  },
+  {
+    "author": "R. L. Stine",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 8,
+        "review": "High on my list...",
+        "user": "rob"
+      },
+      {
+        "discussion": [
+          {
+            "text": "This is too harsh...",
+            "user": "ben"
+          },
+          {
+            "text": "I agree ...",
+            "user": "jill"
+          }
+        ],
+        "rating": 2,
+        "review": "Not worth the paper ...",
+        "user": "mike"
+      }
+    ],
+    "title": "Monster Blood IV",
+    "year": 1997
+  },
+  {
+    "author": "Carolyn Keene",
+    "publisher": "Grosset",
+    "title": "The Secret of Kane",
+    "year": 1930
+  }
+]
+
+
+// variant of Query 1 in overview
+// DIFF: sort added because of different outputs from map/reduce
+read({type:'myHDFSFile', location:'example.jql'})
+-> transform {key: $.publisher, ($.title): $.year}
+-> sort by [$];##
+[
+  {
+    "Chamber of Secrets": 1999,
+    "key": "Scholastic"
+  },
+  {
+    "Deathly Hallows": 2007,
+    "key": "Scholastic"
+  },
+  {
+    "Monster Blood IV": 1997,
+    "key": "Scholastic"
+  },
+  {
+    "Sorcerers Stone": 1998,
+    "key": "Scholastic"
+  },
+  {
+    "The Secret of Kane": 1930,
+    "key": "Grosset"
+  }
+]
+
+
+// (see hbaseQueries.txt)
+// hbaseWrite('example', []);
+
+// (see hbaseQueries.txt)
+// hbaseWrite('example', q);
+
+read({type:"local", location:'build/test/cache/data/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
+[
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 10,
+        "review": "The best ...",
+        "user": "joe"
+      },
+      {
+        "rating": 6,
+        "review": "Average ...",
+        "user": "mary"
+      }
+    ],
+    "title": "Chamber of Secrets",
+    "year": 1999
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1998
+  },
+  {
+    "author": "R. L. Stine",
+    "publisher": "Scholastic",
+    "reviews": [
+      {
+        "rating": 8,
+        "review": "High on my list...",
+        "user": "rob"
+      },
+      {
+        "discussion": [
+          {
+            "text": "This is too harsh...",
+            "user": "ben"
+          },
+          {
+            "text": "I agree ...",
+            "user": "jill"
+          }
+        ],
+        "rating": 2,
+        "review": "Not worth the paper ...",
+        "user": "mike"
+      }
+    ],
+    "title": "Monster Blood IV",
+    "year": 1997
+  },
+  {
+    "author": "Carolyn Keene",
+    "publisher": "Grosset",
+    "title": "The Secret of Kane",
+    "year": 1930
+  }
+]
+
+
+hdfsShell("-copyFromLocal docs/jaql-overview.html lines") * 0;##
+0
+
+
+lineRdr = read(lines("lines"));##
+"lineRdr"
+
+
+splitArr = builtin("com.acme.extensions.expr.SplitIterExpr$Descriptor");##
+"splitArr"
+
+
+lineRdr
+-> expand splitArr($, " ")
+-> transform [$,1]
+-> group by w = ($[0])
+    into [w, sum($[*][1])]
+-> count();##
+1341
+
+
+lineRdr
+-> expand splitArr($, " ")
+-> group by w = ($)
+    into [w, count($)]
+-> count();##
+1341
+
+
+// -- user-defined aggregates ---------------------------------------------------------------------
+
+f = hdfs("nums");##
+"f"
+                                    // defined above
+
+// create a UDA using combine()
+myavg1 = fn($) (
+  p = $ -> transform [ $, 1 ]
+        -> combine( fn(p, q) [ p[0]+q[0], p[1]+q[1] ] ),
+  p[0] / p[1]
+);##
+"myavg1"
+
+read(f) -> group by (1) into myavg1($[*].b);##
+[
+  2550
+]
+
+
+// create a UDA using uda()
+myavg2 = uda(fn()     [ 0        , 0         ],            // init
+             fn(p, v) [ p[0]+v   , p[1]+1    ],            // accumulate
+             fn(p, q) [ p[0]+q[0], p[1]+q[1] ],            // combine
+             fn(p)    p[0]/p[1] );##
+"myavg2"
+                         // final
+read(f) -> group by (1) into myavg2($[*].b);##
+[
+  2550
+]
+
+
+// create a UDA using javauda()
+myavg3 = javauda("com.ibm.jaql.udf.LongAvgUda");##
+"myavg3"
+
+read(f) -> group by (1) into myavg3($[*].b);##
+[
+  2550
+]
+
+
+// try out argument passing
+myavg4 = javauda("com.ibm.jaql.udf.LongAvgUda", 2);##
+"myavg4"
+        // average of squares
+read(f) -> group by (1) into myavg4($[*].b);##
+[
+  11448072
+]
+     
+

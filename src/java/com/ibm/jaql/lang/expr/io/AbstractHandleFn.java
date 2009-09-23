@@ -85,16 +85,22 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
     BufferedJsonRecord rec = new BufferedJsonRecord();
     rec.add(Adapter.TYPE_NAME, getType());
     rec.add(Adapter.LOCATION_NAME, location().eval(context));
-    if(exprs.length > 1) {
-      
-      if(exprs.length == 2) {
-        // only one option is specified
-        rec.add(Adapter.OPTIONS_NAME, exprs[1].eval(context));
-      } else if(exprs.length == 3) {
-        // both input and output options are specified
-        rec.add(Adapter.INOPTIONS_NAME, exprs[1].eval(context));
-        rec.add(Adapter.OUTOPTIONS_NAME, exprs[2].eval(context));
-      }
+    JsonValue inout = exprs.length > 1 ? exprs[1].eval(context) : null;
+    JsonValue out = exprs.length > 2 ? exprs[2].eval(context) : null;
+    if (inout != null && out != null)
+    {
+      // both input and output options are specified
+      rec.add(Adapter.INOPTIONS_NAME, exprs[1].eval(context));
+      rec.add(Adapter.OUTOPTIONS_NAME, exprs[2].eval(context));
+    }
+    else if (inout != null)
+    {
+      // only one option is specified
+      rec.add(Adapter.OPTIONS_NAME, exprs[1].eval(context));
+    }
+    else if (out != null)
+    {
+      throw new IllegalArgumentException();
     }
     return rec;
   }  

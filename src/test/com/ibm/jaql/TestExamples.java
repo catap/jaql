@@ -34,7 +34,7 @@ public class TestExamples extends TestMapReduce
   protected void setUp() throws IOException
   {
     super.setUp();
-    setFilePrefix("example");
+    setFilePrefix("examples");
   }
 
 }

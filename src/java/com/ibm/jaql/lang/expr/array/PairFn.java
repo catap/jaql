@@ -19,15 +19,22 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 // TODO: introduce macro exprs that always rewrite into something else
 /**
  * pair(A,B) == [A,B]
  */
-@JaqlFn(fnName = "pair", minArgs = 2, maxArgs = 2)
 public class PairFn extends IterExpr // TODO: rewrite into [A,B]
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("pair", PairFn.class);
+    }
+  }
+  
   /**
    * [ exprs[0], exprs[1] ]
    * 

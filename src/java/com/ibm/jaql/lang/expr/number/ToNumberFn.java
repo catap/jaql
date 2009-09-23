@@ -27,14 +27,21 @@ import com.ibm.jaql.json.type.MutableJsonDecimal;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "number", minArgs = 1, maxArgs = 1)
 public class ToNumberFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("toNumber", ToNumberFn.class);
+    }
+  }
+  
   protected MutableJsonLong jlong = new MutableJsonLong();
   protected MutableJsonDecimal jdec = new MutableJsonDecimal();
   

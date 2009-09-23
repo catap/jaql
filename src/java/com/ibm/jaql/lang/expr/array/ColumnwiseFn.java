@@ -27,12 +27,19 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
-@JaqlFn(fnName = "columnwise", minArgs = 1, maxArgs = 1)
 public class ColumnwiseFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("columnwise", ColumnwiseFn.class);
+    }
+  }
+  
   /**
    * exprs
    * 

@@ -31,8 +31,8 @@
     <property name="build.src" value="${build.dir}/src" />
     <property name="build.docs" value="${build.dir}/docs" />
     <property name="build.javadocs" value="${build.docs}/api" />
-    <!-- Default version is 0.18.3. Other supported versions include: 0.18.1 -->
-    <property name="hadoop.version" value="0.18.3" />
+    <!-- Default version is 0.20.1. For other supported versions, see vendor/hadoop/ -->
+    <property name="hadoop.version" value="0.20.1" />
 
     <property name="hadoop.dir"
               value="${basedir}/vendor/hadoop/${hadoop.version}" />
@@ -231,10 +231,12 @@
         <copy todir="${build.src}/test">
             <fileset dir="${basedir}/src/test">
                 <include name="**/*.java" />
+            	<include name="**/*.jar" />
                 <include name="**/*.txt" />
                 <include name="**/*.dat" />
                 <include name="**/*.jql" />
-                <include name="**/*.json" />
+            	<include name="**/*.jaql" />
+                <include name="**/*.json" />            	
             </fileset>
         </copy>
     </target>
@@ -379,12 +381,10 @@
         <copy todir="${tmp.dir}/com/ibm/jaql/util">
             <fileset dir="${build.dir}/classes/com/ibm/jaql/util" />
         </copy>
-        <copy todir="${tmp.dir}/com/ibm/jaql/util">
-            <fileset dir="${build.dir}/test/classes/com/ibm/jaql/util" />
-        </copy>
 
         <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
         <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
+    	<unjar src="lib/commons-lang-2.4.jar" dest="${tmp.dir}" />
 
         <!-- make the jar -->
         <jar jarfile="${build.dir}/jaql.jar" basedir="${tmp.dir}">

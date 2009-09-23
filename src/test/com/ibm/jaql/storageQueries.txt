@@ -142,8 +142,8 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'});
 //stRead( 
 //  mapReduce( {
 //    'input' : {type: 'hdfs', location: 'jaqlTest/test6.dat'},
-//    'map'   : fn($i) [[ $i.g, 1 ]],
-//    'reduce': fn($key, $values) [{ key: $key, n: count($values) }],
+//    'map'   : fn(i) [[ i.g, 1 ]],
+//    'reduce': fn(key, values) [{ key: key, n: count(values) }],
 //    'output': {type: 'hbase', location: 'jaqlTesttest6out'}
 //    })
 // );
@@ -164,8 +164,8 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'});
 // stRead( 
 //   mapReduce( {
 //     'input' : {type: 'hbase', location: 'jaqlTesttest7'},
-//     'map'   : fn($i) [[ $i.g, 1 ]],
-//     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+//     'map'   : fn(i) [[ i.g, 1 ]],
+//     'reduce': fn(key, values) [{ g: key, n: count(values) }],
 //     'output': {type: 'hdfs', location: 'jaqlTest/test7.dat'}
 //     })
 //  );
@@ -196,7 +196,7 @@ mapReduce( {
                inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
 			  		       converter: 'com.foobar.store.FromJSONTxtConverter'}},
     'map'   : fn($) ( $ -> transform [ $.g, 1 ]),
-    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'reduce': fn(key, values) [{ g: key, n: count(values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test8.dat'}
     })
 -> read();
@@ -226,8 +226,8 @@ mapReduce( {
 // stRead(
 //   mapReduce( {
 //     'input': [ [{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}] ],
-//      'map'   : fn($i) [[ $i.g, 1 ]],
-//      'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+//      'map'   : fn(i) [[ i.g, 1 ]],
+//      'reduce': fn(key, values) [{ g: key, n: count(values) }],
 //      'output': {type: 'hdfs', location: 'jaqlTest/test9out.dat'}
 //    })
 // );
@@ -236,9 +236,9 @@ mapReduce( {
 
 // stRead(mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'}, 
 //                             {type: 'hbase', location: 'jaqlTesttest9'}],
-//                    map: [ fn($i) [[ $i.g, 1 ]], 
-//                           fn($i) [[ $i.g, 1 ]] ],
-//                    reduce: fn($key, $aVals, $bVals) [{ g: $key, as: count($aVals), bs: count($bVals) }],
+//                    map: [ fn(i) [[ i.g, 1 ]], 
+//                           fn(i) [[ i.g, 1 ]] ],
+//                    reduce: fn(key, aVals, bVals) [{ g: key, as: count(aVals), bs: count(bVals) }],
 //                    output: {type: 'hdfs', location: 'jaqlTest/test10out.dat'}}));
 
 //-- test higher level interfaces
@@ -259,35 +259,35 @@ read(hdfs('jaqlTest/test12a.dat'));
 
 read(hdfs('jaqlTest/test12b.dat'));
 
-$path = "build/test/cache/data/";
+path = "build/test/cache/data/";
 
-$r1 = read(file($path + "books.json"));
+r1 = read(file(path + "books.json"));
 
-$r1 -> write(file($path + "b1"));
+r1 -> write(file(path + "b1"));
 
-read(file($path + "b1")) == read(file($path + "books.json"));
+read(file(path + "b1")) == read(file(path + "books.json"));
 
-$r1 -> write(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));
+r1 -> write(file(path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));
 
-$r2 = read(file($path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));
+r2 = read(file(path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));
 
-$r1 == $r2;
+r1 == r2;
 
-$r1 -> write(hdfs("jaqlTest/b1"));
+r1 -> write(hdfs("jaqlTest/b1"));
 
-$r1 == read(hdfs("jaqlTest/b1"));
+r1 == read(hdfs("jaqlTest/b1"));
 
-$v = {someField: "some value"};
+v = {someField: "some value"};
 
-[$v] -> write(file($path + "b2", {asArray: false}));
+[v] -> write(file(path + "b2", {asArray: false}));
 
-read(file($path + "b2", {asArray: false}))[0] == $v;
+read(file(path + "b2", {asArray: false}))[0] == v;
 
-hdfsShell("-copyFromLocal "+$path+"test.json jaqlTest/test") * 0;
+hdfsShell("-copyFromLocal "+path+"test.json jaqlTest/test") * 0;
 
-$r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
+r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
 
-$l = [
+l = [
   {
     "a": "foo",
     "b": "bar"
@@ -299,19 +299,19 @@ $l = [
   }
 ];
 
-$l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));
+l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));
 
-$r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));
+r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));
 
-$r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
+r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
 
-($r -> sort by [$]) == ($r2 -> sort by [$]);
+(r -> sort by [$]) == (r2 -> sort by [$]);
 
-//$artist = "The Police";
-//$url = "http://api.freebase.com/api/service/mqlread";
-//$query = {query: {album: [], name: $artist, type: "/music/artist"}};
-//httpGet($url, {query: serialize($query)}, {asArray: false})[0].result.album;
-//read(http($url, {query: serialize($query)}))[0].result.album;
+//artist = "The Police";
+//url = "http://api.freebase.com/api/service/mqlread";
+//query = {query: {album: [], name: artist, type: "/music/artist"}};
+//httpGet(url, {query: serialize(query)}, {asArray: false})[0].result.album;
+//read(http(url, {query: serialize(query)}))[0].result.album;
 
 // write('hbase', 'jaqlTesttest13a.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
 
@@ -331,7 +331,7 @@ mapReduce( {
     'map'   : fn($) ( $ -> transform [ null, $ ] ),
     'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
   })
--> read();
+-> read() -> sort by [$];
 
 mapReduce( {
     'input': [ {type: 'array', inoptions: {array: [1,2,3]}},
@@ -340,36 +340,36 @@ mapReduce( {
                 fn($) ($ -> transform [ null, $ + 20 ]) ],
     'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
   })
--> read();
+-> read() -> sort by [$];
 
 //-- test rewrites --
 
 // group by over hdfs read
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
--> group by $a = ($.g)
-    into { g:$a, i:count($) }
+-> group by a = ($.g)
+    into { g:a, i:count($) }
 -> sort by [$.g];
 
 // group by over hbase read (see hbaseQueries.txt)
-// group( $i in stRead({type: 'hbase', location: 'jaqlTesttest7'}) 
-//        by $a = $i.g
-//        into $is
-//     [ { g:$a, i:count($is) } ];
+// group( i in stRead({type: 'hbase', location: 'jaqlTesttest7'}) 
+//        by a = i.g
+//        into is
+//     [ { g:a, i:count(is) } ];
 
 // for loop over hdfs read
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 -> transform $.key;
 
 // for loop over hbase read (see hbaseQueries.txt)
-// for( $r in stRead({type: 'hbase', location: 'jaqlTesttest7'}) )
-//   [ $r.key ];
+// for( r in stRead({type: 'hbase', location: 'jaqlTesttest7'}) )
+//   [ r.key ];
 
 // co-group (see hbaseQueries.txt)
 // group(
-//   $i in stRead({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
-//      by $g = $i.g
-//      into $as,
-//   $j in stRead({type: 'hbase', location: 'jaqlTesttest9'}) 
-//      by $g = $j.g
-//      into $bs )
-//  [ { g: $g, as: count($as), bs: count($bs) } ];
+//   i in stRead({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
+//      by g = i.g
+//      into as,
+//   j in stRead({type: 'hbase', location: 'jaqlTesttest9'}) 
+//      by g = j.g
+//      into bs )
+//  [ { g: g, as: count(as), bs: count(bs) } ];

@@ -23,11 +23,18 @@ import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
-@JaqlFn(fnName="date", minArgs=1, maxArgs=2)
 public class DateFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("date", DateFn.class);
+    }
+  }
+  
   protected MutableJsonDate date = new MutableJsonDate();
   
   public DateFn(Expr[] exprs)
@@ -39,13 +46,13 @@ public class DateFn extends Expr
   public JsonDate eval(Context context) throws Exception
   {
     JsonString dateStr = (JsonString)exprs[0].eval(context);
-    if( exprs.length == 1 )
+    JsonString formatStr = (JsonString)exprs[1].eval(context);
+    if( formatStr == null)
     {
       date.set(dateStr.toString());
     }
     else
     {
-      JsonString formatStr = (JsonString)exprs[1].eval(context);
       date.set(dateStr.toString(), JsonDate.getFormat(formatStr.toString()));
     }
     return date;

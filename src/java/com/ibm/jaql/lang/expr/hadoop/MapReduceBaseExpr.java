@@ -51,9 +51,9 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.JaqlFunction;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -67,7 +67,6 @@ public abstract class MapReduceBaseExpr extends Expr
 {
   public final static String    BASE_NAME                  = "com.ibm.jaql.mapred";
   public final static String    STORE_REGISTRY_VAR_NAME    = BASE_NAME + ".sRegistry";
-  public final static String    FUNC_REGISTRY_VAR_NAME     = BASE_NAME + ".fRegistry";
   public final static String    RNG_REGISTRY_VAR_NAME      = BASE_NAME + ".rRegistry";
   public final static String    REGISTRY_VAR_NAM           = BASE_NAME + ".registry";
   public final static String    NUM_INPUTS_NAME            = BASE_NAME + ".numInputs";
@@ -193,8 +192,6 @@ public abstract class MapReduceBaseExpr extends Expr
     // write out various static registries
     RegistryUtil.writeConf(conf, HadoopAdapter.storeRegistryVarName, JaqlUtil
         .getAdapterStore());
-    RegistryUtil.writeConf(conf, FUNC_REGISTRY_VAR_NAME, JaqlUtil
-        .getFunctionStore());
     RegistryUtil.writeConf(conf, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
 
     return args;
@@ -219,17 +216,16 @@ public abstract class MapReduceBaseExpr extends Expr
    * @param fn
    * @param inId
    */
-  protected final void prepareFunction(String fnName, int numArgs,
-      JaqlFunction fn, int inId)
+  protected final void prepareFunction(String fnName, int numArgs, Function fn, int inId)
   {
     // TODO: pass functions (and their captures!) as strings through the job conf or a temp file?
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
     PrintStream ps = new PrintStream(outStream);
 
-    if (fn.getNumParameters() != numArgs)
+    if (fn.getParameters().numParameters() < numArgs || fn.getParameters().numRequiredParameters() > numArgs)
     {
-      throw new RuntimeException(fnName + " function must have exactly "
-          + numArgs + " argument(s)");
+      throw new RuntimeException(fnName + " function must be callable with "
+          + numArgs + " positional argument(s)");
     }
     try
     {
@@ -270,8 +266,6 @@ public abstract class MapReduceBaseExpr extends Expr
         //AdapterManager.readRegistryFromConf(storeRegistryVarName, job);
         RegistryUtil.readConf(job, HadoopAdapter.storeRegistryVarName, JaqlUtil
             .getAdapterStore());
-        RegistryUtil.readConf(job, FUNC_REGISTRY_VAR_NAME, JaqlUtil
-            .getFunctionStore());
         RegistryUtil.readConf(job, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
         //FunctionStore.readRegistryFromConf(funcRegistryVarName, job);
         //RNGStore.readFromConf(rngRegistryVarName, job);
@@ -282,15 +276,15 @@ public abstract class MapReduceBaseExpr extends Expr
       }
     }
 
-    public static JaqlFunction compile(Context context, String exprText)
+    public static Function compile(Context context, String exprText)
     {
       try
       {
         // System.err.println("compiling: "+exprText);
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
         JaqlParser parser = new JaqlParser(lexer);
-        Expr expr = parser.parse();
-        JaqlFunction fn = JaqlUtil.enforceNonNull((JaqlFunction) expr.eval(context));
+        Expr expr = parser.stmt();
+        Function fn = JaqlUtil.enforceNonNull((Function) expr.eval(context));
         return fn;
       }
       catch (Exception ex)
@@ -299,7 +293,7 @@ public abstract class MapReduceBaseExpr extends Expr
       }
     }
 
-    public static JaqlFunction compile(JobConf job, String propName, Context context)
+    public static Function compile(JobConf job, String propName, Context context)
     {
       String exprText = job.get(propName);
       // System.err.println("compiling: "+exprText);
@@ -316,7 +310,7 @@ public abstract class MapReduceBaseExpr extends Expr
      * @param inId
      * @return
      */
-    public JaqlFunction compile(JobConf job, String fnName, int inId)
+    public Function compile(JobConf job, String fnName, int inId)
     {
       String fullName = BASE_NAME + "." + fnName + "." + inId;
       return compile(job, fullName, context);
@@ -338,7 +332,7 @@ public abstract class MapReduceBaseExpr extends Expr
       implements MapRunnable<JsonHolder, JsonHolder, JsonHolder, JsonHolder>
   {
     int         inputId     = 0;
-    JaqlFunction   mapFn;
+    Function   mapFn;
     boolean     makePair    = false;
     BufferedJsonArray outPair;
     JsonHolder outKey = null; 
@@ -380,7 +374,8 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       try
       {
-        JsonIterator iter = mapFn.iter(context, new RecordReaderValueIter(input));
+        mapFn.setArguments(new RecordReaderValueIter(input));
+        JsonIterator iter = mapFn.iter(context);
         for (JsonValue v : iter)
         {
           JsonArray inValue = (JsonArray)v;

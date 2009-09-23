@@ -16,10 +16,10 @@
 package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.walk.ExprFlow;
@@ -123,7 +123,7 @@ public abstract class Rewrite
 
     while ((expr = flow.next()) != null)
     {
-      if (expr instanceof DefineFunctionExpr)
+      if (expr instanceof DefineJaqlFunctionExpr)
       {
         break;
       }
@@ -156,7 +156,7 @@ public abstract class Rewrite
       }
       if (expr instanceof FunctionCallExpr)
       {
-        if (!(expr instanceof DefineFunctionExpr))
+        if (!(expr instanceof DefineJaqlFunctionExpr))
         {
           // FIXME: look deeper into this case.
           return true;

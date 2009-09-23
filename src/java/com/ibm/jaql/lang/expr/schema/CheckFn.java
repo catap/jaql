@@ -7,15 +7,22 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
 
 /** Checks whether the first argument matches the schema given in the second argument. If so,
  * returns the first argument. Otherwise, throws an expection.  
  */
-@JaqlFn(fnName="check", minArgs=2, maxArgs=2)
 public class CheckFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("check", CheckFn.class);
+    }
+  }
+  
   public CheckFn(Expr[] exprs)
   {
     super(exprs);

@@ -22,16 +22,23 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "pickN", minArgs = 2, maxArgs = 2)
 public final class PickNAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {
   private SpilledJsonArray array = new SpilledJsonArray();
   private long limit;
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("pickN", PickNAgg.class);
+    }
+  }
   
   /**
    * Expr aggInput, Expr N
@@ -51,7 +58,7 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
   }
 
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     array.clear();
     JsonNumber num = (JsonNumber)exprs[1].eval(context);
@@ -59,7 +66,7 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null  )
     {
@@ -78,7 +85,7 @@ public final class PickNAgg extends AlgebraicAggregate // TODO: should this pres
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonArray array2 = (JsonArray)value;
     long m = array.count();

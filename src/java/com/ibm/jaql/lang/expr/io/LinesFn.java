@@ -24,14 +24,23 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression that constructs an I/O descriptor for HDFS file access.
  */
-@JaqlFn(fnName="lines", minArgs=1, maxArgs=2)
-public class LinesFn extends AbstractHandleFn {
+public class LinesFn extends AbstractHandleFn
+{
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+  {
+    public Descriptor()
+    {
+      super("lines", LinesFn.class);
+    }
+  }
+  
   private final static JsonValue TYPE = new JsonString("lines");
+ 
   /**
    * exprs[0]: path
    * exprs[1]: options 
@@ -64,9 +73,9 @@ public class LinesFn extends AbstractHandleFn {
   @Override
   public JsonRecord eval(Context context) throws Exception {
     BufferedJsonRecord options = null;
-    if (exprs.length > 1) {
+    JsonValue customOptions = exprs[1].eval(context);
+    if (customOptions != null) {
       options = new BufferedJsonRecord();
-      JsonValue customOptions = exprs[1].eval(context);
       if (!(customOptions instanceof JsonRecord)) {
         throw new RuntimeException("options for lines() function has to be a record");
       }

@@ -16,14 +16,21 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "localRead", minArgs = 1, maxArgs = 1)
 public class LocalReadFn extends AbstractReadExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("localRead", LocalReadFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

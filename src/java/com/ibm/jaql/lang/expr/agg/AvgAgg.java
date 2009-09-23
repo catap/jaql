@@ -24,17 +24,24 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
 import com.ibm.jaql.lang.expr.core.MathExpr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "avg", minArgs = 1, maxArgs = 1)
 public class AvgAgg extends AlgebraicAggregate
 {
   private SumAgg.Summer summer = new SumAgg.Summer();
   private long count = 0;
+  
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("avg", AvgAgg.class);
+    }
+  }
   
   /**
    * one arg
@@ -51,14 +58,14 @@ public class AvgAgg extends AlgebraicAggregate
   }
   
   @Override
-  public void initInitial(Context context) throws Exception
+  public void init(Context context) throws Exception
   {
     summer.init();
     count = 0;
   }
 
   @Override
-  public void addInitial(JsonValue value) throws Exception
+  public void accumulate(JsonValue value) throws Exception
   {
     if( value == null  )
     {
@@ -78,7 +85,7 @@ public class AvgAgg extends AlgebraicAggregate
   }
 
   @Override
-  public void addPartial(JsonValue value) throws Exception
+  public void combine(JsonValue value) throws Exception
   {
     JsonArray arr = (JsonArray)value;
     JsonValue[] pair = new JsonValue[2];

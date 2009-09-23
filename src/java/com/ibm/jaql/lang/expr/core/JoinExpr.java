@@ -140,7 +140,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       {
         exprText.print("preserve ");
       }
-      exprText.print(b.var.name);
+      exprText.print(b.var.name());
       exprText.print(" in (");
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(") on (");

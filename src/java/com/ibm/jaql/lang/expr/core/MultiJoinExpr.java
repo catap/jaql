@@ -172,7 +172,7 @@ public class MultiJoinExpr extends MacroExpr
       {
         exprText.print("preserved ");
       }
-      exprText.print(b.var.name);
+      exprText.print(b.var.name());
       exprText.print(" in (");
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(")");
@@ -181,7 +181,7 @@ public class MultiJoinExpr extends MacroExpr
       {
         BindingExpr on = (BindingExpr)b.child(i);
         exprText.print(" on ");
-        exprText.print(on.var.name);
+        exprText.print(on.var.name());
         exprText.print(" = ");
         b.eqExpr().decompile(exprText, capturedVars);
       }

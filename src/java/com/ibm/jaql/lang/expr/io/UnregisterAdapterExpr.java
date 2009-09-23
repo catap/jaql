@@ -18,7 +18,7 @@ package com.ibm.jaql.lang.expr.io;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 
@@ -27,9 +27,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * 
  * unregisterAdapter(string key) returns key
  */
-@JaqlFn(fnName="unregisterAdapter", minArgs=1, maxArgs=1)
 public class UnregisterAdapterExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("unregisterAdapter", UnregisterAdapterExpr.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

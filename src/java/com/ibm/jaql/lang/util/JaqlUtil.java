@@ -31,9 +31,7 @@ import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.registry.FunctionStore;
 import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.util.PagedFile;
 
@@ -117,27 +115,28 @@ public class JaqlUtil
                                                         };
 
   private static final int       TEMP_PAGE_SIZE           = 64 * 1024;    // TODO: this is tuneable
-  // TODO: This stuff has to be wrapped up into a Session object, and 
-  // we need a way to find it from the current Thread.
-  private static PagedFile       queryPagedFile;
-  private static PagedFile       sessionPagedFile;
-  private static Env             sessionEnv             = new Env();
-  private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
-  private static FunctionStore   functionStore;
-  private static RNGStore        rngStore;
 
-  /**
-   * @return
-   */
-  public static FunctionStore getFunctionStore()
-  {
-    if (functionStore == null)
+  // FIXME: Page files and query files have been made thread local because there were problems
+  // with one thread (e.g., a combiner) closing the page file while another thread (e.g., the mapper)
+  // was still using it.
+  private static ThreadLocal<PagedFile> queryPagedFile = new ThreadLocal<PagedFile>()
+  { 
+    public PagedFile initialValue()
     {
-      functionStore = new FunctionStore(
-          new FunctionStore.DefaultRegistryFormat());
+      return makeTempPagedFile("jaqlQueryTemp");
+    }    
+  };
+  private static ThreadLocal<PagedFile> sessionPagedFile = new ThreadLocal<PagedFile>()
+  { 
+    public PagedFile initialValue()
+    {
+      return makeTempPagedFile("jaqlSessionTemp");
     }
-    return functionStore;
-  }
+    
+  };
+  
+  private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
+  private static RNGStore        rngStore;
 
   /**
    * @return
@@ -192,11 +191,7 @@ public class JaqlUtil
    */
   public static PagedFile getQueryPageFile()
   {
-    if (queryPagedFile == null)
-    {
-      queryPagedFile = makeTempPagedFile("jaqlQueryTemp");
-    }
-    return queryPagedFile;
+    return queryPagedFile.get();
   }
 
   /** Returns the page file of the current session. The page file is used to spill large
@@ -206,19 +201,7 @@ public class JaqlUtil
    */
   public static PagedFile getSessionPageFile()
   {
-    if (sessionPagedFile == null)
-    {
-      sessionPagedFile = makeTempPagedFile("jaqlSessionTemp");
-    }
-    return sessionPagedFile;
-  }
-
-  /**
-   * @return
-   */
-  public static Env getSessionEnv()
-  {
-    return sessionEnv;
+    return sessionPagedFile.get();
   }
 
   /**
@@ -256,5 +239,17 @@ public class JaqlUtil
   public static <T> List<T> toUnmodifiableList(T[] array)
   {
     return Collections.unmodifiableList(toList(array));
+  }
+  
+  public static RuntimeException rethrow(Exception e)
+  {
+    if (e instanceof RuntimeException)
+    {
+      return (RuntimeException)e;
+    }
+    else
+    {
+      return new RuntimeException(e);
+    }
   }
 }

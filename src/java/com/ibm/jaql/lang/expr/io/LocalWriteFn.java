@@ -16,14 +16,21 @@
 package com.ibm.jaql.lang.expr.io;
 
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
  */
-@JaqlFn(fnName = "localWrite", minArgs = 2, maxArgs = 2)
 public class LocalWriteFn extends AbstractWriteExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("localWrite", LocalWriteFn.class);
+    }
+  }
+  
   /**
    * @param exprs
    */

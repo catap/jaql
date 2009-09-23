@@ -9,12 +9,19 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /** An internal method that can be used to print the internal tree of expressions in JSON format. */
-@JaqlFn(fnName = "exprtree", minArgs = 1, maxArgs = 1)
 public class ExprTreeExpr extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("exprtree", ExprTreeExpr.class);
+    }
+  }
+  
   /**
    * boolean explain expr
    * 

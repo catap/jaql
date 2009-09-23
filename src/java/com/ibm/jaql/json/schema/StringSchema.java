@@ -21,7 +21,8 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a JSON string */
 public final class StringSchema extends Schema
@@ -40,18 +41,17 @@ public final class StringSchema extends Schema
 
   public static final JsonString PAR_PATTERN = new JsonString("pattern");
   
-  private static Parameters parameters = null; 
+  private static JsonValueParameters parameters = null; 
   
-  public static Parameters getParameters()
+  public static JsonValueParameters getParameters()
   {
     if (parameters == null)
     {
-      Schema long0 = new LongSchema(JsonLong.ZERO, null, null);
-      Schema string = new StringSchema();
-      parameters = new Parameters(
-          new JsonString[] { PAR_MIN_LENGTH, PAR_MAX_LENGTH, PAR_PATTERN, PAR_VALUE },
-          new Schema[]     { long0         , long0         , string     , string },
-          new JsonValue[]  { JsonLong.ZERO , null          , null       , null });
+      parameters = new JsonValueParameters(
+          new JsonValueParameter(PAR_MIN_LENGTH, "long(min=0)?", JsonLong.ZERO),
+          new JsonValueParameter(PAR_MAX_LENGTH, "long(min=0)?", null),
+          new JsonValueParameter(PAR_PATTERN, SchemaFactory.stringOrNullSchema(), null),
+          new JsonValueParameter(PAR_VALUE, SchemaFactory.stringOrNullSchema(), null));
     }
     return parameters;
   }

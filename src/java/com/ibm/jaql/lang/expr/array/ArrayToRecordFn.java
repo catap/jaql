@@ -23,15 +23,22 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
  * 
  */
-@JaqlFn(fnName = "arrayToRecord", minArgs = 2, maxArgs = 2)
 public class ArrayToRecordFn extends Expr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
+  {
+    public Descriptor()
+    {
+      super("arrayToRecord", ArrayToRecordFn.class);
+    }
+  }
+  
   /**
    * @param args: array names, array values
    */

@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.nil;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -23,15 +25,21 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
-import static com.ibm.jaql.json.type.JsonType.*;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * emptyOnNull(e) == firstNonNull(e, [])
  */
-@JaqlFn(fnName = "emptyOnNull", minArgs = 1, maxArgs = 1)
 public class EmptyOnNullFn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("emptyOnNull", EmptyOnNullFn.class);
+    }
+  }
+  
   /**
    * item emptyOnNull(item)
    * 

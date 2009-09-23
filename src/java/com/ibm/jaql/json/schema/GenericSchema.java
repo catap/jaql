@@ -18,7 +18,7 @@ package com.ibm.jaql.json.schema;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.core.Parameters;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
@@ -29,13 +29,13 @@ public final class GenericSchema extends Schema
 
   // -- schema parameters -------------------------------------------------------------------------
   
-  private static Parameters parameters = null; 
+  private static JsonValueParameters parameters = null; 
   
-  public static Parameters getParameters()
+  public static JsonValueParameters getParameters()
   {
     if (parameters == null)
     {
-      parameters = new Parameters(); // no args
+      parameters = new JsonValueParameters(); // no args
     }
     return parameters;
   }

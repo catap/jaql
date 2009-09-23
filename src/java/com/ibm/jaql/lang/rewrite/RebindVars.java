@@ -48,8 +48,8 @@ public class RebindVars extends Rewrite
     VarExpr ve = (VarExpr) expr;
     Var var = ve.var();
     Expr realDef = ve.findVarDef();
-    Expr nameDef = ve.findVarDef(var.name);
-    assert realDef != null && nameDef != null;
+    Expr nameDef = ve.findVarDef(var.name());
+    //assert realDef != null && nameDef != null;
     if (realDef != nameDef)
     {
       engine.env.makeUnique(var);

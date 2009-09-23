@@ -22,7 +22,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * lag1(arr) 
@@ -35,9 +35,16 @@ import com.ibm.jaql.lang.expr.core.JaqlFn;
  *
  * eg: [1,2,3] -> lag1()  ==  [ {prev: 1, cur: 2}, { prev: 2, cur: 3 } ] 
  */
-@JaqlFn(fnName="lag1",minArgs=1,maxArgs=1)
 public class Lag1Fn extends IterExpr
 {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  {
+    public Descriptor()
+    {
+      super("lag1", Lag1Fn.class);
+    }
+  }
+  
   public Lag1Fn(Expr[] inputs)
   {
     super(inputs);

@@ -5,7 +5,7 @@ package com.ibm.jaql.json.type;
 
 import java.util.HashMap;
 
-import com.ibm.jaql.lang.core.JaqlFunction;
+import com.ibm.jaql.lang.expr.function.JaqlFunction;
 
 /** Enumeration of all JSON encodings. */
 public enum JsonEncoding
