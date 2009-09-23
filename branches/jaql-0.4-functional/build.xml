@@ -384,6 +384,7 @@
 
         <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
         <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
+    	<unjar src="lib/commons-lang-2.4.jar" dest="${tmp.dir}" />
 
         <!-- make the jar -->
         <jar jarfile="${build.dir}/jaql.jar" basedir="${tmp.dir}">
