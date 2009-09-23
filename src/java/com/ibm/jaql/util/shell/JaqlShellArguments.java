@@ -25,6 +25,7 @@ import java.util.List;
 
 import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
+import jline.History;
 
 import org.apache.commons.cli2.CommandLine;
 import org.apache.commons.cli2.DisplaySetting;
@@ -48,7 +49,7 @@ public class JaqlShellArguments {
   boolean batchMode = false;
 
   private JaqlShellArguments() {};
-
+  
   @SuppressWarnings("unchecked")
   static JaqlShellArguments parseArgs(String[] args) {
     // option builders
@@ -218,7 +219,7 @@ public class JaqlShellArguments {
     } else {
       // add stdin
       try {
-        in.add(new ConsoleReaderInputStream(new ConsoleReader()));
+        in.add(configureConsoleInput());
       } catch (IOException e) {
         in.add(System.in);
       }
@@ -227,6 +228,22 @@ public class JaqlShellArguments {
 
     // return result
     return result;
+  }
+
+  /**
+   * Configures a console reader input stream. <tt>.jaql_history</tt> in
+   * <tt>user.home</tt> is used to store command history.
+   * 
+   * @return The console reader input stream
+   * @throws IOException
+   */
+  private static ConsoleReaderInputStream configureConsoleInput() throws IOException {
+    ConsoleReader cr = new ConsoleReader();
+    String historyFile = System.getProperty("user.home") + File.separator
+        + ".jaql_history";
+    cr.setHistory(new History(new File(historyFile)));
+    ConsoleReaderInputStream crIn = new ConsoleReaderInputStream(cr);
+    return crIn;
   }
 
   @SuppressWarnings("unchecked")
