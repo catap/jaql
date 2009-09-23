@@ -1141,7 +1141,7 @@ callPipe[Expr in] returns [Expr r=null]
       positionalArgs.add(0, in);
       Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
     }
-    : r=basic args[positionalArgs, namedArgs]  { r = new FunctionCallExpr(r, positionalArgs, namedArgs); }
+    : r=basic args[positionalArgs, namedArgs]  { r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); }
       r=callRepeat[r, positionalArgs, namedArgs]
     ;
     
@@ -1149,7 +1149,7 @@ callPipe[Expr in] returns [Expr r=null]
 callRepeat[Expr f, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] returns [Expr r=f]
     : ( "(" ) => { positionalArgs.clear(); namedArgs.clear(); } 
                  args[positionalArgs, namedArgs]
-                 { r = new FunctionCallExpr(r, positionalArgs, namedArgs); }
+                 { r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); }
                  r = callRepeat[r, positionalArgs, namedArgs]
                | () 
     ;    

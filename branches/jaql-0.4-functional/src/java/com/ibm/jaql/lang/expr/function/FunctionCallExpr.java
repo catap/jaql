@@ -329,6 +329,11 @@ public class FunctionCallExpr extends Expr
     }
   }
   
+  public Expr inlineIfPossible()
+  {
+    return inlineIfPossible(this);
+  }
+  
   public static Expr inlineIfPossible(Expr e)
   {
     if (e instanceof FunctionCallExpr)
