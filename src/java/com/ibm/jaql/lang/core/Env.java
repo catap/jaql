@@ -85,6 +85,19 @@ public class Env extends Namespace
     return globals().inscopeLocal(varName);
   }
   
+  public boolean isDefinedLocal(String varName)
+  {
+    try
+    {
+      inscopeLocal(varName);
+      return true;
+    }
+    catch (Exception e)
+    {
+      return false;
+    }
+  }
+  
   @Override
   public Var inscopeImport(String namespace, String varName)
   {
