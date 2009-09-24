@@ -80,9 +80,11 @@ stmt returns [Expr r=null]
     { Var v; }
     : ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(v); }
     |       ("import" id) => r=importExpr
-                           | r=topAssign
-                           | "explain" r=topAssign  { r = new ExplainExpr(r); }                                  
-                           | "quit"                 { r = null; done = true; }
+                           | { !env.isDefinedLocal("quit") }? 
+                             "quit" { r = null; done = true; }
+                           | { !env.isDefinedLocal("quit") }?
+                             "explain" r=topAssign  { r = new ExplainExpr(r); }
+                           | r=topAssign                           
     ;
 
 // namespace import
@@ -110,12 +112,12 @@ topAssign returns [Expr r]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
                   { r = new AssignExpr( env.scopeGlobal(v), r); } // TODO: expr name should reflect global var
+                | { !env.isDefinedLocal("registerFunction") }? r=registerFunction
                 | r=pipe ( /*empty*/        
                            { r = env.importGlobals(r); } 
                          | "=>" v=id        
                            { r = new AssignExpr( env.scopeGlobal(v), r); } 
-                         )
-                | r=registerFunction
+                         )                
     ;
 
 // local assignment, creates local variables
@@ -130,8 +132,8 @@ assign returns [Expr r=null]
 
 // expression that can appear on the right-hand side of an assignment    
 rvalue returns [Expr r = null]
-    : r=pipe
-//  | r=extern
+    : ( "extern" id ) => r=extern
+                       | r=pipe
     ;
 
 // external function NYI
@@ -160,12 +162,12 @@ subpipe[Expr e] returns [Expr r=e]
 
 // an expression that can occur at the beginning of a pipe   
 expr returns [Expr r]
-    : r=group
-    | r=join
-    | r=equijoin
-    | r=ifExpr
-    | r=forExpr
-    | r=unroll
+    : { !env.isDefinedLocal("group") }? r=group
+    | { !env.isDefinedLocal("join") }? r=join
+    | { !env.isDefinedLocal("equijoin") }? r=equijoin
+    | { !env.isDefinedLocal("if") }? r=ifExpr
+    | { !env.isDefinedLocal("for") }? r=forExpr
+    | { !env.isDefinedLocal("unroll") }? r=unroll
     | r=orExpr
 //  | r=combineExpr
     ;
@@ -182,8 +184,8 @@ andExpr returns [Expr r]
 
 notExpr returns [Expr r]
     : "not" r=notExpr  { r = new NotExpr(r); }
-    | r=isnullExpr
-    | r=isdefinedExpr
+    | { !env.isDefinedLocal("isnull") }? r=isnullExpr
+    | { !env.isDefinedLocal("isDefined") }? r=isdefinedExpr
     | r=inExpr
     ;
 
@@ -407,7 +409,7 @@ basic returns [Expr r=null]
     : r=constant
     | r=record
     | r=array
-    | r=builtinFunction
+    | { !env.isDefinedLocal("builtin") }? r=builtinFunction
     | r=varExpr
     | r=cmpExpr
     | r=parenExpr
@@ -454,14 +456,17 @@ block returns [Expr r=null]
 // expression that can occur after a ->
 op[Expr in] returns [Expr r=null]
     { BindingExpr b=null; } 
-    : "filter" b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
-    | "transform" b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
-    | "expand"  b=each[in] ( r=expr
+    : { !env.isDefinedLocal("filter") }?
+      "filter" b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
+    | { !env.isDefinedLocal("transform") }? 
+      "transform" b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
+    | { !env.isDefinedLocal("expand") }? 
+      "expand"  b=each[in] ( r=expr
                            | /*empty*/ { r = new VarExpr(b.var); } )
                                        { r = new ForExpr(b, r);       env.unscope(b.var); }
-    | r=groupPipe[in]
+    | { !env.isDefinedLocal("group") }? r=groupPipe[in]
     | ("sort" kw) => r=sort[in]
-    | r=top[in]
+    | { !env.isDefinedLocal("top") }? r=top[in]
     | r=split[in]
     | ("aggregate" kw) => r=aggregate[in]
     | r=callPipe[in]
@@ -618,7 +623,9 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 
 fieldValue returns [Expr r=null]
     { boolean flat = false; }
-    : ":" ("flatten" {flat=true;})? r=pipe
+    : ":" ( { !env.isDefinedLocal("flatten") }? "flatten" {flat=true;}
+                                              | () 
+          ) r=pipe
       {
         if( flat )
         {
@@ -977,7 +984,9 @@ join returns [Expr r=null]
 
 joinIn returns [BindingExpr b=null]
     { boolean p = false; }
-    : ( "preserve" { p = true; })? b=vpipe
+    : ( { !env.isDefinedLocal("preserve") }? "preserve" { p = true; }  
+                                           | ()
+      ) b=vpipe
       {
         b.preserve = p;
       }
@@ -1340,64 +1349,69 @@ kw
     | s=softkw
     ;
         
-// a soft keyword, i.e., a keyword that can be used as an identifier
+// A soft keyword that can be used as an identifier in all places
+// where identifiers are accepted. Soft keywords are not hidden by
+// variables of the same name (they occur in the grammar at places
+// where no identifier is allowed).
 softkw returns [String s=null]
-    : "aggregate"       { s = "aggregate"; }
-    | "as"              { s = "as"; }
-    | "asc"             { s = "asc"; }
-    | "by"              { s = "by"; }
-    | "desc"            { s = "desc"; }
-    | "each"            { s = "each"; }
-    | "final"           { s = "final"; }
-    | "full"            { s = "full"; }
-    | "import"          { s = "import"; }
-    | "in"              { s = "in"; }
-    | "initial"         { s = "initial"; }
-    | "into"            { s = "into"; }
-    | "partial"         { s = "partial"; }
-    | "materialize"     { s = "materialize"; }
-    | "on"              { s = "on"; }
-    | "schema"          { s = "schema"; }    
-    | "sort"            { s = "sort"; }
-    | "where"           { s = "where"; }
-    ;
+    : "aggregate"        { s = "aggregate"; }
+    | "as"               { s = "as"; }
+    | "asc"              { s = "asc"; }
+    | "by"               { s = "by"; }
+    | "desc"             { s = "desc"; }
+    | "each"             { s = "each"; }
+    | "else"             { s = "else"; }    
+    | "extern"           { s = "extern"; }
+    | "final"            { s = "final"; }
+    | "full"             { s = "full"; }
+    | "import"           { s = "import"; }
+    | "in"               { s = "in"; }
+    | "initial"          { s = "initial"; }
+    | "instanceof"       { s = "instanceof"; }
+    | "into"             { s = "into"; }
+    | "partial"          { s = "partial"; }
+    | "materialize"      { s = "materialize"; }
+    | "on"               { s = "on"; }
+    | "schema"           { s = "schema"; }    
+    | "sort"             { s = "sort"; }
+    | "using"            { s = "using"; }
+    | "where"            { s = "where"; }
+    ; 
 
-// a strict keyword, i.e., a keyword that cannot be used as an identifier
+// A weak keyword can be shadowed by an identifier. Weak keywords are treated as
+// keywords if (1) the grammar expects the keyword and (2) there is no variable
+// of the same name in scope.
+weakkw returns [String s=null]
+    : "builtin"          { s = "builtin"; }
+    | "equijoin"         { s = "equijoin"; }     
+    | "expand"           { s = "expand"; }
+    | "explain"          { s = "explain"; }
+    | "filter"           { s = "filter"; }
+    | "flatten"          { s = "flatten"; }    
+    | "for"              { s = "for"; }
+    | "group"            { s = "group"; }
+    | "if"               { s = "if"; }
+    | "isdefined"        { s = "isdefined"; }
+    | "isnull"           { s = "isnull"; }          
+    | "join"             { s = "join"; }
+    | "preserve"         { s = "preserve"; }
+    | "quit"             { s = "quit"; }    
+    | "registerFunction" { s = "registerFunction"; }
+    | "top"              { s = "top"; }
+    | "transform"        { s = "transform"; }
+    | "unroll"           { s = "unroll"; }       
+    ;
+    
+// A strict keyword cannot be used as an identifier
 strictkw
-    : 
-    // keywords that should be hard keywords
-    | "and"
-    | "explain"
+    : "and"
     | "false"
     | "fn"
     | "not" 
     | "null"
     | "or"
     | "true"
-    // keywords that we might want to make soft / functions
-    | "group"
-    | "transform"
-    | "for"
-    | "equijoin"
-    | "expand"
-    | "preserve"
-    | "flatten"
-    | "instanceof"
-    | "builtin"
-    | "isnull"
-    | "registerFunction"
-    | "extern"
-    | "top"
-    | "filter"
-    | "if"
-    | "isdefined"
-    | "using"
-    | "join"
-    | "else"
-    | "unroll"
-    | "quit"
     ;
-
 
 // -- identifiers ---------------------------------------------------------------------------------
     
@@ -1405,6 +1419,7 @@ strictkw
 id returns [String s=null]
     : i:ID              { s = i.getText(); }
     | s=softkw
+    | s=weakkw
     ;
 
 // an identifier as JsonString
