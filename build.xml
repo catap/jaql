@@ -44,6 +44,7 @@
     <property name="test.src.dir" value="${basedir}/src/test/com/ibm/jaql" />
     <property name="test.classes.dir" value="${build.dir}/classes" />
     <property name="test.include" value="jaql/Test*" />
+	<property name="test.exclude" value="jaql/TestRng" />
     <property name="test.classpath.id" value="test.classpath.mini" />
     <property name="test.output" value="no" />
     <property name="test.junit.output.format" value="plain" />
@@ -121,7 +122,7 @@
     <!-- ================================================================== -->
     <!-- Junit test                                                         -->
     <!-- ================================================================== -->
-    <target name="test" depends="jar, extension.jar">
+    <target name="test-internal" depends="jar, extension.jar">
         <mkdir dir="${build.dir}" />
         <mkdir dir="${test.build.dir}" />
         <delete dir="${test.build.data}" />
@@ -168,6 +169,9 @@
                          value="${test.jaql.mapred.mode}" />
             <sysproperty key="test.cleanup" value="${test.cleanup}" />
             <sysproperty key="build" value="${build.dir}" />
+        	<sysproperty key="test.plain" value="${test.plain}" />
+        	<sysproperty key="test.explain" value="${test.explain}" />
+        	<sysproperty key="test.rewrite" value="${test.rewrite}" />
             <classpath refid="${test.classpath.id}" />
             <formatter type="${test.junit.output.format}" />
             <batchtest todir="${test.build.dir}" unless="testcase">
@@ -186,6 +190,32 @@
             <param name="test.cleanup" value="true" />
         </antcall>
     </target>
+	
+	<target name="test-plain">
+		<antcall target="test-internal">
+			<param name="test.plain" value="true" />
+		</antcall>
+	</target>
+		
+	<target name="test-explain">
+        <antcall target="test-internal">
+            <param name="test.explain" value="true" />
+        </antcall>
+	</target>
+		
+	<target name="test-rewrite">
+        <antcall target="test-internal">
+            <param name="test.rewrite" value="true" />
+        </antcall>
+	</target>
+	
+	<target name="test">
+        <antcall target="test-internal">
+        	<param name="test.plain" value="true" />
+        	<param name="test.explain" value="true" />
+            <param name="test.rewrite" value="true" />
+        </antcall>
+	</target>
 
     <!-- ================================================================== -->
     <!-- Build from source                                                  -->
