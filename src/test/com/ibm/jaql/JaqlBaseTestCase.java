@@ -96,6 +96,15 @@ public abstract class JaqlBaseTestCase extends TestCase
         + prefix + "Decompile.txt";
     m_rewriteName = System.getProperty("test.cache.data") + File.separator
         + prefix + "Rewrite.txt";
+    
+    runResult = "true".equals(System.getProperty("test.plain"));
+	System.err.println("runResult == " + runResult);
+	
+	runDecompileResult = "true".equals(System.getProperty("test.explain"));
+	System.err.println("runDecompileResult == " + runDecompileResult);
+	
+	runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
+	System.err.println("runRewriteResult == " + runRewriteResult);
   }
   
   /**
@@ -113,6 +122,16 @@ public abstract class JaqlBaseTestCase extends TestCase
         + prefix + "Decompile.txt";
     m_rewriteName = dir + File.separator
         + prefix + "Rewrite.txt";
+    
+    runResult = "true".equals(System.getProperty("test.plain"));
+	System.err.println("runResult == " + runResult);
+	
+	runDecompileResult = "true".equals(System.getProperty("test.explain"));
+	System.err.println("runDecompileResult == " + runDecompileResult);
+	
+	runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
+	System.err.println("runRewriteResult == " + runRewriteResult);
+
   }
 
   /*
