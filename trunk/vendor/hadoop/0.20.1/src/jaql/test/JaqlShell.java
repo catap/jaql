@@ -56,12 +56,7 @@ public class JaqlShell extends AbstractJaqlShell
 
   private JaqlShell() { };
   
-  /**
-   * @param dir
-   * @param numNodes
-   * @param format
-   * @throws Exception
-   */
+  @Override
   public void init(String dir, int numNodes) throws Exception
   {
     String vInfo = VersionInfo.getVersion();
@@ -157,14 +152,10 @@ public class JaqlShell extends AbstractJaqlShell
     }
   }
 
-  /**
-   * @throws Exception
-   */
+  @Override
   public void init() throws Exception
   {
     // do nothing in the case of cluster
-    //m_conf = new HBaseConfiguration();
-    //m_admin = new HBaseAdmin(m_conf);
     Configuration conf = new Configuration();
     FileSystem fs = FileSystem.get(conf);
 
@@ -239,6 +230,8 @@ public class JaqlShell extends AbstractJaqlShell
   }
 
   /**
+   * Removes the default configurations for hadoop and hbase.
+   * 
    * @throws Exception
    */
   private static void cleanupOverride() throws Exception
@@ -250,29 +243,28 @@ public class JaqlShell extends AbstractJaqlShell
     hbOverride.delete();
   }
 
-  /**
-   * @param mrc
-   * @throws Exception
-   */
-  private static void stopMRCluster(MiniMRCluster mrc) throws Exception
-  {
-    mrc.shutdown();
-
-    // clean up the temp conf dir
-    cleanupOverride();
-  }
-
-  /**
-   * @throws Exception
-   */
+  @Override
   public void close() throws Exception
   {
+    if (m_mr != null)
+    {
+      m_mr.shutdown();
+      m_mr = null;
+    }
     if (m_base != null)
     {
-      stopMRCluster(m_mr);
       m_base.shutdown();
-      cleanupOverride();
+      m_base = null;
     }
+    if (zooKeeperCluster != null) {
+      zooKeeperCluster.shutdown();
+    }
+    if (m_fs != null)
+    {
+      m_fs.shutdown();
+      m_fs = null;
+    }
+    cleanupOverride();
   }
 
   public static void main(String[] args) throws Exception {
