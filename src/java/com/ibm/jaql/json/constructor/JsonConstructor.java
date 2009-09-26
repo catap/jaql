@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -27,7 +28,7 @@ import com.ibm.jaql.json.type.JsonValue;
  */
 public class JsonConstructor
 {
-  private static HashMap<String, ArrayList<JMethod>> lib = new HashMap<String, ArrayList<JMethod>>();
+  private static Map<String, ArrayList<JMethod>> lib = new HashMap<String, ArrayList<JMethod>>();
 
   static
   {
