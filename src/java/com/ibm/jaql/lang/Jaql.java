@@ -441,7 +441,6 @@ public class Jaql
    */
   protected void handleError(Throwable error) throws Exception
   {
-    System.err.println(error);
     error.printStackTrace();
     System.err.flush();
     if( stopOnException )
