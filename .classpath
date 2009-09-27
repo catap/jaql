@@ -2,10 +2,10 @@
 <classpath>
 	<classpathentry kind="src" path="src/java"/>
 	<classpathentry kind="src" path="src/test"/>
+	<classpathentry kind="src" path="vendor/hadoop/0.20.1/src/jaql/java"/>
+	<classpathentry kind="src" path="vendor/hadoop/0.20.1/src/jaql/test"/>
 	<classpathentry kind="src" path="vendor/hbase/0.20.0/src/jaql/java"/>
 	<classpathentry kind="src" path="vendor/hbase/0.20.0/src/jaql/test"/>
-	<classpathentry kind="src" path="vendor/hadoop/0.20.1/src/jaql/test"/>
-	<classpathentry kind="src" path="vendor/hadoop/0.20.1/src/jaql/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry exported="true" kind="lib" path="lib/antlr.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/jline-0.9.94.jar"/>
