@@ -44,7 +44,7 @@
     <property name="test.src.dir" value="${basedir}/src/test/com/ibm/jaql" />
     <property name="test.classes.dir" value="${build.dir}/classes" />
     <property name="test.include" value="jaql/Test*" />
-	<property name="test.exclude" value="jaql/TestRng" />
+    <property name="test.exclude" value=""/>
     <property name="test.classpath.id" value="test.classpath.mini" />
     <property name="test.output" value="no" />
     <property name="test.junit.output.format" value="plain" />
@@ -156,7 +156,9 @@
                maxmemory="256m"
                errorProperty="tests.failed"
                failureProperty="tests.failed">
-        	<assertions><enable/></assertions>
+            <assertions>
+                <enable/>
+            </assertions>
             <sysproperty key="test.build.data" value="${test.build.data}" />
             <sysproperty key="test.cache.data" value="${test.cache.data}" />
             <sysproperty key="hadoop.log.dir" value="${test.log.dir}" />
@@ -462,7 +464,7 @@
     <!-- ================================================================== -->
     <!-- Jaql Binary Distribution                                           -->
     <!-- ================================================================== -->
-    <target name="bindistro" depends="jar, javadoc">
+    <target name="bindistro" depends="jar, javadoc, extension.jar">
         <mkdir dir="${build.dir}/jaql-${version}" />
 
         <mkdir dir="${build.dir}/jaql-${version}/conf" />
@@ -473,6 +475,11 @@
         <mkdir dir="${build.dir}/jaql-${version}/resources" />
         <copy todir="${build.dir}/jaql-${version}/resources">
             <fileset dir="${resources.dir}" />
+        </copy>
+
+        <mkdir dir="${build.dir}/jaql-${version}/src" />
+        <copy todir="${build.dir}/jaql-${version}/src">
+            <fileset dir="${build.dir}/src"/>
         </copy>
 
         <mkdir dir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}" />
@@ -510,6 +517,9 @@
         <copy todir="${build.dir}/jaql-${version}/docs"
               file="${test.src.dir}/examples.txt" />
 
+        <copy todir="${build.dir}/jaql-${version}"
+              file="${basedir}/build.xml" />
+
         <tar compression="gzip"
              longfile="gnu"
              destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
@@ -522,11 +532,36 @@
         </tar>
     </target>
 
+    <target name="newbindistro"
+            depends="srcdistro, javadoc, jar, extension.jar">
+
+        <copy todir="${build.dir}/jaql-${version}/docs">
+            <fileset dir="${build.docs}" />
+        </copy>
+        <copy todir="${build.dir}/jaql-${version}/docs"
+              file="${test.src.dir}/examples.txt" />
+
+        <copy tofile="${build.dir}/jaql-${version}/jaql.jar"
+              file="${build.dir}/jaql.jar" />
+        <copy tofile="${build.dir}/jaql-${version}/extension.jar"
+              file="${build.dir}/extension.jar" />
+
+        <tar compression="gzip"
+             longfile="gnu"
+             destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
+            <tarfileset dir="${build.dir}/jaql-${version}"
+                        prefix="jaql-${version}"
+                        excludes="bin/*" />
+            <tarfileset dir="${build.dir}/jaql-${version}/bin"
+                        prefix="jaql-${version}/bin"
+                        filemode="755" />
+        </tar>
+    </target>
     <!-- ================================================================== -->
     <!-- Jaql Source Distribution                                           -->
     <!-- ================================================================== -->
     <target name="srcdistro"
-            depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy, javadoc">
+            depends="init, init-vendor-hadoop-version, init-vendor-hbase-version">
         <mkdir dir="${build.dir}/jaql-${version}" />
 
         <mkdir dir="${build.dir}/jaql-${version}/conf" />
@@ -554,64 +589,30 @@
             <fileset dir="${basedir}/vendor" />
         </copy>
 
-        <mkdir dir="${build.dir}/jaql-${version}/docs" />
+        <!-- <mkdir dir="${build.dir}/jaql-${version}/docs" />
         <copy todir="${build.dir}/jaql-${version}/docs">
             <fileset dir="${build.docs}" />
         </copy>
         <copy todir="${build.dir}/jaql-${version}/docs"
-              file="${test.src.dir}/examples.txt" />
+              file="${test.src.dir}/examples.txt" /> -->
 
         <mkdir dir="${build.dir}/jaql-${version}/src" />
         <copy todir="${build.dir}/jaql-${version}/src">
             <fileset dir="${build.src}" />
         </copy>
 
-        <copy todir="${build.dir}/jaql-${version}"
-              file="${basedir}/build.xml" />
-    </target>
-
-    <target name="opensrc" depends="init, init-copy">
-        <mkdir dir="${build.dir}/jaql-${version}/conf" />
-        <copy todir="${build.dir}/jaql-${version}/conf">
-            <fileset dir="${conf.dir}" />
+        <mkdir dir="${build.dir}/jaql-${version}/eclipse" />
+        <copy todir="${build.dir}/jaql-${version}/eclipse">
+            <fileset dir="${basedir}/eclipse"/>
         </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/resources" />
-        <copy todir="${build.dir}/jaql-${version}/resources">
-            <fileset dir="${resources.dir}" />
-        </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/bin" />
-        <copy todir="${build.dir}/jaql-${version}/bin">
-            <fileset refid="bin.files" />
-        </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/lib" />
-        <copy todir="${build.dir}/jaql-${version}/lib">
-            <fileset dir="${basedir}/lib" />
-        </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/vendor" />
-        <copy todir="${build.dir}/jaql-${version}/vendor">
-            <fileset dir="${basedir}/vendor" />
-        </copy>
-
-        <mkdir dir="${build.dir}/jaql-${version}/docs" />
-        <copy todir="${build.dir}/jaql-${version}/docs">
-            <fileset dir="${docs.dir}" />
-        </copy>
-        <copy todir="${build.dir}/jaql-${version}/docs"
-              file="${test.src.dir}/examples.txt" />
-
-        <mkdir dir="${build.dir}/jaql-${version}/src" />
-        <copy todir="${build.dir}/jaql-${version}/src">
-            <fileset dir="${build.src}" />
-        </copy>
+        <copy tofile="${build.dir}/jaql-${version}/.classpath"
+        			   file="${basedir}/eclipse/${hadoop.version}/classpath" />
+        <copy tofile="${build.dir}/jaql-${version}/.project"
+              file="${basedir}/eclipse/${hadoop.version}/project" />
 
         <copy todir="${build.dir}/jaql-${version}"
               file="${basedir}/build.xml" />
     </target>
-
 
     <!-- ================================================================== -->
     <!-- Clean.  Delete the build files, and their directories              -->

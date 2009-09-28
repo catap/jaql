@@ -98,13 +98,13 @@ public abstract class JaqlBaseTestCase extends TestCase
         + prefix + "Rewrite.txt";
     
     runResult = "true".equals(System.getProperty("test.plain"));
-	System.err.println("runResult == " + runResult);
-	
-	runDecompileResult = "true".equals(System.getProperty("test.explain"));
-	System.err.println("runDecompileResult == " + runDecompileResult);
-	
-	runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
-	System.err.println("runRewriteResult == " + runRewriteResult);
+    System.err.println("runResult == " + runResult);
+
+    runDecompileResult = "true".equals(System.getProperty("test.explain"));
+    System.err.println("runDecompileResult == " + runDecompileResult);
+
+    runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
+    System.err.println("runRewriteResult == " + runRewriteResult);
   }
   
   /**
@@ -124,13 +124,13 @@ public abstract class JaqlBaseTestCase extends TestCase
         + prefix + "Rewrite.txt";
     
     runResult = "true".equals(System.getProperty("test.plain"));
-	System.err.println("runResult == " + runResult);
-	
-	runDecompileResult = "true".equals(System.getProperty("test.explain"));
-	System.err.println("runDecompileResult == " + runDecompileResult);
-	
-	runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
-	System.err.println("runRewriteResult == " + runRewriteResult);
+    System.err.println("runResult == " + runResult);
+
+    runDecompileResult = "true".equals(System.getProperty("test.explain"));
+    System.err.println("runDecompileResult == " + runDecompileResult);
+
+    runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
+    System.err.println("runRewriteResult == " + runRewriteResult);
 
   }
 
@@ -204,27 +204,48 @@ public abstract class JaqlBaseTestCase extends TestCase
         context.reset();
         qNum++;
 
+        //
+        // Correctness for RNG depends on the order of tests: 
+        //   plain (q) -> decompile (d) ->  rewrite (r)
+        // Assumption: either all test modes are run (e.g., ant test) or
+        //             only one of the test modes is run
+        // Case [all tests]: current test saves previous test's RNG state 
+        //                   and restores current
+        // Case [one test] : no saves or restores are needed
         if (runResult)
         {
           System.err.println("\nrunning formatResult");
-          JaqlUtil.getRNGStore().save(rRngMap);
-          JaqlUtil.getRNGStore().restore(qRngMap);
+          System.err.println(runResult + "," + runDecompileResult + "," + runRewriteResult);
+          if(runningAllTests()) {
+            JaqlUtil.getRNGStore().save(rRngMap);
+            JaqlUtil.getRNGStore().restore(qRngMap);
+          } else if(!runningOneTest()){
+            System.err.println("Neither one test mode nor all test modes are run");
+          }
           formatResult(qNum, expr, context, oStr);
         }
 
         if (runDecompileResult)
         {
           System.err.println("\nrunning formatDecompileResult");
-          JaqlUtil.getRNGStore().save(qRngMap);
-          JaqlUtil.getRNGStore().restore(dRngMap);
+          if(runningAllTests()) {
+            JaqlUtil.getRNGStore().save(qRngMap);
+            JaqlUtil.getRNGStore().restore(dRngMap);
+          } else if(!runningOneTest()){
+            System.err.println("Neither one test mode nor all test modes are run");
+          }
           formatDecompileResult(expr, context, dStr);
         }
 
         if (runRewriteResult)
         {
           System.err.println("\nrunning formatRewriteResult");
-          JaqlUtil.getRNGStore().save(dRngMap);
-          JaqlUtil.getRNGStore().restore(rRngMap);
+          if(runningAllTests()) {
+            JaqlUtil.getRNGStore().save(dRngMap);
+            JaqlUtil.getRNGStore().restore(rRngMap);
+          } else if(!runningOneTest()){
+            System.err.println("Neither one test mode or all test modes are run");
+          }
           formatRewriteResult(expr, parser, context, rStr);
           System.err.println("\nMade it to the end for this query!");
         }
@@ -264,6 +285,16 @@ public abstract class JaqlBaseTestCase extends TestCase
     dStr.close();
     oStr.flush();
     oStr.close();
+  }
+  
+  private boolean runningAllTests() {
+    return (runResult && runDecompileResult && runRewriteResult);
+  }
+  
+  private boolean runningOneTest() {
+    return (runResult && !runDecompileResult && !runRewriteResult) ||
+      (!runResult && runDecompileResult && !runRewriteResult) ||
+      (!runResult && !runDecompileResult && runRewriteResult);
   }
 
   /**
