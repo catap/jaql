@@ -69,7 +69,7 @@ public final class BasicTextFullSerializer extends TextFullSerializer
   @Override
   public JsonValue read(InputStream in, JsonValue target) throws IOException
   {
-    throw new IOException("basic reading is not yet supported");
+    throw new UnsupportedOperationException("basic reading is not yet supported");
   }
 
   @SuppressWarnings("unchecked")
