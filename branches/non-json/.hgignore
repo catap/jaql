@@ -1,0 +1,12 @@
+# use glob syntax.
+syntax: glob
+
+**.svn
+build**
+eclipseBuild**
+.antlr-eclipse
+_temporary**
+vendor/hadoop/*/logs**
+
+# switch to regexp syntax.
+syntax: regexp

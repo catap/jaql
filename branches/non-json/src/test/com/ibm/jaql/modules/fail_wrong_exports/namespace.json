@@ -1,0 +1,4 @@
+{
+	version: 	0.1,
+	export:		["fuzzy_join", "normalize", "cleanTitle"]
+}
