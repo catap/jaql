@@ -57,7 +57,7 @@ public class ExamplesFn extends Expr {
 		InputStream in = new FileInputStream(f);
 		TeeInputStream tin = new TeeInputStream(in, System.out);
 		try {
-			Jaql.run(f.getName(), tin);
+			Jaql.run(f.getName(), tin, false);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

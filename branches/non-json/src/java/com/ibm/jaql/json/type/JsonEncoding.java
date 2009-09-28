@@ -29,9 +29,10 @@ public enum JsonEncoding
   SPAN(16, JsonSpan.class, JsonType.SPAN),
   DOUBLE(17, JsonDouble.class, JsonType.DOUBLE),
   JAVA_RECORD(18, JavaJsonRecord.class, JsonType.RECORD), 
-  JAVA_ARRAY(19, JavaJsonRecord.class, JsonType.ARRAY);
+  JAVA_ARRAY(19, JavaJsonRecord.class, JsonType.ARRAY),
+  UNQUOTED_STRING(20, UnquotedJsonString.class, JsonType.UNQUOTED_STRING);
 
-  public final static int                                        LIMIT        = 20;                                             // keep at max id + 1
+  public final static int                                        LIMIT        = 21;                                             // keep at max id + 1
   private static final JsonEncoding[]                                idToEncoding = new JsonEncoding[LIMIT];
   private static final HashMap<Class<? extends JsonValue>, Integer> classMap     = new HashMap<Class<? extends JsonValue>, Integer>();
 

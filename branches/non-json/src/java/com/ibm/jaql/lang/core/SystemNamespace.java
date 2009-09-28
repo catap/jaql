@@ -67,6 +67,7 @@ import com.ibm.jaql.lang.expr.core.PerPartitionFn;
 import com.ibm.jaql.lang.expr.core.PerfFn;
 import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
+import com.ibm.jaql.lang.expr.csv.JsonToCsvFn;
 import com.ibm.jaql.lang.expr.date.DateFn;
 import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.DatePartsFn;
@@ -169,6 +170,7 @@ import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.BatchFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.system.RFn;
+import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 
 /** The system namespace. Treated specially, always present. */
@@ -311,6 +313,8 @@ public final class SystemNamespace extends Namespace {
     register(new RegexExtractFn.Descriptor());
     register(new TokenizeFn.Descriptor());
     register(new XmlToJsonFn.Descriptor());
+    register(new JsonToXmlFn.Descriptor());
+    register(new JsonToCsvFn.Descriptor());
     //register(new IsnullExpr.Descriptor());
     register(new DenullFn.Descriptor());
     register(new DeemptyFn.Descriptor());

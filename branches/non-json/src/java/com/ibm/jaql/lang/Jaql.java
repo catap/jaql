@@ -60,14 +60,15 @@ public class Jaql
             in = System.in;
         }
     }
-    run("<stdin>",in);
+    run("<stdin>", in, false);
     // System.exit(0); // possible jvm 1.6 work around for "JDWP Unable to get JNI 1.2 environment"
   }
 
-  public static void run(String filename, InputStream in) throws Exception
+  public static void run(String filename, InputStream in, boolean batchMode) throws Exception
   {
     Jaql engine = new Jaql(filename, in);
     engine.setOutput(System.out);
+    engine.setBatchMode(batchMode);
     engine.run();
   }
 
@@ -86,6 +87,7 @@ public class Jaql
   protected boolean stopOnException = false;
   protected PrintStream output = null;  // TODO: should generalize to generic output handler
   protected String prompt = "\njaql> ";
+  private boolean batchMode = false;
   
   static
   {
@@ -139,6 +141,10 @@ public class Jaql
   public void setOutput(PrintStream output)
   {
     this.output = output;
+  }
+  
+  public void setBatchMode(boolean batchMode) {
+    this.batchMode = batchMode;
   }
 
   /**
@@ -290,7 +296,7 @@ public class Jaql
       context.reset(); // close the last query, if still open
       try
       {
-        if( output != null )
+        if( output != null && !batchMode )
         {
           output.print(prompt);
         }

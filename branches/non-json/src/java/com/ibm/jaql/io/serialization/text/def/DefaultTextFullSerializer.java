@@ -22,6 +22,7 @@ import java.util.EnumMap;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
+import com.ibm.jaql.io.serialization.text.basic.JsonStringUnquotedSerializer;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonEncoding;
@@ -51,7 +52,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
   // -- construction -----------------------------------------------------------
 
   public DefaultTextFullSerializer() {
-    assert JsonEncoding.LIMIT == 20; // change when adding the encodings
+    assert JsonEncoding.LIMIT == 21; // change when adding the encodings
 
     serializers = new EnumMap<JsonEncoding, TextBasicSerializer<?>>(JsonEncoding.class);
 
@@ -76,6 +77,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
                     new JsonRegexSerializer(jstringSerializer));
     serializers.put(JsonEncoding.SPAN, new JsonSpanSerializer());
     serializers.put(JsonEncoding.DOUBLE, new JsonDoubleSerializer());
+    serializers.put(JsonEncoding.UNQUOTED_STRING, new JsonStringUnquotedSerializer());
   }
 
   // -- FullSerializer methods -------------------------------------------------
