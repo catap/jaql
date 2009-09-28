@@ -35,15 +35,10 @@ import com.ibm.jaql.json.type.JsonValue;
  */
 public final class BasicTextFullSerializer extends TextFullSerializer
 {
-  protected final EnumMap<JsonEncoding, TextBasicSerializer<?>> serializers; 
-  protected final JsonAsStringSerializer stringSerializer = new JsonAsStringSerializer();
+  private final EnumMap<JsonEncoding, TextBasicSerializer<?>> serializers; 
+  private final JsonAsStringSerializer stringSerializer = new JsonAsStringSerializer();
 
-  // caches
-  final JsonValue[] atoms1 = new JsonValue[JsonEncoding.LIMIT];
-  final JsonValue[] atoms2 = new JsonValue[JsonEncoding.LIMIT];
-
-  
-  // -- default instance --------------------------------------------------------------------------
+  // -- default instance -------------------------------------------------------
   
   private static BasicTextFullSerializer defaultInstance = null;
 
@@ -57,7 +52,7 @@ public final class BasicTextFullSerializer extends TextFullSerializer
   }
   
   
-  // -- construction ------------------------------------------------------------------------------
+  // -- construction -----------------------------------------------------------
 
   public BasicTextFullSerializer()
   {
@@ -66,11 +61,10 @@ public final class BasicTextFullSerializer extends TextFullSerializer
     serializers.put(JsonEncoding.LONG,     new JsonLongSerializer());
     serializers.put(JsonEncoding.DECFLOAT, new JsonDecimalSerializer());
     serializers.put(JsonEncoding.DOUBLE,   new JsonDoubleSerializer());
-    // serializers.put(JsonEncoding.DATE,     new JsonStringUnquotedSerializer());
   }
 
   
-  // -- FullSerializer methods --------------------------------------------------------------------
+  // -- FullSerializer methods -------------------------------------------------
 
   @Override
   public JsonValue read(InputStream in, JsonValue target) throws IOException
