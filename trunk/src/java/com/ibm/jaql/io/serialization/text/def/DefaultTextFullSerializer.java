@@ -58,8 +58,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
     TextBasicSerializer<JsonString> jstringSerializer = new JsonStringSerializer();
 
     // UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
-    // UNDEFINED(1, null, null), // reserved for possible inclusion of the
-    // undefined value
+    // UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
     serializers.put(JsonEncoding.NULL, new NullSerializer());
     serializers.put(JsonEncoding.ARRAY_SPILLED, new JsonArraySerializer(this));
     serializers.put(JsonEncoding.ARRAY_BUFFERED, new JsonArraySerializer(this));
