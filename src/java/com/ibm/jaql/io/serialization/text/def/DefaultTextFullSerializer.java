@@ -28,46 +28,43 @@ import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Jaql's default serializer. This serializer is generic; it does not consider/exploit any
- * schema information. */
-public final class DefaultTextFullSerializer extends TextFullSerializer
-{
-  final EnumMap<JsonEncoding, TextBasicSerializer<?>> serializers; 
+/**
+ * Jaql's default serializer. This serializer is generic; it does not
+ * consider/exploit any schema information.
+ */
+public final class DefaultTextFullSerializer extends TextFullSerializer {
+  private final EnumMap<JsonEncoding, TextBasicSerializer<?>> serializers;
 
-  // caches
-  final JsonValue[] atoms1 = new JsonValue[JsonEncoding.LIMIT];
-  final JsonValue[] atoms2 = new JsonValue[JsonEncoding.LIMIT];
+  // -- default instance -------------------------------------------------------
 
-  
-  // -- default instance --------------------------------------------------------------------------
-  
   private static DefaultTextFullSerializer defaultInstance = new DefaultTextFullSerializer();
+
   public static DefaultTextFullSerializer getInstance() {
-    if (defaultInstance == null) { 
+    if (defaultInstance == null) {
       // TODO: code block needed; why is defaultInstance not initialized?
-      // once reslove, make defaultInstance final      
+      // once reslove, make defaultInstance final
       defaultInstance = new DefaultTextFullSerializer();
     }
     return defaultInstance;
   }
-  
-  
-  // -- construction ------------------------------------------------------------------------------
+
+  // -- construction -----------------------------------------------------------
 
   public DefaultTextFullSerializer() {
     assert JsonEncoding.LIMIT == 20; // change when adding the encodings
-    
+
     serializers = new EnumMap<JsonEncoding, TextBasicSerializer<?>>(JsonEncoding.class);
-    
+
     TextBasicSerializer<JsonString> jstringSerializer = new JsonStringSerializer();
-    
-//    UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
-//    UNDEFINED(1, null, null), // reserved for possible inclusion of the undefined value
+
+    // UNKNOWN(0, null, Type.UNKNOWN), // bogus item type used as an indicator
+    // UNDEFINED(1, null, null), // reserved for possible inclusion of the
+    // undefined value
     serializers.put(JsonEncoding.NULL, new NullSerializer());
     serializers.put(JsonEncoding.ARRAY_SPILLED, new JsonArraySerializer(this));
     serializers.put(JsonEncoding.ARRAY_BUFFERED, new JsonArraySerializer(this));
-    serializers.put(JsonEncoding.RECORD, new JsonRecordSerializer(
-        jstringSerializer, this));
+    serializers.put(JsonEncoding.RECORD,
+                    new JsonRecordSerializer(jstringSerializer, this));
     serializers.put(JsonEncoding.BOOLEAN, new JsonBoolSerializer());
     serializers.put(JsonEncoding.STRING, jstringSerializer);
     serializers.put(JsonEncoding.BINARY, new JsonBinarySerializer());
@@ -76,20 +73,16 @@ public final class DefaultTextFullSerializer extends TextFullSerializer
     serializers.put(JsonEncoding.DATE, new JsonDateSerializer());
     serializers.put(JsonEncoding.FUNCTION, new FunctionSerializer());
     serializers.put(JsonEncoding.SCHEMA, new JsonSchemaSerializer());
-//    serializers.put(JsonEncoding.JAVAOBJECT_CLASSNAME, new JsonJavaObjectSerializer());
-    serializers.put(JsonEncoding.REGEX, new JsonRegexSerializer(jstringSerializer));
+    serializers.put(JsonEncoding.REGEX,
+                    new JsonRegexSerializer(jstringSerializer));
     serializers.put(JsonEncoding.SPAN, new JsonSpanSerializer());
     serializers.put(JsonEncoding.DOUBLE, new JsonDoubleSerializer());
-//    JAVA_RECORD(18, JavaJRecord.class, Type.RECORD),
-//    serializers.put(JsonEncoding.JAVA_ARRAY, new JavaJsonArraySerializer());
   }
 
-  
-  // -- FullSerializer methods --------------------------------------------------------------------
+  // -- FullSerializer methods -------------------------------------------------
 
   @Override
-  public JsonValue read(InputStream in, JsonValue target) throws IOException
-  {
+  public JsonValue read(InputStream in, JsonValue target) throws IOException {
     try {
       JsonParser parser = new JsonParser(in);
       return parser.JsonVal();
@@ -100,8 +93,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer
 
   @SuppressWarnings("unchecked")
   @Override
-  public void write(PrintStream out, JsonValue value, int indent) throws IOException
-  {
+  public void write(PrintStream out, JsonValue value, int indent) throws IOException {
     JsonEncoding encoding;
     if (value == null) {
       encoding = JsonEncoding.NULL;
@@ -110,18 +102,19 @@ public final class DefaultTextFullSerializer extends TextFullSerializer
     }
     TextBasicSerializer serializer = serializers.get(encoding);
     assert serializer != null : "No serializer defined for " + encoding;
-    serializer.write(out, value, indent);    
+    serializer.write(out, value, indent);
   }
 
-  
-  // -- misc --------------------------------------------------------------------------------------
+  // -- misc -------------------------------------------------------------------
 
-  /** Returns the <code>BasicSerializer</code> used for the given <code>encoding</code>. */
+  /**
+   * Returns the <code>BasicSerializer</code> used for the given
+   * <code>encoding</code>.
+   */
   public TextBasicSerializer<?> getSerializer(JsonEncoding encoding) {
     TextBasicSerializer<?> serializer = serializers.get(encoding);
     assert serializer != null : "No serializer defined for " + encoding;
     return serializer;
   }
 
-  
 }
