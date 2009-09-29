@@ -68,5 +68,6 @@
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/lib/slf4j-api-1.4.3.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/lib/slf4j-log4j12-1.4.3.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/lib/xmlenc-0.52.jar"/>
+	<classpathentry kind="lib" path="conf"/>
 	<classpathentry kind="output" path="buildEclipse"/>
 </classpath>
