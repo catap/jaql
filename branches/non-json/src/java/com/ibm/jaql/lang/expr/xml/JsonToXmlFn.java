@@ -29,7 +29,6 @@ import com.ibm.jaql.json.type.UnquotedJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.util.Assert;
 
 /**
  * A function for converting JSON to XML. It is called as follows:
