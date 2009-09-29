@@ -209,7 +209,7 @@ public class JsonToXmlFn extends Expr {
    * @throws NullPointerException If the field name is <code>null</code>
    */
   String atom(JsonString fn, JsonAtom atom) {
-    Assert.notNull(fn, "Field name is null");
+    assert fn != null : "Field name is null";
     String s = escape(atom);
     String tagName = fn.toString();
     if (s.trim().length() == 0)
