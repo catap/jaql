@@ -13,22 +13,30 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io;
+package com.ibm.jaql.io.stream.converter;
 
-import java.io.Closeable;
 import java.io.IOException;
+import java.io.PrintStream;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * A Writer that writes values.
+ * Wraps the output in a beginning <i>[</i> and an ending <i>]</i>. JSON value
+ * are separated with <i>,</i>.
  */
-public abstract class ClosableJsonWriter implements Closeable {
-  /**
-   * Write the JSON value.
-   * 
-   * @param value JSON value
-   * @throws IOException
-   */
-  public abstract void write(JsonValue value) throws IOException;
+public class ArrayJsonTextOutputStream extends AbstractJsonTextOutputStream {
+
+  private static String ARR_OPEN = "[";
+  private static String ARR_CLOSE = "]";
+  private static String ARR_SEP = ",";
+
+  public ArrayJsonTextOutputStream() {
+    super(ARR_OPEN, ARR_SEP, ARR_CLOSE);
+  }
+
+  @Override
+  protected void printValue(PrintStream output, JsonValue i) throws IOException {
+    JsonUtil.print(output, i);
+  }
 }

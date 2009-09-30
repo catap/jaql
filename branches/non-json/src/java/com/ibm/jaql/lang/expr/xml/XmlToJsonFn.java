@@ -42,7 +42,6 @@ import com.ibm.jaql.util.IntArray;
 /**
  * A function for converting XML to JSON.
  * 
- * @see JsonToXmlFn
  */
 public class XmlToJsonFn extends Expr
 {

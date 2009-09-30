@@ -16,13 +16,14 @@
 package com.ibm.jaql.io;
 
 /**
- * An adapter that produces Items
+ * An adapter that produces JSON values.
  */
-public interface OutputAdapter extends Adapter
-{
+public interface OutputAdapter extends Adapter {
 
   /**
-   * @return ItemWriter
+   * Returns the writer for writing JSON value.
+   * 
+   * @return Closable JSON writer
    * @throws Exception
    */
   ClosableJsonWriter getWriter() throws Exception;

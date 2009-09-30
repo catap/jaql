@@ -25,93 +25,92 @@ import com.ibm.jaql.io.AbstractOutputAdapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.converter.JsonToStream;
+import com.ibm.jaql.io.stream.converter.JsonToStreamConverter;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Output adapter that writes {@link Item}s to a URL, using a {@link ItemToStream} 
- * converter in the process.
- * 
+/**
+ * Output adapter that writes {@link Item}s to a URL, using a
+ * {@link ItemToStream} converter in the process.
  */
-public class StreamOutputAdapter extends AbstractOutputAdapter
-{
+public class StreamOutputAdapter extends AbstractOutputAdapter {
 
-  protected JsonToStream<JsonValue> formatter;
+  private JsonToStream<JsonValue> formatter;
+  private ClosableJsonWriter writer;
+  private JsonToStreamConverter converter;
 
-  private ClosableJsonWriter     writer;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.AbstractOutputAdapter#initializeFrom(com.ibm.jaql.json.type.JRecord)
-   */
   @SuppressWarnings("unchecked")
   @Override
-  public void init(JsonValue args) throws Exception
-  {
+  public void init(JsonValue args) throws Exception {
     super.init(args);
+    AdapterStore as = AdapterStore.getStore();
+    JsonRecord outputArgs = as.output.getOption((JsonRecord) args);
 
-    JsonRecord outputArgs = AdapterStore.getStore().output.getOption((JsonRecord)args);
-    // setup the formatter
-    Class<?> fclass = AdapterStore.getStore().getClassFromRecord(outputArgs,
-        FORMAT_NAME, null);
-    if (fclass == null) throw new Exception("formatter must be specified");
-    if (!JsonToStream.class.isAssignableFrom(fclass))
-      throw new Exception("formatter must implement ItemOutputStream");
-    formatter = (JsonToStream) fclass.newInstance();
+    // formatter
+    Class<JsonToStream> fclass = (Class<JsonToStream>) as.getClassFromRecord(outputArgs,
+                                                                             FORMAT_NAME,
+                                                                             null);
+    if (fclass == null)
+      throw new IllegalArgumentException("formatter must be specified");
+    formatter = fclass.newInstance();
     JsonValue arrAcc = outputArgs.get(StreamInputAdapter.ARR_NAME);
-    if(arrAcc != null) {
-      formatter.setArrayAccessor( ((JsonBool)arrAcc).get());
+    if (arrAcc != null) {
+      formatter.setArrayAccessor(((JsonBool) arrAcc).get());
+    }
+
+    // converter
+    Class<JsonToStreamConverter> converterClass = (Class<JsonToStreamConverter>) as.getClassFromRecord(options,
+                                                                                 CONVERTER_NAME,
+                                                                                 null);
+    if (converterClass != null) {
+      this.converter = converterClass.newInstance();
+      this.converter.init(options);
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.OutputAdapter#getItemWriter()
-   */
-  public ClosableJsonWriter getWriter() throws Exception
-  {
+  @Override
+  public ClosableJsonWriter getWriter() throws Exception {
     final OutputStream output = openStream(location);
-    this.formatter.setOutputStream(output);
-    this.writer = new ClosableJsonWriter() {
-      
-      public void close() throws IOException
-      {
-        formatter.close();
+    formatter.setOutputStream(output);
+    writer = new ClosableJsonWriter() {
+      @Override
+      public void close() throws IOException {
+        formatter.cleanUp();
       }
 
-      public void write(JsonValue value) throws IOException
-      {
-        formatter.write(value);
+      @Override
+      public void write(JsonValue value) throws IOException {
+        JsonValue v = converter == null ? value : converter.convert(value);
+        formatter.write(v);
       }
-
     };
     return writer;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.AbstractOutputAdapter#close()
-   */
   @Override
-  public void close() throws Exception
-  {
-    if (writer != null) writer.close();
+  public void close() throws Exception {
+    if (writer != null)
+      writer.close();
   }
 
   /**
-   * @param location
-   * @return
+   * Opens the output stream to the given location. STDOUT is returned if the
+   * location is <code>null</code>.
+   * 
+   * @param location URL string
+   * @return An ouput stream
    * @throws Exception
    */
-  protected OutputStream openStream(String location) throws Exception
-  {
-    // make a URI from location.
-    URI uri = new URI(location);
-    URL url = uri.toURL();
-    URLConnection c = url.openConnection();
-    return c.getOutputStream();
+  protected OutputStream openStream(String location) throws Exception {
+    if (location == null) {
+      return System.out;
+    } else {
+      // make a URI from location.
+      URI uri = new URI(location);
+      URL url = uri.toURL();
+      URLConnection c = url.openConnection();
+      return c.getOutputStream();
+    }
   }
 }

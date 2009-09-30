@@ -13,16 +13,22 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.json.type;
+package com.ibm.jaql.io.stream.converter;
 
-import static org.junit.Assert.assertEquals;
+import com.ibm.jaql.io.Initializable;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
-import org.junit.Test;
+/**
+ * For converting a JSON value to its text representation.
+ */
+public interface JsonToStreamConverter extends Initializable {
 
-public class UnquotedJsonStringTest {
-  @Test
-  public void getEncoding() {
-    UnquotedJsonString un = new UnquotedJsonString("foo");
-    assertEquals(JsonEncoding.UNQUOTED_STRING, un.getEncoding());
-  }
+  /**
+   * Converts the JSON value into a text representation.
+   * 
+   * @param src JSON value
+   * @return The text representation
+   */
+  public JsonString convert(JsonValue src);
 }

@@ -20,22 +20,23 @@ import com.ibm.jaql.json.type.JsonString;
 /**
  * An interface for accessing a data source.
  */
-public interface Adapter extends Initializable
-{
-  static JsonString TYPE_NAME       = new JsonString("type");
+public interface Adapter extends Initializable {
+  JsonString TYPE_NAME = new JsonString("type");
 
-  static JsonString LOCATION_NAME   = new JsonString("location");
+  JsonString LOCATION_NAME = new JsonString("location");
 
-  static JsonString INOPTIONS_NAME  = new JsonString("inoptions");
+  JsonString INOPTIONS_NAME = new JsonString("inoptions");
 
-  static JsonString OUTOPTIONS_NAME = new JsonString("outoptions");
+  JsonString OUTOPTIONS_NAME = new JsonString("outoptions");
 
-  static JsonString OPTIONS_NAME    = new JsonString("options");
-  
-  static JsonString ADAPTER_NAME    = new JsonString("adapter");
+  JsonString OPTIONS_NAME = new JsonString("options");
 
-  static JsonString FORMAT_NAME     = new JsonString("format");
-  
+  JsonString ADAPTER_NAME = new JsonString("adapter");
+
+  JsonString FORMAT_NAME = new JsonString("format");
+
+  JsonString CONVERTER_NAME = new JsonString("converter");
+
   /**
    * Once an adapter has been initialized, you can take whatever steps that are
    * needed prior to accessing the data. This is called by expressions, but not

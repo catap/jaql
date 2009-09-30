@@ -13,19 +13,25 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.json.type;
+package com.ibm.jaql.lang.expr.io;
+
+import com.ibm.jaql.io.stream.converter.LinesJsonTextOutputStream;
+import com.ibm.jaql.io.stream.converter.ToDelConverter;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * For printing of JSON string in unquoted format.
+ * CSV output format.
  */
-public final class UnquotedJsonString extends JsonString {
+public class CsvFormatFn extends AbstractOutputFormatFn {
 
-  public UnquotedJsonString(String string) {
-    super(string);
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par00 {
+    public Descriptor() {
+      super("csvFormat", CsvFormatFn.class);
+    }
   }
 
-  @Override
-  public JsonEncoding getEncoding() {
-    return JsonEncoding.UNQUOTED_STRING;
+  public CsvFormatFn(Expr[] exprs) {
+    super(exprs, LinesJsonTextOutputStream.class, ToDelConverter.class);
   }
 }

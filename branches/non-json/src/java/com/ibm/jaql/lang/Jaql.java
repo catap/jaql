@@ -417,15 +417,20 @@ public class Jaql
         if (expr.getSchema().is(ARRAY, NULL).always())
         {
           JsonIterator iter = expr.iter(context);
-          iter.print(output);
+          if (!batchMode)
+            iter.print(output);
         }
         else
         {
           JsonValue value = expr.eval(context);
-          JsonUtil.print(output, value);
+          if (!batchMode)
+            JsonUtil.print(output, value);
         }
-        output.println();
-        output.flush();
+        if (!batchMode) 
+        {
+          output.println();
+          output.flush();  
+        }
       }
       catch( Throwable error )
       {

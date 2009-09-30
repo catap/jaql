@@ -27,7 +27,6 @@ public enum JsonType
   DATE(JsonDate.class, "date"),
   SCHEMA(JsonSchema.class, "schematype"),
   FUNCTION(Function.class, "function"),
-  UNQUOTED_STRING(UnquotedJsonString.class, "uquoted_string"),
 
   // Extensiblity for writable java objects, but the class name is written on every instance!
 

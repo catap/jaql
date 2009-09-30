@@ -20,31 +20,33 @@ import java.io.OutputStream;
 
 import com.ibm.jaql.json.type.JsonValue;
 
-/** 
+/**
  * Interface for writing {@link JsonValue}s to an {@link OutputStream}.
  */
-public interface JsonToStream<T extends JsonValue>
-{
+public interface JsonToStream<T extends JsonValue> {
   /**
-   * @param out
+   * Sets output stream.
+   * 
+   * @param out Output stream
    */
   void setOutputStream(OutputStream out);
 
   /**
-   * If the converter is for array access, then it assumes the item is not part of a JSON array.
-   * In this case, only one value is expected to be written out.
-   *  
+   * If the converter is not for array access, then it assumes the JSON value is
+   * not part of a JSON array. In this case, only one value is expected to be
+   * written out.
+   * 
    * @param a
    */
   void setArrayAccessor(boolean a);
-  
+
   /**
    * Is the converter an array accessor?
    * 
    * @return
    */
   boolean isArrayAccessor();
-  
+
   /**
    * @param i
    * @throws IOException
@@ -52,7 +54,9 @@ public interface JsonToStream<T extends JsonValue>
   void write(T i) throws IOException;
 
   /**
+   * Clean up the underlying output stream. Close it if needed.
+   * 
    * @throws IOException
    */
-  void close() throws IOException;
+  void cleanUp() throws IOException;
 }

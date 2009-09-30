@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.util.Map;
 
 import com.ibm.jaql.io.ClosableJsonWriter;
@@ -79,13 +82,19 @@ public abstract class AbstractWriteExpr extends Expr
   
     adapter.open();
     ClosableJsonWriter writer = adapter.getWriter();
-    JsonIterator iter = dataExpr().iter(context);
-    if (iter != null)
+    if (dataExpr().getSchema().is(ARRAY, NULL).always())
     {
-      for (JsonValue value : iter) 
+      JsonIterator iter = dataExpr().iter(context);
+      if (iter != null)
       {
-        writer.write(value);
+        for (JsonValue value : iter) 
+        {
+          writer.write(value);
+        }
       }
+    } else {
+      JsonValue value = dataExpr().eval(context);
+      writer.write(value);
     }
     adapter.close();
   

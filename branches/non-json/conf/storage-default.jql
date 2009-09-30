@@ -15,6 +15,10 @@
 //
 
 [
+{key: 'stdout',
+ val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
+                    format: 'com.ibm.jaql.io.stream.converter.ArrayJsonTextOutputStream'}}
+},
 // local file data
 {key: 'local',
  val: {inoptions : 	{adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',

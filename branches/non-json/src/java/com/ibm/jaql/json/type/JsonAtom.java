@@ -15,8 +15,7 @@
  */
 package com.ibm.jaql.json.type;
 
-
-/** Superclass for all atomic JSON values. */
-public abstract class JsonAtom extends JsonValue
-{
-}
+/**
+ * Superclass for all atomic JSON values.
+ */
+public abstract class JsonAtom extends JsonValue {}

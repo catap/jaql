@@ -23,14 +23,10 @@ import com.ibm.jaql.json.type.JsonString;
 /**
  * An adapter that is specific for Hadoop Input and Output formats.
  */
-public interface HadoopAdapter
-    extends Adapter, ConfSetter, JobConfigurable
-{
-  public final static String IMP                  = "com.ibm.jaql.io.hadoop.MapReduceExpr";
+public interface HadoopAdapter extends Adapter, ConfSetter, JobConfigurable {
+  String IMP = "com.ibm.jaql.io.hadoop.MapReduceExpr";
 
-  public final static String storeRegistryVarName = IMP + ".sRegistry";
+  String storeRegistryVarName = IMP + ".sRegistry";
 
-  static JsonString              CONVERTER_NAME       = new JsonString("converter");
-  
-  static JsonString              CONFIGURATOR_NAME    = new JsonString("configurator");
+  JsonString CONFIGURATOR_NAME = new JsonString("configurator");
 }
