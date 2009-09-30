@@ -60,13 +60,8 @@ import com.ibm.jaql.lang.expr.function.JsonValueParameters;
  * The R process is forked and the init script/string is passed to R only on the 
  * first invocation.
  * 
-<<<<<<< .working
- * To configure R, add -DR.home=<path to R> and -DR.args=<args to R> to the VM arguments. 
- * // TODO: need jaql.conf
-=======
  * To configure R, add -DR.home=<path to R> and -DR.args=<args to R> to the 
  * VM arguments. 
->>>>>>> .merge-right.r337
  * 
  * // TODO: need jaql.conf
  * 
