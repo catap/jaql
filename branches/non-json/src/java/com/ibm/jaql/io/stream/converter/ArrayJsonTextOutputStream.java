@@ -23,7 +23,8 @@ import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * Wraps the output in a beginning <i>[</i> and an ending <i>]</i>. JSON value
- * are separated with <i>,</i>.
+ * are separated with <i>,</i>. {@link DefaultTextFullSerializer} is for the
+ * serialization of JSON values.
  */
 public class ArrayJsonTextOutputStream extends AbstractJsonTextOutputStream {
 
@@ -36,7 +37,7 @@ public class ArrayJsonTextOutputStream extends AbstractJsonTextOutputStream {
   }
 
   @Override
-  protected void printValue(PrintStream output, JsonValue i) throws IOException {
-    JsonUtil.print(output, i);
+  protected void printValue(PrintStream print, JsonValue i) throws IOException {
+    JsonUtil.print(print, i);
   }
 }

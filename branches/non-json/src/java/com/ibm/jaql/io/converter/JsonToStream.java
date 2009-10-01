@@ -41,14 +41,17 @@ public interface JsonToStream<T extends JsonValue> {
   void setArrayAccessor(boolean a);
 
   /**
-   * Is the converter an array accessor?
+   * Tests whether the converter is an array accessor.
    * 
-   * @return
+   * @return <code>true</code> if the converter is an array accessor:
+   *         <code>false</code> otherwise.
    */
   boolean isArrayAccessor();
 
   /**
-   * @param i
+   * Writes the JSON value to the output stream.
+   * 
+   * @param i JSON value
    * @throws IOException
    */
   void write(T i) throws IOException;

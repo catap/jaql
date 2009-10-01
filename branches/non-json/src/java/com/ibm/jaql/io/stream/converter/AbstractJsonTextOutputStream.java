@@ -71,20 +71,16 @@ public abstract class AbstractJsonTextOutputStream implements
 
   @Override
   public void write(JsonValue i) throws IOException {
-    try {
-      if (seenFirst && !arrAcc)
-        throw new RuntimeException("Expected only one value when not in array mode");
-      if (!seenFirst && arrAcc) {
-        output.print(start);
-      }
-      if (seenFirst)
-        output.print(sep);
-      else
-        seenFirst = true;
-      printValue(output, i);
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    if (seenFirst && !arrAcc)
+      throw new RuntimeException("Expected only one value when not in array mode");
+    if (!seenFirst && arrAcc) {
+      output.print(start);
     }
+    if (seenFirst)
+      output.print(sep);
+    else
+      seenFirst = true;
+    printValue(output, i);
   }
 
   @Override
@@ -100,5 +96,12 @@ public abstract class AbstractJsonTextOutputStream implements
     }
   }
 
-  protected abstract void printValue(PrintStream output, JsonValue i) throws IOException;
+  /**
+   * Prints the JSON value to the print stream.
+   * 
+   * @param print A print stream
+   * @param i A JSON value
+   * @throws IOException
+   */
+  protected abstract void printValue(PrintStream print, JsonValue i) throws IOException;
 }

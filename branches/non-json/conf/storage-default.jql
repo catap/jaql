@@ -24,7 +24,7 @@
  val: {inoptions : 	{adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
 				                 format  : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'},
        outoptions: 	{adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
-                     format  : 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}}
+                     format  : 'com.ibm.jaql.io.stream.converter.ArrayJsonTextOutputStream'}}
 },
 				 
 // hdfs data

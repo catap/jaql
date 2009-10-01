@@ -18,27 +18,32 @@ package com.ibm.jaql.io.stream.converter;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import com.ibm.jaql.io.serialization.text.basic.JsonStringUnquotedSerializer;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
-// Rename to LineJsonTextOutputStream
 /**
- * Writes every JSON value in a new line.
+ * Writes every JSON value in a new line. {@link JsonStringUnquotedSerializer}
+ * is used for the serialization of JSON string.
+ * {@link DefaultTextFullSerializer} is for the serialization of other kinds of
+ * JSON values.
  */
 public class LinesJsonTextOutputStream extends AbstractJsonTextOutputStream {
 
   private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+  private JsonStringUnquotedSerializer strSer = new JsonStringUnquotedSerializer();
 
   public LinesJsonTextOutputStream() {
     super("", LINE_SEPARATOR, "");
   }
 
   @Override
-  protected void printValue(PrintStream output, JsonValue i) throws IOException {
+  protected void printValue(PrintStream print, JsonValue i) throws IOException {
     if (i instanceof JsonString)
-      output.print(i);
+      strSer.write(print, i);
     else
-    JsonUtil.print(output, i);
+      JsonUtil.print(print, i);
   }
 }
