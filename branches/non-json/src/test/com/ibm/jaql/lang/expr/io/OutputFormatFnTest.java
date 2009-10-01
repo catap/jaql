@@ -1,4 +1,4 @@
-package om.ibm.jaql.lang.expr.io;
+package com.ibm.jaql.lang.expr.io;
 
 import org.junit.Test;
 
@@ -50,7 +50,6 @@ public class OutputFormatFnTest extends AbstractLoggableTest {
   }
 
   private void work(String s) throws Exception {
-    System.out.println(s);
     Jaql jaql = new Jaql(s);
     JsonValue jv = jaql.evalNext();
     debug(jv);
