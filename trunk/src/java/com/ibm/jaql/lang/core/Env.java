@@ -70,7 +70,12 @@ public class Env extends Namespace
   {
     if (variables.containsKey(varName))
     {
-      return variables.get(varName);
+      Var var = variables.get(varName);
+      if (var.isHidden()) 
+      {
+        throw new IndexOutOfBoundsException("variable is hidden in this scope: " + varName);
+      }
+      return var;
     }
     return inscopeGlobal(varName);
   }
@@ -80,7 +85,12 @@ public class Env extends Namespace
   {
     if (variables.containsKey(varName))
     {
-      return variables.get(varName);
+      Var var = variables.get(varName);
+      if (var.isHidden()) 
+      {
+        throw new IndexOutOfBoundsException("variable is hidden in this scope: " + varName);
+      }
+      return var;
     }
     return globals().inscopeLocal(varName);
   }

@@ -18,7 +18,6 @@ package com.ibm.jaql.lang.rewrite;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
-import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * Compose a function definition and a function call.
@@ -45,25 +44,17 @@ public class FunctionInline extends Rewrite
   @Override
   public boolean rewrite(Expr expr)
   {
+    // try inlining
     FunctionCallExpr call = (FunctionCallExpr) expr;
-    Expr callFn = call.fnExpr();
-
-    // rewrite when we know the function at compile time
-    if (callFn.isCompileTimeComputable().always())
+    Expr inlined = call.inlineIfPossible();
+    if (inlined != call) // successful
     {
-      try
-      {
-        Expr inlinedFunction = call.inline();
-        call.replaceInParent(inlinedFunction);
-        return true;
-      }
-      catch (Exception e)
-      {
-        throw JaqlUtil.rethrow(e);
-      }
+      call.replaceInParent(inlined);
+      return true;
     }
     
     // rewrite do expressiosn
+    Expr callFn = call.fnExpr();
     if (callFn instanceof DoExpr )
     {
       // Push call into DoExpr return:
