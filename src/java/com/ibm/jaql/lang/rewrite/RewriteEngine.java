@@ -138,7 +138,7 @@ public class RewriteEngine
    */
   public Expr run(Env env, Expr query) throws Exception
   {
-//    if (1==1) return query;
+    if (1==1) return query;
     
     // We don't rewrite def expressions until they are actually evaluated.
     if (query instanceof AssignExpr)

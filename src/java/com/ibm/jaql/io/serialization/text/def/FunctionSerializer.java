@@ -19,8 +19,12 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashSet;
 
+import java.util.Map;
+import java.util.Map.Entry;
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.SystemNamespace;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
@@ -56,8 +60,27 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
       try
       {
         JaqlFunction f = (JaqlFunction)value;
+        Map<Var, JsonValue> localBindings = f.getLocalBindings();
+        String sep="";
+        
+        // write captures
+        if (!localBindings.isEmpty())
+        {
+          out.print("const((");
+          for (Entry<Var, JsonValue> e : localBindings.entrySet())
+          {
+            out.print(sep);
+            out.print(e.getKey().name());
+            out.print("=");
+            JsonUtil.print(out, e.getValue());
+            sep = ", ";
+          }
+        }
+        
+        // write parameters
         VarParameters pars = f.getParameters();
         HashSet<Var> capturedVars = new HashSet<Var>();
+        out.print(sep);
         out.print("fn(");
         String del = "";
         for (int i=0; i<pars.numParameters(); i++)
@@ -78,8 +101,16 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
           del = ", ";
         }
         out.print(") (");
+        
+        // write body
         f.body().decompile(out, capturedVars);
         out.print(")");
+        
+        // endig parens for captures
+        if (!localBindings.isEmpty())
+        {
+          out.print("))");
+        }
         return;
       } catch (Exception e)
       {

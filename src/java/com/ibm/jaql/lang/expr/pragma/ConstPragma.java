@@ -15,20 +15,16 @@
  */
 package com.ibm.jaql.lang.expr.pragma;
 
-import java.util.Map;
-
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.util.Bool3;
 
 /**
  * This is a pragma function to force const evaluation.
  */
-public class ConstPragma extends Pragma
+public class ConstPragma extends MacroExpr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
   {
@@ -38,9 +34,6 @@ public class ConstPragma extends Pragma
     }
   }
   
-  protected boolean evaluated = false;
-  protected JsonValue value;
-
   /**
    * @param exprs
    */
@@ -49,43 +42,23 @@ public class ConstPragma extends Pragma
     super(exprs);
   }
 
-  public Bool3 getProperty(ExprProperty prop, boolean deep)
-  {
-    // deep ignored deliberately
-    return getProperty(getProperties(), prop, null);
-  }
-    
   @Override
-  public Bool3 evaluatesChildOnce(int i)
+  public Expr expand(Env env) throws Exception
   {
-    return Bool3.TRUE;
-  }
-
-  public Map<ExprProperty, Boolean> getProperties()
-  {
-    Map<ExprProperty, Boolean> result = ExprProperty.createUnsafeDefaults();
-    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
-    return result;
-  }
-
-  
-  public Schema getSchema()
-  {
-    return exprs[0].getSchema();
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
-   */
-  public JsonValue eval(Context context) throws Exception
-  {
-    if( !evaluated )
+    // we should check for compile time computability here; this is currently commented out
+    // because it blocks function defs of form (a=5, fn() a)    
+//    if (!exprs[0].isCompileTimeComputable().always())
+//    {
+//      throw new IllegalArgumentException("argument to const() cannot be evaluated at compile time");
+//    }
+    try
     {
-      value = exprs[0].eval(context);
-      evaluated = true;
+      return new ConstExpr(exprs[0].eval(Env.getCompileTimeContext()));
     }
-    return value;
+    catch (Exception e)
+    {
+      throw new IllegalArgumentException(e);
+    }
   }
+
 }

@@ -126,6 +126,7 @@ public class MRAggregate extends MapReduceBaseExpr
 
   protected static AlgebraicAggregate[] makeAggs(JaqlFunction aggFn)
   {
+    assert aggFn.getLocalBindings().isEmpty(); // has been inlined in configure(...)
     Expr e = aggFn.body();
     if( !(e instanceof ArrayExpr) )
     {
@@ -166,7 +167,7 @@ public class MRAggregate extends MapReduceBaseExpr
       super.configure(job);
       mapFn = compile(job, "map", 0);
       aggFn = (JaqlFunction)compile(job, "aggregate", 0);
-      aggFn = aggFn.evalConstBindings();
+      aggFn = aggFn.inlineLocalBindings();
       keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputKeyClass(), job);
       aggArrayHolder = (JsonHolder)ReflectionUtils.newInstance(job.getMapOutputValueClass(), job);
     }
@@ -252,7 +253,7 @@ public class MRAggregate extends MapReduceBaseExpr
     {
       super.configure(job);
       aggFn = (JaqlFunction)compile(job, "aggregate", 0);
-      aggFn = aggFn.evalConstBindings();
+      aggFn = aggFn.inlineLocalBindings();
       if( aggFn.getParameters().numParameters() != 2 )
       {
         throw new RuntimeException("aggregate function must have exactly two parameters");
