@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.function;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,96 +28,171 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
-import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.util.Bool3;
 
+/** Definition of a Jaql function. 
+ * 
+ * The children are of form <a>* <b>* <c>, where
+ * <a> BindingExpr without a child (required parameter), 
+ * <b> a BindingExpr with default value as child (optional parameter),
+ * <c> function body.
+ */
 public final class DefineJaqlFunctionExpr extends Expr
 {
-  private VarParameters parameters;
+
+  // -- construction ------------------------------------------------------------------------------
   
-  protected static VarParameters makeParameters(Var[] params, Expr[] defaults)
-  {
-    assert params.length == defaults.length;
-    VarParameter[] pars = new VarParameter[params.length];
-    for(int i = 0 ; i < params.length ; i++)
-    {
-      if (defaults[i] == null)
-      {
-        pars[i] = new VarParameter(params[i]);
-      }
-      else
-      {
-        pars[i] = new VarParameter(params[i], defaults[i]);
-      }
-    }
-    return new VarParameters(pars);
-  }
-
-  protected static VarParameters makeParameters(List<Var> params, List<Expr> defaults)
-  {
-    return makeParameters(params.toArray(new Var[params.size()]), 
-        defaults.toArray(new Expr[defaults.size()]));
-  }
-
+  /** Construct function definition without default values */
   public DefineJaqlFunctionExpr(Var[] params, Expr body)
   {
     this(params, new Expr[params.length], body);
   }
-  
-  /**
-   * @param params
-   * @param body
-   */
-  public DefineJaqlFunctionExpr(Var[] params, Expr[] defaults, Expr body)
-  {
-    this(makeParameters(params, defaults), body);
-  }
 
-  /**
-   * @param fnVar
-   * @param params
-   * @param body
-   */
-  public DefineJaqlFunctionExpr(List<Var> params, List<Expr> defaults, Expr body)
-  {
-    this(makeParameters(params, defaults), body);
-  }
-  
-  public DefineJaqlFunctionExpr(VarParameters parameters, Expr body)
-  {
-    super(body);
-    this.parameters = parameters;
-    annotate();
-  }
-  
+  /** Construct function definition without default values */
   public DefineJaqlFunctionExpr(List<Var> params, Expr body)
   {
-    this(params, emptyList(params), body);
+    this(params, emptyList(params.size()), body);
+  }
+
+  /** Construct function definition with given default values */
+  public DefineJaqlFunctionExpr(Var[] params, Expr[] defaults, Expr body)
+  {
+    super(makeParameters(params, defaults, body));
+    getFunction(); // checks that arguments are valid
+  }
+
+  /** Construct function definition with given default values */
+  public DefineJaqlFunctionExpr(List<Var> params, List<Expr> defaults, Expr body)
+  {
+    super(makeParameters(params, defaults, body));
+    getFunction(); // checks that arguments are valid
   }
   
-  private static List<Expr> emptyList(List<Var> var) 
+  /** Construct function definition from given parameters */
+  public DefineJaqlFunctionExpr(VarParameters parameters, Expr body)
   {
-    List<Expr> l = new ArrayList<Expr>(var.size());
-    for (int i=0; i<var.size(); i++) l.add(null);
+    super(makeParameters(parameters, body));
+    getFunction(); // checks that arguments are valid
+  }
+  
+  /** Construct the children of a DefineJaqlFunctionExpr with the given parameters and body. */
+  protected static Expr[] makeParameters(Var[] params, Expr[] defaults, Expr body)
+  {
+    assert params.length == defaults.length;
+    Expr[] exprs = new Expr[params.length+1];
+    for(int i = 0 ; i < params.length ; i++)
+    {
+      if (defaults[i] == null)
+      {
+        exprs[i] = new BindingExpr(BindingExpr.Type.EQ, params[i], null, Expr.NO_EXPRS);
+      }
+      else
+      {
+        exprs[i] = new BindingExpr(BindingExpr.Type.EQ, params[i], null, defaults[i]);
+      }
+    }
+    exprs[exprs.length-1] = body;
+    return exprs;
+  }
+
+  /** @see #makeParameters(Var[], Expr[], Expr) */
+  protected static Expr[] makeParameters(List<Var> params, List<Expr> defaults, Expr body)
+  {
+    return makeParameters(params.toArray(new Var[params.size()]), 
+        defaults.toArray(new Expr[defaults.size()]), body);
+  }
+
+  /** @see #makeParameters(Var[], Expr[], Expr) */
+  protected static Expr[] makeParameters(VarParameters pars, Expr body)
+  {
+    int n = pars.numParameters();
+    Var[] params = new Var[n];
+    Expr[] defaults = new Expr[n];
+    for (int i=0; i<n; i++)
+    {
+      VarParameter p = pars.get(i);
+      params[i] = p.getVar();
+      defaults[i] = p.isRequired() ? null : p.getDefaultValue();
+    }
+    return makeParameters(params, defaults, body);
+  }
+  
+  /** Construct an empty list of the specified size */
+  private static List<Expr> emptyList(int size) 
+  {
+    List<Expr> l = new ArrayList<Expr>(size);
+    for (int i=0; i<size; i++) l.add(null);
     return l;
   }
   
-  private JaqlFunction getFunction()
-  {
-    return new JaqlFunction(parameters, body());
-  }
-
+  
+  // -- getters -----------------------------------------------------------------------------------
+  
+  /** Returns the function body */
   public Expr body()
   {
-    return exprs[0];
+    return exprs[exprs.length-1];
   }
   
+  /** Returns the number of parameters of this function */
+  public int numParams()
+  {
+    return exprs.length-1;
+  }
+  
+  /** Returns the variable used for parameter <tt>i</tt> */
+  public Var varOf(int i)
+  {
+    BindingExpr e = (BindingExpr)exprs[i];
+    return e.var;
+  }
+  
+  /** Returns the default value of parameter <tt>i</tt> or <code>null</code> if the parameter
+   * does not have a default value */
+  public Expr defaultOf(int i)
+  {
+    BindingExpr e = (BindingExpr)exprs[i];
+    if (e.numChildren() == 0)
+    {
+      return null;
+    }
+    else
+    {
+      return ((BindingExpr)e).eqExpr();
+    }
+  }
+  
+  // package private; might return a function with free variables, which is not a valid literal
+  JaqlFunction getFunction()
+  {
+    int n = numParams();
+    VarParameter[] pars = new VarParameter[n];
+    for (int i=0; i<n; i++)
+    {
+      Var var = varOf(i);
+      Expr defaultValue = defaultOf(i);
+      if (defaultValue == null)
+      {
+        pars[i] = new VarParameter(var);
+      }
+      else
+      {
+        pars[i] = new VarParameter(var, defaultValue);
+      }
+    }
+    return new JaqlFunction(new VarParameters(pars), body());
+  }
+  
+
+  // -- Expr --------------------------------------------------------------------------------------
+
+  @Override
   public Bool3 getProperty(ExprProperty prop, boolean deep)
   {
-    return super.getProperty(prop, false); // no deep property checks
+ // no deep property checks: it's just a function definition
+    return super.getProperty(prop, false);  
   }
   
   @Override
@@ -133,12 +209,6 @@ public final class DefineJaqlFunctionExpr extends Expr
     return result;
   }
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-   *      java.util.HashSet)
-   */
   @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
@@ -148,19 +218,49 @@ public final class DefineJaqlFunctionExpr extends Expr
     capturedVars.addAll(f.getCaptures());    
   }
   
+  @Override
   public HashSet<Var> getCapturedVars()
   {
     return getFunction().getCaptures();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
-   */
+  @Override
+  public Expr clone(VarMap varMap)
+  {
+    // clone parameters and body, using fresh variables for the parameters 
+    VarParameter[] newPars = cloneParameters(varMap);
+    Expr newBody = body().clone(varMap);
+    return new DefineJaqlFunctionExpr(new VarParameters(newPars), newBody);
+  }
+  
+  /** Clone the parameters and their default values. */
+  private VarParameter[] cloneParameters(VarMap varMap)
+  {
+    VarParameter[] newPars = new VarParameter[numParams()];
+    for (int i=0; i<numParams(); i++)
+    {
+      Var var = varOf(i);
+      Expr defaultValue = defaultOf(i);
+      if (defaultValue == null)
+      {
+        newPars[i] = new VarParameter(var);
+      }
+      else
+      {
+        Expr newDefaultValue = defaultValue.clone(varMap);
+        newPars[i] = new VarParameter(var, newDefaultValue);
+      }
+    }
+    return newPars;
+  }
+  
+  // -- evaluation --------------------------------------------------------------------------------
+  
+  
   @Override
   public JaqlFunction eval(Context context) throws Exception
   {
+    annotate();
     JaqlFunction f = getFunction();
     HashSet<Var> capturedVars = getCapturedVars();
     int n = capturedVars.size();
@@ -171,7 +271,7 @@ public final class DefineJaqlFunctionExpr extends Expr
       // To add new local variables, we have to define a new function.
       // TODO: is it safe to share f when we don't have captures?
       VarMap varMap = new VarMap();
-      for(Var oldVar: capturedVars)
+      for (Var oldVar: capturedVars)
       {
         Var newVar = new Var(oldVar.name(), oldVar.getSchema());
         varMap.put(oldVar, newVar);
@@ -182,46 +282,25 @@ public final class DefineJaqlFunctionExpr extends Expr
       Expr newBody = f.body().clone(varMap);
       
       // capture variables
-      Expr[] es = new Expr[n + 1];
-      int i = 0;
+      Map<Var, JsonValue> environment = new HashMap<Var, JsonValue>();
       for( Var v: capturedVars )
       {
         JsonValue val = JsonUtil.getCopy(v.getValue(context), null);
         Var newVar = varMap.get(v);
-        es[i++] = new BindingExpr(BindingExpr.Type.EQ, newVar, null, new ConstExpr(val));
+        environment.put(newVar, val);
       }
-      es[n] = newBody;
       
       // create function
-      f = new JaqlFunction(new VarParameters(newPars), new DoExpr(es));
+      f = new JaqlFunction(environment, new VarParameters(newPars), newBody);
     }
+    
     return f;
   }
 
-  private VarParameter[] cloneParameters(VarMap varMap)
-  {
-    VarParameters pars = parameters;
-    VarParameter[] newPars = new VarParameter[pars.numParameters()];
-    for (int i=0; i<pars.numParameters(); i++)
-    {
-      VarParameter p = pars.get(i);
-      if (p.isRequired())
-      {
-        newPars[i] = p;
-      }
-      else
-      {
-        Expr newDefaultValue = p.getDefaultValue().clone(varMap);
-        newPars[i] = new VarParameter(p.getVar(), newDefaultValue);
-      }
-    }
-    return newPars;
-  }
-  
+  /** Annotate the parameter variables, see {@link Var.Usage}. */ 
   public void annotate()
   {
-    VarParameters pars = parameters;
-    int p = pars.numParameters();
+    int p = numParams();
     if( p == 0 )
     {
       return;
@@ -231,7 +310,7 @@ public final class DefineJaqlFunctionExpr extends Expr
     for(int i = 0 ; i < p ; i++)
     {
       uses.clear();
-      Var var = pars.get(i).getVar();
+      Var var = varOf(i);
       var.setUsage(Var.Usage.EVAL);
       body.getVarUses(var, uses);
       int n = uses.size();
@@ -256,13 +335,5 @@ public final class DefineJaqlFunctionExpr extends Expr
         }
       }
     }
-  }
-
-  public Expr clone(VarMap varMap)
-  {
-    // clone parameters and body
-    VarParameter[] newPars = cloneParameters(varMap);
-    Expr newBody = body().clone(varMap);
-    return new DefineJaqlFunctionExpr(new VarParameters(newPars), newBody);
   }
 }

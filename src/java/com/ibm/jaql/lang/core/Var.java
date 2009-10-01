@@ -48,8 +48,9 @@ public final class Var extends Object
   public static final Var UNUSED = new Var("$__unused__");
 
   private String name;
-  private boolean hidden = false; // variable not accessible in current parse
-                                 // context (this could reuse Usage)
+  private boolean hidden = false; // variable not accessible in current parse context,
+                                  // also marks that a variable is not allowed to be shadowed by
+                                  // another variable of the same name                                  
   public Var varStack; // Used during parsing for vars of the same name;
                        // contains the a list of previous definitions of this
                        // variable

@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
@@ -44,6 +45,13 @@ public class DoExpr extends Expr
   public DoExpr(ArrayList<? extends Expr> exprs)
   {
     super(exprs);
+  }
+  
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
   }
   
   /**

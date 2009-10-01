@@ -325,6 +325,8 @@ f(1,2,3); // fails
 f(1,x=1); // fails
 f(1,2,x=1); // fails
 
+
+// default values
 f = fn(a="a",b="b") [ a, b ];
 f();
 f("A");
@@ -335,6 +337,18 @@ f(b="B");
 f = fn(a, b="b", c="c") [ a, b, c ];
 f("A");
 f(b="B", a="A");
+
+// captures
+z=randomLong()*0+100;
+f = fn(x) z+x;
+f(10);
+f = fn(x=z) z+x;
+f();
+f(10);
+//TODO: fix problems with this function when decompiling without rewrite
+//f = fn(z=::z) z+::z;
+//f();
+//f(10);
 
 // continuations & multiple call sites:
 

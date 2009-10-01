@@ -987,18 +987,18 @@ compare(x=1,y=2);##
 compare(y=2,x=1);##
 -1
 
-compare(1)##
+compare(1);##
 FAILURE
-; // fails
-compare(1,2,3)##
+ // fails
+compare(1,2,3);##
 FAILURE
-; // fails
-compare(1,x=1)##
+ // fails
+compare(1,x=1);##
 FAILURE
-; // fails
-compare(1,2,x=1)##
+ // fails
+compare(1,2,x=1);##
 FAILURE
-; // fails
+ // fails
 
 // jaql functions and call-by-name
 f = fn($) $;##
@@ -1049,6 +1049,8 @@ f(1,2,x=1);##
 FAILURE
  // fails
 
+
+// default values
 f = fn(a="a",b="b") [ a, b ];##
 "f"
 
@@ -1100,6 +1102,30 @@ f(b="B", a="A");##
   "c"
 ]
 
+
+// captures
+z=randomLong()*0+100;##
+"z"
+
+f = fn(x) z+x;##
+"f"
+
+f(10);##
+110
+
+f = fn(x=z) z+x;##
+"f"
+
+f();##
+200
+
+f(10);##
+110
+
+//TODO: fix problems with this function when decompiling without rewrite
+//f = fn(z=::z) z+::z;
+//f();
+//f(10);
 
 // continuations & multiple call sites:
 

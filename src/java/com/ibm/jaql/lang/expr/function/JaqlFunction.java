@@ -17,17 +17,24 @@ package com.ibm.jaql.lang.expr.function;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
 /** 
  * Value that stores a function implemented in Jaql.
@@ -43,6 +50,10 @@ public class JaqlFunction extends Function
   /** Body of the function. */
   private Expr body;
   
+  /** Function-local bindings. Contains values for free variables in the default values and 
+   * body. */
+  private Map<Var, JsonValue> localBindings;
+
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -50,10 +61,19 @@ public class JaqlFunction extends Function
    * by using the variable corresponding to that parameter. */
   public JaqlFunction(VarParameters parameters, Expr body)
   {
+    this.localBindings = new HashMap<Var, JsonValue>();
     this.parameters = parameters;
     this.body = body;
   }
   
+  /** Constructs from the specified parameters, variable assignment, and body. The body refers to 
+   * a certain parameter by using the variable corresponding to that parameter. */
+  public JaqlFunction(Map<Var, JsonValue> environment, VarParameters parameters, Expr body)
+  {
+    this.localBindings = Collections.unmodifiableMap(environment);
+    this.parameters = parameters;
+    this.body = body;
+  }
   
   // -- self-description --------------------------------------------------------------------------
 
@@ -90,7 +110,85 @@ public class JaqlFunction extends Function
   
   // -- evaluation / inlining ---------------------------------------------------------------------
 
+  /** Returns the function-local bindings. Contains values for free variables in the default 
+   * values and body. */
+  public Map<Var, JsonValue> getLocalBindings()
+  {
+    return localBindings;
+  }
+  
+  /** Returns a copy of this function obtained by replacing all references to function-local
+   * variables by their values. */
+  public JaqlFunction inlineLocalBindings()
+  {
+    VarMap varMap = new VarMap();
+    
+    // copy parameters
+    int n = parameters.numParameters();
+    VarParameter[] newParams = new VarParameter[n]; 
+    for (int i=0; i<n; i++)
+    {
+      VarParameter p = parameters.get(i);
+      Var newVar = new Var(p.var.name(), p.var.getSchema());
+      
+      VarParameter newP;
+      if (p.isRequired())
+      {
+        newP = new VarParameter(newVar); 
+      }
+      else if (p.isOptional())
+      {
+        Expr e = inlineLocalBindings(p.defaultValue, varMap);
+        newP = new VarParameter(newVar, e);
+      }
+      else
+      {
+        throw new IllegalStateException("Jaql functions can only have required or optional parameters");
+      }
 
+      varMap.put(p.var, newVar);
+      newParams[i] = newP;
+    }
+       
+    // copy body
+    Expr newBody = inlineLocalBindings(body, varMap);
+    
+    // return the function
+    return new JaqlFunction(new VarParameters(newParams), newBody);
+  }
+  
+  /** Clones <code>expr</code> and replaces all references to function-local variables 
+   * by their values */ 
+  private Expr inlineLocalBindings(Expr expr, VarMap varMap)
+  {
+    // check root
+    if (expr instanceof VarExpr)
+    {
+      VarExpr ve = (VarExpr)expr;
+      if (localBindings.containsKey(ve.var()))
+      {
+        return new ConstExpr(localBindings.get(ve.var()));
+      }
+    }
+    
+    // traverse children
+    Expr clonedExpr = expr.clone(varMap);
+    PostOrderExprWalker walker = new PostOrderExprWalker(clonedExpr);    
+    Expr e;
+    while ((e = walker.next()) != null)
+    {
+      if (e instanceof VarExpr)
+      {
+        VarExpr ve = (VarExpr)e;
+        if (localBindings.containsKey(ve.var()))
+        {
+          ve.replaceInParent(new ConstExpr(localBindings.get(ve.var())));
+        }
+      }
+    }
+    return clonedExpr;
+  }
+  
   /** Determines whether this function captures variables. Function arguments have to be 
    * set using one of the <code>setArguments</code> functions before this method is called. */ 
   public boolean hasCaptures()
@@ -120,6 +218,7 @@ public class JaqlFunction extends Function
           par.getDefaultValue().decompile(exprText, capturedVars);
         }
       }
+      capturedVars.removeAll(localBindings.keySet());
       return capturedVars;
     }
     catch (Exception e)
@@ -163,80 +262,61 @@ public class JaqlFunction extends Function
   {
     if (forEval)
     {
+      // initialize function-local environment
+      for (Entry<Var, JsonValue> e : localBindings.entrySet())
+      {
+        Var var = e.getKey();
+        var.setValue(e.getValue());
+      }
       return body;
     }
     else
     {
-      // For functions with args, create a let to evaluate the args then call the body
       // TODO: Don't inline (potentially) recursive functions
-      Expr[] doExprs = new Expr[numArgs+1];
-      for (int i=0; i<numArgs; i++)
+      
+      // initialize function-local environment
+      int numEnv = localBindings.size();
+      Expr[] doExprs = new Expr[numEnv+numArgs+1];
+      int i = 0;
+      for (Entry<Var, JsonValue> e : localBindings.entrySet())
+      {
+        doExprs[i] = new BindingExpr(BindingExpr.Type.EQ, e.getKey(), null, new ConstExpr(e.getValue()));
+        i++;
+      }
+      
+      // evaluate the args
+      for (i=0; i<numArgs; i++)
       {
         Var var = parameters.get(i).getVar();
         assert var.type() == Var.Type.EXPR; // all arguments are expressions at compile time
-        doExprs[i] = new BindingExpr(BindingExpr.Type.EQ, var, null, var.expr());
+        doExprs[numEnv+i] = new BindingExpr(BindingExpr.Type.EQ, var, null, var.expr());
       }
-      doExprs[numArgs] = body;
+      
+      // return the inlined functions
+      doExprs[numEnv+numArgs] = body;
       return new DoExpr(doExprs);
     }
   }
 
-  
-  /** When the body is of form <code>(binding (, binding*) e)</code> and all the bindings 
-   * associate a constant to their variable, evaluates the bindings and returns <code>e</code>.
-   */
-  public JaqlFunction evalConstBindings()
-  {
-    JaqlFunction f = getCopy(null);
-    f.body = evalConstBindings(f.body);
-    return f;
-  }
-
-  // helper for evalConstBindings()
-  private Expr evalConstBindings(Expr e)
-  {
-    if (e instanceof DoExpr)
-    {
-      Expr[] es = ((DoExpr)e).children();
-      
-      // test if right shape
-      for (int i=0; i<es.length-1; i++)
-      {
-        if (!(es[i] instanceof BindingExpr))
-        {
-          return e;
-        }
-        BindingExpr be = (BindingExpr)es[i];
-        if (be.type != BindingExpr.Type.EQ || be.eqExpr().isCompileTimeComputable().maybeNot())
-        {
-          return e;
-        }
-      }
-      
-      // go
-      for (int i=0; i<es.length-1; i++)
-      {
-        BindingExpr be = (BindingExpr)es[i];
-        try
-        {
-          be.var.setValue(be.eqExpr().eval(Env.getCompileTimeContext()));
-          be.var.finalize();
-        } catch (Exception e1)
-        {
-          throw JaqlUtil.rethrow(e1);
-        }
-      }
-      return evalConstBindings(es[es.length-1]);
-    }
-    return e;
-  }
-  
   // -- copying -----------------------------------------------------------------------------------
   
   @Override
   public JaqlFunction getCopy(JsonValue target)
   {
     VarMap varMap = new VarMap();
+    
+    // copy environment
+    Map<Var, JsonValue> newEnv = new HashMap<Var, JsonValue>();
+    for (Entry<Var, JsonValue> e : localBindings.entrySet())
+    {
+      Var oldVar = e.getKey();
+      Var newVar = new Var(oldVar.name(), oldVar.getSchema());
+      JsonValue newValue = JsonUtil.getImmutableCopyUnchecked(e.getValue());
+      newEnv.put(newVar, newValue);
+      varMap.put(oldVar, newVar);
+    }
+    
+    // copy parameters and default values
     int n = parameters.numParameters();
     VarParameter[] newPars = new VarParameter[n];
     for (int i=0; i<n; i++)
@@ -251,11 +331,13 @@ public class JaqlFunction extends Function
       }
       else
       {
-        newPars[i] = new VarParameter(newVar, par.getDefaultValue());
+        newPars[i] = new VarParameter(newVar, par.getDefaultValue().clone(varMap));
       }
     }
+    
+    // copy body
     Expr newBody = body.clone(varMap);
-    return new JaqlFunction(new VarParameters(newPars), newBody);
+    return new JaqlFunction(newEnv, new VarParameters(newPars), newBody);
   }
 
   @Override
