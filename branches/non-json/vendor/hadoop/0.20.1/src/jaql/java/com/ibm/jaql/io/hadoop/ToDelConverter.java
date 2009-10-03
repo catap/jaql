@@ -22,9 +22,9 @@ import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 
 import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
-import com.ibm.jaql.io.stream.converter.JsonToCsv;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.csv.JsonToDel;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
 // TODO: Does this really need to be in the vendor directory?
@@ -32,11 +32,11 @@ import com.ibm.jaql.util.RandomAccessBuffer;
 /** Converts JSON array or record to a delimited text value. */
 public final class ToDelConverter implements KeyValueExport<NullWritable, Text> {
 
-  private JsonToCsv toCsv;
+  private JsonToDel toDel;
 
   @Override
   public void init(JsonRecord options) {
-    toCsv = new JsonToCsv(options);
+    toDel = new JsonToDel(options);
   }
 
   @Override
@@ -57,7 +57,7 @@ public final class ToDelConverter implements KeyValueExport<NullWritable, Text> 
   @Override
   public void convert(JsonValue src, NullWritable key, Text text) {
     try {
-      RandomAccessBuffer buf = toCsv.convert(src);
+      RandomAccessBuffer buf = toDel.convert(src);
       text.set(buf.getBuffer(), 0, buf.size());
     } catch (Exception e) {
       throw new UndeclaredThrowableException(e);

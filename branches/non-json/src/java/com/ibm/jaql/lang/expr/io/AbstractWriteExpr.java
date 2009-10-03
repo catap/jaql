@@ -17,14 +17,10 @@ package com.ibm.jaql.lang.expr.io;
 
 import java.util.Map;
 
-import javax.management.RuntimeErrorException;
-
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.OutputAdapter;
-import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.json.util.NullIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
@@ -83,23 +79,16 @@ public abstract class AbstractWriteExpr extends Expr
   
     adapter.open();
     ClosableJsonWriter writer = adapter.getWriter();
-    
-    JsonValue evaled = dataExpr().eval(context);
-    if (evaled != null) {
-      if (evaled instanceof JsonArray ) {
-        JsonIterator iter = ((JsonArray) evaled).iter();
-        if (iter != null)
-        {
-          for (JsonValue value : iter) 
-          {
-            writer.write(value);
-          }
-        }
-      } else {
-        writer.write(evaled);
+    JsonIterator iter = dataExpr().iter(context);
+    if (iter != null)
+    {
+      for (JsonValue value : iter) 
+      {
+        writer.write(value);
       }
     }
     adapter.close();
+  
     return args;
   }
 }

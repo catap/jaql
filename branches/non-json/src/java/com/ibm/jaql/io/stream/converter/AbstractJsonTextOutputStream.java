@@ -23,7 +23,7 @@ import com.ibm.jaql.io.converter.JsonToStream;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * Writes serialized {@link JsonValue}s to a text output stream.
+ * A converter to write serialized {@link JsonValue}s to a text output stream.
  */
 public abstract class AbstractJsonTextOutputStream implements
     JsonToStream<JsonValue> {
@@ -40,11 +40,11 @@ public abstract class AbstractJsonTextOutputStream implements
    * Constructs a JSON text output stream.
    * 
    * @param start The string to be written to this output stream before writing
-   *          any JSON values.
+   *          any array items in array access mode.
    * @param sep The string to be written to this output stream between writing
-   *          two JSON values.
+   *          two array items in array access mode.
    * @param end The string to be written to this output stream before cleaning
-   *          up this output stream.
+   *          up this output stream in array access mode.
    */
   public AbstractJsonTextOutputStream(String start, String sep, String end) {
     this.start = start;

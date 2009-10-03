@@ -19,10 +19,10 @@ import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 
-import com.ibm.jaql.AbstractLoggableTest;
+import com.ibm.jaql.AbstractTest;
 import com.ibm.jaql.json.type.JsonString;
 
-public class AdapterStoreTest extends AbstractLoggableTest {
+public class AdapterStoreTest extends AbstractTest {
 
   @Test
   public void adapterStore() throws Exception {

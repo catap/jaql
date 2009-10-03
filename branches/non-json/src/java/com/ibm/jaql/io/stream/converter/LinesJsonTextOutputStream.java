@@ -24,10 +24,10 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * Writes every JSON value in a new line. {@link JsonStringUnquotedSerializer}
- * is used for the serialization of JSON string.
- * {@link DefaultTextFullSerializer} is for the serialization of other kinds of
- * JSON values.
+ * Writes every JSON value in a new line in array access mode.
+ * {@link JsonStringUnquotedSerializer} is used for the serialization of JSON
+ * string. {@link DefaultTextFullSerializer} is for the serialization of other
+ * kinds of JSON values.
  */
 public class LinesJsonTextOutputStream extends AbstractJsonTextOutputStream {
 

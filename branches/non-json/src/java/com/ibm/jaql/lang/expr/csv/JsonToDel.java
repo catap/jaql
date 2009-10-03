@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io.stream.converter;
+package com.ibm.jaql.lang.expr.csv;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -30,7 +30,7 @@ import com.ibm.jaql.util.RandomAccessBuffer;
 /**
  * For converting a JSON value to a CSV line.
  */
-public class JsonToCsv {
+public class JsonToDel {
 
   private JsonString[] fields;
   private String delimiter;
@@ -43,7 +43,7 @@ public class JsonToCsv {
    * 
    * @param options Initialization options.
    */
-  public JsonToCsv(JsonRecord options) {
+  public JsonToDel(JsonRecord options) {
     JsonString js = (JsonString) options.get(AbstractFromDelConverter.DELIMITER_NAME);
     delimiter = (js == null) ? "," : js.toString();
     JsonArray fieldsArr = (JsonArray) options.get(AbstractFromDelConverter.FIELDS_NAME);

@@ -13,14 +13,14 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io.stream.converter;
+package com.ibm.jaql.lang.expr.xml;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-import com.ibm.jaql.AbstractLoggableTest;
+import com.ibm.jaql.AbstractTest;
 import com.ibm.jaql.json.parser.JsonParserUtil;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonAtom;
@@ -30,9 +30,15 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class ToXmlConverterTest extends AbstractLoggableTest {
+public class JsonToXmlFnTest extends AbstractTest {
 
-  private ToXmlConverter fn = new ToXmlConverter();
+  private JsonToXmlFn fn = new JsonToXmlFn();
+  
+  @Test
+  public void xml() {
+    eval("{root: {content: [1,2,3]}}->jsonToXml();");
+    eval("{root: {content: [1, 2, 3]}}->jsonToXml()->write(stdout());");
+  }
 
   @Test
   public void invalidJsonToXml() throws Exception {

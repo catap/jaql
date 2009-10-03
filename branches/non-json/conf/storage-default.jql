@@ -17,7 +17,7 @@
 [
 {key: 'stdout',
  val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
-                    format: 'com.ibm.jaql.io.stream.converter.ArrayJsonTextOutputStream'}}
+                    format: 'com.ibm.jaql.io.stream.converter.LinesJsonTextOutputStream'}}
 },
 // local file data
 {key: 'local',

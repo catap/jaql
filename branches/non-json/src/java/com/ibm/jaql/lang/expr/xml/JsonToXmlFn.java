@@ -13,48 +13,85 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io.stream.converter;
+package com.ibm.jaql.lang.expr.xml;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang.ClassUtils;
 
+import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonAtom;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.MutableJsonString;
+import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * For converting the JSON value into a XML.
+ * A function for converting JSON to XML. It is called as follows:
+ * <code>jsonToXml()</code> . It is counterpart of {@link XmlToJsonFn}. But it
+ * does not perform a conversion which is reverse to the conversion in
+ * {@link XmlToJsonFn}. The reason is that .
+ * <ol>
+ * <li>There is no concepts such as namespace in JSON</li>
+ * <li>The conversion is for a conversion from general JSON to XML. It is the
+ * commons case that the JSON to be converted is not converted from XML.</li>
+ * </ol>
+ * 
+ * An array nested in another array does not inherit the nesting array. For
+ * example, <code>{content: [[1, 2]]}</code> is converted to:
+ * 
+ * <pre>
+ * &lt;content&gt;
+ *   &lt;array&gt;1&lt;/array&gt;
+ *   &lt;array&gt;2&lt;/array&gt;
+ * &lt;/content&gt;
+ * 
+ * <pre>
+ * @see XmlToJsonFn
  */
-public class ToXmlConverter implements JsonToStreamConverter {
+public class JsonToXmlFn extends Expr {
+
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11 {
+    public Descriptor() {
+      super("jsonToXml", JsonToXmlFn.class);
+    }
+  }
+
+  public JsonToXmlFn(Expr[] exprs) {
+    super(exprs);
+  }
+
+  JsonToXmlFn() {}
 
   private static final String XML_DECL = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   private static final String INDENT_UNIT = "  ";
+  private static final String NEW_LINE = "\n";
+
   private static final JsonString ARRAY = new JsonString("array");
+
+  private boolean firstLine = true;
 
   // For XML pretty print
   private boolean seenText = false;
   private boolean seenTagEnd = true;
   private int indentCount = 0;
 
-  private MutableJsonString val = new MutableJsonString();
-
   @Override
-  public void init(JsonValue options) {}
-
-  @Override
-  public JsonString convert(JsonValue src) {
-    try {
-      String xml = toXml(src);
-      val.setCopy(XML_DECL + xml);
-      return val;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+  public JsonValue eval(Context context) throws Exception {
+    JsonValue jv = exprs[0].eval(context);
+    String xml = toXml(jv);
+    String[] lines = xml.split("\\n");
+    int len = lines.length;
+    BufferedJsonArray ja = new BufferedJsonArray(len + 1);
+    ja.set(0, new JsonString(XML_DECL));
+    for (int i = 0; i < len; i++) {
+      ja.set(i + 1, new JsonString(lines[i]));
     }
+    return ja;
   }
 
   /**
@@ -145,7 +182,7 @@ public class ToXmlConverter implements JsonToStreamConverter {
   }
 
   /**
-   * Returns the XML string for the field name and JSON array.
+   * Return the XML string for the field name and JSON array.
    * 
    * @param fn The field name
    * @param ja Json array
@@ -226,7 +263,7 @@ public class ToXmlConverter implements JsonToStreamConverter {
    */
   private String tagStart(String name) {
     StringBuilder sb = new StringBuilder();
-    sb.append("\n");
+    sb.append(getLineSeparator());
     if (!seenTagEnd) {
       indentCount++;
     }
@@ -254,7 +291,7 @@ public class ToXmlConverter implements JsonToStreamConverter {
     StringBuilder sb = new StringBuilder();
     if (!seenText) {
       indentCount--;
-      sb.append("\n");
+      sb.append(getLineSeparator());
       indent(sb);
     } else {
       seenText = false;
@@ -290,6 +327,15 @@ public class ToXmlConverter implements JsonToStreamConverter {
     if (str.length() == 0)
       return "";
     return escape(str);
+  }
+
+  private String getLineSeparator() {
+    if (!firstLine) {
+      return NEW_LINE;
+    } else {
+      firstLine = false;
+      return "";
+    }
   }
 
   /**

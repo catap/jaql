@@ -15,23 +15,32 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import com.ibm.jaql.io.stream.converter.LinesJsonTextOutputStream;
-import com.ibm.jaql.io.stream.converter.ToDelConverter;
-import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import org.junit.Test;
 
-/**
- * CSV output format.
- */
-public class CsvFormatFn extends AbstractOutputFormatFn {
+import com.ibm.jaql.AbstractTest;
+import static org.junit.Assert.*;
 
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par00 {
-    public Descriptor() {
-      super("csvFormat", CsvFormatFn.class);
-    }
+public class StdoutFnTest extends AbstractTest {
+
+  @Test
+  public void descriptor() {
+    eval("stdout();");
   }
 
-  public CsvFormatFn(Expr[] exprs) {
-    super(exprs, LinesJsonTextOutputStream.class, ToDelConverter.class);
+  @Test
+  public void write() {
+    eval("[1,2,3]->write(stdout());");
+    try {
+      eval("1->write(stdout());");
+      fail();
+    } catch (RuntimeException e) {
+      debug(e);
+    }
+    try {
+      eval("{value: 100}->write(stdout());");
+      fail();
+    } catch (RuntimeException e) {
+      debug(e);
+    }
   }
 }

@@ -25,7 +25,6 @@ import com.ibm.jaql.io.AbstractOutputAdapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.converter.JsonToStream;
-import com.ibm.jaql.io.stream.converter.JsonToStreamConverter;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
@@ -38,7 +37,7 @@ public class StreamOutputAdapter extends AbstractOutputAdapter {
 
   private JsonToStream<JsonValue> formatter;
   private ClosableJsonWriter writer;
-  private JsonToStreamConverter converter;
+  private OutputStream defaultOutput = System.out;
 
   @SuppressWarnings("unchecked")
   @Override
@@ -58,15 +57,6 @@ public class StreamOutputAdapter extends AbstractOutputAdapter {
     if (arrAcc != null) {
       formatter.setArrayAccessor(((JsonBool) arrAcc).get());
     }
-
-    // converter
-    Class<JsonToStreamConverter> converterClass = (Class<JsonToStreamConverter>) as.getClassFromRecord(options,
-                                                                                 CONVERTER_NAME,
-                                                                                 null);
-    if (converterClass != null) {
-      this.converter = converterClass.newInstance();
-      this.converter.init(options);
-    }
   }
 
   @Override
@@ -81,8 +71,7 @@ public class StreamOutputAdapter extends AbstractOutputAdapter {
 
       @Override
       public void write(JsonValue value) throws IOException {
-        JsonValue v = converter == null ? value : converter.convert(value);
-        formatter.write(v);
+        formatter.write(value);
       }
     };
     return writer;
@@ -94,17 +83,25 @@ public class StreamOutputAdapter extends AbstractOutputAdapter {
       writer.close();
   }
 
+  public OutputStream getDefaultOutput() {
+    return defaultOutput;
+  }
+
+  public void setDefaultOutput(OutputStream defaultOutput) {
+    this.defaultOutput = defaultOutput;
+  }
+
   /**
    * Opens the output stream to the given location. STDOUT is returned if the
    * location is <code>null</code>.
    * 
    * @param location URL string
-   * @return An ouput stream
+   * @return An output stream
    * @throws Exception
    */
   protected OutputStream openStream(String location) throws Exception {
     if (location == null) {
-      return System.out;
+      return defaultOutput;
     } else {
       // make a URI from location.
       URI uri = new URI(location);

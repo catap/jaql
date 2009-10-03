@@ -21,7 +21,9 @@ import java.io.OutputStream;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * Interface for writing {@link JsonValue}s to an {@link OutputStream}.
+ * Interface for writing {@link JsonValue}s to an {@link OutputStream}. It has
+ * two modes. Array access mode is for writing items in a JSON array. Non-array
+ * access mode is for writing a single JSON value.
  */
 public interface JsonToStream<T extends JsonValue> {
   /**

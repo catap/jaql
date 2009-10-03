@@ -21,9 +21,10 @@ import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.Jaql;
 
 // TODO: use logging after a logging library is used. 
-public class AbstractLoggableTest {
+public class AbstractTest {
 
   protected void debug(Object message) {
     System.out.println(message);
@@ -34,13 +35,27 @@ public class AbstractLoggableTest {
   }
 
   protected JsonValue parse(String str) throws ParseException {
-    StringReader sr = new StringReader(str);
-    JsonParser parser = new JsonParser(sr);
-    JsonValue jv = parser.TopVal();
-    return jv;
+    try {
+      StringReader sr = new StringReader(str);
+      JsonParser parser = new JsonParser(sr);
+      JsonValue jv = parser.TopVal();
+      return jv;
+    } catch (ParseException pe) {
+      throw new RuntimeException(pe);
+    }
   }
 
   protected JsonString toJsonString(String s) {
     return s == null ? null : new JsonString(s);
+  }
+
+  protected void eval(String s) {
+    try {
+      Jaql jaql = new Jaql(s);
+      JsonValue jv = jaql.evalNext();
+      debug(jv);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 }

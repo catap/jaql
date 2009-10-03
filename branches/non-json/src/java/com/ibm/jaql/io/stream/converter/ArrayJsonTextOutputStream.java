@@ -22,9 +22,9 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
- * Wraps the output in a beginning <i>[</i> and an ending <i>]</i>. JSON value
- * are separated with <i>,</i>. {@link DefaultTextFullSerializer} is for the
- * serialization of JSON values.
+ * In array access mode, items of an JSON array are wrapped in a beginning
+ * <i>[</i> and an ending <i>]</i>. Items are separated with <i>,</i>.
+ * {@link DefaultTextFullSerializer} is for the serialization of JSON values.
  */
 public class ArrayJsonTextOutputStream extends AbstractJsonTextOutputStream {
 
