@@ -17,6 +17,13 @@
 package com.ibm.jaql.util.shell;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
+import com.ibm.jaql.json.type.FixedJArray;
+import com.ibm.jaql.json.type.JRecord;
+import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 
 /** Base class for version-specific shells. */
 public abstract class AbstractJaqlShell {
@@ -52,7 +59,60 @@ public abstract class AbstractJaqlShell {
       e.printStackTrace();
     }
   }
+  
+  /**
+   * @param in
+   * @param failOnError
+   * @param errorLog
+   * @throws Exception
+   */
+  public void runBatch(InputStream in, boolean failOnError, PrintStream errorLog) throws Exception {
+    try
+    {
+      if(failOnError) {
+        com.ibm.jaql.lang.Jaql.batch(in);
+      } else {
+        com.ibm.jaql.lang.Jaql.main(in);
+      } 
+    } catch(Exception e) {
+      // 1. write it into errorLog as JSON
+      writeException(e, errorLog);
+      
+      // 2. flush and close the errorLog
+      errorLog.flush();
+      errorLog.close();
+      
+      // 3. wrap the exception with an exception to kill the process
+      throw new Exception(e);
+      
+    }
+  }
 
+  private void writeException(Exception e, PrintStream errorLog) {
+    
+    // the message
+    JString msg = new JString(e.getMessage());
+    
+    // the stack
+    FixedJArray eArr = new FixedJArray();
+    StackTraceElement[] traceElements = e.getStackTrace();
+    for(int i = 0; i < traceElements.length; i++) {
+      eArr.add(new JString(traceElements[i].toString()));
+    }
+    
+    // create a record
+    MemoryJRecord eRec = new MemoryJRecord();
+    eRec.add("stack", eArr);
+    eRec.add("msg", msg);
+    
+    // write out the record
+    try {
+      eRec.print(errorLog);
+    } catch(Exception ioe) {
+      ioe.printStackTrace(System.err);
+    }
+  }
+  
   /**
    * @param args
    * @throws Exception
@@ -77,7 +137,12 @@ public abstract class AbstractJaqlShell {
         shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
       }
       if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
-      shell.runInteractively(jaqlArgs.in);
+      // TODO: runBatch if needed
+      if(jaqlArgs.batchMode) {
+        shell.runBatch(jaqlArgs.in, true, jaqlArgs.log);
+      } else {
+        shell.runInteractively(jaqlArgs.in);
+      }
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
       }
@@ -85,7 +150,9 @@ public abstract class AbstractJaqlShell {
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      if(!jaqlArgs.batchMode)
+        e.printStackTrace();
+      throw new Exception(e);
     }
     finally
     {
