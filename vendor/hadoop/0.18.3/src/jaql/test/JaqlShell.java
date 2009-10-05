@@ -269,7 +269,13 @@ public class JaqlShell extends AbstractJaqlShell
   }
 
   public static void main(String[] args) throws Exception {
-  	main(new JaqlShell(), args);
+    try {
+      main(new JaqlShell(), args);
+    } catch(Exception e) {
+      System.exit(1);
+    }
+  	
+    System.exit(0);
   }
 
 }

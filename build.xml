@@ -337,6 +337,9 @@
         </javac>
     </target>
 
+    <!-- ================================================================== -->
+    <!-- Jar                                                                -->
+    <!-- ================================================================== -->
     <property name="tmp.dir" value="${basedir}/tmp" />
     <target name="jar" depends="compile, compile-test">
         <delete dir="${tmp.dir}" />
@@ -401,6 +404,24 @@
                 <attribute name="Main-Class" value="JaqlShell" />
             </manifest>
         </jar>
+    </target>
+
+    <!-- ================================================================== -->
+    <!-- Source Jar                                                         -->
+    <!-- ================================================================== -->
+    <target name="srcjar" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy">
+        <antlr target="${src.dir}/com/ibm/jaql/lang/parser/jaql.g">
+            <classpath refid="${test.classpath.id}" />
+        </antlr>
+        <copy todir="${build.src}/java/com/ibm/jaql/lang/parser/">
+            <fileset dir="${src.dir}/com/ibm/jaql/lang/parser/">
+                <include name="*.java" />
+            </fileset>
+        </copy>
+        
+        <jar jarfile="${build.dir}/jaql_src.jar" basedir="${build.src}/java"/>
+        
+        <jar jarfile="${build.dir}/jaql_test_src.jar" basedir="${build.src}/test"/>
     </target>
 
     <!-- ================================================================== -->

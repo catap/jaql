@@ -161,6 +161,62 @@ public class Jaql
     }
   }
   
+  // TODO: add a batch method
+  public static void batch(InputStream in) throws Exception {
+    JaqlLexer lexer = new JaqlLexer(in);
+    JaqlParser parser = new JaqlParser(lexer);
+    Context context = new Context();
+    RewriteEngine rewriter = new RewriteEngine();
+    boolean parsing = false;
+    //PrintTableWriter writer = new PrintTableWriter(System.out);
+
+    while (true)
+    {
+      try
+      {
+        System.out.print("\njaql> ");
+        System.out.flush();
+        parser.env.reset();
+        parsing = true;
+        Expr expr = parser.parse();
+        parsing = false;
+        if (parser.done)
+        {
+          break;
+        }
+        if (expr == null)
+        {
+          continue;
+        }
+        expr = rewriter.run(parser.env, expr);
+        context.reset();
+        // TODO: enable push style?
+        // expr.write(context, writer);
+        if (expr instanceof ExplainExpr) // TODO: statement.eval
+        {
+          Item item = expr.eval(context);
+          System.out.println(item.get());
+        }
+        else if (expr.isArray().always())
+        {
+          Iter iter = expr.iter(context);
+          iter.print(System.out);
+        }
+        else
+        {
+          Item item = expr.eval(context);
+          item.print(System.out);
+        }
+        context.endQuery(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
+      }
+      catch (Exception ex)
+      {
+        // quit processing in case of exception
+        throw new Exception(ex);
+      }
+    }
+  }
+  
   public static void addExtensionJars(String[] jars) throws Exception
   {
     ClassLoaderMgr.addExtensionJars(jars);

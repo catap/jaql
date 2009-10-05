@@ -19,8 +19,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.List;
 
 import jline.ConsoleReader;
@@ -46,6 +48,7 @@ public class JaqlShellArguments {
   int numNodes = 1;
   InputStream in;
   boolean batchMode = false;
+  PrintStream log = System.err;
 
   private JaqlShellArguments() {};
 
@@ -125,6 +128,16 @@ public class JaqlShellArguments {
     .withOption(optDir)
     .withOption(optNumNodes)
     .create();
+    
+    Option optLog = obuilder
+    .withShortName("l")
+    .withLongName("log")
+    .withDescription("path to log file")
+    .withArgument(abuilder
+        .withName("arg")
+        .withMinimum(1).withMaximum(1)
+        .create())
+        .create();
 
     // create input files option
     Option optInputFiles = abuilder
@@ -139,6 +152,7 @@ public class JaqlShellArguments {
     .withOption(optHelp)
     .withOption(optJars)
     .withOption(optBatch)
+    .withOption(optLog)
     .withOption(optEval)
     .withOption(optInputFiles)
     .withOption(clusterOptions)
@@ -223,6 +237,13 @@ public class JaqlShellArguments {
         in.add(System.in);
       }
     }
+    if (cl.hasOption(optLog)) {
+      try {
+        result.log = new PrintStream(new FileOutputStream( (String) cl.getValue(optLog)));
+      } catch(FileNotFoundException fe) {
+        result.log = System.err;
+      }
+    } 
     result.in = in;
 
     // return result
