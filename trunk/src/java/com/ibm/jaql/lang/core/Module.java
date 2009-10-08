@@ -150,27 +150,36 @@ public abstract class Module {
 			}
 		};
 		
-		for (String dir : searchPath) {
-			File d = new File(dir);
-			if(!d.isDirectory()) {
-				throw new RuntimeException(d.getAbsolutePath() + " is no directory");
-			}
-			if(isModuleDirectory(d)) {
-				if(dir.equals(name)) {
-					return new DefaultModule(d);
-				}
-			}
-			else {
-				File[] modules = d.listFiles(filter);
-				for (File module : modules) {
-					if(name.equals(module.getName())) {
-						return new DefaultModule(module);
-					}
-				}
-			}
+		for (String dir : searchPath) 
+		{
+		  File d = new File(dir);
+		  if(d.isDirectory())
+		  {
+		    if(isModuleDirectory(d))
+		    {
+		      if(dir.equals(name)) {
+		        return new DefaultModule(d);
+		      }
+		    }
+		    else
+		    {
+		      File[] modules = d.listFiles(filter);
+		      for (File module : modules) {
+		        if(name.equals(module.getName()))
+		        {
+		          return new DefaultModule(module);
+		        }
+		      }
+		    }
+		  }
 		}
 		
-		throw new RuntimeException("Could not find module " + name);
+		String err = "Could not find module " + name + " in:";
+        for (String dir : searchPath)
+        {
+          err += "\n" + dir;
+        }
+		throw new RuntimeException(err);
 	}
 	
 	public static boolean isModuleDirectory(final File f) {
