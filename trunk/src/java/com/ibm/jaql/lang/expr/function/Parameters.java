@@ -233,11 +233,16 @@ public abstract class Parameters<T>
     return get(positionOf(name));
   }
   
-  /** Returns the position of the specified parameter or <code>null</code> if the parameter does
+  /** Returns the position of the specified parameter or <code>-1</code> if the parameter does
    * not exist. */
-  public Integer positionOf(JsonString name)
+  public int positionOf(JsonString name) // TODO: not all callers properly handling unknown parameters!
   {
-    return positions.get(name);
+    Integer i = positions.get(name);
+    if( i == null )
+    {
+      return -1;
+    }
+    return i.intValue();
   }
 
   /** Checks whether the parameter at the specified position is required */
