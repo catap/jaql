@@ -39,11 +39,13 @@ import org.apache.commons.cli2.commandline.Parser;
 import org.apache.commons.cli2.util.HelpFormatter;
 import org.apache.commons.cli2.validation.NumberValidator;
 
+import com.ibm.jaql.lang.core.Module;
+
 /** Parser for arguments of JaqlShell. */
 public class JaqlShellArguments {
   boolean useExistingCluster = false;
   String[] jars = new String[0];
-  String[] searchPath = new String[0];
+  String[] searchPath = Module.defaultSearchPath();
   String hdfsDir = "/tmp/jaql/dfs";
   int numNodes = 1;
   InputStream in;

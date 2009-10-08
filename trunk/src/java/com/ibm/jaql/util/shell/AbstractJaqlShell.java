@@ -18,7 +18,7 @@ package com.ibm.jaql.util.shell;
 
 import java.io.InputStream;
 
-import com.ibm.jaql.lang.core.DefaultModule;
+import com.ibm.jaql.lang.core.Module;
 
 /** Base class for version-specific shells. */
 public abstract class AbstractJaqlShell {
@@ -66,8 +66,8 @@ public abstract class AbstractJaqlShell {
 
     try
     {
-    	//Set module search path
-    	DefaultModule.setSearchPath(jaqlArgs.searchPath);
+      //Set module search path
+      Module.setSearchPath(jaqlArgs.searchPath);
     	
       if (!jaqlArgs.batchMode) {
         // TODO startup text
