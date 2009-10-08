@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +34,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.DefaultModule;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -42,14 +44,13 @@ import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.util.ClassLoaderMgr;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 public class Jaql
 {
+  public static String ENV_JAQL_HOME = "JAQL_HOME"; 
+  
   public static void main(String args[]) throws Exception
   {
-  	DefaultModule.setSearchPath(new String[] { "modules/" });
-  	
     InputStream in;
     if (args.length > 0) {
         in = new FileInputStream(args[0]);

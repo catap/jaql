@@ -34,6 +34,7 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 public abstract class Module {
@@ -48,7 +49,7 @@ public abstract class Module {
 	protected static final JsonString EXPORT_FIELD = new JsonString("export");
 	protected static final JsonString VERSION_FIELD = new JsonString("version");
 	protected static final JsonString IMPORT_FIELD = new JsonString("import");
-	protected static String[] searchPath = null;
+	protected static String[] searchPath = defaultSearchPath();
 	protected static Schema namespaceSchema = null;
 	protected static Schema descriptionSchema = null;
 	
@@ -77,6 +78,61 @@ public abstract class Module {
 		} catch (IOException e) {
 		  throw JaqlUtil.rethrow(e);
 		}
+	}
+
+	public static boolean addPath(ArrayList<String> searchPath, String path, String morePath)
+	{
+	  if( path == null )
+	  {
+	    return false;
+	  }
+	  if( morePath != null )
+	  {
+	    if( ! path.endsWith("/") )
+	    {
+	      path += "/";
+	    }
+	    while( morePath.startsWith("/") )
+	    {
+	      morePath = morePath.substring(1);
+	    }
+	    path += morePath;
+	  }
+	  while( path.endsWith("/") )
+	  {
+	    path.substring(0, path.length() - 1 );
+	  }
+	  File f = new File(path);
+	  if( ! f.isDirectory() )
+	  {
+	    return false;
+	  }
+	  path = f.getAbsolutePath();
+	  searchPath.add(path);
+	  return true;
+	}
+
+	/**
+	 * The default search path is:
+	 *   In the start-up directory:
+	 *       ./jaql/modules
+	 *       ./modules
+	 *       .
+	 *   The -Djaql.modules.dir=... directory specified jvm startup
+	 *   Inside the user's home directory: $HOME/jaql/modules
+	 *   Jaql's installation: $JAQL_HOME/modules
+	 */
+	public static String[] defaultSearchPath()
+	{
+	  ArrayList<String> path = new ArrayList<String>();
+	  String cwd = System.getProperty("user.dir");
+      addPath( path, cwd, "jaql/modules" );
+      addPath( path, cwd, "modules" );
+      addPath( path, cwd, null );
+      addPath( path, System.getProperty("jaql.modules.dir"), null );
+      addPath( path, System.getenv("HOME"), "jaql/modules" );
+      addPath( path, System.getenv(Jaql.ENV_JAQL_HOME), "modules" );
+	  return path.toArray(new String[path.size()]);
 	}
 	
 	public static void setSearchPath(String[] searchPath) {
