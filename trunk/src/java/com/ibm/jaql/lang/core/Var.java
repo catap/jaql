@@ -24,11 +24,17 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
 import static com.ibm.jaql.json.type.JsonType.*;
 
-/**
+/** A variable. 
  * 
+ * Variables have a name and optionally a tag. In the language, variables are referred to by just 
+ * "name" or by "name#tag". This makes it possible to refer to (tagged) variables that are shadowed 
+ * by a variable of the same name, e.g., <code>( x#1=1, x=2, [ x#1, x ] )</code> will produce 
+ * <code>[ 1, 2 ]</code>. 
  */
 public final class Var extends Object
 {
+  public static final String TAG_MARKER = "#";
+  
   public enum Usage
   {
     EVAL,     // Variable may be referenced multiple times (value must be stored)
@@ -48,6 +54,8 @@ public final class Var extends Object
   public static final Var UNUSED = new Var("$__unused__");
 
   private String name;
+  private String tag; // tag for disambiguation, always null for globals 
+  
   private boolean hidden = false; // variable not accessible in current parse context,
                                   // also marks that a variable is not allowed to be shadowed by
                                   // another variable of the same name                                  
@@ -66,31 +74,32 @@ public final class Var extends Object
   private boolean isFinal = false;
   private Namespace namespace = null;
   
-  public Var(String name, Schema schema)
+  public Var(String taggedName, Schema schema)
   {
     assert schema != null;
-    this.name = name;
+    setTaggedName(taggedName);
     this.schema = schema;
   }
 
-  public Var(String name)
+  public Var(String taggedName)
   {
-    this(name, SchemaFactory.anySchema());
+    this(taggedName, SchemaFactory.anySchema());
   }
 
-  /** Constant variable */
-  public Var(String name, boolean isGlobal)
+  public Var(String taggedName, Schema schema, boolean isGlobal)
   {
-    this(name, SchemaFactory.anySchema());
+    this(taggedName, schema);
     this.type = Type.UNDEFINED;
     this.isGlobal = isGlobal;
+    if (tag != null)
+    {
+      throw new IllegalStateException("global variables cannot have tags: " + taggedName);
+    }
   }
 
-  public Var(String name, Schema schema, boolean isGlobal)
+  public Var(String taggedName, boolean isGlobal)
   {
-    this(name, schema);
-    this.type = Type.UNDEFINED;
-    this.isGlobal = isGlobal;
+    this(taggedName, SchemaFactory.anySchema(), isGlobal);
   }
 
   /**
@@ -101,10 +110,72 @@ public final class Var extends Object
     return name;
   }
 
+  public String taggedName()
+  {
+    return name + (tag == null ? "" : TAG_MARKER + tag);
+  }
+  
+  public String tag()
+  {
+    return tag;
+  }
+  
+  public boolean hasTag()
+  {
+    return tag != null;
+  }
+  
+  /** Splits variable reference into [ name, tag ], where tag might be null. */
+  public static String[] splitTaggedName(String taggedName)
+  {
+    String[] result = new String[2];
+    int index = taggedName.indexOf(TAG_MARKER);
+    if (index < 0)
+    {
+      result[0] = taggedName;
+      result[1] = null;      
+    }
+    else
+    {
+      result[0] = taggedName.substring(0, index);
+      result[1] = taggedName.substring(index+1);
+      if (result[0].isEmpty() || result[1].isEmpty() || result[1].contains(TAG_MARKER))
+      {
+        throw new IllegalArgumentException("invalid variable reference: " + taggedName);
+      }
+    }
+    return result;
+  }
+  
   public void setName(String name)
   {
+    if (name.isEmpty() || name.contains(TAG_MARKER))
+    {
+      throw new IllegalArgumentException("invalid variable name: " + name);
+    }
     this.name = name;
   }
+  
+  public void setTag(String tag)
+  {
+    if (tag != null && (tag.isEmpty() || tag.contains(TAG_MARKER)))
+    {
+      throw new IllegalArgumentException("invalid tag: " + tag);
+    }
+    this.tag = tag;
+  }
+  
+  public void setTaggedName(String taggedName)
+  {
+    String[] split = splitTaggedName(taggedName);
+    if (isGlobal() && split[1] != null)
+    {
+      throw new IllegalArgumentException("global variables cannot have tags: " + taggedName);
+    }
+    this.name = split[0];
+    this.tag = split[1];
+  }
+
   
   /**
    * @return
@@ -151,7 +222,7 @@ public final class Var extends Object
   @Override
   public String toString()
   {
-    return name + " @" + System.identityHashCode(this);
+    return name + ( tag != null ? TAG_MARKER+tag : "") + " @" + System.identityHashCode(this);
   }
 
   /**
@@ -289,7 +360,7 @@ public final class Var extends Object
       assert schema.matchesUnsafe(v);
       return v;
     }
-    throw new IllegalStateException("undefined variable: " + name());
+    throw new IllegalStateException("undefined variable: " + taggedName());
   }
 
   /**

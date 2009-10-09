@@ -33,7 +33,6 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
  * to store the compile-time environment. */
 public class Env extends Namespace
 {
-  private int varId = 0; // used to generate unique variable names
   Namespace   globals;   // holds global variables and imports
   
 
@@ -66,40 +65,40 @@ public class Env extends Namespace
   // -- scoping -----------------------------------------------------------------------------------
   
   @Override
-  public Var inscope(String varName)
+  public Var inscope(String taggedName)
   {
-    if (variables.containsKey(varName))
+    Var var = findVar(variables, taggedName);
+    if (var == null)
     {
-      Var var = variables.get(varName);
-      if (var.isHidden()) 
-      {
-        throw new IndexOutOfBoundsException("variable is hidden in this scope: " + varName);
-      }
-      return var;
+      return inscopeGlobal(taggedName);
     }
-    return inscopeGlobal(varName);
+    if (var.isHidden()) 
+    {
+      throw new IndexOutOfBoundsException("variable is hidden in this scope: " + var.taggedName());
+    }
+    return var;
   }
   
   @Override
-  public Var inscopeLocal(String varName)
+  public Var inscopeLocal(String taggedName)
   {
-    if (variables.containsKey(varName))
+    Var var = findVar(variables, taggedName);
+    if (var == null)
     {
-      Var var = variables.get(varName);
-      if (var.isHidden()) 
-      {
-        throw new IndexOutOfBoundsException("variable is hidden in this scope: " + varName);
-      }
-      return var;
+      return globals().inscopeLocal(taggedName);
     }
-    return globals().inscopeLocal(varName);
+    if (var.isHidden()) 
+    {
+      throw new IndexOutOfBoundsException("variable is hidden in this scope: " + var.taggedName());
+    }
+    return var;
   }
   
-  public boolean isDefinedLocal(String varName)
+  public boolean isDefinedLocal(String taggedName)
   {
     try
     {
-      inscopeLocal(varName);
+      inscopeLocal(taggedName);
       return true;
     }
     catch (Exception e)
@@ -124,7 +123,6 @@ public class Env extends Namespace
   {
     ensureNotFinal();
     variables.clear();
-    varId = 0;
   }
 
   /** 
@@ -155,6 +153,7 @@ public class Env extends Namespace
   /** 
    * Creates a new variable with the specified name and puts it into the global scope. 
    * The most recent definition of the global variable of the specified name is overwritten.
+   * If varName contains a tag, this method will fail.
    */
   public Var scopeGlobal(String varName, JsonValue value)
   {
@@ -173,13 +172,6 @@ public class Env extends Namespace
   
   // -- variables ---------------------------------------------------------------------------------
   
-  /** Gives a variable a unique name. */
-  public void makeUnique(Var var)
-  {
-    var.setName(var.name() + "__" + varId);
-    varId++;
-  }
-
   /** Creates a new variable, scopes it, unscopes it, and returns it. */
   public Var makeVar(String name) 
   {
@@ -211,6 +203,9 @@ public class Env extends Namespace
   // all constants in the tree.)  As a temporary HACK, we are using a null context.  If there is a expr that
   // reports isConst and requires the context, we will get a null pointer exception, which is a bug on our part.
   // Either we need to pass a context around during parsing, or we need to defer this evaluation to after parsing.
+
+  // FIXME: we have to create a single point for all compile-time evals and tag variables over there
+  
   private static Context compileTimeContext = new Context();
   public static Context getCompileTimeContext()
   {

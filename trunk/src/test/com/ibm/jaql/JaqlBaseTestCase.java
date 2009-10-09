@@ -45,6 +45,7 @@ import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.registry.RNGStore;
+import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.TeeInputStream;
@@ -197,6 +198,8 @@ public abstract class JaqlBaseTestCase extends TestCase
         {
           continue;
         }
+        VarTagger.tag(expr);
+        
         captures.clear();
         System.err.println("\nDecompiled query:");
         expr.decompile(System.err, captures);
@@ -389,6 +392,7 @@ public abstract class JaqlBaseTestCase extends TestCase
     try
     {
       expr = rewriter.run(parser.env, expr);
+      VarTagger.tag(expr);
       captures.clear();
       System.err.println("\nRewritten query:");
       expr.decompile(System.err, captures);

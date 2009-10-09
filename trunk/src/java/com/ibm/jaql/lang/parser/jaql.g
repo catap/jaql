@@ -790,7 +790,7 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
           {
             if( e instanceof VarExpr )
             {
-              v = ((VarExpr)e).var().name();
+              v = ((VarExpr)e).var().taggedName();
             }
             else
             {
@@ -799,7 +799,7 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
           }
           for( Var as: asVars ) 
           {
-            if( as.name().equals(v) )
+            if( as.taggedName().equals(v) )
             {
               oops("duplicate group \"as\" variable: "+v);
             }
@@ -835,14 +835,14 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
         }
         b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
       }
-      else if( v == null || (by.var != Var.UNUSED && by.var.name().equals(v)) )
+      else if( v == null || (by.var != Var.UNUSED && by.var.taggedName().equals(v)) )
       {
         by.addChild(e);
         b = by;
       }
       else
       {
-        oops("all group by variables must have the same name:" +by.var.name()+" != "+v);
+        oops("all group by variables must have the same name:" +by.var.taggedName()+" != "+v);
       }
     }
     ;
@@ -1733,17 +1733,25 @@ HERE_STRING
 protected IDWORD
     : ('$'|LETTER|'_'|'@') (LETTER|'_'|DIGIT)*
     ;
-    
-    
+
+protected TAG
+    : '#' (LETTER|'_'|DIGIT)+
+    ;  
+  
 ID
-    : ( IDWORD ':' ':' IDWORD)     => IDWORD ':' ':' IDWORD { $setType(NAMESPACE_ID); }
+    : (IDWORD TAG) => IDWORD TAG
+    | ( IDWORD ':' ':' IDWORD) => IDWORD ':' ':' IDWORD { $setType(NAMESPACE_ID); }
     | (IDWORD (WS)* 
          ( '='
          | '?' (WS)* ':'
          | ':'
          )
-      )                           => IDWORD
-                                   | IDWORD { _ttype = testLiteralsTable(_ttype); }
+      ) => IDWORD
+    | IDWORD { _ttype = testLiteralsTable(_ttype); }
+    ;
+    
+KEYWORD
+    : TAG { _ttype = testLiteralsTable(_ttype); }
     ;
     
 NAMESPACE_ID
