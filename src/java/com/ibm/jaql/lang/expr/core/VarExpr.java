@@ -89,7 +89,7 @@ public class VarExpr extends Expr
         exprText.print(var.getNamespace().getName() + "::");
       }
     }
-    exprText.print(var.name());
+    exprText.print(var.taggedName());
     capturedVars.add(var);
   }
 

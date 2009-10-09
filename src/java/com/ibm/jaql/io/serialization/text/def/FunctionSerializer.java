@@ -70,7 +70,7 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
           for (Entry<Var, JsonValue> e : localBindings.entrySet())
           {
             out.print(sep);
-            out.print(e.getKey().name());
+            out.print(e.getKey().taggedName());
             out.print("=");
             JsonUtil.print(out, e.getValue());
             sep = ", ";
@@ -89,10 +89,10 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
           out.print(del);
           if (par.getSchema() != SchemaFactory.anySchema()) // identity check should be ok, if not, doesnt matter
           {
-            out.print(par.getSchema());
+            out.print(par.getSchema().toString());
             out.print(" ");
           }
-          out.print(par.getName());
+          out.print(par.getVar().taggedName());
           if (par.isOptional())
           {
             out.print("=");

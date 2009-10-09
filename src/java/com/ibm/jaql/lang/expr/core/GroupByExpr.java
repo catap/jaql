@@ -427,7 +427,7 @@ public class GroupByExpr extends IterExpr
     BindingExpr in = inBinding();
     BindingExpr by = byBinding();
     exprText.print("\ngroup each ");
-    exprText.print(in.var.name());
+    exprText.print(in.var.taggedName());
     exprText.print(" in ");
     String sep = "";
     for (int i = 0; i < n; i++)
@@ -439,14 +439,14 @@ public class GroupByExpr extends IterExpr
       exprText.print(" by ");
       if( i == 0 ) // if( byBinding.var != Var.unused )
       {
-        exprText.println(by.var.name());
+        exprText.println(by.var.taggedName());
         exprText.print(" = ");
       }
       exprText.print("(");
       by.child(i).decompile(exprText, capturedVars);
       exprText.print(")");
       exprText.print(" as ");
-      exprText.print(getAsVar(i).name()); 
+      exprText.print(getAsVar(i).taggedName()); 
       sep = ", ";
     }
     Expr using = usingExpr();

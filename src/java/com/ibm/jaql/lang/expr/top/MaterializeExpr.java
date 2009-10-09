@@ -70,7 +70,7 @@ public class MaterializeExpr extends TopExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
   {
     exprText.print("materialize ");
-    exprText.print(var.name());
+    exprText.print(var.taggedName());
     exprText.print(" = ");
     exprs[0].decompile(exprText, capturedVars);
   }

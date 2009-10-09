@@ -88,7 +88,7 @@ public class ExplainExpr extends TopExpr
         System.err.println("Invalid query... Undefined variables:");
         for (Var key : capturedVars)
         {
-          System.err.println(key.name());
+          System.err.println(key.taggedName());
         }
         System.err.println(outStream.toString());
         throw new RuntimeException("undefined variables");

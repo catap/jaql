@@ -189,6 +189,10 @@ group
      by g = ($.c) as j
   into { g:g, bs:i[*].b, ds:j[*].d };
 
+// cogroup and tagging 
+group [ {a:1, b:1} ] by k#1=$.a as x#0, [ {a:1, b:2} ] by k#1=$.a as x#1 into { k, x, x0: x#0, x1: x#1 }; // ok
+group [ 1 ] by k=$ as x, [ 1 ] by k#1=$ as y into { x, y };  // should fail 
+
 // This will generate a semantic error because the 'by' names must be unique.
 group
   [] by g = ($.a) as is,
@@ -338,17 +342,22 @@ f = fn(a, b="b", c="c") [ a, b, c ];
 f("A");
 f(b="B", a="A");
 
-// captures
+// captures and tagging
 z=randomLong()*0+100;
 f = fn(x) z+x;
 f(10);
 f = fn(x=z) z+x;
 f();
 f(10);
-//TODO: fix problems with this function when decompiling without rewrite
-//f = fn(z=::z) z+::z;
-//f();
-//f(10);
+f = fn(z=::z) z+::z;
+f();
+f(10);
+f = (z=randomLong()*0+1000, y=z, fn(x=z, z=1) x+y+z+::z);
+f();
+f(10);
+f(10, -1);
+(fn(x) (y=x, fn(x) x+y))(x=1)(x=2);
+(fn(x#0) (fn(x) x+x#0))(x=1)(x=2);
 
 // continuations & multiple call sites:
 

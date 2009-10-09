@@ -61,7 +61,7 @@ public class AssignExpr extends TopExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(var.name()); // TODO: expr -> $var when var is pipe var
+    exprText.print(var.taggedName()); // TODO: expr -> $var when var is pipe var
     exprText.print(" = ");
     if (numChildren() > 0)
     {
@@ -87,6 +87,6 @@ public class AssignExpr extends TopExpr
   public JsonValue eval(Context context) throws Exception
   {
     var.setExpr(exprs[0]);
-    return new JsonString(var.name());
+    return new JsonString(var.taggedName());
   }
 }

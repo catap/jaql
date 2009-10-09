@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import com.ibm.jaql.json.parser.ParseException;
@@ -111,13 +112,13 @@ public class Namespace {
   /** Creates a new variable with the specified name and puts it into the local scope.
    * Previous definitions of variables of the specified name are hidden but not overwritten.
    * 
-   * @param varName
+   * @param taggedName
    * @return
    */
-  public Var scope(String varName)
+  public Var scope(String taggedName)
   {
     ensureNotFinal();
-    Var var = new Var(varName);
+    Var var = new Var(taggedName);
     scope(var);
     return var;
   }
@@ -125,13 +126,13 @@ public class Namespace {
   /** Creates a new variable with the specified name and schema and puts it into the local scope.
    * Previous definitions of variables of the specified name are hidden but not overwritten.
    * 
-   * @param varName
+   * @param taggedName
    * @return
    */
-  public Var scope(String varName, Schema varSchema)
+  public Var scope(String taggedName, Schema varSchema)
   {
     ensureNotFinal();
-    Var var = new Var(varName, varSchema);
+    Var var = new Var(taggedName, varSchema);
     scope(var);
     return var;
   }
@@ -176,36 +177,36 @@ public class Namespace {
    * 
    * @throws IndexOutOfBoundsException if the variable is not defined or hidden
    */
-  public Var inscope(String varName)
+  public Var inscope(String taggedName)
   {
-    return inscope(varName, false);
+    return inscope(taggedName, false);
   }
 
   /** Returns the variable of the specified name, searching in only the this namespaces.
    * 
    * @throws IndexOutOfBoundsException if the variable is not defined or hidden
    */
-  public Var inscopeLocal(String varName)
+  public Var inscopeLocal(String taggedName)
   {
-    return inscope(varName, true);
+    return inscope(taggedName, true);
   }
   
   // helper for the above inscope methods
-  private Var inscope(String varName, boolean local)
+  private Var inscope(String taggedName, boolean local)
   {
-    Var var = variables.get(varName);
+    Var var = findVar(variables, taggedName);
     if (!local && var == null)
     {
-      var = importedVariables.get(varName);
+      var = findVar(importedVariables, taggedName);
     }
     if (var == null)
     {
-      throw new IndexOutOfBoundsException("variable not defined: " + varName);
+      throw new IndexOutOfBoundsException("variable not defined: " + taggedName);
     }
     if (var.isHidden())
     {
       throw new IndexOutOfBoundsException("variable is hidden in this scope: "
-          + varName);
+          + taggedName);
     }
     return var;
   }
@@ -228,6 +229,29 @@ public class Namespace {
           + " does not export a variable of name " + varName);
     }
     return ns.inscopeLocal(varName);
+  }
+  
+  /** Search for a variable of the given name and tag in <code>varMap</code> and return it. Return 
+   * null if not found. */
+  protected static Var findVar(Map<String, Var> varMap, String taggedName)
+  {
+    String[] split = Var.splitTaggedName(taggedName);
+    String name = split[0];
+    String tag = split[1];
+    
+    if (varMap.containsKey(name))
+    {
+      Var var = varMap.get(name);
+      if (tag != null)
+      {
+        while (var != null && !tag.equals(var.tag()))
+        {
+          var = var.varStack;
+        }
+      }
+      return var; // might be null
+    }
+    return null;
   }
   
   // -- getters -----------------------------------------------------------------------------------
@@ -389,7 +413,7 @@ public class Namespace {
 							expr.eval(context);
 						}
 						else {
-							throw new RuntimeException("module files should only contains assignments; expr " 
+							throw new RuntimeException("module files should only contain assignments; expr " 
 							    + expr + " is not allowed");
 						}
 					}
@@ -403,5 +427,5 @@ public class Namespace {
 		  }
 		}
 	}
-	
+
 }

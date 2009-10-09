@@ -172,7 +172,7 @@ public class MultiJoinExpr extends MacroExpr
       {
         exprText.print("preserved ");
       }
-      exprText.print(b.var.name());
+      exprText.print(b.var.taggedName());
       exprText.print(" in (");
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(")");
@@ -181,7 +181,7 @@ public class MultiJoinExpr extends MacroExpr
       {
         BindingExpr on = (BindingExpr)b.child(i);
         exprText.print(" on ");
-        exprText.print(on.var.name());
+        exprText.print(on.var.taggedName());
         exprText.print(" = ");
         b.eqExpr().decompile(exprText, capturedVars);
       }
@@ -435,11 +435,11 @@ public class MultiJoinExpr extends MacroExpr
         case FULL_OUTER:  s = " <-> "; break;
       }
       if( this.input1.isPreserved() ) out.append("[");
-      out.append(this.input1.binding.var.name());
+      out.append(this.input1.binding.var.taggedName());
       if( this.input1.isPreserved() ) out.append("]");
       out.append(s);
       if( this.input2.isPreserved() ) out.append("[");
-      out.append(this.input2.binding.var.name());
+      out.append(this.input2.binding.var.taggedName());
       if( this.input2.isPreserved() ) out.append("]");
       s = " on ";
       int n = expr1.size();
@@ -479,7 +479,7 @@ public class MultiJoinExpr extends MacroExpr
       JoinInput x = findDisconnected();
       if( x != null )
       {
-        throw new RuntimeException("join must be fully connected.  For example, this is not connected to the first input: "+x.binding.var.name());
+        throw new RuntimeException("join must be fully connected.  For example, this is not connected to the first input: "+x.binding.var.taggedName());
       }
       if( numPreserved > 0 )
       {
