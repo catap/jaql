@@ -84,7 +84,7 @@ public abstract class AbstractJsonTextOutputStream implements
   }
 
   @Override
-  public void cleanUp() throws IOException {
+  public void close() throws IOException {
     if (output != null) {
       if (seenFirst && arrAcc)
         output.print(end);

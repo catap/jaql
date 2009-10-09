@@ -33,13 +33,19 @@ import com.ibm.jaql.json.type.JsonValue;
 public class JsonToXmlFnTest extends AbstractTest {
 
   private JsonToXmlFn fn = new JsonToXmlFn();
-  
+
   @Test
   public void xml() {
     eval("{root: {content: [1,2,3]}}->jsonToXml();");
     eval("{root: {content: [1, 2, 3]}}->jsonToXml()->write(stdout());");
   }
 
+  /**
+   * Verifies that for unacceptable JSON values,
+   * <code>IllegalArgumentException</code> will be thrown.
+   * 
+   * @throws Exception
+   */
   @Test
   public void invalidJsonToXml() throws Exception {
     verifyInvalidJson("1");
@@ -136,16 +142,6 @@ public class JsonToXmlFnTest extends AbstractTest {
   }
 
   @Test
-  public void invalidJsonAtom() {
-    try {
-      fn.atom(null, new JsonLong(999));
-      fail();
-    } catch (NullPointerException npe) {
-      debugException(npe);
-    }
-  }
-
-  @Test
   public void validJsonAtom() {
     JsonLong jl = new JsonLong(123);
     assertXmlEquals("<n>123</n>", atomS("n", jl));
@@ -174,7 +170,7 @@ public class JsonToXmlFnTest extends AbstractTest {
     JsonValue jv = JsonParserUtil.parse(str);
     try {
       fn.toXml(jv);
-      fail();
+      fail("exxx");
     } catch (IllegalArgumentException iae) {
       debugException(iae);
     }
@@ -203,7 +199,4 @@ public class JsonToXmlFnTest extends AbstractTest {
   private String atomS(String s, JsonAtom atom) {
     return fn.atom(toJsonString(s), atom);
   }
-
-
-
 }

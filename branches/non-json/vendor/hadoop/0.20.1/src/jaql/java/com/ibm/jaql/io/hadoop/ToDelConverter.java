@@ -24,7 +24,7 @@ import org.apache.hadoop.io.Text;
 import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.csv.JsonToDel;
+import com.ibm.jaql.lang.expr.del.JsonToDel;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
 // TODO: Does this really need to be in the vendor directory?

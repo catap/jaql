@@ -59,9 +59,9 @@ public interface JsonToStream<T extends JsonValue> {
   void write(T i) throws IOException;
 
   /**
-   * Clean up the underlying output stream. Close it if needed.
+   * Closes the underlying output stream if needed.
    * 
    * @throws IOException
    */
-  void cleanUp() throws IOException;
+  void close() throws IOException;
 }

@@ -76,7 +76,7 @@ public class JsonOutputStream implements JsonToStream<JsonValue>
    * 
    * @see com.ibm.jaql.io.converter.ItemToStream#close()
    */
-  public void cleanUp() throws IOException
+  public void close() throws IOException
   {
     if (output != null)
     {

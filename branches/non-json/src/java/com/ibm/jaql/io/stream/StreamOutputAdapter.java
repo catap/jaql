@@ -66,7 +66,7 @@ public class StreamOutputAdapter extends AbstractOutputAdapter {
     writer = new ClosableJsonWriter() {
       @Override
       public void close() throws IOException {
-        formatter.cleanUp();
+        formatter.close();
       }
 
       @Override
