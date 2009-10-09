@@ -18,10 +18,13 @@ package com.ibm.jaql.lang.expr.xml;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.Stack;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.lang.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -38,7 +41,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.IntArray;
 
 /**
- * 
+ * A function for converting XML to JSON.
  */
 public class XmlToJsonFn extends Expr
 {
@@ -50,8 +53,8 @@ public class XmlToJsonFn extends Expr
     }
   }
   
-  protected XMLReader parser;
-  protected XmlToJsonHandler handler;
+  private XMLReader parser;
+  private XmlToJsonHandler handler;
 
   /**
    * string xmlToJson( string xml )
@@ -63,11 +66,7 @@ public class XmlToJsonFn extends Expr
     super(exprs);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
-   */
+  @Override
   public JsonValue eval(Context context) throws Exception
   {
     if( parser == null )
@@ -76,7 +75,6 @@ public class XmlToJsonFn extends Expr
       factory.setNamespaceAware(true);
       parser = factory.newSAXParser().getXMLReader();
       handler = new XmlToJsonHandler2();
-//      handler = new XmlToJsonHandler1();
       parser.setContentHandler( handler );
     }
 
@@ -205,7 +203,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
  * 
  * This has an annoyance for nodes that occur once under some node and twice
  * under another node because the value is sometimes an array and sometimes
- * a single value, which makes query writing painful.  This would be fixed with
+ * a single value, which makes query writing painful. This would be fixed with
  * schema support.
  *
  * Text nodes are not records, they are just strings. All text _directly_ under
@@ -224,7 +222,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
  * Schema support is also important for creating non-string values.
  * 
  * If a node is in a namespace, two records are created:
- *    { 'http://namespace': { a:'1', b:'2' }
+ *    { 'http://namespace': { a:'1', b:'2' }}
  * All nodes in that namespace are below the namespace field.
  * 
  * @author kbeyer
@@ -233,8 +231,13 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
 {
   public static final JsonString textName  = new JsonString("text()");
 
-  protected Stack<BufferedJsonRecord> stack = new Stack<BufferedJsonRecord>();
-  protected StringBuffer text = new StringBuffer();
+  /**
+   * <code>LinkedList</code> is used for performance reason. Stack operations only happens at
+   * one end of the list.
+   */
+  protected Deque<BufferedJsonRecord> stack = new LinkedList<BufferedJsonRecord>();
+  /** Stores all the characters received during parsing */
+  protected StringBuilder text = new StringBuilder();
   protected IntArray lengths = new IntArray();
   
   @Override
@@ -251,45 +254,57 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
   public void endDocument() throws SAXException
   {
     BufferedJsonRecord r = stack.pop();
-    assert stack.empty();
+    assert stack.size() == 0;
     lengths.pop();
     assert lengths.empty();
     result = r;
   }
   
+  /**
+   * Create a JSON record for new node. The node attributes are processed.
+   */
   @Override
   public void startElement(String uri, String localName, String name, Attributes attrs)
     throws SAXException
   {
-    BufferedJsonRecord r = new BufferedJsonRecord();
-    stack.push(r);
+    BufferedJsonRecord node = new BufferedJsonRecord();
+    stack.push(node);
     lengths.add(text.length());
     int n = attrs.getLength();
+    BufferedJsonRecord container;
     for( int i = 0 ; i < n ; i++ )
     {
       uri = attrs.getURI(i);
+      
+      // If attribute has a uri
       if( uri != null && uri.length() > 0 )
       {
         JsonString jUri = new JsonString(uri);
-        BufferedJsonRecord ur = (BufferedJsonRecord) r.get(jUri);
+        BufferedJsonRecord ur = (BufferedJsonRecord) node.get(jUri);
         if( ur == null )
         {
           ur = new BufferedJsonRecord();
-          r.add(jUri, ur);
+          node.add(jUri, ur);
         }
-        r = ur;
+        container = ur;
+      } else {
+        container = node;
       }
-      name = "@" + attrs.getLocalName(i);
-      JsonString jName = new JsonString(name);
+      
+      String attrName = "@" + attrs.getLocalName(i);
+      JsonString jName = new JsonString(attrName);
       String v = attrs.getValue(i);
-      if( r.containsKey(jName) )
+      if( container.containsKey(jName) )
       {
-        throw new RuntimeException("duplicate attribute name: "+name);
+        throw new RuntimeException("duplicate attribute name: "+attrName);
       }
-      r.add(jName, new JsonString(v));
+      container.add(jName, new JsonString(v));
     }
   }
 
+  /**
+   * 
+   */
   @Override
   public void endElement(String uri, String localName, String name)
       throws SAXException
@@ -300,6 +315,7 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
       int textEnd = text.length();
       int textStart = lengths.pop();
       JsonValue me = r;
+      
       if( textStart < textEnd )
       {
         JsonString s = new JsonString(text.substring(textStart, textEnd));
@@ -308,12 +324,14 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
         {
           me = s;
         }
-        else
+        else if(!StringUtils.isBlank(s.toString()))
         {
           r.add(textName, s);
         }
       }
+      
       BufferedJsonRecord parent = stack.peek();
+      // uri is not empty, use namespace record as parent.
       if( uri != null && uri.length() > 0 )
       {
         JsonString jUri = new JsonString(uri);
@@ -325,8 +343,9 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
         }
         parent = ur;
       }
+      
       JsonString jLocalName = new JsonString(localName);
-      if( parent.containsKey(jLocalName) )
+      if (!parent.containsKey(jLocalName))
       {
         parent.add(jLocalName, me);
       }
@@ -353,9 +372,12 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
     }
   }
   
+  /**
+   * Collects all the characters received so far.
+   */
   @Override
   public void characters(char[] ch, int start, int length) throws SAXException
   {
     text.append(ch, start, length);
-  }  
+  } 
 }
