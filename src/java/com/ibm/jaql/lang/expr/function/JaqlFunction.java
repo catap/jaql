@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
 import java.util.Map.Entry;
 
 import com.ibm.jaql.json.type.JsonUtil;
@@ -33,6 +35,8 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.rewrite.VarTagger;
+import com.ibm.jaql.lang.rewrite.VarTagger.TagGenerator;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
@@ -68,9 +72,9 @@ public class JaqlFunction extends Function
   
   /** Constructs from the specified parameters, variable assignment, and body. The body refers to 
    * a certain parameter by using the variable corresponding to that parameter. */
-  public JaqlFunction(Map<Var, JsonValue> environment, VarParameters parameters, Expr body)
+  public JaqlFunction(Map<Var, JsonValue> localBindings, VarParameters parameters, Expr body)
   {
-    this.localBindings = Collections.unmodifiableMap(environment);
+    this.localBindings = Collections.unmodifiableMap(localBindings);
     this.parameters = parameters;
     this.body = body;
   }
@@ -187,6 +191,54 @@ public class JaqlFunction extends Function
       }
     }
     return clonedExpr;
+  }
+  
+  /** Tags variables used in the default value expressions and body so that decompilation
+   * or serialization of this function is safe. Has to be called before decompilation.
+   * 
+   * @throws IllegalStateException if the function has captures that have to be tagged
+   */
+  public void tagVars()
+  {
+    TagGenerator tagGenerator = new VarTagger.NumberTagGenerator();
+    
+    // scope local bindings
+    Map<String, Stack<Var>> scope = new HashMap<String, Stack<Var>>();
+    for (Var var : localBindings.keySet())
+    {
+      var.setTag(null);
+      VarTagger.scope(var, scope);
+    }
+    
+    // tag all default value expressions and the function body; also determine the set of
+    // environment variables that has to be tagged
+    Set<Var> varsToTag = new HashSet<Var>();
+    for (int i=0; i<parameters.numParameters(); i++)
+    {
+      VarParameter par = parameters.get(i);
+      if (par.isOptional())
+      {
+        par.var.setTag(null);
+        varsToTag.addAll(VarTagger.tag(par.defaultValue, scope, tagGenerator));
+      }
+    }
+    
+    // scope args
+    for (int i=0; i<parameters.numParameters(); i++)
+    {
+      VarTagger.scope(parameters.get(i).getVar(), scope);
+    }
+    varsToTag.addAll(VarTagger.tag(body, scope, tagGenerator));
+    
+    // tag local bindings
+    for (Var var : varsToTag)
+    {
+      if (!localBindings.containsKey(var))
+      {
+        throw new IllegalStateException("Function has captures that have to be tagged");
+      }
+      var.setTag(tagGenerator.nextTag());
+    }
   }
   
   /** Determines whether this function captures variables. Function arguments have to be 

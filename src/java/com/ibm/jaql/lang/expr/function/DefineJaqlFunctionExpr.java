@@ -136,6 +136,11 @@ public final class DefineJaqlFunctionExpr extends Expr
     return exprs[exprs.length-1];
   }
   
+  public void setBody(Expr newBody)
+  {
+    this.setChild(exprs.length-1, newBody);
+  }
+  
   /** Returns the number of parameters of this function */
   public int numParams()
   {
@@ -213,7 +218,7 @@ public final class DefineJaqlFunctionExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    JaqlFunction f = getFunction();
+    JaqlFunction f = getFunction();    
     exprText.print(f.getText());
     capturedVars.addAll(f.getCaptures());    
   }
@@ -282,16 +287,16 @@ public final class DefineJaqlFunctionExpr extends Expr
       Expr newBody = f.body().clone(varMap);
       
       // capture variables
-      Map<Var, JsonValue> environment = new HashMap<Var, JsonValue>();
+      Map<Var, JsonValue> localBindings = new HashMap<Var, JsonValue>();
       for( Var v: capturedVars )
       {
         JsonValue val = JsonUtil.getCopy(v.getValue(context), null);
         Var newVar = varMap.get(v);
-        environment.put(newVar, val);
+        localBindings.put(newVar, val);
       }
       
-      // create function
-      f = new JaqlFunction(environment, new VarParameters(newPars), newBody);
+      // create function      
+      f = new JaqlFunction(localBindings, new VarParameters(newPars), newBody);
     }
     
     return f;

@@ -32,7 +32,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[7];
+  protected RewritePhase[] phases      = new RewritePhase[6];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter
   protected long           counter     = 0;
@@ -122,13 +122,6 @@ public class RewriteEngine
     new PerPartitionElimination(phase);
     
     phases[++phaseId] = basicPhase;
-    
-    // This phase is REQUIRED to run to completion if the expr has been
-    // modified in a way that a variable could be hidden (ie, just about any rewrite)
-    // FIXME: Make sure this phase is run to completion. Probably when we wrap up the parse & rewrite into one class. 
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker,
-        10000000);
-    new RebindVars(phase);
   }
 
   /**
