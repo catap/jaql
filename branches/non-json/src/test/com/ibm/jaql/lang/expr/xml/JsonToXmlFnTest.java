@@ -34,12 +34,6 @@ public class JsonToXmlFnTest extends AbstractTest {
 
   private JsonToXmlFn fn = new JsonToXmlFn();
 
-  @Test
-  public void xml() {
-    eval("{root: {content: [1,2,3]}}->jsonToXml();");
-    eval("{root: {content: [1, 2, 3]}}->jsonToXml()->write(stdout());");
-  }
-
   /**
    * Verifies that for unacceptable JSON values,
    * <code>IllegalArgumentException</code> will be thrown.
@@ -52,18 +46,6 @@ public class JsonToXmlFnTest extends AbstractTest {
     verifyInvalidJson("\"map\"");
     verifyInvalidJson("[1, 2]");
     verifyInvalidJson("{name: ['a', 'b']}");
-  }
-
-  @Test
-  public void pretty() throws Exception {
-    printXml("{root: {p: [{name: 'jaql'}, 2, 3]}}");
-    printXml("{list: {content: [{publisher: 'Scholastic', author: 'J. K. Rowling', title: 'Deathly Hallows', year: 2007}, {publisher: 'Scholastic', author: 'J. K. Rowling', title: 'Chamber of Secrets', year: 1999, reviews: [ {rating: 10, user: 'joe', review: 'The best ...'}, {rating: 6, user: 'mary', review: 'Average ...'}]}, {publisher: 'Scholastic', author: 'J. K. Rowling', title: 'Sorcerers Stone', year: 1998}, {publisher: 'Scholastic', author: 'R. L. Stine', title: 'Monster Blood IV', year: 1997, reviews: [ {rating: 8, user: 'rob', review: 'High on my list...'}, {rating: 2, user: 'mike', review: 'Not worth the paper ...', discussion: [{user: 'ben', text: 'This is too harsh...'}, {user: 'jill', text: 'I agree ...'}]}]}, {publisher: 'Grosset', author: 'Carolyn Keene', title: 'The Secret of Kane', year: 1930}] } }");
-  }
-
-  private void printXml(String s) throws Exception {
-    JsonValue jv = JsonParserUtil.parse(s);
-    String xml = fn.toXml(jv);
-    debug(xml);
   }
 
   @Test
@@ -170,7 +152,7 @@ public class JsonToXmlFnTest extends AbstractTest {
     JsonValue jv = JsonParserUtil.parse(str);
     try {
       fn.toXml(jv);
-      fail("exxx");
+      fail();
     } catch (IllegalArgumentException iae) {
       debugException(iae);
     }
@@ -183,7 +165,6 @@ public class JsonToXmlFnTest extends AbstractTest {
   }
 
   private void assertXmlEquals(String expected, String actual) {
-    // debug(actual);
     actual = actual.replaceAll("\\n *", "");
     assertEquals(expected, actual);
   }

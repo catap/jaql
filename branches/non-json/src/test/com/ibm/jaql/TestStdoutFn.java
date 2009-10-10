@@ -13,34 +13,18 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.lang.expr.io;
+package com.ibm.jaql;
 
-import org.junit.Test;
+import java.io.IOException;
 
-import com.ibm.jaql.AbstractTest;
-import static org.junit.Assert.*;
 
-public class StdoutFnTest extends AbstractTest {
+public class TestStdoutFn extends JaqlBaseTestCase {
 
-  @Test
-  public void descriptor() {
-    eval("stdout();");
+  @Override
+  protected void setUp() throws IOException {
+    setFilePrefix("stdoutFn");
   }
 
-  @Test
-  public void write() {
-    eval("[1,2,3]->write(stdout());");
-    try {
-      eval("1->write(stdout());");
-      fail();
-    } catch (RuntimeException e) {
-      debug(e);
-    }
-    try {
-      eval("{value: 100}->write(stdout());");
-      fail();
-    } catch (RuntimeException e) {
-      debug(e);
-    }
-  }
+  @Override
+  protected void tearDown() throws IOException {}
 }
