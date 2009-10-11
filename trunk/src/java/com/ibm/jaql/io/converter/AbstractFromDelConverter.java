@@ -44,7 +44,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * the converter. If so, the converter produces a record for each input line; otherwise, it 
  * produces an array. 
  * 
- * The converter has support for quoted values in the input data. It can be parametrized
+ * The converter has support for quoted values in the input data. It can be parameterized
  * by an ASCII quote character (defaults to <code>'"'</code>). Quotes may be escaped using 
  * double-quoting, i.e. <code>"te""st"</code> will produce a single string <code>"te\"st"</code>.
  * 

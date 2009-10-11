@@ -342,7 +342,7 @@ public class SchemaFactory
   
   /**
    * @param typeConstructorName
-   * @return The paramater descriptor for the constructor function with the specified type name.
+   * @return The parameter descriptor for the constructor function with the specified type name.
    */
   public static JsonValueParameters getParameters(String typeConstructorName)
   {
