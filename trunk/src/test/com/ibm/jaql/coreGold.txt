@@ -1444,6 +1444,14 @@ range(0,11) -> transform fib($);##
 
 
 
+//-------------------------- MATERIALIZE --------------------------
+
+// FIXME: currently breaks w/ decompile
+// array will spill at 256 items by default; see SpilledJsonArray
+// data = range(1,300);
+// materialize data;
+// data;
+
 //-------------------------- QUIT ---------------------------------
 
 quit;

@@ -27,7 +27,6 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
@@ -87,7 +86,7 @@ public class HadoopTempExpr extends Expr
     {
       try
       {
-        JsonSchema schema = (JsonSchema)exprs[0].eval(Env.getCompileTimeContext());
+        JsonSchema schema = (JsonSchema)exprs[0].compileTimeEval();
         options[0] = new RecordSchema.Field(
             new JsonString("schema"), SchemaFactory.schemaOf(schema), false);
       } catch (Exception e)

@@ -25,7 +25,6 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -76,7 +75,7 @@ public class ConfUtil
     JaqlLexer lexer = new JaqlLexer(input);
     JaqlParser parser = new JaqlParser(lexer);
     Expr expr = parser.stmt();
-    JsonValue data = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
+    JsonValue data = JaqlUtil.enforceNonNull(expr.compileTimeEval());
 
     return (JsonRecord) data;
   }
@@ -100,7 +99,7 @@ public class ConfUtil
     JaqlLexer lexer = new JaqlLexer(input);
     JaqlParser parser = new JaqlParser(lexer);
     Expr expr = parser.stmt();
-    JsonValue data = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
+    JsonValue data = JaqlUtil.enforceNonNull(expr.compileTimeEval());
     return (JsonArray) data;
   }
 

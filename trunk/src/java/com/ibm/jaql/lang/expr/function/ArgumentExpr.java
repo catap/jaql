@@ -60,7 +60,7 @@ public class ArgumentExpr extends Expr
     }    
   }
   
-  public JsonRecord constEval() 
+  public JsonRecord constEval(Env env) 
   {
     if( ! isCompileTimeComputable().always() )
     {
@@ -68,7 +68,7 @@ public class ArgumentExpr extends Expr
     }
     try
     {
-      return eval(Env.getCompileTimeContext());
+      return (JsonRecord)(env.eval(this));
     }
     catch (RuntimeException ex)
     {
@@ -101,7 +101,7 @@ public class ArgumentExpr extends Expr
    }
    return target;    
   }
-  
+
   @Override
   public Map<ExprProperty, Boolean> getProperties() 
   {

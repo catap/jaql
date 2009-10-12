@@ -10,7 +10,6 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -329,7 +328,7 @@ public abstract class Function extends JsonAtom
       try
       {
         assert nameExpr.isCompileTimeComputable().always(); // it's actually a ConstExpr(JsonString) or ConstExpr(null)
-        name = (JsonString)nameExpr.eval(Env.getCompileTimeContext());
+        name = (JsonString)nameExpr.compileTimeEval();
       } catch (Exception e)
       {
         throw JaqlUtil.rethrow(e);

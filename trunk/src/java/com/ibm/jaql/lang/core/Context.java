@@ -25,7 +25,6 @@ import java.util.HashMap;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.Function;
-import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Pair;
 
 /** Run-time context, i.e., values for the variables in the environment.
@@ -39,7 +38,7 @@ public class Context
   protected Pair<Expr,String> exprFnPair = new Pair<Expr, String>();
   protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
   // PyModule pyModule;
-
+  
   /**
    * Create a new root context.
    */
@@ -87,7 +86,6 @@ public class Context
       }
     }
     resetTasks.clear();
-    JaqlUtil.getQueryPageFile().clear();
   }
 
 

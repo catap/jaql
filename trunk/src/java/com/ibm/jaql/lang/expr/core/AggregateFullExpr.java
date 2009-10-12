@@ -63,7 +63,7 @@ public class AggregateFullExpr extends AggregateExpr
       {
         try
         {
-          Function ff = (Function)call.fnExpr().eval(Env.getCompileTimeContext());
+          Function ff = (Function)call.fnExpr().compileTimeEval();
           if (ff instanceof BuiltInFunction)
           {
             BuiltInFunction f = (BuiltInFunction)ff;

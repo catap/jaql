@@ -92,6 +92,13 @@ public final class ConstExpr extends Expr
     return value;
   }
 
+  @Override
+  public JsonValue compileTimeEval() throws Exception
+  {
+    return value;  
+  }
+  
+  
   /*
    * (non-Javadoc)
    * 

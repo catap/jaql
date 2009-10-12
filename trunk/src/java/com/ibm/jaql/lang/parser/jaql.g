@@ -58,12 +58,33 @@ options {
 {
     public boolean done = false;
     public Env env = new Env();
-    // static abstract class ExpandMapper { public abstract Expr remap(Expr ctx); } 
 
     public void oops(String msg) throws RecognitionException, TokenStreamException
     { 
       throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
     }
+    
+    private Expr inlineGlobalFinalValueVar(Expr e)
+    {
+      // automatically inline global variables that are final and have a value
+      // true for all builtin functions
+      if (e instanceof VarExpr && e.isCompileTimeComputable().always())
+      {
+        Var v = ((VarExpr)e).var();
+        if (v.isGlobal() && v.isFinal() && v.type() == Var.Type.VALUE)
+        {
+          try
+          {
+            e = new ConstExpr(env.eval(e));
+          } 
+          catch (Exception ex)
+          {
+            throw com.ibm.jaql.lang.util.JaqlUtil.rethrow(ex);
+          } 
+        }
+      }
+      return e;
+    } 
 }
 
 // -- main productions ----------------------------------------------------------------------------
@@ -78,12 +99,12 @@ parse returns [Expr r=null]
 // a statement without statement delimiter
 stmt returns [Expr r=null]
     { Var v; }
-    : ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(v); }
+    : ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(env, v); }
     |       ("import" id) => r=importExpr
                            | { !env.isDefinedLocal("quit") }? 
                              "quit" { r = null; done = true; }
                            | { !env.isDefinedLocal("quit") }?
-                             "explain" r=topAssign  { r = new ExplainExpr(r); }
+                             "explain" r=topAssign  { r = new ExplainExpr(env, r); }
                            | r=topAssign                           
     ;
 
@@ -111,13 +132,9 @@ importExpr returns [Expr r=null]
 topAssign returns [Expr r]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
-                  { r = new AssignExpr( env.scopeGlobal(v), r); } // TODO: expr name should reflect global var
+                  { r = new AssignExpr(env, env.scopeGlobal(v), r); } // TODO: expr name should reflect global var
                 | { !env.isDefinedLocal("registerFunction") }? r=registerFunction
-                | r=pipe ( /*empty*/        
-                           { r = env.importGlobals(r); } 
-                         | "=>" v=id        
-                           { r = new AssignExpr( env.scopeGlobal(v), r); } 
-                         )                
+                | r=pipe { r = new QueryExpr(env, env.importGlobals(r)); } 
     ;
 
 // local assignment, creates local variables
@@ -125,9 +142,7 @@ assign returns [Expr r=null]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
                   { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-                | r=pipe ( "=>" v=id      
-                           { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
-                         )?  
+                | r=pipe  
     ;
 
 // expression that can appear on the right-hand side of an assignment    
@@ -426,7 +441,7 @@ parenExpr returns [Expr r=null]
 // a block with local variables
 block returns [Expr r=null] 
     { ArrayList<Expr> es=null; }
-    : r=assign  //TODO: ("=>" var ";" block)? ???
+    : r=assign
       ("," { es = new ArrayList<Expr>(); es.add(r); }
          r=assign       { es.add(r); }
         ("," r=assign   { es.add(r); } )*
@@ -910,7 +925,7 @@ aggFn returns [Aggregate agg=null]
             {
                 try
                 {
-                    Function ff = (Function)call.fnExpr().eval(Env.getCompileTimeContext());
+                    Function ff = (Function)env.eval(call.fnExpr());
                     if (ff instanceof BuiltInFunction)
                     {
                         BuiltInFunction f = (BuiltInFunction)ff;
@@ -1081,8 +1096,8 @@ registerFunction returns [Expr e = null]
           {
             throw new IllegalArgumentException("variable name has to be a constant");
           }
-          String name = varName.eval(env.getCompileTimeContext()).toString();
-          e = new AssignExpr(env.scopeGlobal(name), new JavaUdfExpr(className));
+          String name = env.eval(varName).toString();
+          e = new AssignExpr(env, env.scopeGlobal(name), new JavaUdfExpr(className));
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
         }
@@ -1150,7 +1165,10 @@ callPipe[Expr in] returns [Expr r=null]
       positionalArgs.add(0, in);
       Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
     }
-    : r=basic args[positionalArgs, namedArgs]  { r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); }
+    : r=basic args[positionalArgs, namedArgs]  {
+    	r = inlineGlobalFinalValueVar(r);
+    	r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
+      }
       r=callRepeat[r, positionalArgs, namedArgs]
     ;
     
@@ -1158,7 +1176,10 @@ callPipe[Expr in] returns [Expr r=null]
 callRepeat[Expr f, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] returns [Expr r=f]
     : ( "(" ) => { positionalArgs.clear(); namedArgs.clear(); } 
                  args[positionalArgs, namedArgs]
-                 { r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); }
+                 {      
+                 	r = inlineGlobalFinalValueVar(r); 
+                 	r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
+                 }
                  r = callRepeat[r, positionalArgs, namedArgs]
                | () 
     ;    
@@ -1240,7 +1261,7 @@ atomSchemaArgs[JsonValueParameters d] returns [ JsonRecord args=null ]
     : ( "(" ) => args[positionalArgs,namedArgs]
                  { 
                    ArgumentExpr e = new ArgumentExpr(d, positionalArgs, namedArgs);
-                   args = e.constEval(); 
+                   args = e.constEval(env); 
                  }
                | ()
     ;

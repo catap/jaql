@@ -54,8 +54,7 @@ public class ConstPragma extends MacroExpr
 //    }
     try
     {
-      VarTagger.tag(exprs[0]);
-      return new ConstExpr(exprs[0].eval(Env.getCompileTimeContext()));
+      return new ConstExpr(env.eval(exprs[0]));
     }
     catch (Exception e)
     {

@@ -31,12 +31,10 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
-import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
@@ -79,22 +77,6 @@ public class FunctionCallExpr extends Expr
     Expr[] exprs = new Expr[2*n + 1];
     exprs[0] = fn;
 
-    // automatically inline global variables bound to builtin functions
-    if (fn instanceof VarExpr && fn.isCompileTimeComputable().always())
-    {
-      Var v = ((VarExpr)fn).var();
-      if (v.isGlobal() && v.isFinal())
-      {
-        try
-        {
-          exprs[0] = new ConstExpr(v.getValue(Env.getCompileTimeContext()));
-        } catch (Exception e)
-        {
-          throw JaqlUtil.rethrow(e);
-        } 
-      }
-    }
-
     for (int i = 0; i < np; i++)
     {
       exprs[2*i+1] = new NoNameExpr();
@@ -126,7 +108,7 @@ public class FunctionCallExpr extends Expr
     {
       try
       {
-        return (Function)fnExpr().eval(Env.getCompileTimeContext());
+        return (Function)fnExpr().compileTimeEval();
       } catch (Exception e)
       {
         return null;
@@ -148,7 +130,7 @@ public class FunctionCallExpr extends Expr
     if (e instanceof NoNameExpr) return false;
     try
     {
-      if (e.isCompileTimeComputable().always() && e.eval(Env.getCompileTimeContext())==null)
+      if (e.isCompileTimeComputable().always() && e.compileTimeEval()==null)
       {
         return false;
       }
@@ -251,7 +233,7 @@ public class FunctionCallExpr extends Expr
     }
     try
     {
-      Function f = (Function)exprs[0].eval(Env.getCompileTimeContext());
+      Function f = (Function)exprs[0].compileTimeEval();
       if( f == null )
       {
         return new ConstExpr(null);
@@ -419,9 +401,15 @@ public class FunctionCallExpr extends Expr
     }
     
     @Override
-    public JsonValue eval(Context context) throws Exception
+    public JsonValue eval(Context context) 
     {
       return null; // means positional
+    }
+    
+    @Override
+    public JsonValue compileTimeEval()
+    {
+      return null;
     }
   }
 

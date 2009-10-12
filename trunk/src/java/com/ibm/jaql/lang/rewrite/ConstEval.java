@@ -16,12 +16,11 @@
 package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FieldExpr;
+import com.ibm.jaql.lang.expr.top.TopExpr;
 
 /**
  * 
@@ -46,15 +45,13 @@ public class ConstEval extends Rewrite
   {
     // We need to be careful computing small functions that produce large results.
     // Those functions mark themselves as not compile time computable.
-    if (expr instanceof ConstExpr || expr instanceof BindingExpr
+    if (expr instanceof ConstExpr || expr instanceof BindingExpr || expr instanceof TopExpr
         || expr instanceof FieldExpr || expr.isCompileTimeComputable().maybeNot())
     {
       return false;
     }
 
-    VarTagger.tag(expr);
-    Context context = Env.getCompileTimeContext();
-    JsonValue value = expr.eval(context);
+    JsonValue value = expr.getTopExpr().getEnv().eval(expr);
     ConstExpr c = new ConstExpr(value);
     expr.replaceInParent(c);
     // context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere

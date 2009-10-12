@@ -15,10 +15,6 @@
  */
 package com.ibm.jaql.lang.util;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,10 +26,8 @@ import org.apache.hadoop.fs.PathFilter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.registry.RNGStore;
-import com.ibm.jaql.util.PagedFile;
 
 /**
  * 
@@ -114,28 +108,6 @@ public class JaqlUtil
                                                           }
                                                         };
 
-  private static final int       TEMP_PAGE_SIZE           = 64 * 1024;    // TODO: this is tuneable
-
-  // FIXME: Page files and query files have been made thread local because there were problems
-  // with one thread (e.g., a combiner) closing the page file while another thread (e.g., the mapper)
-  // was still using it.
-  private static ThreadLocal<PagedFile> queryPagedFile = new ThreadLocal<PagedFile>()
-  { 
-    public PagedFile initialValue()
-    {
-      return makeTempPagedFile("jaqlQueryTemp");
-    }    
-  };
-  private static ThreadLocal<PagedFile> sessionPagedFile = new ThreadLocal<PagedFile>()
-  { 
-    public PagedFile initialValue()
-    {
-      return makeTempPagedFile("jaqlSessionTemp");
-    }
-    
-  };
-  
-  private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
   private static RNGStore        rngStore;
 
   /**
@@ -165,52 +137,7 @@ public class JaqlUtil
     return store;
   }
 
-  /**
-   * @param prefix
-   * @return
-   */
-  private static PagedFile makeTempPagedFile(String prefix)
-  {
-    try
-    {
-      File f = File.createTempFile(prefix, "dat");
-      f.deleteOnExit();
-      RandomAccessFile file = new RandomAccessFile(f, "rw");
-      file.setLength(0);
-      PagedFile pf = new PagedFile(file.getChannel(), TEMP_PAGE_SIZE);
-      return pf;
-    }
-    catch (IOException ex)
-    {
-      throw new UndeclaredThrowableException(ex);
-    }
-  }
 
-  /**
-   * @return
-   */
-  public static PagedFile getQueryPageFile()
-  {
-    return queryPagedFile.get();
-  }
-
-  /** Returns the page file of the current session. The page file is used to spill large
-   * data structures to disk. 
-   *  
-   * @return
-   */
-  public static PagedFile getSessionPageFile()
-  {
-    return sessionPagedFile.get();
-  }
-
-  /**
-   * @return
-   */
-  public static Context getSessionContext()
-  {
-    return sessionContext;
-  }
 
   /**
    * @param varSet1

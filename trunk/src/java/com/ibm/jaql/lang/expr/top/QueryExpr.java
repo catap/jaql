@@ -17,33 +17,28 @@ package com.ibm.jaql.lang.expr.top;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 
 /**
  * 
  */
-public class QueryExpr extends Expr
+public class QueryExpr extends TopExpr
 {
   /**
    * @param exprs
    */
-  public QueryExpr(Expr[] exprs)
+  public QueryExpr(Env env, Expr ... exprs)
   {
-    super(exprs);
-  }
-
-  /**
-   * @param expr
-   */
-  public QueryExpr(Expr expr)
-  {
-    super(new Expr[]{expr});
+    super(env, exprs);
   }
 
   /*
@@ -65,6 +60,13 @@ public class QueryExpr extends Expr
     return exprs[0].getSchema();
   }
 
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  }
+  
   /*
    * (non-Javadoc)
    * 

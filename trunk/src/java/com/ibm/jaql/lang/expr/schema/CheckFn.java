@@ -5,7 +5,6 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
@@ -46,7 +45,7 @@ public class CheckFn extends Expr
     {
       if (exprs[1].isCompileTimeComputable().always())
       {
-        JsonSchema s = (JsonSchema)exprs[1].eval(Env.getCompileTimeContext());
+        JsonSchema s = (JsonSchema)exprs[1].compileTimeEval();
         return s.get();
       }
     }
