@@ -20,7 +20,6 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -84,7 +83,7 @@ public class ConvertFn extends Expr
     {
       try
       {
-        JsonSchema schema = JaqlUtil.enforceNonNull((JsonSchema)exprs[1].eval(Env.getCompileTimeContext()));
+        JsonSchema schema = JaqlUtil.enforceNonNull((JsonSchema)exprs[1].compileTimeEval());
         this.converter = new StringConverter(schema.get());
         this.target = converter.createTarget();
         this.schema = schema.get();

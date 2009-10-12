@@ -99,6 +99,12 @@ public class SpillFile implements DataOutput
     version++;
   }
   
+  @Override
+  protected void finalize() throws Throwable {
+    file.freePages(fileVersion, firstPage, buffer);
+  }
+
+  
   public void setFile(PagedFile file) throws IOException
   {
     clear();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) IBM Corp. 2009.
+* Copyright (C) IBM Corp. 2009.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -30,6 +30,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 public final class PickNAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {
   private SpilledJsonArray array = new SpilledJsonArray();
+  
   private long limit;
   
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22

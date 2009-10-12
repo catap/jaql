@@ -22,6 +22,7 @@ import java.util.Iterator;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -35,17 +36,9 @@ public class ExplainExpr extends TopExpr
    * 
    * @param exprs
    */
-  public ExplainExpr(Expr[] exprs)
+  public ExplainExpr(Env env, Expr ... exprs)
   {
-    super(exprs);
-  }
-
-  /**
-   * @param expr
-   */
-  public ExplainExpr(Expr expr)
-  {
-    super(new Expr[]{expr});
+    super(env, exprs);
   }
 
   /*

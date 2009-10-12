@@ -26,7 +26,6 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JsonValueParameter;
@@ -126,7 +125,7 @@ public class JavaUdaCallFn extends AlgebraicAggregate
       if (exprs[1].isCompileTimeComputable().always())
       {
         // get an instance of the aggregate
-        JsonString className = (JsonString)exprs[1].eval(Env.getCompileTimeContext());
+        JsonString className = (JsonString)exprs[1].compileTimeEval();
         aggregate = (JavaUda) Class.forName(className.toString()).newInstance();
         return aggregate.getPartialSchema();
       }
@@ -157,7 +156,7 @@ public class JavaUdaCallFn extends AlgebraicAggregate
       if (exprs[1].isCompileTimeComputable().always())
       {
         // get an instance of the aggregate
-        JsonString className = (JsonString)exprs[1].eval(Env.getCompileTimeContext());
+        JsonString className = (JsonString)exprs[1].compileTimeEval();
         aggregate = (JavaUda) Class.forName(className.toString()).newInstance();
         return aggregate.getFinalSchema();
       }

@@ -391,7 +391,7 @@ public abstract class JaqlBaseTestCase extends TestCase
     RewriteEngine rewriter = new RewriteEngine();
     try
     {
-      expr = rewriter.run(parser.env, expr);
+      expr = rewriter.run(expr);
       VarTagger.tag(expr);
       captures.clear();
       System.err.println("\nRewritten query:");

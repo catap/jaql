@@ -21,7 +21,8 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
-import com.ibm.jaql.lang.expr.top.QueryExpr;
+import com.ibm.jaql.lang.expr.top.MaterializeExpr;
+import com.ibm.jaql.lang.expr.top.TopExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
@@ -129,23 +130,31 @@ public class RewriteEngine
    * @param query
    * @throws Exception
    */
-  public Expr run(Env env, Expr query) throws Exception
+  public Expr run(Expr query) throws Exception
   {
 //    if (1==1) return query;
     
     // We don't rewrite def expressions until they are actually evaluated.
-    if (query instanceof AssignExpr)
+    // FIXME: rewrites of MaterializeExpr inlines functions; disable those inlines
+    if (query instanceof AssignExpr || query instanceof MaterializeExpr)
     {
       return query;
     }
-    Expr dummy = new QueryExpr(query);
-    this.env = env;
+    if (!(query instanceof TopExpr))
+    {
+      throw new IllegalArgumentException("expression tree is not rooted by a TopExpr");
+    }
+    this.env = query.getTopExpr().getEnv();
+    if (env == null)
+    {
+      throw new IllegalArgumentException("expression tree does not have an environment");
+    }
     counter = 0;
     for (RewritePhase phase : phases)
     {
-      phase.run(dummy);
+      phase.run(query);
     }
-    return dummy.child(0);
+    return query;
   }
 
   /**

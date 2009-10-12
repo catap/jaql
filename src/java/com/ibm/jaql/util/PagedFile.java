@@ -15,7 +15,10 @@
  */
 package com.ibm.jaql.util;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ConcurrentModificationException;
@@ -25,6 +28,9 @@ import java.util.ConcurrentModificationException;
  * allocate, read, write, and free a page. The physical order of pages on disk may not 
  * correspond to the order of their allocation, as freed pages will be reused to 
  * satisfy subsequent allocations. 
+ * 
+ * Jaql uses a single page file per JVM, which can be retrieved using 
+ * {@link PagedFile#get()}. The page file is cleaned up when the JVM exits.
  */
 public final class PagedFile
 {
@@ -35,6 +41,36 @@ public final class PagedFile
   protected long          fileEnd;
   protected int           version;
 
+  private static final int       TEMP_PAGE_SIZE           = 64 * 1024;    // TODO: this is tuneable
+  private static final PagedFile pagedFile = makeTempPagedFile(); 
+  
+  /** Return the global page file. */
+  public static PagedFile get()
+  {
+    return pagedFile;
+  }
+  
+  /**
+   * @param prefix
+   * @return
+   */
+  public static PagedFile makeTempPagedFile()
+  {
+    try
+    {
+      File f = File.createTempFile("jaql-pagefile", ".dat");
+      f.deleteOnExit();
+      RandomAccessFile file = new RandomAccessFile(f, "rw");
+      file.setLength(0);
+      PagedFile pf = new PagedFile(file.getChannel(), TEMP_PAGE_SIZE);
+      return pf;
+    }
+    catch (IOException ex)
+    {
+      throw new UndeclaredThrowableException(ex);
+    }
+  }
+  
   /**
    * pageSize must be a multiple of 8, >= 256, and acceptable to ByteBuffer
    * 
@@ -104,6 +140,11 @@ public final class PagedFile
    */
   public synchronized void clear()
   {
+    if (this == get())
+    {
+      throw new IllegalStateException("global page file must not be cleared");
+    }
+    
     // init the freeList
     version++;
     fileEnd = pageSize(); // the first page is the file header

@@ -15,28 +15,29 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.util.Map;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 public abstract class AbstractReadExpr extends IterExpr
 {
@@ -75,7 +76,7 @@ public abstract class AbstractReadExpr extends IterExpr
       // when argument is compile-time computable, ask adapter for schema
       if (exprs[0].isCompileTimeComputable().always())
       {
-        JsonValue args = exprs[0].eval(Env.getCompileTimeContext()); // TODO should provide context
+        JsonValue args = exprs[0].compileTimeEval(); // TODO should provide context
         InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
         Schema s = adapter.getSchema();
         assert s.is(ARRAY,NULL).always();

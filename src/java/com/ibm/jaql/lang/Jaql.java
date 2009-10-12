@@ -202,10 +202,10 @@ public class Jaql
     {
       try
       {
-        Expr e = new MaterializeExpr(var);
+        Expr e = new MaterializeExpr(parser.env, var);
         if( doRewrite )
         {
-          e = rewriter.run(parser.env, e);
+          e = rewriter.run(e);
         }
         e.eval(context);
       }
@@ -319,7 +319,7 @@ public class Jaql
         {
           try
           {
-            expr = rewriter.run(parser.env, expr);
+            expr = rewriter.run(expr);
           }
           catch( Throwable error )
           {

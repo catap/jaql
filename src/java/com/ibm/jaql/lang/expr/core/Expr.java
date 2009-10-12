@@ -32,15 +32,15 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.SystemNamespace;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
+import com.ibm.jaql.lang.expr.top.TopExpr;
 import com.ibm.jaql.util.Bool3;
 
 /** Superclass for all JAQL expressions.
@@ -144,7 +144,7 @@ public abstract class Expr
       {
         if (exprs[i].isCompileTimeComputable().always())
         {
-          if (!JsonUtil.equals(p.defaultOf(i), exprs[i].eval(Env.getCompileTimeContext())))
+          if (!JsonUtil.equals(p.defaultOf(i), exprs[i].compileTimeEval()))
           {
             exprText.print(sep);
             exprText.print(p.nameOf(i));
@@ -358,7 +358,7 @@ public abstract class Expr
     {
       try
       {
-        return SchemaFactory.schemaOf(eval(Env.getCompileTimeContext()));
+        return SchemaFactory.schemaOf(compileTimeEval());
       } catch (Exception e)
       {
         // ignore
@@ -848,6 +848,38 @@ public abstract class Expr
     }
     // Var not found...
     return null;
+  }
+  
+  /** Returns the tree root if it implements TopExpr, otherwise returns null */
+  public TopExpr getTopExpr()
+  {
+    Expr e = this;
+    while (e.parent != null)
+    {
+      assert !(e instanceof TopExpr);
+      e = e.parent;
+    }
+    if (e instanceof TopExpr)
+    {
+      return (TopExpr)e;
+    }
+    return null;
+  }
+  
+  /** 
+   * Evaluates this expression at compile-time. The default implementation of this method 
+   * retrieves the environment stored at the root of the tree ({@link #getTopExpr()}); if there 
+   * is no such environment it will fail. Subclasses may override this behavior when 
+   * a context is not needed for evaluation.
+   */
+  public JsonValue compileTimeEval() throws Exception
+  {
+    TopExpr e = getTopExpr();
+    if (e == null)
+    {
+      throw new IllegalStateException("expression does not have a top expression");
+    };
+    return e.getEnv().eval(this);
   }
   
 //  /**

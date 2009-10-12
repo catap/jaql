@@ -27,14 +27,15 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
 /** An environment is namespace with a separate namespace for global variables. It is used
  * to store the compile-time environment. */
 public class Env extends Namespace
 {
-  Namespace   globals;   // holds global variables and imports
-  
+  Namespace globals;   // holds global variables and imports
+  Context context;     // compile-time context
 
   // -- construction ------------------------------------------------------------------------------
   
@@ -188,6 +189,15 @@ public class Env extends Namespace
   }
   
   
+  // -- compile-time evaluation -------------------------------------------------------------------
+  
+  /** Evaluate the expression using the environment's context. */
+  public JsonValue eval(Expr e) throws Exception
+  {
+    VarTagger.tag(e);
+    return e.eval(context);
+  }
+  
   // -- misc --------------------------------------------------------------------------------------
 
   /** Returns the global environment. */
@@ -196,22 +206,7 @@ public class Env extends Namespace
     return globals;
   }
 
-  /** Preliminary method. Used to obtain a context at compile time. */
-  // FIXME: We require a context here! The context should be passed in to this function.
-  // The context cannot be reset after this call because parts of the result may be in the context
-  // temp space.  The temp space needs to live as long as the expression tree lives.  (This is true of
-  // all constants in the tree.)  As a temporary HACK, we are using a null context.  If there is a expr that
-  // reports isConst and requires the context, we will get a null pointer exception, which is a bug on our part.
-  // Either we need to pass a context around during parsing, or we need to defer this evaluation to after parsing.
 
-  // FIXME: we have to create a single point for all compile-time evals and tag variables over there
-  
-  private static Context compileTimeContext = new Context();
-  public static Context getCompileTimeContext()
-  {
-    // FIXME: this is just a quick hack to support compile time compilation
-    return compileTimeContext;
-  }
   
   /**
    * @param root
