@@ -97,17 +97,6 @@ public class SpilledJsonArray extends JsonArray
     
   }
 
-  /** Creates a new <code>SpillJArray</code> that stores its data in the provided 
-   * <code>file</code>. The first {@link #DEFAULT_CACHE_SIZE} elements are
-   * also cached in memory. 
-   * 
-   * @param pagedFile a page file 
-   */
-  public SpilledJsonArray(PagedFile pagedFile)
-  {
-    this(pagedFile, DEFAULT_CACHE_SIZE);
-  }
-
   /** Creates an new <code>SpillJArray</code> using the default page file as determined by
    * {@link JaqlUtil#getQueryPageFile()}. The first <code>cacheSize</code> elements are 
    * also cached in memory.
@@ -116,7 +105,7 @@ public class SpilledJsonArray extends JsonArray
    */
   public SpilledJsonArray(int cacheSize)
   {
-    this(JaqlUtil.getQueryPageFile(), cacheSize);
+    this(PagedFile.get(), cacheSize);
   }
 
   /** Creates an new <code>SpillJArray</code> using the default page file as determined by
@@ -125,7 +114,7 @@ public class SpilledJsonArray extends JsonArray
    */
   public SpilledJsonArray()
   {
-    this(JaqlUtil.getQueryPageFile(), DEFAULT_CACHE_SIZE);
+    this(PagedFile.get(), DEFAULT_CACHE_SIZE);
   }
 
   // -- caching ----------------------------------------------------------------------------------

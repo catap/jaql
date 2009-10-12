@@ -23,6 +23,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -39,9 +40,9 @@ public class AssignExpr extends TopExpr
    * @param varName
    * @param valExpr
    */
-  public AssignExpr(Var var, Expr valueExpr)
+  public AssignExpr(Env env, Var var, Expr valueExpr)
   {
-    super(valueExpr);
+    super(env, valueExpr);
     this.var = var;
   }
   
@@ -76,7 +77,7 @@ public class AssignExpr extends TopExpr
   public Expr clone(VarMap varMap)
   {
     Var newVar = varMap.remap(var);
-    return new AssignExpr(newVar, exprs[0].clone(varMap));
+    return new AssignExpr(env, newVar, exprs[0].clone(varMap));
   }
   
   /*

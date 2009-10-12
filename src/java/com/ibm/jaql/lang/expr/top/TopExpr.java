@@ -15,18 +15,25 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-/**
- * 
+/** 
+ * An expression at the root of the expression tree.
  */
 public abstract class TopExpr extends Expr
 {
-  /**
-   * @param exprs
-   */
-  public TopExpr(Expr ... exprs)
+  protected Env env;
+  
+  public TopExpr(Env env, Expr ... exprs)
   {
     super(exprs);
+    if (env == null) throw new NullPointerException("env must not be null");
+    this.env = env;
+  }
+  
+  public Env getEnv()
+  {
+    return env;
   }
 }

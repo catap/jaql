@@ -13,7 +13,6 @@ import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -61,7 +60,7 @@ implements org.apache.hadoop.io.serializer.Serialization<JsonHolder>
         JaqlLexer lexer = new JaqlLexer(new StringReader(text));
         JaqlParser parser = new JaqlParser(lexer);
         Expr expr = parser.stmt();
-        value = JaqlUtil.enforceNonNull(expr.eval(Env.getCompileTimeContext()));
+        value = JaqlUtil.enforceNonNull(expr.compileTimeEval());
       } catch (Exception e)
       {
         // value stays null 
