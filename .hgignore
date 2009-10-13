@@ -2,7 +2,7 @@
 syntax: glob
 
 **.svn
-build**
+build/**
 buildEclipse**
 .antlr-eclipse
 _temporary**
