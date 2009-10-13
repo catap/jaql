@@ -3,7 +3,7 @@ syntax: glob
 
 **.svn
 build**
-eclipseBuild**
+buildEclipse**
 .antlr-eclipse
 _temporary**
 vendor/hadoop/*/logs**
