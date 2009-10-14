@@ -373,3 +373,14 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 //      by g = j.g
 //      into bs )
 //  [ { g: g, as: count(as), bs: count(bs) } ];
+
+//-- test jsonToDel --
+[[1,2]] -> jsonToDel();
+$arrays1 = [[1,2],[3,4]];
+$arrays1 -> jsonToDel();
+$arrays2 = [['one','two'],['three','four']];
+$arrays2 -> jsonToDel();
+$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
+$records -> jsonToDel({fields: ['name', 'age']});
+$mixed =  [{name: 'mike', age: 10}, [100, 200]];
+$mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});

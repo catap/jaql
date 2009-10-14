@@ -18,6 +18,7 @@ package com.ibm.jaql.util.shell;
 
 import java.io.InputStream;
 
+import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.lang.core.Module;
 
 /** Base class for version-specific shells. */
@@ -43,11 +44,16 @@ public abstract class AbstractJaqlShell {
   /**
    * @throws Exception
    */
-  public void runInteractively(InputStream in) throws Exception
+  public void run(InputStream in,
+                   OutputAdapter outputAdapter,
+                   boolean batchMode) throws Exception
   {
     try
     {
-      com.ibm.jaql.lang.Jaql.run("<unknown>", in);   // TODO: get filename   
+      com.ibm.jaql.lang.Jaql.run("<unknown>",
+                                 in,
+                                 outputAdapter,
+                                 batchMode); // TODO: get filename 
     }
     catch (Exception e)
     {
@@ -63,7 +69,7 @@ public abstract class AbstractJaqlShell {
   {
     //  parse arguments
     JaqlShellArguments jaqlArgs = JaqlShellArguments.parseArgs(args);
-
+    jaqlArgs.enableConsolePrint(false);
     try
     {
       //Set module search path
@@ -82,7 +88,11 @@ public abstract class AbstractJaqlShell {
         shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
       }
       if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
-      shell.runInteractively(jaqlArgs.in);
+      jaqlArgs.enableConsolePrint(true);
+      shell.run(jaqlArgs.chainedIn, 
+                jaqlArgs.outputAdapter,
+                jaqlArgs.batchMode);
+      jaqlArgs.enableConsolePrint(false);
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
       }
@@ -95,5 +105,6 @@ public abstract class AbstractJaqlShell {
     {
       shell.close();
     }
+    jaqlArgs.enableConsolePrint(true);
   }
 }

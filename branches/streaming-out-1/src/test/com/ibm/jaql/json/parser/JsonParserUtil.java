@@ -1,5 +1,5 @@
 /*
- * Copyright (C) IBM Corp. 2008.
+ * Copyright (C) IBM Corp. 2009.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,22 +13,22 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io;
+package com.ibm.jaql.json.parser;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.io.StringReader;
 
 import com.ibm.jaql.json.type.JsonValue;
 
-/**
- * A Writer that writes values.
- */
-public abstract class ClosableJsonWriter implements Closeable {
-  /**
-   * Writes the JSON value.
-   * 
-   * @param value JSON value
-   * @throws IOException
-   */
-  public abstract void write(JsonValue value) throws IOException;
+public class JsonParserUtil {
+
+  public static JsonValue parse(String str) {
+    try {
+      StringReader sr = new StringReader(str);
+      JsonParser parser = new JsonParser(sr);
+      JsonValue jv = parser.TopVal();
+      return jv;
+    } catch (ParseException pe) {
+      throw new RuntimeException(pe);
+    }
+  }
 }

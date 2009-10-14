@@ -16,84 +16,32 @@
 package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 
-import com.ibm.jaql.io.converter.JsonToStream;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Writes serialized {@link Item}s to a binary output stream.
- * 
+/**
+ * A converter to print JSON value. In array access mode, items of an JSON array
+ * are wrapped in a beginning <i>[</i> and an ending <i>]</i>. Items are
+ * separated with <i>,</i>. {@link DefaultTextFullSerializer} is for the
+ * serialization of JSON values.
  */
-public class JsonTextOutputStream implements JsonToStream<JsonValue>
-{
-  private PrintStream output;
-  private boolean     arrAcc = true;
-  private boolean     seenFirst = false;
-  private String      ARR_OPEN  = "[";
-  private String      ARR_CLOSE = "]";
-  private String      ARR_SEP   = ",";
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.ItemToStream#setOutputStream(java.io.OutputStream)
-   */
-  public void setOutputStream(OutputStream out)
-  {
-    output = new PrintStream(out);
-  }
-  
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.io.converter.ItemToStream#setArrayAccessor(boolean)
-   */
-  public void setArrayAccessor(boolean a) {
-    arrAcc = a;
-  }
-  
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.io.converter.ItemToStream#isArrayAccessor()
-   */
-  public boolean isArrayAccessor() {
-    return arrAcc;
-  }
-  
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.ItemToStream#write(com.ibm.jaql.json.type.Item)
-   */
-  public void write(JsonValue i) throws IOException
-  {
-    try {
-      if(seenFirst && !arrAcc)
-        throw new RuntimeException("Expected only one value when not in array mode");
-      if(!seenFirst && arrAcc) {
-        output.print(ARR_OPEN);
-      }
-      if(seenFirst)
-        output.print(ARR_SEP);
-      else
-        seenFirst = true;
-      JsonUtil.print(output, i);
-    } catch(Exception e) {
-      throw new RuntimeException(e);
-    }
+public class JsonTextOutputStream extends AbstractJsonTextOutputStream {
+
+  private static String ARR_OPEN = "[";
+  private static String ARR_CLOSE = "]";
+  private static String ARR_SEP = ",";
+
+  @Override
+  public void init(JsonValue options) throws Exception {}
+
+  public JsonTextOutputStream() {
+    super(ARR_OPEN, ARR_SEP, ARR_CLOSE);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.converter.ItemToStream#close()
-   */
-  public void close() throws IOException
-  {
-    if (output != null)
-    {
-      if(seenFirst && arrAcc)
-        output.print(ARR_CLOSE);
-      output.flush();
-      output.close();
-    }
+  @Override
+  protected void printValue(PrintStream print, JsonValue i) throws IOException {
+    JsonUtil.print(print, i);
   }
 }

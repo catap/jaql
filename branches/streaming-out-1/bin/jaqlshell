@@ -34,7 +34,7 @@ if $cygwin; then
     "stty -icanon min 1 -echo;" 2>/dev/null
 fi
 
-jaql JaqlShell $*
+jaql JaqlShell "$@"
 
 # CYGWIN ONLY: restore terminal settings
 if $cygwin; then
