@@ -1,0 +1,7 @@
+{
+	version: 	0.1,
+	import: [
+		{ module: "fuzzy_join",	vars: ["*"] }
+	],
+	export:		["fuzzy_join", "$normalize", "cleanTitle"]
+}
