@@ -1,3 +1,0 @@
-fuzzy_join=$fuzzy_join;
-$normalize=fuzzy_join::$normalize;
-cleanTitle=fuzzy_join::cleanTitle;
