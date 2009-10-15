@@ -59,7 +59,7 @@ public final class UnrollExpr extends IterExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("unroll ");
+    exprText.print(kw("unroll") + " ");
     for(int i = 0 ; i < exprs.length ; i++)
     {
       exprs[i].decompile(exprText, capturedVars);

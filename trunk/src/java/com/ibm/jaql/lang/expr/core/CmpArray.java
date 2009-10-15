@@ -57,7 +57,7 @@ public class CmpArray extends CmpExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("cmp [");
+    exprText.print(kw("cmp") + " [");
     String sep = " ";
     for(Expr e: exprs)
     {

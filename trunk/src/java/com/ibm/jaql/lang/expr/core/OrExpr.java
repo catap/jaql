@@ -71,7 +71,7 @@ public class OrExpr extends Expr
   {
     exprText.print('(');
     exprs[0].decompile(exprText, capturedVars);
-    exprText.print(") or (");
+    exprText.print(") " + kw("or") + " (");
     exprs[1].decompile(exprText, capturedVars);
     exprText.print(')');
   }

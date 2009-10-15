@@ -161,7 +161,7 @@ public class MultiJoinExpr extends MacroExpr
       throws Exception
   {
     // TODO: fix this
-    exprText.print("join ");
+    exprText.print(kw("join") + " ");
     int n = numBindings();
     String sep = "";
     for (int i = 0; i < n; i++)
@@ -170,17 +170,17 @@ public class MultiJoinExpr extends MacroExpr
       BindingExpr b = binding(i);
       if( b.preserve )
       {
-        exprText.print("preserved ");
+        exprText.print(kw("preserved") + " ");
       }
       exprText.print(b.var.taggedName());
-      exprText.print(" in (");
+      exprText.print(" " + kw("in") + " (");
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(")");
       int m = b.numChildren();
       for(int j = 1 ; j < m ; j++)
       {
         BindingExpr on = (BindingExpr)b.child(i);
-        exprText.print(" on ");
+        exprText.print(" " + kw("on") + " ");
         exprText.print(on.var.taggedName());
         exprText.print(" = ");
         b.eqExpr().decompile(exprText, capturedVars);
@@ -188,7 +188,7 @@ public class MultiJoinExpr extends MacroExpr
       b.inExpr().decompile(exprText, capturedVars);
       sep = ",\n     ";
     }
-    exprText.println(" into ");
+    exprText.println(" " + kw("into") + " ");
     projectExpr().decompile(exprText, capturedVars);
 
     for (int i = 0; i < n; i++)

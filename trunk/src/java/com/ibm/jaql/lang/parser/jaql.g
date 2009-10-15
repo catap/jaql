@@ -84,6 +84,12 @@ options {
         }
       }
       return e;
+    }
+    
+    // checks whether the next token matches the specified weak keyword
+    private boolean nextIsWeakKw(String kw) throws TokenStreamException
+    {
+    	return !env.isDefinedLocal(kw) && kw.equals(LT(1).getText());
     } 
 }
 
@@ -99,22 +105,19 @@ parse returns [Expr r=null]
 // a statement without statement delimiter
 stmt returns [Expr r=null]
     { Var v; }
-    : ("materialize" var) => "materialize" v=var    { r = new MaterializeExpr(env, v); }
-    |       ("import" id) => r=importExpr
-                           | { !env.isDefinedLocal("quit") }? 
-                             "quit" { r = null; done = true; }
-                           | { !env.isDefinedLocal("quit") }?
-                             "explain" r=topAssign  { r = new ExplainExpr(env, r); }
-                           | r=topAssign                           
+    : (kwMaterialize var) => kwMaterialize v=var    { r = new MaterializeExpr(env, v); }
+    | (kwImport id)       => r=importExpr
+    | (kwQuit)            => kwQuit { r = null; done = true; }
+    | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(env, r); }
+    | r=topAssign                           
     ;
 
 // namespace import
 importExpr returns [Expr r=null]
     { boolean loadAll = false; String v; String var; 
         ArrayList<String> names = new ArrayList<String>();}
-    : "import" v=id (
-    	{env.importNamespace(Namespace.get(v));
-    	} 
+    : kwImport v=id (
+    	  { env.importNamespace(Namespace.get(v)); } 
     	| "(" (
     		"*" ")" {
     			env.importNamespace(Namespace.get(v));
@@ -133,7 +136,7 @@ topAssign returns [Expr r]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
                   { r = new AssignExpr(env, env.scopeGlobal(v), r); } // TODO: expr name should reflect global var
-                | { !env.isDefinedLocal("registerFunction") }? r=registerFunction
+                | (kwRegisterFunction) => r=registerFunction
                 | r=pipe { r = new QueryExpr(env, env.importGlobals(r)); } 
     ;
 
@@ -147,14 +150,14 @@ assign returns [Expr r=null]
 
 // expression that can appear on the right-hand side of an assignment    
 rvalue returns [Expr r = null]
-    : ( "extern" id ) => r=extern
+    : ( kwExtern id ) => r=extern
                        | r=pipe
     ;
 
 // external function NYI
 extern returns [Expr r = null]
     { String lang; }
-    : "extern" lang=id "fn" r=expr
+    : kwExtern lang=id kwFn r=expr
       { r = new ExternFunctionExpr(lang, r); }
     ;
 
@@ -177,47 +180,47 @@ subpipe[Expr e] returns [Expr r=e]
 
 // an expression that can occur at the beginning of a pipe   
 expr returns [Expr r]
-    : { !env.isDefinedLocal("group") }? r=group
-    | { !env.isDefinedLocal("join") }? r=join
-    | { !env.isDefinedLocal("equijoin") }? r=equijoin
-    | { !env.isDefinedLocal("if") }? r=ifExpr
-    | { !env.isDefinedLocal("for") }? r=forExpr
-    | { !env.isDefinedLocal("unroll") }? r=unroll
+    : (kwGroup)    => r=group
+    | (kwJoin)     => r=join
+    | (kwEquijoin) => r=equijoin
+    | (kwIf)       => r=ifExpr
+    | (kwFor)      => r=forExpr
+    | (kwUnroll)   => r=unroll
     | r=orExpr
 //  | r=combineExpr
     ;
 
 orExpr returns [Expr r]
     { Expr s; }
-    : r=andExpr ( "or" s=andExpr { r = new OrExpr(r,s); } )*
+    : r=andExpr ( kwOr s=andExpr { r = new OrExpr(r,s); } )*
     ;
 
 andExpr returns [Expr r]
     { Expr s; }
-    : r=notExpr ( "and" s=notExpr { r = new AndExpr(r,s); } )*
+    : r=notExpr ( kwAnd s=notExpr { r = new AndExpr(r,s); } )*
     ;
 
 notExpr returns [Expr r]
-    : "not" r=notExpr  { r = new NotExpr(r); }
-    | { !env.isDefinedLocal("isnull") }? r=isnullExpr
-    | { !env.isDefinedLocal("isDefined") }? r=isdefinedExpr
+    : kwNot r=notExpr  { r = new NotExpr(r); }
+    | (kwIsnull)    => r=isnullExpr
+    | (kwIsdefined) => r=isdefinedExpr
     | r=inExpr
     ;
 
 isnullExpr returns [Expr r]
-    : "isnull" r=inExpr
+    : kwIsnull r=inExpr
     { r = new IsnullExpr(r); }
     ;
 
 isdefinedExpr returns [Expr r]
     { Expr n; }
-    : "isdefined" r=call n=projName // TODO: this should be a path expression
+    : kwIsdefined r=call n=projName // TODO: this should be a path expression
     { r = new IsdefinedExpr(r,n); }
     ;
     
 inExpr returns [Expr r = null]
     { Expr s; }
-    : r=compareExpr ( "in" s=compareExpr  { r = new InExpr(r,s); } )?
+    : r=compareExpr ( kwIn s=compareExpr  { r = new InExpr(r,s); } )?
     ;
 
 compareExpr returns [Expr r = null]
@@ -245,7 +248,7 @@ compareOp returns [int r = -1]
 instanceofExpr returns [Expr r]
     { Expr s; }
     : r=addExpr 
-      ( "instanceof" s=addExpr { r = new InstanceOfExpr(r,s); } )? 
+      ( kwInstanceof s=addExpr { r = new InstanceOfExpr(r,s); } )? 
     ;
 
 addExpr returns [Expr r]
@@ -281,7 +284,7 @@ unaryAdd returns [Expr r]
     
 typeExpr returns [Expr r=null]
     { Schema s; }
-    : ("schema" (id|"null"|"["|"{")) => "schema" s=schema   { r = new ConstExpr(new JsonSchema(s)); }
+    : (kwSchema (id|kwNull|"["|"{")) => kwSchema s=schema   { r = new ConstExpr(new JsonSchema(s)); }
     | r=path
     ;   
 
@@ -290,7 +293,7 @@ forExpr returns [Expr r = null]
     { 
         ArrayList<BindingExpr> bs = new ArrayList<BindingExpr>();
     }
-    : "for" "(" forDef[bs] ("," forDef[bs])* ")" r=expr
+    : kwFor "(" forDef[bs] ("," forDef[bs])* ")" r=expr
 //    : "for" forDef[bs] ("," forDef[bs])* 
 //        ( "into" r=expr    { r = new ArrayExpr(r); }
 //        | "expand" r=expr )
@@ -312,7 +315,7 @@ forDef[ArrayList<BindingExpr> bindings]
 //    {
 //      bindings.add(b);
 //    }
-    : v=id ( /*( "at" v2=var )?*/  "in" e=pipe { t = BindingExpr.Type.IN; }
+    : v=id ( /*( "at" v2=var )?*/  kwIn e=pipe { t = BindingExpr.Type.IN; }
             // | ":" v2=var "in" e=pipe        { t = BindingExpr.Type.INREC; }
             // | "="  e=expr                { t = BindingExpr.Type.EQ; }
             )
@@ -331,9 +334,9 @@ forDef[ArrayList<BindingExpr> bindings]
 // TODO: make a function
 ifExpr returns [Expr r=null]
     { Expr p=null; Expr s=null; }
-    : "if" "(" p=expr ")" r=expr 
+    : kwIf "(" p=expr ")" r=expr 
       ( options {greedy=true;} : 
-        "else" s=expr )?
+        kwElse s=expr )?
     {
         r = new IfExpr(p, r, s);
     }
@@ -424,7 +427,7 @@ basic returns [Expr r=null]
     : r=constant
     | r=record
     | r=array
-    | { !env.isDefinedLocal("builtin") }? r=builtinFunction
+    | ( kwBuiltin ) => r=builtinFunction
     | r=varExpr
     | r=cmpExpr
     | r=parenExpr
@@ -471,19 +474,16 @@ block returns [Expr r=null]
 // expression that can occur after a ->
 op[Expr in] returns [Expr r=null]
     { BindingExpr b=null; } 
-    : { !env.isDefinedLocal("filter") }?
-      "filter" b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
-    | { !env.isDefinedLocal("transform") }? 
-      "transform" b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
-    | { !env.isDefinedLocal("expand") }? 
-      "expand"  b=each[in] ( r=expr
-                           | /*empty*/ { r = new VarExpr(b.var); } )
-                                       { r = new ForExpr(b, r);       env.unscope(b.var); }
-    | { !env.isDefinedLocal("group") }? r=groupPipe[in]
-    | ("sort" kw) => r=sort[in]
-    | { !env.isDefinedLocal("top") }? r=top[in]
-    | r=split[in]
-    | ("aggregate" kw) => r=aggregate[in]
+    : (kwFilter)       => kwFilter b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
+    | (kwTransform)    => kwTransform b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
+    | (kwExpand)       => kwExpand b=each[in] 
+                          ( r=expr | /*empty*/ { r = new VarExpr(b.var); } )
+                          { r = new ForExpr(b, r); env.unscope(b.var); }
+    | (kwGroup)        => r=groupPipe[in]
+    | (kwSort kw)      => r=sort[in]
+    | (kwTop)          => r=top[in]
+    | (kwAggregate kw) => r=aggregate[in]
+    | (kwSplit)        => r=split[in]
     | r=callPipe[in]
     // | r=partition[in]
     // TODO: add rename path
@@ -493,7 +493,7 @@ op[Expr in] returns [Expr r=null]
 // variable binding to array elements    
 each[Expr in] returns [BindingExpr b=null]
     { String v = "$"; }
-    : ( ("each" id) => "each" v=id
+    : ( (kwEach id) => kwEach v=id
       | ()
       )
     { 
@@ -504,7 +504,7 @@ each[Expr in] returns [BindingExpr b=null]
 // top-n elements
 top[Expr in] returns [Expr r=null]
     { Expr n; Expr by=null; }
-    : "top" n=expr (by=sortCmp)?
+    : kwTop n=expr (by=sortCmp)?
       {
         // TODO: add heap-based top operator
         if( by != null )
@@ -518,7 +518,7 @@ top[Expr in] returns [Expr r=null]
 // unroll 
 unroll returns [Expr r=null]
     { ArrayList<Expr> args = new ArrayList<Expr>(); }
-    : "unroll" r=call  { args.add(r); }
+    : kwUnroll r=call  { args.add(r); }
           ( r=estep      { args.add(r); } )+
           // TODO: as name
       {
@@ -574,12 +574,12 @@ decfloatLit returns [ JsonDecimal v=null]
     ;
 
 boolLit returns [JsonBool b=null]
-    : "true"   { b = JsonBool.TRUE; }
-    | "false"  { b = JsonBool.FALSE; }
+    : kwTrue   { b = JsonBool.TRUE; }
+    | kwFalse  { b = JsonBool.FALSE; }
     ;
     
 nullExpr returns [Expr r=null]
-    : "null"   { r = new ConstExpr(null); }
+    : kwNull   { r = new ConstExpr(null); }
     ;
     
 record returns [Expr r = null]
@@ -638,8 +638,8 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
 
 fieldValue returns [Expr r=null]
     { boolean flat = false; }
-    : ":" ( { !env.isDefinedLocal("flatten") }? "flatten" {flat=true;}
-                                              | () 
+    : ":" ( (kwFlatten) => kwFlatten {flat=true;}
+          | /* empty */ 
           ) r=pipe
       {
         if( flat )
@@ -674,9 +674,9 @@ split[Expr in] returns [Expr r=null]
 //         ( "if"  p=expr e=subpipe[b.var]  { es.add(new IfExpr(p,e)); } )*
 //         ( "else" e=subpipe[b.var]        { es.add(new IfExpr(new ConstExpr(JsonBool.trueItem), e) ); } )?
 //       ")"
-    : "split" b=each[in]     { es.add( b ); } 
+    : kwSplit b=each[in]     { es.add( b ); } 
          splitIfs[b, es]
-         ( "else"            { b.var.setHidden(true); } 
+         ( kwElse            { b.var.setHidden(true); } 
                 e=expr       { es.add(new IfExpr(new ConstExpr(JsonBool.TRUE), e) ); } )?
       {
         r = new SplitExpr(es);
@@ -691,7 +691,7 @@ splitIfs[BindingExpr b, ArrayList<Expr> es]
 
 splitIf[BindingExpr b, ArrayList<Expr> es]
     { Expr p, e; }
-    : "if"              { b.var.setHidden(false); } 
+    : kwIf              { b.var.setHidden(false); } 
        "(" p=expr ")"   { b.var.setHidden(true); }
        e=expr           { es.add(new IfExpr(p,e)); }
        ;
@@ -711,13 +711,13 @@ comparator returns [Expr r=null]
 
 cmpExpr returns [Expr r=null]
     { String v; }
-    : "cmp" ( "(" v=id ")" r=cmpArrayFn[v]
+    : kwCmp ( "(" v=id ")" r=cmpArrayFn[v]
             | r=cmpArray )
     ;
 
 cmpFnExpr returns [Expr r=null]
     { String v; }
-    : "cmp" "(" v=id ")" r=cmpArrayFn[v]
+    : kwCmp "(" v=id ")" r=cmpArrayFn[v]
     ;
 
 cmpArrayFn[String vn] returns [Expr r=null]
@@ -739,8 +739,8 @@ cmpArray returns [CmpArray r=null]
 cmpSpec[ArrayList<CmpSpec> keys]
     { Expr e; Expr c=null; CmpSpec.Order o = CmpSpec.Order.ASC; }
     : e=expr 
-      ( "using" c=comparator { oops("nested comparators NYI"); } )? 
-      ( "asc" | "desc" { o = CmpSpec.Order.DESC; } )?
+      ( kwUsing c=comparator { oops("nested comparators NYI"); } )? 
+      ( kwAsc | kwDesc { o = CmpSpec.Order.DESC; } )?
     {
       keys.add( new CmpSpec(e, o) );
     }
@@ -750,14 +750,14 @@ cmpSpec[ArrayList<CmpSpec> keys]
 // -- sorting -------------------------------------------------------------------------------------
 
 sort[Expr in] returns [Expr r=null]
-    : "sort" r=sortCmp
+    : kwSort r=sortCmp
       { r = new SortExpr(in, r); }
     ;
 
 sortCmp returns [Expr r=null]
     { String v="$"; }
-    : ("each" v=id)? "by" r=cmpArrayFn[v]
-    | "using" r=comparator
+    : (kwEach v=id)? kwBy r=cmpArrayFn[v]
+    | kwUsing r=comparator
     ;
 
 
@@ -771,7 +771,7 @@ group returns [Expr r=null]
       String v = "$";
       ArrayList<Var> as = new ArrayList<Var>();
     }
-    : "group" ( ("each" id "in") => "each" v=id "in" 
+    : kwGroup ( (kwEach id kwIn) => kwEach v=id kwIn 
               | () 
               ) 
         { 
@@ -779,7 +779,7 @@ group returns [Expr r=null]
         }
       by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
         { if( by.var != Var.UNUSED ) env.scope(by.var); } 
-      ( "using" c=comparator { oops("comparators on group by NYI"); } )?
+      ( kwUsing c=comparator { oops("comparators on group by NYI"); } )?
         {
           for( Var av: as )
           {
@@ -799,7 +799,7 @@ group returns [Expr r=null]
 
 groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [BindingExpr by]
     { Expr e; String v=null; }
-    : e=expr { env.scope(in.var); } by=groupBy[prevBy] ( "as" v=id )?    
+    : e=expr { env.scope(in.var); } by=groupBy[prevBy] ( kwAs v=id )?    
         {
           if( v == null )
           {
@@ -827,7 +827,7 @@ groupIn[BindingExpr in, BindingExpr prevBy, ArrayList<Var> asVars] returns [Bind
 
 groupBy[BindingExpr by] returns [BindingExpr b=null]
     { String v = null; Expr e=null; }
-    : ( "by" 
+    : ( kwBy 
         ( (id "=") => (v=id "=") e=expr
                     | e=expr
         ) 
@@ -863,8 +863,8 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
     ;
 
 groupReturn returns [Expr r=null]
-    : "into" r=expr    { r = new ArrayExpr(r); }
-    | "expand" r=expr
+    : kwInto r=expr    { r = new ArrayExpr(r); }
+    | kwExpand r=expr
     //| r=aggregate[new VarExpr(pipeVar)] 
     //    { if(numInputs != 1) throw new RuntimeException("cannot use aggregate with cogroup"); } 
     ;
@@ -875,10 +875,10 @@ groupPipe[Expr in] returns [Expr r=null]
       BindingExpr b; BindingExpr by=null; Expr key=null;  Expr c; 
       String v="$"; Var asVar = null; 
     }
-    : "group" b=each[in] 
+    : kwGroup b=each[in] 
       by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
-      ( "as" v=id )?        { asVar=env.scope(v, SchemaFactory.arraySchema()); }
-      ( "using" c=comparator { oops("comparators on group by NYI"); } )?
+      ( kwAs v=id )?         { asVar=env.scope(v, SchemaFactory.arraySchema()); }
+      ( kwUsing c=comparator { oops("comparators on group by NYI"); } )?
       r=groupReturn
         {
           if( by.var != Var.UNUSED ) env.unscope(by.var);
@@ -894,16 +894,16 @@ aggregate[Expr in] returns [Expr r=null]
     { String v="$"; BindingExpr b=null; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
 //    : ("aggregate" | "agg") b=each[in] r=expr
 //       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
-    : "aggregate" ("as" v=id)?
+    : kwAggregate (kwAs v=id)?
          {
            //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
            b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
          }
-      ( "into"    r=expr { r = AggregateFullExpr.make(env, b, r, false); }
-      | "full"    a=aggList     { r = new AggregateFullExpr(b, a); }
-      | "initial" aa=algAggList { r = new AggregateInitialExpr(b, aa); }
-      | "partial" aa=algAggList { r = new AggregatePartialExpr(b, aa); }
-      | "final"   aa=algAggList { r = new AggregateFinalExpr(b, aa); }
+      ( kwInto    r=expr { r = AggregateFullExpr.make(env, b, r, false); }
+      | kwFull    a=aggList     { r = new AggregateFullExpr(b, a); }
+      | kwInitial aa=algAggList { r = new AggregateInitialExpr(b, aa); }
+      | kwPartial aa=algAggList { r = new AggregatePartialExpr(b, aa); }
+      | kwFinal   aa=algAggList { r = new AggregateFinalExpr(b, aa); }
       )
       { env.unscope(b.var); }
     ;
@@ -977,7 +977,7 @@ join returns [Expr r=null]
       Expr p; 
       BindingExpr b;
     }
-    : "join" b=joinIn     { in.add(b); b.var.setHidden(true); }
+    : kwJoin b=joinIn     { in.add(b); b.var.setHidden(true); }
             ("," b=joinIn { in.add(b); b.var.setHidden(true); } )+  
       {
         for( BindingExpr b2: in )
@@ -985,9 +985,9 @@ join returns [Expr r=null]
           b2.var.setHidden(false);
         }
       }
-      "where" p=expr
-      ( "into" r=expr     { r = new ArrayExpr(r); }
-      | "expand" r=expr )
+      kwWhere p=expr
+      ( kwInto r=expr     { r = new ArrayExpr(r); }
+      | kwExpand r=expr )
       {
         for( BindingExpr b2: in )
         {
@@ -999,8 +999,8 @@ join returns [Expr r=null]
 
 joinIn returns [BindingExpr b=null]
     { boolean p = false; }
-    : ( { !env.isDefinedLocal("preserve") }? "preserve" { p = true; }  
-                                           | ()
+    : ( (kwPreserve) => kwPreserve { p = true; }  
+        | ()
       ) b=vpipe
       {
         b.preserve = p;
@@ -1011,7 +1011,7 @@ joinIn returns [BindingExpr b=null]
 vpipe returns [BindingExpr r=null]
     { String v; Expr e=null; }
     : v=id  ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
-            | "in" e=expr  
+            | kwIn e=expr  
             )
     { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e); }
     ;    
@@ -1022,16 +1022,16 @@ equijoin returns [Expr r=null]
         ArrayList<Expr> on = new ArrayList<Expr>(); 
         Expr c=null; 
     }
-    : "equijoin" ejoinIn[in,on] ( "," ejoinIn[in,on] )+ 
-      ( "using" c=comparator { oops("comparators on joins are NYI"); } )?
+    : kwEquijoin ejoinIn[in,on] ( "," ejoinIn[in,on] )+ 
+      ( kwUsing c=comparator { oops("comparators on joins are NYI"); } )?
       {
         for( BindingExpr b: in )
         {
           b.var.setHidden(false);
         }
       }
-      ( "into" r=expr     { r = new ArrayExpr(r); }
-      | "expand" r=expr )
+      ( kwInto r=expr     { r = new ArrayExpr(r); }
+      | kwExpand r=expr )
     {
       r = new JoinExpr(in,on,r); // TODO: add comparator
       for( BindingExpr b: in )
@@ -1044,7 +1044,7 @@ equijoin returns [Expr r=null]
 ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
     { Expr e; BindingExpr b; }
     : b=joinIn       { in.add(b); } 
-      "on" e=expr    { on.add(e); b.var.setHidden(true); }
+      kwOn e=expr    { on.add(e); b.var.setHidden(true); }
     ;
 
 
@@ -1055,7 +1055,7 @@ fn returns [Expr r = null]
     { List<Var> vs = new ArrayList<Var>();
       List<Expr> es = new ArrayList<Expr>();
     }
-    : "fn" 
+    : kwFn 
       params[vs,es] { for (Var v: vs) v.setHidden(false); }
       r=pipe
       { 
@@ -1085,12 +1085,12 @@ pipeFn returns [Expr r=null]
 // a built-in function     
 builtinFunction returns [Expr e = null]
     { Expr c; }
-    : "builtin" "(" c=expr ")" { e=new BuiltInExpr(c); }; 
+    : kwBuiltin "(" c=expr ")" { e=new BuiltInExpr(c); }; 
         
 // backwards compatibility, registerFunction("f", e) is now written as f=javaudf(e)
 registerFunction returns [Expr e = null]
     { Expr varName, className; }
-    : "registerFunction" "(" varName=expr "," className=expr ")" {
+    : kwRegisterFunction "(" varName=expr "," className=expr ")" {
         try {
           if (!varName.isCompileTimeComputable().always())
           {
@@ -1138,8 +1138,8 @@ optionalParams[List<Var> vs, List<Expr> es]
 paramVar[List<Var> vs]
     { String n; Schema s=SchemaFactory.anySchema(); Expr e=null; }
     : ( ( id ( "," | "=" | ")" ) ) => n=id 
-        |             ( "schema" ) => "schema" s=schema n=id 
-        |                             s=schema n=id
+      | ( kwSchema )               => kwSchema s=schema n=id 
+      | s=schema n=id
       )
       { Var v = new Var(n, s); env.scope(v); v.setHidden(true); vs.add(v); }
     ;
@@ -1248,7 +1248,7 @@ aSchema returns [Schema s = null]
 
 atomSchema returns [Schema s = null]
     { String id; JsonRecord args; JsonValueParameters p=null; }
-    : "null"                   { s = SchemaFactory.nullSchema(); }
+    : kwNull                   { s = SchemaFactory.nullSchema(); }
     | id=id                    { p=SchemaFactory.getParameters(id); }
       args=atomSchemaArgs[p]   { s = SchemaFactory.make(id, args); }
     ;
@@ -1367,13 +1367,72 @@ recordSchemaFieldName returns [String s=null]
 kw
     { String s; }
     : strictkw
+    | weakkw
     | s=softkw
     ;
-        
-// A soft keyword that can be used as an identifier in all places
-// where identifiers are accepted. Soft keywords are not hidden by
-// variables of the same name (they occur in the grammar at places
-// where no identifier is allowed).
+
+// Strict keywords: cannot be used as identifiers
+strictkw : kwAnd 
+         | kwCmp
+         | kwFalse 
+         | kwFn 
+         | kwNot 
+         | kwNull 
+         | kwOr 
+         | kwTrue;
+
+kwAnd    : "and"   | "#and" ;
+kwCmp    : "cmp"   | "#cmp" ;
+kwFalse  : "false" | "#false" ;
+kwFn     : "fn"    | "#fn" ;
+kwNot    : "not"   | "#not" ;
+kwNull   : "null"  | "#null" ; 
+kwOr     : "or"    | "#or" ;
+kwTrue   : "true"  | "#true" ;
+
+// Weak keywords: shadowed by in-scope identifiers
+weakkw   : (kwBuiltin) => kwBuiltin 
+         | (kwEquijoin) => kwEquijoin
+         | (kwExpand) => kwExpand 
+         | (kwExplain) => kwExplain 
+         | (kwFilter) => kwFilter 
+         | (kwFlatten) => kwFlatten 
+         | (kwFor) => kwFor 
+         | (kwGroup) => kwGroup
+         | (kwIf) => kwIf 
+         | (kwIsdefined) => kwIsdefined 
+         | (kwIsnull) => kwIsnull 
+         | (kwJoin) => kwJoin 
+         | (kwPreserve) => kwPreserve 
+         | (kwQuit) => kwQuit 
+         | (kwRegisterFunction) => kwRegisterFunction
+         | (kwSplit) => kwSplit
+         | (kwTop) => kwTop 
+         | (kwTransform) => kwTransform 
+         | (kwUnroll) => kwUnroll 
+         ;
+
+kwBuiltin          : { nextIsWeakKw("builtin") }? ID          | "#builtin" ;
+kwEquijoin         : { nextIsWeakKw("equijoin") }? ID         | "#equijoin" ;     
+kwExpand           : { nextIsWeakKw("expand") }? ID           | "#expand" ;
+kwExplain          : { nextIsWeakKw("explain") }? ID          | "#explain" ;
+kwFilter           : { nextIsWeakKw("filter") }? ID           | "#filter" ;
+kwFlatten          : { nextIsWeakKw("flatten") }? ID          | "#flatten" ;    
+kwFor              : { nextIsWeakKw("for") }? ID              | "#for" ;
+kwGroup            : { nextIsWeakKw("group") }? ID            | "#group" ;
+kwIf               : { nextIsWeakKw("if") }? ID               | "#if" ;
+kwIsdefined        : { nextIsWeakKw("isdefined") }? ID        | "#isdefined" ;
+kwIsnull           : { nextIsWeakKw("isnull") }? ID           | "#isnull" ;          
+kwJoin             : { nextIsWeakKw("join") }? ID             | "#join" ;
+kwPreserve         : { nextIsWeakKw("preserve") }? ID         | "#preserve" ;
+kwQuit             : { nextIsWeakKw("quit") }? ID             | "#quit" ;    
+kwRegisterFunction : { nextIsWeakKw("registerFunction") }? ID | "#registerFunction" ;
+kwSplit            : { nextIsWeakKw("split") }? ID            | "#split" ;
+kwTop              : { nextIsWeakKw("top") }? ID              | "#top" ;
+kwTransform        : { nextIsWeakKw("transform") }? ID        | "#transform" ;
+kwUnroll           : { nextIsWeakKw("unroll") }? ID           | "#unroll" ;
+       
+// Soft keywords: occur in the grammar at places where no identifier is allowed (thus no ambiguitiy)
 softkw returns [String s=null]
     : "aggregate"        { s = "aggregate"; }
     | "as"               { s = "as"; }
@@ -1398,49 +1457,37 @@ softkw returns [String s=null]
     | "using"            { s = "using"; }
     | "where"            { s = "where"; }
     ; 
-
-// A weak keyword can be shadowed by an identifier. Weak keywords are treated as
-// keywords if (1) the grammar expects the keyword and (2) there is no variable
-// of the same name in scope.
-weakkw returns [String s=null]
-    : "builtin"          { s = "builtin"; }
-    | "equijoin"         { s = "equijoin"; }     
-    | "expand"           { s = "expand"; }
-    | "explain"          { s = "explain"; }
-    | "filter"           { s = "filter"; }
-    | "flatten"          { s = "flatten"; }    
-    | "for"              { s = "for"; }
-    | "group"            { s = "group"; }
-    | "if"               { s = "if"; }
-    | "isdefined"        { s = "isdefined"; }
-    | "isnull"           { s = "isnull"; }          
-    | "join"             { s = "join"; }
-    | "preserve"         { s = "preserve"; }
-    | "quit"             { s = "quit"; }    
-    | "registerFunction" { s = "registerFunction"; }
-    | "top"              { s = "top"; }
-    | "transform"        { s = "transform"; }
-    | "unroll"           { s = "unroll"; }       
-    ;
     
-// A strict keyword cannot be used as an identifier
-strictkw
-    : "and"
-    | "false"
-    | "fn"
-    | "not" 
-    | "null"
-    | "or"
-    | "true"
-    ;
+kwAggregate        : "aggregate" | "#aggregate";   
+kwAs               : "as" | "#as" ;
+kwAsc              : "asc" | "#asc" ;
+kwBy               : "by" | "#by" ;
+kwDesc             : "desc" | "#desc" ;
+kwEach             : "each" | "#each" ;
+kwElse             : "else" | "#else" ;
+kwExtern           : "extern" | "#extern" ;
+kwFinal            : "final" | "#final" ;
+kwFull             : "full" | "#full" ;
+kwImport           : "import" | "#import" ;
+kwIn               : "in" | "#in" ;
+kwInitial          : "initial" | "#initial" ;
+kwInstanceof       : "instanceof" | "#instanceof" ;
+kwInto             : "into" | "#into" ;
+kwPartial          : "partial" | "#partial" ;
+kwMaterialize      : "materialize" | "#materialize" ;
+kwOn               : "on" | "#on" ;
+kwSchema           : "schema" | "#schema" ;
+kwSort             : "sort" | "#sort" ;
+kwUsing            : "using" | "#using" ;
+kwWhere            : "where" | "#where" ; 
 
+  
 // -- identifiers ---------------------------------------------------------------------------------
     
 // an identifier as String    
 id returns [String s=null]
     : i:ID              { s = i.getText(); }
     | s=softkw
-    | s=weakkw
     ;
 
 // an identifier as JsonString
@@ -1611,6 +1658,11 @@ options {
     private int indent;
     private int blockIndent;
     private String blockTag;
+    
+    public boolean isLiteral(String s)
+    {
+    	return literals.containsKey(new ANTLRHashString(s, this));
+    }
 }
 
 protected DIGIT
@@ -1756,23 +1808,18 @@ protected IDWORD
     ;
 
 protected TAG
+    :  '#' (LETTER|'_'|DIGIT)+
+    ;
+
+KEYWORD options { testLiterals=true; }
     : '#' (LETTER|'_'|DIGIT)+
     ;  
   
 ID
-    : (IDWORD TAG) => IDWORD TAG
-    | ( IDWORD ':' ':' IDWORD) => IDWORD ':' ':' IDWORD { $setType(NAMESPACE_ID); }
-    | (IDWORD (WS)* 
-         ( '='
-         | '?' (WS)* ':'
-         | ':'
-         )
-      ) => IDWORD
-    | IDWORD { _ttype = testLiteralsTable(_ttype); }
-    ;
-    
-KEYWORD
-    : TAG { _ttype = testLiteralsTable(_ttype); }
+    : ( IDWORD ':' ':' IDWORD ) => IDWORD ':' ':' IDWORD  { $setType(NAMESPACE_ID); }
+    | ( IDWORD TAG ) => IDWORD TAG
+    | ( IDWORD (WS)* ('?' (WS)* ':' | ':' ) ) => IDWORD   
+    | IDWORD /* those IDs might also be keywords */       { _ttype = testLiteralsTable(_ttype); }
     ;
     
 NAMESPACE_ID

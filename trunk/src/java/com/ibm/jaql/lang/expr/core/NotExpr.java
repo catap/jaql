@@ -68,7 +68,7 @@ public class NotExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("not (");
+    exprText.print(kw("not") + " (");
     exprs[0].decompile(exprText, capturedVars);
     exprText.print(")");
   }

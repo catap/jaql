@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.util;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -27,6 +28,8 @@ import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.registry.RNGStore;
 
 /**
@@ -179,4 +182,15 @@ public class JaqlUtil
       return new RuntimeException(e);
     }
   }
+  
+  private final static JaqlLexer LEXER = new JaqlLexer((InputStream)null); 
+  public static boolean isKeyword(String s)
+  {
+    if (!s.startsWith("#"))
+    {
+      s = "#" + s;
+    }
+    return LEXER.isLiteral(s);
+  };
+
 }
