@@ -359,20 +359,17 @@ f(10, -1);
 (fn(x) (y=x, fn(x) x+y))(x=1)(x=2);
 (fn(x#0) (fn(x) x+x#0))(x=1)(x=2);
 
-// continuations & multiple call sites:
-
+// continuations & multiple call sites
 f = fn(i) [i,i];
 (a = f(3), b = f(5), [b,a]); // [ [5,5],[3,3] ]
 f(3) -> f(); // [ [3,3], [3,3] ]
 
-// pushing calls down thru do blocks:
-
+// pushing calls down thru do blocks
 (x = 1+2,
  y = x + x,
  fn(z) z + y + y)(1);
 
-// captures:
-
+// captures
 for(i in range(1,10))
    [[i, fn(j) i + j]]
 -> sort by [$[0] desc]
@@ -392,8 +389,7 @@ for(i in range(1,10))
 // 8 records where x,y,z in [8,9]
 // [ { i: 2x4, j:3y5, k:1z6 } ]
 
-// recursion:
-
+// recursion
 search1 = fn(list, item, search2) (
   if( not exists(list) ) null
   else (
@@ -452,6 +448,26 @@ range(0,11) -> transform fib($);
 // data = range(1,300);
 // materialize data;
 // data;
+
+//-------------------------- KEYWORDS (do not move) ---------------
+
+// strict keywords
+null = 1;                              // fails
+
+// weak keywords
+f = fn(x) x -> transform (1);
+#transform = fn(x,y) "test";           // fails
+transform = fn(x,y) "test";            // OK
+[1, 2, 3] -> transform (1);
+[1, 2, 3] -> #transform (1);
+[1, 2, 3] -> f();
+
+// soft keywords
+#sort = fn(x) x;                       // fails
+sort = fn(x) x;                        // OK
+[2, 1, 3] -> sort();
+[2, 1, 3] -> #sort();  // fails
+[2, 1, 3] -> sort using [$];
 
 //-------------------------- QUIT ---------------------------------
 

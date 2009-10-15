@@ -71,7 +71,7 @@ public class MaterializeExpr extends TopExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
   {
     assert var.isGlobal();
-    exprText.print("materialize ");
+    exprText.print(kw("materialize") + " ");
     exprText.print("::" + var.taggedName());
 //    exprText.print(" = ");
 //    exprs[0].decompile(exprText, capturedVars);

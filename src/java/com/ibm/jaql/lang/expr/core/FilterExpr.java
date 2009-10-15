@@ -135,7 +135,7 @@ public final class FilterExpr extends IterExpr
   {
     BindingExpr b = binding();
     b.inExpr().decompile(exprText, capturedVars);
-    exprText.print("\n-> filter each ");
+    exprText.print("\n-> " + kw("filter") + " " + kw("each") + " ");
     exprText.print(b.var.taggedName());
     exprText.print(" ");
     predicate().decompile(exprText, capturedVars);

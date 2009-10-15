@@ -132,7 +132,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
     // input -> aggregate (each var)? expr
     final BindingExpr in = binding();
     in.inExpr().decompile(exprText, capturedVars);
-    exprText.print("\n-> aggregate as ");
+    exprText.print("\n-> " + kw("aggregate") + " " + kw("as") + " ");
     exprText.print(in.var.taggedName());
     exprText.print(" ");
     exprText.print(getAggType());

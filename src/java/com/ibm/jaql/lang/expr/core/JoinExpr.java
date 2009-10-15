@@ -129,7 +129,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("\nequijoin ");
+    exprText.print("\n" + kw("equijoin") + " ");
     int n = numBindings();
     String sep = "";
     for (int i = 0; i < n; i++)
@@ -138,17 +138,17 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       BindingExpr b = binding(i);
       if( b.preserve )
       {
-        exprText.print("preserve ");
+        exprText.print(kw("preserve") + " ");
       }
       exprText.print(b.var.taggedName());
-      exprText.print(" in (");
+      exprText.print(" " + kw("in") + " (");
       b.inExpr().decompile(exprText, capturedVars);
-      exprText.print(") on (");
+      exprText.print(") " + kw("on") + " (");
       onExpr(i).decompile(exprText, capturedVars);
       exprText.print(")");
       sep = ",\n     ";
     }
-    exprText.print("\nexpand (");
+    exprText.print("\n" + kw("expand") + " (");
     collectExpr().decompile(exprText, capturedVars);
     exprText.println(")");
 

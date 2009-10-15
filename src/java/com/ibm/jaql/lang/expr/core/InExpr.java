@@ -65,7 +65,7 @@ public class InExpr extends Expr
   {
     exprText.print(" (");
     exprs[0].decompile(exprText, capturedVars);
-    exprText.print(") in (");
+    exprText.print(") " + kw("in") + " (");
     exprs[1].decompile(exprText, capturedVars);
     exprText.print(") ");
   }

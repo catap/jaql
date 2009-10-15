@@ -37,7 +37,7 @@ public class BuiltInExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
   throws Exception
   {
-    exprText.print("builtin(");
+    exprText.print(kw("builtin") + "(");
     exprs[0].decompile(exprText, capturedVars);
     exprText.print(")");
   }

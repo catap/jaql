@@ -62,7 +62,7 @@ public class SplitExpr extends Expr
   {
     BindingExpr b = binding();
     b.exprs[0].decompile(exprText, capturedVars);
-    exprText.print("\n-> split each ");
+    exprText.print("\n-> " + kw("split") + " " + kw("each") + " ");
     exprText.print(b.var.taggedName());
     for(int i = 1 ; i < exprs.length ; i++)
     {

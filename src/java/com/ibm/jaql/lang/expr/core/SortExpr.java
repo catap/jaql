@@ -98,7 +98,7 @@ public class SortExpr extends IterExpr
       throws Exception
   {
     exprs[0].decompile(exprText, capturedVars);
-    exprText.print("\n  -> sort using (");
+    exprText.print("\n  -> " + kw("sort") + " " + kw("using") + " (");
     exprs[1].decompile(exprText, capturedVars);
     exprText.print(")");
   }

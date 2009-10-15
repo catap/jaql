@@ -42,8 +42,8 @@ import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.MaterializeExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
-import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
+import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
 public class Jaql

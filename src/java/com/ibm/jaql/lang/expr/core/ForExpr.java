@@ -200,7 +200,7 @@ public final class ForExpr extends IterExpr // TODO: rename
 //    else
     {
       b.inExpr().decompile(exprText, capturedVars);
-      exprText.print(" -> expand each ");
+      exprText.print(" -> " + kw("expand") + " " + kw("each") + " ");
       exprText.print(b.var.taggedName());
       exprText.print(" ( ");
       collectExpr().decompile(exprText, capturedVars);

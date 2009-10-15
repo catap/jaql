@@ -20,7 +20,6 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.lang.rewrite.VarTagger;
 
 /**
  * This is a pragma function to force const evaluation.
