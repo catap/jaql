@@ -114,13 +114,13 @@ public final class IfExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("\nif( ");
+    exprText.print("\n" + kw("if") + "( ");
     testExpr().decompile(exprText, capturedVars);
     exprText.print(" )\n( ");
     trueExpr().decompile(exprText, capturedVars);
     if (falseExpr().getSchema().is(NULL).maybeNot())
     {
-      exprText.print(" )\nelse ( ");
+      exprText.print(" )\n" + kw("else") + " ( ");
       falseExpr().decompile(exprText, capturedVars);
     }
     exprText.println(" )");

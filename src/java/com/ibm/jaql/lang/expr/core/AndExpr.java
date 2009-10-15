@@ -71,7 +71,7 @@ public class AndExpr extends Expr
   {
     exprText.print('(');
     exprs[0].decompile(exprText, capturedVars);
-    exprText.print(") and (");
+    exprText.print(") " + kw("and") + "(");
     exprs[1].decompile(exprText, capturedVars);
     exprText.print(')');
   }

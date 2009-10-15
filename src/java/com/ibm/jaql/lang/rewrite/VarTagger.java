@@ -26,6 +26,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * Provides methods for tagging variables of the same name so as to avoid problems in 
@@ -33,7 +34,6 @@ import com.ibm.jaql.lang.expr.core.VarExpr;
  */
 public class VarTagger 
 {
-  
   /** In <code>e</code>, tags variables that are referred to while a different variable of the 
    * same name is in scope. This makes decompilation of <code>e</code> is safe. Expression
    * <code>e</code> must not have any captured, non-global variables. */
@@ -100,6 +100,12 @@ public class VarTagger
           else
           {
             // free variable; that's OK 
+          }
+          
+          if (JaqlUtil.isKeyword(var.name()))
+          {
+            // all keyword variable will be tagged
+            varsToTag.add(var);
           }
         }
       }

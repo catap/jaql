@@ -57,7 +57,7 @@ public class UnnestExpr extends IterExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("unnest (");
+    exprText.print(kw("unnest") + " (");
     exprs[0].decompile(exprText, capturedVars);
     exprText.print(")");
   }

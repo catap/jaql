@@ -52,7 +52,7 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
       }
       else
       {
-        out.print("builtin('" + d.getClass().getName() + "')");
+        out.print("#builtin('" + d.getClass().getName() + "')");
       }
     }
     else if (value instanceof JaqlFunction)
@@ -66,7 +66,7 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
         // write captures
         if (!localBindings.isEmpty())
         {
-          out.print("const((");
+          out.print("system::const((");
           for (Entry<Var, JsonValue> e : localBindings.entrySet())
           {
             out.print(sep);
@@ -119,7 +119,7 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
     }
     else if (value instanceof JavaUdfFunction) {
       JavaUdfFunction f = (JavaUdfFunction)value;
-      out.print("javaudf('" + f.getImplementingClass().getName() + "')");
+      out.print("system::javaudf('" + f.getImplementingClass().getName() + "')");
     }
     else
     {

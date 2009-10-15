@@ -71,7 +71,7 @@ public class InstanceOfExpr extends Expr
   {
     exprText.print("(");
     exprs[0].decompile(exprText, capturedVars);
-    exprText.print(") instanceof (");
+    exprText.print(") " + kw("instanceof") + " (");
     exprs[1].decompile(exprText, capturedVars);
     exprText.print(")");
   }

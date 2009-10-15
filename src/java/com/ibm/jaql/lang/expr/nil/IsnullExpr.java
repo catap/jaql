@@ -52,7 +52,7 @@ public class IsnullExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("isnull (");
+    exprText.print(kw("isnull") + " (");
     exprs[0].decompile(exprText, capturedVars);
     exprText.print(")");
   }

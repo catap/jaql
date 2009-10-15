@@ -76,7 +76,7 @@ public final class IsdefinedExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("isdefined (");
+    exprText.print(kw("isdefined") + " (");
     exprs[0].decompile(exprText, capturedVars);
     exprText.print(").(");
     exprs[1].decompile(exprText, capturedVars);

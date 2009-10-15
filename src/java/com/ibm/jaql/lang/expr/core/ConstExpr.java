@@ -77,7 +77,7 @@ public final class ConstExpr extends Expr
       value instanceof Function || // TODO: JValue.getType().isExtendedJson()
       value instanceof JsonDate     || // TODO: parser should recognize constructors and eval during parse
       value instanceof JsonRegex;
-    if (annotate) exprText.print("const("); // FIXME: remove
+    if (annotate) exprText.print("system::const("); // FIXME: remove
     JsonUtil.print(exprText, value, 2);
     if (annotate) exprText.print(")");// FIXME: remove
   }

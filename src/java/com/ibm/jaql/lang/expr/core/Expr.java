@@ -126,7 +126,7 @@ public abstract class Expr
     }
     else
     {
-      exprText.print("builtin('" + d.getClass().getName() + "')");
+      exprText.print(kw("builtin") + "('" + d.getClass().getName() + "')");
     }
     
     exprText.print("(");
@@ -167,6 +167,24 @@ public abstract class Expr
     exprText.print(end);
   }
 
+  /** Quotes the given keyword using # when necessary. This method has to be used when decompiling
+   * a keyword. */
+  protected String kw(String keyword)
+  {
+    // currently a keyword will be quoted when there is a global variable of the same name (locals
+    // are not a problem because they will be tagged).
+    //
+    // possible optimization: tag only weak keywords
+
+    if (keyword.contains("#")) throw new IllegalArgumentException();
+    TopExpr top = getTopExpr();
+    if (top == null || top.getEnv().isDefinedLocal(keyword))
+    {
+      return '#' + keyword;
+    }
+    return keyword;
+  }
+  
   /*
    * (non-Javadoc)
    * 

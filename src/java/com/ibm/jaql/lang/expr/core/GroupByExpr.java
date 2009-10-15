@@ -426,9 +426,9 @@ public class GroupByExpr extends IterExpr
     int n = numInputs(); // TODO: special case n==1 to do e -> group
     BindingExpr in = inBinding();
     BindingExpr by = byBinding();
-    exprText.print("\ngroup each ");
+    exprText.print("\n" + kw("group") + " " + kw("each") + " ");
     exprText.print(in.var.taggedName());
-    exprText.print(" in ");
+    exprText.print(" " + kw("in") + " ");
     String sep = "";
     for (int i = 0; i < n; i++)
     {
@@ -436,7 +436,7 @@ public class GroupByExpr extends IterExpr
       exprText.print("(");
       in.child(i).decompile(exprText, capturedVars);
       exprText.print(")");
-      exprText.print(" by ");
+      exprText.print(" " + kw("by") + " ");
       if( i == 0 ) // if( byBinding.var != Var.unused )
       {
         exprText.println(by.var.taggedName());
@@ -452,11 +452,11 @@ public class GroupByExpr extends IterExpr
     Expr using = usingExpr();
     if( using.getSchema().is(NULL).maybeNot() )
     {
-      exprText.println(" using (");
+      exprText.println(" " + kw("using") + " (");
       using.decompile(exprText, capturedVars);
       exprText.println(")");
     }
-    exprText.println(" expand (");
+    exprText.println(" " + kw("expand") + " (");
     collectExpr().decompile(exprText, capturedVars);
     exprText.println(")");
 

@@ -128,7 +128,7 @@ public final class TransformExpr extends IterExpr
   {
     BindingExpr b = binding();
     b.inExpr().decompile(exprText, capturedVars);
-    exprText.print("\n-> transform each ");
+    exprText.print("\n-> " + kw("transform") + " " + kw("each") + " ");
     exprText.print(b.var.taggedName());
     exprText.print(" (");
     projection().decompile(exprText, capturedVars);
