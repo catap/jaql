@@ -28,6 +28,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -89,7 +90,7 @@ public class RFn extends Expr {
     public Descriptor() {
       JsonValueParameter[] params = new JsonValueParameter[8];
       params[INDEX_FN] = new JsonValueParameter("fn",SchemaFactory.stringSchema());
-      params[INDEX_ARGS] = new JsonValueParameter("args",SchemaFactory.arraySchema());
+      params[INDEX_ARGS] = new JsonValueParameter("args",SchemaFactory.arrayOrNullSchema(), null);
       params[INDEX_IN_SCHEMA] = 
         new JsonValueParameter("inSchema",SchemaFactory.arrayOrNullSchema(),null);
       params[INDEX_OUT_SCHEMA] = new JsonValueParameter("outSchema", SchemaFactory.make(
@@ -149,43 +150,102 @@ public class RFn extends Expr {
   // all the nodes, or just streaming these few lines of code into R at startup.
   // TODO: decide which approach to select.
   private static String[] initStrings = {
-    "tableFromJaql = function(descriptor) { \n" +
-    "  if (descriptor$mode == 2) {\n" +
-    "    numfiles<-length(descriptor$name); \n" +
-    "    prefix<-descriptor$path;\n" +
-    "    l<- list();\n" +
-    "    types<-eval(parse(text=descriptor$type));\n" +
-    "    for (i in 1:numfiles) { \n" +
-    "      filename<-paste(prefix,i,sep='/'); \n" +
-    "      l[[descriptor$name[i]]] = scan(filename, what=eval(parse(text=types[[i]])),quiet=T); \n" +
-    "      unlink(filename); \n" +
-    "    }\n" +
-    "    unlink(prefix,recursive=T); \n" +
-    "    return(data.frame(l)); \n" +
-    "  } else if (descriptor$mode == 3) {\n" +
-    "    filename<-descriptor$path; \n" +
-    "    type=eval(parse(text=descriptor$type));\n" +
-    "    res<-scan(filename, what=type,quiet=T);\n" +
-    "    unlink(filename);\n" +
-    "    return(res);\n" +
-    "  } else if (descriptor$mode == 4) {\n" +
-    "    numfiles<-descriptor$ncols;\n" +
-    "    prefix<-descriptor$path;\n" +
-    "    l<- list();\n" +
-    "    types<-eval(parse(text=descriptor$type));\n" +
-    "    for (i in 1:numfiles) {\n" +
-    "    filename<-paste(prefix,i,sep='/');\n" +
-    "    l[[as.character(i)]] = scan(filename, what=eval(parse(text=types[[i]])),quiet=T);\n" +
-    "    unlink(filename);\n" +
-    "  }\n" +
-    "  unlink(prefix,recursive=T);\n" +
-    "  return(data.frame(l));\n" +
-    "  } else return (NA);\n" +
-    "}\n",
-    "toBinary<-function(file, obj, ...) { \n" +
-    "  x<-obj;\n" +
-    "  save(x,file=file);\n" +
-    "}"
+//    "tableFromJaql = function(descriptor) { \n" +
+//    "  if (descriptor$mode == 2) {\n" +
+//    "    numfiles<-length(descriptor$name); \n" +
+//    "    prefix<-descriptor$path;\n" +
+//    "    l<- list();\n" +
+//    "    types<-eval(parse(text=descriptor$type));\n" +
+//    "    for (i in 1:numfiles) { \n" +
+//    "      filename<-paste(prefix,i,sep='/'); \n" +
+//    "      l[[descriptor$name[i]]] = scan(filename, what=eval(parse(text=types[[i]])),quiet=T); \n" +
+//    "      unlink(filename); \n" +
+//    "    }\n" +
+//    "    unlink(prefix,recursive=T); \n" +
+//    "    return(data.frame(l)); \n" +
+//    "  } else if (descriptor$mode == 3) {\n" +
+//    "    filename<-descriptor$path; \n" +
+//    "    type=eval(parse(text=descriptor$type));\n" +
+//    "    res<-scan(filename, what=type,quiet=T);\n" +
+//    "    unlink(filename);\n" +
+//    "    return(res);\n" +
+//    "  } else if (descriptor$mode == 4) {\n" +
+//    "    numfiles<-descriptor$ncols;\n" +
+//    "    prefix<-descriptor$path;\n" +
+//    "    l<- list();\n" +
+//    "    types<-eval(parse(text=descriptor$type));\n" +
+//    "    for (i in 1:numfiles) {\n" +
+//    "    filename<-paste(prefix,i,sep='/');\n" +
+//    "    l[[as.character(i)]] = scan(filename, what=eval(parse(text=types[[i]])),quiet=T);\n" +
+//    "    unlink(filename);\n" +
+//    "  }\n" +
+//    "  unlink(prefix,recursive=T);\n" +
+//    "  return(data.frame(l));\n" +
+//    "  } else return (NA);\n" +
+//    "}\n",
+//    "toBinary<-function(file, obj, ...) { \n" +
+//    "  x<-obj;\n" +
+//    "  save(x,file=file);\n" +
+//    "}"+
+//    "\n"+
+//    "# Convert a hexadecimal string into a raw vector\n"+
+//    "hexToRaw = function(hexStr)\n"+
+//    "{\n"+
+//    "  A = as.numeric(charToRaw('A'))\n"+
+//    "  F = as.numeric(charToRaw('Z'))\n"+
+//    "  c0 = as.numeric(charToRaw('0'))\n"+
+//    "  c9 = as.numeric(charToRaw('9'))\n"+
+//    "  hexStr = as.numeric(charToRaw(toupper(hexStr)))\n"+
+//    "  hexStr = sapply(hexStr,\n"+ 
+//    "      function(x) {\n"+
+//    "        if( c0 <= x & x <= c9 ) x = x - c0\n"+
+//    "        else if( A <= x & x <= F ) x = x - A + 10\n"+
+//    "        else stop('invalid hex character '+x)\n"+
+//    "        x\n"+ 
+//    "      } )\n"+
+//    "  i = 1\n"+
+//    "  j = 1\n"+
+//    "  n = length(hexStr)\n"+
+//    "  result = raw(n/2)\n"+
+//    "  while( i <= n )\n"+
+//    " {  {\n"+
+//    "    result[j] = as.raw(hexStr[i] * 16 + hexStr[i+1])\n"+
+//    "    i = i + 2\n"+
+//    "    j = j + 1\n"+
+//    "  }\n"+
+//    "  result\n"+
+//    "}\n"+
+//    "\n"+
+//    "# Serialize an object into a hexadecimal string\n"+
+//    "objectToHex = function(object)\n"+
+//    "{\n"+
+//    " filename = tempfile()\n"+
+//    "  save(object,file=filename)\n"+
+//    "  file = file(filename,open='rb')\n"+
+//    "  seek(file,0,'end')\n"+
+//    "  bin = readBin(file,'raw',n=seek(file,0))\n"+
+//    "  close(file)\n"+
+//    "  unlink(filename)\n"+
+//    "  paste(as.character(bin),collapse='')\n"+
+//    "}\n"+
+//    "\n"+
+//    "# Deserialize an object from a hexadecimal string\n"+
+//    "hexToObject = function(hexStr)\n"+
+//    "{\n"+
+//    "  if( length(hexStr) > 1 )\n"+
+//    "  {\n"+
+//    "    return sapply(hexStr, hexToObject)\n"+
+//    "  }\n"+
+//    "  bin = hexToRaw(hexStr)\n"+
+//    "  filename = tempfile()\n"+
+//    "  c = file(filename,open='wb')\n"+
+//    "  writeBin(bin,c)\n"+
+//    "  close(c)\n"+
+//    "  load(filename)\n"+
+//    "  unlink(filename)\n"+
+//    "  object\n"+
+//    "}\n"+
+//    ""
   };
   
   static final Log LOG = LogFactory.getLog(RFn.class);
@@ -222,6 +282,8 @@ public class RFn extends Expr {
       if (binary) {
         String tmpFileName = RUtil.getTempFileName();
         rOut = new File(tmpFileName);
+        tmpFileName = rOut.getAbsolutePath();
+        tmpFileName = tmpFileName.replace('\\', '/');
         rOut.deleteOnExit();
         stdin.print("cat(toBinary(file='");
         stdin.print(tmpFileName);
@@ -229,45 +291,48 @@ public class RFn extends Expr {
       } else {
         stdin.print("cat(toJSON(");
       }
-      stdin.print(fn);
       stdin.print("(");
+      stdin.print(fn);
+      stdin.print(")");
       tmp = exprs[INDEX_ARGS].eval(context);
-      if (tmp == null) {
-        throw new IllegalArgumentException("Missing arguments to function " + fn + 
-            ". For passing 0 arguments use empty array.");
-      } else if (!(tmp instanceof JsonArray)) {
-        throw new IllegalArgumentException("Arguments to function " + fn + 
-            " must be enclosed as an array.");
-      }
-      JsonArray args = (JsonArray)tmp;
-      tmp = exprs[INDEX_IN_SCHEMA].eval(context);
-      JsonArray argSchema = null;
-      if (tmp != null) {
+      if (tmp != null) // we have args
+      {
         if (!(tmp instanceof JsonArray)) {
-          throw new IllegalArgumentException("Schema for arguments of function " + fn +
-              " must be enclosed in an array");
+          throw new IllegalArgumentException("Arguments to function " + fn + 
+             " must be enclosed as an array.");
         }
-        argSchema = (JsonArray)tmp;
-      }
-      Schema inferred = exprs[INDEX_ARGS].getSchema();
-      for(int i = 0 ; i < args.count() ; i++) {
-        JsonValue value = args.get(i);
-        Schema elemSchema = null;
-        if (argSchema != null) {
-          tmp = argSchema.get(i);
-          if (!(tmp instanceof JsonSchema)) {
-            throw new IllegalArgumentException("Argument schema at index " + i + 
-                " not an instance of " + JsonSchema.class.getCanonicalName());
+        JsonArray args = (JsonArray)tmp;
+        tmp = exprs[INDEX_IN_SCHEMA].eval(context);
+        JsonArray argSchema = null;
+        if (tmp != null) {
+          if (!(tmp instanceof JsonArray)) {
+            throw new IllegalArgumentException("Schema for arguments of function " + fn +
+            " must be enclosed in an array");
           }
-          elemSchema = ((JsonSchema)tmp).get();
-        } else {
-          elemSchema = inferred.element(new JsonLong(i));
+          argSchema = (JsonArray)tmp;
         }
-        stdin.print(sep);
-        processFnArgument(context, value, elemSchema);
-        sep = ",";
+        Schema inferred = exprs[INDEX_ARGS].getSchema();
+        stdin.print("(");
+        for(int i = 0 ; i < args.count() ; i++) {
+          JsonValue value = args.get(i);
+          Schema elemSchema = null;
+          if (argSchema != null) {
+            tmp = argSchema.get(i);
+            if (!(tmp instanceof JsonSchema)) {
+              throw new IllegalArgumentException("Argument schema at index " + i + 
+                  " not an instance of " + JsonSchema.class.getCanonicalName());
+            }
+            elemSchema = ((JsonSchema)tmp).get();
+          } else {
+            elemSchema = inferred.element(new JsonLong(i));
+          }
+          stdin.print(sep);
+          processFnArgument(context, value, elemSchema);
+          sep = ",";
+        }
+        stdin.print(")");
       }
-      stdin.println(")),'\n')");
+      stdin.println("),'\n')");
       stdin.flush();
 
       // parser.ReInit(stdout); 
@@ -334,7 +399,7 @@ public class RFn extends Expr {
         JsonRecord result = RUtil.serializeIterator(array.iter(), elemSchema, 
             new RUtil.Config());
         stdin.print("tableFromJaql(");
-        encodeAsString(result, false);
+        encodeAsString(result, true);
         stdin.print(")");
       }
     }
@@ -348,7 +413,8 @@ public class RFn extends Expr {
   
   private void encodeAsString(JsonValue value, boolean escape) {
     stdin.print("eval(parse(text='");
-    stdin.print(RUtil.convertToRString(value, escape));
+    String s = RUtil.convertToRString(value, escape);
+    stdin.print(s);
     stdin.print("'))");
   }
 
@@ -367,7 +433,7 @@ public class RFn extends Expr {
     JsonString initStr = (JsonString)exprs[INDEX_INIT].eval(context);
     stdin.println("sink(type='output',file=stderr())");
     // Changed it to library to avoid the message "Loading required package: rjson"
-    //stdin.println("library('jaqlR')");
+    stdin.println("library('jaqlR')");
     for (String initString : initStrings) {
       stdin.println(initString);
     }
@@ -424,7 +490,8 @@ public class RFn extends Expr {
         int n;
         while( (n = is.read(buffer)) >= 0 ) {
           //LOG.error(new String(buffer,0,n));
-          System.err.println(new String(buffer,0,n));
+          String s = new String(buffer,0,n);
+          System.err.println(s);
         }
         is.close();
       }

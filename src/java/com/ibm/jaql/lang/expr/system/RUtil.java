@@ -50,13 +50,17 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonAtom;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.BaseUtil;
 
 /**
  * This class provides some utilities to interface jaql with R.
@@ -80,7 +84,8 @@ public class RUtil {
   private static final AtomicLong uniqueId = 
     new AtomicLong(System.currentTimeMillis());
   private static final String extension = ".csv";
-  public static final String fileSeparator = System.getProperty("file.separator");
+  // public static final String fileSeparator = System.getProperty("file.separator");
+  public static final String fileSeparator = "/";
   public static final String rNullString = "NA";
   public static final String fieldSeparator = ",";
   
@@ -98,6 +103,7 @@ public class RUtil {
   
   static {
     tmpDirPath = System.getProperty("java.io.tmpdir");
+    tmpDirPath = tmpDirPath.replace('\\', '/');
     if (!tmpDirPath.endsWith(fileSeparator)) tmpDirPath += fileSeparator;
     tmpDirPath += "rJaql" + fileSeparator;
     File tmpDir = new File(tmpDirPath);
@@ -119,33 +125,18 @@ public class RUtil {
         return new JsonString("logical()");
       case STRING:
         return new JsonString("character()");
+      case DATE:
+        return new JsonString("character()"); // TODO: convert to date on R side
+      case BINARY:
+        return new JsonString("character()"); // TODO: convert to raw on R side
       default: throw new IllegalArgumentException("Cannot convert " + type + 
           " to a R type");
     }
   }
   
-  public static String convertToRString (JsonValue val) {
-    if (val == null) {
-      return rNullString;
-    } else if (val instanceof JsonNumber) {
-      if (val instanceof JsonLong) return String.valueOf(((JsonLong)val).longValue());
-      return String.valueOf(((JsonNumber)val).doubleValue());
-    } else if (val instanceof JsonBool) {
-      return String.valueOf(((JsonBool)val).get()).toUpperCase();
-    } else if (val instanceof JsonString) {
-      String str = val.toString();
-      str = StringEscapeUtils.escapeJava(str);
-      str = StringEscapeUtils.escapeJava(str);
-      str = "\"" + str + "\"";
-      return str;
-    } else if (val instanceof JsonArray) {
-      return serializeArray((JsonArray)val);
-    } else if (val instanceof JsonRecord) {
-      return serializeRecord((JsonRecord)val);
-    } else {
-      throw new IllegalArgumentException("Invalid Json type " + val.getType() + 
-          " for conversion in convertToRString.");
-    }
+  public static String convertToRString(JsonValue val)
+  {
+    return convertToRString(val, true);
   }
   
   public static String convertToRString (JsonValue val, boolean escape) {
@@ -160,10 +151,27 @@ public class RUtil {
       String str = val.toString();
       if (escape) {
         str = StringEscapeUtils.escapeJava(str);
-        str = StringEscapeUtils.escapeJava(str);
+        str = str.replaceAll("\\\\/", "/"); // workaround for http://issues.apache.org/jira/browse/LANG-421
+        // str = StringEscapeUtils.escapeJava(str);
       }
       str = "\"" + str + "\"";
       return str;
+    } else if (val instanceof JsonDate) {
+      String str = val.toString();
+      str = "\"" + str + "\"";
+      return str;
+    } else if (val instanceof JsonBinary) {
+      JsonBinary bin = (JsonBinary)val;
+      StringBuilder sb = new StringBuilder();
+      sb.append('\"');
+      for (int i = 0; i < bin.bytesLength() ; i++)
+      {
+        byte b = bin.get(i);
+        sb.append(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
+        sb.append(BaseUtil.HEX_NIBBLE[b & 0x0f]);
+      }
+      sb.append('\"');
+      return sb.toString();
     } else if (val instanceof JsonArray) {
       return serializeArray((JsonArray)val, escape);
     } else if (val instanceof JsonRecord) {
@@ -441,7 +449,8 @@ public class RUtil {
       JsonType type = fieldTypes.get(new Integer(i));
       types.add(convertJsonTypeToR(type));
     }
-    returnVal.add(new JsonString("type"), new JsonString(serializeArray(types)));
+//    returnVal.add(new JsonString("type"), new JsonString(serializeArray(types)));
+    returnVal.add(new JsonString("type"), types);
     returnVal.add(new JsonString("ncols"), new JsonLong(expectedLength));
     return returnVal;
   }
@@ -493,8 +502,11 @@ public class RUtil {
     writer.close();
     BufferedJsonRecord returnVal = new BufferedJsonRecord();
     returnVal.add(new JsonString("mode"), new JsonLong(MODE_ARRAY_OF_ATOMICS));
+    // file = rOut.getAbsolutePath();
+    file = file.replace('\\', '/');
     returnVal.add(new JsonString("path"), new JsonString(file));
-    returnVal.add(new JsonString("type"), new JsonString(convertJsonTypeToR(expect)));
+//    returnVal.add(new JsonString("type"), new JsonString(convertJsonTypeToR(expect)));
+    returnVal.add(new JsonString("type"), convertJsonTypeToR(expect));
     return returnVal;
   }
   
@@ -608,7 +620,8 @@ public class RUtil {
       }
       types.add(convertJsonTypeToR(type));
     }
-    returnVal.add(new JsonString("type"), new JsonString(serializeArray(types)));
+    //returnVal.add(new JsonString("type"), new JsonString(serializeArray(types)));
+    returnVal.add(new JsonString("type"), types);
     returnVal.add(new JsonString("name"), new BufferedJsonArray(fieldNames, false));
     return returnVal;
   }
