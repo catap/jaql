@@ -7,6 +7,9 @@ buildEclipse**
 .antlr-eclipse
 _temporary**
 vendor/hadoop/*/logs**
+src/java/com/ibm/jaql/lang/parser/*.java
+src/java/com/ibm/jaql/lang/parser/*.smap
+src/java/com/ibm/jaql/lang/parser/*.txt
 
 # switch to regexp syntax.
 syntax: regexp
