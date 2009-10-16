@@ -18,40 +18,50 @@ package com.ibm.jaql.io.converter;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import com.ibm.jaql.io.Initializable;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** 
- * Interface for writing {@link JsonValue}s to an {@link OutputStream}.
+/**
+ * Interface for writing {@link JsonValue}s to an {@link OutputStream}. It has
+ * two modes. Array access mode is for writing items in a JSON array. Non-array
+ * access mode is for writing a single JSON value.
  */
-public interface JsonToStream<T extends JsonValue>
-{
+public interface JsonToStream<T extends JsonValue> extends Initializable {
   /**
-   * @param out
+   * Sets output stream.
+   * 
+   * @param out Output stream
    */
   void setOutputStream(OutputStream out);
 
   /**
-   * If the converter is for array access, then it assumes the item is not part of a JSON array.
-   * In this case, only one value is expected to be written out.
-   *  
+   * If the converter is not for array access, then it assumes the JSON value is
+   * not part of a JSON array. In this case, only one value is expected to be
+   * written out.
+   * 
    * @param a
    */
   void setArrayAccessor(boolean a);
-  
+
   /**
-   * Is the converter an array accessor?
+   * Tests whether the converter is an array accessor.
    * 
-   * @return
+   * @return <code>true</code> if the converter is an array accessor:
+   *         <code>false</code> otherwise.
    */
   boolean isArrayAccessor();
-  
+
   /**
-   * @param i
+   * Writes the JSON value to the output stream.
+   * 
+   * @param i JSON value
    * @throws IOException
    */
   void write(T i) throws IOException;
 
   /**
+   * Closes the underlying output stream if needed.
+   * 
    * @throws IOException
    */
   void close() throws IOException;

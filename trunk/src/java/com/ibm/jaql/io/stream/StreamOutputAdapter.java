@@ -29,89 +29,86 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Output adapter that writes {@link Item}s to a URL, using a {@link ItemToStream} 
- * converter in the process.
- * 
+/**
+ * Output adapter that writes {@link Item}s to a URL, using a
+ * {@link ItemToStream} converter in the process.
  */
-public class StreamOutputAdapter extends AbstractOutputAdapter
-{
+public class StreamOutputAdapter extends AbstractOutputAdapter {
 
-  protected JsonToStream<JsonValue> formatter;
+  private JsonToStream<JsonValue> formatter;
+  private ClosableJsonWriter writer;
+  private OutputStream defaultOutput = System.out;
 
-  private ClosableJsonWriter     writer;
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.AbstractOutputAdapter#initializeFrom(com.ibm.jaql.json.type.JRecord)
-   */
   @SuppressWarnings("unchecked")
   @Override
-  public void init(JsonValue args) throws Exception
-  {
+  public void init(JsonValue args) throws Exception {
     super.init(args);
+    AdapterStore as = AdapterStore.getStore();
+    JsonRecord outputArgs = as.output.getOption((JsonRecord) args);
 
-    JsonRecord outputArgs = AdapterStore.getStore().output.getOption((JsonRecord)args);
-    // setup the formatter
-    Class<?> fclass = AdapterStore.getStore().getClassFromRecord(outputArgs,
-        FORMAT_NAME, null);
-    if (fclass == null) throw new Exception("formatter must be specified");
-    if (!JsonToStream.class.isAssignableFrom(fclass))
-      throw new Exception("formatter must implement ItemOutputStream");
-    formatter = (JsonToStream) fclass.newInstance();
+    // formatter
+    Class<JsonToStream> fclass = (Class<JsonToStream>) as.getClassFromRecord(outputArgs,
+                                                                             FORMAT_NAME,
+                                                                             null);
+    if (fclass == null)
+      throw new IllegalArgumentException("formatter must be specified");
+    formatter = fclass.newInstance();
+    formatter.init(outputArgs);
     JsonValue arrAcc = outputArgs.get(StreamInputAdapter.ARR_NAME);
-    if(arrAcc != null) {
-      formatter.setArrayAccessor( ((JsonBool)arrAcc).get());
+    if (arrAcc != null) {
+      formatter.setArrayAccessor(((JsonBool) arrAcc).get());
     }
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.OutputAdapter#getItemWriter()
-   */
-  public ClosableJsonWriter getWriter() throws Exception
-  {
+  @Override
+  public ClosableJsonWriter getWriter() throws Exception {
     final OutputStream output = openStream(location);
-    this.formatter.setOutputStream(output);
-    this.writer = new ClosableJsonWriter() {
-      
-      public void close() throws IOException
-      {
+    formatter.setOutputStream(output);
+    writer = new ClosableJsonWriter() {
+      @Override
+      public void close() throws IOException {
         formatter.close();
       }
 
-      public void write(JsonValue value) throws IOException
-      {
+      @Override
+      public void write(JsonValue value) throws IOException {
         formatter.write(value);
       }
-
     };
     return writer;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.AbstractOutputAdapter#close()
-   */
   @Override
-  public void close() throws Exception
-  {
-    if (writer != null) writer.close();
+  public void close() throws Exception {
+    if (writer != null)
+      writer.close();
   }
 
   /**
-   * @param location
-   * @return
+   * Opens the output stream to the given location. STDOUT is returned if the
+   * location is <code>null</code>.
+   * 
+   * @param location URL string
+   * @return An output stream
    * @throws Exception
    */
-  protected OutputStream openStream(String location) throws Exception
-  {
-    // make a URI from location.
-    URI uri = new URI(location);
-    URL url = uri.toURL();
-    URLConnection c = url.openConnection();
-    return c.getOutputStream();
+  protected OutputStream openStream(String location) throws Exception {
+    if (location == null) {
+      return defaultOutput;
+    } else {
+      // make a URI from location.
+      URI uri = new URI(location);
+      URL url = uri.toURL();
+      URLConnection c = url.openConnection();
+      return c.getOutputStream();
+    }
+  }
+  
+  public OutputStream getDefaultOutput() {
+    return defaultOutput;
+  }
+
+  public void setDefaultOutput(OutputStream defaultOutput) {
+    this.defaultOutput = defaultOutput;
   }
 }
