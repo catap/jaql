@@ -18,56 +18,40 @@ package com.ibm.jaql.io;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Superclass for output adapters that take a {@link JsonRecord} for initialization. */
-public abstract class AbstractOutputAdapter implements OutputAdapter
-{
+/**
+ * Superclass for output adapters that take a {@link JsonRecord} for
+ * initialization.
+ */
+public abstract class AbstractOutputAdapter implements OutputAdapter {
   /**
-   * 
+   * IO descriptor.
    */
   protected JsonRecord args;
 
   /**
-   * 
+   * Location.
    */
-  protected String  location;
+  protected String location;
 
   /**
-   * 
+   * Output options.
    */
   protected JsonRecord options;
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.DataStoreAdapter#initializeFrom(com.ibm.jaql.lang.JRecord)
-   */
-  public void init(JsonValue args) throws Exception
-  {
-    this.args = (JsonRecord)args;
-    // set the location
-    this.location = AdapterStore.getStore().getLocation(this.args);
-
-    // set the options
-    this.options = AdapterStore.getStore().output.getOption(this.args);
+  @Override
+  public void init(JsonValue v) throws Exception {
+    args = (JsonRecord) v;
+    location = AdapterStore.getStore().getLocation(args);
+    options = AdapterStore.getStore().output.getOption(args);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.DataStoreAdapter#open()
-   */
-  public void open() throws Exception
-  {
-    // nothing
+  @Override
+  public void open() throws Exception {
+  // nothing
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.DataStoreAdapter#close()
-   */
-  public void close() throws Exception
-  {
-    // nothing
+  @Override
+  public void close() throws Exception {
+  // nothing
   }
 }

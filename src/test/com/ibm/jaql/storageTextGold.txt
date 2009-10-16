@@ -43,7 +43,7 @@ read(lines($f));##
   ",,"
 ]
 
-read(del($f));##
+read(delHdfs($f));##
 [
   [
     "HELLO",
@@ -92,7 +92,7 @@ read(del($f));##
   ]
 ]
 
-read(del($f, { quoted: false }));##
+read(delHdfs($f, { quoted: false }));##
 [
   [
     "HELLO",
@@ -141,15 +141,15 @@ read(del($f, { quoted: false }));##
   ]
 ]
 
-read(del($f, { quoted: null }));##
+read(delHdfs($f, { quoted: null }));##
 FAILURE
  // should fail
-read(del($f, { delimiter: null }));##
+read(delHdfs($f, { delimiter: null }));##
 FAILURE
  // should fail
 
 // test field information
-read(del($f, { fields: ["c1", "c2", "c3"] }));##
+read(delHdfs($f, { fields: ["c1", "c2", "c3"] }));##
 [
   {
     "c1": "HELLO",
@@ -198,7 +198,7 @@ read(del($f, { fields: ["c1", "c2", "c3"] }));##
   }
 ]
 
-read(del($f, { fields: ["c3", "c1", "c2"] }));##
+read(delHdfs($f, { fields: ["c3", "c1", "c2"] }));##
 [
   {
     "c1": "world",
@@ -247,7 +247,7 @@ read(del($f, { fields: ["c3", "c1", "c2"] }));##
   }
 ]
 
-read(del($f, { fields: null }));##
+read(delHdfs($f, { fields: null }));##
 [
   [
     "HELLO",
@@ -297,13 +297,13 @@ read(del($f, { fields: null }));##
 ]
 
 
-read(del($f, { fields: { c1: schema string, c2:schema string, c3:schema string } }));##
+read(delHdfs($f, { fields: { c1: schema string, c2:schema string, c3:schema string } }));##
 FAILURE
  // should fail
-read(del($f, { fields: ["c1", "c2", 3 ] }));##
+read(delHdfs($f, { fields: ["c1", "c2", 3 ] }));##
 FAILURE
  // should fail
-read(del($f, { fields: ["c1", "c2", "c3", "c4"] }));##
+read(delHdfs($f, { fields: ["c1", "c2", "c3", "c4"] }));##
 FAILURE
  // should fail
 
@@ -311,10 +311,10 @@ FAILURE
 $f = "delimited-invalid1.del";##
 "$f"
 
-read(del($f));##
+read(delHdfs($f));##
 FAILURE
                       // should fail
-read(del($f, { quoted: false }));##
+read(delHdfs($f, { quoted: false }));##
 [
   [
     "hello",
@@ -327,10 +327,10 @@ read(del($f, { quoted: false }));##
 $f = "delimited-invalid2.del";##
 "$f"
 
-read(del($f));##
+read(delHdfs($f));##
 FAILURE
                       // should fail
-read(del($f, { quoted: false }));##
+read(delHdfs($f, { quoted: false }));##
 [
   [
     "hello",
@@ -343,10 +343,10 @@ read(del($f, { quoted: false }));##
 $f = "delimited-invalid3.del";##
 "$f"
 
-read(del($f));##
+read(delHdfs($f));##
 FAILURE
                       // should fail
-read(del($f, { quoted: false }));##
+read(delHdfs($f, { quoted: false }));##
 FAILURE
    // should fail
 
@@ -489,7 +489,7 @@ FAILURE
  // should fail
 
 // all together
-schemaof(read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } })));##
+schemaof(read(delHdfs("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } })));##
 schema [
          {
            "c1": string?,
@@ -498,7 +498,7 @@ schema [
          }<0,*>
        ]
 
-schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));##
+schemaof(read(delHdfs("delimited.del", { convert: schema [ string?, string?, long? ] })));##
 schema [
          [
            string?,
@@ -508,7 +508,7 @@ schema [
        ]
 
 
-read(del("delimited.del", { convert: schema [ string?, string?, long? ] }));##
+read(delHdfs("delimited.del", { convert: schema [ string?, string?, long? ] }));##
 [
   [
     "HELLO",
@@ -557,7 +557,7 @@ read(del("delimited.del", { convert: schema [ string?, string?, long? ] }));##
   ]
 ]
 
-schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));##
+schemaof(read(delHdfs("delimited.del", { convert: schema [ string?, string?, long? ] })));##
 schema [
          [
            string?,
@@ -566,7 +566,7 @@ schema [
          ]<0,*>
        ]
 
-read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));##
+read(delHdfs("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));##
 [
   {
     "c1": "HELLO",

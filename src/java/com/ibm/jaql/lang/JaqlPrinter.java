@@ -1,5 +1,5 @@
 /*
- * Copyright (C) IBM Corp. 2008.
+ * Copyright (C) IBM Corp. 2009.
  * 
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -13,22 +13,37 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io;
+package com.ibm.jaql.lang;
 
-import java.io.Closeable;
 import java.io.IOException;
 
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
- * A Writer that writes values.
+ * For printing of output in JAQL shell.
  */
-public abstract class ClosableJsonWriter implements Closeable {
+public interface JaqlPrinter {
   /**
-   * Writes the JSON value.
+   * Prints the evaluated value of the given JAQL expression.
    * 
-   * @param value JSON value
+   * @param expr An expression
+   * @param context Context
+   * @throws Exception
+   */
+  public void print(Expr expr, Context context) throws Exception;
+
+  /**
+   * Prints the JAQL shell prompt.
+   * 
    * @throws IOException
    */
-  public abstract void write(JsonValue value) throws IOException;
+  public void printPrompt() throws IOException;
+
+  /**
+   * Closes this printer.
+   * 
+   * @throws IOException
+   */
+  public void close() throws IOException;
 }

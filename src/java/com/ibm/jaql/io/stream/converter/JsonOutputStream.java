@@ -23,7 +23,7 @@ import com.ibm.jaql.io.converter.JsonToStream;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** Writes serialized {@link Item}s to a binary output stream.
+/** Writes serialized {@link JsonValue}s to a binary output stream.
  * 
  */
 public class JsonOutputStream implements JsonToStream<JsonValue>
@@ -84,4 +84,7 @@ public class JsonOutputStream implements JsonToStream<JsonValue>
       output.close();
     }
   }
+  
+  @Override
+  public void init(JsonValue options) throws Exception {}
 }

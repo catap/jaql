@@ -20,19 +20,29 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression used for writing external data. It is called as follows:
- * write({type: '...', location: '...', outoptions: '...', inoptions: '...'},
- * expr); <br>
- * The type specifies which OutputAdapter to use, the location specifies the
- * address to which the adapter will write. The optional outoptions further
- * parametrize the adapter's behavior. The optional inoptions can be used to
- * parametrize a read expression that takes as input a write expression (e.g.,
- * read(write({...}, expr)) ). <br>
- * If outoptions or inoptions are not specified, then default options that are
- * registered for the type at the AdapterStore will be used. If no options are
- * specified and there are no defaults registered, it is an error. If both
- * options are specified and default options are registered, then the union of
- * option fields will be used. If there are duplicate names, then the query
- * options will be used as an override.
+ * 
+ * <pre>
+ * write({type: '...', 
+ *        location: '...', 
+ *        outoptions: '...', 
+ *        inoptions: '...'}
+ *       , expr);
+ * </pre>
+ * 
+ * The <tt>type</tt> specifies which {@link OutputAdapter} to use, the
+ * <tt>location</tt> specifies the address to which the adapter will write. The
+ * optional <tt>outoptions</tt> further parameterize the adapter's behavior. The
+ * optional <tt>inoptions</tt> can be used to parametrize a read expression that
+ * takes as input a write expression (e.g., <tt>read(write({...}, expr)) </tt>).
+ * <p>
+ * If <tt>outoptions</tt> or <tt>inoptions</tt> are unspecified, then default
+ * options that are registered for the type at the {@link AdapterStore} will be
+ * used. If no options are specified and there are no defaults registered, it is
+ * an error. If both options are specified and default options are registered,
+ * then the union of option fields will be used. If there are duplicate names,
+ * then the query options will be used as an override.
+ * 
+ * @see AdapterStore
  */
 public final class WriteFn extends AbstractWriteExpr implements PotentialMapReducible
 {

@@ -21,7 +21,6 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 
@@ -29,7 +28,7 @@ import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
 import antlr.collections.impl.BitSet;
 
-import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
@@ -66,10 +65,24 @@ public class Jaql
     // System.exit(0); // possible jvm 1.6 work around for "JDWP Unable to get JNI 1.2 environment"
   }
 
-  public static void run(String filename, InputStream in) throws Exception
+  public static void run(String filename,
+                         InputStream in) throws Exception
+  {
+    run(filename, in, null, false);
+  }
+  
+  public static void run(String filename,
+                         InputStream in,
+                         OutputAdapter outputAdapter,
+                         boolean batchMode) throws Exception
   {
     Jaql engine = new Jaql(filename, in);
-    engine.setOutput(System.out);
+
+    if (outputAdapter == null) {
+      engine.setJaqlPrinter(new StreamPrinter(System.out, batchMode));
+    } else {
+      engine.setJaqlPrinter(new IODescriptorPrinter(outputAdapter.getWriter()));
+    }
     engine.run();
   }
 
@@ -86,8 +99,7 @@ public class Jaql
   protected Context context = new Context();
   protected boolean doRewrite = true;
   protected boolean stopOnException = false;
-  protected PrintStream output = null;  // TODO: should generalize to generic output handler
-  protected String prompt = "\njaql> ";
+  private JaqlPrinter printer;
   
   static
   {
@@ -138,20 +150,6 @@ public class Jaql
     setInput("<string>", new StringReader(jaql));
   }
   
-  public void setOutput(PrintStream output)
-  {
-    this.output = output;
-  }
-
-  /**
-   * Set the prompt displayed before each statement.  Set to "" to disable.
-   * @param prompt
-   */
-  public void setPrompt(String prompt)
-  {
-    this.prompt = prompt;
-  }
-
   /**
    * Turn on and off the query rewrite engine.
    * 
@@ -160,6 +158,10 @@ public class Jaql
   public void enableRewrite(boolean doRewrite)
   {
     this.doRewrite = doRewrite;
+  }
+  
+  public void setJaqlPrinter(JaqlPrinter printer) {
+    this.printer = printer;
   }
   
 //  public void enableMapReduce(boolean doMapReduce)
@@ -292,10 +294,7 @@ public class Jaql
       context.reset(); // close the last query, if still open
       try
       {
-        if( output != null )
-        {
-          output.print(prompt);
-        }
+        printer.printPrompt();
         expr = parser.parse();
       }
       catch (Throwable error)
@@ -339,8 +338,7 @@ public class Jaql
         }
         else if( expr instanceof ExplainExpr )
         {
-          JsonValue value = expr.eval(context);
-          System.out.println(value);
+          printer.print(expr, context);
         }
         else if( expr != null )
         {
@@ -411,31 +409,26 @@ public class Jaql
   public boolean run() throws Exception
   {
     Expr expr;
-    while( (expr = prepareNext()) != null )
+    try {
+      while( (expr = prepareNext()) != null )
+      {
+        try
+        {
+          printer.print(expr, context);
+        }
+        catch( Throwable error )
+        {
+          handleError(error);
+        }
+        finally
+        {
+          context.reset(); 
+        }
+      }
+    } 
+    finally 
     {
-      try
-      {
-        if (expr.getSchema().is(ARRAY, NULL).always())
-        {
-          JsonIterator iter = expr.iter(context);
-          iter.print(output);
-        }
-        else
-        {
-          JsonValue value = expr.eval(context);
-          JsonUtil.print(output, value);
-        }
-        output.println();
-        output.flush();
-      }
-      catch( Throwable error )
-      {
-        handleError(error);
-      }
-      finally
-      {
-        context.reset(); 
-      }
+      printer.close();
     }
     return true;
   }
