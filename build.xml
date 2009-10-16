@@ -43,7 +43,6 @@
     <property name="test.build.dir" value="${build.dir}/test" />
     <property name="test.src.dir" value="${basedir}/src/test/com/ibm/jaql" />
     <property name="test.classes.dir" value="${build.dir}/classes" />
-    <property name="test.include" value="jaql/Test*" />
     <property name="test.exclude" value=""/>
     <property name="test.classpath.id" value="test.classpath.mini" />
     <property name="test.output" value="no" />
@@ -149,6 +148,16 @@
         <mkdir dir="${test.classes.dir}" />
         <unjar src="${build.dir}/jaql.jar" dest="${build.dir}/classes" />
 
+        <!-- Use testcase property if the property is provided. -->
+        <condition property="test.include" value="${testcase}">
+          <isset property="testcase"/>
+        </condition> 
+        <condition property="test.include" value="jaql/Test*">
+          <not>
+            <isset property="testcase"/>
+          </not>
+        </condition> 
+
         <junit showoutput="${test.output}"
                printsummary="yes"
                haltonfailure="no"
@@ -178,7 +187,7 @@
         	<sysproperty key="test.rewrite" value="${test.rewrite}" />
             <classpath refid="${test.classpath.id}" />
             <formatter type="${test.junit.output.format}" />
-            <batchtest todir="${test.build.dir}" unless="testcase">
+            <batchtest todir="${test.build.dir}">
                 <fileset dir="${test.classes.dir}"
                          includes="**/${test.include}.class"
                          excludes="**/${test.exclude}.class" />
