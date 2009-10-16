@@ -794,3 +794,83 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 //      by g = j.g
 //      into bs )
 //  [ { g: g, as: count(as), bs: count(bs) } ];
+
+//-- test jsonToDel --
+[[1,2]] -> jsonToDel();##
+[
+  "1,2"
+]
+
+$arrays1 = [[1,2],[3,4]];##
+"$arrays1"
+
+$arrays1 -> jsonToDel();##
+[
+  "1,2",
+  "3,4"
+]
+
+$arrays2 = [['one','two'],['three','four']];##
+"$arrays2"
+
+$arrays2 -> jsonToDel();##
+[
+  "\"one\",\"two\"",
+  "\"three\",\"four\""
+]
+
+$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];##
+"$records"
+
+$records -> jsonToDel({fields: ['name', 'age']});##
+[
+  "\"mike\",10",
+  "\"john\",20"
+]
+
+$mixed =  [{name: 'mike', age: 10}, [100, 200]];##
+"$mixed"
+
+$mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});##
+[
+  "\"mike\"<=>10",
+  "100<=>200"
+]
+
+
+// json format
+[[1,2],[3,4]] -> write({type: 'json'});##
+{
+  "type": "json"
+}
+
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'json'});##
+{
+  "type": "json"
+}
+
+
+// del format
+[[1,2],[3,4]]->write({type: 'del'});##
+{
+  "type": "del"
+}
+
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'del', outoptions: {fields: ['lang', 'no'], delimiter: '='}});##
+{
+  "outoptions": {
+    "delimiter": "=",
+    "fields": [
+      "lang",
+      "no"
+    ]
+  },
+  "type": "del"
+}
+
+
+// xml format
+[{root: {content: [1,2,3]}}] -> write({type: 'xml'});##
+{
+  "type": "xml"
+}
