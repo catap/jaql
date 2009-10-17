@@ -23,8 +23,11 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 import com.ibm.jaql.util.RandomAccessBuffer;
+
 /**
  * A converter to convert a JSON value to a XML file.
+ * 
+ * @see JsonToXmlFn
  */
 public class XmlTextOutputStream extends LinesJsonTextOutputStream {
   private JsonToXmlFn toXml = new JsonToXmlFn();

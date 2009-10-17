@@ -29,7 +29,12 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
 /**
- * For converting a JSON value to a CSV line.
+ * For converting a JSON value to a CSV line. Only if the following conditions
+ * are satisfied, a JSON value can be converted to a CSV line:
+ * <ol>
+ * <li>JSON array</li>
+ * <li>JSON record and field names options are provided</li>
+ * <ol>
  */
 public class JsonToDel {
 
@@ -38,7 +43,7 @@ public class JsonToDel {
   private RandomAccessBuffer buf = new RandomAccessBuffer();
   private PrintStream out = new PrintStream(buf);
   private final BasicTextFullSerializer serializer = new BasicTextFullSerializer();
-  
+
   public JsonToDel() {
     this(null);
   }
@@ -72,8 +77,8 @@ public class JsonToDel {
    * @param src JSON value
    * @return The buffer contains the byte array of UTF-8 string.
    * @throws IOException
-   * @throws IllegalArgumentException If the JSON value is neither a JSON record
-   *           nor a JSON array.
+   * @throws IllegalArgumentException If the JSON value can be converted to a
+   *           CSV line.
    */
   public RandomAccessBuffer convert(JsonValue src) throws IOException {
     buf.reset();
@@ -101,7 +106,7 @@ public class JsonToDel {
     out.flush();
     return buf;
   }
-  
+
   /**
    * Converts the JSON value into a JSON string for a CSV line.
    * 
@@ -114,7 +119,7 @@ public class JsonToDel {
     JsonString line = new JsonString(buf.getBuffer(), buf.size());
     return line;
   }
-  
+
   /**
    * Converts the JSON iterator into a JSON iterator for CSV lines.
    * 
