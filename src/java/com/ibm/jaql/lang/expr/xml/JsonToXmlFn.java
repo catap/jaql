@@ -35,11 +35,18 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  * A function for converting JSON to XML. It is called as follows:
  * <code>jsonToXml()</code> . It is counterpart of {@link XmlToJsonFn}. But it
  * does not perform a conversion which is reverse to the conversion in
- * {@link XmlToJsonFn}. The reason is that .
+ * {@link XmlToJsonFn}. The reason is:
  * <ol>
  * <li>There is no concepts such as namespace in JSON</li>
  * <li>The conversion is for a conversion from general JSON to XML. It is the
  * commons case that the JSON to be converted is not converted from XML.</li>
+ * </ol>
+ * 
+ * Only a JSON value satisfying the following conditions can be converted to
+ * XML:
+ * <ol>
+ * <li>It is a JSON record whose size is 1.</li>
+ * <li>The value of the only JSON pair in this JSON record is not JSON array.</li>
  * </ol>
  * 
  * An array nested in another array does not inherit the nesting array. For
@@ -114,13 +121,7 @@ public class JsonToXmlFn extends Expr {
    * 
    * @param v JSON value
    * @return XML string
-   * @throws IllegalArgumentException If the JSON value does not satisfy the
-   *           following condition:
-   *           <ol>
-   *           <li>It is a JSON record whose size is 1.</li>
-   *           <li>The value of the only JSON pair in this JSON record is not
-   *           JSON array.</li>
-   *           </ol>
+   * @throws IllegalArgumentException If the JSON value can be converted to XML.
    * @throws Exception
    */
   String toXml(JsonValue v) {
