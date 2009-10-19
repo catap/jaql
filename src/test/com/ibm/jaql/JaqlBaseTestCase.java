@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -26,6 +29,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -44,477 +48,428 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
-import com.ibm.jaql.lang.registry.RNGStore;
-import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
-import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.util.TeeInputStream;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * 
  */
-public abstract class JaqlBaseTestCase extends TestCase
-{
+/**
+ * @author kelvin
+ *
+ */
+public abstract class JaqlBaseTestCase extends TestCase {
 
-  private static final Log LOG             = LogFactory
-                                               .getLog(JaqlBaseTestCase.class
-                                                   .getName());
+	private static final Log LOG = LogFactory.getLog(JaqlBaseTestCase.class
+			.getName());
 
-  public static String     FAILURE         = "FAILURE";
+	public static String FAILURE = "FAILURE";
 
-  private String           m_queryFileName = null;
-  private String           m_tmpFileName   = null;
-  private String           m_goldFileName  = null;
-  private String           m_decompileName = null;
-  private String           m_rewriteName   = null;
+	private String m_queryFileName = null;
+	private String m_tmpFileName = null;
+	private String m_goldFileName = null;
+	private String m_decompileName = null;
+	private String m_rewriteName = null;
 
-  private HashSet<Var>     captures        = new HashSet<Var>();
+	private HashSet<Var> captures = new HashSet<Var>();
 
-  protected boolean runResult = true;
-  protected boolean runDecompileResult = true;
-  protected boolean runRewriteResult = true;
-  
-  /*
-   * (non-Javadoc)
-   * 
-   * @see junit.framework.TestCase#setUp()
-   */
-  protected abstract void setUp() throws IOException;
+	protected boolean runResult = true;
+	protected boolean runDecompileResult = true;
+	protected boolean runRewriteResult = true;
 
-  /**
-   * @param prefix
-   */
-  protected void setFilePrefix(String prefix)
-  {
-    m_queryFileName = System.getProperty("test.cache.data") + File.separator
-        + prefix + "Queries.txt";
-    m_tmpFileName = System.getProperty("test.cache.data") + File.separator
-        + prefix + "Tmp.txt";
-    m_goldFileName = System.getProperty("test.cache.data") + File.separator
-        + prefix + "Gold.txt";
-    m_decompileName = System.getProperty("test.cache.data") + File.separator
-        + prefix + "Decompile.txt";
-    m_rewriteName = System.getProperty("test.cache.data") + File.separator
-        + prefix + "Rewrite.txt";
-    
-    runResult = "true".equals(System.getProperty("test.plain"));
-    System.err.println("runResult == " + runResult);
+	protected int PLAIN = 1;
+	protected int DECOMPLIE = 2;
+	protected int REWRITE = 3;
 
-    runDecompileResult = "true".equals(System.getProperty("test.explain"));
-    System.err.println("runDecompileResult == " + runDecompileResult);
+	private Map<String, Long> exprTypeCounter = null;
 
-    runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
-    System.err.println("runRewriteResult == " + runRewriteResult);
-  }
-  
-  /**
-   * @param prefix
-   */
-  protected void setFilePrefix(File dir, String prefix)
-  {
-    m_queryFileName = dir + File.separator
-        + prefix + "Queries.txt";
-    m_tmpFileName = dir+ File.separator
-        + prefix + "Tmp.txt";
-    m_goldFileName = dir + File.separator
-        + prefix + "Gold.txt";
-    m_decompileName = dir + File.separator
-        + prefix + "Decompile.txt";
-    m_rewriteName = dir + File.separator
-        + prefix + "Rewrite.txt";
-    
-    runResult = "true".equals(System.getProperty("test.plain"));
-    System.err.println("runResult == " + runResult);
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see junit.framework.TestCase#setUp()
+	 */
+	protected abstract void setUp() throws IOException;
 
-    runDecompileResult = "true".equals(System.getProperty("test.explain"));
-    System.err.println("runDecompileResult == " + runDecompileResult);
+	/**
+	 * @param prefix
+	 */
+	protected void setFilePrefix(String prefix) {
+		setFilePrefix(new File(System.getProperty("test.cache.data")), prefix);
+	}
 
-    runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
-    System.err.println("runRewriteResult == " + runRewriteResult);
+	/**
+	 * @param prefix
+	 */
+	protected void setFilePrefix(File dir, String prefix) {
+		m_queryFileName = dir + File.separator + prefix + "Queries.txt";
+		m_tmpFileName = dir + File.separator + prefix + "Tmp.txt";
+		m_goldFileName = dir + File.separator + prefix + "Gold.txt";
+		m_decompileName = dir + File.separator + prefix + "Decompile.txt";
+		m_rewriteName = dir + File.separator + prefix + "Rewrite.txt";
 
-  }
+		runResult = "true".equals(System.getProperty("test.plain"));
+		System.err.println("runResult = " + runResult);
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see junit.framework.TestCase#tearDown()
-   */
-  protected abstract void tearDown() throws IOException;
+		runDecompileResult = "true".equals(System.getProperty("test.explain"));
+		System.err.println("runDecompileResult = " + runDecompileResult);
 
-  /**
-   * @param inputFileName
-   * @param outputFileName
-   * @throws FileNotFoundException
-   * @throws IOException
-   */
-  protected void evaluateQueries(String inputFileName, String outputFileName)
-      throws FileNotFoundException, IOException
-  {
-    // open input and output streams
-    InputStream input = new FileInputStream(inputFileName);
-    input = new TeeInputStream(input, System.err);
+		runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
+		System.err.println("runRewriteResult = " + runRewriteResult);
 
-    PrintStream oStr = new PrintStream(new FileOutputStream(outputFileName));
-    TeeInputStream teeQueries = new TeeInputStream(input, oStr);
+	}
 
-    PrintStream dStr = new PrintStream(new FileOutputStream(m_decompileName));
-    TeeInputStream teeDecompile = new TeeInputStream(teeQueries, dStr);
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see junit.framework.TestCase#tearDown()
+	 */
+	protected abstract void tearDown() throws IOException;
 
-    PrintStream rStr = new PrintStream(new FileOutputStream(m_rewriteName));
-    TeeInputStream teeRewrite = new TeeInputStream(teeDecompile, rStr);
+	private void execute(String inputFileName, String outputFilename, int type)
+			throws FileNotFoundException, IOException {
+		// Initialize input, output streams
+		InputStream input = new FileInputStream(inputFileName);
+		input = new TeeInputStream(input, System.err);
+		PrintStream oStr = new PrintStream(new FileOutputStream(outputFilename));
+		TeeInputStream teeInput = new TeeInputStream(input, oStr);
 
-    // setup the parser
-    JaqlLexer lexer = new JaqlLexer(teeRewrite);
-    JaqlParser parser = new JaqlParser(lexer);
-    Context context = new Context();
-    boolean parsing = false;
+		// Initialize parser
+		JaqlLexer lexer = new JaqlLexer(teeInput);
+		JaqlParser parser = new JaqlParser(lexer);
+		Context context = new Context();
 
-    // saves and restores for rng's
-    HashMap<JsonValue, RNGStore.RNGEntry> qRngMap = new HashMap<JsonValue, RNGStore.RNGEntry>();
-    HashMap<JsonValue, RNGStore.RNGEntry> dRngMap = new HashMap<JsonValue, RNGStore.RNGEntry>();
-    HashMap<JsonValue, RNGStore.RNGEntry> rRngMap = new HashMap<JsonValue, RNGStore.RNGEntry>();
+		// expression type counter
+		exprTypeCounter = new HashMap<String, Long>();
 
-    int qNum = 0;
-    // consume the input
-    while (true)
-    {
-      try
-      {
-        System.err.println("\n\nParsing query at " + inputFileName + ":"
-            + lexer.getLine());
-        parser.env.reset();
-        parsing = true;
-        Expr expr = parser.parse();
-        parsing = false;
-        System.err.println("\n\nParsed query at " + inputFileName + ":"
-            + lexer.getLine());
-        oStr.flush();
-        if (parser.done)
-        {
-          break;
-        }
-        if (expr == null)
-        {
-          continue;
-        }
-        VarTagger.tag(expr);
-        
-        captures.clear();
-        System.err.println("\nDecompiled query:");
-        expr.decompile(System.err, captures);
-        System.err.println(";\nEnd decompiled query\n");
-        context.reset();
-        qNum++;
+		// Begin to loop all sentences
+		boolean parsing = false;
+		int qNum = 0;
+		while (true) {
+			try {
+				parser.env.reset();
+				parsing = true;
+				Expr expr = parser.parse();
+				parsing = false;
+				System.err.println("\n\nParsing query at " + inputFileName
+						+ ":" + lexer.getLine());
+				oStr.flush();
+				if (parser.done) {
+					break;
+				}
+				if (expr == null) {
+					continue;
+				}
+				
+				VarTagger.tag(expr);
+				captures.clear();
+				System.err.println("\nDecompiled query:");
+				expr.decompile(System.err, captures);
+				System.err.println(";\nEnd decompiled query\n");
 
-        //
-        // Correctness for RNG depends on the order of tests: 
-        //   plain (q) -> decompile (d) ->  rewrite (r)
-        // Assumption: either all test modes are run (e.g., ant test) or
-        //             only one of the test modes is run
-        // Case [all tests]: current test saves previous test's RNG state 
-        //                   and restores current
-        // Case [one test] : no saves or restores are needed
-        if (runResult)
-        {
-          System.err.println("\nrunning formatResult");
-          System.err.println(runResult + "," + runDecompileResult + "," + runRewriteResult);
-          if(runningAllTests()) {
-            JaqlUtil.getRNGStore().save(rRngMap);
-            JaqlUtil.getRNGStore().restore(qRngMap);
-          } else if(!runningOneTest()){
-            System.err.println("Neither one test mode nor all test modes are run");
-          }
-          formatResult(qNum, expr, context, oStr);
-        }
+				if (type == PLAIN) {
+					System.err.println("\nrunning formatResult");
+					formatResult(qNum, expr, context, oStr);
+				} else if (type == DECOMPLIE) {
+					System.err.println("\nrunning formatDecompileResult");
+					formatDecompileResult(expr, context, oStr);
+				} else {
+					System.err.println("\nrunning formatRewriteResult");
+					formatRewriteResult(expr, context, oStr);
+				}
+				context.reset();
+				qNum++;
+			} catch (Exception ex) {
+				LOG.error(ex);
+				ex.printStackTrace(System.err);
+				formatFailure(qNum, oStr);
+				if (parsing) {
+					BitSet bs = new BitSet();
+					bs.add(JaqlParser.EOF);
+					bs.add(JaqlParser.SEMI);
+					try {
+						parser.consumeUntil(bs);
+					} catch (TokenStreamException tse) {
+						queryFailure(tse);
+					}
+				}
+			}
+		}
 
-        if (runDecompileResult)
-        {
-          System.err.println("\nrunning formatDecompileResult");
-          if(runningAllTests()) {
-            JaqlUtil.getRNGStore().save(qRngMap);
-            JaqlUtil.getRNGStore().restore(dRngMap);
-          } else if(!runningOneTest()){
-            System.err.println("Neither one test mode nor all test modes are run");
-          }
-          formatDecompileResult(expr, context, dStr);
-        }
+		// Print out all concerned expression occurrences
+		java.util.Iterator<String> i = exprTypeCounter.keySet().iterator();
+		while (i.hasNext()) {
+			String tem = i.next();
+			System.err.println("\n\nType " + tem + " occured "
+					+ exprTypeCounter.get(tem) + " times");
+		}
+		
+		//clear type counter
+		exprTypeCounter.clear();
 
-        if (runRewriteResult)
-        {
-          System.err.println("\nrunning formatRewriteResult");
-          if(runningAllTests()) {
-            JaqlUtil.getRNGStore().save(dRngMap);
-            JaqlUtil.getRNGStore().restore(rRngMap);
-          } else if(!runningOneTest()){
-            System.err.println("Neither one test mode or all test modes are run");
-          }
-          formatRewriteResult(expr, parser, context, rStr);
-          System.err.println("\nMade it to the end for this query!");
-        }
-      }
-      catch (Exception ex)
-      {
-        LOG.error(ex);
-        ex.printStackTrace(System.err);
-        formatFailure(qNum, oStr);
-        formatFailure(qNum, dStr);
-        formatFailure(qNum, rStr);
-        if (parsing)
-        {
-          BitSet bs = new BitSet();
-          bs.add(JaqlParser.EOF);
-          bs.add(JaqlParser.SEMI);
-          try
-          {
-            parser.consumeUntil(bs);
-          }
-          catch (TokenStreamException tse)
-          {
-            queryFailure(tse);
-          }
-        }
-      }
-    }
+		// Close all streams
+		context.reset();
+		oStr.flush();
+		oStr.close();
+		teeInput.close();
 
-    // close the input and output
-    context.reset();
-    teeRewrite.close();
-    teeDecompile.close();
-    teeQueries.close();
-    rStr.flush();
-    rStr.close();
-    dStr.flush();
-    dStr.close();
-    oStr.flush();
-    oStr.close();
-  }
-  
-  private boolean runningAllTests() {
-    return (runResult && runDecompileResult && runRewriteResult);
-  }
-  
-  private boolean runningOneTest() {
-    return (runResult && !runDecompileResult && !runRewriteResult) ||
-      (!runResult && runDecompileResult && !runRewriteResult) ||
-      (!runResult && !runDecompileResult && runRewriteResult);
-  }
+	}
 
-  /**
-   * @param qId
-   * @param expr
-   * @param context
-   * @param str
-   */
-  private void formatResult(int qId, Expr expr, Context context, PrintStream str)
-  {
-    printHeader(str);
-    try
-    {
-      Schema schema = expr.getSchema();
-      if (schema.is(ARRAY,NULL).always())
-      {
-//        JsonIterator iter = expr.iter(context);
-//        iter.print(str);
+	/**
+	 * @param qId
+	 * @param expr
+	 * @param context
+	 * @param str
+	 */
+	private void formatResult(int qId, Expr expr, Context context,
+			PrintStream str) {
 
-        JsonValue value = expr.eval(context);
-        JsonUtil.print(str, value);
-        if (!schema.matches(value))
-        {
-          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH\n" + schema);        
-        }
-      }
-      else
-      {
-        JsonValue value = expr.eval(context);
-        JsonUtil.print(str, value);
-        if (!schema.matches(value))
-        {
-          throw new AssertionError("VALUE\n" + value + "\nDOES NOT MATCH\n" + schema);        
-        }
-      }
-    }
-    catch (Exception e)
-    {
-      queryFailure(e);
-      str.print(FAILURE);
-    }
-    printFooter(str);
-    str.flush();
-  }
+		// count expression occurrence
+		countType(expr);
 
-  /**
-   * @param expr
-   * @param context
-   * @param str
-   */
-  private void formatDecompileResult(Expr expr, Context context, PrintStream str)
-  {
-    // decompile expr into a temp buffer
-    ByteArrayOutputStream buf = new ByteArrayOutputStream();
-    PrintStream tmpStr = new PrintStream(buf);
-    try
-    {
-      Expr dexpr = expr;
-      if (!(expr instanceof AssignExpr))
-      {
-        expr.decompile(tmpStr, new HashSet<Var>());
-        tmpStr.close();
-        //System.err.println("REAL DECOMP:"+buf);
-        // parse it and eval
-        JaqlLexer lexer = new JaqlLexer(new ByteArrayInputStream(buf
-            .toByteArray()));
-        JaqlParser parser = new JaqlParser(lexer);
-        dexpr = parser.stmt();
-      }
-      formatResult(-1, dexpr, context, str);
-    }
-    catch (Exception e)
-    {
-      queryFailure(e);
-      str.print(FAILURE);
-    }
-    str.flush();
-  }
+		printHeader(str);
+		try {
+			Schema schema = expr.getSchema();
+			if (schema.is(ARRAY, NULL).always()) {
+				// JsonIterator iter = expr.iter(context);
+				// iter.print(str);
 
-  /**
-   * @param expr
-   * @param parser
-   * @param context
-   * @param str
-   * @throws Exception
-   */
-  private void formatRewriteResult(Expr expr, JaqlParser parser,
-      Context context, PrintStream str) throws Exception
-  {
-    // rewrite expr
-    RewriteEngine rewriter = new RewriteEngine();
-    try
-    {
-      expr = rewriter.run(expr);
-      VarTagger.tag(expr);
-      captures.clear();
-      System.err.println("\nRewritten query:");
-      expr.decompile(System.err, captures);
-      System.err.println(";\nEnd rewritten query");
-      context.reset();
-    }
-    catch (Exception e)
-    {
-      printHeader(str);
-      queryFailure(e);
-      str.print(FAILURE);
-      printFooter(str);
-      str.flush();
-      return;
-    }
-    
-    // eval
-    formatResult(-1, expr, context, str);
-  }
+				JsonValue value = expr.eval(context);
+				JsonUtil.print(str, value);
+				if (!schema.matches(value)) {
+					throw new AssertionError("VALUE\n" + value
+							+ "\nDOES NOT MATCH\n" + schema);
+				}
+			} else {
+				JsonValue value = expr.eval(context);
+				JsonUtil.print(str, value);
+				if (!schema.matches(value)) {
+					throw new AssertionError("VALUE\n" + value
+							+ "\nDOES NOT MATCH\n" + schema);
+				}
+			}
+		} catch (Exception e) {
+			queryFailure(e);
+			str.print(FAILURE);
+		}
+		printFooter(str);
+		str.flush();
+	}
+	
+	/**
+	 * @param expr
+	 */
+	private void countType(Expr expr){
+		
+		if (expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
+				|| expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
+				|| expr instanceof com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr) {
+			String exprTypeStr = expr.getClass().getName();
+			if (exprTypeCounter.containsKey(exprTypeStr)) {
+				exprTypeCounter.put(exprTypeStr, exprTypeCounter
+						.get(exprTypeStr) + 1);
+			} else {
+				exprTypeCounter.put(exprTypeStr, new Long(1));
+			}
+		}
+		
+		//loop all its children to get nested expressions		
+		for(int i = 0 ; i < expr.numChildren() ; i++){
+			countType(expr.child(i));
+		}
+	}
 
-  /**
-   * @param qId
-   * @param str
-   */
-  private void formatFailure(int qId, PrintStream str)
-  {
-    printHeader(str);
-    str.print(FAILURE);
-    printFooter(str);
-  }
+	/**
+	 * @param expr
+	 * @param context
+	 * @param str
+	 */
+	private void formatDecompileResult(Expr expr, Context context,
+			PrintStream str) {
 
-  /**
-   * @param str
-   */
-  private void printHeader(PrintStream str)
-  {
-    str.println("##");
-  }
+		// decompile expr into a temp buffer
+		ByteArrayOutputStream buf = new ByteArrayOutputStream();
+		PrintStream tmpStr = new PrintStream(buf);
+		try {
+			Expr dexpr = expr;
+			if (!(expr instanceof AssignExpr)) {
+				expr.decompile(tmpStr, new HashSet<Var>());
+				tmpStr.close();
+				// System.err.println("REAL DECOMP:"+buf);
+				// parse it and eval
+				JaqlLexer lexer = new JaqlLexer(new ByteArrayInputStream(buf
+						.toByteArray()));
+				JaqlParser parser = new JaqlParser(lexer);
+				dexpr = parser.stmt();
+			}
+			formatResult(-1, dexpr, context, str);
+		} catch (Exception e) {
+			queryFailure(e);
+			str.print(FAILURE);
+		}
+		str.flush();
+	}
 
-  /**
-   * @param str
-   */
-  private void printFooter(PrintStream str)
-  {
-    str.println();
-  }
+	/**
+	 * @param expr
+	 * @param parser
+	 * @param context
+	 * @param str
+	 * @throws Exception
+	 */
+	private void formatRewriteResult(Expr expr, Context context, PrintStream str)
+			throws Exception {
+		// rewrite expr
+		RewriteEngine rewriter = new RewriteEngine();
+		try {
+			expr = rewriter.run(expr);
+			VarTagger.tag(expr);
+			captures.clear();
+			System.err.println("\nRewritten query:");
+			expr.decompile(System.err, captures);
+			System.err.println(";\nEnd rewritten query");
+			context.reset();
+		} catch (Exception e) {
+			printHeader(str);
+			queryFailure(e);
+			str.print(FAILURE);
+			printFooter(str);
+			str.flush();
+			return;
+		}
 
-  /**
-   * @param e
-   */
-  private void queryFailure(Exception e)
-  {
-    LOG.error(e);
-    e.printStackTrace(System.err);
-  }
+		// eval
+		formatResult(-1, expr, context, str);
+	}
 
-  /**
+	/**
+	 * @param qId
+	 * @param str
+	 */
+	private void formatFailure(int qId, PrintStream str) {
+		printHeader(str);
+		str.print(FAILURE);
+		printFooter(str);
+	}
+
+	/**
+	 * @param str
+	 */
+	private void printHeader(PrintStream str) {
+		str.println("##");
+	}
+
+	/**
+	 * @param str
+	 */
+	private void printFooter(PrintStream str) {
+		str.println();
+	}
+
+	/**
+	 * @param e
+	 */
+	private void queryFailure(Exception e) {
+		LOG.error(e);
+		e.printStackTrace(System.err);
+	}
+
+	/**
    * 
    */
-  public void testQueries()
-  {
-    // evaluate the queries
-    try
-    {
-      evaluateQueries(m_queryFileName, m_tmpFileName);
-    }
-    catch (Exception e)
-    {
-      fail(e.getMessage());
-    }
+	public void testQueries() {
+		boolean success = true;
+		try {
+			if (this.runResult) {
+				System.err
+						.println("\n\nExecuting testQueries in plain mode");
+				execute(m_queryFileName, m_tmpFileName, this.PLAIN);
+				try {
+					assertTrue(
+							"\n\nFound difference between current and expected output",
+							compareResults(m_tmpFileName, m_goldFileName, LOG));
+					System.err
+							.println("\n\nExecuted testQueries in plain mode successfully");
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+					fail(e.getMessage());
+					success = false;
+					System.err
+							.println("\n\nExecuted testQueries in plain mode with failure");
+				}
+			}
 
-    // compare the new vs. expected output
-    try
-    {
-      if (runResult)
-      {
-        assertTrue("Found difference between current and expected output",
-            compareResults(m_tmpFileName, m_goldFileName, LOG));
-      }
-      if (runDecompileResult)
-      {
-        assertTrue("Found differences between decompiles and expected ouput",
-            compareResults(m_decompileName, m_goldFileName, LOG));
-      }
-      if (runRewriteResult)
-      {
-        assertTrue("Found difference between rewrite and expected output",
-            compareResults(m_rewriteName, m_goldFileName, LOG));
-      }
-    }
-    catch (IOException e)
-    {
-      e.printStackTrace(System.err);
-      fail();
-    }
-  }
-  
-  /**
-   * @param testFileName
-   * @param goldFileName
-   * @param LOG
-   * @return
-   * @throws IOException
-   */
-  public static boolean compareResults(String testFileName,
-      String goldFileName, Log LOG) throws IOException
-  {
-    // use unix 'diff', ignoring whitespace
-    Runtime rt = Runtime.getRuntime();
-    Process p = rt.exec(new String[]{"diff", "-w", testFileName, goldFileName});
-    InputStream str = p.getInputStream();
+			if (this.runDecompileResult) {
+				System.err
+						.println("\n\nExecuting testQueries in decompile mode");
+				execute(m_queryFileName, m_decompileName, this.DECOMPLIE);
+				try {
+					assertTrue(
+							"\n\nFound differences between decompiles and expected ouput",
+							compareResults(m_decompileName, m_goldFileName, LOG));
+					System.err
+							.println("\n\nExecuted testQueries in decompile mode successfully");
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+					fail(e.getMessage());
+					success = false;
+					System.err
+							.println("\n\nExecuted testQueries in decompile mode with failure");
+				}
+			}
 
-    byte[] b = new byte[1024];
-    int numRead = 0;
-    StringBuilder sb = new StringBuilder();
-    while ((numRead = str.read(b)) > 0)
-    {
-      sb.append(new String(b, 0, numRead, "US-ASCII"));
-    }
-    if (sb.length() > 0)
-      LOG.error("\ndiff -w " + testFileName + " " + goldFileName + "\n" + sb);
+			if (this.runRewriteResult) {
+				System.err
+						.println("\n\nExecuting testQueries in rewrite mode");
+				execute(m_queryFileName, m_rewriteName, this.REWRITE);
+				try {
+					assertTrue(
+							"\n\nFound difference between rewrite and expected output",
+							compareResults(m_rewriteName, m_goldFileName, LOG));
+					System.err
+							.println("\n\nExecuted testQueries in rewrite mode successfully");
+				} catch (Exception e) {
+					e.printStackTrace(System.err);
+					fail(e.getMessage());
+					success = false;
+					System.err
+							.println("\n\nExecuted testQueries in rewrite mode with failure");
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+			fail(e.getMessage());
+		}
+		if (!success)
+			fail();
 
-    return sb.length() == 0;
-  }
+	}
+
+	/**
+	 * @param testFileName
+	 * @param goldFileName
+	 * @param LOG
+	 * @return
+	 * @throws IOException
+	 */
+	public static boolean compareResults(String testFileName,
+			String goldFileName, Log LOG) throws IOException {
+		// use unix 'diff', ignoring whitespace
+		Runtime rt = Runtime.getRuntime();
+		Process p = rt.exec(new String[] { "diff", "-w", testFileName,
+				goldFileName });
+		InputStream str = p.getInputStream();
+
+		byte[] b = new byte[1024];
+		int numRead = 0;
+		StringBuilder sb = new StringBuilder();
+		while ((numRead = str.read(b)) > 0) {
+			sb.append(new String(b, 0, numRead, "US-ASCII"));
+		}
+		if (sb.length() > 0)
+			LOG.error("\ndiff -w " + testFileName + " " + goldFileName + "\n"
+					+ sb);
+
+		return sb.length() == 0;
+	}
 }
