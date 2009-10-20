@@ -35,6 +35,7 @@ import junit.framework.TestCase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jdt.core.dom.ThisExpression;
 
 import antlr.TokenStreamException;
 import antlr.collections.impl.BitSet;
@@ -57,7 +58,7 @@ import com.ibm.jaql.util.TeeInputStream;
  */
 /**
  * @author kelvin
- *
+ * 
  */
 public abstract class JaqlBaseTestCase extends TestCase {
 
@@ -69,14 +70,17 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	private String m_queryFileName = null;
 	private String m_tmpFileName = null;
 	private String m_goldFileName = null;
+	private String m_goldCountFileName = null;
 	private String m_decompileName = null;
 	private String m_rewriteName = null;
+	private String m_countName = null;
 
 	private HashSet<Var> captures = new HashSet<Var>();
 
-	protected boolean runResult = true;
-	protected boolean runDecompileResult = true;
-	protected boolean runRewriteResult = true;
+	protected boolean runResult = false;
+	protected boolean runDecompileResult = false;
+	protected boolean runRewriteResult = false;
+	protected boolean runCountResult = false;
 
 	protected int PLAIN = 1;
 	protected int DECOMPLIE = 2;
@@ -105,8 +109,10 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		m_queryFileName = dir + File.separator + prefix + "Queries.txt";
 		m_tmpFileName = dir + File.separator + prefix + "Tmp.txt";
 		m_goldFileName = dir + File.separator + prefix + "Gold.txt";
+		m_goldCountFileName = dir + File.separator + prefix + "GoldCount.txt";
 		m_decompileName = dir + File.separator + prefix + "Decompile.txt";
 		m_rewriteName = dir + File.separator + prefix + "Rewrite.txt";
+		m_countName = dir + File.separator + prefix + "Count.txt";
 
 		runResult = "true".equals(System.getProperty("test.plain"));
 		System.err.println("runResult = " + runResult);
@@ -116,6 +122,9 @@ public abstract class JaqlBaseTestCase extends TestCase {
 
 		runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
 		System.err.println("runRewriteResult = " + runRewriteResult);
+
+		runCountResult = "true".equals(System.getProperty("test.count"));
+		System.err.println("runCountResult = " + runCountResult);
 
 	}
 
@@ -139,9 +148,6 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		JaqlParser parser = new JaqlParser(lexer);
 		Context context = new Context();
 
-		// expression type counter
-		exprTypeCounter = new HashMap<String, Long>();
-
 		// Begin to loop all sentences
 		boolean parsing = false;
 		int qNum = 0;
@@ -160,7 +166,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				if (expr == null) {
 					continue;
 				}
-				
+
 				VarTagger.tag(expr);
 				captures.clear();
 				System.err.println("\nDecompiled query:");
@@ -173,10 +179,11 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				} else if (type == DECOMPLIE) {
 					System.err.println("\nrunning formatDecompileResult");
 					formatDecompileResult(expr, context, oStr);
-				} else {
+				} else if (type == REWRITE) {
 					System.err.println("\nrunning formatRewriteResult");
 					formatRewriteResult(expr, context, oStr);
 				}
+
 				context.reset();
 				qNum++;
 			} catch (Exception ex) {
@@ -196,16 +203,20 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			}
 		}
 
-		// Print out all concerned expression occurrences
-		java.util.Iterator<String> i = exprTypeCounter.keySet().iterator();
-		while (i.hasNext()) {
-			String tem = i.next();
-			System.err.println("\n\nType " + tem + " occured "
-					+ exprTypeCounter.get(tem) + " times");
+		if (this.runRewriteResult & this.runCountResult && exprTypeCounter != null) {
+			PrintStream cStr = new PrintStream(new FileOutputStream(
+					this.m_countName));
+			// Print out all concerned expression occurrences			
+			java.util.Iterator<String> i = exprTypeCounter.keySet().iterator();
+			while (i.hasNext()) {
+				String tem = i.next();
+				cStr.println(tem + "\t" + exprTypeCounter.get(tem));
+			}
+			cStr.flush();
+			cStr.close();
+			// clear type counter
+			exprTypeCounter.clear();
 		}
-		
-		//clear type counter
-		exprTypeCounter.clear();
 
 		// Close all streams
 		context.reset();
@@ -223,10 +234,6 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	 */
 	private void formatResult(int qId, Expr expr, Context context,
 			PrintStream str) {
-
-		// count expression occurrence
-		countType(expr);
-
 		printHeader(str);
 		try {
 			Schema schema = expr.getSchema();
@@ -255,12 +262,15 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		printFooter(str);
 		str.flush();
 	}
-	
+
 	/**
 	 * @param expr
 	 */
-	private void countType(Expr expr){
-		
+	private void countType(Expr expr) {
+
+		if (exprTypeCounter == null)
+			exprTypeCounter = new HashMap<String, Long>();
+
 		if (expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
 				|| expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
 				|| expr instanceof com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr) {
@@ -272,9 +282,9 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				exprTypeCounter.put(exprTypeStr, new Long(1));
 			}
 		}
-		
-		//loop all its children to get nested expressions		
-		for(int i = 0 ; i < expr.numChildren() ; i++){
+
+		// loop all its children to get nested expressions
+		for (int i = 0; i < expr.numChildren(); i++) {
 			countType(expr.child(i));
 		}
 	}
@@ -337,7 +347,11 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			str.flush();
 			return;
 		}
-
+		
+		// if counter is required
+		if (this.runCountResult)
+			countType(expr);
+		
 		// eval
 		formatResult(-1, expr, context, str);
 	}
@@ -381,8 +395,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		boolean success = true;
 		try {
 			if (this.runResult) {
-				System.err
-						.println("\n\nExecuting testQueries in plain mode");
+				System.err.println("\n\nExecuting testQueries in plain mode");
 				execute(m_queryFileName, m_tmpFileName, this.PLAIN);
 				try {
 					assertTrue(
@@ -419,13 +432,21 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			}
 
 			if (this.runRewriteResult) {
-				System.err
-						.println("\n\nExecuting testQueries in rewrite mode");
+				System.err.println("\n\nExecuting testQueries in rewrite mode");
 				execute(m_queryFileName, m_rewriteName, this.REWRITE);
 				try {
 					assertTrue(
 							"\n\nFound difference between rewrite and expected output",
 							compareResults(m_rewriteName, m_goldFileName, LOG));
+
+					if (this.runCountResult){
+						assertTrue(
+								"\n\nExpression Occurences are different with desired",
+								compareResults(this.m_countName,
+										m_goldCountFileName, LOG));
+						System.err
+						.println("\n\nGot desired expression occurrences");
+					}
 					System.err
 							.println("\n\nExecuted testQueries in rewrite mode successfully");
 				} catch (Exception e) {

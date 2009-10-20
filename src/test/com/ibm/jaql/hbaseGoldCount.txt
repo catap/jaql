@@ -1,0 +1,3 @@
+com.ibm.jaql.lang.expr.hadoop.MapReduceFn	7
+com.ibm.jaql.lang.expr.io.WriteFn	15
+com.ibm.jaql.lang.expr.hadoop.MRAggregate	1
