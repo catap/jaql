@@ -268,7 +268,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	 */
 	private void countType(Expr expr) {		
 		if (expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
-				|| expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
+				|| expr instanceof com.ibm.jaql.lang.expr.io.AbstractReadExpr
 				|| expr instanceof com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr) {			
 			if (exprTypeCounter == null)
 				exprTypeCounter = new HashMap<String, Long>();			
