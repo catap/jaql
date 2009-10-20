@@ -18,12 +18,14 @@ package com.ibm.jaql.lang.expr.number;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.MathExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
@@ -54,34 +56,47 @@ public class ModFn extends Expr
    */
   public JsonNumber eval(final Context context) throws Exception
   {
-    JsonValue w1 = exprs[0].eval(context);
-    if (w1 == null)
+    JsonNumber value1 = (JsonNumber)exprs[0].eval(context);
+    if (value1 == null)
     {
       return null;
     }
-    JsonValue w2 = exprs[1].eval(context);
-    if (w2 == null)
+    JsonNumber value2 = (JsonNumber)exprs[1].eval(context);
+    if (value2 == null)
     {
       return null;
     }
 
-    boolean long1 = w1 instanceof JsonLong;
-    boolean long2 = w2 instanceof JsonLong;
-    long mod;
-    if (long1 && long2)
+    if( value1 instanceof JsonDecimal || value2 instanceof JsonDecimal )
     {
-      mod = ((JsonLong) w1).get() % ((JsonLong) w2).get();
+      BigDecimal x = value1.decimalValue();
+      BigDecimal y = value2.decimalValue();
+      BigDecimal z = x.remainder(y, MathContext.DECIMAL128);
+      return new JsonDecimal(z);
     }
-    else
+    if( value1 instanceof JsonDouble || value2 instanceof JsonDouble )
     {
-      BigDecimal x1 = long1
-          ? new BigDecimal(((JsonLong) w1).get())
-          : ((JsonDecimal) w1).get();
-      BigDecimal x2 = long2
-          ? new BigDecimal(((JsonLong) w2).get())
-          : ((JsonDecimal) w2).get();
-      mod = x1.remainder(x2, MathContext.DECIMAL128).longValue();
+      double x = value1.doubleValue();
+      double y = value2.doubleValue();
+      return new JsonDouble(x % y);
     }
-    return new JsonLong(mod); // TODO: memory
+    long x = value1.longValueExact();
+    long y = value2.longValueExact();
+    return new JsonLong(x % y);
   }
+  
+  @Override
+  public Schema getSchema()
+  {
+    Schema s1 = exprs[0].getSchema();
+    Schema s2 = exprs[1].getSchema();
+    
+    Schema result = MathExpr.promote(s1, s2);
+    if (result == null)
+    {
+      throw new RuntimeException("Operation mod not defined for input types.");
+    }
+    return result;
+  }
+
 }
