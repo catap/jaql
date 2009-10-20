@@ -266,14 +266,12 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	/**
 	 * @param expr
 	 */
-	private void countType(Expr expr) {
-
-		if (exprTypeCounter == null)
-			exprTypeCounter = new HashMap<String, Long>();
-
+	private void countType(Expr expr) {		
 		if (expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
 				|| expr instanceof com.ibm.jaql.lang.expr.io.AbstractWriteExpr
-				|| expr instanceof com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr) {
+				|| expr instanceof com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr) {			
+			if (exprTypeCounter == null)
+				exprTypeCounter = new HashMap<String, Long>();			
 			String exprTypeStr = expr.getClass().getName();
 			if (exprTypeCounter.containsKey(exprTypeStr)) {
 				exprTypeCounter.put(exprTypeStr, exprTypeCounter
@@ -282,7 +280,6 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				exprTypeCounter.put(exprTypeStr, new Long(1));
 			}
 		}
-
 		// loop all its children to get nested expressions
 		for (int i = 0; i < expr.numChildren(); i++) {
 			countType(expr.child(i));
