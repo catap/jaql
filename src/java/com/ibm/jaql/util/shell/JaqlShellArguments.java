@@ -326,7 +326,13 @@ public class JaqlShellArguments {
 
   private static OutputAdapter getOutputAdapter(String outOptions) throws Exception {
     if (outOptions.equals(""))
-      outOptions = "json";
+      outOptions = "jsonStream";
+    
+    // special casing here, to enable shortcut notation
+    if (outOptions.equals("json") || outOptions.equals("del") || outOptions.equals("xml"))
+    {
+      outOptions += "Stream";
+    }
     
     // construct json record for json, del and xml
     if (StringUtils.isAlpha(outOptions)) {

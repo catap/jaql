@@ -36,11 +36,11 @@ public class DelFn extends AbstractHandleFn
   {
     public Descriptor()
     {
-      super("delHdfs", DelFn.class);
+      super("del", DelFn.class);
     }
   }
   
-  private final static JsonValue TYPE = new JsonString("delHdfs");
+  private final static JsonValue TYPE = new JsonString("del");
   /**
    * exprs[0]: path
    * exprs[1]: options 
@@ -86,7 +86,7 @@ public class DelFn extends AbstractHandleFn
       BufferedJsonRecord options = new BufferedJsonRecord();
       if (!(customOptions instanceof JsonRecord))
       {
-        throw new RuntimeException("options for delHdfs() function has to be a record");
+        throw new RuntimeException("options for del() function has to be a record");
       }
       for (Entry<JsonString, JsonValue> option : (JsonRecord)customOptions)
       {

@@ -108,7 +108,7 @@ stmt returns [Expr r=null]
     : (kwMaterialize var) => kwMaterialize v=var    { r = new MaterializeExpr(env, v); }
     | (kwImport id)       => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
-    | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(env, r); }
+    | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(r); }
     | r=topAssign                           
     ;
 

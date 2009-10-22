@@ -31,7 +31,7 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 /**
  * 
  */
-public class MaterializeExpr extends TopExpr
+public class MaterializeExpr extends EnvExpr
 {
   private Var var;
 
