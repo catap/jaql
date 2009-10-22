@@ -32,7 +32,7 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 /**
  * 
  */
-public class AssignExpr extends TopExpr
+public class AssignExpr extends EnvExpr
 {
   public Var var;
   
