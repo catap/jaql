@@ -386,12 +386,12 @@ $mixed =  [{name: 'mike', age: 10}, [100, 200]];
 $mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});
 
 // json format
-[[1,2],[3,4]] -> write({type: 'json'});
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'json'});
+[[1,2],[3,4]] -> write({type: 'jsonStream'});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});
 
 // del format
-[[1,2],[3,4]]->write({type: 'del'});
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'del', outoptions: {fields: ['lang', 'no'], delimiter: '='}});
+[[1,2],[3,4]]->write({type: 'delStream'});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: {fields: ['lang', 'no'], delimiter: '='}});
 
 // xml format
-[{root: {content: [1,2,3]}}] -> write({type: 'xml'});
+[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});

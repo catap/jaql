@@ -22,7 +22,6 @@ import java.util.Iterator;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -36,9 +35,9 @@ public class ExplainExpr extends TopExpr
    * 
    * @param exprs
    */
-  public ExplainExpr(Env env, Expr ... exprs)
+  public ExplainExpr(Expr expr)
   {
-    super(env, exprs);
+    super(expr);
   }
 
   /*
@@ -90,5 +89,10 @@ public class ExplainExpr extends TopExpr
     // assert capturedVars.isEmpty();
     String query = outStream.toString();
     return new JsonString(query);
+  }
+  
+  public EnvExpr getEnvExpr()
+  {
+    return exprs[0].getEnvExpr();
   }
 }

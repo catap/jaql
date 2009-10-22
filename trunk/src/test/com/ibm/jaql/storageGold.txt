@@ -839,24 +839,24 @@ $mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});##
 
 
 // json format
-[[1,2],[3,4]] -> write({type: 'json'});##
+[[1,2],[3,4]] -> write({type: 'jsonStream'});##
 {
-  "type": "json"
+  "type": "jsonStream"
 }
 
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'json'});##
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});##
 {
-  "type": "json"
+  "type": "jsonStream"
 }
 
 
 // del format
-[[1,2],[3,4]]->write({type: 'del'});##
+[[1,2],[3,4]]->write({type: 'delStream'});##
 {
-  "type": "del"
+  "type": "delStream"
 }
 
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'del', outoptions: {fields: ['lang', 'no'], delimiter: '='}});##
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: {fields: ['lang', 'no'], delimiter: '='}});##
 {
   "outoptions": {
     "delimiter": "=",
@@ -865,12 +865,12 @@ $mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});##
       "no"
     ]
   },
-  "type": "del"
+  "type": "delStream"
 }
 
 
 // xml format
-[{root: {content: [1,2,3]}}] -> write({type: 'xml'});##
+[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});##
 {
-  "type": "xml"
+  "type": "xmlStream"
 }

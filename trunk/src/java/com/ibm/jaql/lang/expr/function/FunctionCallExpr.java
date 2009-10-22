@@ -168,7 +168,7 @@ public class FunctionCallExpr extends Expr
       Expr e = f.inline(true);
       return e.getProperties();
     }
-    return ExprProperty.createUnsafeDefaults();
+    return ExprProperty.createSafeDefaults();
   }
   
   @Override

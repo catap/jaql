@@ -1,3 +1,4 @@
+
 //
 // Copyright (C) IBM Corp. 2008.
 // 
@@ -33,22 +34,22 @@
        			           configurator : 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}}
 },
 // json format for streaming out
-{key: 'json',
+{key: 'jsonStream',
  val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
                     format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}}
 },
 //  delimited data (CSV) format for streaming out
-{key: 'del',
+{key: 'delStream',
  val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
                     format: 'com.ibm.jaql.io.stream.converter.DelTextOutputStream'}}
 },
 // XML format for streaming out
-{key: 'xml',
+{key: 'xmlStream',
  val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
                     format: 'com.ibm.jaql.io.stream.converter.XmlTextOutputStream'}}
 },
 // delimited data (CSV) for HDFS
-{key: 'delHdfs',
+{key: 'del',
  val: { inoptions: {
           adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
           format:       'org.apache.hadoop.mapred.TextInputFormat',

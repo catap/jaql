@@ -31,7 +31,7 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 /**
  * 
  */
-public class QueryExpr extends TopExpr
+public class QueryExpr extends EnvExpr
 {
   /**
    * @param exprs

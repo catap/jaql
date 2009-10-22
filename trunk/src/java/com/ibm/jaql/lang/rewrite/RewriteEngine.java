@@ -22,7 +22,6 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.MaterializeExpr;
-import com.ibm.jaql.lang.expr.top.TopExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
@@ -140,11 +139,11 @@ public class RewriteEngine
     {
       return query;
     }
-    if (!(query instanceof TopExpr))
+    if (query.getEnvExpr() == null)
     {
-      throw new IllegalArgumentException("expression tree is not rooted by a TopExpr");
+      throw new IllegalArgumentException("expression tree does not have an EnvExpr");
     }
-    this.env = query.getTopExpr().getEnv();
+    this.env = query.getEnvExpr().getEnv();
     if (env == null)
     {
       throw new IllegalArgumentException("expression tree does not have an environment");

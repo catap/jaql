@@ -20,7 +20,7 @@ import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FieldExpr;
-import com.ibm.jaql.lang.expr.top.TopExpr;
+import com.ibm.jaql.lang.expr.top.EnvExpr;
 
 /**
  * 
@@ -45,13 +45,13 @@ public class ConstEval extends Rewrite
   {
     // We need to be careful computing small functions that produce large results.
     // Those functions mark themselves as not compile time computable.
-    if (expr instanceof ConstExpr || expr instanceof BindingExpr || expr instanceof TopExpr
+    if (expr instanceof ConstExpr || expr instanceof BindingExpr || expr instanceof EnvExpr
         || expr instanceof FieldExpr || expr.isCompileTimeComputable().maybeNot())
     {
       return false;
     }
 
-    JsonValue value = expr.getTopExpr().getEnv().eval(expr);
+    JsonValue value = expr.getEnvExpr().getEnv().eval(expr);
     ConstExpr c = new ConstExpr(value);
     expr.replaceInParent(c);
     // context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere

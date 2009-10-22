@@ -40,7 +40,8 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
-import com.ibm.jaql.lang.expr.top.TopExpr;
+import com.ibm.jaql.lang.expr.top.EnvExpr;
+import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.util.Bool3;
 
 /** Superclass for all JAQL expressions.
@@ -177,7 +178,7 @@ public abstract class Expr
     // possible optimization: tag only weak keywords
 
     if (keyword.contains("#")) throw new IllegalArgumentException();
-    TopExpr top = getTopExpr();
+    EnvExpr top = getEnvExpr();
     if (top == null || top.getEnv().isDefinedLocal(keyword))
     {
       return '#' + keyword;
@@ -868,31 +869,32 @@ public abstract class Expr
     return null;
   }
   
-  /** Returns the tree root if it implements TopExpr, otherwise returns null */
-  public TopExpr getTopExpr()
+  /** Returns the environment expression of the tree (usually the root) if existent, otherwise 
+   * returns null */
+  public EnvExpr getEnvExpr()
   {
     Expr e = this;
-    while (e.parent != null)
+    while (e.parent != null && !(e.parent instanceof ExplainExpr))
     {
-      assert !(e instanceof TopExpr);
+      assert !(e instanceof EnvExpr);
       e = e.parent;
     }
-    if (e instanceof TopExpr)
+    if (e instanceof EnvExpr)
     {
-      return (TopExpr)e;
+      return (EnvExpr)e;
     }
     return null;
   }
   
   /** 
    * Evaluates this expression at compile-time. The default implementation of this method 
-   * retrieves the environment stored at the root of the tree ({@link #getTopExpr()}); if there 
+   * retrieves the environment stored at the root of the tree ({@link #getEnvExpr()}); if there 
    * is no such environment it will fail. Subclasses may override this behavior when 
    * a context is not needed for evaluation.
    */
   public JsonValue compileTimeEval() throws Exception
   {
-    TopExpr e = getTopExpr();
+    EnvExpr e = getEnvExpr();
     if (e == null)
     {
       throw new IllegalStateException("expression does not have a top expression");
