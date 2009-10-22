@@ -28,7 +28,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.function.Function;
 
 /**
- * 
+ * Random number generator store.
  */
 public class RNGStore extends Registry<JsonValue, RNGStore.RNGEntry> {
 
