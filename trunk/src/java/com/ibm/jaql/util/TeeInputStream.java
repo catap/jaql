@@ -20,119 +20,69 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 // TODO: this should really work on Readers instead of InputStreams
-/** 
- * InputStream that forwards everything that is read from it to the provided 
+/**
+ * InputStream that forwards everything that is read from it to the provided
  * output stream.
- * 
  */
-public class TeeInputStream extends InputStream
-{
-  InputStream  in;
-  OutputStream out;
+public class TeeInputStream extends InputStream {
+  private InputStream in;
+  private OutputStream out;
 
   /**
-   * @param in
-   * @param out
+   * Creates a tee input stream with an input stream and an output stream.
+   * 
+   * @param in input stream to be read from.
+   * @param out output stream which content from the input stream will be
+   *          forwarded to.
    */
-  public TeeInputStream(InputStream in, OutputStream out)
-  {
+  public TeeInputStream(InputStream in, OutputStream out) {
     this.in = in;
     this.out = out;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#read()
-   */
   @Override
-  public int read() throws IOException
-  {
+  public int read() throws IOException {
     int x = in.read();
-    if (x >= 0)
-    {
+    if (x >= 0) {
       out.write(x);
     }
     return x;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#read(byte[], int, int)
-   */
   @Override
-  public int read(byte[] b, int off, int len) throws IOException
-  {
+  public int read(byte[] b, int off, int len) throws IOException {
     len = read(b, off, len);
     out.write(b, off, len);
     return len;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#available()
-   */
   @Override
-  public int available() throws IOException
-  {
+  public int available() throws IOException {
     return in.available();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#close()
-   */
   @Override
-  public void close() throws IOException
-  {
+  public void close() throws IOException {
     in.close();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#mark(int)
-   */
   @Override
-  public synchronized void mark(int arg0)
-  {
+  public synchronized void mark(int arg0) {
     in.mark(arg0);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#markSupported()
-   */
   @Override
-  public boolean markSupported()
-  {
+  public boolean markSupported() {
     return in.markSupported();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#reset()
-   */
   @Override
-  public synchronized void reset() throws IOException
-  {
+  public synchronized void reset() throws IOException {
     in.reset();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see java.io.InputStream#skip(long)
-   */
   @Override
-  public long skip(long arg0) throws IOException
-  {
+  public long skip(long arg0) throws IOException {
     return in.skip(arg0);
   }
-
 }
