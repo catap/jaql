@@ -35,7 +35,6 @@ import junit.framework.TestCase;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.jdt.core.dom.ThisExpression;
 
 import antlr.TokenStreamException;
 import antlr.collections.impl.BitSet;
