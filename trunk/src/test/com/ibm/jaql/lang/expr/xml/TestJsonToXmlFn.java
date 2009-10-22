@@ -29,7 +29,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonToXmlFnTest extends AbstractTest {
+public class TestJsonToXmlFn extends AbstractTest {
 
   private JsonToXmlFn fn = new JsonToXmlFn();
 
