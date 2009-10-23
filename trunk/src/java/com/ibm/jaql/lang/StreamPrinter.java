@@ -20,13 +20,11 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 
@@ -50,18 +48,17 @@ public class StreamPrinter implements JaqlPrinter {
 
   @Override
   public void print(Expr expr, Context context) throws Exception {
-    // special casing of explains: result should not be converted 
-    if (expr instanceof ExplainExpr)
-    {
-      expr.child(0).decompile(output, new HashSet<Var>());
-      return;
-    }
     if (expr.getSchema().is(ARRAY, NULL).always()) {
       JsonIterator iter = expr.iter(context);
       iter.print(output);
     } else {
       JsonValue value = expr.eval(context);
-      JsonUtil.print(output, value);
+      // special casing of explains: result should not be converted
+      if (expr instanceof ExplainExpr) {
+        output.print(value);
+      } else {
+        JsonUtil.print(output, value);
+      }
     }
     output.println();
     output.flush();
