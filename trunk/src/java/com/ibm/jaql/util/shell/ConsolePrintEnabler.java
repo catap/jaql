@@ -19,8 +19,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 /**
- * For enabling and disabling ouput to STDOUT and STDERR. STDERR is disabled
- * since <code>MiniDFSCluster</code> prints startup information to it.
+ * For enabling and disabling output to console through stdout and stderr.
  */
 public class ConsolePrintEnabler {
 
@@ -33,11 +32,11 @@ public class ConsolePrintEnabler {
   });
 
   /**
-   * Enable or disable output to STDOUT. If STDOUT is disabled,
-   * <code>write</code> method of {@link System#out} does nothing.
+   * Enable or disable output to console. If s is disabled, <code>write</code>
+   * method of {@link System#out} does nothing.
    * 
-   * @param enable <code>true</code> to enable output to STDOUT;
-   *          <code>false</code> to disable output to STDOUT.
+   * @param enable <code>true</code> to enable output to console;
+   *          <code>false</code> to disable output to console.
    */
   public static void enable(boolean enable) {
     if (enable) {
