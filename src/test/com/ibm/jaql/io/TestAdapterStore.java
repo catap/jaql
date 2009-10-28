@@ -26,9 +26,9 @@ public class TestAdapterStore extends AbstractTest {
 
   @Test
   public void adapterStore() throws Exception {
-    getRegistry("json");
-    getRegistry("del");
-    getRegistry("xml");
+    getRegistry("jsonStream");
+    getRegistry("delStream");
+    getRegistry("xmlStream");
   }
 
   private AdapterStore.AdapterRegistry getRegistry(String type) {
