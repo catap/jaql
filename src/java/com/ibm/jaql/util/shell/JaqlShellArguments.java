@@ -281,7 +281,7 @@ public class JaqlShellArguments {
     
     // search path directories
     if (cl.hasOption(optSearchPath)) {
-      result.searchPath = ((String)cl.getValue(optJars)).split(":");
+      result.searchPath = ((String)cl.getValue(optSearchPath)).split(":");
       for (String dir : result.searchPath) {
         if (!new File(dir).exists() || !new File(dir).isDirectory()) {
           printHelp("Search-path entry " + dir + " not found or is no directory", options);
