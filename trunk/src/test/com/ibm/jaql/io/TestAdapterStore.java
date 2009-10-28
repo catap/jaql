@@ -22,7 +22,7 @@ import org.junit.Test;
 import com.ibm.jaql.AbstractTest;
 import com.ibm.jaql.json.type.JsonString;
 
-public class AdapterStoreTest extends AbstractTest {
+public class TestAdapterStore extends AbstractTest {
 
   @Test
   public void adapterStore() throws Exception {
@@ -36,7 +36,6 @@ public class AdapterStoreTest extends AbstractTest {
     assertNotNull(as);
     JsonString key = new JsonString(type);
     AdapterStore.AdapterRegistry ar = as.get(key);
-//    debug("inoptions: " + ar.getOutput());
     debug("outoptions: " + ar.getOutput());
     return ar;
   }
