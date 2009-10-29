@@ -1,0 +1,29 @@
+
+Initializing Jaql.
+
+jaql> 10;10
+
+jaql> 
+"abc";"abc"
+
+jaql> 
+[1,2,3];[
+  1,
+  2,
+  3
+]
+
+jaql> 
+{name: "beijing", no: 1};{
+  "name": "beijing",
+  "no": 1
+}
+
+jaql> 
+[1, 2, 3] -> filter $ > 2;[
+  3
+]
+
+jaql> 
+quit;
+Shutting down jaql.

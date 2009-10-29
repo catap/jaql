@@ -50,14 +50,18 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 
 /** Parser for arguments of JaqlShell. */
 public class JaqlShellArguments {
+  static final String DEFAULT_HDFS_DIR = "/tmp/jaql/dfs";
+  static final int DEFAULT_NUM_NODES = 1;
+  static final boolean DEFAULT_BATCH_MODE = false;
+  
   boolean useExistingCluster = false;
   String[] jars = new String[0];
   OutputAdapter outputAdapter;
   String[] searchPath = Module.defaultSearchPath();
-  String hdfsDir = "/tmp/jaql/dfs";
-  int numNodes = 1;
+  String hdfsDir = DEFAULT_HDFS_DIR;
+  int numNodes = DEFAULT_NUM_NODES;
   ChainedInputStream chainedIn = new ChainedInputStream();
-  boolean batchMode = false;
+  boolean batchMode = DEFAULT_BATCH_MODE;
 
   private JaqlShellArguments() {};
   
@@ -115,7 +119,7 @@ public class JaqlShellArguments {
   }
   
   @SuppressWarnings("unchecked")
-  static JaqlShellArguments parseArgs(String[] args) {
+  static JaqlShellArguments parseArgs(String... args) {
     // option builders
     final DefaultOptionBuilder obuilder = new DefaultOptionBuilder();
     final ArgumentBuilder abuilder = new ArgumentBuilder();
