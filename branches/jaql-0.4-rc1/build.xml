@@ -55,6 +55,9 @@
     <!-- Use the following property setting when testing on a distributed cluster -->
     <!-- <property name="test.deployment" value="cluster"/> -->
     <property name="test.deployment" value="mini" />
+    <condition property="test.exclude" value="TestHBase">
+        <os family="windows"/>
+    </condition>
     <!-- Use the following property to force map reduce in local mode -->
     <!-- <property name="jaql.mapred.mode" value="cluster"/> -->
     <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
