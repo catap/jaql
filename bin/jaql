@@ -187,6 +187,12 @@ for f in $HBASE_HOME/lib/jetty-ext/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
+if [ -d "$HADOOP_HOME/lib/jsp-2.1" ]; then
+  for f in $HADOOP_HOME/lib/jsp-2.1/*.jar; do
+    CLASSPATH=${CLASSPATH}:$f;
+  done
+fi
+
 # add hadoop user-specified CLASSPATH
 if [ "$HADOOP_CLASSPATH" != "" ]; then
   CLASSPATH=${CLASSPATH}:${HADOOP_CLASSPATH}
@@ -265,4 +271,4 @@ fi
 # echo $CLASSPATH 1>&2
 
 # run it
-"$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
