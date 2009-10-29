@@ -65,6 +65,8 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			.getName());
 
 	public static String FAILURE = "FAILURE";
+	
+	public static final String TEST_CACHE_DATA = System.getProperty("test.cache.data");
 
 	private String m_queryFileName = null;
 	private String m_tmpFileName = null;
@@ -87,51 +89,55 @@ public abstract class JaqlBaseTestCase extends TestCase {
 
 	private Map<String, Long> exprTypeCounter = null;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
+	@Override
 	protected abstract void setUp() throws IOException;
 
 	/**
 	 * @param prefix
 	 */
 	protected void setFilePrefix(String prefix) {
-		setFilePrefix(new File(System.getProperty("test.cache.data")), prefix);
+    m_queryFileName = getQueryPathname(prefix);
+    m_goldFileName = getGoldPathname(prefix);
+    m_tmpFileName = getTmpPathname(prefix);
+    m_goldCountFileName = getPathname(prefix, "GoldCount");
+    m_decompileName = getPathname(prefix, "Decompile");
+    m_rewriteName = getPathname(prefix, "Rewrite");
+    m_countName = getPathname(prefix, "Count");
+
+    runResult = "true".equals(System.getProperty("test.plain"));
+    System.err.println("runResult = " + runResult);
+
+    runDecompileResult = "true".equals(System.getProperty("test.explain"));
+    System.err.println("runDecompileResult = " + runDecompileResult);
+
+    runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
+    System.err.println("runRewriteResult = " + runRewriteResult);
+
+    runCountResult = "true".equals(System.getProperty("test.count"));
+    System.err.println("runCountResult = " + runCountResult);
+	}
+	
+	public static String getPathname(String fileName) {
+	  return TEST_CACHE_DATA + File.separator + fileName + ".txt";
 	}
 
-	/**
-	 * @param prefix
-	 */
-	protected void setFilePrefix(File dir, String prefix) {
-		m_queryFileName = dir + File.separator + prefix + "Queries.txt";
-		m_tmpFileName = dir + File.separator + prefix + "Tmp.txt";
-		m_goldFileName = dir + File.separator + prefix + "Gold.txt";
-		m_goldCountFileName = dir + File.separator + prefix + "GoldCount.txt";
-		m_decompileName = dir + File.separator + prefix + "Decompile.txt";
-		m_rewriteName = dir + File.separator + prefix + "Rewrite.txt";
-		m_countName = dir + File.separator + prefix + "Count.txt";
+  public static String getPathname(String prefix, String suffix) {
+    return getPathname(prefix + suffix);
+  }
+  
+  public static String getQueryPathname(String prefix) {
+    return getPathname(prefix, "Queries");
+  }
 
-		runResult = "true".equals(System.getProperty("test.plain"));
-		System.err.println("runResult = " + runResult);
-
-		runDecompileResult = "true".equals(System.getProperty("test.explain"));
-		System.err.println("runDecompileResult = " + runDecompileResult);
-
-		runRewriteResult = "true".equals(System.getProperty("test.rewrite"));
-		System.err.println("runRewriteResult = " + runRewriteResult);
-
-		runCountResult = "true".equals(System.getProperty("test.count"));
-		System.err.println("runCountResult = " + runCountResult);
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#tearDown()
-	 */
+  public static String getGoldPathname(String prefix) {
+    return getPathname(prefix, "Gold");
+  }
+  
+  public static String getTmpPathname(String prefix) {
+    return getPathname(prefix, "Tmp");
+  }
+  
+  @Override
 	protected abstract void tearDown() throws IOException;
 
 	private void execute(String inputFileName, String outputFilename, int type)
@@ -396,7 +402,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				try {
 					assertTrue(
 							"\n\nFound difference between current and expected output",
-							compareResults(m_tmpFileName, m_goldFileName, LOG));
+							compareResults(m_tmpFileName, m_goldFileName));
 					System.err
 							.println("\n\nExecuted testQueries in plain mode successfully");
 				} catch (Exception e) {
@@ -415,7 +421,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				try {
 					assertTrue(
 							"\n\nFound differences between decompiles and expected ouput",
-							compareResults(m_decompileName, m_goldFileName, LOG));
+							compareResults(m_decompileName, m_goldFileName));
 					System.err
 							.println("\n\nExecuted testQueries in decompile mode successfully");
 				} catch (Exception e) {
@@ -433,13 +439,13 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				try {
 					assertTrue(
 							"\n\nFound difference between rewrite and expected output",
-							compareResults(m_rewriteName, m_goldFileName, LOG));
+							compareResults(m_rewriteName, m_goldFileName));
 
-					if (this.runCountResult){
+					if (this.runCountResult && new File(m_goldCountFileName).isFile()){
 						assertTrue(
 								"\n\nExpression Occurences are different with desired",
 								compareResults(this.m_countName,
-										m_goldCountFileName, LOG));
+										m_goldCountFileName));
 						System.err
 						.println("\n\nGot desired expression occurrences");
 					}
@@ -462,19 +468,29 @@ public abstract class JaqlBaseTestCase extends TestCase {
 
 	}
 
-	/**
-	 * @param testFileName
-	 * @param goldFileName
-	 * @param LOG
-	 * @return
-	 * @throws IOException
-	 */
-	public static boolean compareResults(String testFileName,
-			String goldFileName, Log LOG) throws IOException {
+  /**
+   * Compares the tmp file and gold file using unix diff. whitespace is ignored
+   * for the diff.
+   * 
+   * 
+   * @param tmpFileName tmp file name
+   * @param goldFileName gold file name
+   * @return <tt>true</tt> if the tmp file and gold file are the same;
+   *         <tt>false</tt> otherwise.
+   * @throws IOException
+   */
+	public static boolean compareResults(String tmpFileName,
+			String goldFileName) throws IOException {
 		// use unix 'diff', ignoring whitespace
-		Runtime rt = Runtime.getRuntime();
-		Process p = rt.exec(new String[] { "diff", "-w", testFileName,
-				goldFileName });
+    ProcessBuilder pb = new ProcessBuilder("diff", "-w", tmpFileName,
+                                           goldFileName);
+    /*
+     * Two input file for diff are the same only if nothing is printed to stdout
+     * and stderr. Redirect stderr to stdout so that only stdout needs to
+     * checked.
+     */
+    pb.redirectErrorStream(true);
+    Process p = pb.start();
 		InputStream str = p.getInputStream();
 
 		byte[] b = new byte[1024];
@@ -484,7 +500,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			sb.append(new String(b, 0, numRead, "US-ASCII"));
 		}
 		if (sb.length() > 0)
-			LOG.error("\ndiff -w " + testFileName + " " + goldFileName + "\n"
+			System.err.println("\ndiff -w " + tmpFileName + " " + goldFileName + "\n"
 					+ sb);
 
 		return sb.length() == 0;
