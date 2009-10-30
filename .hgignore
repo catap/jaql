@@ -1,6 +1,7 @@
 # use glob syntax.
 syntax: glob
 
+junit*.properties
 **.svn
 build/**
 buildEclipse**

@@ -29,8 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -58,10 +61,19 @@ public class TestJaqlShell {
    */
   @Test
   public void interactive() {
-    Map<String, String> rs = new HashMap<String, String>();
-    rs.put("\\\\tmp\\\\jaql\\\\dfs\\\\dfs\\\\data\\\\data(\\d)",
-           "/tmp/jaql/dfs/dfs/data/data$1");
-    verify("jaqlShellInteractive", rs, null);
+    List<RegexReplacement> rrs = new ArrayList<RegexReplacement>();
+    /*
+     * Replace backslash \ with slash /
+     */
+    rrs.add(new RegexReplacement("\\\\tmp\\\\jaql\\\\dfs\\\\dfs\\\\data\\\\data(\\d)",
+                                "/tmp/jaql/dfs/dfs/data/data$1"));
+    /*
+     * How many times the line is printed depends on environment factors such as
+     * machine performance. So it is removed.
+     */
+    rrs.add(new RegexReplacement("Waiting for the Mini HDFS Cluster to start\\.\\.\\.",
+                                ""));
+    verify("jaqlShellInteractive", rrs, null);
   }
 
   /**
@@ -89,40 +101,50 @@ public class TestJaqlShell {
   }
 
   /**
-   * Verifies that Jaql Shell produces the same output as expected.
+   * Verifies that Jaql Shell produce the same output as expected.
    * 
    * @param prefix prefix
    * @param arguments Jaql Shell arguments except input file
-   * @see #verify(String, String, Map, String[])
+   * @see #verify(String, String, List, String[])
    */
   private void verify(String prefix, String[] arguments) {
     verify(prefix, null, arguments);
   }
 
+  /**
+   * Verifies that Jaql Shell produces the same output as expected.
+   * 
+   * @param prefix prefix
+   * @param regexReplacements regular expression replacements
+   * @param arguments Jaql Shell arguments except input file
+   * @see #verify(String, String, Map, String[])
+   */
   private void verify(String prefix,
-                      Map<String, String> replacements,
+                      List<RegexReplacement> regexReplacements,
                       String[] arguments) {
     verify(JaqlBaseTestCase.getQueryPathname(prefix),
            prefix,
-           replacements,
+           regexReplacements,
            arguments);
   }
 
   /**
-   * Verifies that Jaql Shell produces the same output as expected.
+   * Verifies that Jaql Shell produce the same output as expected.
    * 
    * @param queryFileName query file name without file extension
    * @param prefix prefix
+   * @param regexReplacements regular expression replacements
    * @param arguments Jaql Shell arguments except input file
+   * @see #compareResults(String, String, List)
    */
   private void verify(String queryFileName,
                       String prefix,
-                      Map<String, String> replacements,
+                      List<RegexReplacement> regexReplacements,
                       String[] arguments) {
     try {
       String tmpFileName = JaqlBaseTestCase.getTmpPathname(prefix);
       String goldFileName = JaqlBaseTestCase.getGoldPathname(prefix);
-      
+
       if (arguments == null)
         arguments = new String[0];
       int len = arguments.length;
@@ -131,7 +153,9 @@ public class TestJaqlShell {
       System.arraycopy(arguments, 0, withInputFile, 0, len);
 
       runJaqlShell(withInputFile, tmpFileName);
-      boolean result = compareResults(tmpFileName, goldFileName, replacements);
+      boolean result = compareResults(tmpFileName,
+                                      goldFileName,
+                                      regexReplacements);
       assertTrue("\n\nFound difference between gold file and tmp file", result);
     } catch (Exception e) {
       e.printStackTrace(System.err);
@@ -146,35 +170,49 @@ public class TestJaqlShell {
    * 
    * @param tmpFileName tmp file name
    * @param goldFileName gold file name
-   * @param replacements A map of regular expression replacements. The key of
-   *          the map entry is regular expression. The value of the map entry is
-   *          replacement string.
+   * @param regexReplacements regular expression replacements
    * @return <tt>true</tt> if the tmp file and gold file are the same;
    *         <tt>false</tt> otherwise.
    * @throws IOException
-   * @see #normalize(String, Map)
+   * @see #normalize(String, List)
    */
   private static boolean compareResults(String tmpFileName,
                                         String goldFileName,
-                                        Map<String, String> replacements) throws IOException {
-    normalize(tmpFileName, replacements);
+                                        List<RegexReplacement> regexReplacements) throws IOException {
+    normalize(tmpFileName, regexReplacements);
     return JaqlBaseTestCase.compareResults(tmpFileName, goldFileName);
   }
 
   /**
-   * Normalizes the text content of the given file. It does the text
-   * replacements for the given file. The replacements are made in the original
-   * file. The content of the original file is saved to <tt>fileName.orig</tt>.
+   * Normalizes the text content of the given file. First, it does the text
+   * replacements line by line for the original file to produce a new file.
+   * <ol>
+   * <li>Read a line <i>L</i> from the original file.</li>
+   * <li>Try to get a replacement <i>R</i> from the <tt>regexReplacements</tt>
+   * (Regular expression replacement with small index is tried first). If all
+   * the replacements has been accessed, go to Step 6.</li>
+   * <li>If the regular expression in <i>R</i> matches <i>L</i> or part of
+   * <i>L</i>, go to Step 4. Otherwise, goto Step 2.</li>
+   * <li>Replace all the parts of <i>L</i> with <i>R</i>'s replacement.</li>
+   * <li>
+   * If the replaced result for one line is empty string, then the whole line is
+   * not written to the new file. Otherwise, the replaced result is written to
+   * the new file. Go to step 1.</li>
+   * <li>Write <i>L</i> to the new file.</li>
+   * </ol>
+   * <p>
+   * Second,the original file is renamed to <tt>fileName.orig</tt>. The new file
+   * is renamed to the original name of the given file.
+   * 
    * 
    * @param fileName file name
-   * @param replacements A map of regular expression replacements. The key of
-   *          the map entry is regular expression. The value of the map entry is
-   *          replacement string.
+   * @param regexReplacements regular expression replacements. Regular
+   *          expression replacement with small index is tried first.
    * @throws IOException
    */
   private static void normalize(String fileName,
-                                Map<String, String> replacements) throws IOException {
-    if (replacements != null) {
+                                 List<RegexReplacement> regexReplacements) throws IOException {
+    if (regexReplacements != null) {
       String normFileName = fileName + ".norm";
       BufferedReader reader = null;
       BufferedWriter writer = null;
@@ -184,10 +222,21 @@ public class TestJaqlShell {
         String line;
         String newLine = System.getProperty("line.separator");
         while ((line = reader.readLine()) != null) {
-          for (Map.Entry<String, String> replacement : replacements.entrySet()) {
-            line = line.replaceAll(replacement.getKey(), replacement.getValue());
-            writer.write(line + newLine);
+          boolean replaced = false;
+          for (RegexReplacement replacement : regexReplacements) {
+            Pattern pattern = Pattern.compile(replacement.getRegex());
+            Matcher matchter = pattern.matcher(line);
+            if (matchter.find()) {
+              String replacedLine = matchter.replaceAll(replacement.getReplacement());
+              if (!replacedLine.equals("")) {
+                writer.write(replacedLine + newLine);
+              }
+              replaced = true;
+              break;
+            } 
           }
+          if (!replaced)
+            writer.write(line + newLine);
         }
         writer.flush();
       } finally {
@@ -202,13 +251,6 @@ public class TestJaqlShell {
       assertTrue(normFileName + " can't be renamed to " + fileName,
                  new File(normFileName).renameTo(new File(fileName)));
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    Map<String, String> rs = new HashMap<String, String>();
-    rs.put("\\\\tmp\\\\jaql\\\\dfs\\\\dfs\\\\data\\\\data(\\d)",
-           "/tmp/jaql/dfs/dfs/data/data$1");
-    normalize("D:\\road\\hadoop\\jaql/build/test/cache\\mimiTmp.txt", rs);
   }
 
   /**
@@ -235,6 +277,24 @@ public class TestJaqlShell {
       assertEquals(0, runner.exitValue());
   }
 
+  private static class RegexReplacement {
+    private String regex;
+    private String replacement;
+    
+    public RegexReplacement(String regex, String replacement) {
+      this.regex = regex;
+      this.replacement = replacement;
+    }
+    
+    public String getRegex() {
+      return regex;
+    }
+    
+    public String getReplacement() {
+      return replacement;
+    }
+  }
+  
   /**
    * Run a bash script. The stdout and stderr for the script are handled with
    * input stream gobblers in separated threads to avoid hang-up of the script.
