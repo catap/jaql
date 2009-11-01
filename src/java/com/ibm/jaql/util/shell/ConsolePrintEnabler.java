@@ -15,25 +15,29 @@
  */
 package com.ibm.jaql.util.shell;
 
-import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * For enabling and disabling output to console through stdout and stderr.
  */
 public class ConsolePrintEnabler {
 
+  private static final Log LOG = LogFactory.getLog(ConsolePrintEnabler.class);
+
   private static final PrintStream out = System.out;
   private static final PrintStream err = System.err;
 
-  private static final PrintStream dummy = new PrintStream(new OutputStream() {
-    @Override
-    public void write(int n) {}
-  });
+  private static final ByteArrayPrintStream bufOut = new ByteArrayPrintStream();
+  private static final ByteArrayPrintStream bufErr = new ByteArrayPrintStream();
 
   /**
-   * Enable or disable output to console. If s is disabled, <code>write</code>
-   * method of {@link System#out} does nothing.
+   * Enable or disable output to console. If console is disabled, content sent
+   * to console is not printed. Instead, it is collected and will be logged when
+   * console is enabled.
    * 
    * @param enable <code>true</code> to enable output to console;
    *          <code>false</code> to disable output to console.
@@ -42,9 +46,40 @@ public class ConsolePrintEnabler {
     if (enable) {
       System.setOut(out);
       System.setErr(err);
+      log(bufOut.getBuffer(), "stdout");
+      log(bufErr.getBuffer(), "stderr");
     } else {
-      System.setOut(dummy);
-      System.setErr(dummy);
+      bufOut.getBuffer().reset();
+      bufErr.getBuffer().reset();
+      System.setOut(bufOut.getPrintStream());
+      System.setErr(bufErr.getPrintStream());
+    }
+  }
+
+  private static void log(ByteArrayOutputStream buf, String outName) {
+    String str = buf.toString();
+    if (!str.equals("")) {
+      LOG.info("content sent to " + outName + " when " + outName
+          + " is disabled:");
+      LOG.info(str);
+    }
+  }
+
+  private static class ByteArrayPrintStream {
+    private ByteArrayOutputStream buf;
+    private PrintStream ps;
+
+    public ByteArrayPrintStream() {
+      buf = new ByteArrayOutputStream();
+      ps = new PrintStream(buf);
+    }
+
+    public ByteArrayOutputStream getBuffer() {
+      return buf;
+    }
+
+    public PrintStream getPrintStream() {
+      return ps;
     }
   }
 }
