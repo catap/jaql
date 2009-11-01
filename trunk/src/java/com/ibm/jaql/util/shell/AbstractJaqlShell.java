@@ -69,30 +69,34 @@ public abstract class AbstractJaqlShell {
   {
     //  parse arguments
     JaqlShellArguments jaqlArgs = JaqlShellArguments.parseArgs(args);
-    jaqlArgs.enableConsolePrint(false);
     try
     {
-      //Set module search path
-      Module.setSearchPath(jaqlArgs.searchPath);
-    	
-      if (!jaqlArgs.batchMode) {
-        // TODO startup text
-        System.out.println("\nInitializing Jaql.");
-      }
-      if (jaqlArgs.useExistingCluster) 
-      {
-        shell.init();
+      try {
+        jaqlArgs.enableConsolePrint(false);
+        //Set module search path
+        Module.setSearchPath(jaqlArgs.searchPath);
+      	
+        if (!jaqlArgs.batchMode) {
+          // TODO startup text
+          System.out.println("\nInitializing Jaql.");
+        }
+        if (jaqlArgs.useExistingCluster) 
+        {
+          shell.init();
+        } 
+        else
+        {
+          shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
+        }
+        if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
       } 
-      else
+      finally 
       {
-        shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
+        jaqlArgs.enableConsolePrint(true);
       }
-      if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
-      jaqlArgs.enableConsolePrint(true);
       shell.run(jaqlArgs.chainedIn, 
                 jaqlArgs.outputAdapter,
                 jaqlArgs.batchMode);
-      jaqlArgs.enableConsolePrint(false);
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
       }
@@ -103,8 +107,12 @@ public abstract class AbstractJaqlShell {
     }
     finally
     {
-      shell.close();
+      try {
+        jaqlArgs.enableConsolePrint(false);
+        shell.close();
+      } finally {
+        jaqlArgs.enableConsolePrint(true);
+      }
     }
-    jaqlArgs.enableConsolePrint(true);
   }
 }
