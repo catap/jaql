@@ -32,7 +32,7 @@ import com.ibm.jaql.json.type.JsonValue;
 public abstract class LinesJsonTextOutputStream extends
                                                AbstractJsonTextOutputStream {
 
-  public static final String LINE_SEPARATOR = "\n";
+  public static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
   protected JsonStringUnquotedSerializer strSer = new JsonStringUnquotedSerializer();
 

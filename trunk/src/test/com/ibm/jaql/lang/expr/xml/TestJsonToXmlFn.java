@@ -21,6 +21,7 @@ import static org.junit.Assert.fail;
 import org.junit.Test;
 
 import com.ibm.jaql.AbstractTest;
+import com.ibm.jaql.io.stream.converter.LinesJsonTextOutputStream;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonAtom;
 import com.ibm.jaql.json.type.JsonDate;
@@ -164,7 +165,7 @@ public class TestJsonToXmlFn extends AbstractTest {
   }
 
   private void assertXmlEquals(String expected, String actual) {
-    actual = actual.replaceAll("\\n *", "");
+    actual = actual.replaceAll(LinesJsonTextOutputStream.LINE_SEPARATOR + " *", "");
     assertEquals(expected, actual);
   }
 
