@@ -75,6 +75,8 @@ public class JsonToXmlFn extends Expr {
 
   public JsonToXmlFn() {}
 
+  private static final String LINE_SEPARATOR_REGEX = LinesJsonTextOutputStream.LINE_SEPARATOR.replaceAll("\\r", "\\\\r")
+                                                                                                .replaceAll("\\n", "\\\\n");
   private static final String XML_DECL = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   private static final String INDENT_UNIT = "  ";
   private static final JsonString ARRAY = new JsonString("array");
@@ -106,7 +108,7 @@ public class JsonToXmlFn extends Expr {
     indentCount = 0;
 
     String xml = toXml(jv);
-    String[] lines = xml.split("\\n");
+    String[] lines = xml.split(LINE_SEPARATOR_REGEX);
     int len = lines.length;
     BufferedJsonArray ja = new BufferedJsonArray(len + 1);
     ja.set(0, new JsonString(XML_DECL));
