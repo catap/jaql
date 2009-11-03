@@ -99,7 +99,7 @@ public class Jaql
   protected Context context = new Context();
   protected boolean doRewrite = true;
   protected boolean stopOnException = false;
-  private JaqlPrinter printer;
+  private JaqlPrinter printer = NullPrinter.get();
   
   static
   {
