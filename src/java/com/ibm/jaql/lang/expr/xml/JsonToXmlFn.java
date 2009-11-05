@@ -32,7 +32,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * A function for converting JSON to XML. It is called as follows:
+ * An expression for converting JSON to XML. It is called as follows:
  * <code>jsonToXml()</code> . It is counterpart of {@link XmlToJsonFn}. But it
  * does not perform a conversion which is reverse to the conversion in
  * {@link XmlToJsonFn}. The reason is:
