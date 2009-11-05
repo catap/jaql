@@ -41,7 +41,9 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.IntArray;
 
 /**
- * A function for converting XML to JSON.
+ * An expression for converting XML to JSON.
+ * 
+ * @see JsonToXmlFn
  */
 public class XmlToJsonFn extends Expr
 {
