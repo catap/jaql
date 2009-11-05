@@ -170,14 +170,14 @@ public class TestJsonToXmlFn extends AbstractTest {
   }
 
   private String recordS(String s, JsonRecord jr) {
-    return fn.record(toJsonString(s), jr);
+    return fn.record(j(s), jr);
   }
 
   private String arrayS(String s, JsonArray ja) {
-    return fn.array(toJsonString(s), ja);
+    return fn.array(j(s), ja);
   }
 
   private String atomS(String s, JsonAtom atom) {
-    return fn.atom(toJsonString(s), atom);
+    return fn.atom(j(s), atom);
   }
 }

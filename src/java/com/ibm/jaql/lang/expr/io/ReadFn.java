@@ -20,7 +20,13 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * An expression used for reading data into jaql. It is called as follows:
- * read({type: '...', location: '...', inoptions: {...}}) <br>
+ * 
+ * <pre>
+ * read({type: '...', 
+ *       location: '...', 
+ *       inoptions: {...}})
+ * </pre>
+ * 
  * The type specifies which InputAdapter to use, the location specifies the
  * address from which the adapter will read. The optional inoptions further
  * parameterize the adapter's behavior. <br>
@@ -31,52 +37,23 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  * will be used. If there are duplicate names, then the query options will be
  * used as an override.
  */
-public final class ReadFn extends AbstractReadExpr implements PotentialMapReducible
-{
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
-  {
-    public Descriptor()
-    {
+public final class ReadFn extends AbstractReadExpr implements
+    PotentialMapReducible {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11 {
+    public Descriptor() {
       super("read", ReadFn.class);
     }
   }
-  
-  /**
-   * @param exprs
-   */
-  public ReadFn(Expr[] exprs)
-  {
+
+  public ReadFn(Expr[] exprs) {
     super(exprs);
   }
 
-  /**
-   * @param e
-   */
-  public ReadFn(Expr e)
-  {
-    super(new Expr[]{e});
+  public ReadFn(Expr e) {
+    super(new Expr[] { e });
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.PotentialMapReducible#isMapReducible()
-   */
-  public boolean isMapReducible()
-  {
+  public boolean isMapReducible() {
     return MapReducibleUtil.isMapReducible(true, exprs[0]);
   }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.PotentialMapReducible#rewriteToMapReduce(com.ibm.jaql.lang.Expr)
-   */
-//  public Expr rewriteToMapReduce(Expr expr)
-//  {
-//    if (exprs[0] instanceof RecordExpr && expr instanceof RecordExpr)
-//      return MapReducibleUtil.rewriteToMapReduce((RecordExpr) exprs[0],
-//          (RecordExpr) expr);
-//    return exprs[0];
-//  }
 }

@@ -44,7 +44,7 @@ public class AbstractTest {
     }
   }
 
-  protected JsonString toJsonString(String s) {
+  protected JsonString j(String s) {
     return s == null ? null : new JsonString(s);
   }
 }
