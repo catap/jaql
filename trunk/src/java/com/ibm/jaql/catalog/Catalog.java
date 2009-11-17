@@ -19,12 +19,7 @@ package com.ibm.jaql.catalog;
 import com.ibm.jaql.json.type.*;
 
 public abstract class Catalog {
-
-	static public Catalog init() {
-
-		return new EmbeddedCatalog();
-	}
-
+	
 	/**
 	 * Opens a catalog connection. The connection configuration is specified in the
 	 * catalog connection configuration file.
@@ -34,6 +29,16 @@ public abstract class Catalog {
 	abstract public void 
 	open() 
 	throws CatalogException;
+	
+	/**
+	 * Closes the catalog connection. Underlying resources are released 
+	 * 
+	 * @throws CatalogException
+	 */
+	abstract public void
+	close();
+	
+	
 
 	/**
 	 * Inserts a entry with the given key.
