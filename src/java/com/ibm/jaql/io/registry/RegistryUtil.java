@@ -43,9 +43,7 @@ public class RegistryUtil
   public static <K, V> void readFile(String fileName, Registry<K, V> registry)
       throws Exception
   {
-    URL loc = ClassLoaderMgr.getResource(fileName);
-
-    InputStream input = loc.openStream();
+    InputStream input = ClassLoaderMgr.getResourceAsStream(fileName);
     registry.readRegistry(input);
     input.close();
   }

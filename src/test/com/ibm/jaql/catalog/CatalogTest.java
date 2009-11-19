@@ -1,91 +1,68 @@
 package com.ibm.jaql.catalog;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import org.junit.Test;
 
-import com.ibm.jaql.json.parser.JsonParser;
+import com.ibm.jaql.AbstractTest;
 import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-// rename to TestCatalog and include it in ant test.
-public class CatalogTest {
+// TODO renamed to TestCatalog to be be included in "ant test" when the catalog feature is finished.
+public class CatalogTest extends AbstractTest {
 
 	@Test
-	public void embedded() {
-		access(EmbeddedCatalog.init());
-	}
-
-	@Test
-	public void serverMode() {
-		access(new ServerModeCatalog());
-	}
-
-	private void access(Catalog testCat) {
+	public void access() throws Exception {
+		Catalog cat = null;
 		try {
-			testCat.open();
+			cat = new CatalogImpl();
+			cat.open();
 
-			JsonString key = new JsonString("/a/b/c");
-			JsonParser jparser = new JsonParser();
-			JsonValue val = jparser.parse("{'title': 'Hello', 'comment': 'World'}");
+			// insert
+			JsonString key1 = new JsonString("/a/b/c");
+			JsonValue val1 = parse("{'title': 'Hello', 'comment': 'World'}");
+			cat.insert(key1, val1, false);
 
-			System.out.println(val.toString());
+			JsonString key2 = new JsonString("/a/x/y");
+			JsonValue val2 = parse("{'title': 'Hello2', 'comment': 'World2'}");
+			cat.insert(key2, val2, true);
 
-			testCat.insert(key, val, true);
+			BufferedJsonArray expectedkeys = new BufferedJsonArray(2);
+			expectedkeys.set(0, key1);
+			expectedkeys.set(1, key2);
+			assertEquals(expectedkeys, cat.list(new JsonString("")));
 
-			System.out.println("Inserted");
-
-			key = new JsonString("/a/x/y");
-			val = jparser.parse("{'title': 'Hello2', 'comment': 'World2'}");
-
-			System.out.println(val.toString());
-
-			testCat.insert(key, val, true);
-
-			System.out.println("Inserted");
-
-			JsonArray list = testCat.list(new JsonString(""));
-			System.out.println(list.toString());
-
-			System.out.println("============ TEST GETTERS ==============");
-
-			key = new JsonString("/a/b/c");
-			System.out.println(testCat.get(key).toString());
-
+			// getters
+			assertEquals(val1, cat.get(key1));
 			JsonString field1 = new JsonString("title");
-			System.out.println(testCat.get(key, field1).toString());
+			assertEquals(new JsonString("Hello"), cat.get(key1, field1));
 
 			JsonString field2 = new JsonString("comment");
 			BufferedJsonArray fields = new BufferedJsonArray(2);
 			fields.set(0, field1);
 			fields.set(1, field2);
-			System.out.println(testCat.get(key, fields).toString());
+			assertEquals(val1, cat.get(key1, fields));
 
-			System.out.println("============ TEST UPDATE ==============");
-
-			val = jparser.parse("{'title': 'Good bye', 'new': 'Cruel'}");
-
-			System.out.println("Expected error - cannot overwrite title field.");
+			// update
+			JsonValue val3 = parse("{'title': 'Good bye', 'new': 'Cruel'}");
 			try {
-				testCat.update(key, val, false);
+				cat.update(key1, val3, false);
+				fail("Expected error - cannot overwrite title field.");
 			} catch (CatalogException ex) {
-				System.out.println(ex.getMessage());
+				infoException(ex);
 			}
-			testCat.update(key, val, true);
-			System.out.println(testCat.get(key).toString());
+			cat.update(key1, val3, true);
+			assertEquals(parse("{'title': 'Good bye', 'comment': 'World', 'new': 'Cruel'}"),
+			             cat.get(key1));
 
-			System.out.println("============ TEST DELETE ==============");
-
-			testCat.delete(new JsonString("/a/b/c"));
-
-			list = testCat.list(new JsonString(""));
-			System.out.println(list.toString());
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
+			// delete
+			cat.delete(key1);
+			cat.delete(key2);
+			assertEquals((long) 0, cat.list(new JsonString("")).count());
 		} finally {
-			testCat.close();
+			cat.close();
 		}
-		System.out.println("all done here");
 	}
 }

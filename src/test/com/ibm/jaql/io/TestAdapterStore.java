@@ -36,7 +36,7 @@ public class TestAdapterStore extends AbstractTest {
     assertNotNull(as);
     JsonString key = new JsonString(type);
     AdapterStore.AdapterRegistry ar = as.get(key);
-    debug("outoptions: " + ar.getOutput());
+    LOG.info("outoptions: " + ar.getOutput());
     return ar;
   }
 

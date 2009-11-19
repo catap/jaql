@@ -18,12 +18,12 @@ package com.ibm.jaql.catalog;
 
 public class CatalogException extends Exception {
 	static final long serialVersionUID = -1;
-	
-	CatalogException(String message) {
+
+	public CatalogException(String message) {
 		super(message);
-	}	
-	
-	CatalogException(String message, Throwable cause) {
+	}
+
+	public CatalogException(String message, Throwable cause) {
 		super(message, cause);
 	}
 }
