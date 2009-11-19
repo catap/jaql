@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
@@ -137,6 +138,11 @@ public class ClassLoaderMgr
     }
     return loc;
   }
+  
+	public static InputStream getResourceAsStream(String name) throws IOException 
+	{
+		return getResource(name).openStream();
+	}
 
   public static ClassLoader getClassLoader()
   {

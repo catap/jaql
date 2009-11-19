@@ -18,15 +18,14 @@ package com.ibm.jaql.util.shell;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 
 /**
  * For enabling and disabling output to console through stdout and stderr.
  */
 public class ConsolePrintEnabler {
 
-  private static final Log LOG = LogFactory.getLog(ConsolePrintEnabler.class);
+  private static final Logger LOG = Logger.getLogger(ConsolePrintEnabler.class);
 
   private static final PrintStream out = System.out;
   private static final PrintStream err = System.err;
