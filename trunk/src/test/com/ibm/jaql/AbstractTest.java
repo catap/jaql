@@ -17,20 +17,22 @@ package com.ibm.jaql;
 
 import java.io.StringReader;
 
+import org.apache.log4j.Logger;
+
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-// TODO: use logging after a logging library is used. 
+/**
+ * Abstract test to provide some useful methods.
+ */
 public class AbstractTest {
 
-  protected void debug(Object message) {
-    System.out.println(message);
-  }
+  protected Logger LOG = Logger.getLogger(getClass());
 
-  protected void debugException(Throwable t) {
-    t.printStackTrace();
+  protected void infoException(Throwable t) {
+    LOG.info(null, t);
   }
 
   protected JsonValue parse(String str) {

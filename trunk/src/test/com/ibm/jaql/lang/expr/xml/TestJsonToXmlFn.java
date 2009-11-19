@@ -154,7 +154,7 @@ public class TestJsonToXmlFn extends AbstractTest {
       fn.toXml(jv);
       fail();
     } catch (IllegalArgumentException iae) {
-      debugException(iae);
+    	infoException(iae);
     }
   }
 

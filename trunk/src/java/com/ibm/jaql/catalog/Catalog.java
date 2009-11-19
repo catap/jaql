@@ -16,29 +16,37 @@
 
 package com.ibm.jaql.catalog;
 
-import com.ibm.jaql.json.type.*;
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 
-public abstract class Catalog {
-	
+/**
+ * Data stored in the catalog are a map of keys to values. The entry key is an
+ * unique string. The entry value is a JSON record. Think an entry as a JSON
+ * record with the following structure:
+ * 
+ * <pre>
+ * {key: {storage: { ... }, schema: { ... }, statistics: { ... }, userInfo: { ... }, ...}}
+ * ...
+ * </pre>
+ */
+public interface Catalog {
+
 	/**
-	 * Opens a catalog connection. The connection configuration is specified in the
-	 * catalog connection configuration file.
+	 * Opens a catalog connection. The connection configuration is specified in
+	 * the catalog connection configuration file. For some implementation, only
+	 * one catalog instance can open connection to database.
 	 * 
 	 * @return Catalog connection
 	 */
-	abstract public void 
-	open() 
-	throws CatalogException;
-	
+	void open() throws CatalogException;
+
 	/**
-	 * Closes the catalog connection. Underlying resources are released 
+	 * Closes the catalog connection. Underlying resources are released.
 	 * 
 	 * @throws CatalogException
 	 */
-	abstract public void
-	close();
-	
-	
+	void close();
 
 	/**
 	 * Inserts a entry with the given key.
@@ -48,21 +56,15 @@ public abstract class Catalog {
 	 * @param overwrite <code>true</code> to replace the existing entry if an
 	 *          entry with the given key already exists; <code>false</code> to
 	 *          throw an exception if such an entry already exists.
-	 * @throws DuplicatedEntryException If <code>overwrite</code> is set to
-	 *           <code>true</code> and an entry with the given key already exists.
 	 */
-	abstract public void 
-	insert( JsonString key, JsonValue entry, boolean overwrite)
-	throws CatalogException;
+	void insert(JsonString key, JsonValue entry, boolean overwrite) throws CatalogException;
 
 	/**
 	 * Deletes the entry specified with the key.
 	 * 
 	 * @param key Entry key
 	 */
-	abstract public void
-	delete( JsonString key) 
-	throws CatalogException;
+	void delete(JsonString key) throws CatalogException;
 
 	/**
 	 * Updates the entry under the specified key. If <code>overwrite</code> is
@@ -87,9 +89,7 @@ public abstract class Catalog {
 	 * @param overwrite <code>true</code> to use <i>upsert</i> semantics;
 	 *          otherwise not.
 	 */
-	abstract public void 
-	update( JsonString key, JsonValue entry, boolean overwrite)
-	throws CatalogException;
+	void update(JsonString key, JsonValue entry, boolean overwrite) throws CatalogException;
 
 	/**
 	 * Lists all the keys starting with the given prefix.
@@ -97,9 +97,7 @@ public abstract class Catalog {
 	 * @param keyPrefix Entry key prefix
 	 * @return JSON Iterator over all the matched entry keys
 	 */
-	abstract public JsonArray
-	list( JsonString keyPrefix)
-	throws CatalogException;
+	JsonArray list(JsonString keyPrefix) throws CatalogException;
 
 	/**
 	 * Returns the entry under the specified key.
@@ -107,9 +105,7 @@ public abstract class Catalog {
 	 * @param key Entry key
 	 * @return The Entry
 	 */
-	abstract public JsonValue
-	get( JsonString key)
-	throws CatalogException;
+	JsonValue get(JsonString key) throws CatalogException;
 
 	/**
 	 * Returns the field value specified with an entry key and a field name.
@@ -118,9 +114,7 @@ public abstract class Catalog {
 	 * @param fieldName Field name
 	 * @return The entry field value
 	 */
-	abstract public JsonValue
-	get( JsonString key, JsonString filedName)
-	throws CatalogException;
+	JsonValue get(JsonString key, JsonString filedName) throws CatalogException;
 
 	/**
 	 * Returns the field values specified with a key and field names.
@@ -130,7 +124,5 @@ public abstract class Catalog {
 	 * @return The entry field in the format of
 	 *         <code>{fieldName1: fieldValue1, fieldName2: fieldName2, ...}</code>
 	 */
-	abstract public JsonValue
-	get( JsonString key, JsonArray filedNames)
-	throws CatalogException;
+	JsonValue get(JsonString key, JsonArray filedNames) throws CatalogException;
 }
