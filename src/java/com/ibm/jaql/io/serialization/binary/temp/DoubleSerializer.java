@@ -25,7 +25,7 @@ import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonDouble;
 
-class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
+final class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
 {
   private DoubleSchema schema;
   
@@ -41,10 +41,12 @@ class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
   @Override
   public JsonDouble read(DataInput in, JsonValue target) throws IOException
   {
-    // get value
-    double value = readValue(in);
+    if (schema.isConstant())
+    {
+      return schema.getConstant();
+    }
     
-    // return result
+    double value = readValue(in);
     if (target == null || !(target instanceof MutableJsonDouble)) {
       return new MutableJsonDouble(value);
     } else {
@@ -58,38 +60,33 @@ class DoubleSerializer extends BinaryBasicSerializer<JsonDouble>
   @Override
   public void write(DataOutput out, JsonDouble value) throws IOException
   {
-    // check match
     if (!schema.matches(value))
     {
       throw new IllegalArgumentException("value not matched by this serializer");
     }
     
-    // check constant
-    if (schema.getValue() != null)
+    if (schema.isConstant())
     {
       return;
     }
     
-    // write
     out.writeDouble(value.get());
   }
   
   
   private double readValue(DataInput in) throws IOException
   {
-    if (schema.getValue() != null)
-    {
-      return schema.getValue().get();
-    }
-    else
-    {
-      return in.readDouble();
-    }
+    return in.readDouble();
   }
   
   // -- comparison --------------------------------------------------------------------------------
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
+    if (schema.isConstant())
+    {
+      return 0;
+    }
+    
     double value1 = readValue(in1);
     double value2 = readValue(in2);
     return (value1 < value2) ? -1 : (value1==value2 ? 0 : +1);

@@ -16,14 +16,13 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a 64 bit integer */
-public final class LongSchema extends RangeSchema<JsonLong>
+public final class LongSchema extends AtomSchema<JsonLong> 
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -33,60 +32,39 @@ public final class LongSchema extends RangeSchema<JsonLong>
   {
     if (parameters == null)
     {
-      Schema schema = SchemaFactory.longOrNullSchema();
-      parameters = new JsonValueParameters(
-          new JsonValueParameter(PAR_MIN, schema, null),
-          new JsonValueParameter(PAR_MAX, schema, null),
-          new JsonValueParameter(PAR_VALUE, schema, null));
+      parameters = AtomSchema.getParameters(SchemaFactory.longOrNullSchema());
     }
     return parameters;
   }
+
   
   // -- construction ------------------------------------------------------------------------------
   
-  public LongSchema(JsonRecord args)
+  public LongSchema(JsonLong value, JsonRecord annotation)
+  {
+    super(value, annotation);
+  }
+  
+  public LongSchema(JsonLong value)
+  {
+    super(value);
+  }
+  
+  public LongSchema()
+  {
+    super();
+  }
+  
+  LongSchema(JsonRecord args)
   {
     this(
-        (JsonNumber)getParameters().argumentOrDefault(PAR_MIN, args),
-        (JsonNumber)getParameters().argumentOrDefault(PAR_MAX, args),
-        (JsonNumber)getParameters().argumentOrDefault(PAR_VALUE, args));
-  }
-  
-  LongSchema()
-  {
-  }
-  
-  public LongSchema(JsonLong min, JsonLong max, JsonLong value)
-  {
-    init(min, max, value);
-  }
-  
-  public LongSchema(JsonNumber min, JsonNumber max, JsonNumber value)
-  {
-    this(convert(min), convert(max), convert(value));
-  }
-  
-  /** Convert the specified numeric to a long or throw an exception */  
-  private static JsonLong convert(JsonNumber v)
-  {
-    if (v == null) return null;
-    if (v instanceof JsonNumber)
-    {
-      try 
-      {
-        return new JsonLong(((JsonNumber)v).longValueExact());
-      }
-      catch (ArithmeticException e)
-      {
-        // throw below
-      }
-    }
-    throw new IllegalArgumentException("interval argument has to be of type long: " + v);
+        (JsonLong)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
   }
   
   
   // -- Schema methods ----------------------------------------------------------------------------
-
+  
   @Override
   public SchemaType getSchemaType()
   {
@@ -107,20 +85,14 @@ public final class LongSchema extends RangeSchema<JsonLong>
     {
       return false;
     }
-    
-    // match
-    if (this.value != null)
-    {
-      return value.equals(this.value);
-    }
-    if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
+    if (this.value != null && !this.value.equals(value))
     {
       return false;
-    }
-    
+    }    
     return true;
   }
   
+
   // -- merge -------------------------------------------------------------------------------------
 
   @Override
@@ -129,10 +101,16 @@ public final class LongSchema extends RangeSchema<JsonLong>
     if (other instanceof LongSchema)
     {
       LongSchema o = (LongSchema)other;
-      JsonLong min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
-      JsonLong max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);      
-      return new LongSchema(min, max, null);
+      if (JsonUtil.equals(this.value, o.value))
+      { 
+        return new LongSchema(this.value);
+      }
+      else
+      {
+        return new LongSchema();
+      }
     }
     return null;
   }
 }
+

@@ -167,7 +167,7 @@ public class PathExpand extends PathArray
     }
     else 
     {
-      Schema arraySchema = new ArraySchema(null, nextResult, null, null);
+      Schema arraySchema = new ArraySchema(null, nextResult);
       if (mayReturnEmpty)
       {
         arraySchema = SchemaTransformation.merge(arraySchema, SchemaFactory.emptyArraySchema());

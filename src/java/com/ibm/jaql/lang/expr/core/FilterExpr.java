@@ -98,8 +98,8 @@ public final class FilterExpr extends IterExpr
     }
     
     // handle non-empty input
-    Schema value = inSchema.elements();
-    return new ArraySchema(value, null, inSchema.maxElements());
+    Schema rest = inSchema.elements();
+    return new ArraySchema(null, rest);
   }
   
   /**

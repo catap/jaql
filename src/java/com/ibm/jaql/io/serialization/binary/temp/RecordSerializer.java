@@ -20,7 +20,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.util.BaseUtil;
 
 // not threadsafe
-class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
+final class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
 {
   // -- private variables -------------------------------------------------------------------------
   

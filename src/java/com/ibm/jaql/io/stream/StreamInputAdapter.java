@@ -114,7 +114,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
 
   public Schema getSchema()
   {
-    return new ArraySchema(formatter.getSchema(), null, null);
+    return new ArraySchema(null, formatter.getSchema());
   }
   
   /**

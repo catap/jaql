@@ -16,14 +16,13 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a double. */
-public final class DoubleSchema extends RangeSchema<JsonDouble>
+public final class DoubleSchema extends AtomSchema<JsonDouble> 
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -33,61 +32,39 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
   {
     if (parameters == null)
     {
-      Schema schema = SchemaFactory.doubleOrNullSchema();
-      parameters = new JsonValueParameters(
-          new JsonValueParameter(PAR_MIN, schema, null),
-          new JsonValueParameter(PAR_MAX, schema, null),
-          new JsonValueParameter(PAR_VALUE, schema, null));
+      parameters = AtomSchema.getParameters(SchemaFactory.doubleOrNullSchema());
     }
     return parameters;
   }
 
-
+  
   // -- construction ------------------------------------------------------------------------------
   
-  public DoubleSchema(JsonRecord args)
+  public DoubleSchema(JsonDouble value, JsonRecord annotation)
+  {
+    super(value, annotation);
+  }
+  
+  public DoubleSchema(JsonDouble value)
+  {
+    super(value);
+  }
+  
+  public DoubleSchema()
+  {
+    super();
+  }
+  
+  DoubleSchema(JsonRecord args)
   {
     this(
-        (JsonNumber)getParameters().argumentOrDefault(PAR_MIN, args),
-        (JsonNumber)getParameters().argumentOrDefault(PAR_MAX, args),
-        (JsonNumber)getParameters().argumentOrDefault(PAR_VALUE, args));
+        (JsonDouble)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
   }
   
-  DoubleSchema()
-  {
-  }
-  
-  public DoubleSchema(JsonDouble min, JsonDouble max, JsonDouble value)
-  {    
-    init(min, max, value);
-  }
-  
-  public DoubleSchema(JsonNumber min, JsonNumber max, JsonNumber value)
-  {
-    this(convert(min), convert(max), convert(value));
-  }
-
-  
-  /** Convert the specified numeric to a long or throw an exception */  
-  private static JsonDouble convert(JsonNumber v)
-  {
-    if (v == null) return null;
-    if (v instanceof JsonNumber)
-    {
-      try 
-      {
-        return new JsonDouble(((JsonNumber)v).doubleValueExact());
-      }
-      catch (ArithmeticException e)
-      {
-        // throw below
-      }
-    }
-    throw new IllegalArgumentException("interval argument has to be of type double: " + v);
-  }
   
   // -- Schema methods ----------------------------------------------------------------------------
-
+  
   @Override
   public SchemaType getSchemaType()
   {
@@ -108,20 +85,14 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
     {
       return false;
     }
-
-    // match
-    if (this.value != null)
-    {
-      return value.equals(this.value);
-    }
-    if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
+    if (this.value != null && !this.value.equals(value))
     {
       return false;
-    }
-    
+    }    
     return true;
-  } 
+  }
   
+
   // -- merge -------------------------------------------------------------------------------------
 
   @Override
@@ -130,9 +101,14 @@ public final class DoubleSchema extends RangeSchema<JsonDouble>
     if (other instanceof DoubleSchema)
     {
       DoubleSchema o = (DoubleSchema)other;
-      JsonDouble min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
-      JsonDouble max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);      
-      return new DoubleSchema(min, max, null);
+      if (JsonUtil.equals(this.value, o.value))
+      { 
+        return new DoubleSchema(this.value);
+      }
+      else
+      {
+        return new DoubleSchema();
+      }
     }
     return null;
   }

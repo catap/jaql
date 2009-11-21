@@ -39,6 +39,6 @@ public class TempHadoopInputAdapter<K,V> extends DefaultHadoopInputAdapter<K,V>
   @Override
   public Schema getSchema()
   {
-    return new ArraySchema(schema, null, null);
+      return new ArraySchema(null, schema);
   }
 }

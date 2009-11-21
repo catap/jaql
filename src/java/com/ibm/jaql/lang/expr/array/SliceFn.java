@@ -78,7 +78,7 @@ public class SliceFn extends IterExpr
     }
     else
     {
-      return new ArraySchema(null, outputSchema.elements(), null, null);
+      return new ArraySchema(null, outputSchema.elements());
     }
   }
   

@@ -303,6 +303,8 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
       return new RecordSerializer((RecordSchema)schema);
     case SCHEMATYPE:
       return new SchemaSerializer((SchematypeSchema)schema);
+    case FUNCTION:
+      return DefaultBinaryFullSerializer.getInstance().getSerializer(JsonEncoding.FUNCTION);
     case GENERIC:
       // "function" and "aschema" falls into this category
       // currently, there is only one encoding for those types; checked below

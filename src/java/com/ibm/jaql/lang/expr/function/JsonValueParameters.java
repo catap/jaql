@@ -23,6 +23,8 @@ import com.ibm.jaql.json.type.JsonValue;
 /** A parameters with JSON default values. */
 public class JsonValueParameters extends Parameters<JsonValue>
 {
+  public static final JsonValueParameters NONE = new JsonValueParameters();
+  
   public JsonValueParameters()
   {
     super();

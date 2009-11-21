@@ -20,18 +20,11 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a binary value */
-public final class BinarySchema extends Schema 
+public final class BinarySchema extends AtomSchemaWithLength<JsonBinary> 
 {
-  // -- private variables ------------------------------------------------------------------------- 
-  
-  private JsonLong minLength;
-  private JsonLong maxLength;
-
-  
   // -- schema parameters -------------------------------------------------------------------------
   
   private static JsonValueParameters parameters = null; 
@@ -40,42 +33,60 @@ public final class BinarySchema extends Schema
   {
     if (parameters == null)
     {
-      parameters = new JsonValueParameters(
-          new JsonValueParameter(PAR_MIN_LENGTH, "long(min=0)?", JsonLong.ZERO),
-          new JsonValueParameter(PAR_MAX_LENGTH, "long(min=0)?", null));
+      parameters = AtomSchemaWithLength.getParameters(SchemaFactory.binaryOrNullSchema());
     }
     return parameters;
   }
 
   
   // -- construction ------------------------------------------------------------------------------
+
+  public BinarySchema(JsonLong length, JsonBinary value, JsonRecord annotation)
+  {
+    super(length, value, annotation);
+  }
+
+  public BinarySchema(JsonLong length, JsonRecord annotation)
+  {
+    super(length, annotation);
+  }
   
-  public BinarySchema(JsonRecord args)
+  public BinarySchema(JsonLong length)
+  {
+    super(length);
+  }
+  
+  public BinarySchema(JsonBinary value, JsonRecord annotation)
+  {
+    super(value, annotation);
+  }
+  
+  public BinarySchema(JsonBinary value)
+  {
+    super(value);
+  }
+  
+  public BinarySchema()
+  {
+    super();
+  }
+  
+  BinarySchema(JsonRecord args)
   {
     this(
-        (JsonLong)getParameters().argumentOrDefault(PAR_MIN_LENGTH, args),
-        (JsonLong)getParameters().argumentOrDefault(PAR_MAX_LENGTH, args));
+        (JsonLong)getParameters().argumentOrDefault(PAR_LENGTH, args),
+        (JsonBinary)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
   }
   
-  public BinarySchema(JsonLong minLength, JsonLong maxLength)
+  
+  // -- superclass methods ------------------------------------------------------------------------
+  
+  protected long lengthOf(JsonBinary s)
   {
-    // check arguments
-    if (!SchemaUtil.checkInterval(minLength, maxLength, JsonLong.ZERO, JsonLong.ZERO))
-    {
-      throw new IllegalArgumentException("invalid range: " + minLength + " " + maxLength);
-    }
-
-    // store length
-    if (minLength != null || maxLength != null)
-    {
-      this.minLength = minLength==null ? JsonLong.ZERO : (JsonLong)JsonUtil.getImmutableCopyUnchecked(minLength);
-      this.maxLength = (JsonLong)JsonUtil.getImmutableCopyUnchecked(maxLength);
-    }
+    return s.bytesLength();
   }
   
-  BinarySchema()
-  {
-  }
   
   // -- Schema methods ----------------------------------------------------------------------------
   
@@ -83,18 +94,6 @@ public final class BinarySchema extends Schema
   public SchemaType getSchemaType()
   {
     return SchemaType.BINARY;
-  }
-
-  @Override
-  public boolean hasModifiers()
-  {
-    return (minLength != null && minLength.get() != 0) || maxLength != null;
-  }
-
-  @Override
-  public boolean isConstant()
-  {
-    return false;
   }
 
   @SuppressWarnings("unchecked")
@@ -111,29 +110,17 @@ public final class BinarySchema extends Schema
     {
       return false;
     }
-    JsonBinary b = (JsonBinary)value;
-    
-    // check length
-    if (!(minLength==null || b.bytesLength()>=minLength.get())) return false;
-    if (!(maxLength==null || b.bytesLength()<=maxLength.get())) return false;
-
-    // everything ok
+    if (this.value != null && !this.value.equals(value))
+    {
+      return false;
+    }    
+    JsonBinary v = (JsonBinary)value;
+    if (this.length != null && this.length.longValue() != v.bytesLength())
+    {
+      return false;
+    }
     return true;
   }
-  
-
-  // -- getters -----------------------------------------------------------------------------------
-  
-  public JsonLong getMinLength()
-  {
-    return minLength;
-  }
-  
-  public JsonLong getMaxLength()
-  {
-    return maxLength;
-  }
-
   
   // -- merge -------------------------------------------------------------------------------------
 
@@ -143,28 +130,23 @@ public final class BinarySchema extends Schema
     if (other instanceof BinarySchema)
     {
       BinarySchema o = (BinarySchema)other;
-      JsonLong minLength = SchemaUtil.min(this.minLength, o.minLength);
-      JsonLong maxLength = SchemaUtil.max(this.maxLength, o.maxLength);
-      return new BinarySchema(minLength, maxLength);
+
+      // same value
+      if (this.value != null && JsonUtil.equals(this.value, o.value))
+      { 
+        return this;
+      }
+      
+      // different value but same length
+      if (JsonUtil.equals(this.length, o.length))
+      {
+        return new BinarySchema(this.length);
+      }
+      
+      // totally different
+      return new BinarySchema();
     }
+    
     return null;
   }
-  
-  
-  // -- comparison --------------------------------------------------------------------------------
-  
-  @Override
-  public int compareTo(Schema other)
-  {
-    int c = this.getSchemaType().compareTo(other.getSchemaType());
-    if (c != 0) return c;
-    
-    BinarySchema o = (BinarySchema)other;
-    c = SchemaUtil.compare(this.minLength, o.minLength);
-    if (c != 0) return c;
-    c = SchemaUtil.compare(this.maxLength, o.maxLength);
-    if (c != 0) return c;
-    
-    return 0;
-  } 
 }

@@ -199,6 +199,14 @@ public final class OrSchema extends Schema
   {
     return schemata.length == 1 && schemata[0].isConstant(); 
   }
+  
+  public JsonValue getConstant()
+  {
+    if (isConstant())
+      return schemata[0].getConstant();
+    else
+      return null;
+  }
 
   @Override
   public boolean matches(JsonValue value) throws Exception

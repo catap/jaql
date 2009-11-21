@@ -55,134 +55,68 @@ false instanceof x;
 
 x = schema long;
 x;
-1 instanceof x;
-1m instanceof x;  // incompatible
-1d instanceof x;  // incompatible
+5 instanceof x;
+5m instanceof x;  // incompatible
+5d instanceof x;  // incompatible
 "a" instanceof x; // incompatible
 
 x = schema long(5);
 x;
 4 instanceof x;  // incompatible
 5 instanceof x;
-6 instanceof x;
-
-x = schema long(max=5);
-x;
-4 instanceof x;  
-5 instanceof x;
-6 instanceof x; // incompatible
-
-x = schema long(-1,1);
-x;
--2 instanceof x; // incompatible
--1 instanceof x;
-0 instanceof x;
-1 instanceof x;
-2 instanceof x; // incompatible
-
-x = schema long(value=5);
-x;
-4 instanceof x;  // incompatible
-5 instanceof x;
+5d instanceof x; // incompatible
+5m instanceof x; // incompatible
 6 instanceof x;  // incompatible
 
-
-// TODO: uncomment next line when parser is fixed to accept Long.MIN
-// schema long(-9223372036854775808, 9223372036854775807); // should work: long range
-schema long(max=9223372036854775808); // must fail: too large argument
-schema long(min=-9223372036854775809); // must fail: too large argument
-schema long(5,3); // must fail: invalid interval
 schema long(5d); // must fail: invalid argument
 schema long(5m); // must fail: invalid argument
 schema long(5.1); // must fail: invalid argument
-schema long(5, value=4); // must fail: invalid argument
 
 
 // -- parsing and matching: double ----------------------------------------------------------------
 
 x = schema double;
 x;
-1d instanceof x;
-1.1 instanceof x;  
-1 instanceof x;    // incompatible
-1.5m instanceof x; // incompatible
-1.1m instanceof x; // incompatible
+5d instanceof x;
+5.5 instanceof x;  
+5 instanceof x;    // incompatible
+5.5m instanceof x; // incompatible
 "a" instanceof x; // incompatible
 
 x = schema double(5d);
 x;
-4d instanceof x;  // incompatible
+4.99d instanceof x;   // incompatible
 5d instanceof x;
-5.001d instanceof x;
+5 instanceof x;  // incompatible
+5m instanceof x; // incompatible
+5.01d instanceof x; // incompatible
 
-x = schema double(max=5d);
-x;
-4d instanceof x;  
-5d instanceof x;
-5.001d instanceof x; // incompatible
-
-x = schema double(-1d,1d);
-x;
--1.001d instanceof x; // incompatible
--1d instanceof x;
-0d instanceof x;
-1d instanceof x;
-1.001d instanceof x; // incompatible
-
-x = schema double(value=5d);
-x;
-4.999d instanceof x;  // incompatible
-5d instanceof x;
-5.001d instanceof x;  // incompatible
-
-schema double(5d,3d); // must fail: invalid interval
 schema double(5);     // must fail: invalid argument
 schema double(5.0);  // should be ok
 schema double(5.1m); // must fail: invalid argument
-schema double(5d, value=4d); // must fail: invalid argument
+
 
 // -- parsing and matching: decfloat --------------------------------------------------------------
 
 x = schema decfloat;
 x;
-1m instanceof x;
-1.1m instanceof x;
-1 instanceof x;    // incompatible
-1.1d instanceof x; // incompatible
+5m instanceof x;
+5.5m instanceof x;  
+5 instanceof x;    // incompatible
+5.5 instanceof x;  // incompatible
 "a" instanceof x;  // incompatible
 
 x = schema decfloat(5m);
 x;
-4m instanceof x;  // incompatible
+4.99m instanceof x;   // incompatible
 5m instanceof x;
-5.001m instanceof x;
+5 instanceof x;       // incompatible
+5d instanceof x;      // incompatible
+5.01m instanceof x; // incompatible
 
-x = schema decfloat(max=5m);
-x;
-4m instanceof x;  
-5m instanceof x;
-5.001m instanceof x; // incompatible
-
-x = schema decfloat(-1m,1m);
-x;
--1.001m instanceof x; // incompatible
--1m instanceof x;
-0m instanceof x;
-1m instanceof x;
-1.001m instanceof x; // incompatible
-
-x = schema decfloat(value=5m);
-x;
-4.999m instanceof x;  // incompatible
-5m instanceof x;
-5.001m instanceof x;  // incompatible
-
-
-schema decfloat(-9223372036854775809m, 9223372036854775808m); // should work (outside long range)
-schema decfloat(5,3); // must fail: invalid interval
-schema decfloat(5d); // must fail: invalid argument
-schema decfloat(5, value=4d); // must fail: invalid argument
-
+schema decfloat(5);    // must fail: invalid argument
+schema decfloat(5.0);  // must fail: invalid argument
+schema decfloat(5d);   // must fail: invalid argument
 
 // -- parsing and matching: date ------------------------------------------------------------------
 
@@ -193,32 +127,9 @@ date('2000-01-01T12:00:00Z') instanceof x;
 
 x = schema date(date('2000-01-01T12:00:00Z'));
 x;
-date('2000-01-01T11:59:59Z') instanceof x;  // incompatible
-date('2000-01-01T12:00:00Z') instanceof x;
-date('2000-01-01T12:00:01Z') instanceof x;
-
-x = schema date(max=date('2000-01-01T12:00:00Z'));
-x;
-date('2000-01-01T11:59:59Z') instanceof x;  
-date('2000-01-01T12:00:00Z') instanceof x;
-date('2000-01-01T12:00:01Z') instanceof x;   // incompatible
-
-x = schema date(date('2000-01-01T12:00:00Z'), date('2000-02-01T12:00:00Z'));
-x;
-date('2000-01-01T11:59:59Z') instanceof x;  // incompatible
-date('2000-01-01T12:00:00Z') instanceof x;
-date('2000-01-02T13:00:00Z') instanceof x;
-date('2000-02-01T12:00:00Z') instanceof x;
-date('2000-02-01T12:00:01Z') instanceof x;   // incompatible
-
-x = schema date(value=date('2000-01-01T12:00:00Z'));
-x;
 date('2000-01-01T11:59:59Z') instanceof x;   // incompatible
 date('2000-01-01T12:00:00Z') instanceof x;
 date('2000-01-01T12:00:01Z') instanceof x;   // incompatible
-
-schema date(date('2000-01-01T12:00:00Z'), date('2000-01-01T11:00:00Z')); // must fail: invalid interval
-schema date(date('2000-01-01T12:00:00Z'), value=date('2000-01-01T11:00:00Z')); // must fail: invalid argument
 
 
 // -- parsing and matching: string ----------------------------------------------------------------
@@ -226,55 +137,44 @@ schema date(date('2000-01-01T12:00:00Z'), value=date('2000-01-01T11:00:00Z')); /
 x = schema string;
 x;
 "1" instanceof x;
-1 instanceof x;
+1 instanceof x;        // incompatible
 
 x = schema string(5);
 x;
-"1234" instanceof x;  // incompatible
+"1234" instanceof x;   // incompatible
 "12345" instanceof x;
-"123456" instanceof x;
-
-x = schema string(maxLength=5);
-x;
-"1234" instanceof x;
-"12345" instanceof x;
-"123456" instanceof x;  // incompatible
-
-x = schema string(4,6);
-x;
-"123" instanceof x;  // incompatible
-"1234" instanceof x;
-"12345" instanceof x;
-"123456" instanceof x;
-"1234567" instanceof x;  // incompatible
-
-schema string(-1); // must fail: invalid interval
-schema string(5,3); // must fail: invalid interval
-
-x = schema string(pattern="ba*b");
-x;
-"baaab" instanceof x;
-"babab" instanceof x;  // incompatible
+"123456" instanceof x; // incompatible
 
 x = schema string(value="ba*b");
 x;
 "ba*b" instanceof x;
-"baaab" instanceof x;  // incompatible
+"baab" instanceof x;   // incompatible
 
-
-schema string(5, pattern="[ab]*");
-schema string(5, 10, pattern="[ab]*");
-schema string("abc["); // must fail: invalid pattern 
+schema string(-1);      // must fail: invalid length
+schema string(1, "ab"); // must fail: length does not match
 
 
 // -- parsing and matching: binary ----------------------------------------------------------------
 
-schema binary;
-schema binary(5);
-schema binary(maxLength=5);
-schema binary(4,6);
-schema binary(-1); // must fail: invalid interval
-schema binary(5,3); // must fail: invalid interval
+x = schema binary;
+x;
+hex('00') instanceof x;
+"1" instanceof x;      // incompatible
+1 instanceof x;        // incompatible
+
+x = schema binary(5);
+x;
+hex('11223344') instanceof x;   // incompatible
+hex('1122334455') instanceof x;
+hex('112233445566') instanceof x; // incompatible
+
+x = schema binary(value=hex('001122'));
+x;
+hex('001122') instanceof x;
+hex('001123') instanceof x;   // incompatible
+
+schema binary(-1);      // must fail: invalid length
+schema binary(2, hex('11')); // must fail: length does not match
 
 
 // -- parsing and matching: arrays ----------------------------------------------------------------
@@ -293,7 +193,7 @@ null instanceof x;       // incompatible
 [] instanceof x;       // incompatible
 [ 1 ] instanceof x;    // incompatible
 
-x = schema [ long(0,10), string(pattern="a*"), boolean ];
+x = schema [ long(value=1), string(value="a"), boolean ];
 x;
 [ 1, "a", true ] instanceof x;
 [ 1, "a", true, 1 ] instanceof x;  // incompatible
@@ -301,68 +201,15 @@ x;
 [ 1, "b", true ] instanceof x;   // incompatible
 [ 1, "a", null ] instanceof x;   // incompatible
 
-x = schema [ long, boolean<2,3> ];
-x;
-[ 1, true ] instanceof x; // incompatible
-[ 1, true, true ] instanceof x;
-[ 1, true, true, true ] instanceof x;
-[ 1, true, true, true, true ] instanceof x; // incompatible
-
-x = schema [ long, boolean* ];
+x = schema [ long, boolean ... ];
 x;
 [ 1 ] instanceof x; 
 [ 1, true ] instanceof x;
 [ 1, true, true ] instanceof x;  
 [ 1, 1 ] instanceof x; // incompatible
 
-x = schema [ long, boolean+ ];
-x;
-[ 1 ] instanceof x;  // incompatible
-[ 1, true ] instanceof x;
-[ 1, true, true ] instanceof x;  
-[ 1, 1 ] instanceof x; // incompatible
-
-x = schema [ long, boolean<2,*> ];
-x;
-[ 1 ] instanceof x;  // incompatible
-[ 1, true ] instanceof x;  // incompatible
-[ 1, true, true ] instanceof x;
-[ 1, true, true, true ] instanceof x;    
-[ 1, 1 ] instanceof x; // incompatible
-
-x = schema [ long, boolean<*,2> ];
-x;
-[ 1 ] instanceof x;  
-[ 1, true ] instanceof x;  
-[ 1, true, true ] instanceof x;
-[ 1, true, true, true ] instanceof x; // incompatible    
-[ 1, 1 ] instanceof x; // incompatible
-
-
-schema [ null* ];
-schema [ null+ ];
-schema [ null<0> ];
-schema [ null<5> ];
-schema [ null<5,10> ];
-schema [ null<5,*> ];
-schema [ null<*,5> ];
-schema [ null<*,*> ];
-schema [ null<-1> ]; // must fail: invalid interval
-schema [ null<5,3> ]; // must fail: invalid interval
-
-schema [ long(0,10)* ];
-schema [ long(0,10)+ ];
-schema [ long(0,10)<0> ];
-schema [ long(0,10)<5> ];
-schema [ long(0,10)<5,10> ];
-schema [ long(0,10)<5,*> ];
-schema [ long(0,10)<*,5> ];
-schema [ long(0,10)<*,*> ];
-schema [ long(0,10)<-1> ]; // must fail: invalid interval
-schema [ long(0,10)<5,3> ]; // must fail: invalid interval
-
-schema [ long(5,3) ]; // must fail: invalid internal schema
-
+schema [ null ... ];
+schema [ long(0) ... ];
 
 // -- parsing and matching: records ---------------------------------------------------------------
 
@@ -468,19 +315,19 @@ null instanceof x;
 1 instanceof x;        
 "1" instanceof x;      // incompatible
 
-x = schema string(pattern="a*") | string(pattern="b*") | long;
+x = schema string(value="a") | string(value="b") | long;
 x;
-"aaa" instanceof x;
-"bbb" instanceof x;
+"a" instanceof x;
+"b" instanceof x;
 1 instanceof x;
 null instanceof x;     // incompatible
 "c" instanceof x;      // incompatible
 
 
-x = schema string(pattern="a*") | string(pattern="b*") | long?;
+x = schema string(value="a") | string(value="b") | long?;
 x;
-"aaa" instanceof x;
-"bbb" instanceof x;
+"a" instanceof x;
+"b" instanceof x;
 1 instanceof x;
 null instanceof x;
 "c" instanceof x;      // incompatible
@@ -502,7 +349,7 @@ schemaof([ 1, "2" ]);
 // -- schema comparison ---------------------------------------------------------------------------
 
 x = [ schema nonnull, 
-       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string<*> ],
+       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string ... ],
        schema binary, 
        schema boolean, 
        schema date, 
@@ -524,8 +371,9 @@ x -> sort by [$ desc];
 mergeSchemata = javaudf('com.ibm.jaql.udf.MergeSchemataUdf');
 
 mergeSchemata(schema binary, schema binary);
-mergeSchemata(schema binary(minLength=5,maxLength=10), schema binary);
-mergeSchemata(schema binary(minLength=5,maxLength=11), schema binary(minLength=4,maxLength=10));
+mergeSchemata(schema binary(1), schema binary);
+mergeSchemata(schema binary(value=hex('11')), schema binary);
+mergeSchemata(schema binary(1), schema binary(value=hex('11')));
 
 mergeSchemata(schema boolean, schema boolean);
 mergeSchemata(schema boolean, schema boolean(false));
@@ -535,53 +383,28 @@ mergeSchemata(schema boolean(false), schema boolean(false));
 mergeSchemata(schema boolean(true), schema boolean(true));
 
 mergeSchemata(schema date, schema date);
-mergeSchemata(schema date, schema date(value=date('2001-07-04T12:08:56Z')));
-mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
-              schema date(min=date('2001-08-04T12:08:56Z'), max=date('2002-08-04T12:08:56Z')));
-mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
-              schema date(min=date('2001-06-04T12:08:56Z'), max=date('2002-06-04T12:08:56Z')));
-mergeSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
-              schema date(value=date('2001-06-04T12:08:56Z')));
+mergeSchemata(schema date, schema date(date('2001-07-04T12:08:56Z')));
 
 mergeSchemata(schema decfloat, schema decfloat);
 mergeSchemata(schema decfloat, schema decfloat(value=1m));
-mergeSchemata(schema decfloat(min=1m, max=5m),
-              schema decfloat(min=2m, max=6m));
-mergeSchemata(schema decfloat(min=1m, max=5m),
-              schema decfloat(min=0m, max=4m));
-mergeSchemata(schema decfloat(min=1m, max=5m),
-              schema decfloat(value=0m));
 
 mergeSchemata(schema double, schema double);
 mergeSchemata(schema double, schema double(value=1.0));
-mergeSchemata(schema double(min=1.0, max=5.0),
-              schema double(min=2.0, max=6.0));
-mergeSchemata(schema double(min=1.0, max=5.0),
-              schema double(min=0.0, max=4.0));
-mergeSchemata(schema double(min=1.0, max=5.0),
-              schema double(value=0.0));
 
 mergeSchemata(schema long, schema long);
 mergeSchemata(schema long, schema long(value=1));
-mergeSchemata(schema long(min=1, max=5),
-              schema long(min=2, max=6));
-mergeSchemata(schema long(min=1, max=5),
-              schema long(min=0, max=4));
-mergeSchemata(schema long(min=1, max=5),
-              schema long(value=0));
 
 mergeSchemata(schema null, schema null);
 
 mergeSchemata(schema string, schema string);
-mergeSchemata(schema string(minLength=5,maxLength=10), schema string);
-mergeSchemata(schema string(minLength=5,maxLength=11), schema string(minLength=4,maxLength=10));
+mergeSchemata(schema string(1), schema string);
 mergeSchemata(schema string(value="a"), schema string);
-mergeSchemata(schema string(pattern="a"), schema string);
+mergeSchemata(schema string(1), schema string(value="a"));
 
 mergeSchemata(schema null, schema string);
 mergeSchemata(schema null, schema string|long);
 mergeSchemata(schema null, schema string|null);
-mergeSchemata(schema long(min=1)|string(maxLength=8)|null, schema date|long(min=2)|string(maxLength=5));
+mergeSchemata(schema long(1)|string(8)|null, schema date|long(2)|string(8));
 
 mergeSchemata(schema nonnull, schema nonnull);
 mergeSchemata(schema nonnull, schema long);
@@ -589,15 +412,12 @@ mergeSchemata(schema nonnull, schema long|date);
 mergeSchemata(schema nonnull, schema null);
 mergeSchemata(schema nonnull, schema long|null);
 
-
 mergeSchemata(schema [], schema []);
 mergeSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
 mergeSchemata(schema [ long, decfloat ], schema [ long ]);
-mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long ]);
-mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, date ]);
-mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, decfloat<4,7> ]);
-mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, date<4,7> ]);
-mergeSchemata(schema [ long, decfloat<2,5> ], schema [ long, null, date<4,7> ]);
+mergeSchemata(schema [ long, decfloat ... ], schema [ long ]);
+mergeSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);
+mergeSchemata(schema [ long, decfloat ... ], schema [ long, date ]);
 
 mergeSchemata(schema {}, schema {});
 mergeSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });
@@ -610,8 +430,9 @@ mergeSchemata(schema { a: long, *:date }, schema { a: long, *:null });
 compactSchemata = javaudf('com.ibm.jaql.udf.CompactSchemataUdf');
 
 compactSchemata(schema binary, schema binary);
-compactSchemata(schema binary(minLength=5,maxLength=10), schema binary);
-compactSchemata(schema binary(minLength=5,maxLength=11), schema binary(minLength=4,maxLength=10));
+compactSchemata(schema binary(1), schema binary);
+compactSchemata(schema binary(value=hex('11')), schema binary);
+compactSchemata(schema binary(1), schema binary(value=hex('11')));
 
 compactSchemata(schema boolean, schema boolean);
 compactSchemata(schema boolean, schema boolean(false));
@@ -621,54 +442,28 @@ compactSchemata(schema boolean(false), schema boolean(false));
 compactSchemata(schema boolean(true), schema boolean(true));
 
 compactSchemata(schema date, schema date);
-compactSchemata(schema date, schema date(value=date('2001-07-04T12:08:56Z')));
-compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
-              schema date(min=date('2001-08-04T12:08:56Z'), max=date('2002-08-04T12:08:56Z')));
-compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
-              schema date(min=date('2001-06-04T12:08:56Z'), max=date('2002-06-04T12:08:56Z')));
-compactSchemata(schema date(min=date('2001-07-04T12:08:56Z'), max=date('2002-07-04T12:08:56Z')),
-              schema date(value=date('2001-06-04T12:08:56Z')));
+compactSchemata(schema date, schema date(date('2001-07-04T12:08:56Z')));
 
 compactSchemata(schema decfloat, schema decfloat);
 compactSchemata(schema decfloat, schema decfloat(value=1m));
-compactSchemata(schema decfloat(min=1m, max=5m),
-              schema decfloat(min=2m, max=6m));
-compactSchemata(schema decfloat(min=1m, max=5m),
-              schema decfloat(min=0m, max=4m));
-compactSchemata(schema decfloat(min=1m, max=5m),
-              schema decfloat(value=0m));
 
 compactSchemata(schema double, schema double);
 compactSchemata(schema double, schema double(value=1.0));
-compactSchemata(schema double(min=1.0, max=5.0),
-              schema double(min=2.0, max=6.0));
-compactSchemata(schema double(min=1.0, max=5.0),
-              schema double(min=0.0, max=4.0));
-compactSchemata(schema double(min=1.0, max=5.0),
-              schema double(value=0.0));
 
 compactSchemata(schema long, schema long);
 compactSchemata(schema long, schema long(value=1));
-compactSchemata(schema long(min=1, max=5),
-              schema long(min=2, max=6));
-compactSchemata(schema long(min=1, max=5),
-              schema long(min=0, max=4));
-compactSchemata(schema long(min=1, max=5),
-              schema long(value=0));
 
 compactSchemata(schema null, schema null);
 
 compactSchemata(schema string, schema string);
-compactSchemata(schema string(minLength=5,maxLength=10), schema string);
-compactSchemata(schema string(minLength=5,maxLength=11), schema string(minLength=4,maxLength=10));
+compactSchemata(schema string(1), schema string);
 compactSchemata(schema string(value="a"), schema string);
-compactSchemata(schema string(pattern="a"), schema string);
+compactSchemata(schema string(1), schema string(value="a"));
 
 compactSchemata(schema null, schema string);
 compactSchemata(schema null, schema string|long);
 compactSchemata(schema null, schema string|null);
-compactSchemata(schema long(min=1)|string(maxLength=8)|null, schema date|long(min=2)|string(maxLength=5));
-
+compactSchemata(schema long(1)|string(8)|null, schema date|long(2)|string(8));
 
 compactSchemata(schema nonnull, schema nonnull);
 compactSchemata(schema nonnull, schema long);
@@ -676,15 +471,12 @@ compactSchemata(schema nonnull, schema long|date);
 compactSchemata(schema nonnull, schema null);
 compactSchemata(schema nonnull, schema long|null);
 
-
 compactSchemata(schema [], schema []);
 compactSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
 compactSchemata(schema [ long, decfloat ], schema [ long ]);
-compactSchemata(schema [ long, decfloat<2,5> ], schema [ long ]);
-compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, date ]);
-compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, decfloat<4,7> ]);
-compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, date<4,7> ]);
-compactSchemata(schema [ long, decfloat<2,5> ], schema [ long, null, date<4,7> ]);
+compactSchemata(schema [ long, decfloat ... ], schema [ long ]);
+compactSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);
+compactSchemata(schema [ long, decfloat ... ], schema [ long, date ]);
 
 compactSchemata(schema {}, schema {});
 compactSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });

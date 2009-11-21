@@ -127,7 +127,7 @@ public abstract class PathArray extends PathStep
     Schema result; 
     if (elements.hasData.always() && !inputMaybeNull)
     {
-      result = new ArraySchema(null, elements.schema, null, null);
+      result = new ArraySchema(null, elements.schema);
     }
     else if (elements.hasData.never())
     {
@@ -135,7 +135,7 @@ public abstract class PathArray extends PathStep
     }
     else
     {
-      result = SchemaTransformation.merge(new ArraySchema(null, elements.schema, null, null), 
+      result = SchemaTransformation.merge(new ArraySchema(null, elements.schema), 
           SchemaFactory.emptyArraySchema());
     }
       

@@ -1273,7 +1273,7 @@ arraySchema returns [ArraySchema s = null]
     { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
       Schema p; 
       Schema rest = null;
-      Pair<JsonLong, JsonLong> repeat = null; 
+      Boolean repeat = false; 
     }
     : "["
         ( p=schema           { rest = p; }
@@ -1282,29 +1282,27 @@ arraySchema returns [ArraySchema s = null]
           repeat=arraySchemaRepeat
         )?
       "]" { 
+      	    if (!repeat && rest != null)
+      	    {
+      	    	schemata.add(rest);
+      	    	rest = null;
+      	    }
             Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
-            s = rest != null ? new ArraySchema(schemaArray, rest, repeat.a, repeat.b)
-                             : new ArraySchema(schemaArray); // empty array
+            s = new ArraySchema(schemaArray, rest);
           }
     ;
 
-arraySchemaRepeat returns [Pair<JsonLong, JsonLong> p = null; ]
-    { JsonLong minRest = null; JsonLong maxRest = null; }
-    : ( /*empty*/                     { minRest = JsonLong.ONE; maxRest = JsonLong.ONE; }
-      | ( "*"                         
-        | "+"                         { minRest = JsonLong.ONE; }
-        | "<" 
-            ( "*"                     
-            | minRest=longLit
-            ) 
-            ( /*empty*/               { maxRest = minRest; }
-            | "," ( "*"             
-                    | maxRest=longLit 
-                  )
-            )
-          ">"
-        )
-      ) { p = new Pair<JsonLong, JsonLong>(minRest, maxRest); }
+arraySchemaRepeat returns [Boolean repeat = false; ]
+    { JsonLong i; }
+    : /* empty */   { repeat = false; }
+    | "..."         { repeat = true; }
+    | "<" ( i=longLit { if (i.get() != 0) 
+    	                  throw new IllegalArgumentException(
+    	                    "<n,n> syntax is deprecated; use ... instead"); 
+    	              } 
+    	    "," "*"
+          | "*" ("," "*") ?
+          ) ">"   { repeat = true; } // backwards compatibility
     ;
 
 
@@ -1936,6 +1934,10 @@ DOTTY
     | '.'                    {$setType(DOT);}
     ;
 
+DOT_DOT_DOT
+    options { testLiterals=true; }
+    : '.' '.' '.'
+    ;
 
 protected DOT_ID
     : '.'! IDWORD

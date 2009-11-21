@@ -178,7 +178,7 @@ public class KeyLookupFn extends IterExpr
     }
     
     // return result
-    Schema resultElements = new ArraySchema(key, value1, value2);
-    return new ArraySchema(resultElements, null, null);
+    Schema resultElements = new ArraySchema(new Schema[] { key, value1, value2 });
+    return new ArraySchema(null, resultElements);
   }
 }
