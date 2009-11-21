@@ -16,14 +16,13 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a 128 bit decimal float value */
-public final class DecfloatSchema extends RangeSchema<JsonDecimal>
+public final class DecfloatSchema extends AtomSchema<JsonDecimal> 
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -33,57 +32,36 @@ public final class DecfloatSchema extends RangeSchema<JsonDecimal>
   {
     if (parameters == null)
     {
-      Schema schema = SchemaFactory.decfloatOrNullSchema();
-      parameters = new JsonValueParameters(
-          new JsonValueParameter(PAR_MIN, schema, null),
-          new JsonValueParameter(PAR_MAX, schema, null),
-          new JsonValueParameter(PAR_VALUE, schema, null));
+      parameters = AtomSchema.getParameters(SchemaFactory.decfloatOrNullSchema());
     }
     return parameters;
   }
 
- 
-  //-- construction ------------------------------------------------------------------------------
   
-  public DecfloatSchema(JsonRecord args)
+  // -- construction ------------------------------------------------------------------------------
+  
+  public DecfloatSchema(JsonDecimal value, JsonRecord annotation)
+  {
+    super(value, annotation);
+  }
+  
+  public DecfloatSchema(JsonDecimal value)
+  {
+    super(value);
+  }
+  
+  public DecfloatSchema()
+  {
+    super();
+  }
+  
+  DecfloatSchema(JsonRecord args)
   {
     this(
-        (JsonNumber)getParameters().argumentOrDefault(PAR_MIN, args),
-        (JsonNumber)getParameters().argumentOrDefault(PAR_MAX, args),
-        (JsonNumber)getParameters().argumentOrDefault(PAR_VALUE, args));
+        (JsonDecimal)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
   }
   
-  DecfloatSchema()
-  {
-  }
-  
-  public DecfloatSchema(JsonDecimal min, JsonDecimal max, JsonDecimal value)
-  {
-    init(min, max, value);
-  }
-  
-  public DecfloatSchema(JsonNumber min, JsonNumber max, JsonNumber value)
-  {
-    this(convert(min), convert(max), convert(value));
-  }
-  
-  /** Convert the specified numeric to a decimal or throw an exception */  
-  private static JsonDecimal convert(JsonNumber v)
-  {
-    if (v == null) return null;
-    if (v instanceof JsonNumber)
-    {
-      try 
-      {
-        return new JsonDecimal(((JsonNumber)v).decimalValueExact());
-      }
-      catch (ArithmeticException e)
-      {
-        // throw below
-      }
-    }
-    throw new IllegalArgumentException("interval argument has to be of type decfloat: " + v);
-  }
   
   // -- Schema methods ----------------------------------------------------------------------------
   
@@ -92,34 +70,29 @@ public final class DecfloatSchema extends RangeSchema<JsonDecimal>
   {
     return SchemaType.DECFLOAT;
   }
-  
+
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
     return new Class[] { JsonDecimal.class }; 
   }
-
+  
+  @Override
   public boolean matches(JsonValue value)
   {
     if (!(value instanceof JsonDecimal))
     {
       return false;
     }
-    
-    // match
-    if (this.value != null)
-    {
-      return value.equals(this.value);
-    }
-    if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
+    if (this.value != null && !this.value.equals(value))
     {
       return false;
-    }
-    
+    }    
     return true;
   }
   
+
   // -- merge -------------------------------------------------------------------------------------
 
   @Override
@@ -128,9 +101,14 @@ public final class DecfloatSchema extends RangeSchema<JsonDecimal>
     if (other instanceof DecfloatSchema)
     {
       DecfloatSchema o = (DecfloatSchema)other;
-      JsonDecimal min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
-      JsonDecimal max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);
-      return new DecfloatSchema(min, max, null);
+      if (JsonUtil.equals(this.value, o.value))
+      { 
+        return new DecfloatSchema(this.value);
+      }
+      else
+      {
+        return new DecfloatSchema();
+      }
     }
     return null;
   }

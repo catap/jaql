@@ -26,7 +26,7 @@ import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonDecimal;
 
-class DecfloatSerializer extends BinaryBasicSerializer<JsonDecimal>
+final class DecfloatSerializer extends BinaryBasicSerializer<JsonDecimal>
 {
   private DecfloatSchema schema;
   
@@ -42,10 +42,12 @@ class DecfloatSerializer extends BinaryBasicSerializer<JsonDecimal>
   @Override
   public JsonDecimal read(DataInput in, JsonValue target) throws IOException
   {
-    // get value
-    BigDecimal value = readValue(in);
+    if (schema.isConstant())
+    {
+      return schema.getConstant();
+    }
     
-    // return result
+    BigDecimal value = readValue(in);
     if (target == null || !(target instanceof MutableJsonDecimal)) {
       return new MutableJsonDecimal(value);
     } else {
@@ -58,44 +60,40 @@ class DecfloatSerializer extends BinaryBasicSerializer<JsonDecimal>
   @Override
   public void write(DataOutput out, JsonDecimal value) throws IOException
   {
-    // check match
     if (!schema.matches(value))
     {
       throw new IllegalArgumentException("value not matched by this serializer");
     }
     
-    // check constant
-    if (schema.getValue() != null)
+    if (schema.isConstant())
     {
       return;
     }
     
-    // write
     String str = value.get().toString();
     out.writeUTF(str);
   }
   
   private BigDecimal readValue(DataInput in) throws IOException
   {
-    if (schema.getValue() != null)
-    {
-      return schema.getValue().get();
-    }
-    else
-    {
-      // TODO: need to read and write binary or at least avoid alloc string
-      // TODO: need to cache bigdecimal
-      String str = in.readUTF();
-      return new BigDecimal(str);
-    }
+    // TODO: need to read and write binary or at least avoid alloc string
+    // TODO: need to cache bigdecimal
+    String str = in.readUTF();
+    return new BigDecimal(str);
   }
   
   // -- comparison --------------------------------------------------------------------------------
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
+    if (schema.isConstant())
+    {
+      return 0;
+    }
+    
     BigDecimal value1 = readValue(in1);
     BigDecimal value2 = readValue(in2);
     return value1.compareTo(value2);
   }
+  
   // TODO: efficient implementation of compare, skip, and copy
 }

@@ -12,7 +12,7 @@ import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
 
 
-public class SchemaSerializer extends BinaryBasicSerializer<JsonSchema>
+final class SchemaSerializer extends BinaryBasicSerializer<JsonSchema>
 {
   private SchematypeSchema schema;
   private BinaryBasicSerializer<JsonSchema> serializer;

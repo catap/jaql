@@ -93,9 +93,7 @@ public class TypeCheckSimplification extends Rewrite
     
     ArraySchema arraySchema = (ArraySchema)asSchema;
     if( arraySchema.getHeadSchemata().size() != 0 ||
-        ! arraySchema.hasRest() ||
-        arraySchema.getMinRest().longValueExact() != 0 ||
-        arraySchema.getMaxRest() != null )
+        ! arraySchema.hasRest() )
     {
       return false;
     }

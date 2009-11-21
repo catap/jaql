@@ -16,12 +16,11 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
-class ArraySerializer extends BinaryBasicSerializer<JsonArray>
+final class ArraySerializer extends BinaryBasicSerializer<JsonArray>
 {
   private ArraySchema schema;
   private BinaryFullSerializer[] headSerializers;
   private BinaryFullSerializer restSerializer;
-  Long fixedRestLength; // if ! = null
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -44,10 +43,6 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
     if (rest != null)
     {
       restSerializer = new TempBinaryFullSerializer(rest);
-      if (schema.getMaxRest() != null && schema.getMinRest().get() == schema.getMaxRest().get())
-      {
-        fixedRestLength = schema.getMinRest().get();
-      }
     }
   }
 
@@ -79,17 +74,8 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
     // read the rest
     if (restSerializer != null)
     {
-      long n;
-      
       // get the count
-      if (fixedRestLength == null)
-      {
-        n = BaseUtil.readVULong(in);
-      }
-      else
-      {
-        n = fixedRestLength;
-      }
+      long n = BaseUtil.readVULong(in);
 
       // read the elements
       for (long i=0; i<n; i++)
@@ -131,10 +117,7 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
       if (restSerializer != null)
       {
         // serialize the count
-        if (fixedRestLength == null)
-        {
-          BaseUtil.writeVULong(out, n);
-        }
+        BaseUtil.writeVULong(out, n);
 
         // write the elements
         for (long i=0; i<n; i++)
@@ -165,20 +148,9 @@ class ArraySerializer extends BinaryBasicSerializer<JsonArray>
     // compare tails
     if (restSerializer != null)
     {
-      // deserialize the count
-      long n1, n2;
-      
       // get the count
-      if (fixedRestLength == null)
-      {
-        n1 = BaseUtil.readVULong(in1);
-        n2 = BaseUtil.readVULong(in2);
-      }
-      else
-      {
-        n1 = n2 = fixedRestLength;
-      }
-
+      long n1 = BaseUtil.readVULong(in1);
+      long n2 = BaseUtil.readVULong(in2);
       return FullSerializer.compareArrays(in1, n1, in2, n2, restSerializer);
     }
     

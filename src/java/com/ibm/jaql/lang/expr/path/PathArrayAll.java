@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.PrintStream;
 import java.util.HashSet;
 
@@ -23,13 +26,11 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 public class PathArrayAll extends PathArray
 {
@@ -101,8 +102,6 @@ public class PathArrayAll extends PathArray
   {
     PathStepSchema elements = null;
     boolean inputMaybeNull = false;
-    JsonLong minLength = null;
-    JsonLong maxLength = null;
     if (inputSchema.is(ARRAY).never())
     {
       // TODO: this indicates a compile-time error but unless error handling is implemented, 
@@ -111,8 +110,6 @@ public class PathArrayAll extends PathArray
     }
     else if (inputSchema.is(ARRAY).always())
     {
-      minLength = inputSchema.minElements();
-      maxLength = inputSchema.maxElements();
       elements = nextStep().getSchema(inputSchema.elements());
     }
     else
@@ -121,15 +118,13 @@ public class PathArrayAll extends PathArray
       if (s==null)  return new PathStepSchema(null, Bool3.FALSE); // TODO: friendly here as well
       inputMaybeNull = s.is(NULL).maybe();
       s = SchemaTransformation.removeNullability(s);
-      minLength = s.minElements();
-      maxLength = s.maxElements();
       elements = nextStep().getSchema(inputSchema.elements());
     }
 
     Schema result; 
     if (elements.hasData.always() && !inputMaybeNull)
     {
-      result = new ArraySchema(null, elements.schema, minLength, maxLength);
+      result = new ArraySchema(null, elements.schema);
     }
     else if (elements.hasData.never())
     {
@@ -137,7 +132,7 @@ public class PathArrayAll extends PathArray
     }
     else
     {
-      result = SchemaTransformation.merge(new ArraySchema(null, elements.schema, minLength, maxLength), 
+      result = SchemaTransformation.merge(new ArraySchema(null, elements.schema), 
           SchemaFactory.emptyArraySchema());
     }
       

@@ -24,7 +24,7 @@ import com.ibm.jaql.json.schema.BooleanSchema;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 
-class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
+final class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
 {
   private BooleanSchema schema;
   
@@ -41,19 +41,14 @@ class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
   @Override
   public JsonBool read(DataInput in, JsonValue target) throws IOException
   {
-    // obtain value
-    boolean value;
-    if (schema.getValue() != null)
+    if (schema.isConstant())
     {
-      value = schema.getValue().get(); // copy!
+      return schema.getConstant(); // copy!
     }
     else
     {
-      value = in.readByte() != 0;
+      return JsonBool.make(in.readByte() != 0);
     }
-    
-    // return it 
-    return JsonBool.make(value);
   }
 
   @Override
@@ -66,7 +61,7 @@ class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
     }
 
     // write
-    if (schema.getValue() != null)
+    if (schema.isConstant())
     {
       // constant
       return;
@@ -80,7 +75,7 @@ class BooleanSerializer extends BinaryBasicSerializer<JsonBool>
   // -- comparison --------------------------------------------------------------------------------
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
-    if (schema.getValue() != null)
+    if (schema.isConstant())
     {
       return 0;
     }

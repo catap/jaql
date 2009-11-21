@@ -301,7 +301,7 @@ public class GroupByExpr extends IterExpr
       {
         // input is a non-empty array
         hasInput = true;
-        Schema asSchema = new ArraySchema(inSchema.elements(), null, null);
+        Schema asSchema = new ArraySchema(null, inSchema.elements());
         if (numInputs() > 1)
         {
           asSchema = SchemaTransformation.addNullability(asSchema);
@@ -317,7 +317,7 @@ public class GroupByExpr extends IterExpr
     Schema collectSchema = collectExpr().getSchema();
     if (collectSchema.is(ARRAY).always()) // hopefully true 
     {
-      return new ArraySchema(collectSchema.elements(), null, null);
+      return new ArraySchema(null, collectSchema.elements());
     }
     else
     {

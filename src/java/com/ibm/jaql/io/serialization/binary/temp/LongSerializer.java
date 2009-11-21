@@ -26,24 +26,15 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.util.BaseUtil;
 
-class LongSerializer extends BinaryBasicSerializer<JsonLong>
+final class LongSerializer extends BinaryBasicSerializer<JsonLong>
 {
   private LongSchema schema;
-  private long offset;
   
   // -- construction ------------------------------------------------------------------------------
   
   public LongSerializer(LongSchema schema)
   {
     this.schema = schema; 
-    if (schema.getMin() != null)
-    {
-      offset = schema.getMin().get();
-    }
-    else
-    {
-      offset = 0;
-    }
   }
   
   // -- serialization -----------------------------------------------------------------------------
@@ -51,10 +42,12 @@ class LongSerializer extends BinaryBasicSerializer<JsonLong>
   @Override
   public JsonLong read(DataInput in, JsonValue target) throws IOException
   {
-    // get value
-    long value =readValue(in);
+    if (schema.isConstant())
+    {
+      return schema.getConstant();
+    }
     
-    // return result
+    long value = readValue(in);
     if (target == null || !(target instanceof MutableJsonLong)) {
       return new MutableJsonLong(value);
     } else {
@@ -68,37 +61,32 @@ class LongSerializer extends BinaryBasicSerializer<JsonLong>
   @Override
   public void write(DataOutput out, JsonLong value) throws IOException
   {
-    // check match
     if (!schema.matches(value))
     {
       throw new IllegalArgumentException("value not matched by this serializer");
     }
     
-    // check constant
-    if (schema.getValue() != null)
+    if (schema.isConstant())
     {
       return;
     }
     
-    // write
-    BaseUtil.writeVSLong(out, value.get()-offset);
+    BaseUtil.writeVSLong(out, value.get());
   }
   
   private long readValue(DataInput in) throws IOException
   {
-    if (schema.getValue() != null)
-    {
-      return schema.getValue().get();
-    }
-    else
-    {
-      return BaseUtil.readVSLong(in)+offset;
-    }
+    return BaseUtil.readVSLong(in);
   }
   
   // -- comparison --------------------------------------------------------------------------------
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
+    if (schema.isConstant())
+    {
+      return 0;
+    }
+    
     long value1 = readValue(in1);
     long value2 = readValue(in2);
     return (value1 < value2) ? -1 : (value1==value2 ? 0 : +1);

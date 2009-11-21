@@ -167,7 +167,7 @@ public class SortExpr extends IterExpr
     else
     {
       // get rid of order
-      out = new ArraySchema(out.elements(), out.minElements(), out.maxElements());
+      out = new ArraySchema(null, out.elements());
     }
     
     // handle nulls (when input can be an array)

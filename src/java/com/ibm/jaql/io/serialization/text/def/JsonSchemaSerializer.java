@@ -20,26 +20,25 @@ import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.AtomSchema;
+import com.ibm.jaql.json.schema.AtomSchemaWithLength;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.schema.BooleanSchema;
 import com.ibm.jaql.json.schema.DateSchema;
 import com.ibm.jaql.json.schema.DecfloatSchema;
 import com.ibm.jaql.json.schema.DoubleSchema;
+import com.ibm.jaql.json.schema.FunctionSchema;
 import com.ibm.jaql.json.schema.GenericSchema;
 import com.ibm.jaql.json.schema.LongSchema;
 import com.ibm.jaql.json.schema.NonNullSchema;
 import com.ibm.jaql.json.schema.NullSchema;
 import com.ibm.jaql.json.schema.OrSchema;
-import com.ibm.jaql.json.schema.RangeSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaType;
 import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.StringSchema;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonSchema;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
@@ -47,7 +46,6 @@ import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
 {
-
   @Override
   public void write(PrintStream out, JsonSchema value, int indent)
       throws IOException
@@ -105,6 +103,9 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     case STRING:
       writeString(out, (StringSchema)schema, indent);
       break;
+    case FUNCTION:
+      writeFunction(out, (FunctionSchema)schema, indent);
+      break;
     default:
       throw new IllegalStateException("unknown schema type");    
     }
@@ -137,7 +138,6 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
       out.println(sep);
       sep=",";
       indent(out, indent);
-      
       write(out, s, indent);
     }
     
@@ -150,26 +150,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
 
       Schema rest = schema.getRestSchema();
       write(out, rest, indent);
-      
-      JsonLong minRest = schema.getMinRest();
-      JsonLong maxRest = schema.getMaxRest();
-      if (!(JsonUtil.equals(minRest, JsonLong.ONE) && JsonUtil.equals(maxRest, JsonLong.ONE))) // == default
-      {
-//        if (JsonValue.equals(minRest, JsonLong.ZERO) && maxRest==null)
-//        {
-//          out.print("*");
-//        }
-//        else if (JsonValue.equals(minRest, JsonLong.ONE) && maxRest==null)
-//        {
-//          out.print("+");
-//        }
-//        else
-//        {
-          out.print('<');
-          writeLengthArgs(out, minRest, maxRest, indent, "");
-          out.print('>');
-//        }        
-      }
+      out.print(" ...");
     }
     
     // done
@@ -182,47 +163,37 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeSchema(PrintStream out, SchematypeSchema schema, int indent) throws IOException
   {
     out.print("schematype");
-    if (schema.getValue() != null)
-    {
-      out.print("(");
-      JsonUtil.print(out, schema.getValue(), indent+8);
-      out.print(")");     
-    }
+    writeAtomSchemaArgs(out, indent, schema);
   }
   
   private static void writeBinary(PrintStream out, BinarySchema schema, int indent) throws IOException
   {
     out.print("binary");
-    
-    JsonLong min = schema.getMinLength();
-    JsonLong max = schema.getMaxLength();
-    writeArgs(out, indent, BinarySchema.getParameters(), new JsonValue[] { min, max } );
+    writeAtomSchemaWithLengthArgs(out, indent, schema);
   }
 
   private static void writeBoolean(PrintStream out, BooleanSchema schema, int indent) throws IOException
   {
     out.print("boolean");
-    
-    JsonValue value = schema.getValue();
-    writeArgs(out, indent, BooleanSchema.getParameters(), new JsonValue[] { value } );
+    writeAtomSchemaArgs(out, indent, schema);
   }
   
   private static void writeDecimal(PrintStream out, DecfloatSchema schema, int indent) throws IOException
   {
     out.print("decfloat");
-    writeRangeArgs(out, indent, DecfloatSchema.getParameters(), schema);    
+    writeAtomSchemaArgs(out, indent, schema);
   }
 
   private static void writeDate(PrintStream out, DateSchema schema, int indent) throws IOException
   {
     out.print("date");
-    writeRangeArgs(out, indent, DateSchema.getParameters(), schema);
+    writeAtomSchemaArgs(out, indent, schema);
   }
 
   private static void writeDouble(PrintStream out, DoubleSchema schema, int indent) throws IOException
   {
     out.print("double");
-    writeRangeArgs(out, indent, DoubleSchema.getParameters(), schema);
+    writeAtomSchemaArgs(out, indent, schema);
   }
   
   private static void writeGeneric(PrintStream out, GenericSchema schema, int indent) throws IOException
@@ -230,10 +201,15 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     out.print(schema.getType().toString());
   }
   
+  private static void writeFunction(PrintStream out, FunctionSchema schema, int indent) throws IOException
+  {
+    out.print("function");
+  }
+  
   private static void writeLong(PrintStream out, LongSchema schema, int indent) throws IOException
   {
     out.print("long");
-    writeRangeArgs(out, indent, LongSchema.getParameters(), schema);
+    writeAtomSchemaArgs(out, indent, schema);
   }
 
   private static void writeNull(PrintStream out, NullSchema schema, int indent) throws IOException
@@ -341,13 +317,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
   private static void writeString(PrintStream out, StringSchema schema, int indent) throws IOException
   {
     out.print("string");
-    JsonLong min = schema.getMinLength();
-    JsonLong max = schema.getMaxLength();
-    JsonString pattern = schema.getPattern();
-    JsonString value = schema.getValue();
-    
-    writeArgs(out, indent, StringSchema.getParameters(),
-        new JsonValue[] { min, max, pattern, value });
+    writeAtomSchemaWithLengthArgs(out, indent, schema);
   }
   
   // -- helpers -----------------------------------------------------------------------------------
@@ -384,41 +354,18 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
     }
   }
   
-  private static <T extends JsonValue> void writeRangeArgs(
-      PrintStream out, int indent,  JsonValueParameters parameters, RangeSchema<T> schema) 
-  throws IOException
+  private static void writeAtomSchemaArgs(PrintStream out, int indent, 
+      AtomSchema<?> schema) throws IOException
   {
-    T min = schema.getMin();
-    T max = schema.getMax();
-    T value = schema.getValue();
-    writeArgs(out, indent, parameters, new JsonValue[] { min, max, value });
+    writeArgs(out, indent, AtomSchema.DEFAULT_PARAMETERS, 
+        new JsonValue[] { schema.getConstant(), schema.getAnnotation() });
   }
   
-  private static void writeLengthArgs(PrintStream out, JsonNumber min, JsonNumber max, 
-      int indent, String sep) throws IOException
+  private static void writeAtomSchemaWithLengthArgs(PrintStream out, int indent, 
+      AtomSchemaWithLength<?> schema) throws IOException
   {
-    out.print(sep);
-    sep=",";
-    if (min==null)
-    {
-      out.print('*');
-    }
-    else
-    {
-      JsonUtil.print(out, min, indent);
-    }
-
-    if (!JsonUtil.equals(min, max))
-    {
-      out.print(sep);
-      if (max==null)
-      {
-        out.print('*');
-      }
-      else
-      {
-        JsonUtil.print(out, max, indent);
-      }
-    }
+    writeArgs(out, indent, AtomSchemaWithLength.DEFAULT_PARAMETERS, 
+        new JsonValue[] { schema.getLength(), schema.getConstant(), schema.getAnnotation() });
   }
+
 }

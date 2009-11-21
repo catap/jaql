@@ -168,7 +168,7 @@ public abstract class PathStep extends Expr
     Schema nameSchema = nameExpr.getSchema();
     if (nameSchema instanceof StringSchema && nameSchema.isConstant())
     {
-      return ((StringSchema)nameSchema).getValue(); // non-null
+      return ((StringSchema)nameSchema).getConstant(); // non-null
     }
     return null;
     // TODO: other ways to find name? compile-time eval?

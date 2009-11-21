@@ -32,20 +32,15 @@ import com.ibm.jaql.util.Bool3;
  * {@link NullSchema} matches the <code>null</code> value. */
 public abstract class Schema implements Comparable<Schema>
 {
-  public static final JsonString PAR_MIN = new JsonString("min");
-  public static final JsonString PAR_MAX = new JsonString("max");
-  public static final JsonString PAR_MIN_LENGTH = new JsonString("minLength");
-  public static final JsonString PAR_MAX_LENGTH = new JsonString("maxLength");
+  public static final JsonString PAR_LENGTH = new JsonString("length");
   public static final JsonString PAR_VALUE = new JsonString("value");
+  public static final JsonString PAR_ANNOTATION = new JsonString("annotation");
 
 
   // -- schema description ------------------------------------------------------------------------
 
   /** Returns the type represented by this schema. */
   public abstract SchemaType getSchemaType();
-
-  /** Checks whether this schema has any modifiers. */
-  public abstract boolean hasModifiers();
   
   /** Checks whether this schema represents a constant value. 
    *  
@@ -54,6 +49,14 @@ public abstract class Schema implements Comparable<Schema>
    */
   public abstract boolean isConstant();
 
+  /** If <code>isConstant()</code> equals <code>true</code>, returns the constant value represented 
+   * by this schema. Otherwise, returns null.  
+   */
+  public abstract JsonValue getConstant();
+
+  /** Checks whether any schema has modifiers that deviate from their default values. */
+  public abstract boolean hasModifiers();
+  
   /** Checks whether this schema matches any value of the specified types.
    * 
    * Returns <code>Bool3.TRUE</code> if the schema matches only values of the specified types.

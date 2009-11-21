@@ -54,7 +54,7 @@ public class LongAvgUda implements JavaUda
   @Override
   public Schema getPartialSchema()
   {
-    return new ArraySchema(SchemaFactory.longSchema(), SchemaFactory.longSchema());    
+    return new ArraySchema(new Schema[] { SchemaFactory.longSchema(), SchemaFactory.longSchema() });    
   }
   
   @Override

@@ -11,7 +11,7 @@ public enum SchemaType implements Comparable<SchemaType>
   BOOLEAN(JsonType.BOOLEAN),
   LONG(JsonType.LONG), DOUBLE(JsonType.DOUBLE), DECFLOAT(JsonType.DECFLOAT), 
   STRING(JsonType.STRING), BINARY(JsonType.BINARY),
-  DATE(JsonType.DATE), GENERIC(null),
+  DATE(JsonType.DATE), FUNCTION(JsonType.FUNCTION),
   SCHEMATYPE(JsonType.SCHEMA),
   
   // compound types
@@ -21,8 +21,11 @@ public enum SchemaType implements Comparable<SchemaType>
 
   // null
   NON_NULL(null), 
-  NULL(JsonType.NULL); 
+  NULL(JsonType.NULL), 
 
+  // container for the rest
+  GENERIC(null);
+  
   private JsonType type;
   
   SchemaType(JsonType type)

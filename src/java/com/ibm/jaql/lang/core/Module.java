@@ -58,10 +58,10 @@ public abstract class Module {
 			Module.namespaceSchema = SchemaFactory.parse( 
 					"{" +
 					VERSION_FIELD + ": decfloat(value=0.1m)," + "\n" +
-					JAQL_FIELD + "?: [ string<0,*> ]," +"\n" +
-					EXPORT_FIELD + "?: [ string<0,*> ]," +"\n" +
-					UDF_FN_FIELD + "?: [ { \"type\"?: string, * }<0,*> ], " + "\n" +
-					IMPORT_FIELD + "?: [ {\"module\": string, \"vars\": [ string<0,*> ] }|string<0,*> ] " + "\n" +
+					JAQL_FIELD + "?: [ string ... ]," +"\n" +
+					EXPORT_FIELD + "?: [ string ... ]," +"\n" +
+					UDF_FN_FIELD + "?: [ { \"type\"?: string, * } ... ], " + "\n" +
+					IMPORT_FIELD + "?: [ {\"module\": string, \"vars\": [ string ... ] }|string ... ] " + "\n" +
 			    "}");
 			
 			Module.descriptionSchema = SchemaFactory.parse( 
@@ -69,8 +69,8 @@ public abstract class Module {
 					VERSION_FIELD + "?: decfloat," +
 					"date?: date," +
 					"title?: string," +
-					"author?: string | [ string<0,*> ]," +
-					"maintainer?: string | [ string<0,*> ]," +
+					"author?: string | [ string ... ]," +
+					"maintainer?: string | [ string ... ]," +
 					"description?: string," +
 					"license?: string," +
 					"url?: string" +

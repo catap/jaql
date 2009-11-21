@@ -22,26 +22,27 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonBinary;
 import com.ibm.jaql.util.BaseUtil;
 
-class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
+final class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
 {
   private BinarySchema schema;
-  int minLength = 0;
-  boolean constantLength = false;
+  int length = 0;
   
   // -- construction ------------------------------------------------------------------------------
   
   public BinarySerializer(BinarySchema schema)
   {
     this.schema = schema;
-    if (schema.getMinLength() != null)
+    if (schema.getLength() != null)
     {
-      minLength = schema.getMinLength().intValueExact();
-      constantLength = JsonUtil.equals(schema.getMinLength(), schema.getMaxLength());  
+      length = (int)schema.getLength().intValueExact();
+    }
+    else
+    {
+      length = -1;
     }
   }
   
@@ -50,15 +51,16 @@ class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
   @Override
   public JsonBinary read(DataInput in, JsonValue target) throws IOException
   {
-    // read length
-    int length;
-    if (constantLength)
+    if (schema.isConstant())
     {
-      length = minLength;
+      return schema.getConstant();
     }
-    else
+    
+    // read length
+    int length = this.length;
+    if (length < 0) // non-constant
     {
-      length = BaseUtil.readVUInt(in)+minLength;
+      length = BaseUtil.readVUInt(in);
     }
 
     // create target
@@ -80,36 +82,42 @@ class BinarySerializer extends BinaryBasicSerializer<JsonBinary>
   @Override
   public void write(DataOutput out, JsonBinary value) throws IOException
   {
-    // check match
     if (!schema.matches(value))
     {
       throw new IllegalArgumentException("value not matched by this serializer");
     }
-    
-    // write length
-    int length = value.bytesLength();
-    if (!constantLength)
+
+    if (schema.isConstant())
     {
-      BaseUtil.writeVUInt(out, length-minLength);
+      return;
     }
     
-    // write
+    if (length < 0)
+    {
+      BaseUtil.writeVUInt(out, value.bytesLength());
+    }
+    
     value.writeBytes(out);
   }
   
   // -- comparison --------------------------------------------------------------------------------
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
+    if (schema.isConstant())
+    {
+      return 0;
+    }
+    
     // read length
     int l1, l2;
-    if (constantLength)
+    if (length < 0)
     {
-      l1 = l2 = minLength;
+      l1 = BaseUtil.readVUInt(in1);
+      l2 = BaseUtil.readVUInt(in2);
     }
     else
     {
-      l1 = BaseUtil.readVUInt(in1)+minLength;
-      l2 = BaseUtil.readVUInt(in2)+minLength;
+      l1 = l2 = length;
     }
 
     // now compare bytes

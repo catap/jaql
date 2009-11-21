@@ -16,17 +16,13 @@
 package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
-import com.ibm.jaql.lang.util.JaqlUtil;
-import com.ibm.jaql.util.Bool3;
 
-/** Generic schema used for types that do not have parameters */
-public final class GenericSchema extends Schema
+/** Schema for a function. TODO: much more can be done here */
+public class FunctionSchema extends Schema 
 {
-  final JsonType type;
-
   // -- schema parameters -------------------------------------------------------------------------
   
   private static JsonValueParameters parameters = null; 
@@ -40,85 +36,57 @@ public final class GenericSchema extends Schema
     return parameters;
   }
   
-  
   // -- construction ------------------------------------------------------------------------------
-  
-  public GenericSchema(JsonType type, JsonRecord args)
+
+  public FunctionSchema()
   {
-    this(type);
-  }
-  
-  public GenericSchema(JsonType type)
-  {
-    JaqlUtil.enforceNonNull(type);
-    this.type = type;
   }
 
-  
+  FunctionSchema(JsonRecord args)
+  {
+  }
+ 
   // -- Schema methods ----------------------------------------------------------------------------
-
+  
   @Override
   public SchemaType getSchemaType()
   {
-    return SchemaType.GENERIC;
-  }
-
-  @Override
-  public boolean isConstant()
-  {
-    return false;
-  }
-
-  @Override
-  public JsonValue getConstant()
-  {
-    return null;
-  }
-  
-  @Override
-  public boolean hasModifiers()
-  {
-    return false;
-  }
-  
-  @Override
-  public boolean matches(JsonValue value) throws Exception
-  {
-    return type.getMainClass().isInstance(value);
-  }
-
-  public Bool3 is(JsonType type, JsonType ... types)
-  {
-    JsonType myType = getType();
-    assert myType != null; // schemata with myType == null override this method
-    boolean first = type == myType;
-    if (first)
-    {
-      return Bool3.TRUE;
-    }
-    else
-    {
-      // test whether all are false
-      for (int i=0; i<types.length; i++)
-      {
-        if (types[i] == myType) return Bool3.TRUE;
-      }
-      return Bool3.FALSE;
-    }
-  }
-  
-  // -- getters -----------------------------------------------------------------------------------
-  
-  public JsonType getType()
-  {
-    return type;  
+    return SchemaType.FUNCTION;
   }
   
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
-    return new Class[] { type.getMainClass() }; 
+    return new Class[] { Function.class }; 
+  }
+  
+  @Override
+  public boolean matches(JsonValue value)
+  {
+    if (!(value instanceof Function))
+    {
+      return false;
+    }
+    return true;
+  }
+  
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
+  // -- getters -----------------------------------------------------------------------------------
+  
+  @Override
+  public boolean isConstant()
+  {
+    return false;
+  }
+  
+  public Function getConstant()
+  {
+    return null;
   }
   
   // -- merge -------------------------------------------------------------------------------------
@@ -126,30 +94,18 @@ public final class GenericSchema extends Schema
   @Override
   protected Schema merge(Schema other)
   {
-    if (other instanceof GenericSchema)
+    if (other instanceof FunctionSchema)
     {
-      GenericSchema o = (GenericSchema)other;
-      if (this.type.equals(o.type))
-      {
-        return this;
-      }
-      else
-      {
-        return null; // cannot be merged
-      }
+      return this;
     }
     return null;
   }
-  
+
   // -- comparison --------------------------------------------------------------------------------
-  
+
   @Override
   public int compareTo(Schema other)
   {
-    int c = this.getSchemaType().compareTo(other.getSchemaType());
-    if (c != 0) return c;
-    
-    GenericSchema o = (GenericSchema)other;
-    return this.type.compareTo(o.type);
-  } 
+    return this.getSchemaType().compareTo(other.getSchemaType());    
+  }
 }
