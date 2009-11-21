@@ -399,7 +399,7 @@ null
 convert(null, schema long);##
 FAILURE
  // should fail
-convert("1", schema long(min=0));##
+convert("1", schema long(0));##
 FAILURE
  // should fail (for the moment)
 
@@ -495,7 +495,7 @@ schema [
            "c1": string?,
            "c2": string?,
            "c3": long?
-         }<0,*>
+         } ...
        ]
 
 schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));##
@@ -504,7 +504,7 @@ schema [
            string?,
            string?,
            long?
-         ]<0,*>
+         ] ...
        ]
 
 
@@ -563,7 +563,7 @@ schema [
            string?,
            string?,
            long?
-         ]<0,*>
+         ] ...
        ]
 
 read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));##

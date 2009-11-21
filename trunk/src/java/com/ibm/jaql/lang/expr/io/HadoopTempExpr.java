@@ -103,7 +103,7 @@ public class HadoopTempExpr extends Expr
         false);
     fields[1] = new RecordSchema.Field(
         Adapter.TYPE_NAME, 
-        new StringSchema(null, null, null, new JsonString("jaqltemp")), 
+        new StringSchema(new JsonString("jaqltemp")), 
         false);
     fields[2] = new RecordSchema.Field(Adapter.OPTIONS_NAME, 
         new RecordSchema(options, SchemaFactory.anySchema()), false);

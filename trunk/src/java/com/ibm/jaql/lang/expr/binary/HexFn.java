@@ -15,10 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.binary;
 
+import java.util.Map;
+
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
@@ -63,4 +66,13 @@ public class HexFn extends Expr
     }
     return new JsonBinary(hexString.toString());
   }
+  
+  // needed for hex(...) constructor
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  } 
 }

@@ -4,14 +4,14 @@ w = fn(what, schema) what -> write(jaqltemp("tempfile", schema));
 
 // -- test schema reporting of read ---------------------------------------------------------------
 
-schemaof(read(jaqltemp("tempfile", schema null | long(min=0) | nonnull)));
+schemaof(read(jaqltemp("tempfile", schema null | long | nonnull)));
 
 // BELOW: COMMENTED OUT BECAUSE ONLY WORKS WITH REWRITE
 
-//s = schema null | long(min=0) | nonnull;
+//s = schema null | long | nonnull;
 //schemaof(read(jaqltemp("tempfile", s)));
 
-//schemaof(r(schema null | long(min=0) | nonnull));
+//schemaof(r(schema null | long | nonnull));
 
 
 // -- null ----------------------------------------------------------------------------------------
@@ -47,11 +47,7 @@ s = schema long;
 [ 1d ] -> w(s); // should fail: non-integer
 [ 1m ] -> w(s); // should fail: non-integer
 
-s = schema long(min=-100);
-( [ -100, 0, 9223372036854775807 ] -> w(s), r(s) );
-[ -101 ] -> w(s); // should fail
-
-s = schema long(value=22);
+s = schema long(22);
 ( [ 22, 22, 22 ] -> w(s), r(s) );
 [ -101 ] -> w(s); // should fail
 
@@ -63,11 +59,7 @@ s = schema decfloat;
 [ 1 ] -> w(s);   // should fail: non-decimal
 [ 1.0 ] -> w(s); // should fail: non-decimal
 
-s = schema decfloat(min=-100.1m);
-( [ -100.1m, 0.0m, 9223372036854775807.0m ] -> w(s), r(s) );
-[ -101.2m ] -> w(s); // should fail
-
-s = schema decfloat(value=22m);
+s = schema decfloat(22m);
 ( [ 22m, 22m, 22m ] -> w(s), r(s) );
 [ -101m ] -> w(s); // should fail
 
@@ -79,11 +71,7 @@ s = schema double;
 [ 1 ] -> w(s);   // should fail: non-double
 [ 1m ] -> w(s);  // should fail: non-double
 
-s = schema double(min=-100.1d);
-( [ -100.1d, 0d, 9223372036854d ] -> w(s), r(s) );
-[ -101.2d ] -> w(s); // should fail
-
-s = schema double(value=22d);
+s = schema double(22d);
 ( [ 22d, 22d, 22d ] -> w(s), r(s) );
 [ -101d ] -> w(s); // should fail
 
@@ -94,14 +82,14 @@ s = schema string;
 ( [ "abc", "", "!@#dsggb34" ] -> w(s), r(s) );
 [ 1 ] -> w(s); // should fail
 
-s = schema string(minLength=2);
-( [ "ab", "abc", "abcd" ] -> w(s), r(s) );
-[ "a" ] -> w(s); // should fail
-
 s = schema string(value="abc");
 ( [ "abc", "abc", "abc" ] -> w(s), r(s) );
 [ "abd" ] -> w(s); // should fail
 
+s = schema string(2);
+( [ "ab", "ac", "ad" ] -> w(s), r(s) );
+[ "a" ] -> w(s); // should fail
+[ "abd" ] -> w(s); // should fail
 
 // -- binary --------------------------------------------------------------------------------------
 
@@ -109,9 +97,14 @@ s = schema binary;
 ( [ hex(""), hex("11"), hex("11AA") ] -> w(s), r(s) );
 [ "" ] -> w(s); // should fail
 
-s = schema binary(minLength=2);
-( [ hex("11AA"), hex("11AABB"), hex("11AACCBB") ] -> w(s), r(s) );
+s = schema binary(value=hex("11"));
+( [ hex("11"), hex("11"), hex("11") ] -> w(s), r(s) );
+[ hex("12") ] -> w(s); // should fail
+
+s = schema binary(2);
+( [ hex("1111"), hex("2222"), hex("FFFF") ] -> w(s), r(s) );
 [ hex("11") ] -> w(s); // should fail
+[ hex("112233") ] -> w(s); // should fail
 
 
 // -- date ----------------------------------------------------------------------------------------
@@ -120,16 +113,12 @@ s = schema date;
 ( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> w(s), r(s) );
 [ 1 ] -> w(s); // should fail
 
-s = schema date(min=date('2000-01-01T11:59:59Z'));
-( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> w(s), r(s) );
-[ date('2000-01-01T11:59:58Z') ] -> w(s); // should fail
-
-s = schema date(value=date('2000-01-01T11:59:59Z'));
+s = schema date(date('2000-01-01T11:59:59Z'));
 ( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z') ] -> w(s), r(s) );
 [ date('2000-01-01T11:59:60Z') ] -> w(s); // should fail
 
 
-// -- generics ------------------------------------------------------------------------------------
+// -- functions -----------------------------------------------------------------------------------
 
 s = schema function;
 ( [ fn(x) x ] -> w(s), r(s) );
@@ -139,7 +128,7 @@ s = schema function;
 // -- schema --------------------------------------------------------------------------------------
 
 s = schema schematype;
-( [ schema long, schema [ long, boolean<2,18> ], schema null ] -> w(s), r(s) );
+( [ schema long, schema [ long, boolean ... ], schema null ] -> w(s), r(s) );
 [ fn(x) x ] -> w(s); // should fail
 
 s = schema schematype(schema long);
@@ -153,7 +142,7 @@ s = schema [ ];
 ( [ [], [], [] ] -> w(s), r(s) );
 [ [1] ] -> w(s); // should fail
 
-s = schema [ any<*> ];
+s = schema [ any ... ];
 ( [ [], [0], [1,"a"], [2,"b",true], [3,"c",null] ] -> w(s), r(s) );
 [ 1 ] -> w(s); // should fail
 
@@ -165,24 +154,14 @@ s = schema [ long, boolean ];
 [ [1,1] ] -> w(s); // should fail
 [ [true,true] ] -> w(s); // should fail
 
-s = schema [ long<2> ];
-( [ [1,2], [3,4], [4,5] ] -> w(s), r(s) );
-[ [1] ] -> w(s); // should fail
-[ [1,1,1] ] -> w(s); // should fail
+s = schema [ long ... ];
+( [ [1], [1,2], [1,2,3] ] -> w(s), r(s) );
 [ [true,true] ] -> w(s); // should fail
 
-s = schema [ long<1,3> ];
-( [ [1], [3,4], [4,5,6] ] -> w(s), r(s) );
+s = schema [ string, long ... ];
+( [ ["1"], ["3",4], ["4",5,6] ] -> w(s), r(s) );
 [ [] ] -> w(s); // should fail
 [ [ 1,2,3,4 ] ] -> w(s); // should fail
-[ [ true ] ] -> w(s); // should fail
-
-s = schema [ long(min=0), long(max=0)<0,2> ];
-( [ [1], [3,-4], [4,-5,-6] ] -> w(s), r(s) );
-[ [] ] -> w(s); // should fail
-[ [ -1 ] ] -> w(s); // should fail
-[ [ 1,1 ] ] -> w(s); // should fail
-[ [ 1,-1,-1,-1 ] ] -> w(s); // should fail
 
 
 // -- records -------------------------------------------------------------------------------------
@@ -233,17 +212,16 @@ s = schema { a: long, b: long, c: long, *: long };
 
 // -- or ------------------------------------------------------------------------------------------
 
-// some tricky cases
-s = schema long(min=0) | decfloat(max=0m);
+s = schema long | decfloat;
 ( [ -1.5m, -1m, 0m, 1, 0 ] -> w(s), r(s) );
 [ null ]  -> w(s); // should fail
-[ -1 ]    -> w(s); // should fail
+[ 1d ]    -> w(s); // should fail
 
-s = schema long(min=0) | decfloat(max=0m) | nonnull;
+s = schema long(0) | decfloat(0m) | nonnull;
 ( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1 ] -> w(s), r(s) );
 [ null ]  -> w(s); // should fail
 
-s = schema long(min=0) | decfloat(max=0m) | any;
+s = schema long(0) | decfloat(0m) | any;
 ( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1, null ] -> w(s), r(s) );
 
 
@@ -271,19 +249,11 @@ sort([ true, false ], schema boolean);
 sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), ], schema date);
 sort([ hex("abcc"), hex("abc0"), hex("bcd0"), hex("abcd") ], schema binary);
 
-// single type
-sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long(max=0) | long(min=0));
-sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double(max=0d) | double(min=0d));
-sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat(max=0m) | decfloat(min=0m));
-sort([ "abcc", "abc", "bcd", "abcd" ], schema string(maxLength=3) | string(minLength=4));
-sort([ true, false ], schema boolean(value=true) | boolean(value=false));
-sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:00Z') ], schema date(min=date('2000-01-01T12:00:00Z')) | date(max=date('2000-01-01T12:00:00Z')));
-
 // arrays
 sort([ [5], [4], [1], [3], [2] ], schema [ long ]);
-sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long<*> ]);
+sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long ... ]);
 sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean ]);
-sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean<*> ]);
+sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean ... ]);
 
 // records
 sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a:long });
@@ -305,5 +275,5 @@ sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c?:long
 
 // encodings
 sort([ 1, 3, 2, "b", "a", "c", false, true, null ], schema long | boolean | string | null );
-sort([ 1, 3, 2, "b", "a", "c", false, true, null, {}, [] ], schema long(max=2) | boolean(value=true) | string | any );
+sort([ 1, 3, 2, "b", "a", "c", false, true, null, {}, [] ], schema long | boolean(true) | string | any );
 

@@ -149,7 +149,7 @@ public final class ForExpr extends IterExpr // TODO: rename
     }
 
     if (out.isEmpty(ARRAY).always()) return SchemaFactory.emptyArraySchema();
-    return new ArraySchema(out.elements(), null, null);
+    return new ArraySchema(null, out.elements());
   }
 
   /**

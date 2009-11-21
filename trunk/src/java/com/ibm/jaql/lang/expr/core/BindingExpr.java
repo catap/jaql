@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -25,15 +27,12 @@ import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.util.Bool3;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * A BindingExpr is not really an Expr at all. It is used to associate a
@@ -43,8 +42,6 @@ import static com.ibm.jaql.json.type.JsonType.*;
  */
 public class BindingExpr extends Expr
 {
-  private static final MutableJsonLong SENTINAL = new MutableJsonLong(-1); 
-  
   public static enum Type
   {
     EQ(), IN(), INREC(), INPAIR(), INAGG(), AGGFN(),
@@ -308,8 +305,6 @@ public class BindingExpr extends Expr
       return r;
     case IN: // array of all elements in the inputs
       Schema varSchema = null; 
-      MutableJsonLong minLength = SENTINAL;
-      MutableJsonLong maxLength = SENTINAL;
       for (int i=0; i<exprs.length; i++)
       {
         Schema inputSchema = exprs[i].getSchema();
@@ -335,43 +330,12 @@ public class BindingExpr extends Expr
           {
             varSchema = SchemaTransformation.merge(varSchema, inputElements);
           }
-          
-          // update minimum length information
-          JsonLong inputMin = inputSchemaArray.minElements();
-          if (inputMin == null) inputMin = JsonLong.ZERO;
-          if (minLength == SENTINAL)
-          {
-            minLength = inputMin == null ? null : new MutableJsonLong(inputMin);
-          }
-          else 
-          {
-            minLength.set(minLength.get() + inputMin.get());
-          }
-          
-          // update maximum length information
-          Schema inputNonNullArray = SchemaTransformation.removeNullability(inputSchemaArray);
-          JsonLong inputMax = inputNonNullArray.maxElements();
-          if (maxLength == SENTINAL)
-          {
-            maxLength = inputMax == null ? null : new MutableJsonLong(inputMax);
-          }
-          else if (maxLength != null)
-          {
-            if (inputMax == null) 
-            {
-              maxLength = null;
-            }
-            else
-            {
-              maxLength.set(maxLength.get()+inputMax.get());
-            }
-          }
         }
       }
       if (varSchema != null) 
       {
         var.setSchema(varSchema); // update the schema associated with the variable
-        return new ArraySchema(varSchema, minLength, maxLength);
+        return new ArraySchema(null, varSchema);
       }
       else
       {

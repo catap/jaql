@@ -55,7 +55,7 @@ convert(null, schema decfloat?);
 convert(null, schema string?);
 convert(null, schema boolean?);
 convert(null, schema long); // should fail
-convert("1", schema long(min=0)); // should fail (for the moment)
+convert("1", schema long(0)); // should fail (for the moment)
 
 // test conversion of arrays
 convert(["a","1"], schema [ string, long ]);

@@ -53,6 +53,12 @@ public final class NonNullSchema extends Schema
   }
 
   @Override
+  public JsonValue getConstant()
+  {
+    return null;
+  }
+  
+  @Override
   public boolean hasModifiers()
   {
     return false;

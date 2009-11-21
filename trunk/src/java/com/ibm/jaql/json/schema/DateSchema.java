@@ -17,12 +17,12 @@ package com.ibm.jaql.json.schema;
 
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a date value */
-public final class DateSchema extends RangeSchema<JsonDate>
+public final class DateSchema extends AtomSchema<JsonDate> 
 {
   // -- schema parameters -------------------------------------------------------------------------
   
@@ -32,38 +32,39 @@ public final class DateSchema extends RangeSchema<JsonDate>
   {
     if (parameters == null)
     {
-      Schema schema = SchemaFactory.dateOrNullSchema();
-      parameters = new JsonValueParameters(
-          new JsonValueParameter(PAR_MIN, schema, null),
-          new JsonValueParameter(PAR_MAX, schema, null),
-          new JsonValueParameter(PAR_VALUE, schema, null));
+      parameters = AtomSchema.getParameters(SchemaFactory.dateOrNullSchema());
     }
     return parameters;
   }
-  
+
   
   // -- construction ------------------------------------------------------------------------------
   
-  public DateSchema(JsonRecord args)
+  public DateSchema(JsonDate value, JsonRecord annotation)
+  {
+    super(value, annotation);
+  }
+  
+  public DateSchema(JsonDate value)
+  {
+    super(value);
+  }
+  
+  public DateSchema()
+  {
+    super();
+  }
+  
+  DateSchema(JsonRecord args)
   {
     this(
-        (JsonDate)getParameters().argumentOrDefault(PAR_MIN, args),
-        (JsonDate)getParameters().argumentOrDefault(PAR_MAX, args),
-        (JsonDate)getParameters().argumentOrDefault(PAR_VALUE, args));
-  }
-  
-  DateSchema()
-  {
-  }
-  
-  public DateSchema(JsonDate min, JsonDate max, JsonDate value)
-  {
-    init(min, max, value);
+        (JsonDate)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
   }
   
   
   // -- Schema methods ----------------------------------------------------------------------------
-
+  
   @Override
   public SchemaType getSchemaType()
   {
@@ -84,20 +85,14 @@ public final class DateSchema extends RangeSchema<JsonDate>
     {
       return false;
     }
-
-    if (this.value != null)
-    {
-      return value.equals(this.value);
-    }
-
-    if ( (min != null && value.compareTo(min)<0) || (max != null && value.compareTo(max)>0) )
+    if (this.value != null && !this.value.equals(value))
     {
       return false;
-    }
-    
+    }    
     return true;
   }
   
+
   // -- merge -------------------------------------------------------------------------------------
 
   @Override
@@ -106,9 +101,14 @@ public final class DateSchema extends RangeSchema<JsonDate>
     if (other instanceof DateSchema)
     {
       DateSchema o = (DateSchema)other;
-      JsonDate min = SchemaUtil.minOrValue(this.min, o.min, this.value, o.value);
-      JsonDate max = SchemaUtil.maxOrValue(this.max, o.max, this.value, o.value);
-      return new DateSchema(min, max, null);
+      if (JsonUtil.equals(this.value, o.value))
+      { 
+        return new DateSchema(this.value);
+      }
+      else
+      {
+        return new DateSchema();
+      }
     }
     return null;
   }

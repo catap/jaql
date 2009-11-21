@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import com.ibm.jaql.json.schema.LongSchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
@@ -36,7 +36,7 @@ public class CompareFn extends Expr
       super("compare",
             CompareFn.class,
             new JsonValueParameters("x", "y"),
-            new LongSchema(JsonLong.MINUS_ONE, JsonLong.ONE, null));
+            SchemaFactory.longSchema());
     }
   }
   
@@ -51,7 +51,7 @@ public class CompareFn extends Expr
   @Override
   public Schema getSchema()
   {
-    return new LongSchema(JsonLong.MINUS_ONE, JsonLong.ONE, null);
+    return SchemaFactory.longSchema();
   }
 
   /*

@@ -19,16 +19,11 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a schema value */
-public final class SchematypeSchema extends Schema 
+public final class SchematypeSchema extends AtomSchema<JsonSchema> 
 {
-  // -- private variables ------------------------------------------------------------------------- 
-  
-  private JsonSchema value; 
-  
   // -- schema parameters -------------------------------------------------------------------------
   
   private static JsonValueParameters parameters = null; 
@@ -37,7 +32,7 @@ public final class SchematypeSchema extends Schema
   {
     if (parameters == null)
     {
-      parameters = new JsonValueParameters(new JsonValueParameter(PAR_VALUE, SchemaFactory.schematypeOrNullSchema(), null));
+      parameters = AtomSchema.getParameters(SchemaFactory.schematypeOrNullSchema());
     }
     return parameters;
   }
@@ -45,20 +40,28 @@ public final class SchematypeSchema extends Schema
   
   // -- construction ------------------------------------------------------------------------------
   
-  public SchematypeSchema(JsonRecord args)
+  public SchematypeSchema(JsonSchema value, JsonRecord annotation)
   {
-    this((JsonSchema)getParameters().argumentOrDefault(PAR_VALUE, args));
+    super(value, annotation);
   }
   
   public SchematypeSchema(JsonSchema value)
   {
-    assert value == null || value.get() != null;
-    this.value = (JsonSchema)JsonUtil.getImmutableCopyUnchecked(value);
+    super(value);
   }
   
-  SchematypeSchema()
+  public SchematypeSchema()
   {
+    super();
   }
+  
+  SchematypeSchema(JsonRecord args)
+  {
+    this(
+        (JsonSchema)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
+  }
+  
   
   // -- Schema methods ----------------------------------------------------------------------------
   
@@ -66,18 +69,6 @@ public final class SchematypeSchema extends Schema
   public SchemaType getSchemaType()
   {
     return SchemaType.SCHEMATYPE;
-  }
-
-  @Override
-  public boolean hasModifiers()
-  {
-    return value != null;
-  }
-  
-  @Override
-  public boolean isConstant()
-  {
-    return value != null;
   }
 
   @SuppressWarnings("unchecked")
@@ -94,27 +85,14 @@ public final class SchematypeSchema extends Schema
     {
       return false;
     }
-    JsonSchema s = (JsonSchema)value;
-    
-    // check for equality
-    if (this.value != null)
+    if (this.value != null && !this.value.equals(value))
     {
-      return JsonUtil.equals(this.value, s);
-    }
-
-    // everything ok
+      return false;
+    }    
     return true;
   }
   
 
-  // -- getters -----------------------------------------------------------------------------------
-  
-  public JsonSchema getValue()
-  {
-    return value;
-  }
-
-  
   // -- merge -------------------------------------------------------------------------------------
 
   @Override
@@ -122,22 +100,16 @@ public final class SchematypeSchema extends Schema
   {
     if (other instanceof SchematypeSchema)
     {
-//      AschemaSchema o = (AschemaSchema)other;
-      return SchemaFactory.schematypeSchema(); // ignore value
+      SchematypeSchema o = (SchematypeSchema)other;
+      if (JsonUtil.equals(this.value, o.value))
+      { 
+        return new SchematypeSchema(this.value);
+      }
+      else
+      {
+        return new SchematypeSchema();
+      }
     }
     return null;
   }
-  
-  
-  // -- comparison --------------------------------------------------------------------------------
-  
-  @Override
-  public int compareTo(Schema other)
-  {
-    int c = this.getSchemaType().compareTo(other.getSchemaType());
-    if (c != 0) return c;
-    
-    SchematypeSchema o = (SchematypeSchema)other;    
-    return SchemaUtil.compare(this.value, o.value);
-  } 
 }

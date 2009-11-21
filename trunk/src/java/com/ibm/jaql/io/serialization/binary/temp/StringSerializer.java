@@ -22,30 +22,27 @@ import java.io.IOException;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.util.BaseUtil;
 
-class StringSerializer extends BinaryBasicSerializer<JsonString>
+final class StringSerializer extends BinaryBasicSerializer<JsonString>
 {
   private StringSchema schema;
-  int minLength = 0;
-  boolean constantLength = false;
+  int length = 0;
+  
   // -- construction ------------------------------------------------------------------------------
   
   public StringSerializer(StringSchema schema)
   {
     this.schema = schema;
-    if (schema.getValue() != null)
+    if (schema.getLength() != null)
     {
-      constantLength = true;
-      minLength = schema.getValue().bytesLength();
+      length = (int)schema.getLength().intValueExact();
     }
-    else if (schema.getMinLength() != null)
+    else
     {
-      minLength = schema.getMinLength().intValueExact();
-      constantLength = JsonUtil.equals(schema.getMinLength(), schema.getMaxLength());  
+      length = -1;
     }
   }
   
@@ -54,15 +51,16 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
   @Override
   public JsonString read(DataInput in, JsonValue target) throws IOException
   {
-    // read length
-    int length;
-    if (constantLength)
+    if (schema.isConstant())
     {
-      length = minLength;
+      return schema.getConstant();
     }
-    else
+    
+    // read length
+    int length = this.length;
+    if (length < 0) // non-constant
     {
-      length = BaseUtil.readVUInt(in)+minLength;
+      length = BaseUtil.readVUInt(in);
     }
 
     // create target
@@ -75,61 +73,51 @@ class StringSerializer extends BinaryBasicSerializer<JsonString>
     t.ensureCapacity(length);
     byte[] bytes = t.get();
 
-    // fill bytes
-    if (schema.getValue() == null)
-    {
-      in.readFully(bytes, 0, length);
-    }
-    else
-    {
-      schema.getValue().writeBytes(bytes);
-    }
-    
-    // set and return
+    // fill bytes, set and return
+    in.readFully(bytes, 0, length);
     t.set(bytes, length);
     return t;
   }
 
-
   @Override
   public void write(DataOutput out, JsonString value) throws IOException
   {
-    // check match
     if (!schema.matches(value))
     {
       throw new IllegalArgumentException("value not matched by this serializer");
     }
-    
-    // check constant
-    if (schema.getValue() != null)
+
+    if (schema.isConstant())
     {
       return;
     }
     
-    // write length
-    int length = value.bytesLength();
-    if (!constantLength)
+    if (length < 0)
     {
-      BaseUtil.writeVUInt(out, length-minLength);
+      BaseUtil.writeVUInt(out, value.bytesLength());
     }
     
-    // write
     value.writeBytes(out);
   }
   
   // -- comparison --------------------------------------------------------------------------------
   
   public int compare(DataInput in1, DataInput in2) throws IOException {
+    if (schema.isConstant())
+    {
+      return 0;
+    }
+    
     // read length
     int l1, l2;
-    if (constantLength)
+    if (length < 0)
     {
-      l1 = l2 = minLength;
+      l1 = BaseUtil.readVUInt(in1);
+      l2 = BaseUtil.readVUInt(in2);
     }
     else
     {
-      l1 = BaseUtil.readVUInt(in1)+minLength;
-      l2 = BaseUtil.readVUInt(in2)+minLength;
+      l1 = l2 = length;
     }
 
     // now compare bytes

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map.Entry;
 
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -188,12 +189,6 @@ public final class RecordSchema extends Schema
     return SchemaType.RECORD;
   }
 
-  @Override
-  public boolean hasModifiers()
-  {
-    return false;
-  }
-  
   public Bool3 isEmpty()
   {
     Bool3 isEmpty = Bool3.FALSE;
@@ -225,7 +220,25 @@ public final class RecordSchema extends Schema
     }
     return true;
   }
+  
+  public JsonRecord getConstant()
+  {
+    if (!isConstant())
+      return null;
+    BufferedJsonRecord r = new BufferedJsonRecord();
+    for (Field f : fields)
+    {
+      r.add(f.name, f.schema.getConstant());
+    }
+    return r;
+  }
 
+  @Override
+  public boolean hasModifiers()
+  {
+    return false;
+  }
+  
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()

@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.PrintStream;
 import java.util.HashSet;
 
@@ -23,7 +25,6 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
@@ -31,7 +32,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 /** [?] retains nulls */
 public class PathToArray extends PathArray
@@ -112,22 +112,20 @@ public class PathToArray extends PathArray
     {
       return new PathStepSchema(SchemaFactory.nullSchema(), Bool3.TRUE);
     }
-    JsonLong minLength = inputSchema.minElements();
-    JsonLong maxLength = inputSchema.maxElements();
     PathStepSchema elements = nextStep().getSchema(s.elements());
 
     Schema result;
     switch(elements.hasData)
     {
     case TRUE:
-      result = new ArraySchema(null, elements.schema, minLength, maxLength);
+      result = new ArraySchema(null, elements.schema);
       break;
     case FALSE:
       result = SchemaFactory.emptyArraySchema();
       break;
     default:
       result = SchemaTransformation.merge(
-          new ArraySchema(null, elements.schema, minLength, maxLength), 
+          new ArraySchema(null, elements.schema), 
           SchemaFactory.emptyArraySchema());
     }
     if (inputMaybeNull) {

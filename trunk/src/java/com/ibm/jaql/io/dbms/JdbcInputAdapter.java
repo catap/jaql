@@ -230,6 +230,6 @@ public class JdbcInputAdapter extends AbstractInputAdapter
   public Schema getSchema()
   {
     // TODO improve
-    return new ArraySchema(SchemaFactory.recordSchema(), null, null);
+    return new ArraySchema(null, SchemaFactory.recordSchema());
   }
 }

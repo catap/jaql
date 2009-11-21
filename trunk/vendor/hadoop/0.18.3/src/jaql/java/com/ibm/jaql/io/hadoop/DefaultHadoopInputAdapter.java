@@ -384,7 +384,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
   {
     if (converter != null) // input file is already Json
     {
-      return new ArraySchema(converter.getSchema(), null, null);
+      return new ArraySchema(null, converter.getSchema());
     }
     else
     {

@@ -88,14 +88,14 @@ public abstract class AbstractReadExpr extends IterExpr
       Schema type = descriptor.element(Adapter.TYPE_NAME);
       if (type != null 
           && type instanceof StringSchema 
-          && JsonUtil.equals(((StringSchema)type).getValue(), new JsonString("jaqltemp")))
+          && JsonUtil.equals(((StringSchema)type).getConstant(), new JsonString("jaqltemp")))
       {
         // it is one of our temp files --> try to get its schema
         Schema options = descriptor.element(Adapter.OPTIONS_NAME);
         Schema schema = options != null ? options.element(new JsonString("schema")) : null;
         if (schema instanceof SchematypeSchema && schema.isConstant())
         {
-          return new ArraySchema(((SchematypeSchema)schema).getValue().get(), null, null);
+          return new ArraySchema(null, ((SchematypeSchema)schema).getConstant().get());
         }
       }
     } catch (Exception e)

@@ -297,7 +297,7 @@ public class SchemaTransformation
     }
     if (inSchema.is(ARRAY, NULL).never())
     {
-      return new ArraySchema(inSchema);
+      return new ArraySchema(new Schema[] { inSchema });
     }
   
     // try unnesting
@@ -314,7 +314,7 @@ public class SchemaTransformation
         }
         else if (s.is(ARRAY, NULL).never())
         {
-          schemata.add(new ArraySchema(s));
+          schemata.add(new ArraySchema(new Schema[] { s }));
         }
         else
         {

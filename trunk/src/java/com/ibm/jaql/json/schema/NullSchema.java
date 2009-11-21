@@ -36,16 +36,23 @@ public final class NullSchema extends Schema
   }
 
   @Override
+  public boolean isConstant()
+  {
+    return true;
+  }
+  
+  @Override
+  public JsonValue getConstant()
+  {
+    return null;
+  }
+  
+  @Override
   public boolean hasModifiers()
   {
     return false;
   }
   
-  @Override
-  public boolean isConstant()
-  {
-    return true;
-  }
 
   @Override
   public Bool3 isEmpty(JsonType type, JsonType ... types) 

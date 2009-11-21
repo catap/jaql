@@ -15,31 +15,17 @@
  */
 package com.ibm.jaql.json.schema;
 
-import java.util.regex.Pattern;
-
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a JSON string */
-public final class StringSchema extends Schema
+public final class StringSchema extends AtomSchemaWithLength<JsonString> 
 {
-  private JsonLong minLength = JsonLong.ZERO;
-  private JsonLong maxLength;
-  private JsonString pattern;
-  private JsonString value;
-  
-  // to make matching more efficient
-  private Pattern compiledPattern;
-  
   // -- schema parameters -------------------------------------------------------------------------
-
-  // TODO: format parameter
-
-  public static final JsonString PAR_PATTERN = new JsonString("pattern");
   
   private static JsonValueParameters parameters = null; 
   
@@ -47,105 +33,67 @@ public final class StringSchema extends Schema
   {
     if (parameters == null)
     {
-      parameters = new JsonValueParameters(
-          new JsonValueParameter(PAR_MIN_LENGTH, "long(min=0)?", JsonLong.ZERO),
-          new JsonValueParameter(PAR_MAX_LENGTH, "long(min=0)?", null),
-          new JsonValueParameter(PAR_PATTERN, SchemaFactory.stringOrNullSchema(), null),
-          new JsonValueParameter(PAR_VALUE, SchemaFactory.stringOrNullSchema(), null));
+      parameters = AtomSchemaWithLength.getParameters(SchemaFactory.stringOrNullSchema());
     }
     return parameters;
   }
-  
 
+  
   // -- construction ------------------------------------------------------------------------------
-  
-  public StringSchema(JsonRecord args) 
-  { 
-    this(
-        args != null && args.containsKey(PAR_MIN_LENGTH) // to distingush whether minlENGTH IS SPECIFIED OR NOT 
-          ? (JsonLong)args.get(PAR_MIN_LENGTH) 
-          : null, 
-        (JsonLong)getParameters().argumentOrDefault(PAR_MAX_LENGTH, args),
-        (JsonString)getParameters().argumentOrDefault(PAR_PATTERN, args),
-        (JsonString)getParameters().argumentOrDefault(PAR_VALUE, args));
-  }
-  
-  public StringSchema() 
-  {
-  }
-  
-  public StringSchema(JsonLong minLength, JsonLong maxLength, JsonString pattern, JsonString value)
-  {
-    // check arguments
-    if (!SchemaUtil.checkInterval(minLength, maxLength, JsonLong.ZERO, JsonLong.ZERO))
-    {
-      throw new IllegalArgumentException("invalid range: " + minLength + " " + maxLength);
-    }
 
-    // store pattern
-    if (pattern != null)
-    {
-      this.pattern = pattern.getImmutableCopy();
-      compiledPattern = Pattern.compile(pattern.toString());
-    }
-    
-    // store length
-    if (minLength != null || maxLength != null)
-    {
-      this.minLength = minLength==null ? JsonLong.ZERO : minLength.getImmutableCopy();
-      this.maxLength = maxLength==null ? null : maxLength.getImmutableCopy();
-    }
-    
-    // store value
-    if (value != null)
-    {
-      boolean matches;
-      try
-      {
-        matches = matches(value);
-      } catch (Exception e)
-      {
-        matches=false;
-      }
-      if (!matches)
-      {
-        throw new IllegalArgumentException("value argument conflicts with other arguments");
-      }        
-      this.value = value.getImmutableCopy();
-      
-      // throw away other stuff
-      this.minLength = JsonLong.ZERO; 
-      this.maxLength = null;
-      this.pattern = null;
-      this.compiledPattern = null;
-    }
-  }
-  
-  public StringSchema(JsonLong minLength, JsonLong maxLength)
+  public StringSchema(JsonLong length, JsonString value, JsonRecord annotation)
   {
-    this(minLength, maxLength, null, null);    
+    super(length, value, annotation);
+  }
+
+  public StringSchema(JsonLong length, JsonRecord annotation)
+  {
+    super(length, annotation);
   }
   
-  // -- schema methods ----------------------------------------------------------------------------
+  public StringSchema(JsonLong length)
+  {
+    super(length);
+  }
+  
+  public StringSchema(JsonString value, JsonRecord annotation)
+  {
+    super(value, annotation);
+  }
+  
+  public StringSchema(JsonString value)
+  {
+    super(value);
+  }
+  
+  public StringSchema()
+  {
+    super();
+  }
+  
+  StringSchema(JsonRecord args)
+  {
+    this(
+        (JsonLong)getParameters().argumentOrDefault(PAR_LENGTH, args),
+        (JsonString)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
+  }
+  
+  
+  // -- superclass methods ------------------------------------------------------------------------
+  
+  protected long lengthOf(JsonString s)
+  {
+    return s.bytesLength();
+  }
+  
+  
+  // -- Schema methods ----------------------------------------------------------------------------
   
   @Override
   public SchemaType getSchemaType()
   {
     return SchemaType.STRING;
-  }
-
-
-  @Override
-  public boolean hasModifiers()
-  {
-    return (minLength != null && minLength.get() != 0) || maxLength != null || value != null
-        || pattern != null;
-  }
-  
-  @Override
-  public boolean isConstant()
-  {
-    return value != null;
   }
 
   @SuppressWarnings("unchecked")
@@ -162,47 +110,16 @@ public final class StringSchema extends Schema
     {
       return false;
     }
-    JsonString s = (JsonString)value;
-
-    // check constant
-    if (this.value != null)
+    if (this.value != null && !this.value.equals(value))
     {
-      return this.value.equals(value);
+      return false;
+    }    
+    JsonString v = (JsonString)value;
+    if (this.length != null && this.length.longValue() != v.bytesLength())
+    {
+      return false;
     }
-    
-    // check string length
-    // TODO: currently uses UTF8 representation
-    if (!(minLength==null || s.bytesLength()>=minLength.get())) return false;
-    if (!(maxLength==null || s.bytesLength()<=maxLength.get())) return false;
-
-    // check regexp pattern
-    if (!(pattern == null || compiledPattern.matcher(s.toString()).matches())) return false;
-
-    // everythink ok
     return true;
-  }
-  
-  
-  // -- getters -----------------------------------------------------------------------------------
-
-  public JsonString getValue()
-  {
-    return value;
-  }
-
-  public JsonString getPattern()
-  {
-    return pattern;
-  }
-  
-  public JsonLong getMinLength()
-  {
-    return minLength;
-  }
-  
-  public JsonLong getMaxLength()
-  {
-    return maxLength;
   }
   
   // -- merge -------------------------------------------------------------------------------------
@@ -213,40 +130,23 @@ public final class StringSchema extends Schema
     if (other instanceof StringSchema)
     {
       StringSchema o = (StringSchema)other;
-      if (this.value != null && o.value != null && this.value.equals(o.value))
-      {
-        return this; // both represent the same constant
+
+      // same value
+      if (this.value != null && JsonUtil.equals(this.value, o.value))
+      { 
+        return this;
       }
       
-      // simple first cut; more sophisticated methods possible (not sure if needed)
-      // currently information in value/pattern is ignored
-      JsonLong minLength = SchemaUtil.min(this.value==null ? this.minLength : new JsonLong(this.value.bytesLength()), 
-                                          o.value==null ? o.minLength : new JsonLong(o.value.bytesLength()));
-      JsonLong maxLength = SchemaUtil.max(this.value==null ? this.maxLength : new JsonLong(this.value.bytesLength()), 
-                                          o.value==null ? o.maxLength : new JsonLong(o.value.bytesLength()));
-      return new StringSchema(minLength, maxLength, null, null);
+      // different value but same length
+      if (JsonUtil.equals(this.length, o.length))
+      {
+        return new StringSchema(this.length);
+      }
+      
+      // totally different
+      return new StringSchema();
     }
+    
     return null;
   }
-  
-  // -- comparison --------------------------------------------------------------------------------
-  
-  @Override
-  public int compareTo(Schema other)
-  {
-    int c = this.getSchemaType().compareTo(other.getSchemaType());
-    if (c != 0) return c;
-    
-    StringSchema o = (StringSchema)other;
-    c = SchemaUtil.compare(this.value, o.value);
-    if (c != 0) return c;
-    c = SchemaUtil.compare(this.minLength, o.minLength);
-    if (c != 0) return c;
-    c = SchemaUtil.compare(this.maxLength, o.maxLength);
-    if (c != 0) return c;
-    c = SchemaUtil.compare(this.pattern, o.pattern);
-    if (c != 0) return c;
-    
-    return 0;
-  } 
 }

@@ -54,7 +54,7 @@ public class SchemaFactory
   private static Schema schematypeSchema;
   private static DecfloatSchema decfloatSchema;
   private static DoubleSchema doubleSchema;
-  private static GenericSchema functionSchema;
+  private static FunctionSchema functionSchema;
   private static LongSchema longSchema;
   private static NullSchema nullSchema;
   private static RecordSchema recordSchema;
@@ -120,7 +120,7 @@ public class SchemaFactory
 
   public static Schema schematypeSchema()
   {
-    if (schematypeSchema  == null) schematypeSchema  = new GenericSchema(JsonType.SCHEMA);
+    if (schematypeSchema  == null) schematypeSchema  = new SchematypeSchema();
     return schematypeSchema;
   }
 
@@ -138,7 +138,7 @@ public class SchemaFactory
 
   public static Schema functionSchema()
   {
-    if (functionSchema  == null) functionSchema = new GenericSchema(JsonType.FUNCTION);
+    if (functionSchema  == null) functionSchema = new FunctionSchema();
     return functionSchema;
   }
 
@@ -373,7 +373,7 @@ public class SchemaFactory
     }
     else if( typeConstructorName.equals("function") )
     {
-      return GenericSchema.getParameters();
+      return FunctionSchema.getParameters();
     }
     else if( typeConstructorName.equals("long") )
     {
@@ -424,7 +424,7 @@ public class SchemaFactory
     }
     else if( typeConstructorName.equals("function") )
     {
-      return new GenericSchema(JsonType.FUNCTION, args);
+      return new FunctionSchema(args);
     }
     else if( typeConstructorName.equals("long") )
     {
@@ -456,7 +456,6 @@ public class SchemaFactory
       return nullSchema();
     }
     
-    JsonLong length;
     switch (v.getEncoding().getType())
     {
     case ARRAY: 
@@ -481,32 +480,27 @@ public class SchemaFactory
       return new BooleanSchema((JsonBool)v);
       
     case STRING:
-      JsonString js = (JsonString)v;
-      return new StringSchema(null, null, null, js);
-
+      return new StringSchema((JsonString)v);
     case LONG:
-      return new LongSchema(null, null, (JsonLong)v);
+      return new LongSchema((JsonLong)v);
     case DOUBLE:
-      return new DoubleSchema(null, null, (JsonDouble)v);
+      return new DoubleSchema((JsonDouble)v);
     case DECFLOAT:
-      return new DecfloatSchema(null, null, (JsonDecimal)v);
+      return new DecfloatSchema((JsonDecimal)v);
       
     // JSON extensions
 
     case BINARY:
-      JsonBinary jb = (JsonBinary)v;
-      length = new JsonLong(jb.bytesLength());
-      return new BinarySchema(length, length);
+      return new BinarySchema((JsonBinary)v);
       
     case DATE:
-      JsonDate jd = (JsonDate)v;
-      return new DateSchema(null, null, jd);
+      return new DateSchema((JsonDate)v);
       
     case SCHEMA:
       return new SchematypeSchema((JsonSchema)v);
     
     case FUNCTION:
-      return new GenericSchema(JsonType.FUNCTION);
+      return new FunctionSchema();
       
     case JAVAOBJECT:
     case REGEX:

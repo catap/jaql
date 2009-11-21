@@ -19,14 +19,11 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /** Schema for a boolean value */
-public final class BooleanSchema extends Schema 
+public final class BooleanSchema extends AtomSchema<JsonBool> 
 {
-  private JsonBool value;
-  
   // -- schema parameters -------------------------------------------------------------------------
   
   private static JsonValueParameters parameters = null; 
@@ -35,7 +32,7 @@ public final class BooleanSchema extends Schema
   {
     if (parameters == null)
     {
-      parameters = new JsonValueParameters(new JsonValueParameter(PAR_VALUE, SchemaFactory.booleanOrNullSchema(), null));
+      parameters = AtomSchema.getParameters(SchemaFactory.booleanOrNullSchema());
     }
     return parameters;
   }
@@ -43,20 +40,28 @@ public final class BooleanSchema extends Schema
   
   // -- construction ------------------------------------------------------------------------------
   
-  public BooleanSchema(JsonRecord args)
+  public BooleanSchema(JsonBool value, JsonRecord annotation)
   {
-    this(
-        (JsonBool)getParameters().argumentOrDefault(PAR_VALUE, args));
+    super(value, annotation);
   }
   
   public BooleanSchema(JsonBool value)
   {
-    this.value = (JsonBool)JsonUtil.getImmutableCopyUnchecked(value);
+    super(value);
   }
   
-  BooleanSchema()
+  public BooleanSchema()
   {
+    super();
   }
+  
+  BooleanSchema(JsonRecord args)
+  {
+    this(
+        (JsonBool)getParameters().argumentOrDefault(PAR_VALUE, args),
+        (JsonRecord)getParameters().argumentOrDefault(PAR_ANNOTATION, args));
+  }
+  
   
   // -- Schema methods ----------------------------------------------------------------------------
   
@@ -66,25 +71,13 @@ public final class BooleanSchema extends Schema
     return SchemaType.BOOLEAN;
   }
 
-  @Override
-  public boolean hasModifiers()
-  {
-    return value != null;
-  }
-  
-  @Override
-  public boolean isConstant()
-  {
-    return value != null;
-  }
-
   @SuppressWarnings("unchecked")
   @Override 
   public Class<? extends JsonValue>[] matchedClasses()
   {
     return new Class[] { JsonBool.class }; 
   }
-
+  
   @Override
   public boolean matches(JsonValue value)
   {
@@ -92,63 +85,31 @@ public final class BooleanSchema extends Schema
     {
       return false;
     }
-    JsonBool b = (JsonBool)value;
-    
-    if (this.value != null)
+    if (this.value != null && !this.value.equals(value))
     {
-      return b.equals(this.value);
-    }
+      return false;
+    }    
     return true;
   }
   
 
-  // -- getters -----------------------------------------------------------------------------------
-  
-  public JsonBool getValue()
-  {
-    return value;
-  }
-  
-  @Override
   // -- merge -------------------------------------------------------------------------------------
 
+  @Override
   protected Schema merge(Schema other)
   {
     if (other instanceof BooleanSchema)
     {
       BooleanSchema o = (BooleanSchema)other;
-      if (this.value==null)
-      {
-        return this;
+      if (JsonUtil.equals(this.value, o.value))
+      { 
+        return new BooleanSchema(this.value);
       }
-      else if (o.value==null)
-      {
-        return o;
-      }
-      else if (this.value.equals(o.value)) // both non null
-      {
-        return this;
-      }
-      else // one is true, one is false 
+      else
       {
         return new BooleanSchema();
       }
     }
     return null;
   }
-  
-  // -- comparison --------------------------------------------------------------------------------
-  
-  @Override
-  public int compareTo(Schema other)
-  {
-    int c = this.getSchemaType().compareTo(other.getSchemaType());
-    if (c != 0) return c;
-    
-    BooleanSchema o = (BooleanSchema)other;
-    c = JsonUtil.compare(this.value, o.value);
-    if (c != 0) return c;
-    
-    return 0;
-  } 
 }

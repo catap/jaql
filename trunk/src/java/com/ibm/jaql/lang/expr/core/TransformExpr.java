@@ -91,7 +91,7 @@ public final class TransformExpr extends IterExpr
     {
       return SchemaFactory.emptyArraySchema();
     }
-    return new ArraySchema(projection().getSchema(), null, null);
+    return new ArraySchema(null, projection().getSchema());
   }
 
 
