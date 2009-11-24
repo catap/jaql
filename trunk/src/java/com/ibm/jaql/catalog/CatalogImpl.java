@@ -50,9 +50,9 @@ public class CatalogImpl implements Catalog {
 	private Connection conn;
 
 	/**
-	 * JDBC connection url
+	 * JDBC connection url - defaults to Embedded derby.
 	 */
-	private String url;
+	private String url = "jdbc:derby:catalog;create=true";
 
 	/**
 	 * Constructs a catalog connection as specified by the catalog connection
@@ -70,8 +70,10 @@ public class CatalogImpl implements Catalog {
 				    + CATALOG_CONFIG);
 			url = connUrl.toString();
 		} catch (Exception ex) {
-			throw new CatalogException("Cannot get " + CONNECTION_URL + " from "
+			LOG.debug("Cannot get " + CONNECTION_URL + " from "
 			    + CATALOG_CONFIG, ex);
+			LOG.debug("Defaulting to embedded Derby for catalog storage.");
+			url = "jdbc:derby:catalog;create=true";
 		} finally {
 			closeStream(input);
 		}
