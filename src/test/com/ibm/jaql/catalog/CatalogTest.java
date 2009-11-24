@@ -3,6 +3,7 @@ package com.ibm.jaql.catalog;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.ibm.jaql.AbstractTest;
@@ -13,13 +14,23 @@ import com.ibm.jaql.json.type.JsonValue;
 // TODO renamed to TestCatalog to be be included in "ant test" when the catalog feature is finished.
 public class CatalogTest extends AbstractTest {
 
-	@Test
-	public void access() throws Exception {
-		Catalog cat = null;
+	private Catalog cat;
+
+	@Before
+	public void cleanup() throws Exception {
 		try {
 			cat = new CatalogImpl();
 			cat.open();
+			((CatalogImpl) cat).cleanup();
+		} catch (Exception ex) {
+			cat.close();
+			throw ex;
+		}
+	}
 
+	@Test
+	public void access() throws Exception {
+		try {
 			// insert
 			JsonString key1 = new JsonString("/a/b/c");
 			JsonValue val1 = parse("{'title': 'Hello', 'comment': 'World'}");

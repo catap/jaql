@@ -279,6 +279,22 @@ public class CatalogImpl implements Catalog {
 			LOG.error("Cannot close JDBC connection", ex);
 		}
 	}
+	/*
+	 * Clean up the catalog database.
+	 */
+	void cleanup() throws CatalogException {
+		Statement st = null;
+		try {
+			st = conn.createStatement();
+			st.execute("delete from catalog");
+			conn.commit();
+		} catch (SQLException ex) {
+			rollback();
+			throw new CatalogException("Cannot delete all the catalog entries", ex);
+		} finally {
+			closeStatement(st);
+		}
+	}
 
 	private void checkConnection() throws CatalogException {
 		if (conn == null)
