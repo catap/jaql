@@ -165,7 +165,7 @@ public class Env extends Namespace
     }
     Var var = new Var(varName, SchemaFactory.schemaOf(value), true);
     var.setValue(value);
-    scope(var);
+    globals.scope(var);
     var.finalize();
     return var;
   }

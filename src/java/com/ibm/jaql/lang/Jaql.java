@@ -187,9 +187,7 @@ public class Jaql
    */
   public void setVar(String varName, JsonValue value) 
   {
-    Var v = parser.env.scopeGlobal(varName, value);    
-    v.setValue(value);
-    v.finalize();
+    parser.env.scopeGlobal(varName, value);    
   }
 
   /**
