@@ -472,7 +472,7 @@ public class SchemaFactory
       {
         JsonString name = e.getKey();
         JsonValue value = e.getValue();
-        fields.add(new RecordSchema.Field(name, schemaOf(value), true));
+        fields.add(new RecordSchema.Field(name, schemaOf(value), false));
       }
       return new RecordSchema(fields.toArray(new RecordSchema.Field[fields.size()]), null);
       

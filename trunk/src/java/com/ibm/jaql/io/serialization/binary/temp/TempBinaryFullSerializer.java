@@ -18,17 +18,12 @@ package com.ibm.jaql.io.serialization.binary.temp;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
+import com.ibm.jaql.io.serialization.SerializerMap;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
-import com.ibm.jaql.json.schema.NonNullSchema;
 import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.BinarySchema;
 import com.ibm.jaql.json.schema.BooleanSchema;
 import com.ibm.jaql.json.schema.DateSchema;
@@ -36,11 +31,10 @@ import com.ibm.jaql.json.schema.DecfloatSchema;
 import com.ibm.jaql.json.schema.DoubleSchema;
 import com.ibm.jaql.json.schema.GenericSchema;
 import com.ibm.jaql.json.schema.LongSchema;
-import com.ibm.jaql.json.schema.NullSchema;
-import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonType;
@@ -83,7 +77,7 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
 {
   // -- private variables -------------------------------------------------------------------------
   
-  /** serializer used for "any" and "null" schemata */  
+  /** serializer used for "nonnull" and "null" schemata */  
   private DefaultBinaryFullSerializer defaultSerializer = DefaultBinaryFullSerializer.getInstance();
   
   /** all values below INDEX_OFFSET are assumed to be reserved for the encodings of the default 
@@ -93,104 +87,19 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
   /** holds the schema associated with this serializer */
   private Schema schema;
   
-  /** true if there is only a single basic serializer associated with this serializer */
-  boolean hasSingleSerializer;
+  /** Describes the basic serializers */
+  private MySerializerMap serializers;
   
-  /** true if the schema matches "null" */
-  boolean matchesNull;
-  
-  /** true if the schema matches "any" */
-  boolean matchesAny;
-  
-  /** Maps subclasses of JsonValue to a list of possible serializers for this subclass */ 
-  private Map<Class<? extends JsonValue>, List<SerializerInfo>> serializerMap;
-  
-  /** A list of serializers (ordered by their encoding) */
-  private List<SerializerInfo> serializerList;
-   
-  /** Describes the information associated with serializers */
-  private class SerializerInfo
-  {
-    final int encoding;
-    final Schema schema;
-    @SuppressWarnings("unchecked")
-    final BinaryBasicSerializer serializer;
-    
-    SerializerInfo(int index, Schema schema, BinaryBasicSerializer<?> serializer)
-    {
-      this.encoding = INDEX_OFFSET + index;
-      this.schema = schema;
-      this.serializer = serializer;
-    }
-  }
   
   // -- construction ------------------------------------------------------------------------------
   
   public TempBinaryFullSerializer(Schema schema) {
-    assert JsonEncoding.LIMIT < INDEX_OFFSET; // these values are used for null/any
+    assert JsonEncoding.LIMIT < INDEX_OFFSET; // these values are used for null/nonnull
     // remove duplicates and make sure each type occurs at most once
     this.schema = SchemaTransformation.compact(schema);
-    init();
+    serializers = new MySerializerMap(this.schema);
   }
   
-  /** Initializes the internal data structures (in particular: serializerMap and serializerList) */
-  private void init()
-  {
-    // create empty data structures
-    serializerMap = new HashMap<Class<? extends JsonValue>,  List<SerializerInfo>>();
-    serializerList = new ArrayList<SerializerInfo>();
-    
-    // any and null are treated separately
-    matchesAny = false;
-    matchesNull = false;
-    hasSingleSerializer = false;
-    
-    // expand OrSchema
-    if (schema instanceof OrSchema)
-    {
-      for (Schema s : ((OrSchema)schema).get())
-      {
-        add(s); // s is not an OrSchema because OrSchemas are not nested
-      }
-    }
-    else 
-    {
-      hasSingleSerializer = true;
-      add(schema);
-    }
-  }
-  
-  /** Adds the given schema to the internal data structures */
-  private void add(Schema schema)
-  {
-    assert !(schema instanceof OrSchema);
-    if (schema instanceof NullSchema)
-    {
-      matchesNull = true;
-    } 
-    else if (schema instanceof NonNullSchema)
-    {
-      matchesAny = true;
-    }
-    else
-    {
-      // add serializer to list
-      SerializerInfo entry = new SerializerInfo(serializerList.size(), schema, makeBasicSerializer(schema));
-      serializerList.add(entry);
-      
-      // and to map
-      for (Class<? extends JsonValue> clazz : schema.matchedClasses())
-      {
-        List<SerializerInfo> list = serializerMap.get(clazz);
-        if (list == null)
-        {
-          list = new ArrayList<SerializerInfo>();
-        }
-        list.add(entry);
-        serializerMap.put(clazz, list);
-      }
-    }    
-  }
 
   // -- full serialization ------------------------------------------------------------------------
 
@@ -198,23 +107,23 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
   @Override
   public JsonValue read(DataInput in, JsonValue target) throws IOException
   {
-    if (hasSingleSerializer)
+    if (!serializers.hasAlternatives())
     {
       // there is just one serializer
-      if (matchesNull)
+      if (serializers.matchesNull())
       {
         // matches null only
         return null;
       }
-      else if (matchesAny)
+      else if (serializers.matchesNonNull())
       {
-        // matches any only
+        // matches nonnull only
         return defaultSerializer.read(in, target);
       }
       else
       {
         // matches some other schema --> retrieve and read
-        return serializerList.get(0).serializer.read(in, target);
+        return serializers.get(0).serializer.read(in, target);
       }
     }
     else
@@ -233,9 +142,9 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
     // handle nulls
     if (value == null)
     {
-      if (matchesNull)
+      if (serializers.matchesNull())
       {
-        if (!hasSingleSerializer) 
+        if (serializers.hasAlternatives()) 
         {
           // will write null encoding < INDEX_OFFSET
           defaultSerializer.write(out, value);
@@ -250,11 +159,11 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
     }
     
     // find a serializer
-    SerializerInfo k = getSerializer(value);
+    SerializerInfo k = serializers.get(value);
     if (k == null)
     {
       // none found
-      if (matchesAny) 
+      if (serializers.matchesNonNull()) 
       {
         // will write encoding < INDEX_OFFSET
         defaultSerializer.write(out, value);
@@ -266,7 +175,7 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
     else
     {
       // at least one found
-      if (!hasSingleSerializer)
+      if (serializers.hasAlternatives())
       {
         // will write encoding >= INDEX_OFFSET
         BaseUtil.writeVUInt(out, k.encoding);
@@ -336,54 +245,6 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
     }
   }
   
-  /** Returns a basic serializer for the given non-null value. It is not guaranteed that the schema 
-   * associated with returned serializer matches <code>value</code> but it is guaranteed that 
-   * if there is a schema that matches <code>value</code>, it is returned. Used for writing. */  
-  SerializerInfo getSerializer(JsonValue value)
-  {
-    assert value != null;
-    
-    // non-null values
-    List<SerializerInfo> list = serializerMap.get(value.getClass());
-    if (list == null)
-    {
-      // search for super classes
-      Class<?> superClass = value.getClass().getSuperclass();
-      while (superClass != null)
-      {
-        list = serializerMap.get(superClass);
-        if (list != null)
-        {
-          serializerMap.put(value.getClass(), list);
-          break;
-        }
-        superClass = superClass.getSuperclass();
-      }
-      if (list == null) return null; // failed
-    }
-    
-    int n = list.size();
-    // n-1 to avoid expensive matches(...) computation in the common case where there is 
-    // just one serializer
-    for (int i=0; i<n-1; i++) 
-    {
-      SerializerInfo s = list.get(i);
-      try
-      {
-        if (s.schema.matches(value)) { 
-          return s;
-        }
-      } catch (Exception e)
-      {
-      }
-    }
-    SerializerInfo result = list.get(n-1);
-    if (matchesAny && !result.schema.matchesUnsafe(value)) // saves matches(...) check when possible 
-    {
-      return null;
-    }
-    return result;
-  }
   
   /** Returns the basic serializer that belongs to the specified encoding */
   private BinaryBasicSerializer<?> getSerializer(int encoding)
@@ -396,7 +257,7 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
     else
     {
       // encoded using one of our serializers
-      return serializerList.get(encoding-INDEX_OFFSET).serializer;
+      return serializers.get(encoding-INDEX_OFFSET).serializer;
     }
   }
   
@@ -406,23 +267,23 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
   @Override
   public int compare(DataInput in1, DataInput in2) throws IOException 
   {
-    if (hasSingleSerializer)
+    if (!serializers.hasAlternatives())
     {
       // there is just one serializer
-      if (matchesNull)
+      if (serializers.matchesNull())
       {
         // matches null only
         return 0;
       }
-      else if (matchesAny)
+      else if (serializers.matchesNonNull())
       {
-        // matches any only
+        // matches nonnull only
         return defaultSerializer.compare(in1, in2);
       }
       else
       {
         // matches some other schema --> retrieve and read
-        return serializerList.get(0).serializer.compare(in1, in2);
+        return serializers.get(0).serializer.compare(in1, in2);
       }
     }
     else
@@ -448,7 +309,7 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
         }
         else
         {
-          type1 = serializerList.get(encoding1-INDEX_OFFSET).schema.getSchemaType().getJsonType();
+          type1 = serializers.get(encoding1-INDEX_OFFSET).schema.getSchemaType().getJsonType();
         }
         JsonType type2;
         if (default2)
@@ -457,7 +318,7 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
         }
         else
         {
-          type2 = serializerList.get(encoding2-INDEX_OFFSET).schema.getSchemaType().getJsonType();
+          type2 = serializers.get(encoding2-INDEX_OFFSET).schema.getSchemaType().getJsonType();
         }
 
         // compare the types
@@ -476,4 +337,45 @@ public final class TempBinaryFullSerializer extends BinaryFullSerializer // for 
       }
     }   
   }
+  
+  
+  // -- helper classes ----------------------------------------------------------------------------
+  
+  /** Describes the information associated with serializers */
+  private final class SerializerInfo
+  {
+    final int encoding;
+    final Schema schema;
+    @SuppressWarnings("unchecked")
+    final BinaryBasicSerializer serializer;
+    
+    SerializerInfo(int index, Schema schema, BinaryBasicSerializer<?> serializer)
+    {
+      this.encoding = INDEX_OFFSET + index;
+      this.schema = schema;
+      this.serializer = serializer;
+    }
+  }
+  
+  /** Implementation of SerializerMap for the above SerializerInfo class */
+  private final class MySerializerMap extends SerializerMap<SerializerInfo>
+  {
+    public MySerializerMap(Schema schema)
+    {
+      super(schema);
+    }
+    
+    @Override
+    public SerializerInfo makeSerializerInfo(int pos, Schema schema)
+    {
+      return new SerializerInfo(pos, schema, makeBasicSerializer(schema));
+    }
+    
+    @Override
+    public Schema schemaOf(SerializerInfo info)
+    {
+      return info.schema;
+    }    
+  }
+
 }

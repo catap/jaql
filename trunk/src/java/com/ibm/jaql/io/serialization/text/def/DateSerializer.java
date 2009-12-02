@@ -15,22 +15,18 @@
  */
 package com.ibm.jaql.io.serialization.text.def;
 
-import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.type.JsonSpan;
+import com.ibm.jaql.json.type.JsonDate;
 
-public class JsonSpanSerializer extends TextBasicSerializer<JsonSpan>
+public class DateSerializer extends TextBasicSerializer<JsonDate>
 {
   @Override
-  public void write(PrintStream out, JsonSpan value, int indent)
-      throws IOException
+  public void write(PrintStream out, JsonDate value, int indent)
   {
-    out.print("span(");
-    out.print(value.begin);
-    out.print(',');
-    out.print(value.end);
-    out.print(')');
+    out.print("date('");
+    out.print(value.toString());
+    out.print("')");
   }
 }

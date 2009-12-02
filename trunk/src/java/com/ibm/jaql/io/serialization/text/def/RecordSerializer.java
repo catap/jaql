@@ -26,12 +26,12 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonRecordSerializer extends TextBasicSerializer<JsonRecord>
+public class RecordSerializer extends TextBasicSerializer<JsonRecord>
 {
   TextBasicSerializer<JsonString> nameSerializer;
   TextFullSerializer valueSerializer;
 
-  public JsonRecordSerializer(TextBasicSerializer<JsonString> nameSerializer, TextFullSerializer valueSerializer)
+  public RecordSerializer(TextBasicSerializer<JsonString> nameSerializer, TextFullSerializer valueSerializer)
   {
     this.nameSerializer = nameSerializer ;
     this.valueSerializer = valueSerializer;

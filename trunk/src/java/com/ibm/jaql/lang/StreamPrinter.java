@@ -21,6 +21,7 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 import java.io.IOException;
 import java.io.PrintStream;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -48,16 +49,17 @@ public class StreamPrinter implements JaqlPrinter {
 
   @Override
   public void print(Expr expr, Context context) throws Exception {
+    Schema schema = expr.getSchema();
     if (expr.getSchema().is(ARRAY, NULL).always()) {
       JsonIterator iter = expr.iter(context);
-      iter.print(output);
+      iter.print(output, 0, schema.elements());
     } else {
       JsonValue value = expr.eval(context);
       // special casing of explains: result should not be converted
       if (expr instanceof ExplainExpr) {
         output.print(value);
       } else {
-        JsonUtil.print(output, value);
+        JsonUtil.getDefaultSerializer(schema).write(output, value);
       }
     }
     output.println();

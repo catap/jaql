@@ -19,15 +19,15 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonDouble;
 
-public class JsonLongSerializer extends TextBasicSerializer<JsonLong>
+public class DoubleSerializer extends TextBasicSerializer<JsonDouble>
 {
 
   @Override
-  public void write(PrintStream out, JsonLong value, int indent)
+  public void write(PrintStream out, JsonDouble value, int indent)
       throws IOException
   {
-    out.print(value.get());
+    out.print(value.get());    
   }
 }

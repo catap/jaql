@@ -151,7 +151,7 @@ public class PathRecord extends PathStep
           {
             // special case: nested record
             RecordSchema innerSchema = (RecordSchema)s.schema;
-            for (RecordSchema.Field field : innerSchema.getFields())
+            for (RecordSchema.Field field : innerSchema.getFieldsByPosition())
             {
               fields.add(field);
             }

@@ -70,7 +70,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.system.RUtil;
 
 /**
  * This class provides the interface to drive Jaql from within R.
@@ -438,7 +437,7 @@ public class RJaqlInterface extends Jaql {
     List<JsonString> names = new ArrayList<JsonString>();
     Map<JsonString, JsonType> typeMap = new HashMap<JsonString, JsonType>();
     StringBuilder header = new StringBuilder();
-    for (Field field : recordSchema.getFields()) {
+    for (Field field : recordSchema.getFieldsByName()) {
       names.add(field.getName());
       if (header.length() != 0) header.append(RUtil.fieldSeparator);
       header.append(field.getName().toString());

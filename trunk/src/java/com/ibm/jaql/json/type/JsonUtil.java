@@ -6,28 +6,27 @@ import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
+import com.ibm.jaql.io.serialization.text.schema.SchemaTextFullSerializer;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 
 /** Utility methods for dealing with {@link JsonValue}s and <code>null</code>s. */
 public class JsonUtil
 {
   /**
-   * Print <code>value</code>, if non-null, on the stream in (extended) JSON text format using
-   * <code>v.print(out)</code>. Otherwise, prints <code>null</code>. 
+   * Print <code>value</code in (extended) JSON text format. 
    * 
    * @param value a value or <code>null</code>
    * @param out an output stream
-   * @param indent indentation value
    * @throws Exception
    */
   public static void print(PrintStream out, JsonValue value) throws IOException {
-    // TODO: remove?
-    TextFullSerializer serializer = TextFullSerializer.getDefault();
+    TextFullSerializer serializer = getDefaultSerializer();
     serializer.write(out, value);
   }
-
+  
   /**
-   * Print <code>value</code>, if non-null, on the stream in (extended) JSON text format using
-   * <code>v.print(out, indent)</code>. Otherwise, prints <code>null</code>. 
+   * Print indented <code>value</code in (extended) JSON text format. 
    * 
    * @param value a value or <code>null</code>
    * @param out an output stream
@@ -35,11 +34,23 @@ public class JsonUtil
    * @throws Exception
    */
   public static void print(PrintStream out, JsonValue value, int indent) throws IOException {
-    // TODO: remove?
-    TextFullSerializer serializer = TextFullSerializer.getDefault();
+    TextFullSerializer serializer = getDefaultSerializer();
     serializer.write(out, value, indent);
   }
 
+  public static TextFullSerializer getDefaultSerializer()
+  {
+    return TextFullSerializer.getDefault();
+  }
+  
+  public static TextFullSerializer getDefaultSerializer(Schema schema)
+  {
+    if (schema == SchemaFactory.anySchema()) { // makes a common case more efficient
+      return getDefaultSerializer();
+    }
+    return new SchemaTextFullSerializer(schema);
+  }
+  
   /**
    * Print <code>value</code>, if non-null, on the stream in (extended) JSON text format using
    * <code>v.print(out)</code>. Otherwise, prints <code>null</code>. 

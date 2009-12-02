@@ -28,7 +28,6 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
