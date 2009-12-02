@@ -138,7 +138,7 @@ final class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     // scan required and optional fields
     for (int posRequired=0, posOptional=0, pos=0; pos < noRequiredOptional; pos++)
     {
-      RecordSchema.Field field = schema.getField(pos);
+      RecordSchema.Field field = schema.getFieldByName(pos);
       FieldInfo k = new FieldInfo(field, new TempBinaryFullSerializer(field.getSchema()));
       allInfo[pos] = k;
       if (field.isOptional()) {

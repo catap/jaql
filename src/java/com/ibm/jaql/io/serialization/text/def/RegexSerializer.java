@@ -22,11 +22,11 @@ import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
 
-public class JsonRegexSerializer extends TextBasicSerializer<JsonRegex>
+public class RegexSerializer extends TextBasicSerializer<JsonRegex>
 {
   TextBasicSerializer<JsonString> stringSerializer;
 
-  public JsonRegexSerializer(TextBasicSerializer<JsonString> stringSerializer)
+  public RegexSerializer(TextBasicSerializer<JsonString> stringSerializer)
   {
     this.stringSerializer = stringSerializer ;
   }

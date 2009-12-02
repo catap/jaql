@@ -21,8 +21,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
@@ -38,8 +39,9 @@ import com.ibm.jaql.util.Bool3;
 /** Schema for a JSON record */
 public final class RecordSchema extends Schema
 {
-  protected final Field[] fields;     // required/optional fields, never null
-  protected final Schema  additional; // additional fields; null if record is "closed"
+  protected final Field[] fieldsByName;  // required/optional fields, never null
+  protected final Field[] fieldsByPosition;  // required/optional fields, never null
+  protected final Schema  additional;    // additional fields; null if record is "closed"
 
   
   // -- inner classes -----------------------------------------------------------------------------
@@ -131,12 +133,16 @@ public final class RecordSchema extends Schema
     if (fields == null) fields = new Field[0];
     checkFields(fields);
     
-    // sort
-    Arrays.sort(fields, FIELD_BY_NAME_COMPARATOR);
+    // set positional array
+    this.fieldsByPosition = new Field[fields.length];
+    System.arraycopy(fields, 0, this.fieldsByPosition, 0, fields.length);
     
-    // set
-    this.fields = new Field[fields.length];
-    System.arraycopy(fields, 0, this.fields, 0, fields.length);
+    // set sorted array
+    Arrays.sort(fields, FIELD_BY_NAME_COMPARATOR);
+    this.fieldsByName = new Field[fields.length];
+    System.arraycopy(fields, 0, this.fieldsByName, 0, fields.length);
+
+    // store schema of additional fields
     this.additional = additional;
   }
   
@@ -192,7 +198,7 @@ public final class RecordSchema extends Schema
   public Bool3 isEmpty()
   {
     Bool3 isEmpty = Bool3.FALSE;
-    if (fields.length == 0)
+    if (fieldsByName.length == 0)
     {
       isEmpty = additional==null ? Bool3.TRUE : Bool3.UNKNOWN;
     }
@@ -211,7 +217,7 @@ public final class RecordSchema extends Schema
     if (additional != null) {
       return false;
     }
-    for (Field f : fields)
+    for (Field f : fieldsByName)
     {
       if (f.isOptional || !f.schema.isConstant())
       {
@@ -226,7 +232,7 @@ public final class RecordSchema extends Schema
     if (!isConstant())
       return null;
     BufferedJsonRecord r = new BufferedJsonRecord();
-    for (Field f : fields)
+    for (Field f : fieldsByName)
     {
       r.add(f.name, f.schema.getConstant());
     }
@@ -257,7 +263,7 @@ public final class RecordSchema extends Schema
 
     // assumption: field names are sorted
     int nr = rec.size();          // number of fields in record
-    int ns = fields.length;       // number of fields in schema
+    int ns = fieldsByName.length;       // number of fields in schema
     int pr = 0;                   // current field in record
     int ps = 0;                   // current field in schema
     
@@ -267,7 +273,7 @@ public final class RecordSchema extends Schema
     if (nr > 0) recEntry = recIt.next();
     while (pr<nr && ps<ns)
     {
-      Field schemaField = fields[ps];
+      Field schemaField = fieldsByName[ps];
       JsonString recordFieldName = recEntry.getKey();
       
       // compare
@@ -331,7 +337,7 @@ public final class RecordSchema extends Schema
     while (ps < ns)
     {
       // therea are fields left in the schema
-      if (!fields[ps].isOptional)
+      if (!fieldsByName[ps].isOptional)
       {
         return false;
       }
@@ -345,26 +351,42 @@ public final class RecordSchema extends Schema
   
   // -- getters -----------------------------------------------------------------------------------
 
-  public Field getField(int index)
+  public Field getFieldByName(int index)
   {
-    return fields[index];
+    return fieldsByName[index];
+  }
+
+  public Field getFieldByPosition(int index)
+  {
+    return fieldsByPosition[index];
   }
 
   public Field getField(JsonString name)
   {
-    int index = Arrays.binarySearch(fields, name, FIELD_BY_NAME_COMPARATOR);
+    int index = Arrays.binarySearch(fieldsByName, name, FIELD_BY_NAME_COMPARATOR);
     if (index >= 0)
     {
-      return fields[index];
+      return fieldsByName[index];
     }
     return null;
   }
 
-  /** Returns a list of required and optional fields sorted by name */
-  public List<Field> getFields()
+  /** Returns a list of required and optional fields in order of declaration */
+  public List<Field> getFieldsByPosition()
   {
-    List<Field> result = new ArrayList<Field>(fields.length);
-    for (Field field : fields)
+    List<Field> result = new ArrayList<Field>(fieldsByName.length);
+    for (Field field : fieldsByPosition)
+    {
+      result.add(field);
+    }
+    return Collections.unmodifiableList(result); // to make clear that modifcations won't work
+  }
+  
+  /** Returns a list of required and optional fields sorted by name */
+  public List<Field> getFieldsByName()
+  {
+    List<Field> result = new ArrayList<Field>(fieldsByName.length);
+    for (Field field : fieldsByName)
     {
       result.add(field);
     }
@@ -382,7 +404,7 @@ public final class RecordSchema extends Schema
   public int noRequired()
   {
     int n = 0;
-    for (Field field : fields)
+    for (Field field : fieldsByName)
     {
       if (!field.isOptional()) n++;
     }
@@ -393,7 +415,7 @@ public final class RecordSchema extends Schema
   public int noOptional()
   {
     int n = 0;
-    for (Field field : fields)
+    for (Field field : fieldsByName)
     {
       if (field.isOptional()) n++;
     }
@@ -403,7 +425,7 @@ public final class RecordSchema extends Schema
   /** Returns the number of required or optional fields (not counting the wildcard) */
   public int noRequiredOrOptional()
   {
-    return fields.length;
+    return fieldsByName.length;
   }
 
   /** Checks whether there is a wildcard. */
@@ -420,45 +442,102 @@ public final class RecordSchema extends Schema
   {
     if (other instanceof RecordSchema)
     {
+      // merged record retains the relative ordering to the extend possible
+      // 1. a1<b1 & a2<b2 => a<b
+      // 2. a1<b1 & a2<b2 & c2<b2 & no c1 => a<c<b
+      // 3. a1<b2 & a2>b2 => broken arbitrarily
+      //
+      // Algorithm:
+      // A. scan both inputs in order
+      // B. if the current field name on both inputs does not occur in the respective other input, 
+      //    output the field with the smaller name (and make it optional). Goto A.
+      // C. if the current field name on one input does not occur in the respective other input,
+      //    out put this field (and make it optional). Goto A.
+      // D. Output the smaller field of the two inputs and merge with the schema of the field in
+      //    the respective other input. Goto A.
       RecordSchema o = (RecordSchema)other;
       
-      Field[] myFields = this.fields;
-      Field[] otherFields = o.fields;
+      Field[] myFields = this.fieldsByPosition;
+      Field[] otherFields = o.fieldsByPosition;
      
-      // assumption: field names are sorted
       int myN = myFields.length;
       int otherN = otherFields.length;
       int myPos = 0;
       int otherPos = 0;
-      
-      // zip join
-      List<Field> newFields = new LinkedList<Field>();
+
+      // go
+      Map<JsonString, Field> newFields = new LinkedHashMap<JsonString, Field>();
       while (myPos<myN && otherPos<otherN)
       {
+        // jump over fields that have been outputted
         Field myField = myFields[myPos];
-        Field otherField = otherFields[otherPos];
-        
-        // compare
-        int cmp = myField.getName().compareTo(otherField.getName());
-        
-        if (cmp < 0) 
+        if (newFields.containsKey(myField.name))
         {
-          // I have the field, but other has not --> make it optional
-          newFields.add(new Field(myField.name, myField.schema, true));
           myPos++;
+          continue;
         }
-        else if (cmp == 0)
+        Field otherField = otherFields[otherPos];
+        if (newFields.containsKey(otherField.name))
         {
-          // both have field --> keep
-          newFields.add(new Field(myField.name, SchemaTransformation.merge(myField.schema, otherField.schema), 
-              myField.isOptional || otherField.isOptional));
-          myPos++; otherPos++;
+          otherPos++;
+          continue;
+        }
+
+        Field next;                  // next field to output
+        Field match = null;          // field of the same name in other input or null
+
+        // check which field name is smallest; when the same, output
+        int cmp = myField.name.compareTo(otherField.name);
+        if (cmp == 0)
+        {
+          next = myField;
+          match = otherField;
+          myPos++;
+          otherPos++;
+        }
+        else // cmp != 0
+        {
+          // check for fields in one input that does not occur in another input
+          boolean myInOther = o.getField(myField.name) != null;
+          boolean otherInMy = this.getField(otherField.name) != null;
+          if ( (!myInOther && !otherInMy && cmp<0) || (!myInOther && otherInMy))
+          {
+            next = myField;
+            match = null;
+            myPos++;
+          } 
+          else if ( (!myInOther && !otherInMy && cmp>0) || (myInOther && !otherInMy))
+          {
+            next = otherField;
+            match = null;
+            otherPos++;
+          }
+          // now we have a field that is in both inputs; we output the one with the smaller name first
+          else if (cmp < 0) 
+          {
+            next = myField;
+            match = o.getField(myField.name);
+            myPos++;
+          }
+          else
+          {
+            next = otherField;
+            match = this.getField(otherField.name);
+            otherPos++;
+          }
+        }
+
+        // output the next field
+        if (match == null)
+        {
+          newFields.put(next.name, new Field(next.name, next.schema, true));
         }
         else
         {
-          // I don't have the field, but other has --> make it optional
-          newFields.add(new Field(otherField.name, otherField.schema, true));
-          otherPos++;
+          newFields.put(next.name, new Field(
+              next.name, 
+              SchemaTransformation.merge(next.schema, match.schema), 
+              next.isOptional || match.isOptional));
         }
       }
       
@@ -466,13 +545,15 @@ public final class RecordSchema extends Schema
       while (myPos < myN)
       {
         Field myField = myFields[myPos];
-        newFields.add(new Field(myField.name, myField.schema, true));
+        if (!newFields.containsKey(myField.name))
+          newFields.put(myField.name, new Field(myField.name, myField.schema, true));
         myPos++;
       }
       while (otherPos < otherN)
       {
         Field otherField = otherFields[otherPos];
-        newFields.add(new Field(otherField.name, otherField.schema, true));
+        if (!newFields.containsKey(otherField.name))
+          newFields.put(otherField.name, new Field(otherField.name, otherField.schema, true));
         otherPos++;
       }
       
@@ -495,18 +576,18 @@ public final class RecordSchema extends Schema
       }
 
       // done
-      return new RecordSchema(newFields.toArray(new Field[newFields.size()]), newRest);
+      return new RecordSchema(newFields.values().toArray(new Field[newFields.size()]), newRest);
     }
     return null;
   }
-  
+    
   @Override
   public Schema elements()
   {
     Schema result = null;
-    for (int i=0; i<fields.length; i++)
+    for (int i=0; i<fieldsByName.length; i++)
     {
-      Schema s = fields[i].getSchema();
+      Schema s = fieldsByName[i].getSchema();
       if (result == null)
       {
         result = s;
@@ -572,7 +653,7 @@ public final class RecordSchema extends Schema
   public JsonLong minElements()
   {
     long l = 0;
-    for (Field f : fields)
+    for (Field f : fieldsByName)
     {
       if (!f.isOptional) 
       {
@@ -591,7 +672,7 @@ public final class RecordSchema extends Schema
     }
     else
     {
-      return new JsonLong(fields.length);
+      return new JsonLong(fieldsByName.length);
     }    
   } 
   
@@ -604,7 +685,7 @@ public final class RecordSchema extends Schema
     if (c != 0) return c;
     
     RecordSchema o = (RecordSchema)other;
-    c = SchemaUtil.arrayCompare(this.fields, o.fields);
+    c = SchemaUtil.arrayCompare(this.fieldsByPosition, o.fieldsByPosition);
     if (c != 0) return c;
     c = SchemaUtil.compare(this.additional, o.additional);
     if (c != 0) return c;
