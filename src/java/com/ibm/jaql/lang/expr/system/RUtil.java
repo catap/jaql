@@ -56,10 +56,8 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
-import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -523,7 +521,7 @@ public class RUtil {
     List<JsonString> names = new ArrayList<JsonString>();
     Map<JsonString, JsonType> typeMap = new HashMap<JsonString, JsonType>();
     //StringBuilder header = new StringBuilder();
-    for (Field field : recordSchema.getFields()) {
+    for (Field field : recordSchema.getFieldsByName()) {
       names.add(field.getName());
       //if (header.length() != 0) header.append(fieldSeparator);
       //header.append(field.getName().toString());

@@ -44,7 +44,7 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
-public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
+public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
 {
   @Override
   public void write(PrintStream out, JsonSchema value, int indent)
@@ -278,7 +278,7 @@ public class JsonSchemaSerializer extends TextBasicSerializer<JsonSchema>
 
     // print declared fields
     String sep="";
-    for (RecordSchema.Field f : schema.getFields())
+    for (RecordSchema.Field f : schema.getFieldsByPosition())
     {
       out.println(sep);
       sep = ",";

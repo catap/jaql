@@ -123,7 +123,7 @@ public class PathNotFields extends PathFields
       
       // and copy the input schema w/o those names
       List<RecordSchema.Field> fields = new LinkedList<RecordSchema.Field>();
-      for (RecordSchema.Field field : ((RecordSchema)inputSchema).getFields())
+      for (RecordSchema.Field field : ((RecordSchema)inputSchema).getFieldsByPosition())
       {
         if (!removedFields.contains(field.getName()))
         {

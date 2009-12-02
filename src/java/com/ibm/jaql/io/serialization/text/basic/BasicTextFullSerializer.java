@@ -22,10 +22,10 @@ import java.util.EnumMap;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
-import com.ibm.jaql.io.serialization.text.def.JsonBoolSerializer;
-import com.ibm.jaql.io.serialization.text.def.JsonDecimalSerializer;
-import com.ibm.jaql.io.serialization.text.def.JsonDoubleSerializer;
-import com.ibm.jaql.io.serialization.text.def.JsonLongSerializer;
+import com.ibm.jaql.io.serialization.text.def.BoolSerializer;
+import com.ibm.jaql.io.serialization.text.def.DecimalSerializer;
+import com.ibm.jaql.io.serialization.text.def.DoubleSerializer;
+import com.ibm.jaql.io.serialization.text.def.LongSerializer;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -57,10 +57,10 @@ public final class BasicTextFullSerializer extends TextFullSerializer
   public BasicTextFullSerializer()
   {
     serializers = new EnumMap<JsonEncoding, TextBasicSerializer<?>>(JsonEncoding.class);
-    serializers.put(JsonEncoding.BOOLEAN,  new JsonBoolSerializer());
-    serializers.put(JsonEncoding.LONG,     new JsonLongSerializer());
-    serializers.put(JsonEncoding.DECFLOAT, new JsonDecimalSerializer());
-    serializers.put(JsonEncoding.DOUBLE,   new JsonDoubleSerializer());
+    serializers.put(JsonEncoding.BOOLEAN,  new BoolSerializer());
+    serializers.put(JsonEncoding.LONG,     new LongSerializer());
+    serializers.put(JsonEncoding.DECFLOAT, new DecimalSerializer());
+    serializers.put(JsonEncoding.DOUBLE,   new DoubleSerializer());
   }
 
   

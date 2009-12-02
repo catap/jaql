@@ -15,24 +15,21 @@
  */
 package com.ibm.jaql.io.serialization.text.def;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.util.BaseUtil;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.util.JsonUtil;
 
-public class JsonBinarySerializer extends TextBasicSerializer<JsonBinary>
+public class StringSerializer extends TextBasicSerializer<JsonString>
 {
+
   @Override
-  public void write(PrintStream out, JsonBinary value, int indent)
+  public void write(PrintStream out, JsonString value, int indent)
+      throws IOException
   {
-    out.print("hex('");
-    for (int i = 0; i < value.bytesLength() ; i++)
-    {
-      byte b = value.get(i);
-      out.print(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
-      out.print(BaseUtil.HEX_NIBBLE[b & 0x0f]);
-    }
-    out.print("')");
+    String s = value.toString();
+    JsonUtil.printQuoted(out, s);
   }
 }

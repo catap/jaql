@@ -82,7 +82,8 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	protected boolean runDecompileResult = false;
 	protected boolean runRewriteResult = false;
 	protected boolean runCountResult = false;
-
+	protected boolean schemaAwarePrinting = false;
+	
 	protected int PLAIN = 1;
 	protected int DECOMPLIE = 2;
 	protected int REWRITE = 3;
@@ -247,14 +248,14 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				// iter.print(str);
 
 				JsonValue value = expr.eval(context);
-				JsonUtil.print(str, value);
+				print(str, expr, value);
 				if (!schema.matches(value)) {
 					throw new AssertionError("VALUE\n" + value
 							+ "\nDOES NOT MATCH\n" + schema);
 				}
 			} else {
 				JsonValue value = expr.eval(context);
-				JsonUtil.print(str, value);
+				print(str, expr, value);
 				if (!schema.matches(value)) {
 					throw new AssertionError("VALUE\n" + value
 							+ "\nDOES NOT MATCH\n" + schema);
@@ -267,6 +268,18 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		printFooter(str);
 		str.flush();
 	}
+	
+	 private void print(PrintStream out, Expr expr, JsonValue value) throws IOException
+	  {
+	    if (schemaAwarePrinting)
+	    {
+	      JsonUtil.getDefaultSerializer(expr.getSchema()).write(out, value);
+	    }
+	    else
+	    {
+	      JsonUtil.print(out, value);
+	    }
+	  }
 
 	/**
 	 * @param expr

@@ -251,6 +251,22 @@ x;
 { a: 1 } instanceof x;
 { a: "1" } instanceof x;
 
+x = schema { a: long, b: null };
+{ a: 1, b: null } instanceof x;
+{ b: null, a: 1 } instanceof x;
+{ a: 1 } instanceof x;           // incompatible
+{ b: null } instanceof x;        // incompatible
+{ a: null, b: 1 } instanceof x;  // incompatible
+{ b: 1, a: null } instanceof x;  // incompatible
+
+x = schema { b: null, a: long };
+{ a: 1, b: null } instanceof x;
+{ b: null, a: 1 } instanceof x;
+{ a: 1 } instanceof x;           // incompatible
+{ b: null } instanceof x;        // incompatible
+{ a: null, b: 1 } instanceof x;  // incompatible
+{ b: 1, a: null } instanceof x;  // incompatible
+
 x = schema { * };
 x;
 { } instanceof x;
@@ -419,11 +435,18 @@ mergeSchemata(schema [ long, decfloat ... ], schema [ long ]);
 mergeSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);
 mergeSchemata(schema [ long, decfloat ... ], schema [ long, date ]);
 
+// merging sorted
 mergeSchemata(schema {}, schema {});
-mergeSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });
+mergeSchemata(schema { a: long, b:long, c: null }, schema { a:long, b:long, c:null });
 mergeSchemata(schema { a: long, b:long, c:null, e?: date }, schema { a: long, b:string, d:null, e:date });
 mergeSchemata(schema { a: long, *:date }, schema { a: long });
 mergeSchemata(schema { a: long, *:date }, schema { a: long, *:null });
+
+// test merge order
+mergeSchemata(schema { a: long, b:long, d:long, f: long }, schema { a: long, c:long, b:long, f: long});
+mergeSchemata(schema { a: long, c:long, b:long }, schema { b: long, a:long });
+mergeSchemata(schema { a: long, c:long, b:long }, schema { b: long, c: long, a:long });
+mergeSchemata(schema { a: long, c:long, b:long }, schema { c: long, b: long, a:long });
 
 // -- schema compaction ---------------------------------------------------------------------------
 

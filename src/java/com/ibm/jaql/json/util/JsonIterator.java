@@ -19,6 +19,9 @@ import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 
+import com.ibm.jaql.io.serialization.text.TextFullSerializer;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -173,15 +176,16 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   
   //-- Utility methods --------------------------------------------------------------------------
   
-  /**
-   * @param out
-   * @throws Exception
-   */
   public final void print(PrintStream out) throws Exception
   {
-    this.print(out, 0);
+    this.print(out, 0, SchemaFactory.anySchema());
   }
 
+  public final void print(PrintStream out, int indent) throws Exception
+  {
+    this.print(out, indent, SchemaFactory.anySchema());
+  }
+  
   /**
    * 
    * <no indent> [ <indent+2> value, ... <indent> ]
@@ -194,7 +198,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
    * @param indent
    * @throws Exception
    */
-  public final void print(PrintStream out, int indent) throws Exception
+  public final void print(PrintStream out, int indent, Schema valueSchema) throws Exception
   {
     if (this.isNull())
     {
@@ -202,6 +206,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
     }
     else
     {
+      TextFullSerializer valueSerializer = JsonUtil.getDefaultSerializer(valueSchema);
       String sep = "";
       out.print("[");
       indent += 2;
@@ -212,9 +217,10 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
         {
           out.print(' ');
         }
-        JsonUtil.print(out, value, indent);
+        valueSerializer.write(out, value, indent);
         sep = ",";
       }
+      indent -= 2;
       if (sep.length() > 0) // if not empty array
       {
         out.println();

@@ -15,21 +15,16 @@
  */
 package com.ibm.jaql.io.serialization.text.def;
 
-import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonUtil;
+import com.ibm.jaql.json.type.JsonBool;
 
-public class JsonStringSerializer extends TextBasicSerializer<JsonString>
+public class BoolSerializer extends TextBasicSerializer<JsonBool>
 {
-
   @Override
-  public void write(PrintStream out, JsonString value, int indent)
-      throws IOException
+  public void write(PrintStream out, JsonBool value, int indent)
   {
-    String s = value.toString();
-    JsonUtil.printQuoted(out, s);
+    out.print(value.get() ? "true" : "false");
   }
 }

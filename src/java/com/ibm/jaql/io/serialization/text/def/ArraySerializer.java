@@ -23,11 +23,11 @@ import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonArraySerializer extends TextBasicSerializer<JsonArray>
+public class ArraySerializer extends TextBasicSerializer<JsonArray>
 {
   TextFullSerializer fullSerializer;
   
-  public JsonArraySerializer(TextFullSerializer fullSerializer) {
+  public ArraySerializer(TextFullSerializer fullSerializer) {
     this.fullSerializer = fullSerializer;
   }
   

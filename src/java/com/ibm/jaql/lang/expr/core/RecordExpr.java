@@ -190,7 +190,7 @@ public class RecordExpr extends Expr
         Schema copySchema = ce.exprs[0].getSchema();
         if (copySchema instanceof RecordSchema)
         {
-          for (RecordSchema.Field f : ((RecordSchema)copySchema).getFields())
+          for (RecordSchema.Field f : ((RecordSchema)copySchema).getFieldsByName())
           {
             fields.add(f);
           }

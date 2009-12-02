@@ -642,6 +642,50 @@ true
 true
 
 
+x = schema { a: long, b: null };##
+"x"
+
+{ a: 1, b: null } instanceof x;##
+true
+
+{ b: null, a: 1 } instanceof x;##
+true
+
+{ a: 1 } instanceof x;##
+false
+           // incompatible
+{ b: null } instanceof x;##
+false
+        // incompatible
+{ a: null, b: 1 } instanceof x;##
+false
+  // incompatible
+{ b: 1, a: null } instanceof x;##
+false
+  // incompatible
+
+x = schema { b: null, a: long };##
+"x"
+
+{ a: 1, b: null } instanceof x;##
+true
+
+{ b: null, a: 1 } instanceof x;##
+true
+
+{ a: 1 } instanceof x;##
+false
+           // incompatible
+{ b: null } instanceof x;##
+false
+        // incompatible
+{ a: null, b: 1 } instanceof x;##
+false
+  // incompatible
+{ b: 1, a: null } instanceof x;##
+false
+  // incompatible
+
 x = schema { * };##
 "x"
 
@@ -1158,10 +1202,11 @@ schema [
        ]
 
 
+// merging sorted
 mergeSchemata(schema {}, schema {});##
 schema {}
 
-mergeSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });##
+mergeSchemata(schema { a: long, b:long, c: null }, schema { a:long, b:long, c:null });##
 schema {
          "a": long,
          "b": long,
@@ -1187,6 +1232,38 @@ mergeSchemata(schema { a: long, *:date }, schema { a: long, *:null });##
 schema {
          "a": long,
          *: date?
+       }
+
+
+// test merge order
+mergeSchemata(schema { a: long, b:long, d:long, f: long }, schema { a: long, c:long, b:long, f: long});##
+schema {
+         "a": long,
+         "c"?: long,
+         "b": long,
+         "d"?: long,
+         "f": long
+       }
+
+mergeSchemata(schema { a: long, c:long, b:long }, schema { b: long, a:long });##
+schema {
+         "a": long,
+         "c"?: long,
+         "b": long
+       }
+
+mergeSchemata(schema { a: long, c:long, b:long }, schema { b: long, c: long, a:long });##
+schema {
+         "a": long,
+         "b": long,
+         "c": long
+       }
+
+mergeSchemata(schema { a: long, c:long, b:long }, schema { c: long, b: long, a:long });##
+schema {
+         "a": long,
+         "c": long,
+         "b": long
        }
 
 
@@ -1562,9 +1639,9 @@ schema [
 schemaof ([{ a: "yes", b: 0 }] -> transform { c:1, $.* });##
 schema [
          {
+           "c": long(value=1),
            "a": string(value="yes"),
-           "b": long(value=0),
-           "c": long(value=1)
+           "b": long(value=0)
          } ...
        ]
 
@@ -1858,8 +1935,8 @@ schema [
                       ]?,
            "values2": [
                         {
-                          "b"?: string(value="bbb"),
                           "c": long,
+                          "b"?: string(value="bbb"),
                           "d"?: string(value="d1")
                         } ...
                       ]?

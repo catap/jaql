@@ -15,20 +15,24 @@
  */
 package com.ibm.jaql.io.serialization.text.def;
 
-import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
-import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonBinary;
+import com.ibm.jaql.util.BaseUtil;
 
-public class JsonDecimalSerializer extends TextBasicSerializer<JsonDecimal>
+public class BinarySerializer extends TextBasicSerializer<JsonBinary>
 {
-
   @Override
-  public void write(PrintStream out, JsonDecimal value, int indent)
-      throws IOException
+  public void write(PrintStream out, JsonBinary value, int indent)
   {
-    out.print(value.get().toString());
-    out.print('m'); // TODO: flag to disable suffix for JSON compatibility
+    out.print("hex('");
+    for (int i = 0; i < value.bytesLength() ; i++)
+    {
+      byte b = value.get(i);
+      out.print(BaseUtil.HEX_NIBBLE[(b >> 4) & 0x0f]);
+      out.print(BaseUtil.HEX_NIBBLE[b & 0x0f]);
+    }
+    out.print("')");
   }
 }

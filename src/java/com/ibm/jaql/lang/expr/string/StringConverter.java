@@ -143,7 +143,7 @@ public class StringConverter
       {
         throw new IllegalArgumentException("invalid input schema");
       }
-      List<RecordSchema.Field> fields = recordSchema.getFields();
+      List<RecordSchema.Field> fields = recordSchema.getFieldsByName();
       int n = fields.size();
       sub = new Descriptor[n];
       fieldMap = new HashMap<JsonString, Descriptor>();
