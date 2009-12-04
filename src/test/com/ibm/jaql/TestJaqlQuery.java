@@ -63,7 +63,7 @@ public class TestJaqlQuery extends TestCase {
 	public void testGetVar() {
 		try{
 			JaqlQuery q = new JaqlQuery();
-			q.setQueryString(publishers + " -> filter $.country==$c;");
+			q.setQueryString("(" + publishers + " -> filter $.country==$c)[0].country;");
 			q.setVar("$c", "UK");
 			JsonValue v = q.evaluate();
 			assertEquals(new JsonString("UK"), v);
