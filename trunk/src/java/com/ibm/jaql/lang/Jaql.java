@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 
+import org.apache.commons.lang.BooleanUtils;
+
 import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
 import antlr.collections.impl.BitSet;
@@ -45,7 +47,7 @@ import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
-public class Jaql
+public class Jaql implements CoreJaql
 {
   public static String ENV_JAQL_HOME = "JAQL_HOME"; 
   
@@ -89,6 +91,10 @@ public class Jaql
   public static void addExtensionJars(String[] jars) throws Exception
   {
     ClassLoaderMgr.addExtensionJars(jars);
+  }
+  
+  public void addJar(String path) throws Exception {
+	  ClassLoaderMgr.addExtensionJars(new String[]{path});
   }
 
   //-----------------------------------------------------------------
@@ -179,6 +185,32 @@ public class Jaql
     this.stopOnException = stopOnException;
   }
   
+  public void setProperty(String name, String value) {
+	  if(name.equalsIgnoreCase("enableRewrite")){
+		  doRewrite = BooleanUtils.toBoolean(value);
+	  }else if(name.equalsIgnoreCase("stopOnException")){
+		  stopOnException = BooleanUtils.toBoolean(value);
+	  }else if(name.equalsIgnoreCase("JaqlPrinter")){
+		  try{
+			  printer = (JaqlPrinter)Class.forName(value).newInstance();
+		  }catch(Exception ex){
+			  ex.printStackTrace();
+		  }
+	  }
+  }
+  
+  public String getProperty(String name) {
+	  if(name.equalsIgnoreCase("enableRewrite")){
+		  return BooleanUtils.toStringTrueFalse(doRewrite);
+	  }else if(name.equalsIgnoreCase("stopOnException")){
+		  return BooleanUtils.toStringTrueFalse(stopOnException);
+	  }else if(name.equalsIgnoreCase("JaqlPrinter") && printer != null){
+		  return printer.getClass().getName();
+	  }else{
+		  return null;
+	  }
+  }
+  
   /**
    * Set the value of a global variable.
    *  
@@ -188,6 +220,15 @@ public class Jaql
   public void setVar(String varName, JsonValue value) 
   {
     parser.env.scopeGlobal(varName, value);    
+  }
+  
+  public void setVar(String varName, JsonIterator iter) {
+	  try{
+		  if(iter.moveNext())
+			  setVar(varName, iter.current());
+	  }catch(Exception ex){
+		  ex.printStackTrace();
+	  }
   }
 
   /**
@@ -214,6 +255,10 @@ public class Jaql
         handleError(error);
       }
     }
+  }
+  
+  public void materializeVar(String name) throws Exception {
+	  materializeVar(new Var(name));
   }
 
   /**
@@ -268,6 +313,14 @@ public class Jaql
 //    return iter;
 //  }
 
+  public Expr expr() throws Exception {
+	  return prepareNext();
+  }
+  
+  public String explain() throws Exception {
+	  return prepareNext().toString();
+  }
+  
   /**
    * Prepares the next evaluable statement.
    * 
@@ -393,6 +446,10 @@ public class Jaql
     context.reset();
     JsonValue value = expr.eval(context);
     return value;
+  }
+  
+  public JsonValue eval() throws Exception {
+	  return evalNext();
   }
 
   /**
