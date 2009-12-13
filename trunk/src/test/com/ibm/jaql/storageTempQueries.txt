@@ -237,7 +237,7 @@ sort = fn(what, schema) (
         reduce: fn(k, v) [ k ],
         schema: { key: schema, value: schema null }
     }),
-    read(jaqltemp("tempfile_sorted", schema))
+    read(jaqltemp("tempfile_sorted", schema)) -> sort by [$]
 ); 
 
 // single schemata
