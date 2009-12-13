@@ -79,7 +79,8 @@ public class FileOutputConfigurator implements InitializableConfSetter
       if (!fs.mkdirs(tempDir))
         throw new IllegalStateException("could not create temporay directory: " + tempDir);
     }
-    conf.set("mapred.task.id", new TaskAttemptID(new TaskID(new JobID("dummy", 0), true, 0),0).toString());
+    int jobId = (int)System.currentTimeMillis();
+    conf.set("mapred.task.id", new TaskAttemptID(new TaskID(new JobID("dummy", jobId), true, 0),0).toString());
     
     // see DefaultHadoopOutputAdapter.close() for cleanup, i.e., renaming the temp file to desired location
   }
