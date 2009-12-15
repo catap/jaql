@@ -22,6 +22,7 @@ import com.ibm.jaql.io.serialization.text.basic.JsonStringUnquotedSerializer;
 import com.ibm.jaql.io.serialization.text.def.DefaultTextFullSerializer;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.SystemUtil;
 
 /**
  * Writes every JSON value in a new line in array access mode.
@@ -31,13 +32,10 @@ import com.ibm.jaql.json.type.JsonValue;
  */
 public abstract class LinesJsonTextOutputStream extends
                                                AbstractJsonTextOutputStream {
-
-  public static final String LINE_SEPARATOR = System.getProperty("line.separator");
-
   protected JsonStringUnquotedSerializer strSer = new JsonStringUnquotedSerializer();
 
   public LinesJsonTextOutputStream() {
-    super("", LINE_SEPARATOR, "");
+    super("", SystemUtil.LINE_SEPARATOR, "");
   }
 
   @Override
