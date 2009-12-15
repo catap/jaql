@@ -15,8 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -33,7 +37,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  * result[].prev is the first k-1 items
  * result[].cur  is the last k-1 items.
  *
- * eg: [1,2,3] -> lag1()  ==  [ {prev: 1, cur: 2}, { prev: 2, cur: 3 } ] 
+ * eg: [1,2,3] -> lag1()  ==  [ { prev: 1, cur: 2 }, { prev: 2, cur: 3 } ] 
  */
 public class Lag1Fn extends IterExpr
 {
@@ -45,16 +49,34 @@ public class Lag1Fn extends IterExpr
     }
   }
   
+  public final static JsonString CUR  = new JsonString("cur");
+  public final static JsonString PREV = new JsonString("prev");
+  
+  private final Schema schema;
+  
   public Lag1Fn(Expr[] inputs)
   {
     super(inputs);
+    Schema inSchema = exprs[0].getSchema().elements();
+    if( inSchema == null )
+    {
+      schema = null;
+    }
+    else
+    {
+      Schema itemSchema = new RecordSchema(new RecordSchema.Field[]{
+          new RecordSchema.Field(CUR, inSchema, false),
+          new RecordSchema.Field(PREV, inSchema, false)
+      }, null);
+      schema = new ArraySchema(null,itemSchema);
+    }
   }
 
-//  @Override
-//  public Schema getSchema()
-//  {
-//    return SchemaFactory.arraySchema();
-//  }
+  @Override
+  public Schema getSchema()
+  {
+    return schema;
+  }
 
   /*
    * (non-Javadoc)
@@ -71,7 +93,7 @@ public class Lag1Fn extends IterExpr
     }
     
     final BufferedJsonRecord rec = new BufferedJsonRecord(2);
-    final JsonString[] names = new JsonString[] { new JsonString("cur"), new JsonString("prev") };
+    final JsonString[] names = new JsonString[] { CUR, PREV };
     final JsonValue[] values = new JsonValue[2];
     rec.set(names, values, 2, true);
     
@@ -79,20 +101,18 @@ public class Lag1Fn extends IterExpr
     {
       return JsonIterator.EMPTY;
     }
+    values[0] = iter.current();
 
     return new JsonIterator(rec) 
     {
-      JsonValue prev = null;
-      JsonValue cur = iter.current();
-      
       public boolean moveNext() throws Exception
       {
-        values[1] = prev = cur.getCopy(prev);
+        values[1] = JsonUtil.getCopy(values[0], values[1]); // prev = cur
         if( ! iter.moveNext() )
         {
           return false;
         }
-        values[0] = cur = iter.current();
+        values[0] = iter.current(); // cur = iter.next()
         return true;
       }
     };
