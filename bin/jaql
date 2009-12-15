@@ -117,7 +117,7 @@ elif [ -d "${JAQL_HOME}/build/classes" ] && [ -d "${JAQL_HOME}/build/test/classe
 elif [ -d "${JAQL_HOME}/buildEclipse" ]; then
   CLASSPATH=${CLASSPATH}:${JAQL_HOME}/buildEclipse
 else
-  echo "Error, neither jaql.jar nor jaql class folders can be found"
+  echo "Error, neither jaql.jar nor jaql class folder can be found"
   exit 1
 fi
 
