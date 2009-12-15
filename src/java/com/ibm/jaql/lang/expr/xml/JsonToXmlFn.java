@@ -30,6 +30,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.SystemUtil;
 
 /**
  * An expression for converting JSON to XML. It is called as follows:
@@ -75,8 +76,6 @@ public class JsonToXmlFn extends Expr {
 
   public JsonToXmlFn() {}
 
-  private static final String LINE_SEPARATOR_REGEX = LinesJsonTextOutputStream.LINE_SEPARATOR.replaceAll("\\r", "\\\\r")
-                                                                                                .replaceAll("\\n", "\\\\n");
   private static final String XML_DECL = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   private static final String INDENT_UNIT = "  ";
   private static final JsonString ARRAY = new JsonString("array");
@@ -108,7 +107,7 @@ public class JsonToXmlFn extends Expr {
     indentCount = 0;
 
     String xml = toXml(jv);
-    String[] lines = xml.split(LINE_SEPARATOR_REGEX);
+    String[] lines = xml.split(SystemUtil.LINE_SEPARATOR_REGEX);
     int len = lines.length;
     BufferedJsonArray ja = new BufferedJsonArray(len + 1);
     ja.set(0, new JsonString(XML_DECL));
@@ -349,7 +348,7 @@ public class JsonToXmlFn extends Expr {
 
   private String getLineSeparator() {
     if (!firstLine) {
-      return LinesJsonTextOutputStream.LINE_SEPARATOR;
+      return SystemUtil.LINE_SEPARATOR;
     } else {
       firstLine = false;
       return "";
