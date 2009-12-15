@@ -1,6 +1,7 @@
 # use glob syntax.
 syntax: glob
 
+**.orig
 junit*.properties
 **.svn
 build/**
