@@ -275,7 +275,8 @@ public class RFn extends Expr {
       } else if (binary) {
         schema = SchemaFactory.binarySchema();
       }
-      LOG.debug("Initialized outSchema to: " + schema);
+      if (LOG.isDebugEnabled())
+      	LOG.debug("Initialized outSchema to: " + schema);
       String sep = "";
       File rOut = null;
       if (binary) {
