@@ -20,29 +20,24 @@ import java.io.IOException;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-public class NullPrinter implements JaqlPrinter
-{
-  private static final NullPrinter THE_INSTANCE = new NullPrinter();
-  
-  public static NullPrinter get()
-  {
-    return THE_INSTANCE;
-  }
-  
-  private NullPrinter() { };
-  
-  @Override
-  public void close() throws IOException
-  {
-  }
+/**
+ * This printer prints nothing.
+ */
+public class NullPrinter implements JaqlPrinter {
+	private static final NullPrinter THE_INSTANCE = new NullPrinter();
 
-  @Override
-  public void print(Expr expr, Context context) throws Exception
-  {
-  }
+	public static NullPrinter get() {
+		return THE_INSTANCE;
+	}
 
-  @Override
-  public void printPrompt() throws IOException
-  {
-  }
+	private NullPrinter() {}
+
+	@Override
+	public void close() throws IOException {}
+
+	@Override
+	public void print(Expr expr, Context context) throws Exception {}
+
+	@Override
+	public void printPrompt() throws IOException {}
 }
