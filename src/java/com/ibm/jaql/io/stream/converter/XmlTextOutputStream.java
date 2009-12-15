@@ -22,6 +22,7 @@ import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
+import com.ibm.jaql.util.SystemUtil;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
 /**
@@ -49,7 +50,7 @@ public class XmlTextOutputStream extends LinesJsonTextOutputStream {
       for (int i = 0; i < arr.count(); i++) {
         out.print(beginNewLine);
         strSer.write(out, (JsonString) arr.get(i));
-        beginNewLine = LINE_SEPARATOR;
+        beginNewLine = SystemUtil.LINE_SEPARATOR;
       }
       return new JsonString(buf.getBuffer(), buf.size());
     } catch (Exception e) {
