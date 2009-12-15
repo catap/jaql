@@ -29,19 +29,19 @@ import com.ibm.jaql.json.type.JsonValue;
  */
 public class JsonTextOutputStream extends AbstractJsonTextOutputStream {
 
-  private static String ARR_OPEN = "[";
-  private static String ARR_CLOSE = "]";
-  private static String ARR_SEP = ",";
+	private static String ARR_OPEN = "[";
+	private static String ARR_CLOSE = "]";
+	private static String ARR_SEP = ",";
 
-  @Override
-  public void init(JsonValue options) throws Exception {}
+	public JsonTextOutputStream() {
+		super(ARR_OPEN, ARR_SEP, ARR_CLOSE);
+	}
 
-  public JsonTextOutputStream() {
-    super(ARR_OPEN, ARR_SEP, ARR_CLOSE);
-  }
+	@Override
+	public void init(JsonValue options) throws Exception {}
 
-  @Override
-  protected void printValue(PrintStream print, JsonValue i) throws IOException {
-    JsonUtil.print(print, i);
-  }
+	@Override
+	protected void printValue(PrintStream print, JsonValue i) throws IOException {
+		JsonUtil.print(print, i);
+	}
 }
