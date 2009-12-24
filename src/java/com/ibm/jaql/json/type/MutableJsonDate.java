@@ -67,7 +67,6 @@ public class MutableJsonDate extends JsonDate
 
   // -- getters -----------------------------------------------------------------------------------
 
-  /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
   public MutableJsonDate getCopy(JsonValue target) throws Exception
   {
@@ -82,7 +81,6 @@ public class MutableJsonDate extends JsonDate
     return new MutableJsonDate(millis);
   }
   
-  /* @see com.ibm.jaql.json.type.JsonValue#getImmutableCopy() */
   @Override
   public JsonDate getImmutableCopy() 
   {
