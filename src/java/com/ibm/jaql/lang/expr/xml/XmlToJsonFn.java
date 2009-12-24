@@ -209,7 +209,7 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
  * schema support.
  *
  * Text nodes are not records, they are just strings. All text _directly_ under
- * one node is concatentated into one string value.  Therefore, mixed content is messed up! // TODO: mixed content...
+ * one node is concatenated into one string value.  Therefore, mixed content is messed up! // TODO: mixed content...
  * If a node has string content and attributes or children, a field called "text()" is created
  * to store the string value.  (Again painful when it sometimes happens.)
  *  
