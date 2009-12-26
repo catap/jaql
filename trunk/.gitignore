@@ -1,0 +1,29 @@
+#
+# NOTE! Don't add files that are generated in specific
+# subdirectories here. Add them in the ".gitignore" file
+# in that subdirectory instead.
+#
+# NOTE! Please use 'git ls-files -i --exclude-standard'
+# command after changing this file, to see if there are
+# any tracked files which get ignored after the change.
+#
+# Normal rules
+
+*.class
+.externalToolBuilders/
+
+
+*.orig
+junit*.properties
+.svn/
+**/.svn/
+build/
+buildEclipse/
+.antlr-eclipse
+_temporary/
+vendor/hadoop/*/logs**
+src/java/com/ibm/jaql/lang/parser/*.java
+src/java/com/ibm/jaql/lang/parser/*.smap
+src/java/com/ibm/jaql/lang/parser/*.txt
+
+!.gitignore
