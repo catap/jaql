@@ -11,14 +11,14 @@ To run the interpreter, please follow these [Running instructions].
 
 = Using a different version of Hadoop =
 
-The default version of Hadoop used by Jaql is 0.18.3. However, Jaql supports
+The default version of Hadoop used by Jaql is 0.20.1. However, Jaql supports
 multiple Hadoop versions (and dependent version of HBase). To build Jaql for
 another version, use the {{{hadoop.version}}} ant property. For example, to build
-for version 0.19.0, you use ant as follows:
+for version 0.18.3, you use ant as follows:
 
-  # ant jar -Dhadoop.version="0.19.0"
+  # ant jar -Dhadoop.version="0.18.3"
 
-We currently support Hadoop versions 0.17.1, 0.18.1, 0.18.3, and 0.19.0.
+We currently support Hadoop versions 0.18.3, and 0.20.1.
 
 = Eclipse Setup =
 The source code is a common Eclipse java project. It can be imported into 
