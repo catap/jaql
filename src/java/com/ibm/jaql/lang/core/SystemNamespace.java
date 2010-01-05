@@ -77,12 +77,14 @@ import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
 import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
+import com.ibm.jaql.lang.expr.hadoop.ChainedMapFn;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
 import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
+import com.ibm.jaql.lang.expr.index.SharedHashtableNFn;
 import com.ibm.jaql.lang.expr.internal.ExprTreeExpr;
 import com.ibm.jaql.lang.expr.internal.HashExpr;
 import com.ibm.jaql.lang.expr.internal.LongHashExpr;
@@ -403,12 +405,14 @@ public final class SystemNamespace extends Namespace {
     // lower level shell access
     register(new HdfsShellExpr.Descriptor());
     register(new HBaseShellExpr.Descriptor());
+    register(new SharedHashtableNFn.Descriptor()); // TODO: experimental
     register(new KeyLookupFn.Descriptor()); // TODO: experimental
     //register(new BuildLuceneFn.Descriptor()); // TODO: experimental
     //register(new ProbeLuceneFn.Descriptor()); // TODO: experimental
     register(new BuildJIndexFn.Descriptor());
     register(new ProbeJIndexFn.Descriptor());
     register(new BuildModelFn.Descriptor()); // TODO: experimental
+    register(new ChainedMapFn.Descriptor()); // TODO: experimental
     // internal
     register(new ExprTreeExpr.Descriptor());
     register(new HashExpr.Descriptor());

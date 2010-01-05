@@ -20,6 +20,7 @@ import java.util.Map.Entry;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -77,7 +78,7 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
           JsonString name = rec.getName(rec.size()); // reuse
           JsonValue value = rec.get(rec.size()); // reuse
           name = e.getKey().getCopy(name);
-          value = e.getValue().getCopy(value);
+          value = JsonUtil.getCopy(e.getValue(), value);
           rec.add(name, value);
         }
       }

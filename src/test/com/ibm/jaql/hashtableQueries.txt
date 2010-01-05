@@ -1,0 +1,179 @@
+//===========================================================================
+// Create data
+//===========================================================================
+
+N = 10000;
+fd = hdfs('test');
+
+range(1,N) 
+ -> transform { i: $, key1: $, key2: $, key3: $, more: -$ }
+ -> write(fd);
+
+//===========================================================================
+// keyLookup tests
+//===========================================================================
+
+[ [1,1], [1,2], [2,3], [3,4] ] -> keyLookup( [ [1,5], [1,6], [3,7] ] );
+
+// Only outer keys that match to a non-null inner key are returned
+memoryJoin = fn(outer, outerKeyFn, inner, innerKeyFn, projectFn) (
+  outer
+    -> transform [outerKeyFn($), $]
+    -> keyLookup( inner -> transform [innerKeyFn($), $] )
+    -> filter exists($[2]) // make into inner join
+    -> transform projectFn($[1], $[2])
+);
+
+// All outer rows will survive the join
+memoryJoinPreserve = fn(outer, outerKeyFn, inner, innerKeyFn, projectFn) (
+  outer
+    -> transform [outerKeyFn($), $]
+    -> keyLookup( inner -> transform [innerKeyFn($), $] )
+    -> transform projectFn($[1], $[2])
+);
+
+inner = range(1,3) -> transform { x: $*2, y: $ };
+outer = range(0,7) -> transform { a: $, b: $ };
+
+memoryJoin( outer, fn(o) o.b,
+            inner, fn(i) i.x,
+            fn(o,i) { o, i } )
+;
+
+memoryJoinPreserve(
+    outer, fn(o) o.b,
+    inner, fn(i) i.x,
+    fn(o,i) { o, i } )
+;
+
+memoryJoin( read(fd) -> filter mod($.key3,3) == 0, fn(o) o.key1,
+            read(fd) -> filter mod($.key3,5) == 0, fn(i) i.key2,
+            fn(o,i) { o, i } )
+ -> count()
+;
+
+memoryJoinPreserve( 
+     read(fd) -> filter mod($.key3,3) == 0, fn(o) o.key1,
+     read(fd) -> filter mod($.key3,5) == 0, fn(i) i.key2,
+     fn(o,i) { o, i } )
+ -> count()
+;
+
+
+//===========================================================================
+// sharedHashtableN tests
+//===========================================================================
+
+//---------------------------------------------------------------------------
+// htJoin hides the detail of the batches but it is a little slower because
+// it materializes a batch for each use.  It also has less room for (thread)
+// parallelism (pairwise could run each leg in parallel).  On the other hand,
+// it filters non-matching items
+// TODO: Move these into a module!
+//---------------------------------------------------------------------------
+htJoinPair = fn(input, keyFn, probeFn, batchSize=100)
+  input 
+   -> batch(batchSize) 
+   -> expand pairwise( $, $ -> transform keyFn($) -> probeFn() -> transform $[1] )
+;
+
+htJoin = fn(input, keyFn, probeFn, projectFn, batchSize=100)
+  input 
+   -> htJoinPair(keyFn, probeFn, batchSize)
+   -> filter not isnull($[1])
+   -> transform projectFn($[0], $[1])
+;
+
+htJoinPreserve = fn(input, keyFn, probeFn, projectFn, batchSize=100)
+  input 
+   -> htJoinPair(keyFn, probeFn, batchSize)
+   -> transform projectFn($[0], $[1])
+;
+
+
+buildN = fn(url, buildfn, scheme) 
+  fn(keys) 
+    sharedHashtableN( keys, url, buildfn, scheme,
+                      serverThread=true, // server thread used to keep ant from waiting on us (we could also reduce timeout or create a shutdown command)
+                      serverTimeout=2*60*1000) // 2 minutes
+;
+
+// Build a hash table that maps for every k * [1..N] to a record
+probeI = fn(k) 
+  buildN(strcat('http://localhost:9055/table',k),
+         fn() read(fd) -> transform [$.i*k, { k, x: -$.i }],
+         schema [ long, { k:long, x:long } ]);
+
+probe2 = probeI(2);
+probe3 = probeI(3);
+probe5 = probeI(5);
+
+// Count the multiples of 2
+read(fd)
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> group into count($)
+;
+
+// Count the multiples of 3
+read(fd)
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> group into count($)
+;
+
+// Count the multiples of 5
+read(fd)
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> group into count($)
+;
+
+// Count the multiples of 5 with twice the effort
+read(fd)
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5b) { i.*, value5b } )
+ -> group into count($)
+;
+
+// Count the multiples of 2, 3
+read(fd)
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> group into count($)
+;
+
+// Count the multiples of 2, 3, and 5 
+read(fd)
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> group into count($)
+;
+
+// Count the multiples of 5, 3, and 2
+read(fd)
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> group into count($)
+;
+
+// Count the multiples of 2 OR 3
+read(fd)
+ -> htJoinPreserve( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> htJoinPreserve( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> filter not isnull($.value2) or not isnull($.value3)
+ -> group into count($)
+;
+
+// Count the multiples of 2, 3, and 5 
+read(fd)
+ -> batch(100) 
+ -> expand pairwise( $,
+                     $ -> transform $.key1 -> probe2() -> transform { value2: $[1] },
+                     $ -> transform $.key2 -> probe3() -> transform { value3: $[1] },
+                     $ -> transform $.key3 -> probe5() -> transform { value5: $[1] } )
+ -> transform record($)
+ -> filter not isnull($.value2) 
+       and not isnull($.value3)
+       and not isnull($.value5)
+ -> count()
+;

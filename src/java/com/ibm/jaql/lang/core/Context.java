@@ -27,13 +27,14 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.util.Pair;
 
-/** Run-time context, i.e., values for the variables in the environment.
+/** 
+ * The run-time context is passed to every expression and holds the run-time state.
+ *   The fnMap acts like the stack for function reentry (via recursion or lazy evaluation).
+ *   The resetTasks are things to do when this context is reset (like close files).
  * 
  */
 public class Context
 {
-  // protected HashMap<Var,Object> varValues = new HashMap<Var,Object>();
-  // protected HashMap<Expr,Item>  tempArrays = new HashMap<Expr,Item>(); // TODO: we could use one hashmap
   protected HashMap<Pair<Expr,String>,Function> fnMap = new HashMap<Pair<Expr,String>,Function>(); // TODO: this will be a compiled expr soon 
   protected Pair<Expr,String> exprFnPair = new Pair<Expr, String>();
   protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
@@ -44,12 +45,10 @@ public class Context
    */
   public Context()
   {
-    // TODO: come up with a really reliable way to cleanup temp files, etc.
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override public void run() { reset(); };
+    });
     
-    //    final Context me = this;
-    //    Runtime.getRuntime().addShutdownHook(new Thread() {
-    //      @Override public void run() { me.reset(); };
-    //    });
 //  if( JaqlUtil.getSessionContext() == null )
 //  {
 //    PySystemState systemState = Py.getSystemState();
@@ -69,8 +68,6 @@ public class Context
    */
   public void reset()
   {
-    // varValues.clear();
-    // tempArrays.clear();
     fnMap.clear(); 
     exprFnPair.a = null;
     exprFnPair.b = null;
@@ -103,9 +100,7 @@ public class Context
   {
     try
     {
-      // FIXME: uncommenting the following line leads to ConcurrentModificationExceptions
-      // on page files
-//      reset();
+      reset();
     }
     finally
     {

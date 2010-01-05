@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.util.PairwiseIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -55,31 +55,6 @@ public class PairwiseFn extends IterExpr
     {
       iters[i] = exprs[i].iter(context);
     }
-
-    final BufferedJsonArray tuple = new BufferedJsonArray(exprs.length); // TODO: memory
-    return new JsonIterator(tuple) {
-      public boolean moveNext() throws Exception
-      {
-        boolean foundOne = false;
-        for (int i = 0; i < exprs.length; i++)
-        {
-          JsonIterator iter = iters[i];
-          if (iter.moveNext())
-          {
-            foundOne = true;
-            tuple.set(i, iter.current());
-          }
-          else
-          {
-            tuple.set(i, null);
-          }
-        }
-        if (foundOne)
-        {
-          return true; // currentValue == tuple
-        }
-        return false;
-      }
-    };
+    return new PairwiseIterator(iters);
   }
 }

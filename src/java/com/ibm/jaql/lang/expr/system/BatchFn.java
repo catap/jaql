@@ -15,26 +15,31 @@
  */
 package com.ibm.jaql.lang.expr.system;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.util.Bool3;
 
 /**
- * batch( arr, n, fn ) 
- * invokes fn
- *
+ * batch( [T] A , long n ) returns [[T]] 
+ * 
+ * Takes an array A and groups it arbitrarily into blocks of size <= n.
+ * Typically the last every block but the last block has size n, but
+ * batch can be run in parallel and could produce more small blocks.
+ * 
+ * Example:
+ * 
+ * range(1,10) -> batch(3);
+ * ==> [ [1,2,3], [4,5,6], [7,8,9], [10] ]
+ * 
  */
 public class BatchFn extends IterExpr
 {
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par33
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
   {
     public Descriptor()
     {
@@ -50,9 +55,7 @@ public class BatchFn extends IterExpr
   @Override
   public Bool3 evaluatesChildOnce(int i)
   {
-    // This could report true for the function expression, but it
-    // does evaluate the function multiple times.
-    return (i == 0) ? Bool3.TRUE : Bool3.UNKNOWN;
+    return Bool3.TRUE;
   }
 
   @Override
@@ -65,73 +68,34 @@ public class BatchFn extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     JsonNumber jnum = (JsonNumber)exprs[1].eval(context);
-    long tbatchSize = jnum.longValue();
-    if( tbatchSize < 1 )
+    final int batchSize = jnum.intValue();
+    if( batchSize < 1 )
     {
-      tbatchSize = SpilledJsonArray.DEFAULT_CACHE_SIZE;
+      throw new IllegalArgumentException("batchSize must be positive");
     }
-    int tbufferSize = SpilledJsonArray.DEFAULT_CACHE_SIZE * 10; // TODO: tune
-    if( tbatchSize < tbufferSize )
+    final JsonIterator input = exprs[0].iter(context);
+    if( input.isNull() )
     {
-      tbufferSize = (int)tbatchSize;
+      return JsonIterator.EMPTY;
     }
+    final SpilledJsonArray block = new SpilledJsonArray();
     
-    final long batchSize = tbatchSize;
-    final int bufferSize = tbufferSize;
-    final BufferedJsonArray pair = new BufferedJsonArray(2);
-    
-    return new JsonIterator(pair)
+    return new JsonIterator(block)
     {
-      SpilledJsonArray batch = new SpilledJsonArray(bufferSize);
-      JsonIterator iter = exprs[0].iter(context);
-      Function fn = (Function)exprs[2].eval(context);
-      JsonIterator batchIter = JsonIterator.EMPTY;
-      JsonIterator fnIter = JsonIterator.EMPTY;
-
       @Override
       public boolean moveNext() throws Exception
       {
-        while( true )
+        block.clear();
+        if( ! input.moveNext() )
         {
-          // Return the next pair from the batch/function, if available
-          if( batchIter.moveNext() )
-          {
-            if( !fnIter.moveNext() )
-            {
-              throw new RuntimeException("function must return exactly one item per batch item.\n"+
-                  " Batch at:"+batchIter.current());
-            }
-            pair.set(0, batchIter.current());
-            pair.set(1, fnIter.current());
-            return true;
-          }
-          else if( fnIter.moveNext() )
-          {
-            throw new RuntimeException("function must return exactly one item per batch item.\n"+
-                " Function at:"+fnIter.current());
-          }
-
-          // load a batch
-          batch.clear();
-          for( long i = 0 ; i < batchSize ; i++ )
-          {
-            if( ! iter.moveNext() )
-            {
-              if( i == 0 )
-              {
-                return false;
-              }
-              break;
-            }
-            JsonValue value = iter.current();
-            batch.addCopy(value);
-          }
-          
-          // invoke the function on the batch
-          batchIter = batch.iter();
-          fn.setArguments(batch);
-          fnIter = fn.iter(context);
+          return false;
         }
+        block.addCopy(input.current());
+        for(int i = 1 ; i < batchSize && input.moveNext() ; i++)
+        {
+          block.addCopy(input.current());
+        }
+        return true;
       }
     };
   }
