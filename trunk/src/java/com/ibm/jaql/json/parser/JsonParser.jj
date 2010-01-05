@@ -16,9 +16,9 @@
 /**
  * JavaCC file
  */
- 
+
 options {
-	JDK_VERSION = "1.5";
+    JDK_VERSION = "1.5";
     STATIC=false;
     UNICODE_INPUT=true;
 }
@@ -40,6 +40,7 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonEncoding;
+import com.ibm.jaql.json.util.JsonIterator;
 
 import com.ibm.jaql.util.BaseUtil;
 
@@ -79,10 +80,10 @@ public class JsonParser
       throw new UnsupportedOperationException();
     }
   };
-	
+    
   public JsonParser() 
   {
-  	this(new StringReader(""));
+    this(new StringReader(""));
   }
   
   public JsonValue parse(String jsonString) throws ParseException 
@@ -98,27 +99,52 @@ public class JsonParser
       throw new ParseException("Cannot parse '" +jsonString+ "': " + e.getMessage());
     }
   }
+  
+  public JsonIterator parseArray(String jsonString) 
+  {
+    ReInit(new StringReader(jsonString));
+    return arrayIterator();
+  }
+
+  public JsonIterator arrayIterator()
+  {
+    return new JsonIterator()
+    {
+      boolean atStart = true;
+      
+      public boolean moveNext() throws ParseException
+      {
+        currentValue = atStart ? ArrayFirst() : ArrayNext();
+        atStart = false;
+        if( currentValue == NIL )
+        {
+          return false;
+        }
+        return true;
+      }
+    };
+  }
 }
 PARSER_END(JsonParser)
 
 SKIP:
 {
- 	" "
-|	"\r"
-|	"\t"
-|	"\n"
+    " "
+|   "\r"
+|   "\t"
+|   "\n"
 }
 
 TOKEN:
 {
-	<COLON:       ":" >
-|	<COMMA:       "," >
-|	<#DIGIT:      ["0"-"9"] >
-|	<#LETTER:     ["a"-"z","A"-"Z"] >
-|	<MAP_BEGIN:   "{" >
-|	<MAP_END:     "}" >
-|	<ARRAY_BEGIN: "[" >
-|	<ARRAY_END:   "]" >
+    <COLON:       ":" >
+|   <COMMA:       "," >
+|   <#DIGIT:      ["0"-"9"] >
+|   <#LETTER:     ["a"-"z","A"-"Z"] >
+|   <MAP_BEGIN:   "{" >
+|   <MAP_END:     "}" >
+|   <ARRAY_BEGIN: "[" >
+|   <ARRAY_END:   "]" >
 |   <LPAREN:      "(" >
 |   <RPAREN:      ")" >
 |   <PLUS:        "+" >
@@ -134,8 +160,8 @@ TOKEN:
 
 MORE:
 {
-	< "'"  > { image.setLength(0); } : IN_STRING1
-|	< "\"" > { image.setLength(0); } : IN_STRING2
+    < "'"  > { image.setLength(0); } : IN_STRING1
+|   < "\"" > { image.setLength(0); } : IN_STRING2
 }
 
 <IN_STRING1> TOKEN: { <STRING1: "'"  > { image.setLength(image.length()-1); matchedToken.image = image.toString(); } : DEFAULT }
@@ -266,124 +292,124 @@ SKIP :
 
 JsonValue JsonVal() :
 {
-	JsonValue value;
+    JsonValue value;
 }
 {
-	( value=ArrayVal()
-	| value=MapVal() 
-	| value=AtomVal()
-	)
-	{ return value; }
+    ( value=ArrayVal()
+    | value=MapVal() 
+    | value=AtomVal()
+    )
+    { return value; }
 }
 
 void Eof() :
 {
 }
 {
-	<EOF>
+    <EOF>
 }
 
 
 JsonValue TopVal() :
 {
-	JsonValue value;
+    JsonValue value;
 }
 {
-	value=JsonVal() Eof()
-	{ return value; }
+    value=JsonVal() Eof()
+    { return value; }
 }
 
 
 JsonValue ArrayFirst() :
 {
-	JsonValue value = JsonParser.NIL;
+    JsonValue value = JsonParser.NIL;
 }
 {
-	<ARRAY_BEGIN> (value=JsonVal())?		
-	{ return value; }
+    <ARRAY_BEGIN> (value=JsonVal())?        
+    { return value; }
 }
 
 JsonValue ArrayNext() :
 {
-	JsonValue value;
+    JsonValue value;
 }
 {
-	( <COMMA> value=JsonVal()	{ return value; }
-	| <ARRAY_END>				{ return JsonParser.NIL; }
-	)
+    ( <COMMA> value=JsonVal()   { return value; }
+    | <ARRAY_END>               { return JsonParser.NIL; }
+    )
 }
 
 JsonValue ArrayVal() :
 {
-	JsonValue[] values;
+    JsonValue[] values;
 }
 {
-	<ARRAY_BEGIN> values=ValueList() <ARRAY_END>
-	{ return new BufferedJsonArray(values, false); }
+    <ARRAY_BEGIN> values=ValueList() <ARRAY_END>
+    { return new BufferedJsonArray(values, false); }
 }
 
 JsonValue MapVal() :
 {
-	BufferedJsonRecord jRecord = new BufferedJsonRecord();
+    BufferedJsonRecord jRecord = new BufferedJsonRecord();
 }
 {
-	<MAP_BEGIN> 
-	  ( MapField(jRecord) 
-	    ( <COMMA> MapField(jRecord) )*
-	  )?
-	<MAP_END>
-	{ return jRecord;	}
+    <MAP_BEGIN> 
+      ( MapField(jRecord) 
+        ( <COMMA> MapField(jRecord) )*
+      )?
+    <MAP_END>
+    { return jRecord;   }
 }
 
 void MapField(BufferedJsonRecord jRecord) :
 {
-	String name;
-	JsonValue value;
+    String name;
+    JsonValue value;
 }
 {
-	name=Name() <COLON> value=JsonVal()
-	{ jRecord.add(new JsonString(name), value); }
+    name=Name() <COLON> value=JsonVal()
+    { jRecord.add(new JsonString(name), value); }
 }
 
 
 String Name() :
 {
-	Token tok;
+    Token tok;
 }
 {
-	tok=<ID>      { return tok.image; }
-|	tok=<STRING1> { return tok.image; }
-|	tok=<STRING2> { return tok.image; }
+    tok=<ID>      { return tok.image; }
+|   tok=<STRING1> { return tok.image; }
+|   tok=<STRING2> { return tok.image; }
 }
 
 JsonValue AtomVal() :
 {
-	JsonValue value;
-	Token atom;
-	String s;
+    JsonValue value;
+    Token atom;
+    String s;
 }
 {
-	( s=String()       { value = new JsonString(s); }
-	| atom=<LONG>      { value = new JsonLong(atom.image); }
-	| atom=<REAL>      { value = new JsonDecimal(atom.image); } // TODO: flag for double vs decimal default
-	| atom=<DECIMAL>   { value = new JsonDecimal(atom.image); }
-	| atom=<DOUBLE>    { value = new JsonDouble(atom.image); }
-	| atom=<TRUE>      { value = JsonBool.TRUE; }
-	| atom=<FALSE>     { value = JsonBool.FALSE; }
-	| atom=<NULL>      { value = null; }
-	| value=Construct()
-	)
-	{ return value; }	
+    ( s=String()       { value = new JsonString(s); }
+    | atom=<LONG>      { value = new JsonLong(atom.image); }
+    | atom=<REAL>      { value = new JsonDecimal(atom.image); } // TODO: flag for double vs decimal default
+    | atom=<DECIMAL>   { value = new JsonDecimal(atom.image); }
+    | atom=<DOUBLE>    { value = new JsonDouble(atom.image); }
+    | atom=<TRUE>      { value = JsonBool.TRUE; }
+    | atom=<FALSE>     { value = JsonBool.FALSE; }
+    | atom=<NULL>      { value = null; }
+    | value=Construct()
+    )
+    { return value; }   
 }
 
 JsonValue Construct() :
 {
-	Token fn;
-	JsonValue[] values;
+    Token fn;
+    JsonValue[] values;
 }
 {
-	fn=<ID> <LPAREN> values=ValueList() <RPAREN>
-	{ return JsonConstructor.eval(fn.image, values); }
+    fn=<ID> <LPAREN> values=ValueList() <RPAREN>
+    { return JsonConstructor.eval(fn.image, values); }
 }
 
 JsonValue[] ValueList() :
@@ -402,20 +428,19 @@ JsonValue[] ValueList() :
 
 String String() :
 {
-	String str;
-	String str2;
+    String str;
+    String str2;
 }
 {
-	str=String1() ( (<PLUS>)? str2=String1() { str += str2; } )*
-	{ return str; }
+    str=String1() ( (<PLUS>)? str2=String1() { str += str2; } )*
+    { return str; }
 }
 
 String String1() :
 {
-	Token tok;
+    Token tok;
 }
 {
-	tok=<STRING1> { return tok.image; }
-|	tok=<STRING2> { return tok.image; }
+    tok=<STRING1> { return tok.image; }
+|   tok=<STRING2> { return tok.image; }
 }
-

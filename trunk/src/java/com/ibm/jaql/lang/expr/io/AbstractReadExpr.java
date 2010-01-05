@@ -41,6 +41,9 @@ import com.ibm.jaql.util.Bool3;
 
 public abstract class AbstractReadExpr extends IterExpr
 {
+  // runtime state
+  protected InputAdapter adapter; 
+  protected ClosableJsonIterator reader;
 
   public AbstractReadExpr(Expr[] exprs)
   {
@@ -67,16 +70,15 @@ public abstract class AbstractReadExpr extends IterExpr
     return result;
   }
   
-  @Override
-  public Schema getSchema()
+  public static Schema getFileSchema(Expr fdExpr)
   {
     // TODO: this is a quick hack to derive schema
     try
     {
       // when argument is compile-time computable, ask adapter for schema
-      if (exprs[0].isCompileTimeComputable().always())
+      if (fdExpr.isCompileTimeComputable().always())
       {
-        JsonValue args = exprs[0].compileTimeEval(); // TODO should provide context
+        JsonValue args = fdExpr.compileTimeEval(); // TODO should provide context
         InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
         Schema s = adapter.getSchema();
         assert s.is(ARRAY,NULL).always();
@@ -84,7 +86,7 @@ public abstract class AbstractReadExpr extends IterExpr
       }
       
       // special case: see if it is one of our temp files
-      Schema descriptor = exprs[0].getSchema();
+      Schema descriptor = fdExpr.getSchema();
       Schema type = descriptor.element(Adapter.TYPE_NAME);
       if (type != null 
           && type instanceof StringSchema 
@@ -104,6 +106,12 @@ public abstract class AbstractReadExpr extends IterExpr
     }
     return SchemaFactory.arraySchema();
   }
+  
+  @Override
+  public Schema getSchema()
+  {
+    return getFileSchema(exprs[0]);
+  }
 
   @Override
   public Bool3 evaluatesChildOnce(int i)
@@ -115,15 +123,29 @@ public abstract class AbstractReadExpr extends IterExpr
   @Override
   public JsonIterator iter(Context context) throws Exception
   {
+    // Close the previous reader, if still open:
+    if( reader != null )
+    {
+      reader.close();
+      reader = null;
+    }
+    // Close the previous adapter, if still open:
+    if( adapter != null )
+    {
+      adapter.close();
+      adapter = null;
+    }
+    
     // evaluate the arguments
     JsonValue args = exprs[0].eval(context);
   
     // get the InputAdapter according to the type
-    final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
+    adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(args);
     adapter.open();
+    reader = adapter.iter();
+    context.closeAtQueryEnd(reader);
+    
     return new JsonIterator() {
-      ClosableJsonIterator reader = adapter.iter();
-  
       @Override
       public boolean moveNext() throws Exception
       {

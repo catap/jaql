@@ -133,7 +133,7 @@ public class JaqlFunction extends Function
     for (int i=0; i<n; i++)
     {
       VarParameter p = parameters.get(i);
-      Var newVar = new Var(p.var.name(), p.var.getSchema());
+      Var newVar = new Var(p.var.taggedName(), p.var.getSchema());
       
       VarParameter newP;
       if (p.isRequired())

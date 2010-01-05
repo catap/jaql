@@ -13,6 +13,7 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonEncoding;
+import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Token Manager. */
@@ -1088,9 +1089,7 @@ protected Token jjFillToken()
    beginColumn = input_stream.getBeginColumn();
    endLine = input_stream.getEndLine();
    endColumn = input_stream.getEndColumn();
-   t = Token.newToken(jjmatchedKind);
-   t.kind = jjmatchedKind;
-   t.image = curTokenImage;
+   t = Token.newToken(jjmatchedKind, curTokenImage);
 
    t.beginLine = beginLine;
    t.endLine = endLine;
@@ -1225,12 +1224,12 @@ void MoreLexicalActions()
       case 24 :
          image.append(input_stream.GetSuffix(jjimageLen));
          jjimageLen = 0;
-                   image.setLength(0);
+               image.setLength(0);
          break;
       case 25 :
          image.append(input_stream.GetSuffix(jjimageLen));
          jjimageLen = 0;
-                   image.setLength(0);
+               image.setLength(0);
          break;
       case 28 :
          image.append(input_stream.GetSuffix(jjimageLen));

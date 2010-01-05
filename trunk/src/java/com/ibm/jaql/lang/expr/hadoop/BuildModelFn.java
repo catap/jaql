@@ -219,6 +219,10 @@ public class BuildModelFn extends MapReduceBaseExpr
       {
         throw new UndeclaredThrowableException(ex);
       }
+      finally
+      {
+        this.close();
+      }
     }
   }
 

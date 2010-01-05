@@ -226,6 +226,10 @@ public class MRAggregate extends MapReduceBaseExpr
       {
         throw new UndeclaredThrowableException(ex);
       }
+      finally
+      {
+        this.close();
+      }
     }
   }
 

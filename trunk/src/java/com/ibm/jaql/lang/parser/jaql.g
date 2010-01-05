@@ -1647,7 +1647,7 @@ varExpr returns [Expr e = null]
 class JaqlLexer extends Lexer;
 
 options {
-  charVocabulary = '\3'..'\377'; // all characters except special ANTLR ones
+  charVocabulary = '\u0000'..'\uFFFE'; // all characters except special ANTLR EOF (-1)
   testLiterals=false;    // don't automatically test for literals
   k=3;                   // lookahead // TODO: try to reduce to 2
 }

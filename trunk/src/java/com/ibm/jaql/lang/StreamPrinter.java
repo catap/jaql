@@ -41,6 +41,8 @@ public class StreamPrinter implements JaqlPrinter {
   private PrintStream output;
   protected String prompt = "\njaql> ";
   private boolean batchMode;
+  private boolean printTime = 
+    System.getProperty("jaql.time.results", "false").toLowerCase().equals("true");
 
   public StreamPrinter(PrintStream output, boolean batchMode) {
     this.output = output;
@@ -50,6 +52,7 @@ public class StreamPrinter implements JaqlPrinter {
   @Override
   public void print(Expr expr, Context context) throws Exception {
     Schema schema = expr.getSchema();
+    long time = System.currentTimeMillis();;
     if (expr.getSchema().is(ARRAY, NULL).always()) {
       JsonIterator iter = expr.iter(context);
       iter.print(output, 0, schema.elements());
@@ -63,6 +66,11 @@ public class StreamPrinter implements JaqlPrinter {
       }
     }
     output.println();
+    if( printTime )
+    {
+      time = System.currentTimeMillis() - time;
+      System.err.println("   time: "+time+" ms");
+    }
     output.flush();
   }
 

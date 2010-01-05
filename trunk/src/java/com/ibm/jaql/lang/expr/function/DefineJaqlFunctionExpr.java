@@ -278,7 +278,7 @@ public final class DefineJaqlFunctionExpr extends Expr
       VarMap varMap = new VarMap();
       for (Var oldVar: capturedVars)
       {
-        Var newVar = new Var(oldVar.name(), oldVar.getSchema());
+        Var newVar = new Var(oldVar.taggedName(), oldVar.getSchema());
         varMap.put(oldVar, newVar);
       }
       

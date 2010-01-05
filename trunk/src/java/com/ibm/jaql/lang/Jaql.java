@@ -21,13 +21,16 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 
-import org.apache.commons.lang.BooleanUtils;
-
 import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
+
+import org.apache.commons.lang.BooleanUtils;
+
 import antlr.collections.impl.BitSet;
 
 import com.ibm.jaql.io.OutputAdapter;
@@ -78,10 +81,17 @@ public class Jaql implements CoreJaql
                          OutputAdapter outputAdapter,
                          boolean batchMode) throws Exception
   {
+    // FIXME: The following is required to get Jaql to parse UTF-8 properly, but
+    // for some reason the JaqlShell interactive mode doesn't work with these lines.
+    //
+    // Reader reader = new InputStreamReader(in, "UTF-8"); // TODO: use system encoding? have jaql encoding parameter?
+    // Jaql engine = new Jaql(filename, reader);
+    
     Jaql engine = new Jaql(filename, in);
 
     if (outputAdapter == null) {
-      engine.setJaqlPrinter(new StreamPrinter(System.out, batchMode));
+      PrintStream out = new PrintStream(System.out, true, "UTF-8"); // TODO: use system encoding? have jaql encoding parameter?
+      engine.setJaqlPrinter(new StreamPrinter(out, batchMode));
     } else {
       engine.setJaqlPrinter(new IODescriptorPrinter(outputAdapter.getWriter()));
     }
@@ -131,6 +141,11 @@ public class Jaql implements CoreJaql
   public Jaql(String filename, Reader in)
   {
     setInput(filename, in);
+  }
+  
+  public void close()
+  {
+    context.reset();
   }
   
   public void setInput(String filename, InputStream in)
