@@ -15,6 +15,7 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonEncoding;
+import com.ibm.jaql.json.util.JsonIterator;
 
 import com.ibm.jaql.util.BaseUtil;
 
@@ -56,7 +57,7 @@ public class JsonParser implements JsonParserConstants {
 
   public JsonParser()
   {
-        this(new StringReader(""));
+    this(new StringReader(""));
   }
 
   public JsonValue parse(String jsonString) throws ParseException
@@ -71,6 +72,31 @@ public class JsonParser implements JsonParserConstants {
       // rethrow to include the original jsonString:
       throw new ParseException("Cannot parse '" +jsonString+ "': " + e.getMessage());
     }
+  }
+
+  public JsonIterator parseArray(String jsonString)
+  {
+    ReInit(new StringReader(jsonString));
+    return arrayIterator();
+  }
+
+  public JsonIterator arrayIterator()
+  {
+    return new JsonIterator()
+    {
+      boolean atStart = true;
+
+      public boolean moveNext() throws ParseException
+      {
+        currentValue = atStart ? ArrayFirst() : ArrayNext();
+        atStart = false;
+        if( currentValue == NIL )
+        {
+          return false;
+        }
+        return true;
+      }
+    };
   }
 
 //  syntax BNF:
@@ -107,7 +133,7 @@ public class JsonParser implements JsonParserConstants {
 // If you want to ensure that the entire buffer was processed, parser.Eof() can be called
 // after JsonVal() or when ArrayFirst()/ArrayNext() returns null.  
   final public JsonValue JsonVal() throws ParseException {
-        JsonValue value;
+    JsonValue value;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case ARRAY_BEGIN:
       value = ArrayVal();
@@ -132,7 +158,7 @@ public class JsonParser implements JsonParserConstants {
       jj_consume_token(-1);
       throw new ParseException();
     }
-          {if (true) return value;}
+      {if (true) return value;}
     throw new Error("Missing return statement in function");
   }
 
@@ -141,15 +167,15 @@ public class JsonParser implements JsonParserConstants {
   }
 
   final public JsonValue TopVal() throws ParseException {
-        JsonValue value;
+    JsonValue value;
     value = JsonVal();
     Eof();
-          {if (true) return value;}
+      {if (true) return value;}
     throw new Error("Missing return statement in function");
   }
 
   final public JsonValue ArrayFirst() throws ParseException {
-        JsonValue value = JsonParser.NIL;
+    JsonValue value = JsonParser.NIL;
     jj_consume_token(ARRAY_BEGIN);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case MAP_BEGIN:
@@ -170,21 +196,21 @@ public class JsonParser implements JsonParserConstants {
       jj_la1[1] = jj_gen;
       ;
     }
-          {if (true) return value;}
+      {if (true) return value;}
     throw new Error("Missing return statement in function");
   }
 
   final public JsonValue ArrayNext() throws ParseException {
-        JsonValue value;
+    JsonValue value;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case COMMA:
       jj_consume_token(COMMA);
       value = JsonVal();
-                                          {if (true) return value;}
+                                  {if (true) return value;}
       break;
     case ARRAY_END:
       jj_consume_token(ARRAY_END);
-                                                  {if (true) return JsonParser.NIL;}
+                                  {if (true) return JsonParser.NIL;}
       break;
     default:
       jj_la1[2] = jj_gen;
@@ -195,16 +221,16 @@ public class JsonParser implements JsonParserConstants {
   }
 
   final public JsonValue ArrayVal() throws ParseException {
-        JsonValue[] values;
+    JsonValue[] values;
     jj_consume_token(ARRAY_BEGIN);
     values = ValueList();
     jj_consume_token(ARRAY_END);
-          {if (true) return new BufferedJsonArray(values, false);}
+      {if (true) return new BufferedJsonArray(values, false);}
     throw new Error("Missing return statement in function");
   }
 
   final public JsonValue MapVal() throws ParseException {
-        BufferedJsonRecord jRecord = new BufferedJsonRecord();
+    BufferedJsonRecord jRecord = new BufferedJsonRecord();
     jj_consume_token(MAP_BEGIN);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case ID:
@@ -230,33 +256,33 @@ public class JsonParser implements JsonParserConstants {
       ;
     }
     jj_consume_token(MAP_END);
-          {if (true) return jRecord;}
+      {if (true) return jRecord;}
     throw new Error("Missing return statement in function");
   }
 
   final public void MapField(BufferedJsonRecord jRecord) throws ParseException {
-        String name;
-        JsonValue value;
+    String name;
+    JsonValue value;
     name = Name();
     jj_consume_token(COLON);
     value = JsonVal();
-          jRecord.add(new JsonString(name), value);
+      jRecord.add(new JsonString(name), value);
   }
 
   final public String Name() throws ParseException {
-        Token tok;
+    Token tok;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case ID:
       tok = jj_consume_token(ID);
-                        {if (true) return tok.image;}
+                    {if (true) return tok.image;}
       break;
     case STRING1:
       tok = jj_consume_token(STRING1);
-                        {if (true) return tok.image;}
+                    {if (true) return tok.image;}
       break;
     case STRING2:
       tok = jj_consume_token(STRING2);
-                        {if (true) return tok.image;}
+                    {if (true) return tok.image;}
       break;
     default:
       jj_la1[5] = jj_gen;
@@ -267,42 +293,42 @@ public class JsonParser implements JsonParserConstants {
   }
 
   final public JsonValue AtomVal() throws ParseException {
-        JsonValue value;
-        Token atom;
-        String s;
+    JsonValue value;
+    Token atom;
+    String s;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case STRING1:
     case STRING2:
       s = String();
-                             value = new JsonString(s);
+                         value = new JsonString(s);
       break;
     case LONG:
       atom = jj_consume_token(LONG);
-                             value = new JsonLong(atom.image);
+                         value = new JsonLong(atom.image);
       break;
     case REAL:
       atom = jj_consume_token(REAL);
-                             value = new JsonDecimal(atom.image);
+                         value = new JsonDecimal(atom.image);
       break;
     case DECIMAL:
       atom = jj_consume_token(DECIMAL);
-                             value = new JsonDecimal(atom.image);
+                         value = new JsonDecimal(atom.image);
       break;
     case DOUBLE:
       atom = jj_consume_token(DOUBLE);
-                             value = new JsonDouble(atom.image);
+                         value = new JsonDouble(atom.image);
       break;
     case TRUE:
       atom = jj_consume_token(TRUE);
-                             value = JsonBool.TRUE;
+                         value = JsonBool.TRUE;
       break;
     case FALSE:
       atom = jj_consume_token(FALSE);
-                             value = JsonBool.FALSE;
+                         value = JsonBool.FALSE;
       break;
     case NULL:
       atom = jj_consume_token(NULL);
-                             value = null;
+                         value = null;
       break;
     case ID:
       value = Construct();
@@ -312,18 +338,18 @@ public class JsonParser implements JsonParserConstants {
       jj_consume_token(-1);
       throw new ParseException();
     }
-          {if (true) return value;}
+      {if (true) return value;}
     throw new Error("Missing return statement in function");
   }
 
   final public JsonValue Construct() throws ParseException {
-        Token fn;
-        JsonValue[] values;
+    Token fn;
+    JsonValue[] values;
     fn = jj_consume_token(ID);
     jj_consume_token(LPAREN);
     values = ValueList();
     jj_consume_token(RPAREN);
-          {if (true) return JsonConstructor.eval(fn.image, values);}
+      {if (true) return JsonConstructor.eval(fn.image, values);}
     throw new Error("Missing return statement in function");
   }
 
@@ -369,8 +395,8 @@ public class JsonParser implements JsonParserConstants {
   }
 
   final public String String() throws ParseException {
-        String str;
-        String str2;
+    String str;
+    String str2;
     str = String1();
     label_3:
     while (true) {
@@ -393,22 +419,22 @@ public class JsonParser implements JsonParserConstants {
         ;
       }
       str2 = String1();
-                                                   str += str2;
+                                               str += str2;
     }
-          {if (true) return str;}
+      {if (true) return str;}
     throw new Error("Missing return statement in function");
   }
 
   final public String String1() throws ParseException {
-        Token tok;
+    Token tok;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case STRING1:
       tok = jj_consume_token(STRING1);
-                        {if (true) return tok.image;}
+                    {if (true) return tok.image;}
       break;
     case STRING2:
       tok = jj_consume_token(STRING2);
-                        {if (true) return tok.image;}
+                    {if (true) return tok.image;}
       break;
     default:
       jj_la1[11] = jj_gen;

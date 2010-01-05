@@ -194,6 +194,15 @@ public class SchemaFactory
     return anySchema;
   }
 
+  public static Schema nullable(Schema schema)
+  {
+    if( schema.matchesUnsafe(null) )
+    {
+      return schema;
+    }
+    return OrSchema.make(schema, SchemaFactory.nullSchema());
+  }
+
   public static Schema arrayOrNullSchema()
   {
     if (arrayOrNullSchema  == null) arrayOrNullSchema = OrSchema.make(arraySchema(), nullSchema());

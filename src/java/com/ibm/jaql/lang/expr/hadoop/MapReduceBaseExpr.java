@@ -402,6 +402,10 @@ public abstract class MapReduceBaseExpr extends Expr
       {
         throw new UndeclaredThrowableException(e);
       }
+      finally
+      {
+        this.close();
+      }
     }
   }
 }

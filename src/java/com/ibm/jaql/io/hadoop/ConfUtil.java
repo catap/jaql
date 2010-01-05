@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.json.type.JsonArray;
@@ -121,5 +122,40 @@ public class ConfUtil
     out.flush();
     out.close();
     conf.set(name, bstr.toString());
+  }
+  
+  /**
+   * Write a binary string to a conf 
+   */
+  public static void writeBinary(Configuration conf, String name, byte[] bytes, int offset, int length)
+  {
+    StringBuilder s = new StringBuilder(length * 2);
+    for(int i = 0 ; i < length ; i++)
+    {
+      byte b = bytes[i + offset];
+      s.append( (char)( ((b >> 4) & 0x0f) + 'a') );
+      s.append( (char)( ((b     ) & 0x0f) + 'a') );
+    }
+    conf.set(name, s.toString());
+  }
+
+  /**
+   * Read a binary string from a conf 
+   */
+  public static byte[] readBinary(Configuration conf, String name)
+  {
+    String s = conf.get(name);
+    if( s == null )
+    {
+      return null;
+    }
+    byte[] bytes = new byte[s.length()/2];
+    for( int i = 0, j = 0 ; i < bytes.length ; i++, j += 2 )
+    {
+      int c1 = s.charAt(j) - 'a';
+      int c2 = s.charAt(j+1) - 'a';
+      bytes[i] = (byte)((c1 << 4) | c2);
+    }
+    return bytes;
   }
 }
