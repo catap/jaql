@@ -28,7 +28,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
 
-/*
+/**
  * 
  * Should: for $i in null if p($i) return e($i) be [] or null?
  * 
