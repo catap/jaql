@@ -80,7 +80,7 @@ public class VarExpr extends Expr
   {
     if (var.isGlobal())
     {
-      if (var.getNamespace() == null)
+      if (var.getNamespace().getName() == null)
       {
         exprText.print("::");
       }

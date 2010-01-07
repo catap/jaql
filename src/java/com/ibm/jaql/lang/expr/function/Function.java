@@ -66,7 +66,6 @@ public abstract class Function extends JsonAtom
     return text;
   }
   
-  
   // -- evaluation / inlining ---------------------------------------------------------------------
 
   /** Prepare the data structure used by the <code>setArgument</code> and <code>setDefault</code>
