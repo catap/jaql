@@ -20,19 +20,14 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 
-import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.JobConfigurable;
 import org.apache.hadoop.mapred.MapRunnable;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.InputAdapter;
@@ -40,6 +35,7 @@ import com.ibm.jaql.io.hadoop.ConfUtil;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.hadoop.JsonHolderDefault;
+import com.ibm.jaql.io.hadoop.SelectSplitInputFormat;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -73,11 +69,6 @@ public class ChainedMapFn extends MapReduceBaseExpr
     }
   }
   
-  public final static String INPUT_FORMAT = BASE_NAME + ".input.format";
-  public final static String SPLIT_CLASS = BASE_NAME + ".split.class";
-  public final static String SPLIT = BASE_NAME + ".split.data";
-  public final static String STATE = BASE_NAME + ".state";
-
   public ChainedMapFn(Expr[] exprs)
   {
     super(exprs);
@@ -120,7 +111,7 @@ public class ChainedMapFn extends MapReduceBaseExpr
     // Override the input format to select one partition
     int targetSplits = conf.getNumMapTasks();
     String oldFormat = conf.get("mapred.input.format.class");
-    conf.set(INPUT_FORMAT, oldFormat);
+    conf.set(SelectSplitInputFormat.INPUT_FORMAT, oldFormat);
     // It would be nice to know how many splits we are generating to avoid 
     // using an exception to quit...
     // int numSplits = oldFormat.getSplits(conf, ??);
@@ -132,11 +123,11 @@ public class ChainedMapFn extends MapReduceBaseExpr
     for( int i = 0 ; i < splits.length ; i++ )
     {
       // TODO: we should move the model around using hdfs files instead of serializing
-      conf.setClass(SPLIT_CLASS, splits[i].getClass(), InputSplit.class);
-      conf.set(STATE, state.toString());
+      conf.setClass(SelectSplitInputFormat.SPLIT_CLASS, splits[i].getClass(), InputSplit.class);
+      conf.set(SelectSplitInputFormat.STATE, state.toString());
       buffer.reset();
       splits[i].write(buffer);
-      ConfUtil.writeBinary(conf, SPLIT, buffer.getData(), 0, buffer.getLength());
+      ConfUtil.writeBinary(conf, SelectSplitInputFormat.SPLIT, buffer.getData(), 0, buffer.getLength());
       conf.setJobName("chainedMap "+(i+1)+"/"+splits.length);
       
       // This causes the output file to be deleted.
@@ -188,7 +179,7 @@ public class ChainedMapFn extends MapReduceBaseExpr
     {
       super.configure(job);
       mapFn = compile(job, "map", 0);
-      String stateString = job.get(STATE);
+      String stateString = job.get(SelectSplitInputFormat.STATE);
       try
       {
         oldState = new JsonParser(new StringReader(stateString)).JsonVal();
@@ -225,49 +216,6 @@ public class ChainedMapFn extends MapReduceBaseExpr
       finally
       {
         this.close();
-      }
-    }
-  }
-  /**
-   * Reads a single split from an input format
-   */
-  static class SelectSplitInputFormat<K,V> implements InputFormat<K,V>, JobConfigurable
-  {
-    static final Logger LOG = Logger.getLogger(SelectSplitInputFormat.class.getName());
-
-    protected InputFormat<K,V> iFormat;
-    protected InputSplit split;
-
-    @Override
-    public RecordReader<K,V> getRecordReader(
-        InputSplit split, JobConf conf, Reporter reporter) throws IOException
-    {
-      return iFormat.getRecordReader(split, conf, reporter);
-    }
-
-    @Override
-    public InputSplit[] getSplits(JobConf conf, int numSplits) throws IOException
-    {
-      return new InputSplit[]{ split };
-    }
-
-    @Override
-    public void configure(JobConf conf)
-    {
-      Class<? extends InputFormat> inputFormatCls = conf.getClass(INPUT_FORMAT, null, InputFormat.class);
-      iFormat = ReflectionUtils.newInstance(inputFormatCls, conf);
-      Class<? extends InputSplit> splitCls = conf.getClass(SPLIT_CLASS, null, InputSplit.class);
-      split = ReflectionUtils.newInstance(splitCls, conf);
-      byte[] bytes = ConfUtil.readBinary(conf, SPLIT);      
-      DataInputBuffer buffer = new DataInputBuffer();
-      buffer.reset(bytes, bytes.length);
-      try
-      {
-        split.readFields(buffer);
-      }
-      catch (IOException e)
-      {
-        throw new UndeclaredThrowableException(e);
       }
     }
   }
