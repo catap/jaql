@@ -130,6 +130,7 @@ public class RewritePhase
                 if (engine.explainFire)
                 {
                   System.err.println();
+//                  VarTagger.tag(start);
                   start.decompile(System.err, new HashSet<Var>());
                   System.err.println();
                   System.err.println();
