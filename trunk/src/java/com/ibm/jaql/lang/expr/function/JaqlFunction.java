@@ -230,10 +230,26 @@ public class JaqlFunction extends Function
     }
     varsToTag.addAll(VarTagger.tag(body, scope, tagGenerator));
     
+    // mark all local variables that have a name that occurs more than once to be tagged
+    // (this is necessary because the local bindings do not have order, so it is undefined
+    //  which one is deserialized first)
+    Map<String, Var> namesSeen = new HashMap<String, Var>();
+    for (Var var : localBindings.keySet())
+    {
+      if (namesSeen.containsKey(var.name()))
+      {
+        // 2nd or more occurrence of the name
+        varsToTag.add(namesSeen.get(var.name())); 
+        varsToTag.add(var);
+      }
+      namesSeen.put(var.name(), var);
+    }
+    
     // tag local bindings
     for (Var var : varsToTag)
     {
-      if (!localBindings.containsKey(var))
+      Stack<Var> scoped = scope.get(var.name()); 
+      if (scoped == null || !scoped.contains(var))
       {
         throw new IllegalStateException("Function has captures that have to be tagged");
       }
@@ -362,7 +378,7 @@ public class JaqlFunction extends Function
     for (Entry<Var, JsonValue> e : localBindings.entrySet())
     {
       Var oldVar = e.getKey();
-      Var newVar = new Var(oldVar.name(), oldVar.getSchema());
+      Var newVar = new Var(oldVar.taggedName(), oldVar.getSchema());
       JsonValue newValue = JsonUtil.getImmutableCopyUnchecked(e.getValue());
       newEnv.put(newVar, newValue);
       varMap.put(oldVar, newVar);
@@ -375,7 +391,7 @@ public class JaqlFunction extends Function
     {
       VarParameter par = parameters.get(i); 
       Var oldVar = par.getVar();
-      Var newVar = new Var(oldVar.name(), oldVar.getSchema());
+      Var newVar = new Var(oldVar.taggedName(), oldVar.getSchema());
       varMap.put(oldVar, newVar);
       if (par.isRequired())
       {

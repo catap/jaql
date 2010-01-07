@@ -297,6 +297,7 @@ public final class DefineJaqlFunctionExpr extends Expr
       
       // create function      
       f = new JaqlFunction(localBindings, new VarParameters(newPars), newBody);
+      f.tagVars();
     }
     
     return f;

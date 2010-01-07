@@ -67,41 +67,13 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
         if (!localBindings.isEmpty())
         {
           out.print("system::const((");
-          // FIXME: The two passes is a quick fix to the following problem:
-          // The localBindings can have tagged and non-tagged variables with the same name.
-          // If the non-tagged is listed before the tagged, then a non-tagged reference
-          // will bind to the tagged variable.  For example:
-          //     ( x#2 = 2, x = 1, [x, x#2] )   ==> [1,2]
-          //     ( x = 1, x#2 = 2, [x, x#2] )   ==> [2,2]
-          // The localBindings are an unordered hash map by Var identity, 
-          // so the variables can land in either order.
-          // Long-term fixes
-          //    1) tag all variables with the duplicate names.
-          //    2) Make a non-tagged reference only bind to a non-tagged variable.
-          // Option (2) seems easiest, but I'm not sure why we have the current bind behavior.
-          // (Found by KB, need to talk to RG) 
-          // FIXME: Find a long-term solution.
           for (Entry<Var, JsonValue> e : localBindings.entrySet())
           {
-            if( e.getKey().hasTag() )
-            {
-              out.print(sep);
-              out.print(e.getKey().taggedName());
-              out.print("=");
-              JsonUtil.print(out, e.getValue());
-              sep = ", ";
-            }
-          }
-          for (Entry<Var, JsonValue> e : localBindings.entrySet())
-          {
-            if( !e.getKey().hasTag() )
-            {
-              out.print(sep);
-              out.print(e.getKey().taggedName());
-              out.print("=");
-              JsonUtil.print(out, e.getValue());
-              sep = ", ";
-            }
+            out.print(sep);
+            out.print(e.getKey().taggedName());
+            out.print("=");
+            JsonUtil.print(out, e.getValue());
+            sep = ", ";
           }
         }
         
