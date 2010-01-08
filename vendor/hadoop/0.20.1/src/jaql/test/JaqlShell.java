@@ -41,10 +41,12 @@ import org.apache.hadoop.hbase.MiniZooKeeperCluster;
 import org.apache.hadoop.mapred.MiniMRCluster;
 import org.apache.hadoop.util.VersionInfo;
 
+import com.ibm.jaql.util.shell.AbstractJaqlShell;
+
 /**
  * 
  */
-public class JaqlShell
+public class JaqlShell extends AbstractJaqlShell
 {
 
   private static final Log LOG = LogFactory.getLog(JaqlShell.class.getName());
@@ -56,13 +58,15 @@ public class JaqlShell
   private MiniZooKeeperCluster zooKeeperCluster;
   private HBaseAdmin       m_admin;
 
+  private JaqlShell() { };
+  
   /**
    * @param dir
    * @param numNodes
    * @param format
    * @throws Exception
    */
-  public JaqlShell(String dir, int numNodes, boolean format) throws Exception
+  public void init(String dir, int numNodes) throws Exception
   {
     String vInfo = VersionInfo.getVersion();
     System.setProperty("test.build.data", dir);
@@ -167,7 +171,7 @@ public class JaqlShell
   /**
    * @throws Exception
    */
-  public JaqlShell() throws Exception
+  public void init() throws Exception
   {
     // do nothing in the case of cluster
     //m_conf = new HBaseConfiguration();
@@ -178,31 +182,6 @@ public class JaqlShell
     // make the home directory if it does not exist
     Path hd = fs.getWorkingDirectory();
     if (!fs.exists(hd)) fs.mkdirs(hd);
-  }
-
-  /**
-   * @param jars
-   * @throws Exception
-   */
-  public void addExtensions(String[] jars) throws Exception
-  {
-    if (jars != null) com.ibm.jaql.lang.Jaql.addExtensionJars(jars);
-  }
-
-  /**
-   * @throws Exception
-   */
-  public void runInteractively() throws Exception
-  {
-    try
-    {
-      com.ibm.jaql.lang.Jaql.main1(new String[]{});
-      System.out.println("shutting down jaql");
-    }
-    catch (Exception e)
-    {
-      e.printStackTrace();
-    }
   }
 
   /**
@@ -332,44 +311,7 @@ public class JaqlShell
     cleanupOverride();
   }
 
-  static String USAGE = "jaql JaqlShell" + "\n\t-cluster"
-                          + "\n\t-jars <list of comma separated jars>"
-                          + "\n\t-dir <HDFS dir>" + "\n\t-fmt (format hdfs?)"
-                          + "\n\t-n <number of nodes>";
-
-  /**
-   * @param msg
-   */
-  static void printUsage(String msg)
-  {
-    System.err.println(msg);
-    System.err.println(USAGE);
-    System.exit(0);
-  }
-
-  /**
-   * @param args
-   * @return
-   */
-  static HashMap<String, String> parseArgs(String[] args)
-  {
-    HashMap<String, String> map = new HashMap<String, String>();
-    for (int i = 0; i < args.length; i++)
-    {
-      if ("-fmt".equals(args[i]) || "-i".equals(args[i])
-          || "-cluster".equals(args[i]))
-      {
-        map.put(args[i], null);
-      }
-      else
-      {
-        if ((i + 1) >= args.length)
-          printUsage("Incorrect args, expected pair");
-        map.put(args[i], args[++i]);
-      }
-    }
-    return map;
-  }
+  
 
   /**
    * @param args
@@ -377,66 +319,13 @@ public class JaqlShell
    */
   public static void main(String[] args) throws Exception
   {
-    //  parse args
-    HashMap<String, String> argMap = parseArgs(args);
-    String dir = "/tmp/jaql/dfs";
-    int numNodes = 1;
-    boolean fmt = true;
-    boolean mini = true;
-    String[] jars = null;
-
-    for (Iterator<String> iter = argMap.keySet().iterator(); iter.hasNext();)
-    {
-      String key = iter.next();
-      if ("-cluster".equals(key))
-      {
-        mini = false;
-      }
-      else if ("-dir".equals(key))
-      {
-        dir = argMap.get(key);
-      }
-      else if ("-n".equals(key))
-      {
-        numNodes = Math.max(Integer.parseInt(argMap.get(key)), 1);
-      }
-      else if ("-fmt".equals(key))
-      {
-        fmt = true;
-      }
-      else if ("-jars".equals(key))
-      {
-        jars = argMap.get("-jars").split(",");
-      }
-      else
-      {
-        printUsage("Incorrect args: " + key);
-      }
+    try {
+      main(new JaqlShell(), args);
+    } catch(Exception e) {
+      System.exit(1);
     }
-
-    JaqlShell jaql = null;
-    try
-    {
-      if (mini)
-      {
-        jaql = new JaqlShell(dir, numNodes, fmt);
-      }
-      else
-      {
-        jaql = new JaqlShell();
-      }
-      if (jars != null) jaql.addExtensions(jars);
-      jaql.runInteractively();
-      jaql.close();
-    }
-    catch (Exception e)
-    {
-      e.printStackTrace();
-    }
-    finally
-    {
-      if (jaql != null) jaql.close();
-    }
+        
+    System.exit(0);
   }
 
 }
