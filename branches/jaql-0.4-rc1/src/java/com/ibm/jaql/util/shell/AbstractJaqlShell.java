@@ -93,11 +93,20 @@ public abstract class AbstractJaqlShell {
     // the message
     JString msg = new JString(e.getMessage());
     
-    // the stack
+    // the stack of this exception
     FixedJArray eArr = new FixedJArray();
     StackTraceElement[] traceElements = e.getStackTrace();
     for(int i = 0; i < traceElements.length; i++) {
       eArr.add(new JString(traceElements[i].toString()));
+    }
+    
+    // the stack of this exception's cause
+    Throwable t = e.getCause();
+    if(t != null) {
+      traceElements = t.getStackTrace();
+      for(int i = 0; i < traceElements.length; i++) {
+        eArr.add(new JString(traceElements[i].toString()));
+      }
     }
     
     // create a record
