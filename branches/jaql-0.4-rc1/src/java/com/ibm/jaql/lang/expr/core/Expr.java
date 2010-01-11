@@ -29,6 +29,7 @@ import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 /** Superclass for all JAQL expressions.
@@ -149,13 +150,13 @@ public abstract class Expr
   public String toString()
   {
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream exprText = new PrintStream(outStream);
-    HashSet<Var> capturedVars = new HashSet<Var>();
     try
     {
+      PrintStream exprText = new PrintStream(outStream, false, JaqlUtil.getEncoding());
+      HashSet<Var> capturedVars = new HashSet<Var>();
       this.decompile(exprText, capturedVars); // TODO: capturedVars should be optional
       exprText.flush();
-      return outStream.toString();
+      return outStream.toString(JaqlUtil.getEncoding());
     }
     catch (Exception e)
     {

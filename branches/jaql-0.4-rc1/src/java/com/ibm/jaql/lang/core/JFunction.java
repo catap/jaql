@@ -32,6 +32,7 @@ import com.ibm.jaql.lang.expr.core.DefineFunctionExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -74,7 +75,7 @@ public class JFunction extends JAtom
     HashSet<Var> capturedVars = new HashSet<Var>();
     fn.decompile(ps, capturedVars);
     assert capturedVars.size() == 0;
-    this.fnText = outStream.toString();
+    this.fnText = outStream.toString(JaqlUtil.getEncoding());
   }
 
   /**

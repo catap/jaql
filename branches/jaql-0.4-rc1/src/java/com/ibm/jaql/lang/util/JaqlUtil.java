@@ -27,7 +27,9 @@ import org.apache.hadoop.fs.PathFilter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.Item;
 import com.ibm.jaql.json.type.JBool;
+import com.ibm.jaql.json.type.JRecord;
 import com.ibm.jaql.json.type.JString;
+import com.ibm.jaql.json.type.MemoryJRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
@@ -116,6 +118,7 @@ public class JaqlUtil
   private static Context         sessionContext         = new Context(); // TODO: this needs to be closed!
   private static FunctionStore   functionStore;
   private static RNGStore        rngStore;
+  private static String          encoding = "UTF-8";
 
   /**
    * @return
@@ -155,6 +158,14 @@ public class JaqlUtil
       store = AdapterStore.initStore();
     }
     return store;
+  }
+  
+  public static String getEncoding() {
+    return encoding;
+  }
+  
+  public static void setEncoding(String enc) {
+    encoding = enc;
   }
 
   /**

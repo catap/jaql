@@ -23,6 +23,7 @@ import com.ibm.jaql.json.type.JString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.JaqlFn;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * 
@@ -50,7 +51,7 @@ public class SerializeFn extends Expr
     // TODO: memory!!
     Item value = exprs[0].eval(context);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
+    PrintStream out = new PrintStream(baos, false, JaqlUtil.getEncoding());
     JString text = new JString();
     Item result = new Item(text);
     // baos.reset();
