@@ -17,12 +17,14 @@ package com.ibm.jaql.json.type;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.util.Iter;
 import com.ibm.jaql.json.util.IterJIterator;
 import com.ibm.jaql.json.util.JIterator;
 import com.ibm.jaql.json.util.JsonUtil;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -107,7 +109,12 @@ public abstract class JArray extends JValue
   public String toJSON()
   {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(baos);
+    PrintStream out = null;
+    try {
+      out = new PrintStream(baos, false, JaqlUtil.getEncoding());
+    } catch(UnsupportedEncodingException e) {
+      throw new UndeclaredThrowableException(e);
+    }
     try
     {
       print(out);
@@ -116,8 +123,14 @@ public abstract class JArray extends JValue
     {
       throw new UndeclaredThrowableException(e);
     }
-    out.flush();
-    return baos.toString();
+    String s = null;
+    try {
+      out.flush();
+      s = baos.toString(JaqlUtil.getEncoding());
+    } catch(UnsupportedEncodingException e) {
+      throw new UndeclaredThrowableException(e);
+    }
+    return s;
   }
 
   /*

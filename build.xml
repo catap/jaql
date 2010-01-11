@@ -179,7 +179,7 @@
             <batchtest todir="${test.build.dir}" unless="testcase">
                 <fileset dir="${test.classes.dir}"
                          includes="**/${test.include}.class"
-                         excludes="**/${test.exclude}.class" />
+                         excludes="**/${test.exclude}.class **/*$$*" />
             </batchtest>
         </junit>
         <fail if="tests.failed">Tests failed!</fail>

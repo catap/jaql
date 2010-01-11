@@ -27,6 +27,7 @@ import org.apache.hadoop.io.WritableComparator;
 
 import com.ibm.jaql.json.util.ItemWritableComparator;
 import com.ibm.jaql.lang.core.JFunction;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.BaseUtil;
 
 /** Encapsulates an arbitrary, single JSON value (instance of {@link JValue}). */
@@ -445,10 +446,11 @@ public final class Item implements WritableComparable<Item> // , Cloneable
     try
     {
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
-      PrintStream out = new PrintStream(baos);
+      
+      PrintStream out = new PrintStream(baos, false, JaqlUtil.getEncoding());
       this.print(out, 0);
       out.flush();
-      return baos.toString();
+      return baos.toString(JaqlUtil.getEncoding());
     }
     catch (Exception e)
     {

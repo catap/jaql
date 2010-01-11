@@ -20,8 +20,10 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.UndeclaredThrowableException;
 
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.BaseUtil;
 
 /**
@@ -270,9 +272,10 @@ public abstract class JRecord extends JValue
   public String toJSON()
   {
     ByteArrayOutputStream os = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(os);
+    PrintStream ps = null;
     try
     {
+      ps = new PrintStream(os, false, JaqlUtil.getEncoding());
       this.print(ps);
     }
     catch (Exception e)
@@ -280,7 +283,13 @@ public abstract class JRecord extends JValue
       throw new UndeclaredThrowableException(e);
     }
     ps.flush();
-    String s = os.toString();
+    String s = null;
+    try {
+      s = os.toString(JaqlUtil.getEncoding());
+    } 
+    catch(UnsupportedEncodingException e) {
+      throw new UndeclaredThrowableException(e);
+    }
     return s;
   }
 
