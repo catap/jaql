@@ -38,7 +38,7 @@ import com.ibm.jaql.util.RandomAccessBuffer;
  */
 public class JsonToDel {
 
-  private JsonString[] fields;
+  private JsonString[] fields = new JsonString[0];
   private String delimiter;
   private RandomAccessBuffer buf = new RandomAccessBuffer();
   private PrintStream out = new PrintStream(buf);
@@ -85,7 +85,8 @@ public class JsonToDel {
     String sep = "";
     if (src instanceof JsonRecord) {
       JsonRecord rec = (JsonRecord) src;
-      // fields are required for records to define order
+      if (fields.length < 1)
+      	throw new IllegalArgumentException("fields are required to convert A JSON record into a CSV line.");
       for (JsonString n : fields) {
         out.print(sep);
         JsonValue value = rec.get(n);
