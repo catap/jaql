@@ -20,7 +20,6 @@ import java.util.Map.Entry;
 
 import org.apache.commons.lang.ClassUtils;
 
-import com.ibm.jaql.io.stream.converter.LinesJsonTextOutputStream;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonAtom;
