@@ -518,8 +518,15 @@ public class SchemaFactory
     }
   }
 
-  /** Parse a schema from the specified string. The string must not contain the "schema" keyword
-   * of Jaql, e.g., <code>long</code> is valid but <code>schema long</code> is not. */
+  /**
+   * Parses a schema from the specified string. The string must not contain the
+   * "schema" keyword of Jaql, e.g., <code>long</code> is valid but
+   * <code>schema long</code> is not.
+   * 
+   * @throws IOException If s is not a valid schema string. Empty string is
+   *           invalid.
+   * @throws NullPointerException If s is <code>null</code>
+   */
   public static final Schema parse(String s) throws IOException
   {
     
