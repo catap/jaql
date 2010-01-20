@@ -12,7 +12,7 @@
 *.class
 .externalToolBuilders/
 
-
+*.log
 *.orig
 junit*.properties
 .svn/
