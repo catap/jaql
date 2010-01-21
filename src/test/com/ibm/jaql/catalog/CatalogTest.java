@@ -9,7 +9,7 @@ import org.junit.Test;
 import com.ibm.jaql.AbstractTest;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.JsonRecord;
 
 // TODO renamed to TestCatalog to be be included in "ant test" when the catalog feature is finished.
 public class CatalogTest extends AbstractTest {
@@ -33,11 +33,11 @@ public class CatalogTest extends AbstractTest {
 		try {
 			// insert
 			JsonString key1 = new JsonString("/a/b/c");
-			JsonValue val1 = parse("{'title': 'Hello', 'comment': 'World'}");
+			JsonRecord val1 = (JsonRecord) parse("{'title': 'Hello', 'comment': 'World'}");
 			cat.insert(key1, val1, false);
 
 			JsonString key2 = new JsonString("/a/x/y");
-			JsonValue val2 = parse("{'title': 'Hello2', 'comment': 'World2'}");
+			JsonRecord val2 = (JsonRecord) parse("{'title': 'Hello2', 'comment': 'World2'}");
 			cat.insert(key2, val2, true);
 
 			BufferedJsonArray expectedkeys = new BufferedJsonArray(2);
@@ -57,7 +57,7 @@ public class CatalogTest extends AbstractTest {
 			assertEquals(val1, cat.get(key1, fields));
 
 			// update
-			JsonValue val3 = parse("{'title': 'Good bye', 'new': 'Cruel'}");
+			JsonRecord val3 = (JsonRecord) parse("{'title': 'Good bye', 'new': 'Cruel'}");
 			try {
 				cat.update(key1, val3, false);
 				fail("Expected error - cannot overwrite title field.");
