@@ -58,6 +58,10 @@ import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.binary.Base64Fn;
 import com.ibm.jaql.lang.expr.binary.HexFn;
+import com.ibm.jaql.lang.expr.catalog.CatalogInsertFn;
+import com.ibm.jaql.lang.expr.catalog.CatalogLookupFn;
+import com.ibm.jaql.lang.expr.catalog.CatalogUpdateFn;
+import com.ibm.jaql.lang.expr.catalog.UpdateCommentFn;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
@@ -174,6 +178,7 @@ import com.ibm.jaql.lang.expr.system.ExecFn;
 import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
+
 
 /** The system namespace. Treated specially, always present. */
 public final class SystemNamespace extends Namespace {
@@ -384,6 +389,10 @@ public final class SystemNamespace extends Namespace {
     register(new FileFn.Descriptor());
     register(new HttpFn.Descriptor());
     register(new JaqlTempFn.Descriptor());
+    register(new CatalogInsertFn.Descriptor());
+    register(new CatalogLookupFn.Descriptor());
+    register(new CatalogUpdateFn.Descriptor());
+    register(new UpdateCommentFn.Descriptor());
   // TODO: delete: register(new HdfsWriteExpr.Descriptor());
   // TODO: delete: register(new HdfsReadExpr.Descriptor());
     register(new HadoopTempExpr.Descriptor());
@@ -422,6 +431,7 @@ public final class SystemNamespace extends Namespace {
     //register(new TestFn.Descriptor());
     register(new ListExportsFn.Descriptor());
     register(new TestFn.Descriptor());
+
   } 
 
 }

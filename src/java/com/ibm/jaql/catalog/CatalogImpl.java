@@ -98,7 +98,7 @@ public class CatalogImpl implements Catalog {
 	}
 
 	@Override
-	public JsonValue get(JsonString key) throws CatalogException {
+	public JsonRecord get(JsonString key) throws CatalogException {
 		checkConnection();
 		Statement st = null;
 		ResultSet rs = null;
@@ -109,7 +109,7 @@ public class CatalogImpl implements Catalog {
 			if (rs.next()) {
 				Clob v = rs.getClob(1);
 				JsonParser jparser = new JsonParser(v.getCharacterStream());
-				JsonValue jv = jparser.TopVal();
+				JsonRecord jv = (JsonRecord) jparser.TopVal();
 				return jv;
 			}
 			conn.commit();
@@ -126,17 +126,14 @@ public class CatalogImpl implements Catalog {
 
 	@Override
 	public JsonValue get(JsonString key, JsonString fieldName) throws CatalogException {
-		JsonValue jv = this.get(key);
-		if (jv instanceof JsonRecord) {
-			return ((JsonRecord) jv).get(fieldName);
-		}
-		// TODO should we return error if catalog entry is not a record?
-		return null;
+		JsonRecord jv = this.get(key);
+		return jv.get(fieldName);
+		
 	}
 
 	@Override
-	public JsonValue get(JsonString key, JsonArray fieldNames) throws CatalogException {
-		JsonValue jv = this.get(key);
+	public JsonRecord get(JsonString key, JsonArray fieldNames) throws CatalogException {
+		JsonRecord jv = this.get(key);
 		try {
 			if (jv instanceof JsonRecord) {
 				BufferedJsonRecord result = new BufferedJsonRecord();
@@ -161,7 +158,7 @@ public class CatalogImpl implements Catalog {
 	}
 
 	@Override
-	public void insert(JsonString key, JsonValue entry, boolean overwrite) throws CatalogException {
+	public void insert(JsonString key, JsonRecord entry, boolean overwrite) throws CatalogException {
 		checkConnection();
 		Statement st = null;
 		PreparedStatement pst = null;
@@ -214,8 +211,8 @@ public class CatalogImpl implements Catalog {
 	}
 
 	@Override
-	public void update(JsonString key, JsonValue entry, boolean overwrite) throws CatalogException {
-		JsonValue jv = this.get(key);
+	public void update(JsonString key, JsonRecord entry, boolean overwrite) throws CatalogException {
+		JsonRecord jv = this.get(key);
 
 		// If this "key" does not exist in the catalog,
 		// just insert it - no further checks needed
@@ -225,8 +222,6 @@ public class CatalogImpl implements Catalog {
 		}
 
 		// Otherwise, we need to merge the old and new records
-		// Again, assume that jv and entry are JsonRecords
-		// (why not make them records in the API?)
 		JsonRecord oldRec = (JsonRecord) jv;
 		JsonRecord newRec = (JsonRecord) entry;
 
