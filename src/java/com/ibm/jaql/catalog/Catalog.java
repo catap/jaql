@@ -17,6 +17,7 @@
 package com.ibm.jaql.catalog;
 
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -57,7 +58,7 @@ public interface Catalog {
 	 *          entry with the given key already exists; <code>false</code> to
 	 *          throw an exception if such an entry already exists.
 	 */
-	void insert(JsonString key, JsonValue entry, boolean overwrite) throws CatalogException;
+	void insert(JsonString key, JsonRecord entry, boolean overwrite) throws CatalogException;
 
 	/**
 	 * Deletes the entry specified with the key.
@@ -89,7 +90,7 @@ public interface Catalog {
 	 * @param overwrite <code>true</code> to use <i>upsert</i> semantics;
 	 *          otherwise not.
 	 */
-	void update(JsonString key, JsonValue entry, boolean overwrite) throws CatalogException;
+	void update(JsonString key, JsonRecord entry, boolean overwrite) throws CatalogException;
 
 	/**
 	 * Lists all the keys starting with the given prefix.
@@ -105,7 +106,7 @@ public interface Catalog {
 	 * @param key Entry key
 	 * @return The Entry
 	 */
-	JsonValue get(JsonString key) throws CatalogException;
+	JsonRecord get(JsonString key) throws CatalogException;
 
 	/**
 	 * Returns the field value specified with an entry key and a field name.
@@ -124,5 +125,5 @@ public interface Catalog {
 	 * @return The entry field in the format of
 	 *         <code>{fieldName1: fieldValue1, fieldName2: fieldName2, ...}</code>
 	 */
-	JsonValue get(JsonString key, JsonArray filedNames) throws CatalogException;
+	JsonRecord get(JsonString key, JsonArray filedNames) throws CatalogException;
 }
