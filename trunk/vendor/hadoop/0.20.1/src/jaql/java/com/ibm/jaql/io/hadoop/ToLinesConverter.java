@@ -23,6 +23,7 @@ import org.apache.hadoop.io.Text;
 import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
 import com.ibm.jaql.json.type.JsonAtom;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -36,11 +37,39 @@ public class ToLinesConverter implements KeyValueExport<NullWritable, Text> {
   @Override
   public void convert(JsonValue src, NullWritable key, Text val) {
     try {
-      if (src == null) {
+      if (src == null)
+      {
         val.set(nullString);
-      } else if (src instanceof JsonAtom) {
+      } 
+      else if (src instanceof JsonString)
+      {
+        JsonString jstr = (JsonString)src;
+        // TODO: There is a potential bug if jstr contains embedded newlines, but
+        // that is a problem for TextOutputFormat in general.  For now, we will
+        // silently replace them with space...
+        if( jstr.indexOf('\n') >= 0 )
+        {
+          byte[] buf = jstr.getCopy();
+          for(int i = 0 ; i < buf.length ; i++)
+          {
+            if( buf[i] == '\n' )
+            {
+              buf[i] = ' ';
+            }
+          }
+          val.set(buf);
+        }
+        else
+        {
+          val.set(jstr.getInternalBytes(), jstr.bytesOffset(), jstr.bytesLength());
+        }
+      }
+      else if (src instanceof JsonAtom)
+      {
         val.set(JsonUtil.printToString(src));
-      } else {
+      }
+      else
+      {
         throw new ClassCastException("Only convert atomic types using lines()");
       }
     } catch (Exception e) {
