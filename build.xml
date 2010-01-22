@@ -365,6 +365,10 @@
       <fileset dir="${build.dir}/classes/com/ibm/jaql/lang" />
     </copy>
 
+    <copy todir="${tmp.dir}/com/ibm/jaql/catalog">
+      <fileset dir="${build.dir}/classes/com/ibm/jaql/catalog" />
+    </copy>
+
     <copy todir="${tmp.dir}/com/ibm/jaql">
       <fileset dir="${build.dir}/test/classes/com/ibm/jaql" />
     </copy>

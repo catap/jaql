@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,16 +41,25 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    * @param collectExpr
    * @return
    */
-  private static Expr[] makeExprs(ArrayList<BindingExpr> bindings, ArrayList<Expr> ons, Expr collectExpr)
+  private static Expr[] makeExprs(
+      ArrayList<BindingExpr> bindings,
+      ArrayList<Expr> ons,
+      Expr optionsExpr,
+      Expr collectExpr)
   {
+    if( optionsExpr == null )
+    {
+      optionsExpr = new ConstExpr(null);
+    }
     int n = bindings.size();
     assert n == ons.size();
-    Expr[] exprs = new Expr[2*n + 1];
+    Expr[] exprs = new Expr[2*n + 2];
     for (int i = 0; i < n; i++)
     {
       exprs[2*i]   = bindings.get(i);
       exprs[2*i+1] = ons.get(i);
     }
+    exprs[exprs.length-2] = optionsExpr;
     exprs[exprs.length-1] = collectExpr;
     return exprs;
   }
@@ -67,9 +78,9 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    * @param bindings
    * @param returnExpr
    */
-  public JoinExpr(ArrayList<BindingExpr> bindings, ArrayList<Expr> ons, Expr returnExpr)
+  public JoinExpr(ArrayList<BindingExpr> bindings, ArrayList<Expr> ons, Expr options, Expr returnExpr)
   {
-    super(makeExprs(bindings, ons, returnExpr));
+    super(makeExprs(bindings, ons, options, returnExpr));
   }
 
   /**
@@ -77,7 +88,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    */
   public int numBindings()
   {
-    return (exprs.length - 1)/2;
+    return (exprs.length - 2)/2;
   }
 
   /**
@@ -99,6 +110,11 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
   {
     assert i < numBindings();
     return exprs[2*i+1];
+  }
+
+  public Expr optionsExpr()
+  {
+    return exprs[exprs.length - 2];
   }
 
   /**
@@ -148,6 +164,15 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       exprText.print(")");
       sep = ",\n     ";
     }
+    
+    Expr opts = optionsExpr();
+    if( opts.getSchema().is(NULL).maybeNot() )
+    {
+      exprText.println(" " + kw("options") + " (");
+      opts.decompile(exprText, capturedVars);
+      exprText.println(")");
+    }
+    
     exprText.print("\n" + kw("expand") + " (");
     collectExpr().decompile(exprText, capturedVars);
     exprText.println(")");

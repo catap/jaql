@@ -111,7 +111,12 @@ public final class SubJsonString extends JsonString
     out.write(this.bytes, start, bytesLength);
   }
   
-  
+  @Override
+  public int bytesOffset()
+  {
+    return start;
+  }
+
   // -- mutation ----------------------------------------------------------------------------------
  
   /** Sets from the provided UTF-8 array without copying. The provided array backs this

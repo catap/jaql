@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.util.Properties;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
@@ -40,19 +41,20 @@ public abstract class AbstractDb2InputFormat implements InputFormat<JsonHolder, 
   public static final String URL_KEY                 = "com.ibm.db2.input.url";
   public static final String PROPERTIES_KEY          = "com.ibm.db2.input.properties"; // json record key/value into JDBC Properties
 
-  protected Driver driver;
-  protected Properties props;
+  // protected Driver driver;
+  // protected Properties props;
   protected Connection conn;
 
-
-  protected void init(JobConf conf, Properties overrides) throws IOException, SQLException
+  public static Connection connect(Configuration conf, Properties overrides)
+    throws IOException, SQLException
   {
     String url        = conf.get(URL_KEY);
     String propRec    = conf.get(PROPERTIES_KEY);
     Class<? extends Driver> driverClass = 
       conf.getClass(DRIVER_KEY, Driver.class).asSubclass(Driver.class);
 
-    try 
+    Driver driver;
+    try
     {
       driver = driverClass.newInstance();
     }
@@ -61,7 +63,7 @@ public abstract class AbstractDb2InputFormat implements InputFormat<JsonHolder, 
       throw new UndeclaredThrowableException(e);// IOException("Error constructing jdbc driver", e);
     }
 
-    props = new Properties();
+    Properties props = new Properties();
     
     if( propRec != null && ! "".equals(propRec))
     {
@@ -89,12 +91,18 @@ public abstract class AbstractDb2InputFormat implements InputFormat<JsonHolder, 
 
 //    DriverPropertyInfo[] info = driver.getPropertyInfo(url, props);
 
-    conn = driver.connect(url, props);
+    return driver.connect(url, props);
+  }
+
+
+  protected void init(Configuration conf, Properties overrides) throws IOException, SQLException
+  {
+    conn = connect(conf, overrides);
   }
   
-  protected void init(JobConf conf) throws IOException, SQLException
+  protected void init(Configuration conf) throws IOException, SQLException
   {
-    this.init(conf, null);
+    conn = connect(conf, null);
   }
 
 

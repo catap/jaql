@@ -23,6 +23,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonSchema;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
@@ -298,17 +299,17 @@ public class ToMapReduce extends Rewrite
     Expr finalFn = new DefineJaqlFunctionExpr(new Var[]{keyVar,valVar}, lastExpr);
 
     RecordExpr args = new RecordExpr(
-        new NameValueBinding("input", input),
-        new NameValueBinding("output", output),
-        new NameValueBinding("map", mapFn),
-        new NameValueBinding("aggregate", aggFn),
-        new NameValueBinding("final", finalFn),
-        new NameValueBinding("schema", 
+        new NameValueBinding(MRAggregate.INPUT_KEY, input),
+        new NameValueBinding(MRAggregate.OUTPUT_KEY, output),
+        new NameValueBinding(MRAggregate.MAP_KEY, mapFn),
+        new NameValueBinding(MRAggregate.AGGREGATE_KEY, aggFn),
+        new NameValueBinding(MRAggregate.FINAL_KEY, finalFn),
+        new NameValueBinding(MRAggregate.SCHEMA_KEY, 
             new RecordExpr(
                 new NameValueBinding("key", new ConstExpr(new JsonSchema(mapOutputKeySchema))),
                 new NameValueBinding("value", new ConstExpr(new JsonSchema(aggPartialSchema)))
-            )
-        )
+            )),
+        new NameValueBinding(MapReduceFn.OPTIONS_KEY, group.optionsExpr())
     );
     Expr mr = new MRAggregate(args);
     
@@ -337,6 +338,7 @@ public class ToMapReduce extends Rewrite
    */
   private void cogroupToMapReduce(Segment groupSeg)
   {
+    // FIXME: Is this code ever called with combining?? I think it is broken in that case.
     Expr topParent = groupSeg.root.parent();
     int topSlot = groupSeg.root.getChildSlot();
 
@@ -378,8 +380,8 @@ public class ToMapReduce extends Rewrite
       mapSeg = mapSeg.nextSibling;
     }
 
-    String mapName = "map";
-    String reduceName = "reduce";
+    JsonString mapName = MapReduceFn.MAP_KEY;
+    JsonString reduceName = MapReduceFn.REDUCE_KEY;
     Expr[] combineFns = null;
     Segment reduceSeg = segmentReduce(group, group.collectExpr());
     boolean combining = (reduceSeg.type == Segment.Type.FINAL_GROUP);
@@ -387,8 +389,8 @@ public class ToMapReduce extends Rewrite
     {
       // We are running combiners!
       // (or there are no combiners, and no references to any of the INTO variables)
-      mapName = "init";
-      reduceName = "final";
+      mapName = MRAggregate.MAP_KEY; // MRAggregate.INIT_KEY;
+      reduceName = MRAggregate.FINAL_KEY;;
       combineFns = new Expr[n];
     }
 
@@ -463,7 +465,6 @@ public class ToMapReduce extends Rewrite
       output = new HadoopTempExpr(new ConstExpr(reduceOutputValueSchema));
     }
     
-    Expr[] fnArgs = new Expr[5];
     Expr input;
     Expr map;
     Expr combine = null;
@@ -486,25 +487,23 @@ public class ToMapReduce extends Rewrite
         combine = new ArrayExpr(combineFns);
       }
     }
+
+    ArrayList<Expr> fnArgs = new ArrayList<Expr>(7);
+    fnArgs.add( new NameValueBinding(MapReduceFn.INPUT_KEY, input) );
+    fnArgs.add( new NameValueBinding(MapReduceFn.OUTPUT_KEY, output) );
+    fnArgs.add( new NameValueBinding(mapName, map) );
     if (combining)
     {
-      fnArgs = new Expr[6];
-      fnArgs[5] = new NameValueBinding("combine", combine);
+      fnArgs.add( new NameValueBinding(MRAggregate.AGGREGATE_KEY, combine) ); // FIXME: was "combine"
     }
-    else
-    {
-      fnArgs = new Expr[5];
-    }
-    fnArgs[0] = new NameValueBinding("input", input);
-    fnArgs[1] = new NameValueBinding("output", output);
-    fnArgs[2] = new NameValueBinding(mapName, map);
-    fnArgs[3] = new NameValueBinding("schema", new RecordExpr(new Expr[] {
-        new NameValueBinding("key", mapOutputKeySchema),
-        new NameValueBinding("value", mapOutputValueSchema) 
-        }));
-    fnArgs[4] = new NameValueBinding(reduceName, reduce);
+    fnArgs.add( new NameValueBinding(reduceName, reduce) );
+    fnArgs.add(
+        new NameValueBinding(MapReduceFn.SCHEMA_KEY, new RecordExpr(new Expr[] {
+          new NameValueBinding("key", mapOutputKeySchema),
+          new NameValueBinding("value", mapOutputValueSchema)  })));
+    fnArgs.add( new NameValueBinding(MapReduceFn.OPTIONS_KEY, group.optionsExpr()) );
 
-    RecordExpr args = new RecordExpr(fnArgs);
+    RecordExpr args = new RecordExpr(fnArgs.toArray(new Expr[fnArgs.size()]));
     Expr mr;
     if (combining)
     {
@@ -596,15 +595,15 @@ public class ToMapReduce extends Rewrite
     Expr mapFn = new DefineJaqlFunctionExpr(new Var[]{mapIn}, expr);
 
     expr = new MapReduceFn(new RecordExpr(
-        new NameValueBinding("input", input),
-        new NameValueBinding("map", mapFn),
-        new NameValueBinding("schema", 
+        new NameValueBinding(MapReduceFn.INPUT_KEY, input),
+        new NameValueBinding(MapReduceFn.MAP_KEY, mapFn),
+        new NameValueBinding(MapReduceFn.SCHEMA_KEY, 
             new RecordExpr(
                 new NameValueBinding("key", new ConstExpr(mapOutputKeySchema)),
                 new NameValueBinding("value", new ConstExpr(mapOutputValueSchema))
             )
         ),
-        new NameValueBinding("output", output)
+        new NameValueBinding(MapReduceFn.OUTPUT_KEY, output)
     ));
 
     mapSeg.type = Segment.Type.MAPREDUCE;

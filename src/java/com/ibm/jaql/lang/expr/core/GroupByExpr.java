@@ -53,7 +53,7 @@ public class GroupByExpr extends IterExpr
   private static Expr[] addAsVars(Expr[] exprs, ArrayList<?> as)
   {
     int n = as.size();
-    assert exprs.length == n + 4;
+    assert exprs.length == n + 5;
     for(int i = 0 ; i < n ; i++)
     {
       Object x = as.get(i);
@@ -80,7 +80,7 @@ public class GroupByExpr extends IterExpr
    */
   private static Expr[] addAsVars(Expr[] exprs, Var[] as)
   {
-    assert exprs.length == as.length + 4;
+    assert exprs.length == as.length + 5;
     for(int i = 0 ; i < as.length ; i++)
     {
       exprs[i+2] = new BindingExpr(BindingExpr.Type.EQ,as[i],null,Expr.NO_EXPRS);
@@ -91,20 +91,26 @@ public class GroupByExpr extends IterExpr
   private static Expr[] makeExprs(
       BindingExpr in, 
       BindingExpr by, 
-      Expr using, 
+      Expr using,
+      Expr options,
       Expr expand)
   {
-    int n = in.numChildren();
-    assert n == by.numChildren();
-    Expr[] exprs = new Expr[n + 4];
-    exprs[0] = in;
-    exprs[1] = by;
     if( using == null )
     {
       using = new ConstExpr(null);
     }
+    if( options == null )
+    {
+      options = new ConstExpr(null);
+    }
+    int n = in.numChildren();
+    assert n == by.numChildren();
+    Expr[] exprs = new Expr[n + 5];
+    exprs[0] = in;
+    exprs[1] = by;
     exprs[n+2] = using;
-    exprs[n+3] = expand;
+    exprs[n+3] = options;
+    exprs[n+4] = expand;
     return exprs;
   }
 
@@ -112,7 +118,8 @@ public class GroupByExpr extends IterExpr
       BindingExpr in, 
       BindingExpr by, 
       BindingExpr as, 
-      Expr using, 
+      Expr using,
+      Expr options,
       Expr expand)
   {
     assert 1 == in.numChildren();
@@ -121,44 +128,12 @@ public class GroupByExpr extends IterExpr
     {
       using = new ConstExpr(null);
     }
-    return new Expr[]{ in, by, as, using, expand };
+    if( options == null )
+    {
+      options = new ConstExpr(null);
+    }
+    return new Expr[]{ in, by, as, using, options, expand };
   }
-
-//  /**
-//   * Note: the byBindings are at bindings.get(0), but moved to
-//   * exprs[exprs.length-2].
-//   * 
-//   * @param bindings
-//   * @param doExpr
-//   * @return
-//   */
-//  private static Expr[] makeExprs(ArrayList<BindingExpr> bindings, Expr doExpr)
-//  {
-//    int n = bindings.size();
-//    Expr[] exprs = new Expr[n + 1];
-//    for (int i = 1; i < n; i++)
-//    {
-//      BindingExpr b = bindings.get(i);
-//      assert b.type == BindingExpr.Type.IN;
-//      exprs[i - 1] = b;
-//    }
-//    BindingExpr byBinding = bindings.get(0);
-//    assert byBinding.type == BindingExpr.Type.EQ;
-//    exprs[n - 1] = byBinding;
-//    exprs[n] = doExpr;
-//    return exprs;
-//  }
-//
-//  private static Expr[] makeExprs(
-//      Var inVar, Expr input, Var byVar, Expr byExpr, Var intoVar, Expr doExpr)
-//  {
-//    Expr[] exprs = new Expr[3];
-//    exprs[0] = new BindingExpr(BindingExpr.Type.IN, inVar, intoVar, input);
-//    exprs[1] = new BindingExpr(BindingExpr.Type.EQ, byVar, null, byExpr);
-//    exprs[2] = doExpr;
-//    return exprs;
-//  }
-
 
   /**
    * @param exprs
@@ -180,10 +155,11 @@ public class GroupByExpr extends IterExpr
       BindingExpr in, 
       BindingExpr by, 
       ArrayList<?> as, // as items must be Var or BindingExpr
-      Expr using, 
+      Expr using,
+      Expr options,
       Expr expand)
   {
-    super(addAsVars(makeExprs(in, by, using, expand), as));
+    super(addAsVars(makeExprs(in, by, using, options, expand), as));
   }
 
   public GroupByExpr(
@@ -191,9 +167,10 @@ public class GroupByExpr extends IterExpr
       BindingExpr by, 
       Var[] as,
       Expr using, 
+      Expr options,
       Expr expand)
   {
-    super(addAsVars(makeExprs(in, by, using, expand), as));
+    super(addAsVars(makeExprs(in, by, using, options, expand), as));
   }
 
   /**
@@ -209,9 +186,10 @@ public class GroupByExpr extends IterExpr
       BindingExpr by, 
       BindingExpr as, 
       Expr using, 
+      Expr options,
       Expr expand)
   {
-    super(makeExprs(in, by, as, using, expand));
+    super(makeExprs(in, by, as, using, options, expand));
   }
 
   /**
@@ -227,49 +205,12 @@ public class GroupByExpr extends IterExpr
       BindingExpr by, 
       Var as, 
       Expr using, 
+      Expr options, 
       Expr expand)
   {
-    super(makeExprs(in, by, new BindingExpr(BindingExpr.Type.EQ,as,null,Expr.NO_EXPRS), using, expand));
+    super(makeExprs(in, by, new BindingExpr(BindingExpr.Type.EQ,as,null,Expr.NO_EXPRS),
+                    using, options, expand));
   }
-
-//  /**
-//   * exprs = (groupInBinding)+ groupByBinding doExpr
-//   * 
-//   * groupInByExpr is a BindingExpr, b: group b.var in b.expr[0] by b.var2 =
-//   * b.expr[1]
-//   * 
-//   * @param bindings
-//   * @param doExpr
-//   */
-//  public GroupByExpr(ArrayList<BindingExpr> bindings, Expr doExpr)
-//  {
-//    super(makeExprs(bindings, doExpr));
-//  }
-//
-//  /**
-//   * 
-//   * @param input
-//   * @param by
-//   * @param doExpr
-//   */
-//  public GroupByExpr(BindingExpr input, BindingExpr by, Expr doExpr)
-//  {
-//    super(input, by, doExpr);
-//  }
-//
-//  /**
-//   * 
-//   * @param inVar
-//   * @param input
-//   * @param byVar
-//   * @param byExpr
-//   * @param intoVar
-//   * @param doExpr
-//   */
-//  public GroupByExpr(Var inVar, Expr input, Var byVar, Expr byExpr, Var intoVar, Expr doExpr)
-//  {
-//    super(makeExprs(inVar, input, byVar, byExpr, intoVar, doExpr));
-//  }
 
   public Schema getSchema()
   {
@@ -344,7 +285,7 @@ public class GroupByExpr extends IterExpr
    */
   public final int numInputs()
   {
-    return exprs[0].numChildren(); // == exprs[1].numChildren() == exprs.length - 4
+    return exprs[0].numChildren(); // == exprs[1].numChildren() == exprs.length - 5
   }
 
   /**
@@ -368,6 +309,14 @@ public class GroupByExpr extends IterExpr
    * @return
    */
   public final Expr usingExpr()
+  {
+    return exprs[exprs.length - 3];
+  }
+
+  /**
+   * @return
+   */
+  public final Expr optionsExpr()
   {
     return exprs[exprs.length - 2];
   }
@@ -403,7 +352,7 @@ public class GroupByExpr extends IterExpr
    */
   public int getIntoIndex(Var var)
   {
-    int n = exprs.length - 2;
+    int n = exprs.length - 3;
     for (int i = 2 ; i < n; i++)
     {
       if( var == getAsVar(i) )
@@ -449,6 +398,7 @@ public class GroupByExpr extends IterExpr
       exprText.print(getAsVar(i).taggedName()); 
       sep = ", ";
     }
+    
     Expr using = usingExpr();
     if( using.getSchema().is(NULL).maybeNot() )
     {
@@ -456,10 +406,19 @@ public class GroupByExpr extends IterExpr
       using.decompile(exprText, capturedVars);
       exprText.println(")");
     }
+
+    Expr opts = optionsExpr();
+    if( opts.getSchema().is(NULL).maybeNot() )
+    {
+      exprText.println(" " + kw("options") + " (");
+      opts.decompile(exprText, capturedVars);
+      exprText.println(")");
+    }
+
     exprText.println(" " + kw("expand") + " (");
     collectExpr().decompile(exprText, capturedVars);
     exprText.println(")");
-
+    
     capturedVars.remove(in.var);
     capturedVars.remove(by.var);
     for (int i = 0; i < n; i++)

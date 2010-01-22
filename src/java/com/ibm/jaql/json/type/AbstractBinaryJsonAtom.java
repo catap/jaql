@@ -85,7 +85,24 @@ abstract class AbstractBinaryJsonAtom extends JsonAtom
     out.write(this.bytes, 0, bytesLength());
   }
   
+  /** FOR EXPERT USE ONLY! IF YOU ARE UNSURE, USE getCopy() 
+   *  Get the internal byte buffer.  
+   *  The bytes may NOT be changed! 
+   *  The buffer is invalid ifthis object is changed.
+   *  You must use bytesOffset() to get the offset into the buffer.
+   */
+  public byte[] getInternalBytes()
+  {
+    ensureBytes();
+    return bytes;
+  }
   
+  public int bytesOffset()
+  {
+    return 0;
+  }
+  
+
   // -- mutation (all protected) ------------------------------------------------------------------
 
   /** Sets the value to the given byte array. The array is not copied but 

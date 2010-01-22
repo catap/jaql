@@ -72,6 +72,5 @@
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/conf"/>
 	<classpathentry kind="lib" path="lib/derby.jar"/>
 	<classpathentry kind="lib" path="lib/derbyclient.jar"/>
-	<classpathentry kind="var" path="ANTLR_HOME/antlr.jar" sourcepath="ANTLR_HOME/antlrsrc.zip"/>
 	<classpathentry kind="output" path="buildEclipse"/>
 </classpath>

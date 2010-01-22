@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Map.Entry;
 
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.io.serialization.text.schema.SchemaTextFullSerializer;
@@ -166,5 +167,42 @@ public class JsonUtil
     {
       throw new UndeclaredThrowableException(e);
     }    
+  }
+  
+  
+  // TODO: add ways to copy all fields & a single field into a BufferedJsonRecord
+  public static void mergeRecordDeep(BufferedJsonRecord target, JsonRecord source) throws Exception
+  {
+    for( Entry<JsonString,JsonValue> f: source )
+    {
+      JsonString key = f.getKey();
+      JsonValue value = f.getValue();
+      JsonValue oldValue = target.get(key);
+      if( value instanceof JsonRecord ) 
+      {
+        BufferedJsonRecord newTarget;
+        if( oldValue instanceof JsonRecord )
+        {
+          // oldRec MUST be a BufferedJsonRecord 
+          newTarget = (BufferedJsonRecord)oldValue;
+        }
+        else
+        {
+          newTarget = new BufferedJsonRecord();
+          target.set(key, newTarget);
+        }
+        mergeRecordDeep(newTarget, (JsonRecord)value);
+      }
+      else if( value == null )
+      {
+        // TODO: add remove method for records
+        // options.remove(key);
+        target.set(key, null);
+      }
+      else
+      {
+        target.set(key, value.getCopy(oldValue));
+      }
+    }
   }
 }

@@ -52,6 +52,9 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  */
 public class MapReduceFn extends MapReduceBaseExpr
 {
+  public final static JsonString COMBINE_KEY = new JsonString("combine");
+  public final static JsonString REDUCE_KEY = new JsonString("reduce");
+  
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
   {
     public Descriptor()
@@ -82,7 +85,7 @@ public class MapReduceFn extends MapReduceBaseExpr
   public Schema getSchema()
   {
     Schema in = exprs[0].getSchema();
-    Schema out = in.element(new JsonString("output"));
+    Schema out = in.element(OUTPUT_KEY);
     return out != null ? out : SchemaFactory.anySchema();
   }
   
@@ -94,9 +97,9 @@ public class MapReduceFn extends MapReduceBaseExpr
   public JsonValue eval(final Context context) throws Exception
   {
     JsonRecord args = baseSetup(context);
-    JsonValue map = JaqlUtil.enforceNonNull(args.getRequired(new JsonString("map")));
-    JsonValue combine = args.get(new JsonString("combine"), null);
-    JsonValue reduce = args.get(new JsonString("reduce"), null);
+    JsonValue map = JaqlUtil.enforceNonNull(args.getRequired(MAP_KEY));
+    JsonValue combine = args.get(COMBINE_KEY, null);
+    JsonValue reduce = args.get(REDUCE_KEY, null);
 
     //conf.setMapperClass(MapEval.class);
     conf.setMapRunnerClass(MapEval.class);
@@ -121,7 +124,7 @@ public class MapReduceFn extends MapReduceBaseExpr
 
       // setup serialization (and propagate schema information, if present)
       setupSerialization(true);
-      JsonValue schema = args.get(new JsonString("schema"));
+      JsonValue schema = args.get(SCHEMA_KEY);
       if (schema != null) {
         conf.set(SCHEMA_NAME, schema.toString());
       }      

@@ -53,6 +53,9 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  */
 public class MRAggregate extends MapReduceBaseExpr
 {
+  public final static JsonString AGGREGATE_KEY = new JsonString("aggregate");
+  public final static JsonString FINAL_KEY = new JsonString("final");
+  
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
   {
     public Descriptor()
@@ -83,7 +86,7 @@ public class MRAggregate extends MapReduceBaseExpr
   public Schema getSchema()
   {
     Schema in = exprs[0].getSchema();
-    Schema out = in.element(new JsonString("output"));
+    Schema out = in.element(OUTPUT_KEY);
     return out != null ? out : SchemaFactory.anySchema();
   }
   
@@ -95,9 +98,9 @@ public class MRAggregate extends MapReduceBaseExpr
   public JsonValue eval(final Context context) throws Exception
   {
     JsonRecord args = baseSetup(context);
-    JsonValue map = args.getRequired(new JsonString("map"));
-    JsonValue agg = args.getRequired(new JsonString("aggregate"));
-    JsonValue finl = args.getRequired(new JsonString("final"));
+    JsonValue map = args.getRequired(MAP_KEY);
+    JsonValue agg = args.getRequired(AGGREGATE_KEY);
+    JsonValue finl = args.getRequired(FINAL_KEY);
 
     // use default: conf.setNumMapTasks(10); // TODO: need a way to specify options
     // use default: conf.setNumReduceTasks(2); // TODO: get from options
@@ -107,7 +110,7 @@ public class MRAggregate extends MapReduceBaseExpr
 
     // setup serialization
     setupSerialization(true);
-    JsonValue schema = args.get(new JsonString("schema"));
+    JsonValue schema = args.get(SCHEMA_KEY);
     if (schema != null) {
       conf.set(SCHEMA_NAME, schema.toString());
     }

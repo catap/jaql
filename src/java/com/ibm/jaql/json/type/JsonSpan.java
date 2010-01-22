@@ -104,19 +104,6 @@ public class JsonSpan extends JsonAtom
     return h;
   }
 
-  /**
-   * @param inText
-   * @param outText
-   */
-  public void getText(JsonString inText, MutableJsonString outText)
-  {
-    int length = (int)(end-begin);
-    byte[] bytes = outText.get();
-    outText.ensureCapacity(length);
-    inText.writeBytes(bytes, (int)begin, length);
-    outText.set(bytes, length);
-  }
-
   /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
   @Override
   public JsonSpan getCopy(JsonValue target) throws Exception

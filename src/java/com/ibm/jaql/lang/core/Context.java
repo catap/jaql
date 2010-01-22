@@ -21,8 +21,13 @@ import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.util.Pair;
@@ -38,6 +43,8 @@ public class Context
   protected HashMap<Pair<Expr,String>,Function> fnMap = new HashMap<Pair<Expr,String>,Function>(); // TODO: this will be a compiled expr soon 
   protected Pair<Expr,String> exprFnPair = new Pair<Expr, String>();
   protected ArrayList<Runnable> resetTasks = new ArrayList<Runnable>();
+  protected BufferedJsonRecord options = new BufferedJsonRecord();
+
   // PyModule pyModule;
   
   /**
@@ -152,5 +159,20 @@ public class Context
       }
     });
     return f;
+  }
+
+  /**
+   * Add fields of rec to the global options.
+   * @throws Exception 
+   */
+  public void setOptions(JsonRecord rec) throws Exception
+  {
+    JsonUtil.mergeRecordDeep(options, rec);
+  }
+  
+  /** Return the global options. (FOR READ ONLY!) */
+  public JsonRecord getOptions()
+  {
+    return options;
   }
 }
