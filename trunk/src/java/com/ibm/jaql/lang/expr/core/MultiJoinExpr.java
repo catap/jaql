@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,18 +87,23 @@ public class MultiJoinExpr extends MacroExpr
    * @param expand
    * @return
    */
-  private static Expr[] makeExprs(ArrayList<BindingExpr> bindings, Expr where, Expr expand)
+  private static Expr[] makeExprs(ArrayList<BindingExpr> bindings, Expr where, Expr options, Expr expand)
   {
+    if( options == null )
+    {
+      options = new ConstExpr(null);
+    }
     int n = bindings.size();
-    Expr[] exprs = new Expr[n + 2];
+    Expr[] exprs = new Expr[n + 3];
     for (int i = 0; i < n; i++)
     {
       BindingExpr b = bindings.get(i);
       assert b.type == BindingExpr.Type.IN;
       exprs[i] = b;
     }
-    exprs[n] = where;
-    exprs[n+1]   = expand;
+    exprs[n]   = where;
+    exprs[n+1] = options;
+    exprs[n+2] = expand;
     return exprs;
   }
 
@@ -112,9 +119,9 @@ public class MultiJoinExpr extends MacroExpr
    * @param bindings
    * @param returnExpr
    */
-  public MultiJoinExpr(ArrayList<BindingExpr> bindings, Expr where, Expr expand)
+  public MultiJoinExpr(ArrayList<BindingExpr> bindings, Expr where, Expr options, Expr expand)
   {
-    super(makeExprs(bindings, where, expand));
+    super(makeExprs(bindings, where, options, expand));
   }
   
   /**
@@ -122,7 +129,7 @@ public class MultiJoinExpr extends MacroExpr
    */
   public int numBindings()
   {
-    return exprs.length - 2;
+    return exprs.length - 3;
   }
 
   /**
@@ -139,6 +146,14 @@ public class MultiJoinExpr extends MacroExpr
    * @return
    */
   public Expr whereExpr()
+  {
+    return exprs[exprs.length - 3];
+  }
+
+  /**
+   * @return
+   */
+  public Expr optionsExpr()
   {
     return exprs[exprs.length - 2];
   }
@@ -188,6 +203,15 @@ public class MultiJoinExpr extends MacroExpr
       b.inExpr().decompile(exprText, capturedVars);
       sep = ",\n     ";
     }
+    
+    Expr opts = optionsExpr();
+    if( opts.getSchema().is(NULL).maybeNot() )
+    {
+      exprText.println(" " + kw("options") + " (");
+      opts.decompile(exprText, capturedVars);
+      exprText.println(")");
+    }
+    
     exprText.println(" " + kw("into") + " ");
     projectExpr().decompile(exprText, capturedVars);
 
@@ -589,6 +613,7 @@ public class MultiJoinExpr extends MacroExpr
           onPipe,
           new BindingExpr(BindingExpr.Type.IN, baseVar, null, base.inCore, base.mappedBinding),
           onBase,
+          optionsExpr().clone(new VarMap()),
           new ArrayExpr(project)
       };
       pipe = new JoinExpr(joinArgs);

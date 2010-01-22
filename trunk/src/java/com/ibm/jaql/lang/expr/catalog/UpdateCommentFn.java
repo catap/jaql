@@ -24,7 +24,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 
 /**
  * An expression that updates comment field of entry in catalog.
@@ -35,7 +34,7 @@ import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 public class UpdateCommentFn extends Expr {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11 {
     public Descriptor() {
-      super("updateComment", JsonToXmlFn.class);
+      super("updateComment", UpdateCommentFn.class);
     }
   }
 

@@ -20,11 +20,9 @@ import com.ibm.jaql.catalog.CatalogImpl;
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 
 /**
  * An expression to read the entry identified by a key in catalog.
@@ -32,7 +30,7 @@ import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 public class CatalogLookupFn extends Expr {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12 {
     public Descriptor() {
-      super("catalogLookup", JsonToXmlFn.class);
+      super("catalogLookup", CatalogLookupFn.class);
     }
   }
 

@@ -62,7 +62,8 @@ public class DistinctFn extends MacroExpr
         new BindingExpr(BindingExpr.Type.IN, v, null, exprs[0]),
         new BindingExpr(BindingExpr.Type.EQ, by, null, new VarExpr(v)),
         as,
-        null,
+        null, // no comparator
+        null, // TODO: how does distinct specify options? 
         new ArrayExpr(new VarExpr(by)));
     return r;
   }

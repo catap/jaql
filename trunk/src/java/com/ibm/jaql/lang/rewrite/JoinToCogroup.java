@@ -183,7 +183,7 @@ public class JoinToCogroup extends Rewrite
     BindingExpr inBinding = new BindingExpr(BindingExpr.Type.IN, inVar, null, inputs);
     BindingExpr byBinding = new BindingExpr(BindingExpr.Type.EQ, byVar, null, bys);
     Expr using = null; // TODO: take using from join
-    Expr groupBy = new GroupByExpr(inBinding, byBinding, asVars, using, groupCollect);
+    Expr groupBy = new GroupByExpr(inBinding, byBinding, asVars, using, join.optionsExpr(), groupCollect);
     // groupBy = new UnnestExpr( groupBy );
 
     join.replaceInParent(groupBy);

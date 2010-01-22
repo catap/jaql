@@ -34,7 +34,7 @@ public class CatalogUpdateFn extends Expr
 	{
 		public Descriptor()
 		{
-			super("catalogUpdate", CatalogInsertFn.class);
+			super("catalogUpdate", CatalogUpdateFn.class);
 		}
 	}
 	
