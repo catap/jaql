@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.span;
 
 import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.MutableJsonString;
+import com.ibm.jaql.json.type.SubJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -38,7 +38,9 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
     }
   }
   
-  protected Expr expr1;
+  final SubJsonString tokText = new SubJsonString();
+  final SimpleTokenizer tokenizer = new SimpleTokenizer();
+
 
   /**
    * @param exprs
@@ -60,13 +62,10 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
     {
       return JsonIterator.NULL;
     }
-
-    final MutableJsonString tokText   = new MutableJsonString();
+    tokenizer.reset(text.getInternalBytes(), text.bytesOffset(), text.bytesLength());
+    
     return new JsonIterator(tokText) {
 
-      final SimpleTokenizer tokenizer = new SimpleTokenizer(text.getCopy(), 0,
-                                          text.bytesLength()); // TODO: reuse
-      
       public boolean moveNext() throws Exception
       {
         JsonSpan span = tokenizer.next();
@@ -74,7 +73,7 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
         {
           return false;
         }
-        span.getText(text, tokText);
+        text.substring(tokText, (int)span.begin, (int)(span.end-span.begin));
         return true; // currentValue == tokText
       }
     };

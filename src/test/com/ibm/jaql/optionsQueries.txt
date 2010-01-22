@@ -1,0 +1,55 @@
+range(0,100)
+ -> transform { key: mod($,7), b: $ }
+ -> write(hdfs('data'))
+;
+
+conf = { 
+  "mapred.job.name":     "options test query",
+  "mapred.reduce.tasks": 10,
+};
+
+read(hdfs('data'))
+ -> group by key = $.key
+    options { conf }
+    into { key, n: count($) }
+ -> sort by [$]
+;
+
+join i in read(hdfs('data')),
+     j in read(hdfs('data'))
+  where i.key == j.key
+  options { conf }
+  into { i: i.key, j: j.key }
+-> distinct()
+-> sort by [$]
+;
+
+// No options set yet
+getOptions();
+
+// Set some options:
+setOptions( { conf: { "io.sort.factor": 20  }} );
+
+// And see them:
+getOptions();
+
+// Add more options:
+setOptions( { conf: { "io.sort.mb": 100  }} );
+
+// See both sets of options.
+getOptions();
+
+// pickup global options
+read(hdfs('data'))
+ -> group by key = $.key
+    into { key, n: count($) }
+ -> sort by [$]
+;
+
+// pickup global options + local options
+read(hdfs('data'))
+ -> group by key = $.key
+    options { conf }
+    into { key, n: count($) }
+ -> sort by [$]
+;

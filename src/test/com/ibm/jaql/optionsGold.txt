@@ -1,0 +1,205 @@
+range(0,100)
+ -> transform { key: mod($,7), b: $ }
+ -> write(hdfs('data'))
+;##
+{
+  "location": "data",
+  "type": "hdfs"
+}
+
+
+conf = { 
+  "mapred.job.name":     "options test query",
+  "mapred.reduce.tasks": 10,
+};##
+"conf"
+
+
+read(hdfs('data'))
+ -> group by key = $.key
+    options { conf }
+    into { key, n: count($) }
+ -> sort by [$]
+;##
+[
+  {
+    "key": 0,
+    "n": 15
+  },
+  {
+    "key": 1,
+    "n": 15
+  },
+  {
+    "key": 2,
+    "n": 15
+  },
+  {
+    "key": 3,
+    "n": 14
+  },
+  {
+    "key": 4,
+    "n": 14
+  },
+  {
+    "key": 5,
+    "n": 14
+  },
+  {
+    "key": 6,
+    "n": 14
+  }
+]
+
+
+join i in read(hdfs('data')),
+     j in read(hdfs('data'))
+  where i.key == j.key
+  options { conf }
+  into { i: i.key, j: j.key }
+-> distinct()
+-> sort by [$]
+;##
+[
+  {
+    "i": 0,
+    "j": 0
+  },
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": 3,
+    "j": 3
+  },
+  {
+    "i": 4,
+    "j": 4
+  },
+  {
+    "i": 5,
+    "j": 5
+  },
+  {
+    "i": 6,
+    "j": 6
+  }
+]
+
+
+// No options set yet
+getOptions();##
+{}
+
+
+// Set some options:
+setOptions( { conf: { "io.sort.factor": 20  }} );##
+true
+
+
+// And see them:
+getOptions();##
+{
+  "conf": {
+    "io.sort.factor": 20
+  }
+}
+
+
+// Add more options:
+setOptions( { conf: { "io.sort.mb": 100  }} );##
+true
+
+
+// See both sets of options.
+getOptions();##
+{
+  "conf": {
+    "io.sort.factor": 20,
+    "io.sort.mb": 100
+  }
+}
+
+
+// pickup global options
+read(hdfs('data'))
+ -> group by key = $.key
+    into { key, n: count($) }
+ -> sort by [$]
+;##
+[
+  {
+    "key": 0,
+    "n": 15
+  },
+  {
+    "key": 1,
+    "n": 15
+  },
+  {
+    "key": 2,
+    "n": 15
+  },
+  {
+    "key": 3,
+    "n": 14
+  },
+  {
+    "key": 4,
+    "n": 14
+  },
+  {
+    "key": 5,
+    "n": 14
+  },
+  {
+    "key": 6,
+    "n": 14
+  }
+]
+
+
+// pickup global options + local options
+read(hdfs('data'))
+ -> group by key = $.key
+    options { conf }
+    into { key, n: count($) }
+ -> sort by [$]
+;##
+[
+  {
+    "key": 0,
+    "n": 15
+  },
+  {
+    "key": 1,
+    "n": 15
+  },
+  {
+    "key": 2,
+    "n": 15
+  },
+  {
+    "key": 3,
+    "n": 14
+  },
+  {
+    "key": 4,
+    "n": 14
+  },
+  {
+    "key": 5,
+    "n": 14
+  },
+  {
+    "key": 6,
+    "n": 14
+  }
+]
+

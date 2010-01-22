@@ -18,12 +18,13 @@ package com.ibm.jaql.io.hadoop;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -43,7 +44,7 @@ public class ConfUtil
    * @param args
    * @throws Exception
    */
-  public static void writeConf(JobConf conf, String name, JsonRecord args)
+  public static void writeConf(Configuration conf, String name, JsonRecord args)
       throws Exception
   {
     if (args == null) return;
@@ -64,7 +65,7 @@ public class ConfUtil
    * @return
    * @throws Exception
    */
-  public static JsonRecord readConf(JobConf conf, String name) throws Exception
+  public static JsonRecord readConf(Configuration conf, String name) throws Exception
   {
     String jsonTxt = conf.get(name);
     if (jsonTxt == null) return null;
@@ -87,7 +88,7 @@ public class ConfUtil
    * @return
    * @throws Exception
    */
-  public static JsonArray readConfArray(JobConf conf, String name)
+  public static JsonArray readConfArray(Configuration conf, String name)
       throws Exception
   {
     String jsonTxt = conf.get(name);
@@ -110,7 +111,7 @@ public class ConfUtil
    * @param data
    * @throws Exception
    */
-  public static void writeConfArray(JobConf conf, String name, JsonArray data)
+  public static void writeConfArray(Configuration conf, String name, JsonArray data)
       throws Exception
   {
     if (data == null) return;
@@ -157,5 +158,19 @@ public class ConfUtil
       bytes[i] = (byte)((c1 << 4) | c2);
     }
     return bytes;
+  }
+
+  /**
+   * Set each key:value from rec in the conf
+   */
+  public static void setConf(Configuration conf, JsonRecord rec)
+  {
+    if( rec != null )
+    {
+      for( Map.Entry<JsonString, JsonValue> e: rec )
+      {
+        conf.set(e.getKey().toString(), e.getValue().toString());
+      }
+    }
   }
 }

@@ -768,32 +768,34 @@ group returns [Expr r=null]
       BindingExpr in = null;
       BindingExpr by = null;
       Expr c=null;
+      Expr ret=null;
+      Expr opt=null;
       String v = "$";
       ArrayList<Var> as = new ArrayList<Var>();
     }
-    : kwGroup ( (kwEach id kwIn) => kwEach v=id kwIn 
-              | () 
-              ) 
+    : kwGroup
+      ( (kwEach id kwIn) => kwEach v=id kwIn )?
         { 
           in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
         }
       by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
         { if( by.var != Var.UNUSED ) env.scope(by.var); } 
       ( kwUsing c=comparator { oops("comparators on group by NYI"); } )?
+      ( (kwOptions) => kwOptions opt=expr )?
         {
           for( Var av: as )
           {
             env.scope(av);
           }
         }
-      r=groupReturn
+      ret=groupReturn
         {
           if( by.var != Var.UNUSED ) env.unscope(by.var);
           for( Var av: as )
           {
             env.scope(av);
           }
-          r = new GroupByExpr(in, by, as, c, r); // .expand(env);
+          r = new GroupByExpr(in, by, as, c, opt, ret);
         }
     ;
 
@@ -869,21 +871,23 @@ groupReturn returns [Expr r=null]
     //    { if(numInputs != 1) throw new RuntimeException("cannot use aggregate with cogroup"); } 
     ;
 
-
 groupPipe[Expr in] returns [Expr r=null]
     { 
-      BindingExpr b; BindingExpr by=null; Expr key=null;  Expr c; 
+      BindingExpr b; BindingExpr by=null; Expr key=null;  Expr ret;
+      Expr cmp = null;  
+      Expr opt = null; 
       String v="$"; Var asVar = null; 
     }
     : kwGroup b=each[in] 
       by=groupBy[null]       { env.unscope(b.var); if( by.var != Var.UNUSED ) env.scope(by.var); }
       ( kwAs v=id )?         { asVar=env.scope(v, SchemaFactory.arraySchema()); }
-      ( kwUsing c=comparator { oops("comparators on group by NYI"); } )?
-      r=groupReturn
+      ( kwUsing cmp=comparator { oops("comparators on group by NYI"); } )?
+      ( (kwOptions) => kwOptions opt=expr )?
+      ret=groupReturn
         {
           if( by.var != Var.UNUSED ) env.unscope(by.var);
           env.unscope(asVar);
-          r = new GroupByExpr(b,by,asVar,null,r);
+          r = new GroupByExpr(b, by, asVar, cmp, opt, ret);
         }
     ;
 
@@ -976,6 +980,7 @@ join returns [Expr r=null]
       HashMap<String,Var> keys = new HashMap<String,Var>();
       Expr p; 
       BindingExpr b;
+      Expr opt=null;
     }
     : kwJoin b=joinIn     { in.add(b); b.var.setHidden(true); }
             ("," b=joinIn { in.add(b); b.var.setHidden(true); } )+  
@@ -986,6 +991,7 @@ join returns [Expr r=null]
         }
       }
       kwWhere p=expr
+      ( (kwOptions) => kwOptions opt=expr )?
       ( kwInto r=expr     { r = new ArrayExpr(r); }
       | kwExpand r=expr )
       {
@@ -993,7 +999,7 @@ join returns [Expr r=null]
         {
           env.unscope(b2.var);
         }
-        r = new MultiJoinExpr(in, p, r).expand(env);  
+        r = new MultiJoinExpr(in, p, opt, r).expand(env);  
       }
     ;
 
@@ -1021,6 +1027,7 @@ equijoin returns [Expr r=null]
         ArrayList<BindingExpr> in = new ArrayList<BindingExpr>(); 
         ArrayList<Expr> on = new ArrayList<Expr>(); 
         Expr c=null; 
+        Expr opt=null;
     }
     : kwEquijoin ejoinIn[in,on] ( "," ejoinIn[in,on] )+ 
       ( kwUsing c=comparator { oops("comparators on joins are NYI"); } )?
@@ -1030,10 +1037,11 @@ equijoin returns [Expr r=null]
           b.var.setHidden(false);
         }
       }
+      ( (kwOptions) => kwOptions opt=expr )?
       ( kwInto r=expr     { r = new ArrayExpr(r); }
       | kwExpand r=expr )
     {
-      r = new JoinExpr(in,on,r); // TODO: add comparator
+      r = new JoinExpr(in,on,opt,r); // TODO: add comparator
       for( BindingExpr b: in )
       {
         env.unscope(b.var);
@@ -1295,7 +1303,7 @@ arraySchema returns [ArraySchema s = null]
 arraySchemaRepeat returns [Boolean repeat = false; ]
     { JsonLong i; }
     : /* empty */   { repeat = false; }
-    | "..."         { repeat = true; }
+    | DOT_DOT_DOT   { repeat = true; }
     | "<" ( i=longLit { if (i.get() != 0) 
     	                  throw new IllegalArgumentException(
     	                    "<n,n> syntax is deprecated; use ... instead"); 
@@ -1429,6 +1437,7 @@ kwSplit            : { nextIsWeakKw("split") }? ID            | "#split" ;
 kwTop              : { nextIsWeakKw("top") }? ID              | "#top" ;
 kwTransform        : { nextIsWeakKw("transform") }? ID        | "#transform" ;
 kwUnroll           : { nextIsWeakKw("unroll") }? ID           | "#unroll" ;
+kwOptions          : { nextIsWeakKw("options") }? ID          | "#options" ;
        
 // Soft keywords: occur in the grammar at places where no identifier is allowed (thus no ambiguitiy)
 softkw returns [String s=null]
@@ -1931,12 +1940,13 @@ DOTTY
     | '0'('x'|'X')(HEX)+     {$setType(INT);}
     | (DOT_ID) => DOT_ID     {$setType(DOT_ID);}
     | (DOT_STAR) => DOT_STAR {$setType(DOT_STAR); }
-    | '.'                    {$setType(DOT);}
+    | '.' (                  {$setType(DOT);}
+          | '.' '.'          {$setType(DOT_DOT_DOT);}
+          )
     ;
 
-DOT_DOT_DOT
-    options { testLiterals=true; }
-    : '.' '.' '.'
+protected DOT_DOT_DOT
+    : '.' '.' '.' 
     ;
 
 protected DOT_ID

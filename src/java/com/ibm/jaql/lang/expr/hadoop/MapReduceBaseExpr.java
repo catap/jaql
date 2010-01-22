@@ -32,6 +32,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.hadoop.CompositeInputAdapter;
+import com.ibm.jaql.io.hadoop.ConfUtil;
 import com.ibm.jaql.io.hadoop.Globals;
 import com.ibm.jaql.io.hadoop.HadoopAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
@@ -65,12 +66,22 @@ import com.ibm.jaql.util.ClassLoaderMgr;
  */
 public abstract class MapReduceBaseExpr extends Expr
 {
+  // Configuration keys
   public final static String    BASE_NAME                  = "com.ibm.jaql.mapred";
   public final static String    STORE_REGISTRY_VAR_NAME    = BASE_NAME + ".sRegistry";
   public final static String    RNG_REGISTRY_VAR_NAME      = BASE_NAME + ".rRegistry";
   public final static String    REGISTRY_VAR_NAM           = BASE_NAME + ".registry";
   public final static String    NUM_INPUTS_NAME            = BASE_NAME + ".numInputs";
   public final static String    SCHEMA_NAME                = BASE_NAME + ".schema";
+  
+  // Argument keys
+  public final static JsonString INPUT_KEY = new JsonString("input");
+  public final static JsonString OUTPUT_KEY = new JsonString("output");
+  public final static JsonString MAP_KEY = new JsonString("map");
+  public final static JsonString SCHEMA_KEY = new JsonString("schema");
+  public final static JsonString OPTIONS_KEY = new JsonString("options");
+  public final static JsonString CONF_KEY = new JsonString("conf"); // options.conf
+  
   
   protected static final Logger LOG = Logger.getLogger(MapReduceFn.class.getName());
 
@@ -123,11 +134,15 @@ public abstract class MapReduceBaseExpr extends Expr
   protected final JsonRecord baseSetup(Context context) throws Exception
   {
     JsonRecord args = JaqlUtil.enforceNonNull((JsonRecord) exprs[0].eval(context));    
-    JsonValue inArgs = args.getRequired(new JsonString("input"));
-    outArgs = args.getRequired(new JsonString("output"));
-    JsonRecord options = (JsonRecord) args.get(new JsonString("options"));
+    JsonValue inArgs = args.getRequired(INPUT_KEY);
+    outArgs = args.getRequired(OUTPUT_KEY);
+    JsonRecord options = (JsonRecord) args.get(OPTIONS_KEY);
 
-    conf = new JobConf();
+    conf = new JobConf(); // TODO: get from context?
+    
+    // Set the global options.
+    ConfUtil.setConf(conf, (JsonRecord)context.getOptions().get(CONF_KEY));
+
     File extensions = ClassLoaderMgr.getExtensionJar();
     if (extensions != null)
     {
@@ -138,18 +153,6 @@ public abstract class MapReduceBaseExpr extends Expr
       conf.setJarByClass(MapReduceFn.class);
     }
 
-    // setup the job name
-    String jobName = "jaql job";
-    if (options != null)
-    {
-      JsonValue nameValue = options.get(new JsonString("jobname"));
-      if (nameValue != null)
-      {
-        jobName = nameValue.toString();
-      }
-    }
-    conf.setJobName(jobName);
-
     //
     // Force local execution if requested.
     //
@@ -157,6 +160,9 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       conf.set("mapred.job.tracker", "local");
     }
+    
+    // set the default job name
+    conf.setJobName("jaql job");
     
     //
     // Setup the input
@@ -188,6 +194,13 @@ public abstract class MapReduceBaseExpr extends Expr
         .getAdapterStore().output.getAdapter(outArgs);
     outAdapter.setParallel(conf);
 //    ConfiguratorUtil.writeToConf(outAdapter, conf, outArgRec);
+
+    // Passs any overrides to the conf from options.conf
+    if (options != null)
+    {
+      JsonRecord confOpts = (JsonRecord)options.get(CONF_KEY);
+      ConfUtil.setConf(conf, confOpts);
+    }
 
     // write out various static registries
     RegistryUtil.writeConf(conf, HadoopAdapter.storeRegistryVarName, JaqlUtil

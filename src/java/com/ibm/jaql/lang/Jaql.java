@@ -21,7 +21,6 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;

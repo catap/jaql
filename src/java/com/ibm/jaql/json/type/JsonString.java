@@ -159,7 +159,16 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
   {
     return toString().indexOf(c);
   }
-  
+
+  /** Get a substring of this string.
+   *  If this string changes, substr is invalid!
+   */
+  public void substring(SubJsonString substr, int begin, int length)
+  {
+    ensureBytes();
+    substr.set(bytes, begin, length);
+  }
+
   // -- mutation (all protected) ------------------------------------------------------------------
 
   /** Sets this <code>JsonString</code> to the provided string. */
@@ -294,4 +303,5 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
   {
     return toString().subSequence(start, end);
   }
+
 }
