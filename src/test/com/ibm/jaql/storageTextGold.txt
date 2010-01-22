@@ -884,9 +884,9 @@ read(lines($out));##
   "4",
   "true",
   "6",
-  "\"Hello\"",
+  "Hello",
   "8",
-  "\"World\"",
+  "World",
   "0.78"
 ]
 
