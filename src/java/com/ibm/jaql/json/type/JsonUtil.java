@@ -46,7 +46,7 @@ public class JsonUtil
   
   public static TextFullSerializer getDefaultSerializer(Schema schema)
   {
-    if (schema == SchemaFactory.anySchema()) { // makes a common case more efficient
+    if (schema == SchemaFactory.anySchema() || schema == null) { // makes a common case more efficient
       return getDefaultSerializer();
     }
     return new SchemaTextFullSerializer(schema);
