@@ -1,0 +1,17 @@
+COPYING.txt
+README.txt
+setup.py
+pyJaql/__init__.py
+pyJaql/env.py
+pyJaql/json.py
+pyJaql/minjson.py
+pyJaql/pyJaql.py
+pyJaql/docs/PyJaql-0.1 Tutorial.odt
+pyJaql/docs/PyJaql-0.1-API.odt
+pyJaql/docs/index.html
+pyJaql/examples/ex1.py
+pyJaql/examples/test.jql
+pyJaql/examples/usageSamples.py
+pyJaql/ut/__init__.py
+pyJaql/ut/pyJaqlTest.py
+pyJaql/ut/test.jql
