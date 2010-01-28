@@ -1,0 +1,4 @@
+include COPYING.txt
+recursive-include pyJaql docs *.html *.css *.png *.gif *.pdf *.odt *.doc
+recursive-include pyJaql examples *py *.jql 
+recursive-include pyJaql ut *.jql
