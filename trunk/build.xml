@@ -17,338 +17,298 @@
 
 <project name="jaql" default="compile">
 
-	<!-- Load all the default properties, and any the user wants    -->
-	<!-- to contribute (without having to type -D or edit this file -->
-	<property file="${user.home}/build.properties" />
-	<property file="build.properties" />
+  <!-- Load all the default properties, and any the user wants    -->
+  <!-- to contribute (without having to type -D or edit this file -->
+  <property file="${user.home}/build.properties" />
+  <property file="build.properties" />
 
-	<property name="lib.dir" value="${basedir}/lib" />
-	<property name="conf.dir" value="${basedir}/conf" />
-	<property name="resources.dir" value="${basedir}/resources" />
-	<property name="bin.dir" value="${basedir}/bin" />
-	<property name="docs.dir" value="${basedir}/docs" />
-	<property name="build.dir" value="${basedir}/build" />
-	<property name="build.src" value="${build.dir}/src" />
-	<property name="build.docs" value="${build.dir}/docs" />
-	<property name="build.javadocs" value="${build.docs}/api" />
-	<!-- Default version is 0.20.1. For other supported versions, see vendor/hadoop/ -->
-	<property name="hadoop.version" value="0.20.1" />
+  <property name="lib.dir" value="${basedir}/lib" />
+  <property name="conf.dir" value="${basedir}/conf" />
+  <property name="resources.dir" value="${basedir}/resources" />
+  <property name="bin.dir" value="${basedir}/bin" />
+  <property name="docs.dir" value="${basedir}/docs" />
+  <property name="build.dir" value="${basedir}/build" />
+  <property name="build.src" value="${build.dir}/src" />
+  <property name="build.docs" value="${build.dir}/docs" />
+  <property name="build.javadocs" value="${build.docs}/api" />
+  <!-- Default version is 0.20.1. For other supported versions, see vendor/hadoop/ -->
+  <property name="hadoop.version" value="0.20.1" />
 
-	<property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
-	<property file="${hadoop.dir}/build.properties" />
-	<property name="hbase.dir" value="${basedir}/vendor/hbase/${hbase.version}" />
+  <property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
+  <property file="${hadoop.dir}/build.properties" />
+  <property name="hbase.dir" value="${basedir}/vendor/hbase/${hbase.version}" />
 
-	<property name="test.build.dir" value="${build.dir}/test" />
-	<property name="test.src.dir" value="${basedir}/src/test/com/ibm/jaql" />
-	<property name="test.classes.dir" value="${build.dir}/classes" />
-	<property name="test.include" value="Test*" />
-	<property name="test.exclude" value="" />
-	<property name="test.classpath.id" value="test.classpath.mini" />
-	<property name="test.output" value="no" />
-	<property name="test.junit.output.format" value="plain" />
-	<property name="test.build.data" value="${test.build.dir}/data" />
-	<property name="test.cache.data" value="${test.build.dir}/cache" />
-	<property name="test.log.dir" value="${test.build.dir}/logs" />
-	<property name="test.conf.override.dir" value="${test.build.dir}/hadoop-override" />
-	<property name="test.cleanup" value="false" />
-	<!-- Use the following property setting when testing on a distributed cluster -->
-	<!-- <property name="test.deployment" value="cluster"/> -->
-	<property name="test.deployment" value="mini" />
-	<!-- Use the following property to force map reduce in local mode -->
-	<!-- <property name="jaql.mapred.mode" value="cluster"/> -->
-	<!-- <property name="test.jaql.mapred.mode" value="local" /> -->
-	<property name="tmp.dir" value="${build.dir}/tmp" />
-	<property name="year" value="2009" />
-	<property name="version" value="0.4" />
-	<property name="Name" value="jaql" />
-	<property name="name" value="jaql" />
-	
-	<property environment="env" />
+  <property name="test.build.dir" value="${build.dir}/test" />
+  <property name="test.src.dir" value="${basedir}/src/test/com/ibm/jaql" />
+  <property name="test.classes.dir" value="${build.dir}/classes" />
+  <property name="test.include" value="Test*" />
+  <property name="test.exclude" value="" />
+  <property name="test.classpath.id" value="test.classpath.mini" />
+  <property name="test.output" value="no" />
+  <property name="test.junit.output.format" value="plain" />
+  <property name="test.build.data" value="${test.build.dir}/data" />
+  <property name="test.cache.data" value="${test.build.dir}/cache" />
+  <property name="test.log.dir" value="${test.build.dir}/logs" />
+  <property name="test.conf.override.dir" value="${test.build.dir}/hadoop-override" />
+  <property name="test.cleanup" value="false" />
+  <!-- Use the following property setting when testing on a distributed cluster -->
+  <!-- <property name="test.deployment" value="cluster"/> -->
+  <property name="test.deployment" value="mini" />
+  <!-- Use the following property to force map reduce in local mode -->
+  <!-- <property name="jaql.mapred.mode" value="cluster"/> -->
+  <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
+  <property name="tmp.dir" value="${build.dir}/tmp" />
+  <property name="year" value="2009" />
+  <property name="version" value="0.4" />
+  <property name="Name" value="jaql" />
+  <property name="name" value="jaql" />
 
-	<path id="test.compile.classpath">
-		<fileset dir="${hadoop.dir}">
-			<include name="**/*.jar" />
-			<exclude name="**/excluded" />
-		</fileset>
-		<fileset dir="${hbase.dir}">
-			<include name="**/*.jar" />
-			<exclude name="**/excluded" />
-		</fileset>
-		<fileset dir="${basedir}/lib">
-			<include name="**/*.jar" />
-			<exclude name="**/excluded" />
-		</fileset>
-		<pathelement location="${build.dir}/classes" />
-	</path>
+  <property environment="env" />
 
-	<path id="test.classpath.base">
-		<pathelement location="${hadoop.dir}/conf" />
-		<pathelement location="${hbase.dir}/conf" />
-		<pathelement location="${hadoop.dir}/src" />
-		<pathelement location="${hbase.dir}/src" />
-		<pathelement location="${conf.dir}" />
-		<pathelement location="${test.cache.data}" />
-		<pathelement location="${build.dir}/jaql.jar" />
-		<fileset dir="${basedir}/lib">
-			<include name="**/*.jar" />
-			<exclude name="**/excluded" />
-		</fileset>
-		<fileset dir="${hadoop.dir}">
-			<include name="**/*.jar" />
-			<exclude name="**/excluded" />
-		</fileset>
-		<fileset dir="${hbase.dir}">
-			<include name="**/*.jar" />
-			<exclude name="**/excluded" />
-		</fileset>
-	</path>
+  <path id="test.compile.classpath">
+    <fileset dir="${hadoop.dir}">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded" />
+    </fileset>
+    <fileset dir="${hbase.dir}">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded" />
+    </fileset>
+    <fileset dir="${basedir}/lib">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded" />
+    </fileset>
+    <pathelement location="${build.dir}/classes" />
+  </path>
 
-	<path id="test.classpath.mini">
-		<pathelement location="${test.conf.override.dir}" />
-		<path refid="test.classpath.base" />
-	</path>
+  <path id="test.classpath.base">
+    <pathelement location="${hadoop.dir}/conf" />
+    <pathelement location="${hbase.dir}/conf" />
+    <pathelement location="${hadoop.dir}/src" />
+    <pathelement location="${hbase.dir}/src" />
+    <pathelement location="${conf.dir}" />
+    <pathelement location="${test.cache.data}" />
+    <pathelement location="${build.dir}/jaql.jar" />
+    <fileset dir="${basedir}/lib">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded" />
+    </fileset>
+    <fileset dir="${hadoop.dir}">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded" />
+    </fileset>
+    <fileset dir="${hbase.dir}">
+      <include name="**/*.jar" />
+      <exclude name="**/excluded" />
+    </fileset>
+  </path>
 
-	<path id="test.classpath.cluster">
-		<pathelement location="${env.HADOOP_CONF_DIR}" />
-		<path refid="test.classpath.base" />
-	</path>
+  <path id="test.classpath.mini">
+    <pathelement location="${test.conf.override.dir}" />
+    <path refid="test.classpath.base" />
+  </path>
 
-	<property name="test.classpath.id" value="test.classpath.mini" />
-	<property name="test.compile.classpath.id" value="test.compile.classpath" />
-	
-	<!-- ================================================================== -->
-	<!-- Junit test                                                         -->
-	<!-- ================================================================== -->
-	<target name="test-internal" depends="jar, extension.jar">
-		<mkdir dir="${build.dir}" />
-		<mkdir dir="${test.build.dir}" />
-		<delete dir="${test.build.data}" />
-		<mkdir dir="${test.build.data}" />
-		<delete dir="${test.log.dir}" />
-		<mkdir dir="${test.log.dir}" />
-		<delete dir="${test.cache.data}" />
-		<mkdir dir="${test.cache.data}" />
-		<mkdir dir="${test.cache.data}/data" />
-		<delete dir="${test.conf.override.dir}" />
-		<mkdir dir="${test.conf.override.dir}" />
-		<copy todir="${test.cache.data}">
-			<fileset dir="${test.src.dir}" includes="*.txt" />
-			<fileset dir="${hadoop.dir}/src/jaql/test/com/ibm/jaql" includes="*.sh,*.txt" />
-		</copy>
-		<chmod dir="${test.cache.data}" perm="ugo+x" includes="*.sh" />
-		<chmod dir="${bin.dir}" perm="ugo+x" includes="*" />
+  <path id="test.classpath.cluster">
+    <pathelement location="${env.HADOOP_CONF_DIR}" />
+    <path refid="test.classpath.base" />
+  </path>
 
-		<copy todir="${test.cache.data}">
-			<fileset dir="${test.src.dir}" includes="*.jar" />
-		</copy>
-		<copy todir="${test.cache.data}">
-			<fileset dir="${test.src.dir}" includes="*.jql" />
-		</copy>
-		<copy todir="${test.cache.data}/data">
-			<fileset dir="${test.src.dir}/data" />
-		</copy>
+  <property name="test.classpath.id" value="test.classpath.mini" />
+  <property name="test.compile.classpath.id" value="test.compile.classpath" />
 
-		<mkdir dir="${test.classes.dir}" />
-		<unjar src="${build.dir}/jaql.jar" dest="${build.dir}/classes" />
-		
-		<!--*********************************Test pyJaql environment requirements*****************************-->
-		<!--copy the probe-script into build system-->
-		<copy todir="${test.cache.data}/data">
-			<fileset dir="${test.src.dir}">
-				<include  name="probe_pyJaql.py"/>
-			</fileset>
-		</copy>		
-		<!--check python installation-->
-		<condition property="python.found">
-			<or>
-				<available file="python" filepath="${env.PATH}" />
-				<available file="python.exe" filepath="${env.Path}" />
-			</or>
-		</condition>
-		<!--if python is not found, output error log-->
-		<antcall target="pythoncheck"></antcall>
-		<!--run a probe task to check whether pyJaql is correctly installed-->
-		<exec executable="python" outputproperty="is_pyJaql_installed" logerror="true" failonerror="false">
-			<arg value="${test.cache.data}/data/probe_pyJaql.py" />
-		</exec>
-		<echo>${is_pyJaql_installed}</echo>
-		<condition property="test.python">
-			<and>
-				<equals arg1="${is_pyJaql_installed}" arg2="" />
-				<isset property="python.found"/>
-			</and>
-		</condition>
-		<!--**************************************************************************************************-->
-		
-		<junit showoutput="${test.output}" printsummary="yes" haltonfailure="no" fork="yes" maxmemory="256m" errorProperty="tests.failed" failureProperty="tests.failed">
-			<assertions>
-				<enable />
-			</assertions>
-			<!-- users should set JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8 -->
-			<sysproperty key="file.encoding" value="UTF8" />
-			<sysproperty key="test.build.data" value="${test.build.data}" />
-			<sysproperty key="test.cache.data" value="${test.cache.data}" />
-			<sysproperty key="hadoop.log.dir" value="${test.log.dir}" />
-			<sysproperty key="hadoop.log.file" value="hadoop.log" />
-			<sysproperty key="hadoop.root.logger" value="INFO,DRFA" />
-			<sysproperty key="hadoop.conf.override" value="${test.conf.override.dir}" />
-			<sysproperty key="test.deployment" value="${test.deployment}" />
-			<sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
-			<sysproperty key="test.cleanup" value="${test.cleanup}" />
-			<sysproperty key="build" value="${build.dir}" />
-			<sysproperty key="test.plain" value="${test.plain}" />
-			<sysproperty key="test.explain" value="${test.explain}" />
-			<sysproperty key="test.rewrite" value="${test.rewrite}" />
-			<sysproperty key="test.count" value="${test.count}" />
-			<classpath refid="${test.classpath.id}" />
-			<formatter type="${test.junit.output.format}" />
-			<batchtest todir="${test.build.dir}" unless="testcase">
-				<fileset dir="${test.classes.dir}" includes="**/${test.include}.class" excludes="**/${test.exclude}.class,**/*$*.class,**/com/ibm/jaql/lang/expr/module/TestFn.class}" >
-					<!--conditionally test pyJaql-->
-					<exclude name="**/com/ibm/jaql/TestPyJaql.class" unless="test.python"/>
-				</fileset>
-			</batchtest>
-		</junit>
-		<fail if="tests.failed">Tests failed!</fail>
-	</target>
+  <!-- ================================================================== -->
+  <!-- Junit test                                                         -->
+  <!-- ================================================================== -->
+  <target name="test-internal" depends="jar, extension.jar">
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${test.build.dir}" />
+    <delete dir="${test.build.data}" />
+    <mkdir dir="${test.build.data}" />
+    <delete dir="${test.log.dir}" />
+    <mkdir dir="${test.log.dir}" />
+    <delete dir="${test.cache.data}" />
+    <mkdir dir="${test.cache.data}" />
+    <mkdir dir="${test.cache.data}/data" />
+    <delete dir="${test.conf.override.dir}" />
+    <mkdir dir="${test.conf.override.dir}" />
+    <copy todir="${test.cache.data}">
+      <fileset dir="${test.src.dir}" includes="*.txt" />
+      <fileset dir="${hadoop.dir}/src/jaql/test/com/ibm/jaql" includes="*.sh,*.txt"/>
+    </copy>
+    <chmod dir="${test.cache.data}" perm="ugo+x" includes="*.sh"/>
+    <chmod dir="${bin.dir}" perm="ugo+x" includes="*"/>
 
-	<!--****************************python not found, echo warning message********************************-->
-	<target name="pythoncheck" unless="python.found">
-		<echo>[WARNING] pyhon not found! TestPyJaql will be skipped.</echo>
-		<echo>		    Please check python installation</echo>
-	</target>
-	<!--**************************************************************************************************-->
-	
-	<target name="test-cluster">
-		<antcall target="test">
-			<param name="test.classpath.id" value="test.classpath.cluster" />
-			<param name="test.deployment" value="cluster" />
-			<param name="test.cleanup" value="true" />
-		</antcall>
-	</target>
+    <copy todir="${test.cache.data}">
+      <fileset dir="${test.src.dir}" includes="*.jar" />
+    </copy>
+    <copy todir="${test.cache.data}">
+      <fileset dir="${test.src.dir}" includes="*.jql" />
+    </copy>
+    <copy todir="${test.cache.data}/data">
+      <fileset dir="${test.src.dir}/data" />
+    </copy>
+    <mkdir dir="${test.classes.dir}" />
+    <unjar src="${build.dir}/jaql.jar" dest="${build.dir}/classes" />
 
-	<target name="test-plain">
-		<antcall target="test-internal">
-			<param name="test.plain" value="true" />
-		</antcall>
-	</target>
+    <junit showoutput="${test.output}" printsummary="yes" haltonfailure="no" fork="yes" maxmemory="256m" errorProperty="tests.failed" failureProperty="tests.failed">
+      <assertions>
+        <enable />
+      </assertions>
+      <!-- users should set JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8 -->
+      <sysproperty key="file.encoding" value="UTF8" />
+      <sysproperty key="test.build.data" value="${test.build.data}" />
+      <sysproperty key="test.cache.data" value="${test.cache.data}" />
+      <sysproperty key="hadoop.log.dir" value="${test.log.dir}" />
+      <sysproperty key="hadoop.log.file" value="hadoop.log" />
+      <sysproperty key="hadoop.root.logger" value="INFO,DRFA" />
+      <sysproperty key="hadoop.conf.override" value="${test.conf.override.dir}" />
+      <sysproperty key="test.deployment" value="${test.deployment}" />
+      <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
+      <sysproperty key="test.cleanup" value="${test.cleanup}" />
+      <sysproperty key="build" value="${build.dir}" />
+      <sysproperty key="test.plain" value="${test.plain}" />
+      <sysproperty key="test.explain" value="${test.explain}" />
+      <sysproperty key="test.rewrite" value="${test.rewrite}" />
+      <sysproperty key="test.count" value="${test.count}" />
+      <classpath refid="${test.classpath.id}" />
+      <formatter type="${test.junit.output.format}" />
+      <batchtest todir="${test.build.dir}" unless="testcase">
+        <fileset dir="${test.classes.dir}" includes="**/${test.include}.class" excludes="**/${test.exclude}.class,**/*$*.class,**/com/ibm/jaql/lang/expr/module/TestFn.class" />
+      </batchtest>
+    </junit>
+    <fail if="tests.failed">Tests failed!</fail>
+  </target>
 
-	<target name="test-explain">
-		<antcall target="test-internal">
-			<param name="test.explain" value="true" />
-		</antcall>
-	</target>
+  <target name="test-cluster">
+    <antcall target="test">
+      <param name="test.classpath.id" value="test.classpath.cluster" />
+      <param name="test.deployment" value="cluster" />
+      <param name="test.cleanup" value="true" />
+    </antcall>
+  </target>
 
-	<target name="test-rewrite">
-		<antcall target="test-internal">
-			<param name="test.rewrite" value="true" />
-			<param name="test.count" value="true" />
-		</antcall>
-	</target>
-	
-	<target name="test">
-		<antcall target="test-internal">
-			<param name="test.plain" value="true" />
-			<param name="test.explain" value="true" />
-			<param name="test.rewrite" value="true" />
-			<param name="test.count" value="true" />
-		</antcall>
-	</target>
+  <target name="test-plain">
+    <antcall target="test-internal">
+      <param name="test.plain" value="true" />
+    </antcall>
+  </target>
 
-	<!-- ================================================================== -->
-	<!-- Build from source                                                  -->
-	<!-- ================================================================== -->
+  <target name="test-explain">
+    <antcall target="test-internal">
+      <param name="test.explain" value="true" />
+    </antcall>
+  </target>
 
-	<property name="build.classes" value="${build.dir}/classes" />
-	<property name="src.dir" value="${basedir}/src/java" />
-	<property name="build.encoding" value="ISO-8859-1" />
-	<property name="javac.debug" value="on" />
-	<property name="javac.optimize" value="on" />
-	<property name="javac.deprecation" value="off" />
-	<property name="javac.version" value="1.5" />
-	<property name="javadoc.link.java" value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
-	<property name="javac.args" value="" />
+  <target name="test-rewrite">
+    <antcall target="test-internal">
+      <param name="test.rewrite" value="true" />
+      <param name="test.count" value="true" />
+    </antcall>
+  </target>
 
-	<!-- <path id="classpath">
+  <target name="test">
+    <antcall target="test-internal">
+      <param name="test.plain" value="true" />
+      <param name="test.explain" value="true" />
+      <param name="test.rewrite" value="true" />
+      <param name="test.count" value="true" />
+    </antcall>
+  </target>
+
+  <!-- ================================================================== -->
+  <!-- Build from source                                                  -->
+  <!-- ================================================================== -->
+
+  <property name="build.classes" value="${build.dir}/classes" />
+  <property name="src.dir" value="${basedir}/src/java" />
+  <property name="build.encoding" value="ISO-8859-1" />
+  <property name="javac.debug" value="on" />
+  <property name="javac.optimize" value="on" />
+  <property name="javac.deprecation" value="off" />
+  <property name="javac.version" value="1.5" />
+  <property name="javadoc.link.java" value="http://java.sun.com/j2se/${javac.version}/docs/api/" />
+  <property name="javac.args" value="" />
+
+  <!-- <path id="classpath">
         <pathelement location="${build.classes}" />
         <fileset dir="${lib.dir}">
             <include name="**/*.jar" />
         </fileset>
     </path> -->
 
-	<target name="init">
-		<mkdir dir="${build.dir}" />
-		<mkdir dir="${build.classes}" />
-		<mkdir dir="${build.src}" />
-		<available file="${hadoop.dir}/src/jaql" property="vendor.hadoop.hasoverrides" />
-		<available file="${hbase.dir}/src/jaql" property="vendor.hbase.hasoverrides" />
-	</target>
+  <target name="init">
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${build.classes}" />
+    <mkdir dir="${build.src}" />
+    <available file="${hadoop.dir}/src/jaql" property="vendor.hadoop.hasoverrides" />
+    <available file="${hbase.dir}/src/jaql" property="vendor.hbase.hasoverrides" />
+  </target>
 
-	<target name="init-copy">
-		<!-- copy over the src file -->
-		<copy todir="${build.src}/java">
-			<fileset dir="${src.dir}">
-				<include name="**/*.java" />
-				<include name="**/*.jj" />
-				<include name="**/*.g" />
-			</fileset>
-		</copy>
-		<copy todir="${build.src}/test">
-			<fileset dir="${basedir}/src/test">
-				<include name="**/*.java" />
-				<include name="**/*.jar" />
-				<include name="**/*.txt" />
-				<include name="**/*.dat" />
-				<include name="**/*.jql" />
-				<include name="**/*.jaql" />
-				<include name="**/*.json" />
-			</fileset>
-		</copy>
-	</target>
+  <target name="init-copy">
+    <!-- copy over the src file -->
+    <copy todir="${build.src}/java">
+      <fileset dir="${src.dir}">
+        <include name="**/*.java" />
+        <include name="**/*.jj" />
+        <include name="**/*.g" />
+      </fileset>
+    </copy>
+    <copy todir="${build.src}/test">
+      <fileset dir="${basedir}/src/test">
+        <include name="**/*.java" />
+        <include name="**/*.jar" />
+        <include name="**/*.txt" />
+        <include name="**/*.dat" />
+        <include name="**/*.jql" />
+        <include name="**/*.jaql" />
+        <include name="**/*.json" />
+      </fileset>
+    </copy>
+  </target>
 
-	<target name="init-vendor-hadoop-version" if="vendor.hadoop.hasoverrides">
-		<!-- copy over version override files -->
-		<copy todir="${build.src}">
-			<fileset dir="${hadoop.dir}/src/jaql">
-				<include name="**/*.java" />
-			</fileset>
-		</copy>
-	</target>
+  <target name="init-vendor-hadoop-version" if="vendor.hadoop.hasoverrides">
+    <!-- copy over version override files -->
+    <copy todir="${build.src}">
+      <fileset dir="${hadoop.dir}/src/jaql">
+        <include name="**/*.java" />
+      </fileset>
+    </copy>
+  </target>
 
-	<target name="init-vendor-hbase-version" if="vendor.hbase.hasoverrides">
-		<!-- copy over version override files -->
-		<copy todir="${build.src}">
-			<fileset dir="${hbase.dir}/src/jaql">
-				<include name="**/*.java" />
-			</fileset>
-		</copy>
-	</target>
+  <target name="init-vendor-hbase-version" if="vendor.hbase.hasoverrides">
+    <!-- copy over version override files -->
+    <copy todir="${build.src}">
+      <fileset dir="${hbase.dir}/src/jaql">
+        <include name="**/*.java" />
+      </fileset>
+    </copy>
+  </target>
 
 
-	<property name="test.build.classes" value="${test.build.dir}/classes" />
-	<target name="init-test">
-		<mkdir dir="${test.build.dir}" />
-		<mkdir dir="${test.build.classes}" />
-	</target>
+  <property name="test.build.classes" value="${test.build.dir}/classes" />
+  <target name="init-test">
+    <mkdir dir="${test.build.dir}" />
+    <mkdir dir="${test.build.classes}" />
+  </target>
 
-	<!-- set javacc.home variable if need to compile .jj file -->
-	<!-- e.g., ant javacc-JsonParser -Djavacc.home=c:/dev/javacc-4.1 -->
-	<target name="javacc-JsonParser">
-		<javacc target="${src.dir}/com/ibm/jaql/json/parser/JsonParser.jj" outputDirectory="${src.dir}/com/ibm/jaql/json/parser" javacchome="${javacc.home}" />
-	</target>
+  <!-- set javacc.home variable if need to compile .jj file -->
+  <!-- e.g., ant javacc-JsonParser -Djavacc.home=c:/dev/javacc-4.1 -->
+  <target name="javacc-JsonParser">
+    <javacc target="${src.dir}/com/ibm/jaql/json/parser/JsonParser.jj" outputDirectory="${src.dir}/com/ibm/jaql/json/parser" javacchome="${javacc.home}" />
+  </target>
 
-	<target name="compile" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy">
-		<!-- place antlr output into build directory? outputdirectory="${build.src}" -->
-		<!-- use ant contrib <for> to find all .g files? -->
-		<antlr target="${src.dir}/com/ibm/jaql/lang/parser/jaql.g">
-			<classpath refid="${test.classpath.id}" />
-		</antlr>
-		<copy todir="${build.src}/java/com/ibm/jaql/lang/parser/">
-			<fileset dir="${src.dir}/com/ibm/jaql/lang/parser/">
-				<include name="*.java" />
-			</fileset>
-		</copy>
-		<!-- <javac encoding="${build.encoding}"
+  <target name="compile" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy">
+    <!-- place antlr output into build directory? outputdirectory="${build.src}" -->
+    <!-- use ant contrib <for> to find all .g files? -->
+    <antlr target="${src.dir}/com/ibm/jaql/lang/parser/jaql.g">
+      <classpath refid="${test.classpath.id}" />
+    </antlr>
+    <copy todir="${build.src}/java/com/ibm/jaql/lang/parser/">
+      <fileset dir="${src.dir}/com/ibm/jaql/lang/parser/">
+        <include name="*.java" />
+      </fileset>
+    </copy>
+    <!-- <javac encoding="${build.encoding}"
                srcdir="${hadoop.dir}/src/java"
                includes="org/apache/hadoop/**/*.java"
                destdir="${build.classes}"
@@ -361,243 +321,247 @@
             <classpath refid="${test.classpath.id}" />
         </javac> -->
 
-		<javac encoding="${build.encoding}" srcdir="${build.src}/java" includes="com/ibm/jaql/**/*.java" destdir="${build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
-			<compilerarg line="${javac.args}" />
-			<classpath refid="${test.compile.classpath.id}" />
-		</javac>
-	</target>
+    <javac encoding="${build.encoding}" srcdir="${build.src}/java" includes="com/ibm/jaql/**/*.java" destdir="${build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args}" />
+      <classpath refid="${test.compile.classpath.id}" />
+    </javac>
+  </target>
 
-	<target name="extension.jar" depends="compile-test">
-		<jar jarfile="${build.dir}/extension.jar" basedir="${build.dir}/test/classes">
-			<fileset dir="${build.dir}" includes="com/foobar/**/*.class" />
-		</jar>
-	</target>
+  <target name="extension.jar" depends="compile-test">
+    <jar jarfile="${build.dir}/extension.jar" basedir="${build.dir}/test/classes">
+      <fileset dir="${build.dir}" includes="com/foobar/**/*.class" />
+    </jar>
+  </target>
 
-	<!-- <property name="src.test.dir" value="${basedir}/src/test"/> -->
-	<target name="compile-test" depends="compile, init-test">
-		<javac encoding="${build.encoding}" srcdir="${build.src}/test" includes="**/*.java" destdir="${test.build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
-			<compilerarg line="${javac.args}" />
-			<classpath refid="${test.compile.classpath.id}" />
-		</javac>
-	</target>
+  <!-- <property name="src.test.dir" value="${basedir}/src/test"/> -->
+  <target name="compile-test" depends="compile, init-test">
+    <javac encoding="${build.encoding}" srcdir="${build.src}/test" includes="**/*.java" destdir="${test.build.classes}" debug="${javac.debug}" optimize="${javac.optimize}" target="${javac.version}" source="${javac.version}" deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args}" />
+      <classpath refid="${test.compile.classpath.id}" />
+    </javac>
+  </target>
 
-	<property name="tmp.dir" value="${basedir}/tmp" />
-	<target name="jar" depends="compile, compile-test">
-		<delete dir="${tmp.dir}" />
-		<mkdir dir="${tmp.dir}" />
+  <property name="tmp.dir" value="${basedir}/tmp" />
+  <target name="jar" depends="compile, compile-test">
+    <delete dir="${tmp.dir}" />
+    <mkdir dir="${tmp.dir}" />
 
-		<!-- copy over files to tmp to jar -->
-		<copy todir="${tmp.dir}">
-			<fileset dir="${build.dir}/test/classes/" includes="JaqlShell.class" />
-		</copy>
+    <!-- copy over files to tmp to jar -->
+    <copy todir="${tmp.dir}">
+      <fileset dir="${build.dir}/test/classes/" includes="JaqlShell.class" />
+    </copy>
 
-		<copy todir="${tmp.dir}/org/apache/hadoop/mapred" file="${build.dir}/classes/org/apache/hadoop/mapred/PublicMergeSorter.class" />
+    <copy todir="${tmp.dir}/org/apache/hadoop/mapred" file="${build.dir}/classes/org/apache/hadoop/mapred/PublicMergeSorter.class" />
 
-		<copy todir="${tmp.dir}/com/ibm/jaql/json">
-			<fileset dir="${build.dir}/classes/com/ibm/jaql/json" />
-		</copy>
+    <copy todir="${tmp.dir}/com/ibm/jaql/json">
+      <fileset dir="${build.dir}/classes/com/ibm/jaql/json" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/ibm/jaql/io">
-			<fileset dir="${build.dir}/classes/com/ibm/jaql/io" />
-		</copy>
+    <copy todir="${tmp.dir}/com/ibm/jaql/io">
+      <fileset dir="${build.dir}/classes/com/ibm/jaql/io" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/ibm/jaql/lang">
-			<fileset dir="${build.dir}/classes/com/ibm/jaql/lang" />
-		</copy>
+    <copy todir="${tmp.dir}/com/ibm/jaql/lang">
+      <fileset dir="${build.dir}/classes/com/ibm/jaql/lang" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/ibm/jaql">
-			<fileset dir="${build.dir}/test/classes/com/ibm/jaql" />
-		</copy>
+    <copy todir="${tmp.dir}/com/ibm/jaql/catalog">
+      <fileset dir="${build.dir}/classes/com/ibm/jaql/catalog" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/acme/extensions/expr">
-			<fileset dir="${build.dir}/test/classes/com/acme/extensions/expr" />
-		</copy>
+    <copy todir="${tmp.dir}/com/ibm/jaql">
+      <fileset dir="${build.dir}/test/classes/com/ibm/jaql" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/acme/extensions/data">
-			<fileset dir="${build.dir}/test/classes/com/acme/extensions/data" />
-		</copy>
+    <copy todir="${tmp.dir}/com/acme/extensions/expr">
+      <fileset dir="${build.dir}/test/classes/com/acme/extensions/expr" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/acme/extensions/fn">
-			<fileset dir="${build.dir}/test/classes/com/acme/extensions/fn" />
-		</copy>
+    <copy todir="${tmp.dir}/com/acme/extensions/data">
+      <fileset dir="${build.dir}/test/classes/com/acme/extensions/data" />
+    </copy>
 
-		<copy todir="${tmp.dir}/com/ibm/jaql/util">
-			<fileset dir="${build.dir}/classes/com/ibm/jaql/util" />
-		</copy>
+    <copy todir="${tmp.dir}/com/acme/extensions/fn">
+      <fileset dir="${build.dir}/test/classes/com/acme/extensions/fn" />
+    </copy>
 
-		<unjar src="lib/antlr.jar" dest="${tmp.dir}" />
-		<unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
-		<unjar src="lib/commons-lang-2.4.jar" dest="${tmp.dir}" />
+    <copy todir="${tmp.dir}/com/ibm/jaql/util">
+      <fileset dir="${build.dir}/classes/com/ibm/jaql/util" />
+    </copy>
 
-		<!-- make the jar -->
-		<jar jarfile="${build.dir}/jaql.jar" basedir="${tmp.dir}">
-			<manifest>
-				<attribute name="Main-Class" value="JaqlShell" />
-			</manifest>
-		</jar>
-	</target>
+    <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
+    <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
+    <unjar src="lib/commons-lang-2.4.jar" dest="${tmp.dir}" />
 
-	<!-- ================================================================== -->
-	<!-- Documentation                                                      -->
-	<!-- ================================================================== -->
-	<target name="default-doc">
-		<copy todir="${build.docs}">
-			<fileset dir="${docs.dir}" />
-		</copy>
-	</target>
-	<target name="javadoc" depends="init, init-copy, init-vendor-hadoop-version, init-vendor-hbase-version, default-doc">
-		<mkdir dir="${build.javadocs}" />
-		<javadoc overview="${build.src}/java/overview.html" packagenames="com.ibm.jaql.*" destdir="${build.javadocs}" version="true" use="true" windowtitle="${Name} ${version} API" doctitle="${Name} ${version} API" bottom="Copyright &amp;copy; IBM Corp ${year}">
-			<packageset dir="${build.src}/java" />
+    <!-- make the jar -->
+    <jar jarfile="${build.dir}/jaql.jar" basedir="${tmp.dir}">
+      <manifest>
+        <attribute name="Main-Class" value="JaqlShell" />
+      </manifest>
+    </jar>
+  </target>
 
-			<link href="${javadoc.link.java}" />
-			<classpath refid="${test.compile.classpath.id}" />
-		</javadoc>
-	</target>
+  <!-- ================================================================== -->
+  <!-- Documentation                                                      -->
+  <!-- ================================================================== -->
+  <target name="default-doc">
+    <copy todir="${build.docs}">
+      <fileset dir="${docs.dir}" />
+    </copy>
+  </target>
+  <target name="javadoc" depends="init, init-copy, init-vendor-hadoop-version, init-vendor-hbase-version, default-doc">
+    <mkdir dir="${build.javadocs}" />
+    <javadoc overview="${build.src}/java/overview.html" packagenames="com.ibm.jaql.*" destdir="${build.javadocs}" version="true" use="true" windowtitle="${Name} ${version} API" doctitle="${Name} ${version} API" bottom="Copyright &amp;copy; IBM Corp ${year}">
+      <packageset dir="${build.src}/java" />
+
+      <link href="${javadoc.link.java}" />
+      <classpath refid="${test.compile.classpath.id}" />
+    </javadoc>
+  </target>
 
 
-	<!-- ================================================================== -->
-	<!-- Filesets                                                           -->
-	<!-- ================================================================== -->
-	<fileset dir="${bin.dir}" id="bin.files">
-		<include name="jaql" />
-		<include name="jaqlshell" />
-	</fileset>
+  <!-- ================================================================== -->
+  <!-- Filesets                                                           -->
+  <!-- ================================================================== -->
+  <fileset dir="${bin.dir}" id="bin.files">
+    <include name="jaql" />
+    <include name="jaqlshell" />
+  </fileset>
 
-	<!-- ================================================================== -->
-	<!-- Jaql Binary Distribution                                           -->
-	<!-- ================================================================== -->
-	<target name="bindistro" depends="jar, javadoc, extension.jar">
-		<mkdir dir="${build.dir}/jaql-${version}" />
+  <!-- ================================================================== -->
+  <!-- Jaql Binary Distribution                                           -->
+  <!-- ================================================================== -->
+  <target name="bindistro" depends="jar, javadoc, extension.jar">
+    <mkdir dir="${build.dir}/jaql-${version}" />
 
-		<mkdir dir="${build.dir}/jaql-${version}/conf" />
-		<copy todir="${build.dir}/jaql-${version}/conf">
-			<fileset dir="${conf.dir}" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/conf" />
+    <copy todir="${build.dir}/jaql-${version}/conf">
+      <fileset dir="${conf.dir}" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/resources" />
-		<copy todir="${build.dir}/jaql-${version}/resources">
-			<fileset dir="${resources.dir}" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/resources" />
+    <copy todir="${build.dir}/jaql-${version}/resources">
+      <fileset dir="${resources.dir}" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/src" />
-		<copy todir="${build.dir}/jaql-${version}/src">
-			<fileset dir="${build.dir}/src" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/src" />
+    <copy todir="${build.dir}/jaql-${version}/src">
+      <fileset dir="${build.dir}/src" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}" />
-		<copy todir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}">
-			<fileset dir="${hadoop.dir}">
-				<include name="**/*" />
-			</fileset>
-		</copy>
-		<mkdir dir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}" />
-		<copy todir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}">
-			<fileset dir="${hbase.dir}">
-				<include name="**/*" />
-			</fileset>
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}" />
+    <copy todir="${build.dir}/jaql-${version}/vendor/hadoop/${hadoop.version}">
+      <fileset dir="${hadoop.dir}">
+        <include name="**/*" />
+      </fileset>
+    </copy>
+    <mkdir dir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}" />
+    <copy todir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}">
+      <fileset dir="${hbase.dir}">
+        <include name="**/*" />
+      </fileset>
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/bin" />
-		<copy todir="${build.dir}/jaql-${version}/bin">
-			<fileset refid="bin.files" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/bin" />
+    <copy todir="${build.dir}/jaql-${version}/bin">
+      <fileset refid="bin.files" />
+    </copy>
 
-		<copy todir="${build.dir}/jaql-${version}" file="${build.dir}/jaql.jar" />
-		<copy todir="${build.dir}/jaql-${version}" file="${build.dir}/extension.jar" />
+    <copy todir="${build.dir}/jaql-${version}" file="${build.dir}/jaql.jar" />
+    <copy todir="${build.dir}/jaql-${version}" file="${build.dir}/extension.jar" />
 
-		<mkdir dir="${build.dir}/jaql-${version}/lib" />
-		<copy todir="${build.dir}/jaql-${version}/lib">
-			<fileset dir="${basedir}/lib" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/lib" />
+    <copy todir="${build.dir}/jaql-${version}/lib">
+      <fileset dir="${basedir}/lib" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/docs" />
-		<copy todir="${build.dir}/jaql-${version}/docs">
-			<fileset dir="${build.docs}" />
-		</copy>
-		<copy todir="${build.dir}/jaql-${version}/docs" file="${test.src.dir}/examples.txt" />
+    <mkdir dir="${build.dir}/jaql-${version}/docs" />
+    <copy todir="${build.dir}/jaql-${version}/docs">
+      <fileset dir="${build.docs}" />
+    </copy>
+    <copy todir="${build.dir}/jaql-${version}/docs" file="${test.src.dir}/examples.txt" />
 
-		<copy todir="${build.dir}/jaql-${version}" file="${basedir}/build.xml" />
+    <copy todir="${build.dir}/jaql-${version}" file="${basedir}/build.xml" />
 
-		<tar compression="gzip" longfile="gnu" destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
-			<tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
-			<tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
-		</tar>
-	</target>
+    <tar compression="gzip" longfile="gnu" destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
+      <tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
+      <tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
+    </tar>
+  </target>
 
-	<target name="newbindistro" depends="srcdistro, javadoc, jar, extension.jar">
+  <target name="newbindistro" depends="srcdistro, javadoc, jar, extension.jar">
 
-		<copy todir="${build.dir}/jaql-${version}/docs">
-			<fileset dir="${build.docs}" />
-		</copy>
-		<copy todir="${build.dir}/jaql-${version}/docs" file="${test.src.dir}/examples.txt" />
+    <copy todir="${build.dir}/jaql-${version}/docs">
+      <fileset dir="${build.docs}" />
+    </copy>
+    <copy todir="${build.dir}/jaql-${version}/docs" file="${test.src.dir}/examples.txt" />
 
-		<copy tofile="${build.dir}/jaql-${version}/jaql.jar" file="${build.dir}/jaql.jar" />
-		<copy tofile="${build.dir}/jaql-${version}/extension.jar" file="${build.dir}/extension.jar" />
+    <copy tofile="${build.dir}/jaql-${version}/jaql.jar" file="${build.dir}/jaql.jar" />
+    <copy tofile="${build.dir}/jaql-${version}/extension.jar" file="${build.dir}/extension.jar" />
 
-		<tar compression="gzip" longfile="gnu" destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
-			<tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
-			<tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
-		</tar>
-	</target>
-	<!-- ================================================================== -->
-	<!-- Jaql Source Distribution                                           -->
-	<!-- ================================================================== -->
-	<target name="srcdistro" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version">
-		<mkdir dir="${build.dir}/jaql-${version}" />
+    <tar compression="gzip" longfile="gnu" destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
+      <tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
+      <tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
+    </tar>
+  </target>
+  <!-- ================================================================== -->
+  <!-- Jaql Source Distribution                                           -->
+  <!-- ================================================================== -->
+  <target name="srcdistro" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version">
+    <mkdir dir="${build.dir}/jaql-${version}" />
 
-		<mkdir dir="${build.dir}/jaql-${version}/conf" />
-		<copy todir="${build.dir}/jaql-${version}/conf">
-			<fileset dir="${conf.dir}" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/conf" />
+    <copy todir="${build.dir}/jaql-${version}/conf">
+      <fileset dir="${conf.dir}" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/resources" />
-		<copy todir="${build.dir}/jaql-${version}/resources">
-			<fileset dir="${conf.dir}" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/resources" />
+    <copy todir="${build.dir}/jaql-${version}/resources">
+      <fileset dir="${conf.dir}" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/bin" />
-		<copy todir="${build.dir}/jaql-${version}/bin">
-			<fileset refid="bin.files" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/bin" />
+    <copy todir="${build.dir}/jaql-${version}/bin">
+      <fileset refid="bin.files" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/lib" />
-		<copy todir="${build.dir}/jaql-${version}/lib">
-			<fileset dir="${basedir}/lib" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/lib" />
+    <copy todir="${build.dir}/jaql-${version}/lib">
+      <fileset dir="${basedir}/lib" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/vendor" />
-		<copy todir="${build.dir}/jaql-${version}/vendor">
-			<fileset dir="${basedir}/vendor" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/vendor" />
+    <copy todir="${build.dir}/jaql-${version}/vendor">
+      <fileset dir="${basedir}/vendor" />
+    </copy>
 
-		<!-- <mkdir dir="${build.dir}/jaql-${version}/docs" />
+    <!-- <mkdir dir="${build.dir}/jaql-${version}/docs" />
         <copy todir="${build.dir}/jaql-${version}/docs">
             <fileset dir="${build.docs}" />
         </copy>
         <copy todir="${build.dir}/jaql-${version}/docs"
               file="${test.src.dir}/examples.txt" /> -->
 
-		<mkdir dir="${build.dir}/jaql-${version}/src" />
-		<copy todir="${build.dir}/jaql-${version}/src">
-			<fileset dir="${build.src}" />
-		</copy>
+    <mkdir dir="${build.dir}/jaql-${version}/src" />
+    <copy todir="${build.dir}/jaql-${version}/src">
+      <fileset dir="${build.src}" />
+    </copy>
 
-		<mkdir dir="${build.dir}/jaql-${version}/eclipse" />
-		<copy todir="${build.dir}/jaql-${version}/eclipse">
-			<fileset dir="${basedir}/eclipse" />
-		</copy>
-		<copy tofile="${build.dir}/jaql-${version}/.classpath" file="${basedir}/eclipse/${hadoop.version}/classpath" />
-		<copy tofile="${build.dir}/jaql-${version}/.project" file="${basedir}/eclipse/${hadoop.version}/project" />
+    <mkdir dir="${build.dir}/jaql-${version}/eclipse" />
+    <copy todir="${build.dir}/jaql-${version}/eclipse">
+      <fileset dir="${basedir}/eclipse" />
+    </copy>
+    <copy tofile="${build.dir}/jaql-${version}/.classpath" file="${basedir}/eclipse/${hadoop.version}/classpath" />
+    <copy tofile="${build.dir}/jaql-${version}/.project" file="${basedir}/eclipse/${hadoop.version}/project" />
 
-		<copy todir="${build.dir}/jaql-${version}" file="${basedir}/build.xml" />
-	</target>
+    <copy todir="${build.dir}/jaql-${version}" file="${basedir}/build.xml" />
+  </target>
 
-	<!-- ================================================================== -->
-	<!-- Clean.  Delete the build files, and their directories              -->
-	<!-- ================================================================== -->
-	<target name="clean">
-		<delete dir="${build.dir}" />
-	</target>
+  <!-- ================================================================== -->
+  <!-- Clean.  Delete the build files, and their directories              -->
+  <!-- ================================================================== -->
+  <target name="clean">
+    <delete dir="${build.dir}" />
+  </target>
 
 </project>
