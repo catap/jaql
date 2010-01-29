@@ -119,7 +119,7 @@
   <!-- ================================================================== -->
   <!-- Junit test                                                         -->
   <!-- ================================================================== -->
-  <target name="test-internal" depends="jar, extension.jar">
+  <target name="test-internal" depends="jar, extension.jar, pyJaqlcheck">
     <mkdir dir="${build.dir}" />
     <mkdir dir="${test.build.dir}" />
     <delete dir="${test.build.data}" />
@@ -173,11 +173,51 @@
       <classpath refid="${test.classpath.id}" />
       <formatter type="${test.junit.output.format}" />
       <batchtest todir="${test.build.dir}" unless="testcase">
-        <fileset dir="${test.classes.dir}" includes="**/${test.include}.class" excludes="**/${test.exclude}.class,**/*$*.class,**/com/ibm/jaql/lang/expr/module/TestFn.class" />
+        <fileset dir="${test.classes.dir}" includes="**/${test.include}.class" excludes="**/${test.exclude}.class,**/*$*.class,**/com/ibm/jaql/lang/expr/module/TestFn.class" >
+      	<!--conditionally test pyJaql-->
+      	<exclude name="**/com/ibm/jaql/TestPyJaql.class" unless="test.python"/>
+        </fileset>
       </batchtest>
     </junit>
     <fail if="tests.failed">Tests failed!</fail>
   </target>
+	
+	<!--****************************pyJaql test running environment check tasks********************************-->
+	<target name="pythoncheck">
+		<!--check python installation-->
+			<condition property="python.found">
+				<or>
+					<available file="python" filepath="${env.PATH}" />
+					<available file="python.exe" filepath="${env.Path}" />
+				</or>
+			</condition>
+	    <antcall target="promote_check_msg"/>
+	</target>
+	
+	<target name="promote_check_msg" unless="python.found" >
+		<echo>[WARNING] pyhon not found! TestPyJaql will be skipped.</echo>
+		<echo>		    Please check python installation</echo>
+	</target>
+	
+	<target name="pyJaqlcheck" depends="pythoncheck" if="python.found">
+		<!--copy the probe-script into build system-->
+		<copy todir="${test.cache.data}/data">
+			<fileset dir="${test.src.dir}">
+				<include  name="probe_pyJaql.py"/>
+			</fileset>
+		</copy>		
+	      	<exec executable="python" outputproperty="is_pyJaql_installed" logerror="true" failonerror="false">
+	    		<arg value="${test.cache.data}/data/probe_pyJaql.py" />
+	    	</exec>
+			<echo>${is_pyJaql_installed}</echo>
+			<condition property="test.python">
+				<and>
+					<equals arg1="${is_pyJaql_installed}" arg2="" />
+					<isset property="python.found"/>
+				</and>
+			</condition>
+	    </target>
+	<!--**************************************************************************************************-->
 
   <target name="test-cluster">
     <antcall target="test">
