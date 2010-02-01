@@ -29,7 +29,14 @@ import com.ibm.jaql.util.Bool3;
 /** Superclass for schemata of JSON values. Commonly used schemata can be created using the
  * {@link SchemaFactory} class. Schema implementations are immutable. To modify schemata (i.e.,
  * to obtain modified copies), use the {@link SchemaTransformation} class. No subclass but 
- * {@link NullSchema} matches the <code>null</code> value. */
+ * {@link NullSchema} matches the <code>null</code> value. 
+ *
+ * Note that many of the methods that operate on schemata will return <code>null</code> to
+ * represent an invalid schema. For example, the schema of the elements of an empty array is
+ * <code>null</code> and the schema of the intersection of two disjoint schemata is also 
+ * <code>null</code>. This is different to {@link NullSchema}, which represents a null
+ * value and is a valid schema. 
+ */
 public abstract class Schema implements Comparable<Schema>
 {
   public static final JsonString PAR_LENGTH = new JsonString("length");
@@ -142,11 +149,18 @@ public abstract class Schema implements Comparable<Schema>
   
   // -- introspection -----------------------------------------------------------------------------
 
-  /** Returns the schema of the elements of this schema or null if this schema does not have
-   * elements. Examples: (1) common schema of all elements of an array, (2) common schema
-   * of all values in a record. When this schema can represent multiple types, the method
-   * is invoked recursively on each of those types; be careful when the schema contains both 
-   * arrays and records. */
+  /** Returns the schema of the elements of this schema or <code>null</code> if this schema does 
+   * not have elements. 
+   * 
+   * Examples: (1) common schema of all elements of a non-empty array, (2) common schema of all 
+   * values in a non-empty record. Note that this method returns <code>null</code> when this schema
+   * represents an empty array or empty record (which do not have elements). 
+   * 
+   * When this schema represents a union of multiple types, the method is invoked recursively on 
+   * each of those types. Be careful when the schema contains both arrays and records; use 
+   * {@link SchemaTransformation#restrictTo(Schema, JsonType...)} to restrict the schema to
+   * just the array part or just the record part.
+   */
   public Schema elements()
   {
     return null;
