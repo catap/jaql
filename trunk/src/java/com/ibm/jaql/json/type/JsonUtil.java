@@ -44,9 +44,13 @@ public class JsonUtil
     return TextFullSerializer.getDefault();
   }
   
+  /** The supplied schema must not be null. */
   public static TextFullSerializer getDefaultSerializer(Schema schema)
   {
-    if (schema == SchemaFactory.anySchema() || schema == null) { // makes a common case more efficient
+    if (schema == null) {
+      throw new NullPointerException("internal error in schema inference");
+    }
+    if (schema == SchemaFactory.anySchema()) { // makes a common case more efficient
       return getDefaultSerializer();
     }
     return new SchemaTextFullSerializer(schema);
