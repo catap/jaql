@@ -186,13 +186,17 @@ public class StringConverter
   boolean initAtomic(Schema schema, Descriptor out)
   {
     out.isNullable = schema.is(NULL).maybe();
+    if (schema.isAny()) {
+      out.type = STRING;
+      return true;
+    }
+
     schema = SchemaTransformation.removeNullability(schema);
     if (schema == null)
     {
       out.type = NULL;
       return true;
     }
-   
     switch (schema.getSchemaType())
     {
     case BOOLEAN:

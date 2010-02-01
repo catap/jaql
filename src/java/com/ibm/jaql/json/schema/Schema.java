@@ -109,6 +109,11 @@ public abstract class Schema implements Comparable<Schema>
     return Bool3.FALSE;
   }
   
+  /** Returns true when this schema matches everything. */
+  public boolean isAny() {
+    return false;
+  }
+  
   /** Returns a list of classes that are potentially be matched by this schema; classes not
    * in this list are never matched. Subclasses of the returned classes are also assumed to be 
    * potentially matched. This means that returning an array containing
