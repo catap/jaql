@@ -148,7 +148,7 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
             new RecordSchema.Field(Field.CONTENT.jsonName, 
                 OrSchema.make(SchemaFactory.stringSchema(), SchemaFactory.binarySchema()), 
                 false),
-            new RecordSchema.Field(Field.META.jsonName, SchemaFactory.stringSchema(), false)
+            new RecordSchema.Field(Field.META.jsonName, SchemaFactory.recordOrNullSchema(), true)
         }, SchemaFactory.stringSchema());
       }
     };
