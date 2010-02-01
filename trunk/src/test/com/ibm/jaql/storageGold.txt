@@ -822,7 +822,7 @@ $arrays2 -> jsonToDel();##
 $records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];##
 "$records"
 
-$records -> jsonToDel({fields: ['name', 'age']});##
+$records -> jsonToDel({schema: schema { name, age }});##
 [
   "\"mike\",10",
   "\"john\",20"
@@ -831,7 +831,7 @@ $records -> jsonToDel({fields: ['name', 'age']});##
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];##
 "$mixed"
 
-$mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});##
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});##
 [
   "\"mike\"<=>10",
   "100<=>200"
@@ -856,14 +856,14 @@ $mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});##
   "type": "delStream"
 }
 
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: {fields: ['lang', 'no'], delimiter: '='}});##
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});##
 {
   "outoptions": {
     "delimiter": "=",
-    "fields": [
-      "lang",
-      "no"
-    ]
+    "schema": schema {
+             "lang": any,
+             "no": any
+           }
   },
   "type": "delStream"
 }

@@ -25,7 +25,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 /**
  * A function for converting JSON to CSV. It is called as follows:
  * <p>
- * <code>jsonToDel({fields: '...', delimiter: '...'})</code> .
+ * <code>jsonToDel({schema: '...', delimiter: '...'})</code> .
  */
 public class JsonToDelFn extends IterExpr {
 

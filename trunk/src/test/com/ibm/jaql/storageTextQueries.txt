@@ -17,13 +17,11 @@ read(del($f, { quoted: null })); // should fail
 read(del($f, { delimiter: null })); // should fail
 
 // test field information
-read(del($f, { fields: ["c1", "c2", "c3"] }));
-read(del($f, { fields: ["c3", "c1", "c2"] }));
-read(del($f, { fields: null }));
+read(del($f, { schema: schema { c1, c2, c3 } }));
+read(del($f, { schema: schema { c3, c1, c2 } }));
 
-read(del($f, { fields: { c1: schema string, c2:schema string, c3:schema string } })); // should fail
-read(del($f, { fields: ["c1", "c2", 3 ] })); // should fail
-read(del($f, { fields: ["c1", "c2", "c3", "c4"] })); // should fail
+read(del($f, { schema: schema { c1, c2 } })); // should fail
+read(del($f, { schema: schema { c1, c2, c3, c4 } })); // should fail
 
 // test invalid files
 $f = "delimited-invalid1.del";
@@ -83,12 +81,14 @@ convert({a:"a", b:1}, schema { a:string, b: long }); // should fail
 convert(null, schema { a:string, b: long }); // should fail
 
 // all together
-schemaof(read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } })));
-schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));
+read(del("delimited.del", { schema: schema [ string?, string?, long? ] }));
+schemaof(read(del("delimited.del", { schema: schema [ string?, string?, long? ] })));
 
-read(del("delimited.del", { convert: schema [ string?, string?, long? ] }));
-schemaof(read(del("delimited.del", { convert: schema [ string?, string?, long? ] })));
-read(del("delimited.del", { fields: ["c1", "c2", "c3"], convert: schema { c1:string?, c2:string?, c3:long? } }));
+read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } }));
+schemaof(read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } })));
+
+read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } }));
+schemaof(read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } })));
 
 // Tests for the lines() interface method
 $l = "lines.txt";
@@ -105,40 +105,40 @@ read(lines($ln));
 read(lines($lwn));
 
 // Test read(lines()) with the convert option.
-read(lines($l,{convert: schema string})); // Test for the default schema.
-read(lines($l,{convert: schema long})); // This should fail since the file is mixture of multiple types.
-read(lines($li,{convert: schema long})); // This should fail since the file has non-numeric characters.
-read(lines($ln,{convert: schema long}));
-read(lines($ln,{convert: schema double}));
-read(lines($lb,{convert: schema boolean}));
-read(lines($lb,{convert: schema long})); // This should fail since the input file contains booleans.
-read(lines($lwn,{convert: schema string})); // This should fail since the input file has nulls.
-read(lines($lwn,{convert: schema long?}));
+read(lines($l,{schema: schema string})); // Test for the default schema.
+read(lines($l,{schema: schema long})); // This should fail since the file is mixture of multiple types.
+read(lines($li,{schema: schema long})); // This should fail since the file has non-numeric characters.
+read(lines($ln,{schema: schema long}));
+read(lines($ln,{schema: schema double}));
+read(lines($lb,{schema: schema boolean}));
+read(lines($lb,{schema: schema long})); // This should fail since the input file contains booleans.
+read(lines($lwn,{schema: schema string})); // This should fail since the input file has nulls.
+read(lines($lwn,{schema: schema long?}));
 
 // Test for invalid arguments to the convert option.
-read(lines($l,{convert: schema [long]}));
-read(lines($l,{convert: schema {f1: long}}));
+read(lines($l,{schema: schema [long]}));
+read(lines($l,{schema: schema {f1: long}}));
 
 $out = "tmpout/out-file.txt";
 
 // Test for write(lines()) and checking whether the written files have data in the specified format
 [1,2,3,4,5,6,7,8,9,10,100,1000,10000,100000] -> write(lines($out));
-read(lines($out,{convert: schema long}));
-read(lines($out,{convert: schema double}));
+read(lines($out,{schema: schema long}));
+read(lines($out,{schema: schema double}));
 
 [true,false,false,false,true,true,false] -> write(lines($out));
-read(lines($out,{convert: schema boolean}));
+read(lines($out,{schema: schema boolean}));
 
 [1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));
 read(lines($out));
 
 [1,2,3,4,null,6] -> write(lines($out));
 read(lines($out));
-read(lines($out,{convert: schema long?}));
-read(lines($out,{convert: schema long})); // This should fail since the file contains null.
+read(lines($out,{schema: schema long?}));
+read(lines($out,{schema: schema long})); // This should fail since the file contains null.
 
 [true, false, null] -> write(lines($out));
-read(lines($out, {convert: schema boolean?}));
+read(lines($out, {schema: schema boolean?}));
 
 // -- Remove all the temporary files created.
 hdfsShell("-rm delimited.del") * 0;

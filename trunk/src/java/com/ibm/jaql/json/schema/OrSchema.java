@@ -193,6 +193,17 @@ public final class OrSchema extends Schema
       throw new IllegalStateException();
     }
   }
+  
+  public boolean isAny() {
+    boolean containsNull = false;
+    boolean containsNonNull = false;
+    for (int i=0; i<schemata.length; i++) {
+      containsNull |= schemata[i] instanceof NullSchema;
+      containsNonNull |= schemata[i] instanceof NonNullSchema;
+    }
+    return containsNull && containsNonNull;
+  }
+
 
   @Override
   public boolean isConstant()
