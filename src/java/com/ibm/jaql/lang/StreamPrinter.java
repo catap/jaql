@@ -55,7 +55,16 @@ public class StreamPrinter implements JaqlPrinter {
     long time = System.currentTimeMillis();;
     if (expr.getSchema().is(ARRAY, NULL).always()) {
       JsonIterator iter = expr.iter(context);
-      iter.print(output, 0, schema.elements());
+      Schema elementSchema = schema.elements();
+      if (elementSchema != null) {
+        iter.print(output, 0, elementSchema);
+      }
+      else
+      {
+        // empty array or null
+        iter.print(output, 0);
+      }
+      
     } else {
       JsonValue value = expr.eval(context);
       // special casing of explains: result should not be converted
