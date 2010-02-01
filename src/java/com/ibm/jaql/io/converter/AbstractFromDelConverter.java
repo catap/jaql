@@ -16,24 +16,25 @@
 package com.ibm.jaql.io.converter;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.ibm.jaql.io.hadoop.converter.KeyValueImport;
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.RecordSchema.Field;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SubJsonString;
-import com.ibm.jaql.lang.expr.string.StringConverter;
 import com.ibm.jaql.lang.expr.string.DelParser;
-import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.lang.expr.string.StringConverter;
 
 /**
  * Base class for converters that convert a delimited file into JSON. The default implementation
@@ -59,8 +60,7 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   public static final byte DELIMITER_DEFAULT = ',';
   public static final JsonString QUOTED_NAME = new JsonString("quoted");
   public static final boolean QUOTED_DEFAULT = true;
-  public static final JsonString FIELDS_NAME = new JsonString("fields");
-  public static final JsonString CONVERT_NAME = new JsonString("convert");
+  public static final JsonString SCHEMA_NAME = new JsonString("schema");
 
   // TODO: feature for skipping header lines
   
@@ -78,7 +78,7 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   private byte delimiter;
   boolean quoted;
   private DelParser reader;
-  private JsonArray header;
+  private boolean isRecord;
   private static JsonString fieldNames[];
   private static int fieldIndexes[];
   private boolean firstRow = true;
@@ -120,29 +120,49 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
     // make reader
     reader = DelParser.make(delimiter, quoted);
 
-    // check for header
+    // TODO: remove check for deprecated options
+    if (options.containsKey(new JsonString("convert"))) {
+      throw new IllegalArgumentException(
+          "The \"convert\" option is deprecated. Use the \"schema\" option instead.");
+    }
+    if (options.containsKey(new JsonString("fields"))) {
+      throw new IllegalArgumentException(
+          "The \"fields\" option is deprecated. Use the \"schema\" option instead.");
+    }
+    
+    // check for schema
+    isRecord = false;
     fieldNames = null;
     fieldIndexes = null;
     firstRow = true;
     noFields = -1;
-    arg = options.get(FIELDS_NAME);
-    if (arg != null) {
+    arg = options.get(SCHEMA_NAME);
+    if (arg != null && !(arg instanceof JsonSchema)) {
+      throw new IllegalArgumentException("parameter \"" + SCHEMA_NAME + "\" must be a schema");
+    }
+    schema = arg != null ? ((JsonSchema)arg).get() : null;
+    if (schema instanceof RecordSchema) {
       try {
+        RecordSchema recordSchema = (RecordSchema)schema;
+        if (recordSchema.hasAdditional() || recordSchema.noOptional()>0) {
+          throw new IllegalArgumentException("record schema must not have optional or wildcard fields");
+        }
+        isRecord = true;
+        
         // extract the field names
-        header = (JsonArray) arg;
-        fieldNames = new JsonString[(int)header.count()];
-        BufferedJsonRecord target = new BufferedJsonRecord(); 
-        int i=0;
-        for(JsonValue jv: header.iter()){
-          fieldNames[i] = JaqlUtil.enforceNonNull(((JsonString)jv).getImmutableCopy());
-          target.add(fieldNames[i], new SubJsonString());
-          i++;
+        List<Field> fields = recordSchema.getFieldsByPosition();
+        fieldNames = new JsonString[fields.size()];
+        BufferedJsonRecord target = new BufferedJsonRecord();
+        for (int i=0; i<fields.size(); i++) {
+          JsonString fieldName = fields.get(i).getName();
+          fieldNames[i] = fieldName;
+          target.add(fieldName, new SubJsonString());
         }
 
         // compute the indexes
         target.sort();
-        fieldIndexes = new int[fieldNames.length];
-        for (i=0; i<fieldNames.length; i++)
+        fieldIndexes = new int[fields.size()];
+        for (int i=0; i<fieldNames.length; i++)
         {
           fieldIndexes[i] = target.indexOf(fieldNames[i]);
           assert fieldIndexes[i]>=0;
@@ -150,27 +170,32 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
         
         // set the target
         emptyTarget = target;
-        schema = new RecordSchema(fieldNames);
       } catch(Exception e) {
         throw new RuntimeException(e);
       }
     }
+    else if (schema instanceof ArraySchema)
+    {
+      ArraySchema arraySchema = (ArraySchema)schema;
+      if (arraySchema.hasRest()) {
+        throw new IllegalArgumentException("array schema must not have variable length");
+      }
+      emptyTarget = new BufferedJsonArray(arraySchema.getHeadSchemata().size());
+    }
+    else if (schema != null)
+    {
+      throw new IllegalArgumentException("only array or record schemata are accepted");
+    }
     else
     {
-      // no header
-      header = null;
-      emptyTarget = new BufferedJsonArray();
-      schema = SchemaFactory.arraySchema();
+      emptyTarget = new BufferedJsonArray(); 
     }
     
     // check for convert
     converter = null;
     conversionTargets = null;
-    arg = options.get(CONVERT_NAME);
-    if (arg != null)
+    if (schema != null)
     {
-      // TODO: check schema compatibility
-      schema = ((JsonSchema)arg).get();
       converter = new StringConverter(schema);
       conversionTargets = new HashMap<Integer, JsonValue>();
     }
@@ -221,7 +246,7 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
    * to initialize the <code>noFields</code> variable. */
   private final void init(JsonValue targetValue, byte[] firstLine, int length)
   {
-    if (header == null)
+    if (schema == null)
     {
       // count the number of columns
       noFields = 0;
@@ -244,22 +269,22 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
     }
     else
     {
-      noFields = (int)header.count();
+      noFields = (int)schema.minElements().get();
     }
   }
 
   /** Clears the respective field in the target value. */
   private final void clear(JsonValue targetValue, int field)
   {
-    if (header == null)
-    {
-      BufferedJsonArray target = (BufferedJsonArray)targetValue;
-      target.set(field, null);
-    }
-    else
+    if (isRecord)
     {
       BufferedJsonRecord target = (BufferedJsonRecord)targetValue;
       target.set(fieldIndexes[field], null);
+    }
+    else
+    {
+      BufferedJsonArray target = (BufferedJsonArray)targetValue;
+      target.set(field, null);
     }
   }
   
@@ -268,17 +293,7 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   private final SubJsonString get(JsonValue targetValue, int field)
   {
     SubJsonString string; 
-    if (header == null)
-    {
-      BufferedJsonArray target = (BufferedJsonArray)targetValue;
-      string = (SubJsonString)target.get(field);
-      if (string == null)
-      {
-        string = new SubJsonString();
-        target.set(field, string);
-      }
-    }
-    else
+    if (isRecord)
     {
       BufferedJsonRecord target = (BufferedJsonRecord)targetValue;
       string = (SubJsonString)target.get(fieldIndexes[field]);
@@ -286,6 +301,16 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
       {
         string = new SubJsonString();
         target.set(fieldIndexes[field], string);
+      }
+    }
+    else
+    {
+      BufferedJsonArray target = (BufferedJsonArray)targetValue;
+      string = (SubJsonString)target.get(field);
+      if (string == null)
+      {
+        string = new SubJsonString();
+        target.set(field, string);
       }
     }
     
@@ -366,6 +391,12 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   @Override
   public Schema getSchema()
   {
-    return schema;
+    if (schema == null) {
+      return SchemaFactory.arraySchema();
+    }
+    else
+    {
+      return schema;
+    }
   }
 }

@@ -39,7 +39,7 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
  
   // -- constants ---------------------------------------------------------------------------------
   private static final Log LOG = LogFactory.getLog(FromLinesConverter.class);
-  public static final JsonString CONVERT_NAME = new JsonString("convert");
+  public static final JsonString SCHEMA_NAME = new JsonString("schema");
 
   // -- constants ---------------------------------------------------------------------------------
  
@@ -54,10 +54,16 @@ public class FromLinesConverter implements KeyValueImport<LongWritable, Text> {
       LOG.warn("No options passed, using the default options.");
       options = JsonRecord.EMPTY;
     }
+    
+    // TODO: remove check for deprecated options
+    if (options.containsKey(new JsonString("convert"))) {
+      throw new IllegalArgumentException(
+          "The \"convert\" option is deprecated. Use the \"schema\" option instead.");
+    }
    
     // Check for a converter.
     schema = SchemaFactory.stringOrNullSchema();
-    JsonValue arg = options.get(CONVERT_NAME);
+    JsonValue arg = options.get(SCHEMA_NAME);
     if (arg != null) {
       schema = ((JsonSchema)arg).get();
       if (!schema.is(JsonType.BOOLEAN, JsonType.DATE, JsonType.DECFLOAT,

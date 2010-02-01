@@ -25,6 +25,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -293,14 +294,36 @@ public class RJaqlInterface extends Jaql {
         }
         count++;
       }
-      if (headerArray != null) 
-        options.add(AbstractFromDelConverter.FIELDS_NAME, headerArray);
+      
       Schema schema = null;
       if (schemaString != null) {
         schema = SchemaFactory.parse(schemaString);
       }
+      
+      if (headerArray != null) {
+        RecordSchema recordSchema = (RecordSchema)schema;
+       
+        // construct new matching schema
+        List<Field> fields = new LinkedList<Field>();
+        for (JsonValue fieldName : headerArray) {
+          Field field;
+          if (recordSchema == null) {
+            field = new Field((JsonString)fieldName, SchemaFactory.stringSchema(), false);
+          }
+          else
+          {
+            field = recordSchema.getField((JsonString)fieldName);
+            if (field == null) throw new NullPointerException("header field not in schema: " + fieldName);
+            // FIXME: schema fields that are not in the header are currently consider OK
+          }
+          fields.add(field);          
+        }
+        
+        // and set it
+        schema = new RecordSchema(fields, null); 
+      }
       if (schema != null)
-        options.add(AbstractFromDelConverter.CONVERT_NAME, new JsonSchema(schema));
+        options.add(AbstractFromDelConverter.SCHEMA_NAME, new JsonSchema(schema));
       KeyValueImport<LongWritable, Text> converter = null;
       if (vector) {
         converter = new FromLinesConverter();

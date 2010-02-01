@@ -17,28 +17,39 @@ package com.ibm.jaql.lang.expr.del;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.UndeclaredThrowableException;
+import java.util.List;
 
 import com.ibm.jaql.io.converter.AbstractFromDelConverter;
 import com.ibm.jaql.io.serialization.text.basic.BasicTextFullSerializer;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.RecordSchema.Field;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
 /**
- * For converting a JSON value to a CSV line. Only if the following conditions
- * are satisfied, a JSON value can be converted to a CSV line:
- * <ol>
- * <li>JSON array</li>
- * <li>JSON record and field names options are provided</li>
- * <ol>
+ * Converts a JSON value to a delimited string.  
+ * 
+ * Conversion is driven by an option record. Currently, only the <code>delimited</code> 
+ * and <code>schema</code> fields of the option records are used. Valid arguments for the 
+ * <code>schema</code> field are: <code>null</code>, an array schema, or a record schema. Most 
+ * of the information in the schema field is currently ignored; there is no schema checking. 
+ * For records, the schema field determines the order of the records field in the serialized file. 
+ * 
  */
+
+// TODO This is a *very* basic implementation. The converter currently should check whether the 
+// TODO input conforms with the specified schema. It should also support the "quotes" field. 
+// TODO See AbstractFromDelConverter.
 public class JsonToDel {
 
-  private JsonString[] fields = new JsonString[0];
+  private JsonString[] fieldNames = new JsonString[0];
   private String delimiter;
   private RandomAccessBuffer buf = new RandomAccessBuffer();
   private PrintStream out = new PrintStream(buf);
@@ -57,17 +68,33 @@ public class JsonToDel {
     options = options == null ? JsonRecord.EMPTY : options;
     JsonString js = (JsonString) options.get(AbstractFromDelConverter.DELIMITER_NAME);
     delimiter = (js == null) ? "," : js.toString();
-    JsonArray fieldsArr = (JsonArray) options.get(AbstractFromDelConverter.FIELDS_NAME);
-    if (fieldsArr != null) {
-      try {
-        int n = (int) fieldsArr.count();
-        fields = new JsonString[n];
-        for (int i = 0; i < n; i++) {
-          fields[i] = (JsonString) fieldsArr.get(i);
-        }
-      } catch (Exception e) {
-        throw new UndeclaredThrowableException(e);
+    
+    // TODO: remove check for deprecated options
+    if (options.containsKey(new JsonString("convert"))) {
+      throw new IllegalArgumentException(
+          "The \"convert\" option is deprecated. Use the \"schema\" option instead.");
+    }
+    
+    JsonSchema jsonSchema = (JsonSchema) options.get(AbstractFromDelConverter.SCHEMA_NAME);
+    Schema schema = jsonSchema != null ? jsonSchema.get() : null;
+    if (schema instanceof RecordSchema) {
+      RecordSchema recordSchema = (RecordSchema)schema;
+      if (recordSchema.hasAdditional() || recordSchema.noOptional()>0) {
+        throw new IllegalArgumentException("record schema must not have optional or wildcard fields");
       }
+
+      // extract the field names
+      List<Field> fields = recordSchema.getFieldsByPosition();
+      fieldNames = new JsonString[fields.size()];
+      for (int i=0; i<fields.size(); i++) {
+        JsonString fieldName = fields.get(i).getName();
+        fieldNames[i] = fieldName;
+      }
+    } else if (schema instanceof ArraySchema) {
+      // silently accept
+    }
+    else if (schema != null) {
+      throw new IllegalArgumentException("only array or record schemata are accepted");
     }
   }
 
@@ -85,9 +112,9 @@ public class JsonToDel {
     String sep = "";
     if (src instanceof JsonRecord) {
       JsonRecord rec = (JsonRecord) src;
-      if (fields.length < 1)
+      if (fieldNames.length < 1)
       	throw new IllegalArgumentException("fields are required to convert A JSON record into a CSV line.");
-      for (JsonString n : fields) {
+      for (JsonString n : fieldNames) {
         out.print(sep);
         JsonValue value = rec.get(n);
         serializer.write(out, value);

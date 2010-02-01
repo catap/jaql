@@ -381,9 +381,9 @@ $arrays1 -> jsonToDel();
 $arrays2 = [['one','two'],['three','four']];
 $arrays2 -> jsonToDel();
 $records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
-$records -> jsonToDel({fields: ['name', 'age']});
+$records -> jsonToDel({schema: schema { name, age }});
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];
-$mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
 
 // json format
 [[1,2],[3,4]] -> write({type: 'jsonStream'});
@@ -391,7 +391,7 @@ $mixed -> jsonToDel({fields: ['name', 'age'], delimiter: '<=>'});
 
 // del format
 [[1,2],[3,4]]->write({type: 'delStream'});
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: {fields: ['lang', 'no'], delimiter: '='}});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});
 
 // xml format
 [{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});
