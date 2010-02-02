@@ -250,7 +250,7 @@ public final class SystemNamespace extends Namespace {
     Var var = new Var(descriptor.getName(), SchemaFactory.schemaOf(f), true);
     var.setNamespace(this);
     var.setValue(f);
-    var.finalize();
+    var.makeFinal();
     variables.put(var.name(), var);
     exportedVariables.add(var.name());
     implementationMap.put(descriptor.getImplementingClass(), descriptor);
