@@ -270,7 +270,7 @@ public class Namespace {
     if (isFinal()) return;
     for (Var v : variables.values())
     {
-      v.finalize();
+      v.makeFinal();
     }
     isFinal = true;
   }

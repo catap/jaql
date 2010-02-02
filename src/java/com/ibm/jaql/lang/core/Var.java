@@ -190,7 +190,7 @@ public final class Var extends Object
     return isFinal;
   }
 
-  public void finalize()
+  public void makeFinal()
   {
     if (type != Type.VALUE && type != Type.EXPR)
     {

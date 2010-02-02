@@ -166,7 +166,7 @@ public class Env extends Namespace
     Var var = new Var(varName, SchemaFactory.schemaOf(value), true);
     var.setValue(value);
     globals.scope(var);
-    var.finalize();
+    var.makeFinal();
     return var;
   }
   
