@@ -1,6 +1,8 @@
 #!/bin/sh
 # 
 # Run the jaql shell
+# Jaql shell has been tested with JAQL_HOME containing whitespaces on Cygwin.
+# But it has not been tried with such a JAQL_HOME on Linux.
 
 if [ "$JAQL_HOME" = "" ]; then
 	echo "Error, JAQL_HOME must be set"
