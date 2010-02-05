@@ -236,11 +236,14 @@ public class JaqlShell extends AbstractJaqlShell
    */
   private static void cleanupOverride() throws Exception
   {
-    File overrideDir = new File(System.getProperty("hadoop.conf.override"));
-    File mrOverride = new File(overrideDir, "hadoop-default.xml");
-    File hbOverride = new File(overrideDir, "hbase-default.xml");
-    mrOverride.delete();
-    hbOverride.delete();
+    String dirName = System.getProperty("hadoop.conf.override");
+    if(dirName != null) {
+      File overrideDir = new File(dirName);
+      File mrOverride = new File(overrideDir, "hadoop-default.xml");
+      File hbOverride = new File(overrideDir, "hbase-default.xml");
+      mrOverride.delete();
+      hbOverride.delete();
+    }
   }
 
   @Override
