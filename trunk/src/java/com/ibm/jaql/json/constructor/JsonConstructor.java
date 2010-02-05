@@ -34,6 +34,7 @@ public class JsonConstructor
   {
     add(new JMethod("date", DateConstructors.class, "date", 1));
     add(new JMethod("span", SpanConstructors.class, "span", 2));
+    add(new JMethod("hex", BinaryConstructors.class, "hex", 1));
   }
 
   /**
