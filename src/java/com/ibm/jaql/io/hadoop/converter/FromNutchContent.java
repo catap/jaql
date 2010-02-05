@@ -114,6 +114,8 @@ public class FromNutchContent extends HadoopRecordToJson<WritableComparable<?>, 
           if(cValue.getEncoding().getType() != JsonType.BINARY)
             cValue = bVal;
         }
+        // update the value in the return record.
+        r.set(Field.CONTENT.jsonName, cValue);
         
         // set the dynamic metadata
         BufferedJsonRecord mr = (BufferedJsonRecord)r.get(Field.META.jsonName);
