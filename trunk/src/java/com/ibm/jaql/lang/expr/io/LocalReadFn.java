@@ -19,23 +19,22 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * An expression used for reading data into jaql. The only different between
+ * localRead and Read is that localRead is disabled for mapReduce rewirte.
  * 
+ * @see ReadFn
  */
-public class LocalReadFn extends AbstractReadExpr
-{
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
-  {
-    public Descriptor()
-    {
+public class LocalReadFn extends AbstractReadExpr {
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11 {
+    public Descriptor() {
       super("localRead", LocalReadFn.class);
     }
   }
-  
+
   /**
    * @param exprs
    */
-  public LocalReadFn(Expr[] exprs)
-  {
+  public LocalReadFn(Expr[] exprs) {
     super(exprs);
   }
 }
