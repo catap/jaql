@@ -86,7 +86,9 @@ import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
 import com.ibm.jaql.lang.expr.hadoop.ChainedMapFn;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
+import com.ibm.jaql.lang.expr.hadoop.NativeMapReduceExpr;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
+import com.ibm.jaql.lang.expr.hadoop.LoadJobConfExpr;
 import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
@@ -173,6 +175,7 @@ import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.StrJoinFn;
 import com.ibm.jaql.lang.expr.string.StrSplitNFn;
+import com.ibm.jaql.lang.expr.string.SplitFn;
 import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.BatchFn;
@@ -306,6 +309,7 @@ public final class SystemNamespace extends Namespace {
     register(new SetOptionsFn.Descriptor());
     register(new GetOptionsFn.Descriptor());
     register(new MapReduceFn.Descriptor());
+    register(new NativeMapReduceExpr.Descriptor());
     register(new MRAggregate.Descriptor());
     register(new UdaFn.Descriptor());
     register(new UdaCallFn.Descriptor());
@@ -336,6 +340,7 @@ public final class SystemNamespace extends Namespace {
     register(new SerializeFn.Descriptor());
     register(new StrcatFn.Descriptor());
     register(new StrSplitNFn.Descriptor());
+    register(new SplitFn.Descriptor());
     register(new StrJoinFn.Descriptor());
     register(new ConvertFn.Descriptor());
     register(new JsonFn.Descriptor());
@@ -415,6 +420,7 @@ public final class SystemNamespace extends Namespace {
     register(new RegisterRNGExpr.Descriptor());
     register(new SampleRNGExpr.Descriptor());
     register(new ReadConfExpr.Descriptor());
+    register(new LoadJobConfExpr.Descriptor());
     // lower level shell access
     register(new HdfsShellExpr.Descriptor());
     register(new HBaseShellExpr.Descriptor());
