@@ -15,13 +15,18 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
  * for $i in e collect ([] | null) ==> []
@@ -55,9 +60,13 @@ public class TrivialForElimination extends Rewrite
     Expr inExpr = fe.binding().inExpr();
     Expr c = fe.collectExpr();
 
-    // for $i in ([] | null) collect e => []
-    // for $i in e collect ([] | null) => []
-    if (inExpr.getSchema().isEmpty(ARRAY,NULL).always() || c.getSchema().isEmpty(ARRAY,NULL).always())
+    // for( i in []   ) e    => []
+    // for( i in null ) e    => []
+    // for( i in e    ) []   => []
+    // for( i in e    ) null => []
+    // TODO: was this, but it ran slowly: if (inExpr.getSchema().isEmpty(ARRAY,NULL).always() || c.getSchema().isEmpty(ARRAY,NULL).always())
+    if ( isEmptyArrayOrNull(inExpr) ||
+         isEmptyArrayOrNull(c) )
     {
       fe.replaceInParent(new ArrayExpr());
       return true;
@@ -89,5 +98,26 @@ public class TrivialForElimination extends Rewrite
     expr = new TransformExpr(fe.binding(), c);
     fe.replaceInParent(expr);
     return true;
+  }
+  
+  public static boolean isEmptyArrayOrNull(Expr expr)
+  {
+    if( expr instanceof ConstExpr )
+    {
+      JsonValue v = ((ConstExpr)expr).value;
+      if( v == null )
+      {
+        return true;
+      }
+      else if( v instanceof JsonArray )
+      {
+        return ((JsonArray)v).isEmpty();
+      }
+    }
+    else if( expr instanceof ArrayExpr )
+    {
+      return ((ArrayExpr)expr).numChildren() == 0;
+    }
+    return false;
   }
 }

@@ -32,7 +32,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[6];
+  protected RewritePhase[] phases      = new RewritePhase[5];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter
   protected long           counter     = 0;
@@ -73,6 +73,7 @@ public class RewriteEngine
     new DoPullup(phase);
     // new DechainFor(phase);
     new FunctionInline(phase);
+    new DaisyChainInline(phase);
     new TrivialForElimination(phase);
     new TrivialTransformElimination(phase);
     new TransformMerge(phase);
@@ -80,21 +81,30 @@ public class RewriteEngine
     new AsArrayElimination(phase);
     // new GlobalInline(phase);
     new DoInlinePragma(phase);
-    new ConstArrayAccess(phase);
-    new ConstFieldAccess(phase);
+    new ConstArrayAccess(phase); // FIXME: merge with RewriteFirstPathStep, remove fn
+    new ConstFieldAccess(phase); // FIXME: merge with RewriteFirstPathStep, remove fn
     new ForInSimpleIf(phase);
     new SimplifyFirstNonNull(phase);
     new TrivialCombineElimination(phase);
     new CombineInputSimplification(phase);
     new DoConstPragma(phase);
-    new PathArrayToFor(phase);
-    new PathIndexToFn(phase);
+    new RewriteFirstPathStep(phase);
+    new PathArrayToFor(phase); // FIXME: merge with RewriteFirstPathStep
+    new PathIndexToFn(phase); // FIXME: merge with RewriteFirstPathStep, remove PathIndexToFn + fn, remove ConstFieldAccess, et al
     new ToArrayElimination(phase);
     new EmptyOnNullElimination(phase);
     new InjectAggregate(phase);
+    new UnrollForLoop(phase);
+    new UnrollTransformLoop(phase);
+    new SimplifyUnion(phase);
+    new VarProjection(phase);
+    new SimplifyRecord(phase);
     new UnnestFor(phase);
     new WriteAssignment(phase);
     new TypeCheckSimplification(phase);
+    // new ConstEval(phase); // TODO: do we need full ConstEval? Should it be in this or another phase?  Can it be made quicker?
+    new CheapConstEval(phase);
+    new ConstIfElimination(phase);
     //    new StrengthReduction(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
@@ -105,9 +115,12 @@ public class RewriteEngine
     // new CogroupToMapReduce(phase);
     // new ForToMapReduce(phase);
 
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);
-    new ConstEval(phase); // TODO: run bottom-up/post-order
-    //new ConstFunction(phase);
+//    // TODO: put ConstEval in basicPhase? it is somewhat expensive because it 
+//    // tested on every expr and the test can walk a lot of the tree...
+//    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);
+//    new ConstEval(phase); // TODO: run bottom-up/post-order
+//    new LetInline(phase); // ConstEval opens more LetInline chances, which opens more ConstEval   
+//    //new ConstFunction(phase);
 
     // phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);
@@ -120,6 +133,7 @@ public class RewriteEngine
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     new GroupElimination(phase);
     new PerPartitionElimination(phase);
+    new PragmaElimination(phase);
     
     phases[++phaseId] = basicPhase;
   }

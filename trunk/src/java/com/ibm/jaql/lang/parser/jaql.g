@@ -57,9 +57,9 @@ options {
 
 {
     public boolean done = false;
-    public Env env = new Env();
-
-    public void oops(String msg) throws RecognitionException, TokenStreamException
+    public Env env = new Env(new Context()); // TODO: The Env should be passed in to the parser constructor
+    
+    protected void oops(String msg) throws RecognitionException, TokenStreamException
     { 
       throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
     }
@@ -592,7 +592,7 @@ record returns [Expr r = null]
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
     { Expr e = null; Expr v=null; boolean required = true; }
-    : (idExpr ("?" | ":")) => e=idExpr ( "?" { required = false; } )?  v=fieldValue  
+    : (idExpr ("?")? ":") => e=idExpr ( "?" { required = false; } )?  v=fieldValue  
       { 
         f = new NameValueBinding(e, v, required); 
       }

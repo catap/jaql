@@ -28,6 +28,8 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.lang.expr.core.RecordExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.util.Bool3;
 
@@ -78,10 +80,56 @@ public class PathFieldValue extends PathStep
   throws Exception
   {
     exprText.print(".(");
-    exprs[0].decompile(exprText, capturedVars);
+    nameExpr().decompile(exprText, capturedVars);
     exprText.print(")");
-    exprs[1].decompile(exprText, capturedVars);
+    nextStep().decompile(exprText, capturedVars);
   }
+  
+  @Override
+  public boolean rewriteFirstStep() throws Exception
+  {
+    Expr ne = nameExpr();
+    if( !(ne instanceof ConstExpr) )
+    {
+      // TODO: We could handle the very special cases of null.(expr) and {}.(expr) => null
+      return false;
+    }
+    ConstExpr ce = (ConstExpr)ne;
+    JsonString name = (JsonString)ce.value;
+    
+    PathExpr pe = (PathExpr)parent;
+    Expr input = pe.input();
+    
+    Expr fieldValue;
+    if( input instanceof ConstExpr )
+    {
+      ce = (ConstExpr)input;
+      JsonRecord rec = (JsonRecord)ce.value; // possible cast exception
+      fieldValue = new ConstExpr(rec.get(name));
+    }
+    else if( input instanceof RecordExpr )
+    {
+      if( input.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).maybe() ||
+          input.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).maybe() )
+      {
+        return false;
+      }
+      RecordExpr re = (RecordExpr)input;
+      fieldValue = re.findStaticFieldValue(name);
+      // TODO: want findStaticFieldValue to distinguish between not able to find the field and the field definitely doesn't exist.
+      if( fieldValue == null )
+      {
+        return false;
+      }
+    }
+    else
+    {
+      return false;
+    }
+    pe.replaceInParent(fieldValue);
+    return true;
+  }
+
 
   /* (non-Javadoc)
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
@@ -94,7 +142,7 @@ public class PathFieldValue extends PathStep
     {
       return null;
     }
-    JsonString name = (JsonString)exprs[0].eval(context);
+    JsonString name = (JsonString)nameExpr().eval(context);
     if( name == null )
     {
       return null;
@@ -133,7 +181,7 @@ public class PathFieldValue extends PathStep
   @Override
   public PathStepSchema getSchema(Schema inputSchema)
   {
-    PathStepSchema s = staticResolveField(inputSchema, exprs[0], nextStep());
+    PathStepSchema s = staticResolveField(inputSchema, nameExpr(), nextStep());
     switch (s.hasData)
     {
     case TRUE:

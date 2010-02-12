@@ -148,7 +148,7 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
       if (e instanceof MacroExpr)
       {
         // should be rare because variables are usually inlined
-        e = ((MacroExpr)e).expand(new Env());
+        e = ((MacroExpr)e).expand(new Env(null)); // FIXME: ksb: This doesn't look healthy.  A new Env? No Context? Maybe expand shouldn't get an Env (which means eliminating env.makeVar())
       }
       return e;
     } catch (Exception e)

@@ -268,34 +268,33 @@ public class RecordExpr extends Expr
         if (nameExpr instanceof ConstExpr)
         {
           ConstExpr ce = (ConstExpr) nameExpr;
-          JsonValue t = ce.value;
-          if (t instanceof JsonString)
+          JsonString t = (JsonString)ce.value;
+          if (name.equals(t))
           {
-            if (name.equals(t))
+            if (valExpr != null)
             {
-              if (valExpr != null)
-              {
-                throw new RuntimeException(
-                    "duplicate field name in record constructor: " + name);
-              }
-              valExpr = nv.valueExpr();
+              throw new RuntimeException(
+                  "duplicate field name in record constructor: " + name);
             }
+            valExpr = nv.valueExpr();
           }
         }
+        else
+        {
+          // We have a computed field name - this field might match the one we're looking for
+          return null;
+        }
+      }
+      else
+      {
+        // We have another source of fields that might match what we're looking for.
+        // TODO: We could handle some of these cases.
+        return null;
       }
     }
     return valExpr;
   }
 
-  /**
-   * @param name
-   * @return
-   */
-  public Expr findStaticFieldValue(String name) // TODO: migrate callers to JString version
-  {
-    return findStaticFieldValue(new JsonString(name)); // TODO: memory
-  }
-  
   /*
    * (non-Javadoc)
    * 

@@ -39,9 +39,10 @@ public class Env extends Namespace
 
   // -- construction ------------------------------------------------------------------------------
   
-  public Env()
+  public Env(Context context)
   {
-    globals = new Namespace(null);   
+    globals = new Namespace(null);
+    this.context = context;
   }
   
   

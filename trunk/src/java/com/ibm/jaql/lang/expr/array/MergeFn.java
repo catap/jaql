@@ -21,6 +21,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * Merge multiple pipes into one pipe in arbitrary order (like SQL's UNION ALL) 
@@ -52,6 +53,11 @@ public class MergeFn extends IterExpr // TODO: add intersect, union, difference,
     super(expr0, expr1);
   }
 
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
 
   @Override
   public JsonIterator iter(final Context context) throws Exception
