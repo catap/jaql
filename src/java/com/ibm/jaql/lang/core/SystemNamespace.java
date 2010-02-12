@@ -49,6 +49,7 @@ import com.ibm.jaql.lang.expr.array.Lag1Fn;
 import com.ibm.jaql.lang.expr.array.MergeFn;
 import com.ibm.jaql.lang.expr.array.PairFn;
 import com.ibm.jaql.lang.expr.array.PairwiseFn;
+import com.ibm.jaql.lang.expr.array.PowersetFn;
 import com.ibm.jaql.lang.expr.array.RemoveElementFn;
 import com.ibm.jaql.lang.expr.array.ReplaceElementFn;
 import com.ibm.jaql.lang.expr.array.ReverseFn;
@@ -63,6 +64,7 @@ import com.ibm.jaql.lang.expr.catalog.CatalogLookupFn;
 import com.ibm.jaql.lang.expr.catalog.CatalogUpdateFn;
 import com.ibm.jaql.lang.expr.catalog.UpdateCommentFn;
 import com.ibm.jaql.lang.expr.core.CompareFn;
+import com.ibm.jaql.lang.expr.core.DaisyChainFn;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GetOptionsFn;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
@@ -92,6 +94,7 @@ import com.ibm.jaql.lang.expr.hadoop.LoadJobConfExpr;
 import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
+import com.ibm.jaql.lang.expr.index.ProbeLongListFn;
 import com.ibm.jaql.lang.expr.index.SharedHashtableNFn;
 import com.ibm.jaql.lang.expr.internal.ExprTreeExpr;
 import com.ibm.jaql.lang.expr.internal.HashExpr;
@@ -142,6 +145,7 @@ import com.ibm.jaql.lang.expr.number.PowFn;
 import com.ibm.jaql.lang.expr.number.ToNumberFn;
 import com.ibm.jaql.lang.expr.pragma.ConstPragma;
 import com.ibm.jaql.lang.expr.pragma.InlinePragma;
+import com.ibm.jaql.lang.expr.pragma.UnrollLoopPragma;
 import com.ibm.jaql.lang.expr.random.RandomDoubleFn;
 import com.ibm.jaql.lang.expr.random.RandomLongFn;
 import com.ibm.jaql.lang.expr.random.RegisterRNGExpr;
@@ -271,6 +275,7 @@ public final class SystemNamespace extends Namespace {
     register(new CompareFn.Descriptor());
     register(new ExistsFn.Descriptor());
     register(new Lag1Fn.Descriptor());
+    register(new PowersetFn.Descriptor());
     //lib.put("loadXml", LoadXmlExpr.Descriptor());
     //lib.put("deepCompare", DeepCompareExpr.Descriptor());
     register(new NowFn.Descriptor());
@@ -370,6 +375,7 @@ public final class SystemNamespace extends Namespace {
     register(new RemoveElementFn.Descriptor());
     register(new InlinePragma.Descriptor());
     register(new ConstPragma.Descriptor());
+    register(new UnrollLoopPragma.Descriptor());
     register(new AsArrayFn.Descriptor());
     register(new ToArrayFn.Descriptor());
     register(new EnumerateExpr.Descriptor());
@@ -426,6 +432,8 @@ public final class SystemNamespace extends Namespace {
     register(new HBaseShellExpr.Descriptor());
     register(new SharedHashtableNFn.Descriptor()); // TODO: experimental
     register(new KeyLookupFn.Descriptor()); // TODO: experimental
+    register(new ProbeLongListFn.Descriptor()); // TODO: experimental
+    register(new DaisyChainFn.Descriptor()); // TODO: experimental
     //register(new BuildLuceneFn.Descriptor()); // TODO: experimental
     //register(new ProbeLuceneFn.Descriptor()); // TODO: experimental
     register(new BuildJIndexFn.Descriptor());

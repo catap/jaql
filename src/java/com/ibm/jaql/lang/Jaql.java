@@ -110,8 +110,9 @@ public class Jaql implements CoreJaql
   
   protected JaqlLexer lexer = null;
   protected JaqlParser parser = null;
+  protected final Context context = new Context();
+  protected final Env env = new Env(context);
   protected RewriteEngine rewriter = new RewriteEngine();
-  protected Context context = new Context();
   protected boolean doRewrite = true;
   protected boolean stopOnException = false;
   private JaqlPrinter printer = NullPrinter.get();
@@ -150,18 +151,16 @@ public class Jaql implements CoreJaql
   public void setInput(String filename, InputStream in)
   {
     lexer = new JaqlLexer(in);
-    Env env = parser != null ? parser.env : null;
     parser = new JaqlParser(lexer);
-    if (env != null) parser.env = env;
+    parser.env = env;
     lexer.setFilename(filename);
   }
   
   public void setInput(String filename, Reader in)
   {
     lexer = new JaqlLexer(in);
-    Env env = parser != null ? parser.env : null;
     parser = new JaqlParser(lexer);
-    if (env != null) parser.env = env;
+    parser.env = env;
     lexer.setFilename(filename);
   }
   

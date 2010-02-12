@@ -17,11 +17,10 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
-import java.util.Map;
 
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -220,13 +219,5 @@ public class NameValueBinding extends FieldExpr
       }
       rec.add(name, value);
     }
-  }
-  
-  @Override
-  public Map<ExprProperty, Boolean> getProperties() 
-  {
-    Map<ExprProperty, Boolean> result = super.getProperties();
-    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
-    return result;
   }
 }

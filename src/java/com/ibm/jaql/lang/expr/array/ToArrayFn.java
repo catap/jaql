@@ -25,6 +25,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * If the input is an array or null, return it; else wrap in an array.
@@ -66,6 +67,12 @@ public class ToArrayFn extends IterExpr
     return SchemaTransformation.wrapIntoArrayOrNull(inSchema);    
   }
   
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   /*
    * (non-Javadoc)
    * 

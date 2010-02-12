@@ -73,9 +73,10 @@ public class RewritePhase
   }
 
   /**
+   * Returns true if the tree is valid.  Raises an exception otherwise.
    * @param expr
    */
-  protected void validateTree(Expr expr)
+  protected boolean validateTree(Expr expr)
   {
     for (Expr e : expr.children())
     {
@@ -83,11 +84,12 @@ public class RewritePhase
       {
         if (e.parent() != expr)
         {
-          throw new RuntimeException("invalid tree");
+          throw new IllegalStateException("Invalid Expr tree: child does not point back to parent");
         }
         validateTree(e);
       }
     }
+    return true;
   }
 
   /**
@@ -105,6 +107,11 @@ public class RewritePhase
     ExprWalker walker = this.walker;
     walker.reset(start);
     Expr expr;
+    final boolean traceFire = engine.traceFire;
+    final boolean traceTryRule = false; // engine.traceTryRule;
+    final boolean tracing = traceFire || traceTryRule;
+    long numTried = 0;
+    long lastFired = System.nanoTime();
     walking : while ((expr = walker.next()) != null)
     {
       for (Class<?> exprClass = expr.getClass(); exprClass != Object.class; exprClass = exprClass
@@ -117,16 +124,17 @@ public class RewritePhase
           for (int i = 0; i < n; i++)
           {
             Rewrite r = myRules.get(i);
-//            if (false)
-//            {
-//              System.err.println("trying rewrite: "
-//                  + r.getClass().getSimpleName());
-//            }
+            long startTime = tracing ? System.nanoTime() : 0;
             if (r.rewrite(expr))
             {
-              if (engine.traceFire)
+              if (traceFire)
               {
-                System.err.println("fired " + r.getClass().getSimpleName());
+                long now = System.nanoTime();
+                if( true /*!traceTryRule*/ )
+                {
+                  System.err.println("{ type:'skip', numTried:"+numTried+", nanos:"+(now-lastFired)+" },");
+                }
+                System.err.println("{ type:'fired', rule:'" + r.getClass().getSimpleName() + "', nanos:"+(now-startTime)+" },");
                 if (engine.explainFire)
                 {
                   System.err.println();
@@ -136,17 +144,25 @@ public class RewritePhase
                   System.err.println();
                 }
                 System.err.flush();
+                lastFired = now;
+                numTried = 0;
               }
-              if (true)
-              {
-                validateTree(start);
-              }
+              assert validateTree(start);
               if (++fireCount >= maxFire)
               {
                 return;
               }
               walker.reset();
               continue walking;
+            }
+            else 
+            {
+              numTried++;
+              if( traceTryRule )
+              {
+                long now = System.nanoTime();
+                System.err.println("{ type:'tried', rule:'" + r.getClass().getSimpleName() + "', nanos:"+(now-startTime)+" },");
+              }
             }
           }
         }

@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonString;
@@ -55,6 +56,14 @@ public abstract class FieldExpr extends Expr
   public FieldExpr(Expr expr0, Expr expr1)
   {
     super(expr0, expr1);
+  }
+
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
   }
 
   /*
