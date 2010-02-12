@@ -23,6 +23,7 @@ import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
@@ -42,6 +43,7 @@ import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -109,12 +111,21 @@ public class MathExpr extends Expr
     this.op = op;
   }
   
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  }
+
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
+  @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
@@ -135,11 +146,19 @@ public class MathExpr extends Expr
     return new MathExpr(op, exprs[0].clone(varMap), exprs[1].clone(varMap));
   }
 
+  
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
   /*
    * (non-Javadoc)
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
+  @Override
   public JsonValue eval(Context context) throws Exception
   {
     JsonValue value1 = exprs[0].eval(context);

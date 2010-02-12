@@ -143,7 +143,8 @@ public abstract class Expr
       }
       else
       {
-        if (exprs[i].isCompileTimeComputable().always())
+        if (exprs[i].isCompileTimeComputable().always() &&
+            exprs[i].getEnvExpr() != null ) // FIXME: why were we doing compileTimeEval at runtime?! It bombed here, so I blocked it (ksb)
         {
           if (!JsonUtil.equals(p.defaultOf(i), exprs[i].compileTimeEval()))
           {
@@ -446,7 +447,23 @@ public abstract class Expr
     exprs = es;
     subtreeModified();
   }
-
+  
+  public void addChildBefore(int slot, Expr e)
+  {
+    if( e instanceof InjectAboveExpr ) // TODO: this really looks like hacking
+    {
+      this.parent = e.parent;
+      e = e.exprs[0];
+    }
+    e.parent = this;
+    Expr[] es = new Expr[exprs.length + 1];
+    System.arraycopy(exprs, 0, es, 0, slot);
+    System.arraycopy(exprs, slot, es, slot + 1, exprs.length - slot);
+    es[slot] = e;
+    exprs = es;
+    subtreeModified();
+  }
+  
   /**
    * @param e
    */
@@ -869,6 +886,17 @@ public abstract class Expr
     return null;
   }
   
+  /** Get the root of the Expr tree */
+  public Expr getRoot()
+  {
+    Expr e = this;
+    while( e.parent != null )
+    {
+      e = e.parent;
+    }
+    return e;
+  }
+  
   /** Returns the environment expression of the tree (usually the root) if existent, otherwise 
    * returns null */
   public EnvExpr getEnvExpr()
@@ -897,11 +925,11 @@ public abstract class Expr
     EnvExpr e = getEnvExpr();
     if (e == null)
     {
-      throw new IllegalStateException("expression does not have a top expression");
+      throw new IllegalStateException("expression does not have a top expression.  root class="+getRoot().getClass().getName());
     };
     return e.getEnv().eval(this);
   }
-  
+
 //  /**
 //   * Return true iff var is defined above this Expr, including globally.
 //   * 

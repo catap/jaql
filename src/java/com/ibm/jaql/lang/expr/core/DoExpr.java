@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -36,15 +37,29 @@ import com.ibm.jaql.util.Bool3;
  */
 public class DoExpr extends Expr
 {
-
+  /**
+   * If the last expression is a BindingExpr, add a ConstExpr(null) for the return expr.
+   * A DoExpr should never end with a BindingExpr, even after rewrites.
+   */
+  protected static Expr[] canonicalForm(Expr[] exprs)
+  {
+    int n = exprs.length;
+    if( exprs[n-1] instanceof BindingExpr )
+    {
+      exprs = Arrays.copyOf(exprs, n + 1);
+      exprs[n] = new ConstExpr(null);
+    }
+    return exprs;
+  }
+  
   public DoExpr(Expr ... exprs)
   {
-    super(exprs);
+    super(canonicalForm(exprs));
   }
 
   public DoExpr(ArrayList<? extends Expr> exprs)
   {
-    super(exprs);
+    this(exprs.toArray(new Expr[exprs.size()]));
   }
   
   public Map<ExprProperty, Boolean> getProperties() 

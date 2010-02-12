@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.HashSet;
+import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -61,6 +62,14 @@ public class CompareExpr extends Expr
   public CompareExpr(int op, Expr expr1, Expr expr2)
   {
     this(op, new Expr[]{expr1, expr2});
+  }
+
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
   }
 
   /*

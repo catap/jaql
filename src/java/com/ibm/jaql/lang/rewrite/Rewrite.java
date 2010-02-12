@@ -15,8 +15,12 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
 import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
@@ -24,6 +28,7 @@ import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * 
@@ -233,5 +238,29 @@ public abstract class Rewrite
       expr = expr.parent();
     }
     return true;
+  }
+  
+  /** 
+   * Ensure that expr returns an array.
+   * If it never returns an array or null, raise a type exception.
+   * If it always returns an array, simply return the expr.
+   * If it unknown, return asArray(expr).
+   */
+  public static Expr asArray(Expr expr)
+  {
+    if( !(expr instanceof IterExpr) )
+    {
+      Schema s = expr.getSchema();
+      Bool3 isArray = s.is(JsonType.ARRAY);
+      if( isArray.never() && s.is(JsonType.NULL).never() )
+      {
+        throw new ClassCastException("expected an array or null. got:"+s+"\nIn expr:"+expr);
+      }
+      if( isArray.maybeNot() )
+      {
+        expr = new AsArrayFn(expr);
+      }
+    }
+    return expr;
   }
 }

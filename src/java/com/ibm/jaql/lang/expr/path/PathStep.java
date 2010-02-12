@@ -119,6 +119,21 @@ public abstract class PathStep extends Expr
     return s;
   }
 
+  /**
+   * Simplify the first step of a path expression.
+   * (this.parent instanceof PathExpr)
+   * 
+   * Called by the rewrite engine when this step is the first step of a path expression.
+   * It should only modify the PathExpr subtree - usually replacing the PathExpr.
+   * 
+   * Return true if the pathExpr subtree has been modified,
+   *        false if the tree has not been modified.
+   */
+  public boolean rewriteFirstStep() throws Exception
+  {
+    return false;
+  }
+  
   /** 
    * 
    * @param context
@@ -224,4 +239,5 @@ public abstract class PathStep extends Expr
     PathStepSchema nextSchema = nextStep.getSchema(SchemaFactory.anySchema());
     return new PathStepSchema(nextSchema.schema, nextSchema.hasData.and(Bool3.UNKNOWN));
   }
+
 }

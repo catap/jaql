@@ -15,12 +15,27 @@
  */
 package com.ibm.jaql.util;
 
+import java.util.Arrays;
+
 /** Dynamically growing array of longs. */
 public class LongArray
 {
+  protected static final int DEFAULT_CAPACITY = 8;
+  
   int    n     = 0;
-  long[] items = new long[2];
+  long[] items;
+  boolean sorted = true;
 
+  public LongArray()
+  {
+    this(DEFAULT_CAPACITY);
+  }
+  
+  public LongArray(int initialCapacity)
+  {
+    this.items = new long[initialCapacity];
+  }
+  
   /**
    * @param x
    */
@@ -28,12 +43,20 @@ public class LongArray
   {
     if (n == items.length)
     {
-      long[] newItems = new long[n * 2];
-      System.arraycopy(items, 0, newItems, 0, n);
-      items = newItems;
+      grow();
     }
+    // TODO: move add-in-order detection (from LongArrayDedup) here to avoid unneeded sort?
     items[n] = x;
     n++;
+    sorted = false;
+  }
+  
+  /** Make the items array at least one bigger */
+  protected void grow()
+  {
+    long[] newItems = new long[n < Integer.MAX_VALUE / 2 ? n * 2 : Integer.MAX_VALUE - 1];
+    System.arraycopy(items, 0, newItems, 0, n);
+    items = newItems;
   }
 
   /**
@@ -92,5 +115,56 @@ public class LongArray
   public void clear()
   {
     n = 0;
+    sorted = true;
+  }
+
+  /** Shrink the allocated array if we are being wasteful */
+  public void trimToSize()
+  {
+    if( items.length > DEFAULT_CAPACITY && n < .95 * items.length )
+    {
+      long[] newItems = new long[n > 2 ? n : 2];
+      System.arraycopy(items, 0, newItems, 0, n);
+      items = newItems;
+    }
+  }
+  
+  /** Sort the elements in ascending order */
+  public void sort()
+  {
+    if( !sorted )
+    {
+      Arrays.sort(items, 0, n); // write a faster sort, eg radix-sort?
+      sorted = true;
+    }
+  }
+
+  /** Has the array been sorted? */
+  public boolean isSorted()
+  {
+    return sorted;
+  }
+  
+  /** 
+   * Return the index of the item if it is in the array, otherwise a value < 0.
+   * If the array is sorted, it returns (-(insertion point) - 1), as defined by Arrays.binarySearch(). 
+   */
+  public int indexOf(long x)
+  {
+    if( sorted )
+    {
+      return Arrays.binarySearch(items, 0, n, x);
+    }
+    else
+    {
+      for(int i = 0 ; i < n ; i++)
+      {
+        if( items[i] == x )
+        {
+          return i;
+        }
+      }
+      return -1;
+    }
   }
 }

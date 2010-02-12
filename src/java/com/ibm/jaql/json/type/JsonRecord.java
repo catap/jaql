@@ -72,7 +72,7 @@ implements Iterable<Entry<JsonString, JsonValue>>
    * key doesn't exist. */
   public JsonValue get(JsonString key)
   {
-    return get((JsonString)key, null);
+    return get(key, null);
   }
 
   /** Returns the value for the specified key (i.e., field name) or throws an 

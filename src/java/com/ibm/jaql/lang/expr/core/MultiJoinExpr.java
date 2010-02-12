@@ -191,18 +191,12 @@ public class MultiJoinExpr extends MacroExpr
       exprText.print(" " + kw("in") + " (");
       b.inExpr().decompile(exprText, capturedVars);
       exprText.print(")");
-      int m = b.numChildren();
-      for(int j = 1 ; j < m ; j++)
-      {
-        BindingExpr on = (BindingExpr)b.child(i);
-        exprText.print(" " + kw("on") + " ");
-        exprText.print(on.var.taggedName());
-        exprText.print(" = ");
-        b.eqExpr().decompile(exprText, capturedVars);
-      }
-      b.inExpr().decompile(exprText, capturedVars);
       sep = ",\n     ";
     }
+    
+    exprText.println("\n  " + kw("where") + " (");
+    whereExpr().decompile(exprText, capturedVars);
+    exprText.println(")");
     
     Expr opts = optionsExpr();
     if( opts.getSchema().is(NULL).maybeNot() )
@@ -212,7 +206,7 @@ public class MultiJoinExpr extends MacroExpr
       exprText.println(")");
     }
     
-    exprText.println(" " + kw("into") + " ");
+    exprText.println(" " + kw("expand") + " ");
     projectExpr().decompile(exprText, capturedVars);
 
     for (int i = 0; i < n; i++)
@@ -488,6 +482,7 @@ public class MultiJoinExpr extends MacroExpr
     int numInCore = 0;    // number of inputs 
     
     JoinInput[] inputs;
+    HashSet<Var> externalVars;
     
     /**
      * Map each distinct variable to the set of input that join on that var.
@@ -498,6 +493,7 @@ public class MultiJoinExpr extends MacroExpr
     
     JoinGraph(Env env)
     {
+      externalVars = MultiJoinExpr.this.getCapturedVars();
       makeInputs(env);
       makeEdges(whereExpr());
       JoinInput x = findDisconnected();
@@ -741,6 +737,8 @@ public class MultiJoinExpr extends MacroExpr
         Expr e2 = c.child(1);
         HashSet<Var> s1 = e1.getCapturedVars();
         HashSet<Var> s2 = e2.getCapturedVars();
+        s1.removeAll(externalVars);
+        s2.removeAll(externalVars);
         if( s1.size() == 1 && s2.size() == 1 )
         {
           Var v1 = s1.iterator().next();

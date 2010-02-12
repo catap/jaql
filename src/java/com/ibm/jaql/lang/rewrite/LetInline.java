@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -63,12 +64,12 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
   {
     DoExpr doExpr = (DoExpr) expr;
     int n = doExpr.numChildren();
-    boolean replaced = false;
     Expr e;
 
-    assert n > 0; // There shouldn't be any empty do exprs
+    assert n > 0; // There shouldn't be any empty do exprs or any
+    assert !(doExpr.returnExpr() instanceof BindingExpr); // do expr never ends with a binding
     
-    for (int i = 0 ; i < n ; i++)
+    for (int i = 0 ; i < n-1 ; i++)
     {
       e = doExpr.child(i);
       // We cannot inline subtrees that have side-effects of nondeterminism.
@@ -85,37 +86,19 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         int numUses = countVarUse(doExpr, b.var);
         if (numUses == 0)  // (..., v=e, ...)   and v is never used
         {
-          if( i < n - 1 )   // b is not the returned expression
+          if( noExternalEffects )
           {
-            if( noExternalEffects )
-            {
-              //     (..., v=e, e2, ...)   
-              // ==> (..., e2, ...)        if v is never used and e has no external effect 
-              b.detach();
-            }
-            else
-            {
-              //     (..., v=e, e2, ...)   
-              // ==> (..., e, e2, ...)     if v is never used
-              b.replaceInParent(valExpr);
-            }
+            //     (..., v=e, e2, ...)   
+            // ==> (..., e2, ...)        if v is never used and e has no external effect 
+            b.detach();
           }
-          else // b is the returned expression
+          else
           {
-            if( noExternalEffects )
-            {
-              //     (..., v=e)   
-              // ==> (..., null)           if e has no external effect 
-              b.replaceInParent(new ConstExpr(null));
-            }
-            else
-            {
-              //     (..., v=e)   
-              // ==> (..., e, null)
-              b.replaceInParent(valExpr);
-              doExpr.addChild(new ConstExpr(null));
-            }
+            //     (..., v=e, e2, ...)   
+            // ==> (..., e, e2, ...)     if v is never used, but has some effect
+            b.replaceInParent(valExpr);
           }
+          removeBlock(doExpr);
           return true;
         }
 
@@ -123,37 +106,41 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
         // FIXME: A function call should report no effects only when its body is known to have no effects.
         // FIXME: solution: for "deep" getProperty: DefineFunction should not look at body, FunctionCall should skip definefunction all go to body (or report safe defaults) 
         
-        if( valExpr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).maybe() ||
-            valExpr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).maybe() )
+//        if( valExpr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).maybe() ||
+//            valExpr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).maybe() )
+//        {
+//          if( numUses == 1 )
+//          {
+//            VarExpr use = findFirstVarUse(doExpr, b.var);
+//            if( use.parent() == doExpr && use.getChildSlot() == b.getChildSlot() + 1 )
+//            {
+//              // ( ..., $v = <some effect>, $v, <...no use of $v...> ) ==> (..., <some effect>, <...no use of $v...>)   
+//              use.replaceInParent(valExpr);
+//              replaced = true;
+//            }
+//          }
+//          if( !replaced )
+//          {
+//            continue;
+//          }
+//        }
+
+        if( noExternalEffects )
         {
           if( numUses == 1 )
           {
             VarExpr use = findFirstVarUse(doExpr, b.var);
-            if( use.parent() == doExpr && use.getChildSlot() == b.getChildSlot() + 1 )
+            if( evaluatedOnceTo(use, doExpr) ) // TODO: vars should be able to be marked as inlined to force inlining
             {
-              // ( ..., $v = <some effect>, $v, <...no use of $v...> ) ==> (..., <some effect>, <...no use of $v...>)   
               use.replaceInParent(valExpr);
-              replaced = true;
+              b.detach();
+              removeBlock(doExpr);
+              return true;
             }
           }
-          if( !replaced )
-          {
-            continue;
-          }
-        }
 
-        if (!replaced && numUses == 1)
-        {
-          VarExpr use = findFirstVarUse(doExpr, b.var);
-          if( evaluatedOnceTo(use, doExpr) ) // TODO: vars should be able to be marked as inlined to force inlining
-          {
-            use.replaceInParent(valExpr);
-            replaced = true;
-          }
-        }
-
-        if( !replaced )  // multiple uses of var or inlining might cause multiple evaluations
-        {
+          // multiple uses of var or inlining might cause multiple evaluations
+          
           // Do not inline a function variable that passes itself to itself (dynamic recursion)
           // conservative method: Inline only if every var usage goes directly into a function call. 
           if( valExpr instanceof DefineJaqlFunctionExpr   // TODO: we could try to make a Def into a Const
@@ -164,50 +151,102 @@ public class LetInline extends Rewrite // TODO: rename to Var inline
             if( allUsesAreCalls(b.var, expr) )
             {
               replaceVarUses(b.var, doExpr, valExpr);
-              replaced = true;
+              b.detach();
+              removeBlock(doExpr);
+              return true;
             }
           }
           else if ( valExpr instanceof ConstExpr 
-                 || valExpr instanceof VarExpr
-                 || valExpr instanceof ReadFn ) 
+              || valExpr instanceof VarExpr
+              || valExpr instanceof ReadFn ) 
           {
             replaceVarUses(b.var, doExpr, valExpr);
-            replaced = true;
+            b.detach();
+            removeBlock(doExpr);
+            return true;
           }
-          // TODO: else consider inlining cheap valExprs into multiple uses.
         }
+        
+        // Even with external effects, we can inline portions of the valExpr for special cases
+        if( valExpr instanceof ArrayExpr )
+        {
+          // Inlining the array constructor enables constant indexing and loop unrolling. 
+          // v = [e1,...,en]
+          // ==>
+          // v1 = e1, ..., vn = e2, all uses of v => [v1,...,vn]
+          ArrayExpr ae = (ArrayExpr)valExpr;
+          int k = ae.numChildren();
+          Expr[] newBinds = new Expr[k];
+          Expr[] newElems = new Expr[k];
+          for( int j = 0 ; j < newBinds.length ; j++ )
+          {
+            Var arrVar = engine.env.makeVar("$arr");
+            newBinds[j] = new BindingExpr(BindingExpr.Type.EQ, arrVar, null, ae.child(j));
+            newElems[j] = new VarExpr(arrVar);
+          }
+          b.replaceInParent(newBinds, 0, newBinds.length);
+          replaceVarUses(b.var, doExpr, new ArrayExpr(newElems));
+          removeBlock(doExpr);
+          return true;
+        }
+        // TODO: else consider inlining other cheap valExprs into multiple uses.
       }
       else // not a BindingExpr
       {
-        // (..., e, ...) ==> (..., ...)
-        if( i < n - 1 && // not the returned expression
-            e.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
-            e.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never() )
-        {
-          replaced = true;
-        }
-      }
-
-      if (replaced)
-      {
-        if (n == 1) // do($v = e) ==> null
-        {
-          doExpr.replaceInParent(new ConstExpr(null));
-        }
-        else if( i + 1 == n ) // do(e1,$v=e2) ==> (e1,null)
-        {
-          e.replaceInParent(new ConstExpr(null));
-        }
-        else        // Eliminate the variable definition.
+        // (..., e, ...) ==> (..., ...)  where e has not external effect, or
+        // (..., var, ...) ==> (..., ...) because any effect caused by var will be done at definition point.  // TODO: should VarExpr report no external effects?
+        if( noExternalEffects ||
+            e instanceof VarExpr )
         {
           e.detach();
+          removeBlock(doExpr);
+          return true;
         }
+      }
+    }
+    
+    if( n == 1 )
+    {
+      // (e) ==> e
+      removeBlock(doExpr);
+      return true;
+    }
+    
+    e = doExpr.returnExpr();
+    if( e instanceof VarExpr )
+    {
+      // (..., var)
+      VarExpr ve = (VarExpr)e;
+      BindingExpr def = ve.findVarDef();
+      if( def.parent() == doExpr && 
+          def.getChildSlot() == ve.getChildSlot() - 1 )
+      {
+        // (..., x=e, x) ==> (..., e)
+        def.replaceInParent(def.eqExpr());
+        ve.detach();
+        removeBlock(doExpr);
         return true;
       }
     }
-
+    
     return false;
   }
+  
+  /**
+   * This is called when we have removed one ore more items from the DoExpr to eliminate the DoExpr
+   * altogether when we only have a return expr;
+   * @param doExpr
+   */
+  protected void removeBlock(DoExpr doExpr)
+  {
+    assert !(doExpr.returnExpr() instanceof BindingExpr); // rewrite messed up
+    if( doExpr.numChildren() == 1 )
+    {
+      doExpr.replaceInParent(doExpr.child(0));
+    }
+  }
+  
+
 
   /**
    * 
