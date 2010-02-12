@@ -186,7 +186,8 @@ public class JavaFunctionCallExpr extends Expr
 
   public Map<ExprProperty, Boolean> getProperties()
   {
-    return ExprProperty.createSafeDefaults();
+    // NOTE: we should at least be as liberal as built-ins.
+    return ExprProperty.createUnsafeDefaults();
   }
 
 	@SuppressWarnings("unchecked")
