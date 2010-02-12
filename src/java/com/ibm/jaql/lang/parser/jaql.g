@@ -1105,7 +1105,7 @@ registerFunction returns [Expr e = null]
             throw new IllegalArgumentException("variable name has to be a constant");
           }
           String name = env.eval(varName).toString();
-          e = new AssignExpr(env, env.scopeGlobal(name), new JavaUdfExpr(className));
+          e = new AssignExpr(env, env.scopeGlobal(name), new JavaUdfExpr(className).expand(env));
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
         }
