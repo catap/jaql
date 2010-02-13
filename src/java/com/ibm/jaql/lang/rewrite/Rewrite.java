@@ -25,6 +25,7 @@ import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
 import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
+import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
@@ -148,25 +149,24 @@ public abstract class Rewrite
    * @param expr
    * @return
    */
-  public boolean mightContainMapReduce(Expr expr)
+  public boolean mightContainMapReduce(Expr expr) // FIXME: replace with an ExprProperty
   {
     ExprWalker walker = engine.walker;
     walker.reset(expr);
 
     while ((expr = walker.next()) != null)
     {
-      if (expr instanceof MapReduceFn || expr instanceof MRAggregate)
+      if (expr instanceof MapReduceBaseExpr )
       {
         return true;
       }
       if (expr instanceof FunctionCallExpr)
       {
-        if (!(expr instanceof DefineJaqlFunctionExpr))
-        {
-          // FIXME: look deeper into this case.
-          return true;
-        }
-        // For FunctionExpr, continue into the body
+        // FIXME: look deeper into this case.
+        // Expr fnExpr = ((FunctionCallExpr)expr).fnExpr();
+        // if( fnExpr instanceof ConstExpr ) ... for JaqlFunction look at its body and params, for Expr or Udf ask them
+        // if( fnExpr instanceof DefineJaqlFunctionExpr ) ... look at body and params
+        return true;
       }
     }
     return false;
