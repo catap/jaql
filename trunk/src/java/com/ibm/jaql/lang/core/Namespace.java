@@ -265,7 +265,7 @@ public class Namespace {
     return isFinal;
   }
   
-  public void finalize()
+  public void makeFinal()
   {
     if (isFinal()) return;
     for (Var v : variables.values())
@@ -382,7 +382,7 @@ public class Namespace {
 		  	}
 		  	
 		  	// finalize
-		  	namespace.finalize();		  	
+		  	namespace.makeFinal();		  	
 		  	return namespace;
 			} catch (FileNotFoundException e) {
 				throw new RuntimeException(e);

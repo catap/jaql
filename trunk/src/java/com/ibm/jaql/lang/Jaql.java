@@ -115,6 +115,8 @@ public class Jaql implements CoreJaql
   protected RewriteEngine rewriter = new RewriteEngine();
   protected boolean doRewrite = true;
   protected boolean stopOnException = false;
+  protected String explainMode = System.getProperty("jaql.explain.mode"); // eventually more modes: jaql, graphical, json, logJaql?
+  protected boolean explainOnly = "jaql".equals(explainMode);
   private JaqlPrinter printer = NullPrinter.get();
   
   static
@@ -378,6 +380,13 @@ public class Jaql implements CoreJaql
       
       if( expr != null )
       {
+        if( explainOnly && 
+            !(expr instanceof AssignExpr) &&
+            !(expr instanceof ExplainExpr) )
+        {
+          expr = new ExplainExpr(expr);
+        }
+        
         if( doRewrite )
         {
           try
