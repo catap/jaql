@@ -440,6 +440,10 @@ public final class RecordSchema extends Schema
 
   protected Schema merge(Schema other)
   {
+    if( this == other )
+    {
+      return this;
+    }
     if (other instanceof RecordSchema)
     {
       // merged record retains the relative ordering to the extend possible

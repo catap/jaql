@@ -28,6 +28,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * element(array, index) is the same as array[index], but it captures a simpler 
@@ -107,22 +108,11 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
     return exprs[1];
   }
   
-//  /*
-//   * (non-Javadoc)
-//   * 
-//   * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
-//   *      java.util.HashSet)
-//   */
-//  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-//      throws Exception
-//  {
-//    // TODO: use proper function?
-//    exprText.print("(");
-//    exprs[0].decompile(exprText, capturedVars);
-//    exprText.print(")[");
-//    exprs[1].decompile(exprText, capturedVars);
-//    exprText.print("]");
-//  }
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
 
   /*
    * (non-Javadoc)

@@ -25,6 +25,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 
@@ -39,6 +40,12 @@ public class QueryExpr extends EnvExpr
   public QueryExpr(Env env, Expr ... exprs)
   {
     super(env, exprs);
+  }
+  
+  @Override
+  public Expr clone(VarMap varMap)
+  {
+    return new QueryExpr(env, cloneChildren(varMap));
   }
 
   /*
