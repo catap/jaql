@@ -163,7 +163,8 @@ public class JavaFunctionCallExpr extends Expr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print(kw("builtin") + "('com.ibm.jaql.lang.expr.function.JavaUdfExpr$Descriptor')('" + instance.getClass().getName() + "')");
+    /// exprText.print(kw("builtin") + "('com.ibm.jaql.lang.expr.function.JavaUdfExpr$Descriptor')('" + instance.getClass().getName() + "')");
+    exprText.print("system::javaudf('" + instance.getClass().getName() + "')");
     String sep = "( ";
     for (Expr e : exprs)
     {

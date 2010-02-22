@@ -27,6 +27,7 @@ import com.ibm.jaql.lang.expr.agg.AvgAgg;
 import com.ibm.jaql.lang.expr.agg.CombineExpr;
 import com.ibm.jaql.lang.expr.agg.CountAgg;
 import com.ibm.jaql.lang.expr.agg.CovStatsAgg;
+import com.ibm.jaql.lang.expr.agg.InferElementSchemaAgg;
 import com.ibm.jaql.lang.expr.agg.JavaUdaCallFn;
 import com.ibm.jaql.lang.expr.agg.JavaUdaFn;
 import com.ibm.jaql.lang.expr.agg.MaxAgg;
@@ -216,7 +217,7 @@ public final class SystemNamespace extends Namespace {
 	  super();
 	  this.name = NAME;
 	  registerAll();
-	  finalize();
+	  makeFinal();
 	}
   
 	
@@ -298,6 +299,7 @@ public final class SystemNamespace extends Namespace {
     register(new ArgMinAgg.Descriptor());
     register(new CovStatsAgg.Descriptor()); // experimental
     register(new VectorSumAgg.Descriptor()); // experimental
+    register(new InferElementSchemaAgg.Descriptor()); // experimental
     register(new GroupCombineFn.Descriptor()); // experimental
     register(new TeeExpr.Descriptor());
     register(new PerPartitionFn.Descriptor());

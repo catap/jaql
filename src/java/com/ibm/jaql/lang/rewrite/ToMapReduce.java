@@ -702,12 +702,12 @@ public class ToMapReduce extends Rewrite
         if (s.type == Segment.Type.MAP)
         {
           s.type = Segment.Type.INLINE_MAP;
-          seg.addChild(s);
         }
         else
         {
           seg.type = Segment.Type.SEQUENTIAL;
         }
+        seg.addChild(s);
       }
       if (seg.type == Segment.Type.SEQUENTIAL)
       {

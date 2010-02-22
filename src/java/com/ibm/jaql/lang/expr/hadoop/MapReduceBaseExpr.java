@@ -52,8 +52,10 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.lang.expr.core.RecordExpr;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -126,6 +128,28 @@ public abstract class MapReduceBaseExpr extends Expr
     return Bool3.TRUE;
   }
 
+  
+  /**
+   * Attempt to find the expression that defines the particular argument to map/reduce.
+   * This can return null if expression cannot be located (or cannot exist)
+   *  // TODO: Would be much happier with named arguments; switch to them!
+   */
+  public Expr findArgument(JsonString argName)
+  {
+    Expr expr = exprs[0];
+    if( expr instanceof RecordExpr )
+    {
+      return ((RecordExpr)expr).findStaticFieldValue(argName);
+    }
+    else if( expr instanceof ConstExpr )
+    {
+      JsonRecord rec = (JsonRecord)((ConstExpr)expr).value;
+      JsonValue v = rec.get(argName);
+      return new ConstExpr(v);
+    }
+    return null;
+  }
+  
   /**
    * @param context
    * @return
@@ -139,6 +163,9 @@ public abstract class MapReduceBaseExpr extends Expr
     JsonRecord options = (JsonRecord) args.get(OPTIONS_KEY);
 
     conf = new JobConf(); // TODO: get from context?
+    
+    // set the default job name
+    conf.setJobName("jaql job");
     
     // Set the global options.
     ConfUtil.setConf(conf, (JsonRecord)context.getOptions().get(CONF_KEY));
@@ -160,9 +187,6 @@ public abstract class MapReduceBaseExpr extends Expr
     {
       conf.set("mapred.job.tracker", "local");
     }
-    
-    // set the default job name
-    conf.setJobName("jaql job");
     
     //
     // Setup the input

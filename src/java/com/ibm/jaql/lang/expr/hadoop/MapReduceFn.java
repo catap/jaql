@@ -33,8 +33,10 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonLong;
@@ -43,8 +45,12 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.UnwrapFromHolderIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.JsonValueParameter;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
+import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
@@ -62,6 +68,60 @@ public class MapReduceFn extends MapReduceBaseExpr
       super("mapReduce", MapReduceFn.class);
     }
   }
+  
+//  public final static int INDEX_INPUT   = 0;
+//  public final static int INDEX_OUTPUT  = 1;
+//  public final static int INDEX_MAP     = 2;
+//  public final static int INDEX_COMBINE = 3;
+//  public final static int INDEX_REDUCE  = 4;
+//  public final static int INDEX_OPTIONS = 5;
+//  public final static int INDEX_SCHEMA  = 6;
+//  
+//  public static class Descriptor implements BuiltInFunctionDescriptor 
+//  {
+//    private Schema schema = SchemaFactory.arraySchema();
+//    private JsonValueParameters parameters =
+//      new JsonValueParameters( new JsonValueParameter[] {
+//        new JsonValueParameter("input",   SchemaFactory.stringSchema()),
+//        new JsonValueParameter("output",  SchemaFactory.arrayOrNullSchema()),
+//        new JsonValueParameter("map",     SchemaFactory.functionSchema()), // TODO: default to identity? fn(X) X?
+//        new JsonValueParameter("combine", SchemaFactory.functionOrNullSchema(), null),
+//        new JsonValueParameter("reduce",  SchemaFactory.functionOrNullSchema(), null),
+//        new JsonValueParameter("options", SchemaFactory.recordOrNullSchema(), null), // TODO: replace by annotations
+//        new JsonValueParameter("schema",  SchemaFactory.schematypeOrNullSchema(), null), // TODO: replace by map/reduce fn return schema
+//    });
+//
+//    @Override
+//    public String getName()
+//    {
+//      return "mapReduce";
+//    }
+//
+//    @Override
+//    public Expr construct(Expr[] positionalArgs)
+//    {
+//      return new MapReduceFn(positionalArgs);
+//    }
+//
+//    @Override
+//    public Class<? extends Expr> getImplementingClass()
+//    {
+//      return MapReduceFn.class;
+//    }
+//
+//    @Override
+//    public JsonValueParameters getParameters()
+//    {
+//      return parameters;
+//    }
+//
+//    @Override
+//    public Schema getSchema()
+//    {
+//      return schema;
+//    }
+//  }
+
 
   /**
    * mapReduce( record args ) { input, output, map, reduce }
@@ -100,6 +160,8 @@ public class MapReduceFn extends MapReduceBaseExpr
     JsonValue map = JaqlUtil.enforceNonNull(args.getRequired(MAP_KEY));
     JsonValue combine = args.get(COMBINE_KEY, null);
     JsonValue reduce = args.get(REDUCE_KEY, null);
+//    Function combine = (Function)exprs[INDEX_COMBINE].eval(context);
+//    Function reduce  = (Function)exprs[INDEX_REDUCE].eval(context);
 
     //conf.setMapperClass(MapEval.class);
     conf.setMapRunnerClass(MapEval.class);
@@ -117,9 +179,8 @@ public class MapReduceFn extends MapReduceBaseExpr
 
     if (reduce != null)
     {
-      // conf.setNumReduceTasks(2); // TODO: get from options
       conf.setReducerClass(ReduceEval.class);
-      Function reduceFn = (Function) reduce;
+      Function reduceFn = (Function)reduce;
       prepareFunction("reduce", numInputs + 1, reduceFn, 0);
 
       // setup serialization (and propagate schema information, if present)

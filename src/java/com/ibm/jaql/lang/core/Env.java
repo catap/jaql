@@ -216,8 +216,25 @@ public class Env extends Namespace
   public Expr importGlobals(Expr root)
   {
     HashMap<Var, Var> globalToLocal = new HashMap<Var, Var>();
+    HashMap<Var, JsonValue> globalConst = new HashMap<Var, JsonValue>();
     ArrayList<Expr> bindings = new ArrayList<Expr>();
     VarMap varMap = new VarMap();
+    importGlobalsAux(root, globalToLocal, globalConst, bindings, varMap);
+    if (bindings.size() > 0)
+    {
+      bindings.add(root);
+      root = new DoExpr(bindings);
+    }
+    return root;
+  }
+
+  private void importGlobalsAux(
+      Expr root,
+      HashMap<Var, Var> globalToLocal,
+      HashMap<Var, JsonValue> globalConst,
+      ArrayList<Expr> bindings,
+      VarMap varMap)
+  {
     PostOrderExprWalker walker = new PostOrderExprWalker(root);
     Expr expr;
     while ((expr = walker.next()) != null)
@@ -228,44 +245,39 @@ public class Env extends Namespace
         Var var = ve.var();
         if (var.isGlobal() && (var.getNamespace() != SystemNamespace.getInstance()))
         {
-          Var localVar = globalToLocal.get(var);
-          if (localVar == null)
+          switch (var.type())
           {
-            localVar = makeVar(var.name());
-            globalToLocal.put(var, localVar);
-            Expr e;
-            switch (var.type())
-            {
-            case EXPR:
-           // TODO: make global context and import from there.
-//            if (var.value != null)
-//            {
-//              val = new ConstExpr(var.value);
-//            }
-//            else
+            case EXPR: {
+              Var localVar = globalToLocal.get(var);
+              if (localVar == null)
               {
+                localVar = makeVar(var.name());
+                globalToLocal.put(var, localVar);
                 varMap.clear();
-                e = var.expr().clone(varMap);
-                e = importGlobals(e);
+                Expr localDef = var.expr().clone(varMap);
+                importGlobalsAux(localDef, globalToLocal, globalConst, bindings, varMap);
+                // Be sure to add the binding after recursion so that all dependent bindings
+                // are bound before this one.
+                bindings.add(new BindingExpr(BindingExpr.Type.EQ, localVar, null, localDef));
               }
+              ve.setVar(localVar);
               break;
-            case VALUE:
-              e = new ConstExpr(JsonUtil.getCopyUnchecked(var.value(), null));
+            }
+            case VALUE: {
+              JsonValue val = globalConst.get(var);
+              if( val == null )
+              {
+                val = JsonUtil.getCopyUnchecked(var.value(), null);
+                globalConst.put(var, val);
+              }
+              ve.replaceInParent(new ConstExpr(val));
               break;
+            }
             default:
               throw new IllegalStateException("global variables have to have be of type value or expr");
-            }
-            bindings.add(new BindingExpr(BindingExpr.Type.EQ, localVar, null, e));
           }
-          ve.setVar(localVar);
         }
       }
     }
-    if (bindings.size() > 0)
-    {
-      bindings.add(root);
-      root = new DoExpr(bindings);
-    }
-    return root;
   }
 }

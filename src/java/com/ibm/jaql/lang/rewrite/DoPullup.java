@@ -20,6 +20,7 @@ import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.FilterExpr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
+import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.IfExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.schema.CheckFn;
@@ -61,8 +62,9 @@ public class DoPullup extends Rewrite
       fn = bind.parent();
       if( ( fn instanceof TransformExpr ||
             fn instanceof FilterExpr ||
-            fn instanceof ForExpr )
-          && fn.getChildSlot() == 0 )
+            fn instanceof ForExpr ||
+            fn instanceof GroupByExpr )
+          && bind.getChildSlot() == 0 )
       {
         // we can safely rewrite these cases
       }
