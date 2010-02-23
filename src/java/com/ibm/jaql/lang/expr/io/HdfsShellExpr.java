@@ -25,7 +25,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * 
+ * An expression for running HDFS shell. It is equivalent to <i>hadoop fs</i>.
  */
 public class HdfsShellExpr extends Expr
 {
@@ -45,11 +45,7 @@ public class HdfsShellExpr extends Expr
     super(exprs);
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
-   */
+
   @Override
   public JsonLong eval(Context context) throws Exception
   {
