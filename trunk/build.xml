@@ -176,6 +176,8 @@
         <fileset dir="${test.classes.dir}" includes="**/${test.include}.class" excludes="**/${test.exclude}.class,**/*$*.class,**/com/ibm/jaql/lang/expr/module/TestFn.class" >
         <!--conditionally test pyJaql-->
         <exclude name="**/com/ibm/jaql/TestPyJaql.class" unless="test.python"/>
+        <exclude name="**/com/ibm/jaql/TestJaqlShell.class" if="use.cluster"/>
+        <exclude name="**/com/ibm/jaql/TestJaqlShellCluster.class" unless="use.cluster"/>
         </fileset>
       </batchtest>
     </junit>
@@ -225,6 +227,7 @@
       <param name="test.classpath.id" value="test.classpath.cluster" />
       <param name="test.deployment" value="cluster" />
       <param name="test.cleanup" value="true" />
+      <param name="use.cluster" value="true"/>
     </antcall>
   </target>
 
