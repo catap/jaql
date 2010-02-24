@@ -26,6 +26,13 @@ if $cygwin; then
 fi
 export JAQL_HOME=$JAQL_HOME
 
+# To run Jaql shell with mimi cluster, Hadoop-related environment variables
+# should be unset.
+unset HADOOP_HOME
+unset HADOOP_CONF_DIR
+unset HBASE_HOME
+unset HBASE_CONF_DIR
+
 export DFLT_HADOOP_VERSION=0.20.1
 export DFLT_HBASE_VERSION=0.20.0
 
