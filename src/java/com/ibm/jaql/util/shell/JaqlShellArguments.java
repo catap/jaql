@@ -101,10 +101,13 @@ public class JaqlShellArguments {
       chainedIn.add(System.in);
     }
   }
-  
+
   /**
-   * Configures a console reader input stream. <tt>.jaql_history</tt> in
-   * <tt>user.home</tt> is used to store command history.
+   * Configures a console reader input stream. History file
+   * <tt>.jaql_history</tt> in <tt>user.home</tt> is used to store command
+   * history. The max line number of the history file is 500 (It can be
+   * specified with the use of {@link History#setMaxSize(int)}). When the
+   * history file is loaded, old entries beyond 500 are removed.
    * 
    * @return The console reader input stream
    * @throws IOException
