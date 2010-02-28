@@ -21,7 +21,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringReader;
 import java.util.List;
 
 import jline.ConsoleReader;
@@ -43,8 +42,8 @@ import org.apache.commons.lang.StringUtils;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.OutputAdapter;
-import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.lang.JaqlQuery;
 import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
@@ -246,7 +245,7 @@ public class JaqlShellArguments {
       parser.setGroup(options);
       cl = parser.parse(args);
     } catch (OptionException e) {
-      printHelpAndExit(e.getMessage(), options);
+      printHelpAndExit(e, null, options);
       return null;
     }
     if (cl.hasOption(optHelp)) {
@@ -280,8 +279,7 @@ public class JaqlShellArguments {
       result.jars = ((String)cl.getValue(optJars)).split(",");
       for (String jar : result.jars) {
         if (!new File(jar).exists()) {
-          printHelp("Jar file " + jar + " not found", options);
-          System.exit(1);
+          printHelpAndExit("Jar file " + jar + " not found", options);
         }
       }
     }
@@ -291,8 +289,7 @@ public class JaqlShellArguments {
       result.searchPath = ((String)cl.getValue(optSearchPath)).split(":");
       for (String dir : result.searchPath) {
         if (!new File(dir).exists() || !new File(dir).isDirectory()) {
-          printHelp("Search-path entry " + dir + " not found or is no directory", options);
-          System.exit(1);
+          printHelpAndExit("Search-path entry " + dir + " not found or is no directory", options);
         }
       }
     }
@@ -304,7 +301,9 @@ public class JaqlShellArguments {
         try {
           result.outputAdapter = getOutputAdapter(format);
         } catch (Exception e) {
-          printHelpAndExit(format + " is neither a valid output format nor a valid IO descriptor", options);
+          printHelpAndExit(e,
+                          "\"" + format + "\" is neither a valid output format nor a valid IO descriptor",
+                          options);
         }
       } 
     }
@@ -321,7 +320,7 @@ public class JaqlShellArguments {
         try {
           result.addInputStream(new FileInputStream(file));
         } catch (FileNotFoundException e) {
-          printHelpAndExit("Input file " + file + " not found", options);
+          printHelpAndExit(e, "Input file " + file + " not found", options);
         }
       }
     }
@@ -347,10 +346,12 @@ public class JaqlShellArguments {
     if (StringUtils.isAlpha(outOptions)) {
       outOptions = "{" + Adapter.TYPE_NAME + ": '" + outOptions + "'}";
     }
-
+    outOptions += ";";
+    
     // get output adapter
-    JsonParser jp = new JsonParser(new StringReader(outOptions));
-    JsonRecord options = (JsonRecord) jp.TopVal();
+    JaqlQuery query =  new JaqlQuery();
+    query.setQueryString(outOptions);
+    JsonRecord options = (JsonRecord) query.evaluate();
     OutputAdapter oa = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(options);
     if (oa == null) 
       throw new NullPointerException();
@@ -358,11 +359,16 @@ public class JaqlShellArguments {
       return oa;
   }
 
+  private static void printHelpAndExit(String message, Group options) {
+    printHelpAndExit(null, message, options);
+  }
+  
   @SuppressWarnings("unchecked")
-  static void printHelp(String message, Group options) {
-    if (message != null) {
+  private static void printHelpAndExit(Exception e, String message, Group options) {
+    if (message != null) 
       System.err.println(message);
-    }
+    if (e != null)
+      e.printStackTrace();
     HelpFormatter hf = new HelpFormatter();
     hf.setShellCommand("jaqlshell");
     hf.setGroup(options);
@@ -370,10 +376,6 @@ public class JaqlShellArguments {
     hf.getLineUsageSettings().add(DisplaySetting.DISPLAY_ARGUMENT_BRACKETED);
     hf.print();
     hf.printHelp();
-  }
-  
-  private static void printHelpAndExit(String message, Group options) {
-    printHelp(message, options);
     System.exit(1);
   }
   
