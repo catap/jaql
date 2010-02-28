@@ -838,6 +838,25 @@ $mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});##
 ]
 
 
+//-- testJsonToXml --
+{content: 12} -> jsonToXml();##
+[
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+  "<content>12</content>"
+]
+
+{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();##
+[
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+  "<content>",
+  "  <city>Beijing</city>",
+  "  <no>1</no>",
+  "  <no>2</no>",
+  "  <no>3</no>",
+  "</content>"
+]
+
+
 // json format
 [[1,2],[3,4]] -> write({type: 'jsonStream'});##
 {
