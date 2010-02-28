@@ -385,6 +385,10 @@ $records -> jsonToDel({schema: schema { name, age }});
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];
 $mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
 
+//-- testJsonToXml --
+{content: 12} -> jsonToXml();
+{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
+
 // json format
 [[1,2],[3,4]] -> write({type: 'jsonStream'});
 [{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});

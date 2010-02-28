@@ -44,10 +44,15 @@ public class TestJaqlShellArguments {
 
   @Test
   public void outoptions() {
-    JaqlShellArguments arguments = JaqlShellArguments.parseArgs("-b",
-                                                                "-o",
-                                                                "xml");
-    assertTrue(arguments.outputAdapter instanceof OutputAdapter);
+    OutputAdapter xml = JaqlShellArguments.parseArgs("-b", "-o", "xml").outputAdapter;
+    assertTrue(xml instanceof OutputAdapter);
+    
+    OutputAdapter json = JaqlShellArguments.parseArgs("-b", "-o", "{type: 'delStream'}").outputAdapter;
+    assertTrue(json instanceof OutputAdapter);
+    
+    String iod = "{type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}}";
+    OutputAdapter schemaJson = JaqlShellArguments.parseArgs("-b", "-o", iod).outputAdapter;
+    assertTrue(schemaJson instanceof OutputAdapter);
   }
 
   /*
