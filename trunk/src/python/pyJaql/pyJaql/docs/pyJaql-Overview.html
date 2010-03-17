@@ -62,7 +62,7 @@ If you don't get an ImportError, you're done!
 
 <h3>2.3 pyJaql</h3>
 <p/> 
-Download pyJaql installer, namely “pyJaql-0.1.tar.gz”. Extract this package and enter into pyJaql dir, run following command:
+Download pyJaql installer, namely pyJaql-0.1.tar.gz. Extract this package and enter into pyJaql dir, run following command:
 <pre>sudo python setup.py install</pre>
 Open python command line, and check your install by below command:
 <pre>import pyJaql</pre>
@@ -71,9 +71,9 @@ If you don't get an ImportError, the installation is done.
 <h2>3 Usage</h2>
 <h3>3.1 Launch Jaql in different models</h3>
 <p/> 
-There are two models to run jaql,  one is “local” model, in this situation, 
+There are two models to run jaql,  one is "local" model, in this situation, 
 pyJaql will launch a mini-cluster on your local machine; On the other hand, 
-if you want to luanch pyJaql on an existing hadoop cluster, use “hadoop-cluster” model. 
+if you want to luanch pyJaql on an existing hadoop cluster, use "hadoop-cluster" model. 
 <ul>
 <li>Launch Jaql in local model</li>
 Unset hadoop related environment variables, eg HADOOP_HOME, HADOOP_CONF_DIR<p/> 
@@ -94,7 +94,7 @@ First, import PyJaql module
 Second, initialize jaql engine
 <pre>jaql=Jaql()</pre>
 Third, execute a jaql expression, one can execute any valid jaql expression by using <b>execute()</b>, which will return a python generator.
-<pre>it=jaql.execute(“jaql expression”,{'variable name':'variable value',...})</pre>
+<pre>it=jaql.execute("jaql expression",{'variable name':'variable value',...})</pre>
 Then iterate the result set, and manipulate the return data as you like,  depending on the output of jaql expresion, there are 3 kinds of data type of the iterating result, list, dict or primitive types(str,int,etc),
 there are kinds of ways to manipulate these data easily and conveniently.
 <pre>
@@ -102,7 +102,7 @@ for item in it:
 	# manipulate item as a list, dict or primitive type
 	# which depends on the return data format
 	# possible ways:
-	#1. item type is dict: use item[“key”] to retrieve specific key value.
+	#1. item type is dict: use item["key"] to retrieve specific key value.
 	#2. item type is list: use item[index] to retrieve list element
 	#3. item type is python primitive type: directly manipulate item
 </pre>
@@ -130,12 +130,12 @@ Following examples will show you ways to embed pyJaql in your python program.
 		jaql.close()	 
 </pre>
 
-<li>Ex2. Read data from HDFS, use “filter” to filtrate result and use “transform” to format output data.</li>
+<li>Ex2. Read data from HDFS, use "filter" to filtrate result and use "transform" to format output data.</li>
 <pre>
-	#Read data from HDFS, use “filter” to filtrate result and use “transform” to format output data.
+	#Read data from HDFS, use "filter" to filtrate result and use "transform" to format output data.
 	try: 
 		jaql=Jaql() 
-		it=jaql.execute(“read(hdfs('books'))->filter $.title=='Chamber of Secrets' and $.year==1999 - > transform {$.title,$.year}” ) 
+		it=jaql.execute("read(hdfs('books'))->filter $.title=='Chamber of Secrets' and $.year==1999 - > transform {$.title,$.year}" ) 
 		for record in it: 
 			print record
 	except JAQLRuntimeException,err: 
@@ -153,7 +153,7 @@ Following examples will show you ways to embed pyJaql in your python program.
 	#The use of extension parameters. 
 	try: 
 		jaql=Jaql() 
-		it=jaql.execute(“read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}” ,{"title":"Chamber of Secrets","year":1999}) 
+		it=jaql.execute("read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}" ,{"title":"Chamber of Secrets","year":1999}) 
 		for record in it: 
 			print record 
 	except JAQLRuntimeException,err: 
@@ -170,7 +170,7 @@ An alternative way is :
        #The use of extension parameters. - alt
        # ...
        vars={"title":"Chamber of Secrets","year":1999}
-       it=jaql.execute(“read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}” ,vars) 
+       it=jaql.execute("read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}",vars) 
        # ...
 </pre>
 
@@ -179,7 +179,7 @@ An alternative way is :
 	#Retrieve specific field in result set
 	try: 
 		jaql=Jaql() 
-		it=jaql.execute(“read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}” ,{"title":"Chamber of Secrets","year":1999}) 
+		it=jaql.execute("read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}" ,{"title":"Chamber of Secrets","year":1999}) 
 		for book in it:
 			print book["reviews"][0]["review"] 
 	except JAQLRuntimeException,err: 
@@ -254,7 +254,7 @@ Execute it in python program:
 	try: 
 		jaql=Jaql() 
 		value=jaql.evaluate ("[{'name':'alex','age':20,'isStudent':true},{'name':'jack','age':23,'isStudent':false}]->filter $.isStudent==$bool and $.name=='alex'->transform $.name;",{"name":"alex","bool":True}) 
-		print value[0] # “value” is a list of result
+		print value[0] # "value" is a list of result
 	except JAQLRuntimeException,err: 
 		print err.msg
 		#handle exception
