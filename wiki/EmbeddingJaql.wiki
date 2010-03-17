@@ -1,0 +1,208 @@
+=Embedding Jaql=
+It is possible to embed Jaql in programs written by different languages, e.g Java and python. Jaql provides very simple api for both java and python programmers, if you have some knowledge of Jaql syntax, you can easily embed Jaql in your program. This document introduces how to setup jaql environment when developing embedding programs, and some examples to demonstrate how one could work with Jaql. 
+
+==Embedding Jaql in Java==
+
+===Setup environment===
+Typically, Jaql runs on a hadoop cluster, which we called cluster model, this requires you have a hadoop cluster (and hbase, if use any hbase related functions) environment, otherwise, you can launch Jaql in local model, which means all the tasks run locally.
+We are not going to discuss how to setup a hadoop cluster(hbase) here, below links maybe useful. 
+  * http://hadoop.apache.org/common/docs/current/cluster_setup.html
+  * http://wiki.apache.org/hadoop/Hbase/10Minutes
+Let's assume you've installed Hadoop 0.20.1 and hbase 0.20.0. Follow below steps, you can launch Jaql on a running hadoop cluster and connect to a hbase server. 
+
+ # Create a Java project
+ # Add the following jar files into the project's build path
+    * jaql.jar
+    * hadoop-0.20.1-core.jar
+    * log4j-1.2.15.jar
+    * commons-logging-1.0.4.jar
+    * commons-logging-api-1.0.4.jar
+    * hbase-0.20.0-core.jar
+    * zookeeper-r785019-hbase-1329.jar
+ # Add the following folder into the project's build path
+           conf folder from Jaql source 
+ # Add you hadoop conf folder into the project's build path, which includs hadoop configuration files, like core-site.xml, hdfs-site.xml and mapred-site.xml.
+
+Note : Launch Jaql in local model, simply remove hadoop conf folder from project's build path. 
+ 
+===Examples===
+This chapter introduces you several simple example using Jaql, more examples can be found in Jaql source.
+==== Ex 1. Write data into HDFS ====
+{{{
+package myclazz;
+
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * This sample program demonstrates how to persist data into HDFS.
+ * */
+public class MyClazz1 implements IConstants{
+	
+	public static void main(String[] args) {
+		try{
+			MyClazz1 mc = new MyClazz1();
+			mc.writeBooks();
+			mc.writePublishers();
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	/**
+	 * persists books data into HDFS
+	 * */
+	public void writeBooks() throws Exception {
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString(books + " -> write(hdfs('books'));");
+		JsonIterator it = jaql.iterate();
+		while(it.moveNext()){
+			JsonValue v = it.current();
+			System.out.println(v);
+		}
+		jaql.close();
+	}
+	
+	/**
+	 * persists publishers data into HDFS
+	 * */
+	public void writePublishers() throws Exception {
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString(publisher + " -> write(hdfs('publishers'));");
+		JsonIterator it = jaql.iterate();
+		while(it.moveNext()){
+			JsonValue v = it.current();
+			System.out.println(v);
+		}
+		jaql.close();
+	}
+}
+}}}
+
+====Ex 2. Read data from HDFS, and retrieve JsonValue data ====
+{{{
+package myclazz;
+
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * This sample program finds the country of a specified 
+ * publishing house.
+ * */
+public class MyClazz2 {
+
+	public static void main(String[] args) {
+		try{
+			MyClazz2 mc = new MyClazz2();
+			JsonValue v = mc.getCountry("Scholastic");
+			System.out.println(v);
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	/**
+	 * returns the country name of the specified publisher.
+	 * 
+	 * @param publisher The name of publishing house
+	 * @return JsonValue
+	 * */
+	private JsonValue getCountry(String publisher) throws Exception {
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString("read(hdfs('publishers')) -> filter $.name == $name -> transform $.country;");
+		jaql.setVar("$name", publisher);
+		JsonValue jv = jaql.evaluate();
+		jaql.close();
+		return jv;
+	}
+}
+
+}}}
+
+==== Ex 3. Read data from HDFS, and retrieve JsonIterator data====
+{{{
+package myclazz;
+
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * This sample program prints all books' name
+ * */
+public class MyClazz3 {
+	
+	protected JaqlQuery jaql;
+	
+	public MyClazz3(){
+		jaql = new JaqlQuery();
+	}
+	
+	public void close(){
+		jaql.close();
+	}
+	
+	public static void main(String[] args) {
+		MyClazz3 mc = null;
+		try{
+			mc = new MyClazz3();
+			JsonIterator it = mc.getAllBooks();
+			while(it.moveNext()){
+				System.out.println(it.current());
+			}
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}finally{
+			mc.close();
+		}
+	}
+	
+	/**
+	 * returns all books
+	 * 
+	 * @return JsonIterator
+	 * */
+	private JsonIterator getAllBooks() throws Exception {
+		jaql.setQueryString("read(hdfs('books')) -> transform $.title;");
+		JsonIterator it= jaql.iterate();
+		return it;
+	}
+}
+}}}
+
+==== Ex 4. Write data into HBase====
+
+{{{
+package myclazz;
+
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * Write data to hbase
+ *
+ */
+public class MyClazz4 implements IConstants{
+
+	public static void main(String[] args){
+		MyClazz4 mc = new MyClazz4();
+		try {
+			mc.hbaseWrite();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}	
+	/**
+          * write data into hbase table
+          */
+	public void hbaseWrite() throws Exception{
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString( hbasew+"-> hbaseWrite('webcrawl');");
+		JsonValue jv = jaql.evaluate();
+		System.out.println(jv);
+	}
+}
+}}}
+
+==Embedding Jaql in Python==
