@@ -109,7 +109,7 @@ public class MyClazz2 {
 }
 }}}
 
-
+---
 
 ==Embedding Jaql in Python==
 ===Introduction===
@@ -224,4 +224,5 @@ More examples can be found in docs folder under pyJaql package.
 After calling jaql.close(), it will shutdown JVM, if you attempt calling Jaql() again a JVMException will be raised. This dues to SUN's JVM (by now is 1.6.0_16) doesn't allow uploading, though JNI API defines a method to destroy JVM named destroyJVM(), it doesn't work1.So, pyJaql shares a unique JVM through program's life cycle, there is no problem if you use several times of jaql=Jaql() to get different jaql engine references, because JVM will only be initialized in the first time, but when you invoke jaql.close(), it's required that to make sure no one will use JVM again^(1)^.
 
 *Reference*
+
 (1). http://jpype.sourceforge.net/doc/user-guide/userguide.html
