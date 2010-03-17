@@ -1,4 +1,5 @@
 =Embedding Jaql=
+_Embedding Jaql in java and python tutorial_
 <wiki:toc max_depth="3" />
 It is possible to embed Jaql in programs written by different languages, e.g Java and python. Jaql provides very simple api for both java and python programmers, if you have some knowledge of Jaql syntax, you can easily embed Jaql in your program. This document introduces how to setup jaql environment when developing embedding programs, and some examples to demonstrate how one could work with Jaql. 
 
@@ -111,3 +112,4 @@ public class MyClazz2 {
 
 
 ==Embedding Jaql in Python==
+PyJaql is an effort to enable python programmers work with Jaql, it's achieved not through re-implementing Jaql in python, but rather through bridging jaql and python by the using of jpype, it provides a few simple and clean functions for python programmers to take the advantage of jaql's capability. This document introduces you how to setup pyJaql environment and few examples for you to start with.
