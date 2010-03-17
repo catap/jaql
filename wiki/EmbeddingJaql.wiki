@@ -27,8 +27,8 @@ Note : Launch Jaql in local model, simply remove hadoop conf folder from project
  
 ===Examples===
 This chapter introduces you several simple example using Jaql for you to start with, more examples can be found in Jaql source.
-Typically, first you are going to initialize a JaqlQuery instance by its constructor *JaqlQuery()*, then use *setQueryString()* to set input for jaql context, at last use *evaluate()* to evaluate the query statement, this function will return you a JsonValue. Alternatively, *iterator()* can also evaluate the statement but return you a JsonIterator.
-Notice that, you can set variable holders in the input parameter,  by means of Jaql syntax, it's $varname, then use *setVar()* to set its value at runtime.
+Typically, first you are going to initialize a JaqlQuery instance by its constructor `JaqlQuery()`, then use `setQueryString()` to set input for jaql context, at last use `evaluate()` to evaluate the query statement, this function will return you a JsonValue. Alternatively, `iterator()` can also evaluate the statement but return you a JsonIterator.
+Notice that, you can set variable holders in the input parameter,  by means of Jaql syntax, it's $varname, then use `setVar()` to set its value at runtime.
 You can try out with below examples.
 ==== Write data into HDFS ====
 {{{
