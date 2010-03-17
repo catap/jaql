@@ -133,5 +133,13 @@ public interface CoreJaql {
 	 *            The jar file's path
 	 */
 	void addJar(String path) throws Exception;
+	
+	/**
+	 * 
+	 * Close a jaql query
+	 * Jaql query statement should be closed after all the query is done, else it will cause a shutdown in progress exception
+	 *
+	 */
+	void close();
 
 }
