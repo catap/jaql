@@ -1,0 +1,284 @@
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="jaql.css"> 
+<!-- /*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */ --> 
+<html> 
+<head> 
+<title>PyJaql Tutorial</title> 
+</head> 
+<body> 
+ 
+<h1 align="center">PyJaql Tutorial</h1> 
+<p/> 
+<h2>1 Introduction </h2>
+<p/> 
+PyJaql is an effort to enable python programmers work with Jaql, 
+it's achieved not through re-implementing Jaql in python, 
+but rather through bridging jaql and python by the using of <a href="http://jpype.sourceforge.net/">jpype</a>,
+it provides a few simple and clean functions for python programmers to take the advantage of jaql's capability.
+This document introduces you how to setup pyJaql environment and few examples for you to start with.
+
+<h2>2 Ubuntu Installer </h2>
+<p/> 
+This chapter introduces you pyJaql installation and configuration steps.
+<h3>2.1 Pyton</h3>
+<p/> 
+By default, python is installed on ubuntu. If not, please read guide introduced by <a href="http://www.python.org/">python official site</a> to install. 
+The recommended version is python 2.6. 
+<h3>2.2 jpype</h3>
+<p/> 
+Download source from sourceforge :http://sourceforge.net/projects/jpype/files/,  the latest version of jpype 0.5.4.1 is recommended.
+<ol>
+<li>Make sure you have all of the necessary tools for compiling C code installed: </li>
+	<pre>sudo apt-get install build-essential</pre> 
+<li>Make sure you have python2.6-dev package installed:</li>
+ 	<pre>sudo apt-get install python2.6-dev</pre>
+<li>Extract jpype package and enter into jpype dir, run the following command: </li>
+	<pre>sudo python setup.py install</pre>
+<li>Put the newly installed jpype into your PYTHONPATH by putting the following into you /etc/environment , or other system wide variable:</li> 
+	<pre>PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.6/dist-packages</pre>
+<li>Check your install by running the following commands:</li> 
+<pre>
+$ python
+[GCC 4.2.3 (Ubuntu 4.2.3-2ubuntu7)] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import jpype
+>>>
+</pre>
+</ol>
+If you don't get an ImportError, you're done! 
+
+<h3>2.3 pyJaql</h3>
+<p/> 
+Download pyJaql installer, namely “pyJaql-0.1.tar.gz”. Extract this package and enter into pyJaql dir, run following command:
+<pre>sudo python setup.py install</pre>
+Open python command line, and check your install by below command:
+<pre>import pyJaql</pre>
+If you don't get an ImportError, the installation is done.
+
+<h2>3 Usage</h2>
+<h3>3.1 Launch Jaql in different models</h3>
+<p/> 
+There are two models to run jaql,  one is “local” model, in this situation, 
+pyJaql will launch a mini-cluster on your local machine; On the other hand, 
+if you want to luanch pyJaql on an existing hadoop cluster, use “hadoop-cluster” model. 
+<ul>
+<li>Launch Jaql in local model</li>
+Unset hadoop related environment variables, eg HADOOP_HOME, HADOOP_CONF_DIR<p/> 
+<li>Launch Jaql in hadoop-cluster model</li>
+<i>This model requires  a running hadoop cluster environment.</i></br>
+Set required environment variables, HADOOP_HOME and HADOOP_CONF_DIR. Make sure HADOOP_HOME points to the right path
+<pre>
+export HADOOP_HOME= "yourHadoopHome"
+export HADOOP_CONF_DIR= "yourHadoopHome/conf"
+</pre>
+</ul>
+
+<h3>3.2 Jaql's Hello World</h3>
+<p/> 
+Basically, there are several steps to get started
+First, import PyJaql module
+<pre>from pyJaql import * </pre>
+Second, initialize jaql engine
+<pre>jaql=Jaql()</pre>
+Third, execute a jaql expression, one can execute any valid jaql expression by using <b>execute()</b>, which will return a python generator.
+<pre>it=jaql.execute(“jaql expression”,{'variable name':'variable value',...})</pre>
+Then iterate the result set, and manipulate the return data as you like,  depending on the output of jaql expresion, there are 3 kinds of data type of the iterating result, list, dict or primitive types(str,int,etc),
+there are kinds of ways to manipulate these data easily and conveniently.
+<pre>
+for item in it:
+	# manipulate item as a list, dict or primitive type
+	# which depends on the return data format
+	# possible ways:
+	#1. item type is dict: use item[“key”] to retrieve specific key value.
+	#2. item type is list: use item[index] to retrieve list element
+	#3. item type is python primitive type: directly manipulate item
+</pre>
+A alternative way to execute a jaql expression is, using <b>evaluate()</b>, this function takes exactly same arguments with excecute(),
+however, it returns a list holding all the result data in memory. 
+<p/> 
+Following examples will show you ways to embed pyJaql in your python program.
+
+<h2>Examples</h2>
+<ul>
+<li>Ex1. write data to Hadoop HDFS</li>
+<pre>
+	#Write the books collection from data below to hadoop hdfs. 
+	hdfswrite="[{publisher: 'Scholastic',author: 'J. K. Rowling',title: 'Deathly Hallows',year: 2007},{publisher: 'Scholastic',author: 'J. K. Rowling',title: 'Chamber of Secrets',year: 1999, reviews: [{rating: 10, user: 'joe', review: 'The best ...'},{rating: 6, user: 'mary', review: 'Average ...'}]}] -> write(hdfs('books'));" 
+	try: 
+		jaql=Jaql() 
+		jaql.execute(hdfswrite) 
+	except JAQLRuntimeException,err: 
+		print err.msg 
+		#handle exception
+	except JVMException,err: 
+		print err.msg
+		#handle exception
+ 	finally: 
+		jaql.close()	 
+</pre>
+
+<li>Ex2. Read data from HDFS, use “filter” to filtrate result and use “transform” to format output data.</li>
+<pre>
+	#Read data from HDFS, use “filter” to filtrate result and use “transform” to format output data.
+	try: 
+		jaql=Jaql() 
+		it=jaql.execute(“read(hdfs('books'))->filter $.title=='Chamber of Secrets' and $.year==1999 - > transform {$.title,$.year}” ) 
+		for record in it: 
+			print record
+	except JAQLRuntimeException,err: 
+		print err.msg 
+		#handle exception
+	except JVMException,err: 
+		print err.msg 
+		#handle exception
+	finally: 
+		jaql.close() 
+</pre>
+
+<li>Ex3. Use extension parameters in jaql statement</li>
+<pre>
+	#The use of extension parameters. 
+	try: 
+		jaql=Jaql() 
+		it=jaql.execute(“read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}” ,{"title":"Chamber of Secrets","year":1999}) 
+		for record in it: 
+			print record 
+	except JAQLRuntimeException,err: 
+		print err.msg
+		#handle exception
+	except JVMException,err: 
+		print err.msg
+		#handle exception
+	finally: 
+		jaql.close() 
+</pre>
+An alternative way is :
+<pre>
+       #The use of extension parameters. - alt
+       # ...
+       vars={"title":"Chamber of Secrets","year":1999}
+       it=jaql.execute(“read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}” ,vars) 
+       # ...
+</pre>
+
+<li>Ex4. Retrieve specific field in result set</li>
+<pre>
+	#Retrieve specific field in result set
+	try: 
+		jaql=Jaql() 
+		it=jaql.execute(“read(hdfs('books'))->filter $.title==$title and $.year==$year - > transform {$.title,$.year}” ,{"title":"Chamber of Secrets","year":1999}) 
+		for book in it:
+			print book["reviews"][0]["review"] 
+	except JAQLRuntimeException,err: 
+		print err.msg
+		#handle exception
+	except JVMException,err: 
+		print err.msg
+		#handle exception
+	finally: 
+		jaql.close() 
+</pre>
+
+<li>Ex5. Run a jaql script from a script file.</li>
+Create a script file, named test.jql, with the content below
+<pre>
+//Books collection data
+$books = [ 
+    {publisher: 'Scholastic', 
+     author: 'J. K. Rowling', 
+     title: 'Deathly Hallows', 
+     year: 2007}, 
+
+    {publisher: 'Scholastic', 
+     author: 'J. K. Rowling', 
+     title: 'Chamber of Secrets', 
+     year: 1999, 
+     reviews: [ 
+       {rating: 10, user: 'joe', review: 'The best ...'}, 
+       {rating: 6, user: 'mary', review: 'Average ...'}]}, 
+
+    {publisher: 'Scholastic', 
+     author: 'J. K. Rowling', 
+     title: 'Sorcerers Stone', 
+     year: 1998}, 
+
+    {publisher: 'Scholastic', 
+     author: 'R. L. Stine', 
+     title: 'Monster Blood IV', 
+     year: 1997, 
+     reviews: [ 
+       {rating: 8, user: 'rob', review: 'High on my list...'}, 
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
+        discussion: 
+          [{user: 'ben', text: 'This is too harsh...'}, 
+           {user: 'jill', text: 'I agree ...'}]}]}, 
+
+    {publisher: 'Grosset', 
+     author: 'Carolyn Keene', 
+     title: 'The Secret of Kane', 
+     year: 1930} 
+  ];
+// Write the books collection from data above. 
+$books -> write(hdfs($filename)); 
+</pre>
+Execute it in python program:
+<pre>
+	#Run a jaql script.
+	try: 
+		jaql=Jaql() 
+		jaql.execute_script("/home/young/test.jql",{"filename":"test.dat"}) 
+	except JAQLRuntimeException,err: 
+		print err.msg  
+	except JVMException,err: 
+		print err.msg 
+	finally: 
+		jaql.close()	
+</pre>
+
+<li>Ex6. Use evaluate() to execute a jaql expression </li>
+<pre>
+	#Retrieve specific field in result set
+	try: 
+		jaql=Jaql() 
+		value=jaql.evaluate ("[{'name':'alex','age':20,'isStudent':true},{'name':'jack','age':23,'isStudent':false}]->filter $.isStudent==$bool and $.name=='alex'->transform $.name;",{"name":"alex","bool":True}) 
+		print value[0] # “value” is a list of result
+	except JAQLRuntimeException,err: 
+		print err.msg
+		#handle exception
+	except JVMException,err: 
+		print err.msg  
+		#handle exception
+	finally: 
+		jaql.close() 
+</pre>
+The usage of evaluate() is very same with execute(), but different in how to retrieve data from jaql, 
+by which means, evaluate() maintain whole result, sometimes a very big block of data, in memory, 
+it cost much more space but consuming less time when retrieving data, 
+however, one must consider that, when the result set is very big, evaluate() cost a long time, 
+sometimes intolerable, to process and return the data. 
+In comparison, execute() does not return us all data in one time, 
+its strategy is to retrieve specific data only when you iterate the result set. 
+They are designed for satisfying different scenarios.
+</ul>
+
+<h2>5 Known Limitation</h2>
+</p>
+After calling <i>jaql.close()</i>, it will shutdown JVM, if you attempt calling <i>Jaql()</i> again a JVMException will be raised. This dues to SUN's JVM (by now is 1.6.0_16) doesn't allow uploading,  though JNI API defines a method to destroy JVM named <i>destroyJVM()</i>, 
+it doesn't work1.So, pyJaql shares a unique JVM through program's life cycle, there is no problem if you use several times of <i>jaql=Jaql()</i> to get different jaql engine references, because JVM will only be initialized in the first time, but when you invoke <i>jaql.close()</i>, 
+it's required that to make sure no one will use JVM again.
+<p/>
+<b>Reference</b></br>
+1. <a href="http://jpype.sourceforge.net/doc/user-guide/userguide.html">http://jpype.sourceforge.net/doc/user-guide/userguide.html</a>
