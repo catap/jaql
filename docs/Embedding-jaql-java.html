@@ -1,0 +1,309 @@
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="jaql.css"> 
+<!-- /*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */ --> 
+<html> 
+<head> 
+<title>Embedding Jaql in Java</title> 
+</head> 
+<body> 
+ 
+<h1 align="center">Embedding Jaql in Java</h1> 
+ 
+<p/> 
+It is possible to embed Jaql in java applications, enable java programmers to process
+<a href="http://www.json.org/">JSON</a> data using <a href="http://hadoop.apache.org/">Hadoop</a>'s map/reduce framework. This document introduce how to setup jaql development environment, 
+and giving some examples to demonstrate how one could work with Jaql. 
+ 
+<h2>Set up environment</h2> 
+<p/>
+Typically, Jaql runs on a hadoop cluster, which we called cluster model, this requires you have a hadoop cluster 
+(and hbase, if use any hbase related functions) environment, otherwise, you can launch Jaql in local model, which 
+means all the tasks run locally. <p/>
+We are not going to discuss how to setup a hadoop cluster(hbase) here, below links maybe useful. <br/>
+<ul>
+<li><a href="http://hadoop.apache.org/common/docs/current/cluster_setup.html">Hadoop cluster setup guide</a></li>
+<li><a href="http://wiki.apache.org/hadoop/Hbase/10Minutes">HBase setup guide</a></li>
+</ul>
+<p/>
+Let's assume you've installed Hadoop 0.20.1 and hbase 0.20.0. Follow below steps, 
+you can launch Jaql on a running hadoop cluster and connect to a hbase server.
+
+<ol>
+<li> Create a Java project,</li><p/>
+<li> Add the following jar files into the project's build path,</li>
+<ul>
+<li>jaql.jar</li>
+<li>hadoop-0.20.1-core.jar</li>
+<li>log4j-1.2.15.jar</li>
+<li>commons-logging-1.0.4.jar</li>
+<li>commons-logging-api-1.0.4.jar</li>
+<li>hbase-0.20.0-core.jar</li>
+<li>zookeeper-r785019-hbase-1329.jar</li>
+</ul><p/>
+<li> Add the following folder into the project's build path,</li><p/>
+conf folder from Jaql source
+<li> Add you hadoop conf folder into the project's build path, which includs hadoop configuration files, like core-site.xml, hdfs-site.xml and mapred-site.xml.</li><p/>
+</ol>
+
+Note : Launch Jaql in local model, simply remove hadoop conf folder from project's build path.
+
+<h2>Examples</h2> 
+
+<h3>1. Write data into HDFS</h3>
+<pre> 
+package myclazz;
+
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * This sample program demonstrates how to persist data into HDFS.
+ * */
+public class MyClazz1 implements IConstants{
+	
+	public static void main(String[] args) {
+		try{
+			MyClazz1 mc = new MyClazz1();
+			mc.writeBooks();
+			mc.writePublishers();
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	/**
+	 * persists books data into HDFS
+	 * */
+	public void writeBooks() throws Exception {
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString(books + " -> write(hdfs('books'));");
+		JsonIterator it = jaql.iterate();
+		while(it.moveNext()){
+			JsonValue v = it.current();
+			System.out.println(v);
+		}
+		jaql.close();
+	}
+	
+	/**
+	 * persists publishers data into HDFS
+	 * */
+	public void writePublishers() throws Exception {
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString(publisher + " -> write(hdfs('publishers'));");
+		JsonIterator it = jaql.iterate();
+		while(it.moveNext()){
+			JsonValue v = it.current();
+			System.out.println(v);
+		}
+		jaql.close();
+	}
+}
+</pre> 
+
+<h3>2. Read data from HDFS, and return JsonValue</h3>
+<pre>
+package myclazz;
+
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * This sample program finds the country of a specified 
+ * publishing house.
+ * */
+public class MyClazz2 {
+
+	public static void main(String[] args) {
+		try{
+			MyClazz2 mc = new MyClazz2();
+			JsonValue v = mc.getCountry("Scholastic");
+			System.out.println(v);
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	/**
+	 * returns the country name of the specified publisher.
+	 * 
+	 * @param publisher The name of publishing house
+	 * @return JsonValue
+	 * */
+	private JsonValue getCountry(String publisher) throws Exception {
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString("read(hdfs('publishers')) -> filter $.name == $name -> transform $.country;");
+		jaql.setVar("$name", publisher);
+		JsonValue jv = jaql.evaluate();
+		jaql.close();
+		return jv;
+	}
+}
+</pre>
+
+<h3>3. Read data from HDFS, and return JsonIterator</h3>
+<pre>
+package myclazz;
+
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * This sample program prints all books' name
+ * */
+public class MyClazz3 {
+	
+	protected JaqlQuery jaql;
+	
+	public MyClazz3(){
+		jaql = new JaqlQuery();
+	}
+	
+	public void close(){
+		jaql.close();
+	}
+	
+	public static void main(String[] args) {
+		MyClazz3 mc = null;
+		try{
+			mc = new MyClazz3();
+			JsonIterator it = mc.getAllBooks();
+			while(it.moveNext()){
+				System.out.println(it.current());
+			}
+		}catch(Exception ex){
+			ex.printStackTrace();
+		}finally{
+			mc.close();
+		}
+	}
+	
+	/**
+	 * returns all books
+	 * 
+	 * @return JsonIterator
+	 * */
+	private JsonIterator getAllBooks() throws Exception {
+		jaql.setQueryString("read(hdfs('books')) -> transform $.title;");
+		JsonIterator it= jaql.iterate();
+		return it;
+	}
+}
+</pre>
+
+<h3>4. Write data into HBase</h3>
+<pre>
+package myclazz;
+
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.JaqlQuery;
+
+/**
+ * Write data to hbase
+ *
+ */
+public class MyClazz4 implements IConstants{
+
+	public static void main(String[] args){
+		MyClazz4 mc = new MyClazz4();
+		try {
+			mc.hbaseWrite();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}	
+	
+	public void hbaseWrite() throws Exception{
+		JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString( hbasew+"-> hbaseWrite('webcrawl');");
+		JsonValue jv = jaql.evaluate();
+		System.out.println(jv);
+	}
+}
+</pre>
+
+<h4>Interface IConstants</h4>
+This interface defines some json-format data, used in previous examples. 
+<pre>
+package myclazz;
+
+public interface IConstants {
+
+	public String books="["+
+	"{" +
+	"publisher: 'Scholastic'," +
+	"author: 'J. K. Rowling'," +
+	"title: 'Deathly Hallows'," +
+	"year: 2007" +
+	"}," +
+	"{" +
+	"publisher: 'Scholastic'," +
+	"author: 'J. K. Rowling'," +
+	"title: 'Chamber of Secrets'," +
+	"year: 1999," +
+	"reviews: [" +
+	"{rating: 10, user: 'joe', review: 'The best ...'}," +
+	"{rating: 6, user: 'mary', review: 'Average ...'}]" +
+	"}," +
+	"{" +
+	"publisher: 'Scholastic'," +
+	"author: 'J. K. Rowling'," +
+	"title: 'Sorcerers Stone'," +
+	"year: 1998" +
+	"}," +
+	"{" +
+	"publisher: 'Scholastic'," +
+	"author: 'R. L. Stine'," +
+	"title: 'Monster Blood IV'," +
+	"year: 1997," +
+	"reviews: [" +
+	"{rating: 8, user: 'rob', review: 'High on my list...'}," +
+	"{rating: 2, user: 'mike', review: 'Not worth the paper ...'," +
+	"discussion:" +
+	"[{user: 'ben', text: 'This is too harsh...'}," +
+	"{user: 'jill', text: 'I agree ...'}]}]" +
+	"}," +
+	"{" +
+	"publisher: 'Grosset'," +
+	"author: 'Carolyn Keene'," +
+	"title: 'The Secret of Kane'," +
+	"year: 1930" +
+	"}]";
+	
+	public String publisher = "[" +
+			"{name:'Scholastic',country:'USA'}," +
+			"{name:'Grosset',country:'USA'}" +
+			"]";
+	
+	public String hbasew ="[" +
+			"{key: 'www.cnn.com', page:'...', rank: 0.9," +
+			"inlinks:[" +
+			"{link: 'www.news.com', anchor: 'newsite'}," +
+			"{link: 'www.jscript.com', anchor: 'look here'}]}," +
+			"{key: 'www.json.org', page:'...', rank: 0.8}" +
+			"]";
+}
+</pre>
+<center>
+<a href="jaql-overview.html">Overview</a> | 
+<a href="jaql-java-functions.html">Java Functions</a> | 
+<a href="datasrc-extensibility.html">Extending Data-sources</a> | 
+<a href="running.html">Running Jaql</a> | 
+<a href="roadmap.html">Roadmap</a> 
+</center> 
+</body> 
+</html> 
