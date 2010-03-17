@@ -109,9 +109,10 @@ public class MyClazz2 {
 }
 }}}
 
----
+----
 
 ==Embedding Jaql in Python==
+
 ===Introduction===
 PyJaql is an effort to enable python programmers work with Jaql, it's achieved not through re-implementing Jaql in python, but rather through bridging jaql and python by the using of [http://jpype.sourceforge.net/ jpype], it provides a few simple and clean functions for python programmers to take the advantage of jaql's capability. This document introduces you how to setup pyJaql environment and few examples for you to start with.
 ===Ubuntu Installer===
@@ -121,25 +122,39 @@ By default, [http://www.python.org/ python] is installed on ubuntu. If not, plea
 ====jpype====
 [http://sourceforge.net/projects/jpype/files/ Download] source from sourceforge, the latest version of jpype 0.5.4.1 is recommended.
  # Make sure you have all of the necessary tools for compiling C code installed:
+  {{{
   sudo apt-get install build-essential
+  }}}
  # Make sure you have python2.6-dev package installed:
+  {{{
   sudo apt-get install python2.6-dev
+  }}}
  # Extract jpype package and enter into jpype dir, run the following command:
+  {{{
   sudo python setup.py install
+  }}}
  # Put the newly installed jpype into your PYTHONPATH by putting the following into you /etc/environment , or other system wide variable:
+  {{{
   PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.6/dist-packages
+  }}}
  # Check your install by running the following commands:
   $ python
+  {{{
   [GCC 4.2.3 (Ubuntu 4.2.3-2ubuntu7)] on linux2
   Type "help", "copyright", "credits" or "license" for more information.
   >>> import jpype
   >>>
+  }}}
 If you don't get an ImportError, you're done!
 ====pyJaql====
  # Download pyJaql installer, namely pyJaql-0.1.tar.gz. Extract this package and enter into pyJaql dir, run following command:
+   {{{ 
    sudo python setup.py install
+   }}}
  # Open python command line, and check your install by below command:
+   {{{ 
    import pyJaql
+   }}}
 If you don't get an ImportError, the installation is done.
 
 ===Usage===
@@ -150,22 +165,27 @@ There are two models to run jaql, one is "local" model, in this situation, pyJaq
  * Launch Jaql in hadoop-cluster model
   _This model requires a running hadoop cluster environment._
   Set required environment variables, HADOOP_HOME and HADOOP_CONF_DIR. Make sure HADOOP_HOME points to the right path
-  export HADOOP_HOME= "yourHadoopHome"
-  export HADOOP_CONF_DIR= "yourHadoopHome/conf"
+  || export HADOOP_HOME= "yourHadoopHome"
+  export HADOOP_CONF_DIR= "yourHadoopHome/conf" ||
 
 ====pyJaql's HelloWorld====
 Basically, there are several steps to get started First, import PyJaql module
 
- {{{from pyJaql import * }}}
+ {{{
+ from pyJaql import *
+ }}}
 
 Second, initialize jaql engine
 
- {{{jaql=Jaql()}}}
+ {{{
+ jaql=Jaql()
+ }}}
 
 Third, execute a jaql expression, one can execute any valid jaql expression by using execute(), which will return a python generator.
  
- {{{it=jaql.execute("jaql expression",{'variable name':'variable value',...})}}}
-
+ {{{
+  it=jaql.execute("jaql expression",{'variable name':'variable value',...})
+ }}}
 An alternative way to do evaluation is jaql.evaluate(). The usage of evaluate() is very same with execute(), but different in how to retrieve data from jaql, by which means, evaluate() maintain whole result, sometimes a very big block of data, in memory, it cost much more space but consuming less time when retrieving data, however, one must consider that, when the result set is very big, evaluate() cost a long time, sometimes intolerable, to process and return the data. In comparison, execute() does not return us all data in one time, its strategy is to retrieve specific data only when you iterate the result set. They are designed for satisfying different scenarios.
 
 Then iterate the result set, and manipulate the return data as you like, depending on the output of jaql expresion, there are 3 kinds of data type of the iterating result, list, dict or primitive types(str,int,etc), there are kinds of ways to manipulate these data easily and conveniently.
