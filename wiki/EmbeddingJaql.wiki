@@ -165,8 +165,10 @@ There are two models to run jaql, one is "local" model, in this situation, pyJaq
  * Launch Jaql in hadoop-cluster model
   _This model requires a running hadoop cluster environment._
   Set required environment variables, HADOOP_HOME and HADOOP_CONF_DIR. Make sure HADOOP_HOME points to the right path
-  || export HADOOP_HOME= "yourHadoopHome"
-  export HADOOP_CONF_DIR= "yourHadoopHome/conf" ||
+  {{{
+  export HADOOP_HOME= "yourHadoopHome"
+  export HADOOP_CONF_DIR= "yourHadoopHome/conf"
+  }}}
 
 ====pyJaql's HelloWorld====
 Basically, there are several steps to get started First, import PyJaql module
