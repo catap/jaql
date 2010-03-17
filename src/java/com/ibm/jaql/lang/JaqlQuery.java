@@ -31,6 +31,7 @@ import com.ibm.jaql.json.util.JsonIterator;
  * q.setQueryString("read(hdfs('books')) -> filter $.price < $maxprice");<br>
  * q.setVar("$maxprice", 100);<br>
  * JsonIterator it = q.iterate();
+ * q.close();
  * </code>
  * */
 public class JaqlQuery {
@@ -138,6 +139,16 @@ public class JaqlQuery {
 	 * */
 	public JsonValue getVar(String varName) throws Exception {
 		return jq.getVarValue(varName);
+	}
+	
+	/**
+	 * 
+	 * Close a jaql query
+	 * Jaql query statement should be closed after all the query is done, else it will cause a shutdown in progress exception
+	 *
+	 */
+	public void close(){
+		jq.close();
 	}
 
 }
