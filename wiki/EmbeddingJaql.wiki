@@ -149,9 +149,9 @@ There are two models to run jaql, one is "local" model, in this situation, pyJaq
   Unset hadoop related environment variables, eg HADOOP_HOME, HADOOP_CONF_DIR
  * Launch Jaql in hadoop-cluster model
   _This model requires a running hadoop cluster environment._
-   Set required environment variables, HADOOP_HOME and HADOOP_CONF_DIR. Make sure HADOOP_HOME points to the right path
-    export HADOOP_HOME= "yourHadoopHome"
-    export HADOOP_CONF_DIR= "yourHadoopHome/conf"
+  Set required environment variables, HADOOP_HOME and HADOOP_CONF_DIR. Make sure HADOOP_HOME points to the right path
+  export HADOOP_HOME= "yourHadoopHome"
+  export HADOOP_CONF_DIR= "yourHadoopHome/conf"
 
 ====pyJaql's HelloWorld====
 Basically, there are several steps to get started First, import PyJaql module
@@ -221,7 +221,7 @@ Following examples will show you ways to embed pyJaql in your python program.
 More examples can be found in docs folder under pyJaql package. 
 
 ===Known Limitation===
-After calling jaql.close(), it will shutdown JVM, if you attempt calling Jaql() again a JVMException will be raised. This dues to SUN's JVM (by now is 1.6.0_16) doesn't allow uploading, though JNI API defines a method to destroy JVM named destroyJVM(), it doesn't work1.So, pyJaql shares a unique JVM through program's life cycle, there is no problem if you use several times of jaql=Jaql() to get different jaql engine references, because JVM will only be initialized in the first time, but when you invoke jaql.close(), it's required that to make sure no one will use JVM again^(1).
+After calling jaql.close(), it will shutdown JVM, if you attempt calling Jaql() again a JVMException will be raised. This dues to SUN's JVM (by now is 1.6.0_16) doesn't allow uploading, though JNI API defines a method to destroy JVM named destroyJVM(), it doesn't work1.So, pyJaql shares a unique JVM through program's life cycle, there is no problem if you use several times of jaql=Jaql() to get different jaql engine references, because JVM will only be initialized in the first time, but when you invoke jaql.close(), it's required that to make sure no one will use JVM again^(1)^.
 
 *Reference*
-1. http://jpype.sourceforge.net/doc/user-guide/userguide.html
+(1). http://jpype.sourceforge.net/doc/user-guide/userguide.html
