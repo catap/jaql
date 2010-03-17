@@ -138,8 +138,8 @@ By default, [http://www.python.org/ python] is installed on ubuntu. If not, plea
   PYTHONPATH=$PYTHONPATH:/usr/local/lib/python2.6/dist-packages
   }}}
  # Check your install by running the following commands:
-  $ python
   {{{
+  $ python
   [GCC 4.2.3 (Ubuntu 4.2.3-2ubuntu7)] on linux2
   Type "help", "copyright", "credits" or "license" for more information.
   >>> import jpype
