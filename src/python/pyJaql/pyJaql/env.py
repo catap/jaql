@@ -33,9 +33,11 @@ def _configenv(*args):
 	_SEP=os.sep # system path separator
 	_CLASSPATH = "" # JVM classpath parameters
 	_DFLT_HADOOP_VERSION = "0.20.1" # default Hadoop version
+	_DFLT_HBASE_VERSION = "0.20.0" # default hbase version
 	_HADOOP_HOME="" # HADOOP_HOME
 	_JAQL_HOME="" # JAQL_HOME
 	_PLATFORM="" #platform name
+	_HBASE_HOME=""# HBASE_HOME
 
 	if os.name=="nt":
 		_SEPARATO=";"#windows
@@ -70,6 +72,13 @@ def _configenv(*args):
 	else:	# local model
 		_HADOOP_CONF_DIR = _HADOOP_HOME + _SEP + "conf"
 		
+	#====================HBASE_HOME====================
+	if os.environ.has_key("HBASE_HOME"):
+		#if HBASE_HOME is set
+		_HBASE_HOME=os.environ["HBASE_HOME"]
+	else:	
+		_HBASE_HOME=_JAQL_HOME + _SEP + "vendor" + _SEP + "hbase" + _SEP + _DFLT_HBASE_VERSION
+	
 	if(len(args)==1):
 		print "PATH INFO-------------------------------------------"
 		#PRINT DEBUG INFO
@@ -80,6 +89,7 @@ def _configenv(*args):
 		print "| _HADOOP_HOME = %s" % (_HADOOP_HOME) 
 		print "| _JAQL_HOME = %s" % (_JAQL_HOME)
 		print "| _HADOOP_CONF_DIR = %s" % (_HADOOP_CONF_DIR)
+		print "| _HBASE_HOME = %s" % (_HBASE_HOME)
 		print "----------------------------------------------------"
 
 	#(1) add jaql.jar to classpath
@@ -103,6 +113,15 @@ def _configenv(*args):
 
 	#(4) add hadoop_conf_dir to classpath
 	_CLASSPATH = _CLASSPATH + _SEPARATO + _HADOOP_CONF_DIR
+
+	#(5) add hbase jars to classpath
+	for jar in _getjarfilelist(_HBASE_HOME):
+		if jar.find("hbase-")>=0:
+			_CLASSPATH = _CLASSPATH + _SEPARATO + jar
+
+	for jar in _getjarfilelist(os.path.join(_HBASE_HOME,"lib")):
+		if jar.find("zookeeper")>=0: # add zookeeper-**.jar to classpath
+			_CLASSPATH = _CLASSPATH + _SEPARATO + jar
 	
 	return _CLASSPATH
 
