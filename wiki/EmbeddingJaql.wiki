@@ -29,7 +29,7 @@ Note : Launch Jaql in local model, simply remove hadoop conf folder from project
  
 ===Examples===
 This chapter introduces you several simple example using Jaql for you to start with, more examples can be found in Jaql source.
-Typically, first you are going to initialize a JaqlQuery instance by its constructor `JaqlQuery()`, then use `setQueryString()` to set input for jaql context, at last use `evaluate()` to evaluate the query statement, this function will return you a JsonValue. Alternatively, `iterator()` can also evaluate the statement but return you a JsonIterator.
+First you are going to initialize a JaqlQuery instance by its constructor `JaqlQuery()`, then use `setQueryString()` to set input for jaql context, at last use `evaluate()` to evaluate the query statement, this function will return you a JsonValue. Alternatively, `iterator()` can also evaluate the statement but return you a JsonIterator.
 Notice that, you can set variable holders in the input parameter,  by means of Jaql syntax, it's $varname, then use `setVar()` to set its value at runtime.
 You can try out with below examples.
 ==== Write data into HDFS ====
@@ -188,7 +188,6 @@ Third, execute a jaql expression, one can execute any valid jaql expression by u
  {{{
   it=jaql.execute("jaql expression",{'variable name':'variable value',...})
  }}}
-An alternative way to do evaluation is jaql.evaluate(). The usage of evaluate() is very same with execute(), but different in how to retrieve data from jaql, by which means, evaluate() maintain whole result, sometimes a very big block of data, in memory, it cost much more space but consuming less time when retrieving data, however, one must consider that, when the result set is very big, evaluate() cost a long time, sometimes intolerable, to process and return the data. In comparison, execute() does not return us all data in one time, its strategy is to retrieve specific data only when you iterate the result set. They are designed for satisfying different scenarios.
 
 Then iterate the result set, and manipulate the return data as you like, depending on the output of jaql expresion, there are 3 kinds of data type of the iterating result, list, dict or primitive types(str,int,etc), there are kinds of ways to manipulate these data easily and conveniently.
 
@@ -201,7 +200,7 @@ for item in it:
 	#2. item type is list: use item[index] to retrieve list element
 	#3. item type is python primitive type: directly manipulate item
 }}}
-A alternative way to execute a jaql expression is, using *evaluate()*, this function takes exactly same arguments with *excecute()*, however, it returns a list holding all the result data in memory.
+An alternative way to do evaluation is jaql.evaluate(). The usage of evaluate() is very same with execute(), but different in how to retrieve data from jaql, by which means, evaluate() maintain whole result, sometimes a very big block of data, in memory, it cost much more space but consuming less time when retrieving data, however, one must consider that, when the result set is very big, evaluate() costs much more time, sometimes intolerable, to process and return the data. In comparison, execute() does not return us all data in one time, its strategy is to retrieve specific data only when you iterate the result set. They are designed for satisfying different scenarios.
 Following examples will show you ways to embed pyJaql in your python program.
 
 ===Examples===
