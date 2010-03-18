@@ -22,7 +22,7 @@ Let's assume you've installed Hadoop 0.20.1 and hbase 0.20.0. Follow below steps
     * hbase-0.20.0-core.jar
     * zookeeper-r785019-hbase-1329.jar
  # Add the following folder into the project's build path
-  conf folder from Jaql source 
+ conf folder from Jaql source 
  # Add you hadoop conf folder into the project's build path, which includs hadoop configuration files, like core-site.xml, hdfs-site.xml and mapred-site.xml.
 
 Note : Launch Jaql in local model, simply remove hadoop conf folder from project's build path. 
