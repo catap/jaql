@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/jaql-opensource/src/java/com/ibm/jaql/lang/Jaql.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
+<listEntry value="org.eclipse.debug.ui.launchGroup.run"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="com.ibm.jaql.lang.Jaql"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="jaql-opensource"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Xmx1000m -Dhadoop.log.dir=${project_loc}/vendor/hadoop/0.20.1/logs -Dhadoop.log.file=hadoop.log -Dhadoop.home.dir=${project_loc}/vendor/hadoop/0.20.1 -Dhadoop.id.str= -Dhadoop.root.logger=INFO,DRFA -Dhadoop.conf.override=/tmp/17306_hadoop-override -Djava.library.path=${project_loc}/vendor/hadoop/0.20.1/lib/native/Linux-i386-32"/>
+</launchConfiguration>
