@@ -19,8 +19,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.List;
 
 import jline.ConsoleReader;
@@ -42,7 +44,9 @@ import org.apache.commons.lang.StringUtils;
 
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.OutputAdapter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.JaqlQuery;
 import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -61,6 +65,7 @@ public class JaqlShellArguments {
   int numNodes = DEFAULT_NUM_NODES;
   ChainedInputStream chainedIn = new ChainedInputStream();
   boolean batchMode = DEFAULT_BATCH_MODE;
+  OutputAdapter logAdapter;
 
   private JaqlShellArguments() {};
   
@@ -224,6 +229,16 @@ public class JaqlShellArguments {
     .withDescription("list of input files")
     .withMinimum(0)
     .create();
+    
+    Option optLog = obuilder
+    .withShortName("l")
+    .withLongName("log")
+    .withDescription("log options: json, del and xml or an output IO descriptor. ")
+    .withArgument(abuilder
+        .withName("arg")
+        .withMinimum(1).withMaximum(1)
+        .create())
+        .create();
 
     // combine all options
     Group options = gbuilder
@@ -232,6 +247,7 @@ public class JaqlShellArguments {
     .withOption(optJars)
     .withOption(optSearchPath)
     .withOption(optBatch)
+    .withOption(optLog)
     .withOption(optOutOptions)
     .withOption(optEval)
     .withOption(optInputFiles)
@@ -324,6 +340,22 @@ public class JaqlShellArguments {
         }
       }
     }
+    
+    // error log
+    if (cl.hasOption(optLog)) {
+      String path = (String) cl.getValue(optLog);
+      try {
+        BufferedJsonRecord logFD = new BufferedJsonRecord();
+        logFD.add(Adapter.TYPE_NAME, new JsonString("local"));
+        logFD.add(Adapter.LOCATION_NAME, new JsonString(path));
+        OutputAdapter oa = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(logFD);
+        result.logAdapter = oa;
+      } catch (Exception e) {
+        printHelpAndExit(e,
+            "\"" + path + "\" invalid",
+            options);
+      }
+    } 
     
     if (!result.batchMode) {
         result.addStdin();
