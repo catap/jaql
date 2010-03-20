@@ -21,9 +21,12 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 
 import jline.ConsoleReader;
 import jline.ConsoleReaderInputStream;
@@ -32,7 +35,12 @@ import org.apache.commons.lang.BooleanUtils;
 
 import antlr.collections.impl.BitSet;
 
+import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.OutputAdapter;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
@@ -72,12 +80,13 @@ public class Jaql implements CoreJaql
   public static void run(String filename,
                          InputStream in) throws Exception
   {
-    run(filename, in, null, false);
+    run(filename, in, null, null, false);
   }
   
   public static void run(String filename,
                          InputStream in,
                          OutputAdapter outputAdapter,
+                         OutputAdapter logAdapter,
                          boolean batchMode) throws Exception
   {
     // FIXME: The following is required to get Jaql to parse UTF-8 properly, but
@@ -94,6 +103,11 @@ public class Jaql implements CoreJaql
     } else {
       engine.setJaqlPrinter(new IODescriptorPrinter(outputAdapter.getWriter()));
     }
+    
+    if (logAdapter != null) {
+      engine.setError(logAdapter.getWriter());
+    }
+    
     engine.run();
   }
 
@@ -118,6 +132,7 @@ public class Jaql implements CoreJaql
   protected String explainMode = System.getProperty("jaql.explain.mode"); // eventually more modes: jaql, graphical, json, logJaql?
   protected boolean explainOnly = "jaql".equals(explainMode);
   private JaqlPrinter printer = NullPrinter.get();
+  private ClosableJsonWriter log = null;
   
   static
   {
@@ -169,6 +184,11 @@ public class Jaql implements CoreJaql
   public void setInput(String jaql)
   {
     setInput("<string>", new StringReader(jaql));
+  }
+  
+  public void setError(ClosableJsonWriter writer)
+  {
+    log = writer;
   }
   
   /**
@@ -506,6 +526,8 @@ public class Jaql implements CoreJaql
     finally 
     {
       printer.close();
+      if(log != null)
+        log.close();
     }
     return true;
   }
@@ -518,8 +540,10 @@ public class Jaql implements CoreJaql
    */
   protected void handleError(Throwable error) throws Exception
   {
-    error.printStackTrace();
-    System.err.flush();
+    //error.printStackTrace();
+    //System.err.flush();
+    writeException(error);
+    
     if( stopOnException )
     {
       if( error instanceof Exception )
@@ -531,6 +555,33 @@ public class Jaql implements CoreJaql
         throw (Error)error;
       }
       throw new RuntimeException(error);
+    }
+  }
+  
+  private void writeException(Throwable e) {
+
+    if(log == null) {
+      e.printStackTrace();
+    } else {
+      // the message
+      JsonString msg = new JsonString(e.getMessage());
+
+      // the stack trace
+      StringWriter sw = new StringWriter();
+      PrintWriter pw = new PrintWriter(sw);
+      e.printStackTrace(pw);
+
+      // create a record
+      BufferedJsonRecord eRec = new BufferedJsonRecord();
+      eRec.add(new JsonString("stack"), new JsonString(sw.toString()));
+      eRec.add(new JsonString("msg"), msg);
+
+      // write out the record
+      try {
+        log.write(eRec);
+      } catch(Exception ioe) {
+        ioe.printStackTrace(System.err);
+      }
     }
   }
 }

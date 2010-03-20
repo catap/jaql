@@ -17,6 +17,8 @@
 package com.ibm.jaql.util.shell;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
 
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.lang.core.Module;
@@ -46,6 +48,7 @@ public abstract class AbstractJaqlShell {
    */
   public void run(InputStream in,
                    OutputAdapter outputAdapter,
+                   OutputAdapter logAdapter,
                    boolean batchMode) throws Exception
   {
     try
@@ -53,6 +56,7 @@ public abstract class AbstractJaqlShell {
       com.ibm.jaql.lang.Jaql.run("<unknown>",
                                  in,
                                  outputAdapter,
+                                 logAdapter,
                                  batchMode); // TODO: get filename 
     }
     catch (Exception e)
@@ -96,6 +100,7 @@ public abstract class AbstractJaqlShell {
       }
       shell.run(jaqlArgs.chainedIn, 
                 jaqlArgs.outputAdapter,
+                jaqlArgs.logAdapter,
                 jaqlArgs.batchMode);
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
