@@ -28,7 +28,7 @@ Let's assume you've installed Hadoop 0.20.1 and hbase 0.20.0. Follow below steps
 Note : Launch Jaql in local model, simply remove hadoop conf folder from project's build path. 
  
 ===Examples===
-This chapter introduces you several simple examples using Jaql for you to start with, more examples can be found in Jaql source.
+This chapter introduces you several simple examples using Jaql for you to start, more examples can be found in Jaql source.
 
 First you are going to initialize a JaqlQuery instance by its constructor `JaqlQuery()`, then use `setQueryString()` to set input for jaql context, at last use `evaluate()` to evaluate the query statement, this function will return you a JsonValue. Alternatively, `iterator()` can also evaluate the statement but return you a JsonIterator.
 Notice that, you can set variable holders in the input parameter,  by means of Jaql syntax, it's $varname, then use `setVar()` to set its value at runtime.
