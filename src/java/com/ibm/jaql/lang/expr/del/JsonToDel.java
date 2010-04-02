@@ -104,7 +104,7 @@ public class JsonToDel {
    * @param src JSON value
    * @return The buffer contains the byte array of UTF-8 string.
    * @throws IOException
-   * @throws IllegalArgumentException If the JSON value can be converted to a
+   * @throws IllegalArgumentException If the JSON value can't be converted to a
    *           CSV line.
    */
   public RandomAccessBuffer convert(JsonValue src) throws IOException {
