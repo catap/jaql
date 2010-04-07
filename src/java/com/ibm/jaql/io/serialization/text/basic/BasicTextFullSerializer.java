@@ -38,17 +38,14 @@ public final class BasicTextFullSerializer extends TextFullSerializer
   private final EnumMap<JsonEncoding, TextBasicSerializer<?>> serializers; 
   private final JsonAsStringSerializer stringSerializer = new JsonAsStringSerializer();
 
+
   // -- default instance -------------------------------------------------------
   
-  private static BasicTextFullSerializer defaultInstance = null;
+  private static final BasicTextFullSerializer defaultInstance = new BasicTextFullSerializer();
 
   public static BasicTextFullSerializer getInstance() 
   {
-    if (defaultInstance == null)
-    { 
-      defaultInstance = new BasicTextFullSerializer();
-    }
-    return defaultInstance;
+      return defaultInstance;
   }
   
   
