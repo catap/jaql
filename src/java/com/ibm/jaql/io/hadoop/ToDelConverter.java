@@ -27,8 +27,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.del.JsonToDel;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
-// TODO: Does this really need to be in the vendor directory?
-
 /** Converts JSON array or record to a delimited text value. */
 public final class ToDelConverter implements KeyValueExport<NullWritable, Text> {
 
