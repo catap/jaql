@@ -44,7 +44,7 @@ import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.io.converter.AbstractFromDelConverter;
 import com.ibm.jaql.io.hadoop.ConfSetter;
-import com.ibm.jaql.io.hadoop.FromDelConverter;
+import com.ibm.jaql.io.hadoop.converter.FromDelConverter;
 import com.ibm.jaql.io.hadoop.FromLinesConverter;
 import com.ibm.jaql.io.hadoop.HadoopSerializationDefault;
 import com.ibm.jaql.io.hadoop.HadoopSerializationTemp;
