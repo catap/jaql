@@ -188,7 +188,8 @@ public abstract class DelParser
     }
 
     // process the field
-    if (output != null)
+
+    if (target != null)
     {
       target.set(output, 0, outputSize);
     }
