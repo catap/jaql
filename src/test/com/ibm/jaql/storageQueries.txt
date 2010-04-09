@@ -69,36 +69,6 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
 			  		        converter: 'com.foobar.store.FromJSONTxtConverter'}})
 -> read();
 
-//-- hbase write/read expressions --
-
-// write/read Items to an HBase Table as Items: default adapter, default format, no converter (see hbaseQueries.txt)
-// stWrite({type: 'hbase', location: 'jaqlTesttest5'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);
-
-// stRead({type: 'hbase', location: 'jaqlTesttest5'});
-
-// stRead(stWrite({type: 'hbase', location: 'jaqlTesttest5alt1'}, [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));
-
-// can do the same thing if you pass in the right options to HadoopRead
-// stWrite({location: 'jaqlTesttest5alt2', 
-//          outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
-//                       format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
-//                       configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'}}, 
-//          [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]);
-                            
-// stRead({location: 'jaqlTesttest5alt2',
-// 	    inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
-// 			  	    format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
-// 			  	    configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}});
-
-// stRead(stWrite({location: 'jaqlTesttest5alt3', 
-//                 outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
-//                              format: 'com.ibm.jaql.io.hbase.JaqlTableOutputFormat',
-//                              configurator: 'com.ibm.jaql.io.hbase.TableOutputConfigurator'},
-//                 inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
-// 			  	            format: 'com.ibm.jaql.io.hbase.JaqlTableInputFormat',
-// 			  	            configurator: 'com.ibm.jaql.io.hbase.TableInputConfigurator'}}, 
-//               [{key: '1', one: '1'}, {key: '2', two: '2'}, {key: '3', three: '3'}]));
-
 //-- local file read/write expressions
 
 // write/read Items to/from a local file
@@ -136,40 +106,6 @@ read({type: 'local', location: 'build/test/cache/myotherfile.txt'});
 
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'});
 
-// input is hdfs sequence file of Items, output is hbase table (note that 'g' renamed to 'key') (see hbaseQueries.txt)
-// stWrite({type: 'hbase', location: 'jaqlTesttest6out'}, []);
-
-//stRead( 
-//  mapReduce( {
-//    'input' : {type: 'hdfs', location: 'jaqlTest/test6.dat'},
-//    'map'   : fn(i) [[ i.g, 1 ]],
-//    'reduce': fn(key, values) [{ key: key, n: count(values) }],
-//    'output': {type: 'hbase', location: 'jaqlTesttest6out'}
-//    })
-// );
- 
-// input is hbase table, output is sequence file of Items
-// stWrite({ type: 'hbase', location: 'jaqlTesttest7'}, [
-//   { key: "0", g:0, text: 'zero' },
-//   { key: "1", g:1, text: 'one' },
-//   { key: "2", g:0, text: 'two' },
-//   { key: "3", g:1, text: 'three' },
-//   { key: "4", g:0, text: 'four' },
-//   { key: "5", g:1, text: 'five' },
-//   { key: "6", g:0, text: 'six' },
-//   { key: "7", g:1, text: 'seven' },
-//   { key: "8", g:0, text: 'eight' },
-// ]);
-
-// stRead( 
-//   mapReduce( {
-//     'input' : {type: 'hbase', location: 'jaqlTesttest7'},
-//     'map'   : fn(i) [[ i.g, 1 ]],
-//     'reduce': fn(key, values) [{ g: key, n: count(values) }],
-//     'output': {type: 'hdfs', location: 'jaqlTest/test7.dat'}
-//     })
-//  );
- 
 // input is a file with JSON text (one record per line), output is a SequenceFile of items
 [
   { key: 0, g:0, text: 'zero' },
@@ -212,34 +148,6 @@ mapReduce( {
   { key: "4", g:0, text: 'four' }
 ]
 -> write({ type: 'hdfs', location: 'jaqlTest/test9.dat'});
-
-// write out an hbase table
-// stWrite({ type: 'hbase', location: 'jaqlTesttest9'}, [
-//   { key: "5", g:1, text: 'five' },
-//   { key: "6", g:0, text: 'six' },
-//   { key: "7", g:1, text: 'seven' },
-//   { key: "8", g:0, text: 'eight' },
-// ]);
-
-// stRead([{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}]);
-
-// stRead(
-//   mapReduce( {
-//     'input': [ [{type: 'hdfs', location: 'jaqlTest/test9.dat'}, {type: 'hbase', location: 'jaqlTesttest9'}] ],
-//      'map'   : fn(i) [[ i.g, 1 ]],
-//      'reduce': fn(key, values) [{ g: key, n: count(values) }],
-//      'output': {type: 'hdfs', location: 'jaqlTest/test9out.dat'}
-//    })
-// );
-
-//-- test co-group (see hbaseQueries.txt)
-
-// stRead(mapReduce( {input: [ {type: 'hdfs', location: 'jaqlTest/test9.dat'}, 
-//                             {type: 'hbase', location: 'jaqlTesttest9'}],
-//                    map: [ fn(i) [[ i.g, 1 ]], 
-//                           fn(i) [[ i.g, 1 ]] ],
-//                    reduce: fn(key, aVals, bVals) [{ g: key, as: count(aVals), bs: count(bVals) }],
-//                    output: {type: 'hdfs', location: 'jaqlTest/test10out.dat'}}));
 
 //-- test higher level interfaces
 
@@ -313,14 +221,6 @@ r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFor
 //httpGet(url, {query: serialize(query)}, {asArray: false})[0].result.album;
 //read(http(url, {query: serialize(query)}))[0].result.album;
 
-// write('hbase', 'jaqlTesttest13a.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
-
-// read('hbase', 'jaqlTesttest13a.dat');
-
-// hbaseWrite('jaqlTesttest13b.dat', [{key: '0', a: 'foo'}, {key: '1', b: 'bar'}]);
-
-// hbaseRead('jaqlTesttest13b.dat');
-
 //-- test array read
 read({type: 'array', inoptions: {array: [1,2,3]}});
 
@@ -350,52 +250,6 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
     into { g:a, i:count($) }
 -> sort by [$.g];
 
-// group by over hbase read (see hbaseQueries.txt)
-// group( i in stRead({type: 'hbase', location: 'jaqlTesttest7'}) 
-//        by a = i.g
-//        into is
-//     [ { g:a, i:count(is) } ];
-
 // for loop over hdfs read
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 -> transform $.key;
-
-// for loop over hbase read (see hbaseQueries.txt)
-// for( r in stRead({type: 'hbase', location: 'jaqlTesttest7'}) )
-//   [ r.key ];
-
-// co-group (see hbaseQueries.txt)
-// group(
-//   i in stRead({type: 'hdfs', location: 'jaqlTest/test9.dat'}) 
-//      by g = i.g
-//      into as,
-//   j in stRead({type: 'hbase', location: 'jaqlTesttest9'}) 
-//      by g = j.g
-//      into bs )
-//  [ { g: g, as: count(as), bs: count(bs) } ];
-
-//-- test jsonToDel --
-[[1,2]] -> jsonToDel();
-$arrays1 = [[1,2],[3,4]];
-$arrays1 -> jsonToDel();
-$arrays2 = [['one','two'],['three','four']];
-$arrays2 -> jsonToDel();
-$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
-$records -> jsonToDel({schema: schema { name, age }});
-$mixed =  [{name: 'mike', age: 10}, [100, 200]];
-$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
-
-//-- testJsonToXml --
-{content: 12} -> jsonToXml();
-{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
-
-// json format
-[[1,2],[3,4]] -> write({type: 'jsonStream'});
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});
-
-// del format
-[[1,2],[3,4]]->write({type: 'delStream'});
-[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});
-
-// xml format
-[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});
