@@ -140,6 +140,32 @@ read(lines($out,{schema: schema long})); // This should fail since the file cont
 [true, false, null] -> write(lines($out));
 read(lines($out, {schema: schema boolean?}));
 
+//-- test jsonToDel --
+[[1,2]] -> jsonToDel();
+$arrays1 = [[1,2],[3,4]];
+$arrays1 -> jsonToDel();
+$arrays2 = [['one','two'],['three','four']];
+$arrays2 -> jsonToDel();
+$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
+$records -> jsonToDel({schema: schema { name, age }});
+$mixed =  [{name: 'mike', age: 10}, [100, 200]];
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
+
+//-- testJsonToXml --
+{content: 12} -> jsonToXml();
+{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
+
+// json format
+[[1,2],[3,4]] -> write({type: 'jsonStream'});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});
+
+// del format
+[[1,2],[3,4]]->write({type: 'delStream'});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});
+
+// xml format
+[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});
+
 // -- Remove all the temporary files created.
 hdfsShell("-rm delimited.del") * 0;
 hdfsShell("-rm delimited-invalid1.del") * 0;
