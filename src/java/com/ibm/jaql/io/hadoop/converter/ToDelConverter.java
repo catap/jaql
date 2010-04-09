@@ -13,7 +13,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io.hadoop;
+package com.ibm.jaql.io.hadoop.converter;
 
 import java.io.IOException;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -21,7 +21,6 @@ import java.lang.reflect.UndeclaredThrowableException;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 
-import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.del.JsonToDel;
