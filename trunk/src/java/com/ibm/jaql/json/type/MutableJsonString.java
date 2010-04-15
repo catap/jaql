@@ -167,7 +167,7 @@ public class MutableJsonString extends JsonString
     invalidateCache();
   }
 
-  /** Find the first occurence of character <code>oldc</code> by <code>newc</code>. This only 
+  /** Find the first occurrence of character <code>oldc</code> by <code>newc</code>. This only 
    * works on 7-bit ascii values right now! */
   public void replace(char oldc, char newc)
   {
