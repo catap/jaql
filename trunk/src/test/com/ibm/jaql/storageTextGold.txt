@@ -40,7 +40,8 @@ read(lines($f));##
   "\"\"\"\"\"\",\"\"\"\"\"\"\"\",6",
   "a,a,",
   "a,,",
-  ",,"
+  ",,",
+  "\"A\"\",\",\"1\",1"
 ]
 
 read(del($f));##
@@ -89,61 +90,20 @@ read(del($f));##
     null,
     null,
     null
+  ],
+  [
+    "A\",",
+    "1",
+    "1"
   ]
 ]
 
 read(del($f, { quoted: false }));##
-[
-  [
-    "HELLO",
-    "world",
-    "1"
-  ],
-  [
-    "hello ",
-    " world",
-    "2"
-  ],
-  [
-    "\"hello\"",
-    "\"world\"",
-    "3"
-  ],
-  [
-    "\"hello\"",
-    "\"\"\"world\"\"\"",
-    "4"
-  ],
-  [
-    "\"\"",
-    "\"\"\"\"",
-    "5"
-  ],
-  [
-    "\"\"\"\"\"\"",
-    "\"\"\"\"\"\"\"\"",
-    "6"
-  ],
-  [
-    "a",
-    "a",
-    null
-  ],
-  [
-    "a",
-    null,
-    null
-  ],
-  [
-    null,
-    null,
-    null
-  ]
-]
-
-read(del($f, { quoted: null }));##
 FAILURE
- // should fail
+ / ##
+FAILURE
+should fail
+read(del($f, { quoted: null })); // should fail
 read(del($f, { delimiter: null }));##
 FAILURE
  // should fail
@@ -195,6 +155,11 @@ read(del($f, { schema: schema { c1, c2, c3 } }));##
     "c1": null,
     "c2": null,
     "c3": null
+  },
+  {
+    "c1": "A\",",
+    "c2": "1",
+    "c3": "1"
   }
 ]
 
@@ -244,6 +209,11 @@ read(del($f, { schema: schema { c3, c1, c2 } }));##
     "c1": null,
     "c2": null,
     "c3": null
+  },
+  {
+    "c1": "1",
+    "c2": "1",
+    "c3": "A\","
   }
 ]
 
@@ -483,6 +453,11 @@ read(del("delimited.del", { schema: schema [ string?, string?, long? ] }));##
     null,
     null,
     null
+  ],
+  [
+    "A\",",
+    "1",
+    1
   ]
 ]
 
@@ -542,6 +517,11 @@ read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } 
     "c1": null,
     "c2": null,
     "c3": null
+  },
+  {
+    "c1": "A\",",
+    "c2": "1",
+    "c3": 1
   }
 ]
 
@@ -601,6 +581,11 @@ read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } 
     "c1": null,
     "c2": null,
     "c3": null
+  },
+  {
+    "c1": "1",
+    "c2": "A\",",
+    "c3": 1
   }
 ]
 
