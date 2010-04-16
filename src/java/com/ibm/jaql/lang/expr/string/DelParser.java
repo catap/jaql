@@ -103,7 +103,7 @@ public abstract class DelParser
     if (end+1 < length && bytes[end+1] == QUOTE)
     {
       // check whether we don't have an empty string ""
-      if (! (end+2==length || (end+2<length && bytes[end+2]==delimiter)) )
+      if (start!=end || !(end+2==length || (end+2<length && bytes[end+2]==delimiter)) )
       {
         return readFieldEscaped(target, bytes, length, start, end, delimiter);
       }
