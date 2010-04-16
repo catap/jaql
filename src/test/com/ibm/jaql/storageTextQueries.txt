@@ -12,7 +12,7 @@ hdfsShell("-copyFromLocal build/test/cache/data/lines-with-null.txt lines-with-n
 $f = "delimited.del";
 read(lines($f));
 read(del($f));
-read(del($f, { quoted: false }));
+read(del($f, { quoted: false })); / should fail
 read(del($f, { quoted: null })); // should fail
 read(del($f, { delimiter: null })); // should fail
 
