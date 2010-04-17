@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.jar.JarInputStream;
@@ -59,37 +61,55 @@ public class ClassLoaderMgr
   {
 		if (names == null || names.length == 0)
 			return;
-		
-		for (String extension : names) {
-			File jar = new File(extension);
-			addExtensionJar(jar);
-		}
 	
-		BaseUtil.LOG.info("jars added to classloader: " + names);
-  }
-  
-	/**
-	 * Combines the extension jars and the original jar into one jar. When several
-	 * jars contain the same file/class the first version is used. The order in
-	 * which the jars are inserted into the new jar is first jaql, then the
-	 * extensions in the order in which they were defined.
-	 * 
-	 * @param extensions paths of the extension jars
-	 */
-	public static void addExtensionJar(File jar) throws Exception {
-		if(!jar.exists())
-			return;
+		// create a collection of jar files with valid paths
+		ArrayList<File> jars = new ArrayList<File>();
+		for(int i = 0; i < names.length; i++) {
+			File jar = new File(names[i]);
+			if(!jar.exists()) {
+				BaseUtil.LOG.info("specified jar path invalid: " + jar);
+			} else {
+				jars.add(jar);
+			}
+		}
 		
-		// add the new jar to the classloader
-		classLoader = createClassLoader(jar);
+		// add all jars to same classloader
+		classLoader = createClassLoader(jars);
+		
 		// set the current thread's classloader
 		Thread.currentThread().setContextClassLoader(classLoader);
 		
-		//Lazy complete jar creation
-		creator.addExtensionJar(jar);
-		
-		return;
-	}
+		// add each jar to the todo list
+		for (File jar : jars) {
+			//Lazy complete jar creation
+			creator.addExtensionJar(jar);
+			
+			BaseUtil.LOG.info("jars added to classloader: " + jar);
+		}
+  }
+  
+  /**
+   * Combines the extension jars and the original jar into one jar. When several
+   * jars contain the same file/class the first version is used. The order in
+   * which the jars are inserted into the new jar is first jaql, then the
+   * extensions in the order in which they were defined.
+   * 
+   * @param extensions paths of the extension jars
+   */
+  public static void addExtensionJar(File jar) throws Exception {
+	  if(!jar.exists())
+		  return;
+
+	  // add the new jar to the classloader
+	  classLoader = createClassLoader(jar);
+	  // set the current thread's classloader
+	  Thread.currentThread().setContextClassLoader(classLoader);
+
+	  //Lazy complete jar creation
+	  creator.addExtensionJar(jar);
+
+	  return;
+  }
 
   /**
    * @return
@@ -167,6 +187,23 @@ public class ClassLoaderMgr
         ? JsonValue.class.getClassLoader()
         : classLoader;
     return new URLClassLoader(urls, parent);
+  }
+  
+  private static URLClassLoader createClassLoader(List<File> jars) throws Exception
+  {
+	  int numPaths = jars.size();
+	  if (numPaths == 0) return null;
+
+	  URL[] urls = new URL[numPaths];
+	  for (int i = 0; i < numPaths; i++)
+	  {
+		  File jar = jars.get(i);
+		  urls[i] = jar.toURI().toURL();
+	  }
+	  ClassLoader parent = (classLoader == null)
+	  ? JsonValue.class.getClassLoader()
+			  : classLoader;
+	  return new URLClassLoader(urls, parent);  
   }
 }
 
