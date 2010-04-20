@@ -30,15 +30,18 @@ case "`uname`" in
     CYGWIN*) cygwin=true;;
 esac
 
-# CYGWIN ONLY: save, then modify terminal settings 
+# On some linux platforms, jline can't restore terminal settings correctly. So
+# the terminal settings are saved here and restored when exiting Jaql shell.
+STTY_STATE=`stty -g 2>/dev/null` 
+
+# CYGWIN ONLY: modify terminal settings 
 if $cygwin; then
-    STTY_STATE=`stty -g 2>/dev/null` 
     "stty -icanon min 1 -echo;" 2>/dev/null
 fi
 
 jaql JaqlShell "$@"
 
-# CYGWIN ONLY: restore terminal settings
+# restore terminal settings
 if $cygwin; then
     stty $STTY_STATE 2>/dev/null
 fi
