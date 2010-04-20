@@ -59,6 +59,10 @@ options
   <file> [<file> ...]        list of input files
 }}}
 
+=== Know Limitations ===
+
+Terminals might mess up if {{{CTRL-C}}} is issued when using Jaql shell on some linux platforms. {{{jaql -Djline.terminal=jline.UnsupportedTerminal JaqlShell}}} can be used instead of {{{jaqlShell}}} to avoid this problem. In this way, jline will be disabled.
+
 = Examples =
 
 All examples from the documentation can be found in DIR/jaql-0.4/docs/examples.txt.
