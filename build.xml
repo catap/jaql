@@ -139,7 +139,7 @@
     <chmod dir="${bin.dir}" perm="ugo+x" includes="*"/>
 
     <copy todir="${test.cache.data}">
-      <fileset dir="${test.src.dir}" includes="*.jar" />
+      <fileset dir="${test.src.dir}" includes="**/*.jar" />
     </copy>
     <copy todir="${test.cache.data}">
       <fileset dir="${test.src.dir}" includes="*.jql" />
@@ -306,6 +306,7 @@
         <include name="**/*.jql" />
         <include name="**/*.jaql" />
         <include name="**/*.json" />
+      	<include name="**/*.jar" />
       </fileset>
     </copy>
   </target>
