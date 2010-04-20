@@ -30,13 +30,13 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  * Usage: [string] strSplit(string val, string delimitter)
  *
  */
-public class SplitFn extends Expr
+public class StrSplitFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
   {
     public Descriptor()
     {
-      super("strSplit", SplitFn.class);
+      super("strSplit", StrSplitFn.class);
     }
   }
   
@@ -46,7 +46,7 @@ public class SplitFn extends Expr
   /**
    * @param args
    */
-  public SplitFn(Expr[] args)
+  public StrSplitFn(Expr[] args)
   {
     super(args);
   }

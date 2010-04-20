@@ -54,7 +54,25 @@ public class LongArray
   /** Make the items array at least one bigger */
   protected void grow()
   {
-    long[] newItems = new long[n < Integer.MAX_VALUE / 2 ? n * 2 : Integer.MAX_VALUE - 1];
+    final int slowLimit = 1000000;
+    final int n2;
+    if( n < slowLimit )
+    {
+      n2 = n * 2;
+    }
+    else if( n < Integer.MAX_VALUE - slowLimit )
+    {
+      n2 = n + slowLimit; 
+    }
+    else if( n < Integer.MAX_VALUE )
+    {
+      n2 = Integer.MAX_VALUE;
+    }
+    else
+    {
+      throw new OutOfMemoryError("array hit limit!");
+    }
+    long[] newItems = new long[n2];
     System.arraycopy(items, 0, newItems, 0, n);
     items = newItems;
   }

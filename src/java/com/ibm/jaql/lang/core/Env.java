@@ -213,8 +213,9 @@ public class Env extends Namespace
    * @param root
    * @return
    */
-  public Expr importGlobals(Expr root)
+  public Expr importGlobals(Expr top)
   {
+    Expr root = top.child(0);
     HashMap<Var, Var> globalToLocal = new HashMap<Var, Var>();
     HashMap<Var, JsonValue> globalConst = new HashMap<Var, JsonValue>();
     ArrayList<Expr> bindings = new ArrayList<Expr>();
@@ -224,8 +225,9 @@ public class Env extends Namespace
     {
       bindings.add(root);
       root = new DoExpr(bindings);
+      top.setChild(0, root);
     }
-    return root;
+    return top;
   }
 
   private void importGlobalsAux(

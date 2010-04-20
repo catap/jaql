@@ -31,6 +31,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -38,6 +39,9 @@ import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 public abstract class Module {
+  public static final long MIN_SUPPORTED_NAMESPACE_VERSION = 1;
+  public static final long MAX_SUPPORTED_NAMESPACE_VERSION = 1;
+  
 	protected static final String JAQL_DIRECTORY = "scripts";
 	protected static final String JAR_DIRECTORY = "jars";
 	protected static final String EXAMPLE_DIRECTORY = "examples";
@@ -45,7 +49,7 @@ public abstract class Module {
 	protected static final String NAMESPACE_FILE = "namespace.json";
 	protected static final String MODULE_FILE = "description.json";
 	protected static final JsonString UDF_FN_FIELD = new JsonString("functions");
-	protected static final JsonString JAQL_FIELD = new JsonString("scripts");
+	protected static final JsonString SCRIPTS_FIELD = new JsonString("scripts");
 	protected static final JsonString EXPORT_FIELD = new JsonString("export");
 	protected static final JsonString VERSION_FIELD = new JsonString("version");
 	protected static final JsonString IMPORT_FIELD = new JsonString("import");
@@ -56,17 +60,17 @@ public abstract class Module {
 	public static void initSchemas() {
 		try {
 			Module.namespaceSchema = SchemaFactory.parse( 
-					"{" +
-					VERSION_FIELD + ": decfloat(value=0.1m)," + "\n" +
-					JAQL_FIELD + "?: [ string ... ]," +"\n" +
-					EXPORT_FIELD + "?: [ string ... ]," +"\n" +
-					UDF_FN_FIELD + "?: [ { \"type\"?: string, * } ... ], " + "\n" +
-					IMPORT_FIELD + "?: [ {\"module\": string, \"vars\": [ string ... ] }|string ... ] " + "\n" +
-			    "}");
+			    "{" +
+					VERSION_FIELD + ": long," + "\n" +
+					SCRIPTS_FIELD + "?: [ string ... ]," +"\n" +
+					EXPORT_FIELD  + "?: [ string ... ]," +"\n" +
+					UDF_FN_FIELD  + "?: [ { \"type\"?: string, * } ... ], " + "\n" +
+					IMPORT_FIELD  + "?: [ {\"module\": string, \"vars\": [ string ... ] }|string ... ] " + "\n" +
+				"}");
 			
 			Module.descriptionSchema = SchemaFactory.parse( 
 					"{" +
-					VERSION_FIELD + "?: decfloat," +
+					VERSION_FIELD + "?: long," +
 					"date?: date," +
 					"title?: string," +
 					"author?: string | [ string ... ]," +
@@ -224,19 +228,33 @@ public abstract class Module {
   	if(data != null) {
   		meta = (JsonRecord) data;
   		//Do schema check
-			try {
-				if(!Module.namespaceSchema.matches(meta)) {
-					//Do some minimal analysis to see whats wrong.
-					if(!meta.containsKey(VERSION_FIELD)) {
-						throw new RuntimeException("Namespace files is missing version");
-					} else {
-						throw new RuntimeException("Namespace file does not match schema");
-					}
-				}
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-  	} 
+  		boolean matches;
+  		try {
+  		  matches = Module.namespaceSchema.matches(meta);
+  		} catch (Exception e) {
+  		  throw new RuntimeException(e);
+  		}
+  		if( ! matches )
+  		{
+  		  //Do some minimal analysis to see whats wrong.
+  		  if(!meta.containsKey(VERSION_FIELD)) {
+  		    throw new RuntimeException("Namespace files is missing version");
+  		  } else {
+  		    throw new RuntimeException("Namespace file does not match schema");
+  		  }
+  		}
+  		long version = ((JsonNumber)meta.get(VERSION_FIELD)).longValueExact(); 
+        if( version < MIN_SUPPORTED_NAMESPACE_VERSION )
+        {
+          throw new RuntimeException("Module namespace is too old.  Version="+version+
+              " Min Version="+MIN_SUPPORTED_NAMESPACE_VERSION);
+        }
+        if( version > MAX_SUPPORTED_NAMESPACE_VERSION )
+        {
+          throw new RuntimeException("Module namespace is too new.  Version="+version+
+              " Max Version="+MAX_SUPPORTED_NAMESPACE_VERSION);
+        }
+  	}
   	
   	return meta;
 	}

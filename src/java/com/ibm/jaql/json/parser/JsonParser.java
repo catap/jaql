@@ -308,7 +308,7 @@ public class JsonParser implements JsonParserConstants {
       break;
     case REAL:
       atom = jj_consume_token(REAL);
-                         value = new JsonDecimal(atom.image);
+                         value = new JsonDouble(atom.image);
       break;
     case DECIMAL:
       atom = jj_consume_token(DECIMAL);

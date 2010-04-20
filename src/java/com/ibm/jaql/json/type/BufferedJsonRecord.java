@@ -195,23 +195,26 @@ public class BufferedJsonRecord extends JsonRecord {
 
 
   /** Adds the specified (name, value) pair to this record (without copying). Throws an exception if 
-   * a field of the specified name exists already.*/
-  public void add(JsonString name, JsonValue value)
+   * a field of the specified name exists already.
+   * Returns the index of the field.  */
+  public int add(JsonString name, JsonValue value)
   {
-  	addOrSet(name, value, true);
+  	return addOrSet(name, value, true);
   }
 
-  /** Adds or updates the specified (name, value) pair (without copying). */
-  public void set(JsonString name, JsonValue value)
+  /** Adds or updates the specified (name, value) pair (without copying).
+   * Returns the index of the field.  */
+  public int set(JsonString name, JsonValue value)
   {
-    addOrSet(name, value, false);
+    return addOrSet(name, value, false);
   }
   
   /** Adds or updates the specified (name, value) pair (without copying).
+   * Returns the index of the field. 
    * 
    * @param exceptionOnSet throw RuntimeException when field already present?
    */
-  protected void addOrSet(JsonString name, JsonValue value, boolean exceptionOnSet) {
+  protected int addOrSet(JsonString name, JsonValue value, boolean exceptionOnSet) {
     int index = indexOf(name);
     if (index >= 0) {
       if (exceptionOnSet) {
@@ -227,6 +230,7 @@ public class BufferedJsonRecord extends JsonRecord {
       hashIndex.put(name, index);
       isSorted = index==0 || (isSorted && names[index].compareTo(names[index-1]) > 0);
     }
+    return index;
   }
   
   /** Sets the value of the field with the specified index. without boundary checking. 
@@ -329,7 +333,36 @@ public class BufferedJsonRecord extends JsonRecord {
     hashIndex.clear();
     isSorted = true;
   }
-  
+
+  /** Remove field at index i. */
+  public void remove(int i)
+  {
+    assert i < size;
+    hashIndex.remove(names[i]);
+    size--;
+    int nmove = size - i;
+    if( nmove > 0 )
+    {
+      System.arraycopy(names, i+1, names, i, nmove);
+      System.arraycopy(values, i+1, values, i, nmove);
+      // fast reindex():
+      for( int j = i ; j < size ; j++ )
+      {
+        hashIndex.put(names[i], j);
+      }
+    }
+  }
+
+  /** Remove field called name, if it exists. */
+  public void remove(JsonString name)
+  {
+    int i = indexOf(name);
+    if( i >= 0 )
+    {
+      remove(i);
+    }
+  }
+
   /** Rearranges the names to be in sorted order. This will may the indexes of the fields.
    * After calling this methods, calls to {@link #iteratorSorted()} will be processed more
    * efficiently. */

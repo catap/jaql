@@ -63,6 +63,13 @@ public class PathReturn extends PathStep
     }
   }
 
+  @Override
+  public boolean rewriteFirstStep() throws Exception
+  {
+    PathExpr pe = (PathExpr)parent;
+    pe.replaceInParent(pe.child(0));
+    return true;
+  }
 
   /**
    * 

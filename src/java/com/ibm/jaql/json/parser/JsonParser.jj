@@ -391,7 +391,7 @@ JsonValue AtomVal() :
 {
     ( s=String()       { value = new JsonString(s); }
     | atom=<LONG>      { value = new JsonLong(atom.image); }
-    | atom=<REAL>      { value = new JsonDecimal(atom.image); } // TODO: flag for double vs decimal default
+    | atom=<REAL>      { value = new JsonDouble(atom.image); } // TODO: flag for double vs decimal default
     | atom=<DECIMAL>   { value = new JsonDecimal(atom.image); }
     | atom=<DOUBLE>    { value = new JsonDouble(atom.image); }
     | atom=<TRUE>      { value = JsonBool.TRUE; }
