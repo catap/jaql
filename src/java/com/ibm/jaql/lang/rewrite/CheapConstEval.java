@@ -44,45 +44,50 @@ public class CheapConstEval extends Rewrite
   @Override
   public boolean rewrite(Expr expr) throws Exception
   {
-    expr = expr.parent();
-    if( expr instanceof TopExpr )
+    boolean fired = false;
+    while( true )
     {
-      return false;
-    }
-    // TODO: we should have something like: while( expr instanceof StructuralExpr ) expr = expr.parent() (ie, the real expr is above)
-    if( expr instanceof BindingExpr ||
-        expr instanceof FieldExpr )
-    {
-      expr = expr.parent();
-    }
-
-    // A fast check for an compile-time computable expression that is 
-    // at most two levels from the leaf of the tree.
-    // The full check does a deep walk of the whole tree that we are trying to avoid.
-    if( expr.getProperty(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, false).maybeNot() )
-    {
-      return false;
-    }
-    for( Expr e: expr.children() )
-    {
-      for( Expr e2: e.children() )
+      expr = expr.parent(); // expr is now the parent of a ConstExpr
+      if( expr instanceof TopExpr )
       {
-        if( e2.numChildren() > 0 )
+        return fired;
+      }
+      // TODO: we should have something like: while( expr instanceof StructuralExpr ) expr = expr.parent() (ie, the real expr is above)
+      if( expr instanceof BindingExpr ||
+          expr instanceof FieldExpr )
+      {
+        expr = expr.parent();
+      }
+
+      // A fast check for an compile-time computable expression that is 
+      // at most two levels from the leaf of the tree.
+      // The full check does a deep walk of the whole tree that we are trying to avoid.
+      if( expr.getProperty(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, false).maybeNot() )
+      {
+        return fired;
+      }
+      for( Expr e: expr.children() )
+      {
+        for( Expr e2: e.children() )
         {
-          return false;
+          if( e2.numChildren() > 0 )
+          {
+            return fired;
+          }
         }
       }
+      // Do the full check, now that we know we don't have a big tree.
+      // All of this can go away when better property caching in the tree.
+      if( expr.isCompileTimeComputable().maybeNot() )
+      {
+        return fired;
+      }
+
+      JsonValue value = expr.compileTimeEval();
+      ConstExpr c = new ConstExpr(value);
+      expr.replaceInParent(c);
+      expr = c;
+      fired = true;
     }
-    // Do the full check, now that we know we don't have a big tree.
-    // All of this can go away when better property caching in the tree.
-    if( expr.isCompileTimeComputable().maybeNot() )
-    {
-      return false;
-    }
-    
-    JsonValue value = expr.compileTimeEval();
-    ConstExpr c = new ConstExpr(value);
-    expr.replaceInParent(c);
-    return true;
   }
 }

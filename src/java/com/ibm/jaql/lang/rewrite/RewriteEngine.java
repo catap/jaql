@@ -21,7 +21,6 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
-import com.ibm.jaql.lang.expr.top.MaterializeExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
@@ -149,7 +148,8 @@ public class RewriteEngine
     
     // We don't rewrite def expressions until they are actually evaluated.
     // FIXME: rewrites of MaterializeExpr inlines functions; disable those inlines
-    if (query instanceof AssignExpr || query instanceof MaterializeExpr)
+//    if (query instanceof AssignExpr || query instanceof MaterializeExpr)
+    if (query instanceof AssignExpr )
     {
       return query;
     }

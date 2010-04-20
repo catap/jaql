@@ -70,18 +70,20 @@ public final class ArgMinAgg extends AlgebraicAggregate
   @Override
   public void accumulate(JsonValue value) throws Exception
   {
-    if( value == null )
+    if( value != null )
     {
-      return;
-    }
-    fnArgs[0] = value;
-    keyFn.setArguments(fnArgs);
-    JsonValue key = keyFn.eval(context);
-    if( noMin || key.compareTo(min) < 0 )
-    {
-      noMin = false;
-      min = key.getCopy(min);
-      arg = value.getCopy(arg);
+      fnArgs[0] = value;
+      keyFn.setArguments(fnArgs);
+      JsonValue key = keyFn.eval(context);
+      if( key != null )
+      {
+        if( noMin || key.compareTo(min) < 0 )
+        {
+          noMin = false;
+          min = key.getCopy(min);
+          arg = value.getCopy(arg);
+        }
+      }
     }
   }
 
@@ -100,7 +102,7 @@ public final class ArgMinAgg extends AlgebraicAggregate
   @Override
   public JsonValue getFinal() throws Exception
   {
-    return arg;
+    return noMin ? null : arg;
   }
 
 }

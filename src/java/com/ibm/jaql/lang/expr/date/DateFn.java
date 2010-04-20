@@ -18,7 +18,9 @@ package com.ibm.jaql.lang.expr.date;
 import java.util.Map;
 
 import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -45,15 +47,29 @@ public class DateFn extends Expr
   @Override
   public JsonDate eval(Context context) throws Exception
   {
-    JsonString dateStr = (JsonString)exprs[0].eval(context);
-    JsonString formatStr = (JsonString)exprs[1].eval(context);
-    if( formatStr == null)
+    JsonValue val = exprs[0].eval(context);
+    if( val instanceof JsonString )
     {
-      date.set(dateStr.toString());
+      JsonString dateStr = (JsonString)exprs[0].eval(context);
+      JsonString formatStr = (JsonString)exprs[1].eval(context);
+      if( formatStr == null)
+      {
+        date.set(dateStr.toString());
+      }
+      else
+      {
+        date.set(dateStr.toString(), JsonDate.getFormat(formatStr.toString()));
+      }
+    }
+    else if( val instanceof JsonNumber )
+    {
+      long millis = ((JsonNumber)val).longValue();
+      date.set(millis);
     }
     else
     {
-      date.set(dateStr.toString(), JsonDate.getFormat(formatStr.toString()));
+      // TODO: else if( val instanceof JsonRecord ) accept dateParts output
+      throw new ClassCastException("date() expects a string or long");
     }
     return date;
   }

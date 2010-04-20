@@ -29,6 +29,7 @@ import com.ibm.jaql.lang.expr.function.JsonValueParameters;
  */
 public final class ArgMaxAgg extends AlgebraicAggregate
 {
+  private boolean noMax;
   private JsonValue max;
   private JsonValue arg;
   private Function keyFn;
@@ -70,29 +71,27 @@ public final class ArgMaxAgg extends AlgebraicAggregate
   @Override
   public void accumulate(JsonValue value) throws Exception
   {
-    if( value == null )
+    if( value != null )
     {
-      return;
-    }
-    fnArgs[0] = value;
-    keyFn.setArguments(fnArgs);
-    JsonValue key = keyFn.eval(context);
-    if( max == null )
-    {
-      max = key.getCopy(null);
-      arg = value.getCopy(null);
-    }
-    else if( key.compareTo(max) > 0 )
-    {
-      max = key.getCopy(max);
-      arg = value.getCopy(arg);
+      fnArgs[0] = value;
+      keyFn.setArguments(fnArgs);
+      JsonValue key = keyFn.eval(context);
+      if( key != null )
+      {
+        if( noMax || key.compareTo(max) > 0 )
+        {
+          noMax = false;
+          max = key.getCopy(max);
+          arg = value.getCopy(arg);
+        }
+      }
     }
   }
 
   @Override
   public JsonValue getPartial() throws Exception
   {
-    return arg;
+    return noMax ? null : arg;
   }
 
   @Override
@@ -104,6 +103,6 @@ public final class ArgMaxAgg extends AlgebraicAggregate
   @Override
   public JsonValue getFinal() throws Exception
   {
-    return arg;
+    return noMax ? null : arg;
   }
 }

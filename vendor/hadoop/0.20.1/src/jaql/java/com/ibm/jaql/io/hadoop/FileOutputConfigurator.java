@@ -64,7 +64,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
     FileOutputFormat.setOutputPath(conf, outPath.getParent());
     
     // HACK: copied from FileOutputFormat since it is package protected.
-    Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath.getName());
+    Path workOutputDir = new Path(fs.getWorkingDirectory(), outPath.getName());
     conf.set("mapred.work.output.dir", workOutputDir.toString());
     if (!fs.exists(workOutputDir))
     {

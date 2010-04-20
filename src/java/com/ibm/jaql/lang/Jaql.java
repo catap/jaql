@@ -51,6 +51,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.MaterializeExpr;
+import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
@@ -278,7 +279,9 @@ public class Jaql implements CoreJaql
     {
       try
       {
-        Expr e = new MaterializeExpr(parser.env, var);
+        Expr e = new MaterializeExpr(var);
+        e = new QueryExpr(parser.env, e);
+        e = env.importGlobals(e);
         if( doRewrite )
         {
           e = rewriter.run(e);

@@ -1,5 +1,5 @@
 {
-	version: 	0.1,
+	version: 	1,
 	scripts:	["fuzzy_join.jaql"],
 	export:		["$fuzzy_join", "$normalize", "cleanTitle"]
 }

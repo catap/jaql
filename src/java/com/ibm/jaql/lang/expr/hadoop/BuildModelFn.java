@@ -30,6 +30,7 @@ import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
 import com.ibm.jaql.io.hadoop.JsonHolder;
+import com.ibm.jaql.io.hadoop.JsonHolderTempValue;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -38,6 +39,7 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -113,30 +115,33 @@ public class BuildModelFn extends MapReduceBaseExpr
     
     prepareFunction("partial", 2, partialFn, 0);
     
-    JsonValue oldModel;
+    JsonValue oldModel = null;
     long iteration = 0;
     JsonBool converged = JsonBool.FALSE;
     do
     {
       // TODO: we should move the model around using hdfs files instead of serializing
-      oldModel = model;
+      oldModel = JsonUtil.getCopy(model,oldModel);
       
-      iteration++;
-      if( iteration > maxIterations )
+      if( iteration >= maxIterations )
       {
         break;
       }
+      iteration++;
       
       conf.set(MODEL_NAME, oldModel.toString());
 
       // This causes the output file to be deleted.
+      
+      JsonValue tempArgs = JsonUtil.getCopy(outArgs, null);// TODO: there's a bug in the I/O layer that causes args to be modified, so we'll always copy.
       HadoopOutputAdapter outAdapter = (HadoopOutputAdapter) 
-         JaqlUtil.getAdapterStore().output.getAdapter(outArgs);
+         JaqlUtil.getAdapterStore().output.getAdapter(tempArgs);
       outAdapter.setParallel(conf);
 
       JobClient.runJob(conf);
      
-      final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(outArgs);
+      tempArgs = JsonUtil.getCopy(outArgs, tempArgs);// TODO: there's a bug in the I/O layer that causes args to be modified, so we'll always copy.
+      final InputAdapter adapter = (InputAdapter) JaqlUtil.getAdapterStore().input.getAdapter(tempArgs);
       adapter.open();
       ClosableJsonIterator reader = adapter.iter();
       combineFn.setArguments(reader, oldModel);
@@ -209,7 +214,7 @@ public class BuildModelFn extends MapReduceBaseExpr
       {
         partialFn.setArguments(new RecordReaderValueIter(input), oldModel);
         JsonValue newModel = partialFn.eval(context);
-        output.collect(new JsonHolder(), new JsonHolder(newModel));
+        output.collect(null, new JsonHolderTempValue(newModel));
       }
       catch (IOException ex)
       {

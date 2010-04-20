@@ -19,7 +19,6 @@ import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -86,8 +85,8 @@ public class RangeExpr extends IterExpr
     if (exprs[0] instanceof ConstExpr && exprs[1] instanceof ConstExpr)
     {
       // We only consider small ranges as a constant.
-      long start = ((JsonLong) ((ConstExpr) exprs[0]).value).get();
-      long end = ((JsonLong) ((ConstExpr) exprs[1]).value).get();
+      long start = ((JsonNumber) ((ConstExpr) exprs[0]).value).longValueExact();
+      long end = ((JsonNumber) ((ConstExpr) exprs[1]).value).longValueExact();
       if (end - start < 10)
       {
         result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);

@@ -69,7 +69,7 @@ public final class BuiltInFunction extends Function
   }
   
   @Override
-  protected String formatError(String msg)
+  public String formatError(String msg)
   {
     return "In call of builtin function " + descriptor.getName() + ": " + msg;
   }

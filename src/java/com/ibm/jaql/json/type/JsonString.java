@@ -153,11 +153,29 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
     return toString().endsWith(suffix.toString());
   }
   
-  /** Find the first occurrence of character <code>c</code>. If found, return the byte index else 
-   * return -1. This only works on 7-bit ascii values right now! */
+  /** Find the first occurrence of character <code>c</code> starting at <code>fromIndex</code>. */
+  public int indexOf(char c, int fromIndex)
+  {
+    return toString().indexOf(c, fromIndex);
+  }
+
+  /** Find the first occurrence of character <code>c</code>. */
   public int indexOf(char c)
   {
-    return toString().indexOf(c);
+    return indexOf(c,0);
+  }
+
+  /** Find the first occurrence of <code>toFind</code> starting at <code>fromIndex</code>. */
+  public int indexOf(JsonString toFind, int fromIndex)
+  {
+    if( toFind == null ) return -1;
+    return toString().indexOf(toFind.toString(), fromIndex);
+  }
+
+  /** Find the first occurrence of <code>toFind</code>. */
+  public int indexOf(JsonString toFind)
+  {
+    return indexOf(toFind, 0);
   }
 
   /** Get a substring of this string.

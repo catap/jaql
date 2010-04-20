@@ -46,14 +46,14 @@ public class DefaultModule extends Module {
 		
 		//Create file list
 		ensureMetaData();
-		if(!meta.containsKey(JAQL_FIELD)) {
+		if(!meta.containsKey(SCRIPTS_FIELD)) {
 			//All files inside the jaql directory are assumed to be jaql
 			//independent of the file suffix
 			return jaqlDir.listFiles();
 		} else {
 			//Load files based on meta data
 			ArrayList<File> files = new ArrayList<File>();
-			JsonArray names = (JsonArray) meta.get(JAQL_FIELD);
+			JsonArray names = (JsonArray) meta.get(SCRIPTS_FIELD);
 			for (JsonValue name : names) {
 				File f = new File(jaqlDir, name.toString());
 				if(!f.exists()) {

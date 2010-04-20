@@ -29,6 +29,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.util.Bool3;
@@ -126,7 +127,13 @@ public class PathFieldValue extends PathStep
     {
       return false;
     }
-    pe.replaceInParent(fieldValue);
+    // Replace the path expression input with the field value, and 
+    // try to rewrite the next step.  Even if that cannot rewrite, we
+    // return true to signal that we changed the tree.
+    PathStep next = nextStep();
+    pe.setChild(0, fieldValue);
+    pe.setChild(1, next);
+    next.rewriteFirstStep();
     return true;
   }
 
@@ -173,7 +180,7 @@ public class PathFieldValue extends PathStep
    */
   public static Expr byVarName(Var recVar, Var fieldNameVar)
   {
-    return byName(recVar, fieldNameVar.name());
+    return byName(recVar, NameValueBinding.fieldName(fieldNameVar));
   }
   
   // -- schema ------------------------------------------------------------------------------------

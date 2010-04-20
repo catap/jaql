@@ -88,7 +88,7 @@ public class JaqlFunction extends Function
   }
 
   @Override
-  protected String formatError(String msg)
+  public String formatError(String msg)
   {
     String result = "In call of Jaql function with signature fn(";  
     String sep="";

@@ -28,7 +28,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 public class ShiftFn extends IterExpr
 {
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par23
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par33
   {
     public Descriptor()
     {
@@ -42,12 +42,14 @@ public class ShiftFn extends IterExpr
     super(inputs);
   }
 
-  /**
-   * @return
-   */
-  public final Expr beforeExpr()
+  public final Expr inputExpr()
   {
     return exprs[0];
+  }
+
+  public final Expr beforeExpr()
+  {
+    return exprs[1];
   }
 
   /**
@@ -55,7 +57,7 @@ public class ShiftFn extends IterExpr
    */
   public final Expr afterExpr()
   {
-    return exprs[1];
+    return exprs[2];
   }
 
   @Override
@@ -73,13 +75,9 @@ public class ShiftFn extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
-    final JsonIterator iter = exprs[0].iter(context);
-    if( iter.isNull() )
-    {
-      return JsonIterator.NULL;
-    }
+    final JsonIterator iter = inputExpr().iter(context);
     
-    JsonNumber beforeNum = (JsonNumber)exprs[1].eval(context);
+    JsonNumber beforeNum = (JsonNumber)beforeExpr().eval(context);
     final long before;
     if( beforeNum == null )
     {
@@ -95,7 +93,7 @@ public class ShiftFn extends IterExpr
     }
 
     final long after;
-    JsonNumber afterNum = (JsonNumber)exprs[2].eval(context);
+    JsonNumber afterNum = (JsonNumber)afterExpr().eval(context);
     if( afterNum == null )
     {
       after = 0;
@@ -140,7 +138,7 @@ public class ShiftFn extends IterExpr
       public boolean moveNext() throws Exception
       {
         if (!eof) {
-          eof = iter.moveNext();
+          eof = !iter.moveNext();
         }
         if( eof )
         {

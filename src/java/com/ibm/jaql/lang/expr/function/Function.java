@@ -48,7 +48,7 @@ public abstract class Function extends JsonAtom
   
   /** Produces an error string including the specified message and some information about this
    * function. */
-  protected abstract String formatError(String msg);
+  public abstract String formatError(String msg);
   
   /** Returns a text representation of this function. */
   public String getText()
@@ -188,7 +188,7 @@ public abstract class Function extends JsonAtom
     }
     int n = getNumPassedArguments(length);
     prepare(n);
-    for (int i=0; i<args.length; i++)
+    for (int i=0; i<length; i++)
     {
       setArgument(i, args[i]);
     }

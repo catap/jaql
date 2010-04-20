@@ -27,6 +27,8 @@ import com.ibm.jaql.lang.expr.agg.AvgAgg;
 import com.ibm.jaql.lang.expr.agg.CombineExpr;
 import com.ibm.jaql.lang.expr.agg.CountAgg;
 import com.ibm.jaql.lang.expr.agg.CovStatsAgg;
+import com.ibm.jaql.lang.expr.agg.ExpSmoothAgg;
+import com.ibm.jaql.lang.expr.agg.IcebergCubeInMemory;
 import com.ibm.jaql.lang.expr.agg.InferElementSchemaAgg;
 import com.ibm.jaql.lang.expr.agg.JavaUdaCallFn;
 import com.ibm.jaql.lang.expr.agg.JavaUdaFn;
@@ -35,6 +37,7 @@ import com.ibm.jaql.lang.expr.agg.MinAgg;
 import com.ibm.jaql.lang.expr.agg.PickNAgg;
 import com.ibm.jaql.lang.expr.agg.SingletonAgg;
 import com.ibm.jaql.lang.expr.agg.SumAgg;
+import com.ibm.jaql.lang.expr.agg.TopNAgg;
 import com.ibm.jaql.lang.expr.agg.UdaCallFn;
 import com.ibm.jaql.lang.expr.agg.UdaFn;
 import com.ibm.jaql.lang.expr.agg.VectorSumAgg;
@@ -48,16 +51,23 @@ import com.ibm.jaql.lang.expr.array.EnumerateExpr;
 import com.ibm.jaql.lang.expr.array.ExistsFn;
 import com.ibm.jaql.lang.expr.array.Lag1Fn;
 import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.NextElementFn;
 import com.ibm.jaql.lang.expr.array.PairFn;
 import com.ibm.jaql.lang.expr.array.PairwiseFn;
 import com.ibm.jaql.lang.expr.array.PowersetFn;
+import com.ibm.jaql.lang.expr.array.PrevAndNextElementFn;
+import com.ibm.jaql.lang.expr.array.PrevElementFn;
 import com.ibm.jaql.lang.expr.array.RemoveElementFn;
 import com.ibm.jaql.lang.expr.array.ReplaceElementFn;
 import com.ibm.jaql.lang.expr.array.ReverseFn;
 import com.ibm.jaql.lang.expr.array.RowwiseFn;
 import com.ibm.jaql.lang.expr.array.ShiftFn;
 import com.ibm.jaql.lang.expr.array.SliceFn;
+import com.ibm.jaql.lang.expr.array.SlidingWindowBySizeFn;
+import com.ibm.jaql.lang.expr.array.SlidingWindowFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
+import com.ibm.jaql.lang.expr.array.TumblingWindowBySizeFn;
+import com.ibm.jaql.lang.expr.array.TumblingWindowFn;
 import com.ibm.jaql.lang.expr.binary.Base64Fn;
 import com.ibm.jaql.lang.expr.binary.HexFn;
 import com.ibm.jaql.lang.expr.catalog.CatalogInsertFn;
@@ -87,11 +97,11 @@ import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
 import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
 import com.ibm.jaql.lang.expr.hadoop.ChainedMapFn;
+import com.ibm.jaql.lang.expr.hadoop.LoadJobConfExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.hadoop.NativeMapReduceExpr;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
-import com.ibm.jaql.lang.expr.hadoop.LoadJobConfExpr;
 import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
@@ -113,12 +123,14 @@ import com.ibm.jaql.lang.expr.io.HdfsFn;
 import com.ibm.jaql.lang.expr.io.HdfsShellExpr;
 import com.ibm.jaql.lang.expr.io.HttpFn;
 import com.ibm.jaql.lang.expr.io.HttpGetExpr;
+import com.ibm.jaql.lang.expr.io.InputSplitsFn;
 import com.ibm.jaql.lang.expr.io.JaqlTempFn;
 import com.ibm.jaql.lang.expr.io.LinesFn;
 import com.ibm.jaql.lang.expr.io.LocalReadFn;
 import com.ibm.jaql.lang.expr.io.LocalWriteFn;
 import com.ibm.jaql.lang.expr.io.ReadAdapterRegistryExpr;
 import com.ibm.jaql.lang.expr.io.ReadFn;
+import com.ibm.jaql.lang.expr.io.ReadSplitFn;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.UnregisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.WriteAdapterRegistryExpr;
@@ -167,6 +179,7 @@ import com.ibm.jaql.lang.expr.regex.RegexSpansFn;
 import com.ibm.jaql.lang.expr.regex.RegexTestFn;
 import com.ibm.jaql.lang.expr.schema.AssertFn;
 import com.ibm.jaql.lang.expr.schema.CheckFn;
+import com.ibm.jaql.lang.expr.schema.DataGuideFn;
 import com.ibm.jaql.lang.expr.schema.SchemaOfExpr;
 import com.ibm.jaql.lang.expr.schema.TypeOfExpr;
 import com.ibm.jaql.lang.expr.span.SpanContainsFn;
@@ -179,12 +192,16 @@ import com.ibm.jaql.lang.expr.string.JsonFn;
 import com.ibm.jaql.lang.expr.string.SerializeFn;
 import com.ibm.jaql.lang.expr.string.StartsWithFn;
 import com.ibm.jaql.lang.expr.string.StrJoinFn;
+import com.ibm.jaql.lang.expr.string.StrLenFn;
+import com.ibm.jaql.lang.expr.string.StrPosFn;
+import com.ibm.jaql.lang.expr.string.StrPosListFn;
+import com.ibm.jaql.lang.expr.string.StrSplitFn;
 import com.ibm.jaql.lang.expr.string.StrSplitNFn;
-import com.ibm.jaql.lang.expr.string.SplitFn;
 import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.BatchFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
+import com.ibm.jaql.lang.expr.system.LsFn;
 import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
@@ -297,14 +314,24 @@ public final class SystemNamespace extends Namespace {
     register(new CombineExpr.Descriptor());
     register(new ArgMaxAgg.Descriptor());
     register(new ArgMinAgg.Descriptor());
+    register(new TopNAgg.Descriptor());
     register(new CovStatsAgg.Descriptor()); // experimental
     register(new VectorSumAgg.Descriptor()); // experimental
     register(new InferElementSchemaAgg.Descriptor()); // experimental
+    register(new ExpSmoothAgg.Descriptor());
     register(new GroupCombineFn.Descriptor()); // experimental
+    register(new IcebergCubeInMemory.Descriptor()); // experimental
     register(new TeeExpr.Descriptor());
     register(new PerPartitionFn.Descriptor());
     register(new PerfFn.Descriptor());
     register(new ShiftFn.Descriptor());
+    register(new PrevElementFn.Descriptor());
+    register(new NextElementFn.Descriptor());
+    register(new PrevAndNextElementFn.Descriptor());
+    register(new TumblingWindowFn.Descriptor()); // experimental
+    register(new TumblingWindowBySizeFn.Descriptor()); // experimental
+    register(new SlidingWindowFn.Descriptor()); // experimental
+    register(new SlidingWindowBySizeFn.Descriptor()); // experimental
     register(new ModFn.Descriptor());
     register(new DivFn.Descriptor());
     register(new AbsFn.Descriptor());
@@ -343,11 +370,14 @@ public final class SystemNamespace extends Namespace {
     register(new StartsWithFn.Descriptor());
     register(new EndsWithFn.Descriptor());
     register(new SubstringFn.Descriptor());
+    register(new StrLenFn.Descriptor());
+    register(new StrPosFn.Descriptor());
+    register(new StrPosListFn.Descriptor());
     register(new BatchFn.Descriptor());
     register(new SerializeFn.Descriptor());
     register(new StrcatFn.Descriptor());
     register(new StrSplitNFn.Descriptor());
-    register(new SplitFn.Descriptor());
+    register(new StrSplitFn.Descriptor());
     register(new StrJoinFn.Descriptor());
     register(new ConvertFn.Descriptor());
     register(new JsonFn.Descriptor());
@@ -400,6 +430,8 @@ public final class SystemNamespace extends Namespace {
     register(new WriteFn.Descriptor());
     register(new LocalWriteFn.Descriptor());
     register(new LocalReadFn.Descriptor());
+    register(new InputSplitsFn.Descriptor());
+    register(new ReadSplitFn.Descriptor());
     register(new HdfsFn.Descriptor());
     register(new DelFn.Descriptor());
     register(new LinesFn.Descriptor());
@@ -430,6 +462,7 @@ public final class SystemNamespace extends Namespace {
     register(new ReadConfExpr.Descriptor());
     register(new LoadJobConfExpr.Descriptor());
     // lower level shell access
+    register(new LsFn.Descriptor());
     register(new HdfsShellExpr.Descriptor());
     register(new HBaseShellExpr.Descriptor());
     register(new SharedHashtableNFn.Descriptor()); // TODO: experimental
@@ -446,6 +479,7 @@ public final class SystemNamespace extends Namespace {
     register(new ExprTreeExpr.Descriptor());
     register(new HashExpr.Descriptor());
     register(new LongHashExpr.Descriptor());
+    register(new DataGuideFn.Descriptor());
     register(new JavaUdfExpr.Descriptor());
     register(new ExamplesFn.Descriptor());
     //register(new TestFn.Descriptor());
