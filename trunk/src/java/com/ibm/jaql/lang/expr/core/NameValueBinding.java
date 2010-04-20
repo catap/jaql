@@ -111,7 +111,21 @@ public class NameValueBinding extends FieldExpr
    */
   public NameValueBinding(Var var, boolean required)
   {
-    this(var.name(), new VarExpr(var), required);
+    this(fieldName(var), new VarExpr(var), required);
+  }
+
+  /**
+   * Return the var name as a field name.  
+   * It strings any leading $ from the name for backwards compatiblity.  
+   */
+  public static String fieldName(Var var)
+  {
+    String name = var.name();
+    if( name.length() > 0 && name.charAt(0) == '$' )
+    {
+      return name.substring(1);
+    }
+    return name;
   }
 
   /*

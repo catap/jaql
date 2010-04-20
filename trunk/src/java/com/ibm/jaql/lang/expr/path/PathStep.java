@@ -231,8 +231,16 @@ public abstract class PathStep extends Expr
       }
       else // field name could not be determined
       {
-        PathStepSchema nextSchema = nextStep.getSchema(
-            new RecordSchema(new RecordSchema.Field[0], recordSchema.elements()));
+        Schema elSchema = recordSchema.elements();
+        if( elSchema == null )
+        { 
+          elSchema = SchemaFactory.nullSchema();
+        }
+        else
+        {
+          elSchema = SchemaFactory.nullable(elSchema);
+        }
+        PathStepSchema nextSchema = nextStep.getSchema(elSchema);
         return new PathStepSchema(nextSchema.schema, nextSchema.hasData.and(Bool3.UNKNOWN));
       }
     }

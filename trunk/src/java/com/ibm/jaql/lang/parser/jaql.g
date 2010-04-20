@@ -105,11 +105,10 @@ parse returns [Expr r=null]
 // a statement without statement delimiter
 stmt returns [Expr r=null]
     { Var v; }
-    : (kwMaterialize var) => kwMaterialize v=var    { r = new MaterializeExpr(env, v); }
-    | (kwImport id)       => r=importExpr
+    : (kwImport id)       => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
     | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(r); }
-    | r=topAssign                           
+    | r=topAssign
     ;
 
 // namespace import
@@ -132,12 +131,16 @@ importExpr returns [Expr r=null]
 	;
     
 // top level assignment, creates global variables and inlines referenced globals
-topAssign returns [Expr r]
-    { String v; }
-    : (id "=") => v=id "=" r=rvalue  
-                  { r = new AssignExpr(env, env.scopeGlobal(v), r); } // TODO: expr name should reflect global var
-                | (kwRegisterFunction) => r=registerFunction
-                | r=pipe { r = new QueryExpr(env, env.importGlobals(r)); } 
+topAssign returns [Expr r=null]
+    { String n; Var v; }
+    : (id "=") => n=id "=" r=rvalue  
+                  { r = new AssignExpr(env, env.scopeGlobal(n), r); } // TODO: expr name should reflect global var
+    | (kwRegisterFunction) => r=registerFunction
+    | (kwMaterialize) => kwMaterialize v=var  
+                                  ( "=" r=expr { r = new MaterializeExpr(v, r); }
+                                  | /*empty*/  { r = new MaterializeExpr(v); }
+                                  ) { r = env.importGlobals(new QueryExpr(env, r)); }
+    | r=pipe { r = env.importGlobals(new QueryExpr(env, r)); } 
     ;
 
 // local assignment, creates local variables
@@ -253,10 +256,7 @@ instanceofExpr returns [Expr r]
 
 addExpr returns [Expr r]
     { Expr s; int op; }
-    : r=multExpr 
-      ( (addOp) => op=addOp s=addExpr  { r = new MathExpr(op,r,s); }
-                 | () 
-      ) 
+    : r=multExpr (op=addOp s=multExpr  { r = new MathExpr(op,r,s); })*
     ;
 
 // infix additive operators

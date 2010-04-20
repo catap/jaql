@@ -15,16 +15,17 @@
  */
 package com.ibm.jaql.lang.expr.date;
 
-import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonEnum;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
@@ -39,11 +40,61 @@ public class DatePartsFn extends Expr
     }
   }
   
-  protected GregorianCalendar cal = new GregorianCalendar();
+  public static enum DatePartField implements JsonEnum
+  {
+    MILLIS("millis"),
+    YEAR("year"),
+    MONTH("month"),
+    DAY("day"),
+    HOUR("hour"),
+    MINUTE("minute"),
+    SECOND("second"),
+    ZONE_OFFSET("zoneOffset"),
+    DAY_OF_WEEK("dayOfWeek");
+    
+    public static final JsonString[] names =
+      JsonUtil.jsonStrings(DatePartField.values());
+    
+    protected final JsonString name;
+    
+    private DatePartField(String name) 
+    {
+      this.name = new JsonString(name);
+    }
+
+    @Override
+    public JsonString jsonString() 
+    {
+      return name; 
+    }
+  }
+
+  protected GregorianCalendar cal;
+  protected BufferedJsonRecord rec;
+  protected MutableJsonLong[] values;
   
   public DatePartsFn(Expr[] exprs)
   {
     super(exprs);
+  }
+  
+  protected void init()
+  {
+    // TODO: add timezone to JsonDate, add optional param for output zone
+    cal = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+    values = new MutableJsonLong[] {
+        new MutableJsonLong(), // millis
+        new MutableJsonLong(), // year
+        new MutableJsonLong(), // month
+        new MutableJsonLong(), // day
+        new MutableJsonLong(), // hour
+        new MutableJsonLong(), // minute
+        new MutableJsonLong(), // second
+        new MutableJsonLong(), // timezone offset
+        new MutableJsonLong()  // day of week 
+    };
+    rec = new BufferedJsonRecord(values.length);
+    rec.set(DatePartField.names, values, values.length, false);
   }
 
   @Override
@@ -54,21 +105,22 @@ public class DatePartsFn extends Expr
     {
       return null;
     }
-    BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: mucho memory
-    cal.setTimeInMillis(d.get());
-    // TODO: muchissimo memory; make static JsonStrings?
-    rec.add(new JsonString("millis"), new JsonLong(d.get()));
-    rec.add(new JsonString("year"), new JsonLong(cal.get(Calendar.YEAR)));
-    rec.add(new JsonString("month"), new JsonLong(cal.get(Calendar.MONTH)+1));
-    rec.add(new JsonString("day"), new JsonLong(cal.get(Calendar.DAY_OF_MONTH)));
-    rec.add(new JsonString("hour"), new JsonLong(cal.get(Calendar.HOUR_OF_DAY)));
-    rec.add(new JsonString("minute"), new JsonLong(cal.get(Calendar.MINUTE)));
-    BigDecimal dec = 
-      new BigDecimal( cal.get(Calendar.SECOND) * 1000 + cal.get(Calendar.MILLISECOND))
-       .divide(new BigDecimal(1000));
-    rec.add(new JsonString("second"), new JsonDecimal(dec));
-    rec.add(new JsonString("offset"), new JsonLong(cal.get(Calendar.ZONE_OFFSET) / 1000));
-    // TODO: add timezone to JDate
+    if( cal == null )
+    {
+      init();
+    }
+    long millis = d.get();
+    cal.setTimeInMillis(millis);
+    // TODO: add timezone to JsonDate, add optional param for output zone
+    values[DatePartField.MILLIS.ordinal()].set(millis);
+    values[DatePartField.YEAR.ordinal()  ].set(cal.get(Calendar.YEAR));
+    values[DatePartField.MONTH.ordinal() ].set(cal.get(Calendar.MONTH)+1);
+    values[DatePartField.DAY.ordinal()   ].set(cal.get(Calendar.DAY_OF_MONTH));
+    values[DatePartField.HOUR.ordinal()  ].set(cal.get(Calendar.HOUR_OF_DAY));
+    values[DatePartField.MINUTE.ordinal()].set(cal.get(Calendar.MINUTE));
+    values[DatePartField.SECOND.ordinal()].set(cal.get(Calendar.SECOND));
+    values[DatePartField.ZONE_OFFSET.ordinal()].set(cal.get(Calendar.ZONE_OFFSET) / 1000);
+    values[DatePartField.DAY_OF_WEEK.ordinal()].set(cal.get(Calendar.DAY_OF_WEEK) - 1); // Sunday=0, Saturday=6
     
     return rec;
   }

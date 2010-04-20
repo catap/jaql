@@ -78,8 +78,8 @@ public class JavaUdfFunction extends Function
     return c;
   }
 	 
-	@Override
-  protected String formatError(String msg)
+  @Override
+  public String formatError(String msg)
   {
     return "In call of Java UDF " + c.getName() + ": " + msg;
   }
@@ -87,7 +87,7 @@ public class JavaUdfFunction extends Function
 	
   // -- evaluation / inlining ---------------------------------------------------------------------
 	
-	@Override
+  @Override
   public void prepare(int numArgs) {
     //TODO: Add support for init function in udf's
     if (args.length != numArgs)

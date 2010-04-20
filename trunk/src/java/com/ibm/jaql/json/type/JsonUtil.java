@@ -209,4 +209,19 @@ public class JsonUtil
       }
     }
   }
+  
+  /**
+   * Convert an array of JsonEnum into an array of JsonString.
+   * For an enum, this is called as JsonUtil.jsonStrings(myenum.values());
+   */
+  public static JsonString[] jsonStrings(JsonEnum[] jenums)
+  {
+    JsonString[] names = new JsonString[jenums.length];
+    for(int i = 0 ; i < jenums.length ; i++)
+    {
+      names[i] = jenums[i].jsonString();
+    }
+    return names;
+  }
+
 }

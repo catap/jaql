@@ -379,8 +379,8 @@ public final class Var extends Object
       value = null; // set undefined
       return iter;
     }
-    JsonArray arr = (JsonArray) getValue(context); // cast error intentionally
-                                                   // possible
+    JsonValue val = getValue(context);
+    JsonArray arr = (JsonArray) val; // cast error intentionally possible
     if (arr == null)
     {
       return JsonIterator.NULL;
