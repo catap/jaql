@@ -80,7 +80,7 @@ public class ReadSplitFn extends AbstractReadExpr
     JsonString jsplitClassName = (JsonString)splitRec.get(InputSplitsFn.CLASS_TAG);
     Class<? extends InputSplit> splitCls = 
       (Class<? extends InputSplit>)ClassLoaderMgr.resolveClass(jsplitClassName.toString());
-    InputSplit split = ReflectionUtils.newInstance(splitCls, conf);
+    InputSplit split = (InputSplit)ReflectionUtils.newInstance(splitCls, conf);
     
     DataInputBuffer in = new DataInputBuffer();
     JsonBinary rawSplit = (JsonBinary)splitRec.get(InputSplitsFn.SPLIT_TAG);
