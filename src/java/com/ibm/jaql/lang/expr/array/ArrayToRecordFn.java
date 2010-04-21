@@ -18,9 +18,10 @@ package com.ibm.jaql.lang.expr.array;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
@@ -53,6 +54,11 @@ public class ArrayToRecordFn extends Expr
     return SchemaFactory.recordSchema();
   }
 
+  // Runtime state:
+  protected BufferedJsonRecord rec;
+  protected JsonString[] names;
+  protected JsonValue[] values;
+
   /*
    * (non-Javadoc)
    * 
@@ -60,13 +66,34 @@ public class ArrayToRecordFn extends Expr
    */
   public JsonRecord eval(final Context context) throws Exception
   {
-    final JsonIterator names  = exprs[0].iter(context);
-    final JsonIterator values = exprs[1].iter(context);
-    BufferedJsonRecord rec = new BufferedJsonRecord(); // TODO: memory
-    while( names.moveNext() && values.moveNext() )
+    JsonArray jnames  = (JsonArray)exprs[0].eval(context);
+    JsonArray jvalues = (JsonArray)exprs[1].eval(context);
+    long numNames = jnames.count();
+    long numValues = jvalues.count();
+    if( numValues > numNames )
     {
-      rec.add((JsonString)names.current(), values.current());
+      throw new RuntimeException("more values than names...");
     }
+    // numValues <= numNames 
+    int len = (int)numNames;
+    if( rec == null )
+    {
+      rec = new BufferedJsonRecord();
+      names  = new JsonString[len];
+      values = new JsonValue[len];
+    }
+    else if( names.length < len )
+    {
+      names  = new JsonString[len];
+      values = new JsonValue[len];
+    }
+    for(int i = (int)numValues ; i < len ; i++)
+    {
+      values[i] = null;
+    }
+    jnames.getAll(names);
+    jvalues.getAll(values);
+    rec.set(names, values, len);
     return rec;
   }
 }
