@@ -34,6 +34,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.hadoop.HadoopShim;
 
 /**
  * ls(glob) 
@@ -123,7 +124,7 @@ public class LsFn extends IterExpr
     final MutableJsonString owner = new MutableJsonString();
     final MutableJsonString group = new MutableJsonString();
     final MutableJsonString permission = new MutableJsonString();
-    JsonValue[] values = new JsonValue[] {
+    final JsonValue[] values = new JsonValue[] {
         accessTime, modifyTime, length, blockSize,
         replication, path, owner, group, permission
     };
@@ -144,7 +145,16 @@ public class LsFn extends IterExpr
         
         FileStatus stat = stats[i++];
         // fs.getUri().toString();
-        accessTime.set(stat.getAccessTime());
+        long x = HadoopShim.getAccessTime(stat);
+        if( x <= 0 )
+        {
+          values[LsField.ACCESS_TIME.ordinal()] = null;
+        }
+        else
+        {
+          accessTime.set(x);
+          values[LsField.ACCESS_TIME.ordinal()] = accessTime;
+        }
         modifyTime.set(stat.getModificationTime());
         length.set(stat.getLen());
         blockSize.set(stat.getBlockSize());
