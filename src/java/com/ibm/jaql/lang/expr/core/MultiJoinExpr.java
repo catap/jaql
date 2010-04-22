@@ -765,6 +765,10 @@ public class MultiJoinExpr extends MacroExpr
         makeEdges(pred.child(0));
         makeEdges(pred.child(1));
       }
+      else
+      {
+        throw new RuntimeException("Join condition limited to only 'and' and '==' at this time");
+      }
     }
     
 //    private void makeJoins()
