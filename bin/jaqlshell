@@ -10,10 +10,10 @@ if [ "$JAQL_HOME" = "" ]; then
 fi
 export PATH=${JAQL_HOME}/bin:$PATH
 
-# jline can't restore terminal settings correctly when using IBM JDK on Linux
-# platform. So terminal settings are saved here and restored when exiting Jaql
-# shell. And saving of terminal settings must be done before the following line
-# invoking JaqlShellGetJars class.
+# jline can't restore terminal settings correctly when using IBM JDK on some
+# Linux platforms. So terminal settings are saved here and restored when
+# exiting Jaql shell. And saving of terminal settings must be done before the
+# following line invoking JaqlShellGetJars class.
 STTY_STATE=`stty -g 2>/dev/null` 
 
 # add user-defined jars to classpath
