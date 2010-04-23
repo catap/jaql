@@ -61,7 +61,7 @@ options
 
 === Know Limitations ===
 
-Terminals might mess up if {{{CTRL-C}}} is issued when using Jaql shell on some linux platforms. {{{jaql -Djline.terminal=jline.UnsupportedTerminal JaqlShell}}} can be used instead of {{{jaqlshell}}} to avoid this problem. In this way, jline will be disabled.
+Terminals might mess up if {{{CTRL-C}}} is issued when using Jaql shell with IBM JDK on some Linux platforms. {{{jaql -Djline.terminal=jline.UnsupportedTerminal JaqlShell}}} can be used instead of {{{jaqlshell}}} to avoid this problem. In this way, jline will be disabled.
 
 = Examples =
 
