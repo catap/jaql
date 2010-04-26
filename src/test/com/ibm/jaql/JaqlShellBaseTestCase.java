@@ -221,13 +221,12 @@ public abstract class JaqlShellBaseTestCase {
     System.arraycopy(arguments, 0, complete, 2, len);
     BashScriptRunner runner = new BashScriptRunner(complete, tmp);
     /*
-     * On windows platform, cygwin is used. As a result, stty commands in
-     * bin/jaqlshell script will be executed. Since there is not a terminal when
-     * bin/jaqlshell is launched from Java program. These stty commands will
-     * give a non-zero exit value. So exit value is not checked on windows.
+     * The last statement in bin/jaqlshell is a stty command. Since there is
+     * not a terminal when bin/jaqlshell is launched from a forked Java process
+     * for junit test in ANT. This stty command will give a non-zero exit
+     * value. So exit value is not checked here.
      */
-    if (!isWindows)
-      assertEquals(0, runner.exitValue());
+    runner.run();
   }
 
   static class RegexReplacement {
@@ -262,7 +261,8 @@ public abstract class JaqlShellBaseTestCase {
    */
   private static class BashScriptRunner {
 
-    private Process proc;
+    private ProcessBuilder pb;
+    private String pathname;
 
     /**
      * Launches the given script.
@@ -273,6 +273,8 @@ public abstract class JaqlShellBaseTestCase {
      * @throws Exception
      */
     public BashScriptRunner(String[] cmd, String pathname) throws Exception {
+      this.pathname = pathname;
+
       String[] executable;
       /*
        * On windows box, a bash script can be launched directly. The bash script
@@ -286,16 +288,21 @@ public abstract class JaqlShellBaseTestCase {
       } else {
         executable = cmd;
       }
-      ProcessBuilder pb = new ProcessBuilder(executable);
+      pb = new ProcessBuilder(executable);
       pb.redirectErrorStream(true);
-      proc = pb.start();
+    }
+
+    /**
+     * Runs the bash script.
+     * 
+     * @return exit value after running the bash script
+     */
+    public int run() throws Exception {
+      Process proc = pb.start();
       InputStreamGobbler stdout = new InputStreamGobbler(proc.getInputStream(),
                                                          new PrintStream(new File(pathname)));
       stdout.start();
       proc.waitFor();
-    }
-
-    public int exitValue() {
       return proc.exitValue();
     }
   }
