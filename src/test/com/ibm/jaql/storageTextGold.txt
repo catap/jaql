@@ -467,7 +467,7 @@ schema [
            string?,
            string?,
            long?
-         ] ...
+         ] * 
        ]
 
 
@@ -531,7 +531,7 @@ schema [
            "c1": string?,
            "c2": string?,
            "c3": long?
-         } ...
+         } * 
        ]
 
 
@@ -595,7 +595,7 @@ schema [
            "c2": string?,
            "c1": string?,
            "c3": long?
-         } ...
+         } * 
        ]
 
 
@@ -1003,8 +1003,8 @@ $mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});##
   "outoptions": {
     "delimiter": "=",
     "schema": schema {
-             "lang": any,
-             "no": any
+             "lang",
+             "no"
            }
   },
   "type": "delStream"

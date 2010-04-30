@@ -495,13 +495,57 @@ false
 false
    // incompatible
 
-x = schema [ long, boolean ... ];##
+x = schema [ * ];##
+"x"
+
+x;##
+schema [ * ]
+
+[ ] instanceof x;##
+true
+
+[ 1 ] instanceof x;##
+true
+ 
+[ 1, true ] instanceof x;##
+true
+
+[ 1, true, "a" ] instanceof x;##
+true
+  
+
+x = schema [ long, * ];##
 "x"
 
 x;##
 schema [
          long,
-         boolean ...
+         any * 
+       ]
+
+[ 1 ] instanceof x;##
+true
+ 
+[ 1, true ] instanceof x;##
+true
+
+[ 1, true, "a" ] instanceof x;##
+true
+  
+[ ] instanceof x;##
+false
+ // incompatible
+[ "a" ] instanceof x;##
+false
+ // incompatible
+
+x = schema [ long, boolean * ];##
+"x"
+
+x;##
+schema [
+         long,
+         boolean * 
        ]
 
 [ 1 ] instanceof x;##
@@ -513,18 +557,24 @@ true
 [ 1, true, true ] instanceof x;##
 true
   
+[ ] instanceof x;##
+false
+ // incompatible
+[ "a" ] instanceof x;##
+false
+ // incompatible
 [ 1, 1 ] instanceof x;##
 false
  // incompatible
 
-schema [ null ... ];##
+schema [ null * ];##
 schema [
-         null ...
+         null * 
        ]
 
-schema [ long(0) ... ];##
+schema [ long(0) * ];##
 schema [
-         long(value=0) ...
+         long(value=0) * 
        ]
 
 
@@ -554,7 +604,7 @@ x = schema { a };##
 
 x;##
 schema {
-         "a": any
+         "a"
        }
 
 { a: 1 } instanceof x;##
@@ -578,7 +628,7 @@ x = schema { "a" };##
 
 x;##
 schema {
-         "a": any
+         "a"
        }
 
 { a: 1 } instanceof x;##
@@ -599,7 +649,7 @@ x = schema { a? };##
 
 x;##
 schema {
-         "a"?: any
+         "a"?
        }
 
 { } instanceof x;##
@@ -690,9 +740,7 @@ x = schema { * };##
 "x"
 
 x;##
-schema {
-         *: any
-       }
+schema { * }
 
 { } instanceof x;##
 true
@@ -710,7 +758,7 @@ x = schema { a: long, * };##
 x;##
 schema {
          "a": long,
-         *: any
+         *
        }
 
 { a: 1 } instanceof x;##
@@ -729,7 +777,7 @@ x = schema { a?: long, * };##
 x;##
 schema {
          "a"?: long,
-         *: any
+         *
        }
 
 { a: 1 } instanceof x;##
@@ -795,7 +843,7 @@ schema {
 
 schema { "for" };##
 schema {
-         "for": any
+         "for"
        }
 
 // schema { null }; // does not work currently
@@ -807,7 +855,7 @@ schema {
 
 schema { "1" };##
 schema {
-         "1": any
+         "1"
        }
 
 schema { 1:##
@@ -954,7 +1002,7 @@ schema [
 // -- schema comparison ---------------------------------------------------------------------------
 
 x = [ schema nonnull, 
-       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string ... ],
+       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string * ],
        schema binary, 
        schema boolean, 
        schema date, 
@@ -985,7 +1033,7 @@ x -> sort by [$];##
   schema [
            long,
            decfloat,
-           string ...
+           string * 
          ],
   schema [
            long,
@@ -1038,7 +1086,7 @@ x -> sort by [$ desc];##
   schema [
            long,
            decfloat,
-           string ...
+           string * 
          ],
   schema [
            long
@@ -1180,25 +1228,25 @@ schema [
 mergeSchemata(schema [ long, decfloat ], schema [ long ]);##
 schema [
          long,
-         decfloat ...
+         decfloat * 
        ]
 
-mergeSchemata(schema [ long, decfloat ... ], schema [ long ]);##
+mergeSchemata(schema [ long, decfloat * ], schema [ long ]);##
 schema [
          long,
-         decfloat ...
+         decfloat * 
        ]
 
-mergeSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);##
+mergeSchemata(schema [ long, decfloat * ], schema [ long, decfloat ]);##
 schema [
          long,
-         decfloat ...
+         decfloat * 
        ]
 
-mergeSchemata(schema [ long, decfloat ... ], schema [ long, date ]);##
+mergeSchemata(schema [ long, decfloat * ], schema [ long, date ]);##
 schema [
          long,
-         decfloat | date ...
+         decfloat | date * 
        ]
 
 
@@ -1392,25 +1440,25 @@ schema [
 compactSchemata(schema [ long, decfloat ], schema [ long ]);##
 schema [
          long,
-         decfloat ...
+         decfloat * 
        ]
 
-compactSchemata(schema [ long, decfloat ... ], schema [ long ]);##
+compactSchemata(schema [ long, decfloat * ], schema [ long ]);##
 schema [
          long,
-         decfloat ...
+         decfloat * 
        ]
 
-compactSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);##
+compactSchemata(schema [ long, decfloat * ], schema [ long, decfloat ]);##
 schema [
          long,
-         decfloat ...
+         decfloat * 
        ]
 
-compactSchemata(schema [ long, decfloat ... ], schema [ long, date ]);##
+compactSchemata(schema [ long, decfloat * ], schema [ long, date ]);##
 schema [
          long,
-         decfloat | date ...
+         decfloat | date * 
        ]
 
 
@@ -1495,22 +1543,22 @@ schema any
 
 schemaof ([ "yes", 0, 1][0:1]);##
 schema [
-         long | string(value="yes") ...
+         long | string(value="yes") * 
        ]
 
 schemaof ([ "yes", 0, 1][1:*]);##
 schema [
-         long | string(value="yes") ...
+         long | string(value="yes") * 
        ]
 
 schemaof ([ "yes", 0, 1][*:1]);##
 schema [
-         long | string(value="yes") ...
+         long | string(value="yes") * 
        ]
 
 schemaof ([ "yes", 0, 1][*:*]);##
 schema [
-         long | string(value="yes") ...
+         long | string(value="yes") * 
        ]
 
 
@@ -1519,31 +1567,31 @@ schemaof ([ "yes", [ 0 ], 1, null] [?]);##
 schema [
          long(value=1) | string(value="yes") | [
            long(value=0)
-         ] | null ...
+         ] | null * 
        ]
 
 schemaof ([ "yes", [ 0 ], 1, [ null ]] [?]);##
 schema [
          long(value=1) | string(value="yes") | [
            long(value=0)?
-         ] ...
+         ] * 
        ]
 
 schemaof ([ null ] [?]);##
 schema [
-         null ...
+         null * 
        ]
 
 
 // arrays: expanding
 schemaof ([ "yes", [ 0 ], 1, null] []);##
 schema [
-         long(value=0) | long(value=1) | string(value="yes") ...
+         long(value=0) | long(value=1) | string(value="yes") * 
        ]
 
 schemaof ([ "yes", [ 0 ], 1, [ null ]] []);##
 schema [
-         long(value=0) | long(value=1) | string(value="yes") | null ...
+         long(value=0) | long(value=1) | string(value="yes") | null * 
        ]
 
 schemaof ([ null ] []);##
@@ -1561,61 +1609,61 @@ schema []
 
 schemaof([ 1, 2, 3]  -> transform $);##
 schema [
-         long ...
+         long * 
        ]
 
 
 // records
 schemaof ([{ a: "yes", b: 0 }] -> transform $.a) ;##
 schema [
-         string(value="yes") ...
+         string(value="yes") * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform $.a) ;##
 schema [
-         string(value="yes")? ...
+         string(value="yes")? * 
        ]
 
 schemaof ([{ a: "yes", b: 0}] -> transform { $.a });##
 schema [
          {
            "a": string(value="yes")
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform { $.a }) ;##
 schema [
          {
            "a"?: string(value="yes")
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }] -> transform { b: $.a }) ;##
 schema [
          {
            "b": string(value="yes")
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform { b: $.a }) ;##
 schema [
          {
            "b": string(value="yes")?
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0}] -> transform ${.a});##
 schema [
          {
            "a": string(value="yes")
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }, {b:1} ] -> transform ${.a});##
 schema [
          {
            "a"?: string(value="yes")
-         } ...
+         } * 
        ]
 
 
@@ -1625,7 +1673,7 @@ schema [
          {
            "a": string(value="yes"),
            "b": long(value=0)
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform  { $.* }) ;##
@@ -1633,7 +1681,7 @@ schema [
          {
            "a"?: string(value="yes"),
            "b": long
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }] -> transform { c:1, $.* });##
@@ -1642,7 +1690,7 @@ schema [
            "c": long(value=1),
            "a": string(value="yes"),
            "b": long(value=0)
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }] -> transform ${*});##
@@ -1650,61 +1698,61 @@ schema [
          {
            "a": string(value="yes"),
            "b": long(value=0)
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0 }] -> transform ${*-.a});##
 schema [
          {
            "b": long(value=0)
-         } ...
+         } * 
        ]
 
 schemaof ([{ a: "yes", b: 0, c:2 }] -> transform ${*-.a,.c});##
 schema [
          {
            "b": long(value=0)
-         } ...
+         } * 
        ]
 
 
 // arrays
 schemaof ([ [ 0, "yes" ] ] -> transform $[1]);##
 schema [
-         string(value="yes") ...
+         string(value="yes") * 
        ]
 
 schemaof ([ [ 0, "yes" ], [ 1 ] ] -> transform $[1]);##
 schema [
-         string(value="yes")? ...
+         string(value="yes")? * 
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[0:1]);##
 schema [
          [
-           boolean(value=true) | long(value=1) | string(value="a") ...
-         ] ...
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[1:*]);##
 schema [
          [
-           boolean(value=true) | long(value=1) | string(value="a") ...
-         ] ...
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[*:1]);##
 schema [
          [
-           boolean(value=true) | long(value=1) | string(value="a") ...
-         ] ...
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
        ]
 
 schemaof ([ [ true, "a", 1 ] ] -> transform $[*:*]);##
 schema [
          [
-           boolean(value=true) | long(value=1) | string(value="a") ...
-         ] ...
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
        ]
 
 
@@ -1713,7 +1761,7 @@ schemaof ([ { a: { a: "no", b: [ {c: "yes"}, 2], c: "no"}, c: "no"}  ] -> transf
 schema [
          {
            "c": string(value="yes")
-         } ...
+         } * 
        ]
 
 
@@ -1722,29 +1770,29 @@ schema [
          [
            {
              "a": long(value=1)
-           } ...
-         ] ...
+           } * 
+         ] * 
        ]
 
 schemaof([ [ {a: 1 } ] ] -> transform $[*].a);##
 schema [
          [
-           long(value=1) ...
-         ] ...
+           long(value=1) * 
+         ] * 
        ]
 
 schemaof([ [ {a: 1 } ] ] -> transform $[*].b);##
 schema [
          [
-           null ...
-         ] ...
+           null * 
+         ] * 
        ]
 
 schemaof([ [ {a: 1 }, {b: 2} ] ] -> transform $[*].a);##
 schema [
          [
-           long(value=1)? ...
-         ] ...
+           long(value=1)? * 
+         ] * 
        ]
 
 
@@ -1753,15 +1801,15 @@ schema [
          [
            {
              "a": long
-           } ...
-         ]? ...
+           } * 
+         ]? * 
        ]
 
 schemaof([ [ {a: 1 } ], {a: 2}, null ] -> transform $[?].a);##
 schema [
          [
-           long ...
-         ]? ...
+           long * 
+         ]? * 
        ]
 
 
@@ -1775,15 +1823,15 @@ schema [
                     string(value="a"),
                     null
                   ]
-           } ...
-         ] ...
+           } * 
+         ] * 
        ]
 
 schemaof([ [ {a: [1, 2, "a", null] } ], null ] -> transform $[].a);##
 schema [
          [
-           long | string(value="a") | null ...
-         ] ...
+           long | string(value="a") | null * 
+         ] * 
        ]
 
 
@@ -1804,9 +1852,9 @@ schema [
                        {
                          "a": long(value=1),
                          "b": string
-                       } ...
+                       } * 
                      ]
-         } ...
+         } * 
        ]
 
 schemaof([ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] -> group by k=$.a into { key: k, values: $ });##
@@ -1817,9 +1865,9 @@ schema [
                        {
                          "a": long,
                          "b": string
-                       } ...
+                       } * 
                      ]
-         } ...
+         } * 
        ]
 
 schemaof([ {a: 1, b: "b1"}, {b:"b2"} ] -> group by k=$.a into { key: k, values: $ });##
@@ -1830,9 +1878,9 @@ schema [
                        {
                          "a"?: long(value=1),
                          "b": string
-                       } ...
+                       } * 
                      ]
-         } ...
+         } * 
        ]
 
 
@@ -1850,9 +1898,9 @@ schema [
                        {
                          "a": long(value=1),
                          "b": string(value="b1")
-                       } ...
+                       } * 
                      ]
-         } ...
+         } * 
        ]
 
 schemaof(group [ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] by k=$.a as g1 into { key: k, values: g1 });##
@@ -1863,9 +1911,9 @@ schema [
                        {
                          "a": long,
                          "b": string
-                       } ...
+                       } * 
                      ]
-         } ...
+         } * 
        ]
 
 schemaof(group [ {a: 1, b: "b1"}, {b: "b1"} ] by k=$.a as g1 into { key: k, values: g1 });##
@@ -1876,9 +1924,9 @@ schema [
                        {
                          "a"?: long(value=1),
                          "b": string(value="b1")
-                       } ...
+                       } * 
                      ]
-         } ...
+         } * 
        ]
 
 
@@ -1902,9 +1950,9 @@ schema [
            "key": long(value=1),
            "values1": null,
            "values2": [
-                        long(value=1) ...
+                        long(value=1) * 
                       ]?
-         } ...
+         } * 
        ]
 
 schemaof(group [] by k=$ as g1, [ 1 ] by k=$ as g2 
@@ -1914,9 +1962,9 @@ schema [
            "key": long(value=1),
            "values1": null,
            "values2": [
-                        long(value=1) ...
+                        long(value=1) * 
                       ]?
-         } ...
+         } * 
        ]
 
 
@@ -1931,16 +1979,16 @@ schema [
                         {
                           "a": long(value=1),
                           "b": string
-                        } ...
+                        } * 
                       ]?,
            "values2": [
                         {
                           "c": long,
                           "b"?: string(value="bbb"),
                           "d"?: string(value="d1")
-                        } ...
+                        } * 
                       ]?
-         } ...
+         } * 
        ]
 
 
@@ -1955,7 +2003,7 @@ schema []
 
 schemaof( [ 1, 2, 3 ] -> filter $>1);##
 schema [
-         long ...
+         long * 
        ]
 
 schemaof( null -> sort by [$] );##
@@ -1966,7 +2014,7 @@ schema []
 
 schemaof( [ 2, 1, 3 ] -> sort by [$]);##
 schema [
-         long ...
+         long * 
        ]
 
 schemaof( null -> expand);##
@@ -1980,12 +2028,12 @@ schema []
 
 schemaof( [[[]]] -> expand);##
 schema [
-         [] ...
+         [] * 
        ]
 
 schemaof( [ [1,2], ["a","b"], [true], null ] -> expand);##
 schema [
-         boolean(value=true) | long | string ...
+         boolean(value=true) | long | string * 
        ]
 
 
@@ -1993,9 +2041,7 @@ schema [
 // -- other expressions --------------------------------------------------------------------------
 
 schemaof(read("anything"));##
-schema [
-         any ...
-       ]
+schema [ * ]
 
 
 schemaof(null -> keyLookup(null));##
@@ -2007,7 +2053,7 @@ schema [
            long(value=1),
            string(value="a"),
            null
-         ] ...
+         ] * 
        ]
 
 schemaof(null -> keyLookup([[1, "a"]]));##
@@ -2019,7 +2065,7 @@ schema [
            long(value=1),
            string(value="a"),
            string(value="b")?
-         ] ...
+         ] * 
        ]
 
 

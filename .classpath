@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry exported="true" kind="lib" path="conf"/>
-	<classpathentry exported="true" kind="lib" path="vendor/hadoop/0.20.1/conf"/>
 	<classpathentry exported="true" kind="lib" path="vendor/hbase/0.20.0/conf"/>
 	<classpathentry kind="src" path="src/java"/>
 	<classpathentry kind="src" path="src/test"/>
