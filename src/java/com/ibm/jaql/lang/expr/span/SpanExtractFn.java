@@ -19,6 +19,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonSpan;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.type.SubJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -101,9 +102,10 @@ public class SpanExtractFn extends Expr
 			end = len;
 		}
 		
-		// get the substring... note that SubJsonString assumes that str is immutable
-		SubJsonString sub = new SubJsonString();
-		str.substring(sub, begin, end);
+		
+		MutableJsonString sub = new MutableJsonString();
+		sub.setCopy(str.getCopy(), begin, (end - begin));
+		
 		return sub;
 	}
 }
