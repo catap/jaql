@@ -18,7 +18,7 @@ w = fn(what, schema) what -> write(jaqltemp("tempfile", schema));##
 
 schemaof(read(jaqltemp("tempfile", schema null | long | nonnull)));##
 schema [
-         long | any ...
+         long | any * 
        ]
 
 
@@ -354,12 +354,12 @@ FAILURE
 s = schema schematype;##
 "s"
 
-( [ schema long, schema [ long, boolean ... ], schema null ] -> w(s), r(s) );##
+( [ schema long, schema [ long, boolean * ], schema null ] -> w(s), r(s) );##
 [
   schema long,
   schema [
            long,
-           boolean ...
+           boolean *
          ],
   schema null
 ]
@@ -398,7 +398,7 @@ s = schema [ ];##
 FAILURE
  // should fail
 
-s = schema [ any ... ];##
+s = schema [ * ];##
 "s"
 
 ( [ [], [0], [1,"a"], [2,"b",true], [3,"c",null] ] -> w(s), r(s) );##
@@ -462,7 +462,7 @@ FAILURE
 FAILURE
  // should fail
 
-s = schema [ long ... ];##
+s = schema [ long * ];##
 "s"
 
 ( [ [1], [1,2], [1,2,3] ] -> w(s), r(s) );##
@@ -485,7 +485,7 @@ s = schema [ long ... ];##
 FAILURE
  // should fail
 
-s = schema [ string, long ... ];##
+s = schema [ string, long * ];##
 "s"
 
 ( [ ["1"], ["3",4], ["4",5,6] ] -> w(s), r(s) );##
@@ -872,7 +872,7 @@ sort([ [5], [4], [1], [3], [2] ], schema [ long ]);##
   ]
 ]
 
-sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long ... ]);##
+sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long * ]);##
 [
   [],
   [
@@ -927,7 +927,7 @@ sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], sch
   ]
 ]
 
-sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean ... ]);##
+sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean * ]);##
 [
   [
     1,

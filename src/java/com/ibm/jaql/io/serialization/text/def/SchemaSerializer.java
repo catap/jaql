@@ -35,6 +35,7 @@ import com.ibm.jaql.json.schema.NullSchema;
 import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaType;
 import com.ibm.jaql.json.schema.SchematypeSchema;
 import com.ibm.jaql.json.schema.StringSchema;
@@ -127,6 +128,13 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
       return;
     }
     
+    // handle any array
+    if (schema.getHeadSchemata().size() == 0 && schema.hasRest() 
+        && schema.getRestSchema() == SchemaFactory.anySchema()) {
+      out.print("[ * ]");
+      return;
+    }
+    
     // non-empty
     out.print("[");
     indent += 2;
@@ -150,7 +158,7 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
 
       Schema rest = schema.getRestSchema();
       write(out, rest, indent);
-      out.print(" ...");
+      out.print(" * ");
     }
     
     // done
@@ -272,6 +280,13 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
       return;
     }
     
+    // handle any record
+    if (schema.noRequiredOrOptional() == 0 && schema.hasAdditional() 
+        && schema.getAdditionalSchema() == SchemaFactory.anySchema()) {
+      out.print("{ * }");
+      return;
+    }
+    
     // non-empty
     out.print("{");
     indent += 2;
@@ -291,10 +306,12 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
         out.print('?');
         o++;
       }
-      out.print(": ");
-      o+=2;
+      if (f.getSchema() != SchemaFactory.anySchema()) {
+        out.print(": ");
+        o+=2;
       
-      write(out, f.getSchema(), indent+o);
+        write(out, f.getSchema(), indent+o);
+      }
     }
     
     // print rest
@@ -303,8 +320,11 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
     {
       out.println(sep);
       indent(out, indent);
-      out.print("*: ");
-      write(out, rest, indent+3);
+      out.print("*");
+      if (rest != SchemaFactory.anySchema()) {
+        out.print(": ");
+        write(out, rest, indent+3);
+      }
     }
     
     // done

@@ -201,15 +201,32 @@ x;
 [ 1, "b", true ] instanceof x;   // incompatible
 [ 1, "a", null ] instanceof x;   // incompatible
 
-x = schema [ long, boolean ... ];
+x = schema [ * ];
+x;
+[ ] instanceof x;
+[ 1 ] instanceof x; 
+[ 1, true ] instanceof x;
+[ 1, true, "a" ] instanceof x;  
+
+x = schema [ long, * ];
+x;
+[ 1 ] instanceof x; 
+[ 1, true ] instanceof x;
+[ 1, true, "a" ] instanceof x;  
+[ ] instanceof x; // incompatible
+[ "a" ] instanceof x; // incompatible
+
+x = schema [ long, boolean * ];
 x;
 [ 1 ] instanceof x; 
 [ 1, true ] instanceof x;
 [ 1, true, true ] instanceof x;  
+[ ] instanceof x; // incompatible
+[ "a" ] instanceof x; // incompatible
 [ 1, 1 ] instanceof x; // incompatible
 
-schema [ null ... ];
-schema [ long(0) ... ];
+schema [ null * ];
+schema [ long(0) * ];
 
 // -- parsing and matching: records ---------------------------------------------------------------
 
@@ -365,7 +382,7 @@ schemaof([ 1, "2" ]);
 // -- schema comparison ---------------------------------------------------------------------------
 
 x = [ schema nonnull, 
-       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string ... ],
+       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string * ],
        schema binary, 
        schema boolean, 
        schema date, 
@@ -431,9 +448,9 @@ mergeSchemata(schema nonnull, schema long|null);
 mergeSchemata(schema [], schema []);
 mergeSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
 mergeSchemata(schema [ long, decfloat ], schema [ long ]);
-mergeSchemata(schema [ long, decfloat ... ], schema [ long ]);
-mergeSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);
-mergeSchemata(schema [ long, decfloat ... ], schema [ long, date ]);
+mergeSchemata(schema [ long, decfloat * ], schema [ long ]);
+mergeSchemata(schema [ long, decfloat * ], schema [ long, decfloat ]);
+mergeSchemata(schema [ long, decfloat * ], schema [ long, date ]);
 
 // merging sorted
 mergeSchemata(schema {}, schema {});
@@ -497,9 +514,9 @@ compactSchemata(schema nonnull, schema long|null);
 compactSchemata(schema [], schema []);
 compactSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
 compactSchemata(schema [ long, decfloat ], schema [ long ]);
-compactSchemata(schema [ long, decfloat ... ], schema [ long ]);
-compactSchemata(schema [ long, decfloat ... ], schema [ long, decfloat ]);
-compactSchemata(schema [ long, decfloat ... ], schema [ long, date ]);
+compactSchemata(schema [ long, decfloat * ], schema [ long ]);
+compactSchemata(schema [ long, decfloat * ], schema [ long, decfloat ]);
+compactSchemata(schema [ long, decfloat * ], schema [ long, date ]);
 
 compactSchemata(schema {}, schema {});
 compactSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });

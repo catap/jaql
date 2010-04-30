@@ -1279,38 +1279,44 @@ atomSchemaArgs[JsonValueParameters d] returns [ JsonRecord args=null ]
 
 arraySchema returns [ArraySchema s = null]
     { ArrayList<Schema> schemata = new ArrayList<Schema>(); 
-      Schema p; 
-      Schema rest = null;
       Boolean repeat = false; 
     }
     : "["
-        ( p=schema           { rest = p; }
-          ( "," p=schema     { schemata.add(rest); rest = p; }
-          )*
-          repeat=arraySchemaRepeat
-        )?
+        arraySchemaList[schemata]
+        repeat=arraySchemaRepeat
       "]" { 
-      	    if (!repeat && rest != null)
+      	    Schema rest = null;
+      	    if (repeat)
       	    {
-      	    	schemata.add(rest);
-      	    	rest = null;
+      	    	rest = schemata.remove(schemata.size()-1);
       	    }
             Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
             s = new ArraySchema(schemaArray, rest);
           }
     ;
 
+arraySchemaList[ArrayList<Schema> schemata]
+    {
+    	Schema p;
+    }
+    : ( "*" ) => ( /* leave * on input */ ) { schemata.add(SchemaFactory.anySchema()); }
+    | p = schema { schemata.add(p); } ("," arraySchemaList[schemata])?
+    | () 
+    ;
+
 arraySchemaRepeat returns [Boolean repeat = false; ]
     { JsonLong i; }
     : /* empty */   { repeat = false; }
+    | "*"           { repeat = true; }
+    // remaining options are for backwards compatibility
     | DOT_DOT_DOT   { repeat = true; }
     | "<" ( i=longLit { if (i.get() != 0) 
     	                  throw new IllegalArgumentException(
-    	                    "<n,n> syntax is deprecated; use ... instead"); 
+    	                    "<n,n> syntax is deprecated; use * instead"); 
     	              } 
     	    "," "*"
           | "*" ("," "*") ?
-          ) ">"   { repeat = true; } // backwards compatibility
+          ) ">"   { repeat = true; }
     ;
 
 
