@@ -21,7 +21,10 @@ import java.io.PrintStream;
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonUtil;
-
+/**
+ * Serializes JSON values as string. Double quote is escaped with another
+ * double quote (i.e., <tt>"</tt> is escaped into <tt>""</tt>).
+ */
 public class JsonAsStringSerializer extends TextBasicSerializer<JsonValue>
 {
 
@@ -29,7 +32,13 @@ public class JsonAsStringSerializer extends TextBasicSerializer<JsonValue>
   public void write(PrintStream out, JsonValue value, int indent)
       throws IOException
   {
-    String s = value.toString();
-    JsonUtil.printQuoted(out, s);
+    write(out, value, indent, true);
   }
+  
+  public void write(PrintStream out, JsonValue value, int indent, boolean escape)
+    throws IOException
+  {
+    JsonUtil.printQuotedDel(out, value, escape);
+  }  
+  
 }

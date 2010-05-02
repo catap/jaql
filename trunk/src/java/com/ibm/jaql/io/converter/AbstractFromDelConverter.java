@@ -37,20 +37,31 @@ import com.ibm.jaql.lang.expr.string.DelParser;
 import com.ibm.jaql.lang.expr.string.StringConverter;
 
 /**
- * Base class for converters that convert a delimited file into JSON. The default implementation
- * can be found in the vendor package.
+ * Base class for converters that convert a delimited file into JSON. The
+ * default implementation can be found in the vendor package.
+ * <p>
  * 
- * Incoming lines are first tokenized using an ASCII delimiter and then, optionally,
- * converted into a JSON type. The output depends on whether field names have been provided to 
- * the converter. If so, the converter produces a record for each input line; otherwise, it 
- * produces an array. 
+ * Incoming lines are first tokenized using an ASCII delimiter and then,
+ * optionally, converted into a JSON type. The output depends on whether field
+ * names have been provided to the converter. If so, the converter produces a
+ * record for each input line; otherwise, it produces an array.
+ * <p>
  * 
- * The converter has support for quoted values in the input data. It can be parameterized
- * by an ASCII quote character (defaults to <code>'"'</code>). Quotes may be escaped using 
- * double-quoting, i.e. <code>"te""st"</code> will produce a single string <code>"te\"st"</code>.
+ * The converter handle quoted values in the input data if option
+ * <tt>quoted</tt> is set to <tt>true</tt>. It can be parameterized by an ASCII
+ * quote character (defaults to <code>'"'</code>). Quotes may be escaped using
+ * double-quoting, i.e. <code>"te""st"</code> will produce a single string
+ * <code>"te\"st"</code>.
+ * <p>
  * 
- * This converter is UTF-8 compatible. (This is due to the fact that ASCII characters
- * cannot occur within a multi-byte UTF-8 codepoint).
+ * Option <tt>escape</tt> is only in effect if option <tt>quoted</tt> is
+ * <tt>true</tt>. Otherwise, it is ignored. If <tt>escape</tt> is <tt>true</tt>,
+ * 2-character escape sequences such as <tt>\n</tt> and 6-character escape
+ * sequences such as <tt>\u008a</tt> are unescaped.
+ * <p>
+ * 
+ * This converter is UTF-8 compatible. (This is due to the fact that ASCII
+ * characters cannot occur within a multi-byte UTF-8 codepoint).
  */
 public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K, V> {
   
@@ -61,6 +72,8 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   public static final JsonString QUOTED_NAME = new JsonString("quoted");
   public static final boolean QUOTED_DEFAULT = true;
   public static final JsonString SCHEMA_NAME = new JsonString("schema");
+  public static final JsonString ESCAPE_NAME = new JsonString("escape"); 
+  public static final boolean ESCAPE_DEFAULT = true;
 
   // TODO: feature for skipping header lines
   
@@ -76,7 +89,8 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   private Schema schema;
 
   private byte delimiter;
-  boolean quoted;
+  private boolean quoted;
+  private boolean escape;
   private DelParser reader;
   private boolean isRecord;
   private static JsonString fieldNames[];
@@ -116,9 +130,26 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
       }
       quoted = ((JsonBool)value).get();
     }
+
+    /// escape is valid only if quoted is true
+    if (quoted) {
+      escape = ESCAPE_DEFAULT;
+      if (options.containsKey(ESCAPE_NAME)) {
+        JsonValue value = options.get(ESCAPE_NAME);
+        if (value == null) {
+          throw new IllegalArgumentException("parameter \"" + ESCAPE_NAME
+              + "\" must not be null");
+        }
+        if (!(value instanceof JsonBool)) {
+          throw new IllegalArgumentException("parameter \"" + ESCAPE_NAME
+              + "\" must be boolean");
+        }
+        escape = ((JsonBool) value).get();
+      }
+    }
     
     // make reader
-    reader = DelParser.make(delimiter, quoted);
+    reader = DelParser.make(delimiter, quoted, escape);
 
     // TODO: remove check for deprecated options
     if (options.containsKey(new JsonString("convert"))) {
