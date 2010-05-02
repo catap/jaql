@@ -1,4 +1,5 @@
 hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-quoted.del delimited-quoted.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid1.del delimited-invalid1.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited-invalid2.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;
@@ -22,6 +23,12 @@ read(del($f, { schema: schema { c3, c1, c2 } }));
 
 read(del($f, { schema: schema { c1, c2 } })); // should fail
 read(del($f, { schema: schema { c1, c2, c3, c4 } })); // should fail
+
+// test quoted delimited file
+$f = "delimited-quoted.del";
+read(del($f, { quoted: true, escape: true}));
+read(del($f, { quoted: true, escape: false}));
+read(del($f, { quoted: false }));
 
 // test invalid files
 $f = "delimited-invalid1.del";
@@ -146,6 +153,9 @@ $arrays1 = [[1,2],[3,4]];
 $arrays1 -> jsonToDel();
 $arrays2 = [['one','two'],['three','four']];
 $arrays2 -> jsonToDel();
+$arrays3 = [["\"", "\na"]];
+$arrays3 -> jsonToDel({escape: true});
+$arrays3 -> jsonToDel({escape: false});
 $records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
 $records -> jsonToDel({schema: schema { name, age }});
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];
@@ -168,6 +178,7 @@ $mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
 
 // -- Remove all the temporary files created.
 hdfsShell("-rm delimited.del") * 0;
+hdfsShell("-rm delimited-quoted.del") * 0;
 hdfsShell("-rm delimited-invalid1.del") * 0;
 hdfsShell("-rm delimited-invalid2.del") * 0;
 hdfsShell("-rm delimited-invalid3.del") * 0;

@@ -29,9 +29,11 @@ import com.ibm.jaql.io.serialization.text.def.LongSerializer;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonValue;
 
-/** 
- * A serializer that converts basic types to literals and the 
- * rest become strings with json inside.
+/**
+ * A serializer that converts basic types to literals and the rest become
+ * strings with json inside. It uses {@link JsonAsStringSerializer} to serialize
+ * JSON values which are not of type JSON boolean, JSON long, JSON decfloat and
+ * JSON double.
  */
 public final class BasicTextFullSerializer extends TextFullSerializer
 {
@@ -69,9 +71,15 @@ public final class BasicTextFullSerializer extends TextFullSerializer
     throw new UnsupportedOperationException("basic reading is not yet supported");
   }
 
-  @SuppressWarnings("unchecked")
+  
   @Override
   public void write(PrintStream out, JsonValue value, int indent) throws IOException
+  {
+    write(out, value, indent, true);
+  }
+  
+  @SuppressWarnings("unchecked")
+  public void write(PrintStream out, JsonValue value, int indent, boolean escape) throws IOException
   {
     // null values are simply not printed
     if( value != null )
@@ -80,9 +88,12 @@ public final class BasicTextFullSerializer extends TextFullSerializer
       TextBasicSerializer serializer = serializers.get(encoding);
       if( serializer == null )
       {
-        serializer = stringSerializer;
+        stringSerializer.write(out, value, indent, escape);
       }
-      serializer.write(out, value, indent);
+      else 
+      {
+        serializer.write(out, value, indent);  
+      }
     }
   }
 }

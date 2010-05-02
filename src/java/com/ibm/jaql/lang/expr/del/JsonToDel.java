@@ -26,6 +26,7 @@ import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.RecordSchema.Field;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
@@ -45,15 +46,14 @@ import com.ibm.jaql.util.RandomAccessBuffer;
  */
 
 // TODO This is a *very* basic implementation. The converter currently should check whether the 
-// TODO input conforms with the specified schema. It should also support the "quotes" field. 
-// TODO See AbstractFromDelConverter.
+// TODO input conforms with the specified schema. See AbstractFromDelConverter.
 public class JsonToDel {
-
   private JsonString[] fieldNames = new JsonString[0];
   private String delimiter;
+  private boolean escape;
   private RandomAccessBuffer buf = new RandomAccessBuffer();
   private PrintStream out = new PrintStream(buf);
-  private final BasicTextFullSerializer serializer = new BasicTextFullSerializer();
+  private final BasicTextFullSerializer serializer = BasicTextFullSerializer.getInstance();
 
   public JsonToDel() {
     this(null);
@@ -68,6 +68,20 @@ public class JsonToDel {
     options = options == null ? JsonRecord.EMPTY : options;
     JsonString js = (JsonString) options.get(AbstractFromDelConverter.DELIMITER_NAME);
     delimiter = (js == null) ? "," : js.toString();
+    
+    escape = AbstractFromDelConverter.ESCAPE_DEFAULT;
+    if (options.containsKey(AbstractFromDelConverter.ESCAPE_NAME)) {
+      JsonValue value = options.get(AbstractFromDelConverter.ESCAPE_NAME);
+      if (value == null) {
+        throw new IllegalArgumentException("parameter \"" + AbstractFromDelConverter.ESCAPE_NAME
+            + "\" must not be null");
+      }
+      if (!(value instanceof JsonBool)) {
+        throw new IllegalArgumentException("parameter \"" + AbstractFromDelConverter.ESCAPE_NAME
+            + "\" must be boolean");
+      }
+      escape = ((JsonBool) value).get();
+    }
     
     // TODO: remove check for deprecated options
     if (options.containsKey(new JsonString("convert"))) {
@@ -117,14 +131,14 @@ public class JsonToDel {
       for (JsonString n : fieldNames) {
         out.print(sep);
         JsonValue value = rec.get(n);
-        serializer.write(out, value);
+        serializer.write(out, value, 0, escape);
         sep = delimiter;
       }
     } else if (src instanceof JsonArray) {
       JsonArray arr = (JsonArray) src;
       for (JsonValue value : arr) {
         out.print(sep);
-        serializer.write(out, value);
+        serializer.write(out, value, 0, escape);
         sep = delimiter;
       }
     } else {
