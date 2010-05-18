@@ -6,6 +6,7 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.Bool3;
 
 /** Function that returns null if its input is null, decimal if its input is decimal, double if
  * its input is a number of a different type. Otherwise, fails. */
@@ -49,4 +50,11 @@ abstract class AbstractRealFn extends Expr
       }
     }
   }
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+  
 }
