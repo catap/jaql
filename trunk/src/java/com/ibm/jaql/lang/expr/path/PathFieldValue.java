@@ -106,7 +106,8 @@ public class PathFieldValue extends PathStep
     {
       ce = (ConstExpr)input;
       JsonRecord rec = (JsonRecord)ce.value; // possible cast exception
-      fieldValue = new ConstExpr(rec.get(name));
+      JsonValue v = rec == null ? null : rec.get(name);  
+      fieldValue = new ConstExpr(v);
     }
     else if( input instanceof RecordExpr )
     {
