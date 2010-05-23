@@ -1,5 +1,6 @@
 hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-quoted.del delimited-quoted.del") * 0;
+hdfsShell("-copyFromLocal build/test/cache/data/delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid1.del delimited-invalid1.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited-invalid2.del") * 0;
 hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;
@@ -24,11 +25,17 @@ read(del($f, { schema: schema { c3, c1, c2 } }));
 read(del($f, { schema: schema { c1, c2 } })); // should fail
 read(del($f, { schema: schema { c1, c2, c3, c4 } })); // should fail
 
-// test quoted delimited file
+// test quoted delimited file (does not work when not escaping)
 $f = "delimited-quoted.del";
 read(del($f, { quoted: true, escape: true}));
 read(del($f, { quoted: true, escape: false}));
 read(del($f, { quoted: false }));
+
+// test quoted delimited file (works when not escaping)
+$f = "delimited-quoted-ok.del";
+read(del($f, { quoted: true, escape: true }));
+read(del($f, { quoted: true, escape: false }));
+read(del($f, { quoted: false, escape: false }));
 
 // test invalid files
 $f = "delimited-invalid1.del";
@@ -179,6 +186,7 @@ $mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
 // -- Remove all the temporary files created.
 hdfsShell("-rm delimited.del") * 0;
 hdfsShell("-rm delimited-quoted.del") * 0;
+hdfsShell("-rm delimited-quoted-ok.del") * 0;
 hdfsShell("-rm delimited-invalid1.del") * 0;
 hdfsShell("-rm delimited-invalid2.del") * 0;
 hdfsShell("-rm delimited-invalid3.del") * 0;
