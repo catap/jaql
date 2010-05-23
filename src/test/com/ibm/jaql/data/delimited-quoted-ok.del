@@ -10,4 +10,4 @@
 "ok \'whoops\","another field","yet another"
 "ok{\""whoops","another field","yet another"
 "mistaken \use of backslash","another field","yet another"
-"confusion \""blah\"", more blah","another field","yet another"
+"confusion \""blah\"" more blah","another field","yet another"

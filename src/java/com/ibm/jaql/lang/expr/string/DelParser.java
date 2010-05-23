@@ -164,8 +164,10 @@ public abstract class DelParser
             }
             switch (bytes[end + 1]) {
               case DOUBLE_QUOTE :
-                output[outputSize++] = DOUBLE_QUOTE;
-                end += 2;
+        	// double-quote takes precedence: BACK_SLASH is not treated as an escape
+        	// note the following ambiguity: "a b \"",	vs. 	"a b \"", a b",
+        	output[outputSize++] = BACK_SLASH;
+        	++end;
                 break;
               case SINGLE_QUOTE :
                 output[outputSize++] = SINGLE_QUOTE;
@@ -196,15 +198,22 @@ public abstract class DelParser
                 end += 2;
                 break;
               case 'u' :
-                byte[] utf8 = toBytes(bytes, end + 2);
-                int utf8Len = utf8.length;
-                System.arraycopy(utf8, 0, output, outputSize, utf8Len);
-                outputSize += utf8Len;
-                end += 6;
+        	try {
+        	  byte[] utf8 = toBytes(bytes, end + 2);
+        	  int utf8Len = utf8.length;
+        	  System.arraycopy(utf8, 0, output, outputSize, utf8Len);
+        	  outputSize += utf8Len;
+        	  end += 6;
+        	} catch(Exception e) {
+        	  // perhaps it was just "BAKC_SLASHublahblah" ... keep BACK_SLASH and u
+        	  output[outputSize++] = bytes[end++];
+        	  output[outputSize++] = bytes[end++];
+        	}
                 break;
               default :
-                throw new RuntimeException("invalid escape sequence: "
-                    + (char) BACK_SLASH + (char) bytes[end + 1]);
+        	output[outputSize++] = bytes[end++]; // swallow the backslash as a literal
+                //throw new RuntimeException("invalid escape sequence: "
+                //    + (char) BACK_SLASH + (char) bytes[end + 1]);
             }
             break;
           default :
