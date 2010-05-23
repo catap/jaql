@@ -1,8 +1,11 @@
 package com.ibm.jaql;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.util.List;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -11,12 +14,13 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.JaqlQuery;
 
-public class TestJaqlQuery extends TestCase {
+public class TestJaqlQuery {
 
 	private static String publishers = "[{name: 'Scholastic', country: 'USA'}, "
 			+ "{name: 'Grosset', country: 'UK'}, "
 			+ "{name: 'Writers Publishing House', country: 'China'}]";
 	
+	@Test
 	public void testIterate() {
 		try{
 			JaqlQuery q = new JaqlQuery();
@@ -31,6 +35,7 @@ public class TestJaqlQuery extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testEvaluate() {
 		try{
 			JaqlQuery q = new JaqlQuery();
@@ -46,6 +51,7 @@ public class TestJaqlQuery extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testSetVar() {
 		try{
 			JaqlQuery q = new JaqlQuery();
@@ -60,6 +66,7 @@ public class TestJaqlQuery extends TestCase {
 		}
 	}
 	
+	@Test
 	public void testGetVar() {
 		try{
 			JaqlQuery q = new JaqlQuery();
