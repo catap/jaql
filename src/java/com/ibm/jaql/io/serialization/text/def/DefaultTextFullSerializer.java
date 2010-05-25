@@ -37,14 +37,9 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
 
   // -- default instance -------------------------------------------------------
 
-  private static DefaultTextFullSerializer defaultInstance = new DefaultTextFullSerializer();
+  private final static DefaultTextFullSerializer defaultInstance = new DefaultTextFullSerializer();
 
   public static DefaultTextFullSerializer getInstance() {
-    if (defaultInstance == null) {
-      // TODO: code block needed; why is defaultInstance not initialized?
-      // once reslove, make defaultInstance final
-      defaultInstance = new DefaultTextFullSerializer();
-    }
     return defaultInstance;
   }
 
