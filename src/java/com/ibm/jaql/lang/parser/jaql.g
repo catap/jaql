@@ -1377,10 +1377,9 @@ recordSchemaFieldName returns [String s=null]
     
 // a keyword
 kw
-    { String s; }
     : strictkw
     | weakkw
-    | s=softkw
+    | softkw
     ;
 
 // Strict keywords: cannot be used as identifiers
@@ -1445,31 +1444,30 @@ kwTransform        : { nextIsWeakKw("transform") }? ID        | "#transform" ;
 kwUnroll           : { nextIsWeakKw("unroll") }? ID           | "#unroll" ;
 kwOptions          : { nextIsWeakKw("options") }? ID          | "#options" ;
        
-// Soft keywords: occur in the grammar at places where no identifier is allowed (thus no ambiguitiy)
-softkw returns [String s=null]
-    : "aggregate"        { s = "aggregate"; }
-    | "as"               { s = "as"; }
-    | "asc"              { s = "asc"; }
-    | "by"               { s = "by"; }
-    | "desc"             { s = "desc"; }
-    | "each"             { s = "each"; }
-    | "else"             { s = "else"; }    
-    | "extern"           { s = "extern"; }
-    | "final"            { s = "final"; }
-    | "full"             { s = "full"; }
-    | "import"           { s = "import"; }
-    | "in"               { s = "in"; }
-    | "initial"          { s = "initial"; }
-    | "instanceof"       { s = "instanceof"; }
-    | "into"             { s = "into"; }
-    | "partial"          { s = "partial"; }
-    | "materialize"      { s = "materialize"; }
-    | "on"               { s = "on"; }
-    | "schema"           { s = "schema"; }    
-    | "sort"             { s = "sort"; }
-    | "using"            { s = "using"; }
-    | "where"            { s = "where"; }
-    ; 
+// Soft keywords: occur in the grammar at places where no identifier is allowed 
+// (thus no shadowing or ambiguitiy)
+softkw : kwAggregate 
+       | kwAs 
+       | kwAsc 
+       | kwBy 
+       | kwDesc 
+       | kwEach
+       | kwElse
+       | kwExtern
+       | kwFinal
+       | kwFull
+       | kwImport
+       | kwIn
+       | kwInitial
+       | kwInstanceof
+       | kwInto
+       | kwMaterialize
+       | kwOn
+       | kwSchema
+       | kwSort
+       | kwUsing
+       | kwWhere
+       ; 
     
 kwAggregate        : "aggregate" | "#aggregate";   
 kwAs               : "as" | "#as" ;
@@ -1494,13 +1492,38 @@ kwSort             : "sort" | "#sort" ;
 kwUsing            : "using" | "#using" ;
 kwWhere            : "where" | "#where" ; 
 
+// used for obtaining the string value of a soft keyword (for identifiers)
+softkwToString returns [String s=null]
+    : "aggregate"        { s = "aggregate"; }
+    | "as"               { s = "as"; }
+    | "asc"              { s = "asc"; }
+    | "by"               { s = "by"; }
+    | "desc"             { s = "desc"; }
+    | "each"             { s = "each"; }
+    | "else"             { s = "else"; }    
+    | "extern"           { s = "extern"; }
+    | "final"            { s = "final"; }
+    | "full"             { s = "full"; }
+    | "import"           { s = "import"; }
+    | "in"               { s = "in"; }
+    | "initial"          { s = "initial"; }
+    | "instanceof"       { s = "instanceof"; }
+    | "into"             { s = "into"; }
+    | "partial"          { s = "partial"; }
+    | "materialize"      { s = "materialize"; }
+    | "on"               { s = "on"; }
+    | "schema"           { s = "schema"; }    
+    | "sort"             { s = "sort"; }
+    | "using"            { s = "using"; }
+    | "where"            { s = "where"; }
+    ; 
   
 // -- identifiers ---------------------------------------------------------------------------------
     
 // an identifier as String    
 id returns [String s=null]
     : i:ID              { s = i.getText(); }
-    | s=softkw
+    | s=softkwToString
     ;
 
 // an identifier as JsonString
