@@ -59,6 +59,8 @@ Type "help", "copyright", "credits" or "license" for more information.
 </pre>
 </ol>
 If you don't get an ImportError, you're done! 
+<h3>Trouble shooting</h3>
+<p>If you got a "jni.h not found" error when installing package, this is must due to wrong JDK path. To manually fix this problem, edit <b>setup.py</b>, on line 47, edit self.JAVA_HOME = "YourJavaHome", save and close then try again, should be fine now. </p>
 
 <h3>2.3 pyJaql</h3>
 <p/> 
@@ -277,7 +279,7 @@ They are designed for satisfying different scenarios.
 <h2>5 Known Limitation</h2>
 </p>
 After calling <i>jaql.close()</i>, it will shutdown JVM, if you attempt calling <i>Jaql()</i> again a JVMException will be raised. This dues to SUN's JVM (by now is 1.6.0_16) doesn't allow uploading,  though JNI API defines a method to destroy JVM named <i>destroyJVM()</i>, 
-it doesn't work1.So, pyJaql shares a unique JVM through program's life cycle, there is no problem if you use several times of <i>jaql=Jaql()</i> to get different jaql engine references, because JVM will only be initialized in the first time, but when you invoke <i>jaql.close()</i>, 
+it doesn't work.So, pyJaql shares a unique JVM through program's life cycle, there is no problem if you use several times of <i>jaql=Jaql()</i> to get different jaql engine references, because JVM will only be initialized in the first time, but when you invoke <i>jaql.close()</i>, 
 it's required that to make sure no one will use JVM again.
 <p/>
 <b>Reference</b></br>

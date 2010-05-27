@@ -1,18 +1,18 @@
-# Copyright (C) IBM Corp. 2008.
-#  
-# Licensed under the Apache License, Version 2.0 (the "License"); you may not
-# use this file except in compliance with the License. You may obtain a copy of
-# the License at
-#  
-# http://www.apache.org/licenses/LICENSE-2.0
-#  
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations under
-# the License.
+## Copyright (C) IBM Corp. 2008.
+##  
+## Licensed under the Apache License, Version 2.0 (the "License"); you may not
+## use this file except in compliance with the License. You may obtain a copy of
+## the License at
+##  
+## http://www.apache.org/licenses/LICENSE-2.0
+##  
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+## WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+## License for the specific language governing permissions and limitations under
+## the License.
 
-import os,sys,string,re
+import os,string,re
 from os import listdir
 
 #find out all the jars in path, return them in a list
@@ -29,15 +29,14 @@ def _getjarfilelist(path):
 Configure jaql environment, 0 or 1 parameter. By given one boolean parameter (optional), (True of False), True to print debug info, False do not.
 """
 def _configenv(*args):
+	
 	_SEPARATO="" # system classpath separator
 	_SEP=os.sep # system path separator
 	_CLASSPATH = "" # JVM classpath parameters
 	_DFLT_HADOOP_VERSION = "0.20.1" # default Hadoop version
-	_DFLT_HBASE_VERSION = "0.20.0" # default hbase version
 	_HADOOP_HOME="" # HADOOP_HOME
 	_JAQL_HOME="" # JAQL_HOME
 	_PLATFORM="" #platform name
-	_HBASE_HOME=""# HBASE_HOME
 
 	if os.name=="nt":
 		_SEPARATO=";"#windows
@@ -56,7 +55,7 @@ def _configenv(*args):
 
 	#==================== DFLT_HADOOP_VERSION ====================
 	if os.environ.has_key("DFLT_HADOOP_VERSION"):
-		_DFLT_HADOOP_VERSION = os.environ["DFLT_HADOOP_VERSION"] #by default is 0.18.3
+		_DFLT_HADOOP_VERSION = os.environ["DFLT_HADOOP_VERSION"] #by default is 0.20.1
 
 	#==================== HADOOP_HOME ====================
 	if os.environ.has_key("HADOOP_HOME"):
@@ -72,13 +71,6 @@ def _configenv(*args):
 	else:	# local model
 		_HADOOP_CONF_DIR = _HADOOP_HOME + _SEP + "conf"
 		
-	#====================HBASE_HOME====================
-	if os.environ.has_key("HBASE_HOME"):
-		#if HBASE_HOME is set
-		_HBASE_HOME=os.environ["HBASE_HOME"]
-	else:	
-		_HBASE_HOME=_JAQL_HOME + _SEP + "vendor" + _SEP + "hbase" + _SEP + _DFLT_HBASE_VERSION
-	
 	if(len(args)==1):
 		print "PATH INFO-------------------------------------------"
 		#PRINT DEBUG INFO
@@ -89,7 +81,6 @@ def _configenv(*args):
 		print "| _HADOOP_HOME = %s" % (_HADOOP_HOME) 
 		print "| _JAQL_HOME = %s" % (_JAQL_HOME)
 		print "| _HADOOP_CONF_DIR = %s" % (_HADOOP_CONF_DIR)
-		print "| _HBASE_HOME = %s" % (_HBASE_HOME)
 		print "----------------------------------------------------"
 
 	#(1) add jaql.jar to classpath
@@ -113,20 +104,11 @@ def _configenv(*args):
 
 	#(4) add hadoop_conf_dir to classpath
 	_CLASSPATH = _CLASSPATH + _SEPARATO + _HADOOP_CONF_DIR
-
-	#(5) add hbase jars to classpath
-	for jar in _getjarfilelist(_HBASE_HOME):
-		if jar.find("hbase-")>=0:
-			_CLASSPATH = _CLASSPATH + _SEPARATO + jar
-
-	for jar in _getjarfilelist(os.path.join(_HBASE_HOME,"lib")):
-		if jar.find("zookeeper")>=0: # add zookeeper-**.jar to classpath
-			_CLASSPATH = _CLASSPATH + _SEPARATO + jar
 	
 	return _CLASSPATH
 
 """
-Check if all the required the jars are incuded in path, if yes, return True, else return False.
+Check if all the required the jars are included in path, if yes, return True, else return False.
 @path
 @debug: boolean value. True to print debug info, false not
 """
@@ -188,7 +170,7 @@ def _check_env(path,debug):
 	return _ENV_CONF
 
 if __name__== "__main__":
-       	path=_configenv(True)
+	path=_configenv(True)
 	_check_env(path,True)
 	
 	
