@@ -29,7 +29,7 @@ class pyJaqlSetup:
 			package_data={'pyJaql': ['ut/*.jql']},
 		    	version = '0.1',
 		    	description = 'jaql - python - bridge',
-		    	author='impliance-jaql-IBM',
+		    	author='Wei Wei Yang-Jaql-IBM',
 		    	author_email='impliance-jaql@cs.opensource.ibm.com'
 		)
 

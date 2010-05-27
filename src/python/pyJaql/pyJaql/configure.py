@@ -11,6 +11,9 @@
 ## WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 ## License for the specific language governing permissions and limitations under
 ## the License.
-from pyJaql import *
 
+import env
 
+if __name__== "__main__":
+    path=env._configenv(True)
+    env._check_env(path,True)
