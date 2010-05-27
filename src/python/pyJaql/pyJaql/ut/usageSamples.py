@@ -58,6 +58,7 @@ def run(sample_id):
 		jaql=pyJaql.Jaql()
 		it=jaql.execute(query)
 		for record in it:
+			print type(record)
 			print record
 	except pyJaql.JAQLRuntimeException,err:
 		print err.msg
@@ -65,6 +66,7 @@ def run(sample_id):
 		print err.msg
 	
 
+		
 #Retreive data field sample, demonstrate how to manipulate result data set.
 def retreive_field():
 	try:
@@ -101,6 +103,8 @@ def script_query():
 		print err.msg
 	except pyJaql.JVMException,err:
 		print err.msg
+	finally:
+		jaql.close()	
 
 def testTrue():
 	jaql=pyJaql.Jaql()
