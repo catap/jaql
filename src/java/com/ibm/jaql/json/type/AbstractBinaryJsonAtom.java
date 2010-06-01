@@ -88,7 +88,7 @@ abstract class AbstractBinaryJsonAtom extends JsonAtom
   /** FOR EXPERT USE ONLY! IF YOU ARE UNSURE, USE getCopy() 
    *  Get the internal byte buffer.  
    *  The bytes may NOT be changed! 
-   *  The buffer is invalid ifthis object is changed.
+   *  The buffer is invalid if this object is changed.
    *  You must use bytesOffset() to get the offset into the buffer.
    */
   public byte[] getInternalBytes()

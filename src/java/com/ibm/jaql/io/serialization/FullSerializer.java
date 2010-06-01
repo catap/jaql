@@ -34,6 +34,8 @@ public abstract class FullSerializer<In, Out> implements
     Serializer<In, Out, JsonValue> {
 
   // -- default implementations ------------------------------------------------
+  
+  // TODO merge with the default implementations in BasicSerializer
   @Override
   public void skip(In in) throws IOException {
     read(in, null);
@@ -54,6 +56,10 @@ public abstract class FullSerializer<In, Out> implements
 
   // -- utility methods --------------------------------------------------------
 
+  
+  // TODO improve the Javadoc. Don't decoding them only if compare method does not
+  // decode.
+  
   /**
    * Compares two encoded item arrays of known length without decoding them.
    * This method (1) never reads more bytes than used by the encoded arrays, (2)
@@ -81,6 +87,11 @@ public abstract class FullSerializer<In, Out> implements
     }
     return count1 - count2;
   }
+  
+  // TODO these 2 compareArrays methods should return the value in the same style.
+  // return count1 - count2;
+  // vs
+  // return count1 < count2 ? -1 : (count1 == count2 ? 0 : 1);
 
   /**
    * Compares two encoded item arrays of known length without decoding them.
