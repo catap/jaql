@@ -43,16 +43,21 @@ public interface KeyValueExport<K, V> {
   K createKeyTarget();
 
   /**
-   * Construct the target Value V whose value is from the source JSON Item being
-   * converted
+   * Constructs the target Value V whose value is from the source JSON Item
+   * being converted.
    * 
    * @return Hadoop record value
    */
   V createValueTarget();
 
   /**
-   * Export a source JSON value into a target Hadoop Record key K, value V
-   * (assumed to be constructed using createTarget).
+   * Exports a source JSON value into a target Hadoop Record key K, value V
+   * (assumed to be constructed using <code>createKeyTarget</code> and
+   * <code>createValueTarget</code>). This method is invoked for every JSON
+   * value during the export. If the number of JSON values is big, this method's
+   * performance will have a big impact on the overall performance of the export
+   * from JSON values to Hadoop records. So the implementation of this method
+   * needs to be highly efficient.
    * 
    * @param src A JSON value
    * @param key Hadoop record key

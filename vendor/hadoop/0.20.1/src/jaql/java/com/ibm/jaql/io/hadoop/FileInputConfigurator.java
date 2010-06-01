@@ -31,11 +31,6 @@ public class FileInputConfigurator implements InitializableConfSetter
 {
   protected String location;
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.ConfSetter#init(java.lang.Object)
-   */
   public void init(JsonValue options) throws Exception
   {
     location = AdapterStore.getStore().getLocation((JsonRecord) options);
@@ -46,21 +41,11 @@ public class FileInputConfigurator implements InitializableConfSetter
     HadoopSerializationDefault.register(conf);
   }
   
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.ConfSetter#setSequential(org.apache.hadoop.mapred.JobConf)
-   */
   public void setSequential(JobConf conf) throws Exception
   {
     set(conf);    
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.ConfSetter#setParallel(org.apache.hadoop.mapred.JobConf)
-   */
   public void setParallel(JobConf conf) throws Exception
   {
     set(conf);    

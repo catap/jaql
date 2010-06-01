@@ -41,9 +41,14 @@ public interface KeyValueImport<K,V> {
    * @return
    */
   JsonValue createTarget();
-  
+
   /**
-   * Import a key K, value V into an Item target (assumed to be constructed using createTarget)
+   * Import a key K, value V into an Item target (assumed to be constructed
+   * using createTarget). This method is invoked for every Hadoop record during
+   * the import. If the number of Hadoop records is big, this method's
+   * performance will have a big impact on the overall performance of the import
+   * from Hadoop records to JSON values.So the implementation of this method
+   * needs to be highly efficient.
    * 
    * @param key
    * @param val

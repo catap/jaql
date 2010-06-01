@@ -59,7 +59,6 @@ public abstract class JsonValue implements Comparable<Object>
   
   // -- comparison/hashing ------------------------------------------------------------------------
 
-  /* @see java.lang.Object#equals(java.lang.Object) */
   @Override
   public boolean equals(Object x)
   {
@@ -70,10 +69,6 @@ public abstract class JsonValue implements Comparable<Object>
     return false;
   }
 
-  /* @see java.lang.Comparable#compareTo(java.lang.Object) */
-  public abstract int compareTo(Object o);
-
-  /* @see java.lang.Object#hashCode() */
   @Override
   public final int hashCode()
   {
