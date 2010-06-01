@@ -30,33 +30,18 @@ import com.ibm.jaql.json.type.JsonValue;
  */
 public class ToJsonTextConverter extends JsonToHadoopRecord<WritableComparable<?>, Text>
 {
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyConverter()
-   */
+
   @Override
   protected FromJson<WritableComparable<?>> createKeyConverter()
   {
     return null;
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createValConverter()
-   */
   @Override
   protected FromJson<Text> createValueConverter()
   {
     return new FromJson<Text>()
     {
-      /*
-       * (non-Javadoc)
-       * 
-       * @see com.ibm.jaql.io.converter.ToItem#convert(com.ibm.jaql.json.type.Item,
-       *      java.lang.Object)
-       */
       public Text convert(JsonValue src, Text tgt)
       {
         ByteArrayOutputStream bstr = new ByteArrayOutputStream();
@@ -80,11 +65,6 @@ public class ToJsonTextConverter extends JsonToHadoopRecord<WritableComparable<?
         return tgt;
       }
 
-      /*
-       * (non-Javadoc)
-       * 
-       * @see com.ibm.jaql.io.converter.ToItem#createTarget()
-       */
       public Text createTarget()
       {
         return new Text();

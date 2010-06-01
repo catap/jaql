@@ -51,25 +51,16 @@ public class LinesFn extends AbstractHandleFn
     super(exprs);
   }
 
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#getType()
-   */
   @Override
   protected JsonValue getType() {
     return TYPE;
   }
 
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#isMapReducible()
-   */
   @Override
   public boolean isMapReducible() {
     return true;
   }
   
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
-   */
   @Override
   public JsonRecord eval(Context context) throws Exception {
     BufferedJsonRecord options = null;

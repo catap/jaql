@@ -33,7 +33,6 @@ import com.ibm.jaql.util.Bool3;
  */
 public abstract class AbstractHandleFn extends Expr implements PotentialMapReducible {
 
-  
   /**
    * @param exprs
    */
@@ -41,11 +40,6 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
   {
     super(exprs);
   }
-  
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.io.PotentialMapReducible#isMapReducible()
-   */
-  public abstract boolean isMapReducible();
   
   /**
    * Return the "type" for this descriptor
@@ -76,9 +70,6 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
     return Bool3.TRUE;
   }
 
-  /* (non-Javadoc)
-   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
-   */
   @Override
   public JsonRecord eval(Context context) throws Exception
   {
