@@ -177,3 +177,129 @@ read(fd)
        and not isnull($.value5)
  -> count()
 ;
+
+//===========================================================================
+// keyMerge tests
+//===========================================================================
+
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( range(10) -> transform [$,$+100] )
+;
+
+range(10) 
+ -> expand [ [$,$], [$,-$] ]
+ -> keyMerge( range(10) -> transform [$,$+100] )
+;
+
+range(10) 
+ -> expand [ [$,$], [$,-$] ]
+ -> keyMerge( range(10) -> filter mod($,2) == 0 -> transform [$,$+100] )
+;
+
+[0,null,4,null,8,null]
+ -> transform [$,'==>']
+ -> keyMerge( [0,null,5,null,8,null] -> transform [$,$] )
+;
+
+// This could/should raise an error for duplicate inner keys?
+// Right now dups are ignored
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( range(10) -> expand [ [$,$+100], [$,$+200] ] )
+;
+
+// This could/should raise an error for out of order inner keys?
+// Right now, weird results
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( [0,5,1,6,2,7,3,8,4,9] -> transform [$,$] )
+;
+
+// This could/should raise an error for out of order outer keys?
+// Right now, weird results
+[0,5,1,6,2,7,3,8,4,9]
+ -> transform [$,$]
+ -> keyMerge( range(10) -> transform [$,$] )
+;
+
+fd1 = hdfs('R');
+fd2 = hdfs('S');
+
+range(1000,by=3) 
+ -> write(HadoopTemp(schema long))
+ -> read() 
+ -> expand [ { fk: $, r: 'one' },
+             { fk: $, r: 'two' } ] 
+ -> group by $.fk expand $  // TODO: this needs to be replaced by a partition expr so we don't rewrite it away
+ -> perPartition( -> sort by [$.fk,$.r] ) // TODO: this is needed make the test work without map/reduce; the partition expr will eliminate it too.  We need the sort by $.r to get deterministic output for the test.
+ -> write(fd1)
+;
+
+range(1000,by=19) 
+ -> write(HadoopTemp(schema long)) 
+ -> read()
+ -> transform { key: $, s: 'three' }
+ -> group by $.key expand $ // TODO: this needs to be replaced by a partitioning function so we don't rewrite it away
+ -> perPartition( -> sort by [$.key] ) // TODO: this is needed make the test work without map/reduce; the partition expr will eliminate it too
+ -> write(fd2)
+;
+
+worklist = fn(array) { type: 'array', inoptions: { array }};
+
+// Expand a file descriptor into one descriptor per part.
+// If fd is a directory with part-* files, a new fd for each part,
+// else just return fd.
+// TODO: Better error checking would be good:
+//    When not a directory with part-##### files, make sure it is a regular file.
+fdParts = fn(fd) 
+  ls( strcat(fd.location, '/part-*') )
+   -> transform { fd{*-.location}, location: $.path }
+   -> onEmpty( [fd] )
+;
+  
+
+// Check if we have parts and that the file lists will match up.
+// We cannot list or return count the parts because it differs 
+// in local vs cluster mode and between different cluster configurations.
+// Best we can do is check that we have at least one part and 
+// the same number of parts in each file.
+0 < count(fdParts(fd1)) == count(fdParts(fd2));
+
+// Zip the corresponding parts of a file together.
+// TODO: Better error checking would be good:
+//    When not a directory with part-##### files
+//    When different number of part files
+samePartFiles = fn(fd1, fd2) pairwise( fdParts(fd1), fdParts(fd2) );
+
+
+// Join two files, fd1 and fd2, 
+//
+// Requires:
+//   1. fd1 and fd2 are multi-part files (ie directories with .../part-##### files)
+//   2. Each file is partitioned by the same key as used here.
+//   3. Each file was partitioned with the same degree (same number of parts)
+//      ie, The keys of fd1/part-i only occur in fd2/part-i, and vice versa
+//   4. Each part is sorted by the same key as used here.
+//   5. fd2 has distinct keys (fd1 can have duplicate keys)
+//
+mergeJoinParts = fn(fd1, key1, fd2, key2, proj) 
+(
+  read( worklist(samePartFiles(fd1, fd2)) )
+   -> expand each part (
+        keyMerge( read(part[0]) -> transform [key1($),$] -> filter not isnull($[0]),
+                  read(part[1]) -> transform [key2($),$] )
+         -> filter not isnull($[2]) // inner join
+         -> transform proj($[1],$[2])
+      )
+);
+
+mergeJoinParts(
+  fd1, fn(i) i.fk, 
+  fd2, fn(j) j.key,
+  fn(i,j) { i.*, j.* }
+);
+
+//===========================================================================
+// done
+//===========================================================================

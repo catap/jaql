@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.agg;
 
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -63,8 +64,7 @@ public final class ArgMaxAgg extends AlgebraicAggregate
   public void init(Context context) throws Exception
   {
     this.context = context;
-    max = null;
-    arg = null;
+    noMax = true;
     keyFn = (Function)exprs[1].eval(context);
   }
 
@@ -78,7 +78,7 @@ public final class ArgMaxAgg extends AlgebraicAggregate
       JsonValue key = keyFn.eval(context);
       if( key != null )
       {
-        if( noMax || key.compareTo(max) > 0 )
+        if( noMax || JsonUtil.compare(key, max) > 0 )
         {
           noMax = false;
           max = key.getCopy(max);
