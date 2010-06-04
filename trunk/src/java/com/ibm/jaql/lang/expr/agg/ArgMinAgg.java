@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.agg;
 
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -77,7 +78,7 @@ public final class ArgMinAgg extends AlgebraicAggregate
       JsonValue key = keyFn.eval(context);
       if( key != null )
       {
-        if( noMin || key.compareTo(min) < 0 )
+        if( noMin || JsonUtil.compare(key,min) < 0 )
         {
           noMin = false;
           min = key.getCopy(min);

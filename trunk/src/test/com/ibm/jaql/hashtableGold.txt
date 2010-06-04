@@ -372,3 +372,823 @@ read(fd)
 ;##
 333
 
+
+//===========================================================================
+// keyMerge tests
+//===========================================================================
+
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( range(10) -> transform [$,$+100] )
+;##
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    101
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    3,
+    3,
+    103
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    5,
+    5,
+    105
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    7,
+    7,
+    107
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    9,
+    9,
+    109
+  ]
+]
+
+
+range(10) 
+ -> expand [ [$,$], [$,-$] ]
+ -> keyMerge( range(10) -> transform [$,$+100] )
+;##
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    101
+  ],
+  [
+    1,
+    -1,
+    101
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    2,
+    -2,
+    102
+  ],
+  [
+    3,
+    3,
+    103
+  ],
+  [
+    3,
+    -3,
+    103
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    4,
+    -4,
+    104
+  ],
+  [
+    5,
+    5,
+    105
+  ],
+  [
+    5,
+    -5,
+    105
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    6,
+    -6,
+    106
+  ],
+  [
+    7,
+    7,
+    107
+  ],
+  [
+    7,
+    -7,
+    107
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    8,
+    -8,
+    108
+  ],
+  [
+    9,
+    9,
+    109
+  ],
+  [
+    9,
+    -9,
+    109
+  ]
+]
+
+
+range(10) 
+ -> expand [ [$,$], [$,-$] ]
+ -> keyMerge( range(10) -> filter mod($,2) == 0 -> transform [$,$+100] )
+;##
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    null
+  ],
+  [
+    1,
+    -1,
+    null
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    2,
+    -2,
+    102
+  ],
+  [
+    3,
+    3,
+    null
+  ],
+  [
+    3,
+    -3,
+    null
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    4,
+    -4,
+    104
+  ],
+  [
+    5,
+    5,
+    null
+  ],
+  [
+    5,
+    -5,
+    null
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    6,
+    -6,
+    106
+  ],
+  [
+    7,
+    7,
+    null
+  ],
+  [
+    7,
+    -7,
+    null
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    8,
+    -8,
+    108
+  ],
+  [
+    9,
+    9,
+    null
+  ],
+  [
+    9,
+    -9,
+    null
+  ]
+]
+
+
+[0,null,4,null,8,null]
+ -> transform [$,'==>']
+ -> keyMerge( [0,null,5,null,8,null] -> transform [$,$] )
+;##
+[
+  [
+    0,
+    "==>",
+    0
+  ],
+  [
+    null,
+    "==>",
+    null
+  ],
+  [
+    4,
+    "==>",
+    null
+  ],
+  [
+    null,
+    "==>",
+    null
+  ],
+  [
+    8,
+    "==>",
+    8
+  ],
+  [
+    null,
+    "==>",
+    null
+  ]
+]
+
+
+// This could/should raise an error for duplicate inner keys?
+// Right now dups are ignored
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( range(10) -> expand [ [$,$+100], [$,$+200] ] )
+;##
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    101
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    3,
+    3,
+    103
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    5,
+    5,
+    105
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    7,
+    7,
+    107
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    9,
+    9,
+    109
+  ]
+]
+
+
+// This could/should raise an error for out of order inner keys?
+// Right now, weird results
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( [0,5,1,6,2,7,3,8,4,9] -> transform [$,$] )
+;##
+[
+  [
+    0,
+    0,
+    0
+  ],
+  [
+    1,
+    1,
+    null
+  ],
+  [
+    2,
+    2,
+    null
+  ],
+  [
+    3,
+    3,
+    null
+  ],
+  [
+    4,
+    4,
+    null
+  ],
+  [
+    5,
+    5,
+    5
+  ],
+  [
+    6,
+    6,
+    6
+  ],
+  [
+    7,
+    7,
+    7
+  ],
+  [
+    8,
+    8,
+    8
+  ],
+  [
+    9,
+    9,
+    9
+  ]
+]
+
+
+// This could/should raise an error for out of order outer keys?
+// Right now, weird results
+[0,5,1,6,2,7,3,8,4,9]
+ -> transform [$,$]
+ -> keyMerge( range(10) -> transform [$,$] )
+;##
+[
+  [
+    0,
+    0,
+    0
+  ],
+  [
+    5,
+    5,
+    5
+  ],
+  [
+    1,
+    1,
+    null
+  ],
+  [
+    6,
+    6,
+    6
+  ],
+  [
+    2,
+    2,
+    null
+  ],
+  [
+    7,
+    7,
+    7
+  ],
+  [
+    3,
+    3,
+    null
+  ],
+  [
+    8,
+    8,
+    8
+  ],
+  [
+    4,
+    4,
+    null
+  ],
+  [
+    9,
+    9,
+    9
+  ]
+]
+
+
+fd1 = hdfs('R');##
+"fd1"
+
+fd2 = hdfs('S');##
+"fd2"
+
+
+range(1000,by=3) 
+ -> write(HadoopTemp(schema long))
+ -> read() 
+ -> expand [ { fk: $, r: 'one' },
+             { fk: $, r: 'two' } ] 
+ -> group by $.fk expand $  // TODO: this needs to be replaced by a partition expr so we don't rewrite it away
+ -> perPartition( -> sort by [$.fk,$.r] ) // TODO: this is needed make the test work without map/reduce; the partition expr will eliminate it too.  We need the sort by $.r to get deterministic output for the test.
+ -> write(fd1)
+;##
+{
+  "location": "R",
+  "type": "hdfs"
+}
+
+
+range(1000,by=19) 
+ -> write(HadoopTemp(schema long)) 
+ -> read()
+ -> transform { key: $, s: 'three' }
+ -> group by $.key expand $ // TODO: this needs to be replaced by a partitioning function so we don't rewrite it away
+ -> perPartition( -> sort by [$.key] ) // TODO: this is needed make the test work without map/reduce; the partition expr will eliminate it too
+ -> write(fd2)
+;##
+{
+  "location": "S",
+  "type": "hdfs"
+}
+
+
+worklist = fn(array) { type: 'array', inoptions: { array }};##
+"worklist"
+
+
+// Expand a file descriptor into one descriptor per part.
+// If fd is a directory with part-* files, a new fd for each part,
+// else just return fd.
+// TODO: Better error checking would be good:
+//    When not a directory with part-##### files, make sure it is a regular file.
+fdParts = fn(fd) 
+  ls( strcat(fd.location, '/part-*') )
+   -> transform { fd{*-.location}, location: $.path }
+   -> onEmpty( [fd] )
+;##
+"fdParts"
+
+  
+
+// Check if we have parts and that the file lists will match up.
+// We cannot list or return count the parts because it differs 
+// in local vs cluster mode and between different cluster configurations.
+// Best we can do is check that we have at least one part and 
+// the same number of parts in each file.
+0 < count(fdParts(fd1)) == count(fdParts(fd2));##
+true
+
+
+// Zip the corresponding parts of a file together.
+// TODO: Better error checking would be good:
+//    When not a directory with part-##### files
+//    When different number of part files
+samePartFiles = fn(fd1, fd2) pairwise( fdParts(fd1), fdParts(fd2) );##
+"samePartFiles"
+
+
+
+// Join two files, fd1 and fd2, 
+//
+// Requires:
+//   1. fd1 and fd2 are multi-part files (ie directories with .../part-##### files)
+//   2. Each file is partitioned by the same key as used here.
+//   3. Each file was partitioned with the same degree (same number of parts)
+//      ie, The keys of fd1/part-i only occur in fd2/part-i, and vice versa
+//   4. Each part is sorted by the same key as used here.
+//   5. fd2 has distinct keys (fd1 can have duplicate keys)
+//
+mergeJoinParts = fn(fd1, key1, fd2, key2, proj) 
+(
+  read( worklist(samePartFiles(fd1, fd2)) )
+   -> expand each part (
+        keyMerge( read(part[0]) -> transform [key1($),$] -> filter not isnull($[0]),
+                  read(part[1]) -> transform [key2($),$] )
+         -> filter not isnull($[2]) // inner join
+         -> transform proj($[1],$[2])
+      )
+);##
+"mergeJoinParts"
+
+
+mergeJoinParts(
+  fd1, fn(i) i.fk, 
+  fd2, fn(j) j.key,
+  fn(i,j) { i.*, j.* }
+);##
+[
+  {
+    "fk": 0,
+    "key": 0,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 0,
+    "key": 0,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 57,
+    "key": 57,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 57,
+    "key": 57,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 114,
+    "key": 114,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 114,
+    "key": 114,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 171,
+    "key": 171,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 171,
+    "key": 171,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 228,
+    "key": 228,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 228,
+    "key": 228,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 285,
+    "key": 285,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 285,
+    "key": 285,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 342,
+    "key": 342,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 342,
+    "key": 342,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 399,
+    "key": 399,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 399,
+    "key": 399,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 456,
+    "key": 456,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 456,
+    "key": 456,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 513,
+    "key": 513,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 513,
+    "key": 513,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 570,
+    "key": 570,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 570,
+    "key": 570,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 627,
+    "key": 627,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 627,
+    "key": 627,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 684,
+    "key": 684,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 684,
+    "key": 684,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 741,
+    "key": 741,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 741,
+    "key": 741,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 798,
+    "key": 798,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 798,
+    "key": 798,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 855,
+    "key": 855,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 855,
+    "key": 855,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 912,
+    "key": 912,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 912,
+    "key": 912,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 969,
+    "key": 969,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 969,
+    "key": 969,
+    "r": "two",
+    "s": "three"
+  }
+]
+
+
+//===========================================================================
+// done
+//===========================================================================
