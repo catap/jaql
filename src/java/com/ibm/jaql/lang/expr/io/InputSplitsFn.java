@@ -36,7 +36,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * Take a i/o descriptor and return a list of raw splits:
- *    [{ class: string, split: binary }...]   
+ *    [{ class: string, split: binary, locations: [string...] }...]   
  */
 public class InputSplitsFn extends IterExpr
 {
@@ -70,11 +70,12 @@ public class InputSplitsFn extends IterExpr
     HadoopInputAdapter hia = (HadoopInputAdapter)adapter;
     JobConf conf = new JobConf(); // TODO: allow configuration
     hia.setParallel(conf); // right thing to do?
+    hia.configure(conf); // right thing to do?
     int numSplits = conf.getNumMapTasks(); // TODO: allow override
     final InputSplit[] splits = hia.getSplits(conf, numSplits);
     final MutableJsonString className = new MutableJsonString();
     final MutableJsonBinary rawSplit = new MutableJsonBinary();
-    final BufferedJsonRecord rec = new BufferedJsonRecord(2);
+    final BufferedJsonRecord rec = new BufferedJsonRecord(3);
     final BufferedJsonArray locArr = new BufferedJsonArray();
     rec.add(CLASS_TAG, className);
     rec.add(SPLIT_TAG, rawSplit);    

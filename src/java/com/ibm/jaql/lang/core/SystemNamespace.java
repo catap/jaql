@@ -61,6 +61,7 @@ import com.ibm.jaql.lang.expr.array.RemoveElementFn;
 import com.ibm.jaql.lang.expr.array.ReplaceElementFn;
 import com.ibm.jaql.lang.expr.array.ReverseFn;
 import com.ibm.jaql.lang.expr.array.RowwiseFn;
+import com.ibm.jaql.lang.expr.array.RunningCombineFn;
 import com.ibm.jaql.lang.expr.array.ShiftFn;
 import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.SlidingWindowBySizeFn;
@@ -104,6 +105,7 @@ import com.ibm.jaql.lang.expr.hadoop.NativeMapReduceExpr;
 import com.ibm.jaql.lang.expr.hadoop.ReadConfExpr;
 import com.ibm.jaql.lang.expr.index.BuildJIndexFn;
 import com.ibm.jaql.lang.expr.index.KeyLookupFn;
+import com.ibm.jaql.lang.expr.index.KeyMergeFn;
 import com.ibm.jaql.lang.expr.index.ProbeJIndexFn;
 import com.ibm.jaql.lang.expr.index.ProbeLongListFn;
 import com.ibm.jaql.lang.expr.index.SharedHashtableNFn;
@@ -113,6 +115,7 @@ import com.ibm.jaql.lang.expr.internal.LongHashExpr;
 import com.ibm.jaql.lang.expr.io.ArrayReadExpr;
 import com.ibm.jaql.lang.expr.io.DelFn;
 import com.ibm.jaql.lang.expr.io.FileFn;
+import com.ibm.jaql.lang.expr.io.FileSplitToRecordFn;
 import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
 import com.ibm.jaql.lang.expr.io.HBaseFetchExpr;
 import com.ibm.jaql.lang.expr.io.HBaseReadExpr;
@@ -128,6 +131,7 @@ import com.ibm.jaql.lang.expr.io.JaqlTempFn;
 import com.ibm.jaql.lang.expr.io.LinesFn;
 import com.ibm.jaql.lang.expr.io.LocalReadFn;
 import com.ibm.jaql.lang.expr.io.LocalWriteFn;
+import com.ibm.jaql.lang.expr.io.MakeFileSplitFn;
 import com.ibm.jaql.lang.expr.io.ReadAdapterRegistryExpr;
 import com.ibm.jaql.lang.expr.io.ReadFn;
 import com.ibm.jaql.lang.expr.io.ReadSplitFn;
@@ -163,6 +167,7 @@ import com.ibm.jaql.lang.expr.random.RandomDoubleFn;
 import com.ibm.jaql.lang.expr.random.RandomLongFn;
 import com.ibm.jaql.lang.expr.random.RegisterRNGExpr;
 import com.ibm.jaql.lang.expr.random.SampleRNGExpr;
+import com.ibm.jaql.lang.expr.random.UuidFn;
 import com.ibm.jaql.lang.expr.record.ArityFn;
 import com.ibm.jaql.lang.expr.record.FieldsFn;
 import com.ibm.jaql.lang.expr.record.NamesFn;
@@ -201,6 +206,8 @@ import com.ibm.jaql.lang.expr.string.StrPosFn;
 import com.ibm.jaql.lang.expr.string.StrPosListFn;
 import com.ibm.jaql.lang.expr.string.StrSplitFn;
 import com.ibm.jaql.lang.expr.string.StrSplitNFn;
+import com.ibm.jaql.lang.expr.string.StrToLowerCaseFn;
+import com.ibm.jaql.lang.expr.string.StrToUpperCaseFn;
 import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.BatchFn;
@@ -336,6 +343,7 @@ public final class SystemNamespace extends Namespace {
     register(new TumblingWindowBySizeFn.Descriptor()); // experimental
     register(new SlidingWindowFn.Descriptor()); // experimental
     register(new SlidingWindowBySizeFn.Descriptor()); // experimental
+    register(new RunningCombineFn.Descriptor()); // experimental
     register(new ModFn.Descriptor());
     register(new DivFn.Descriptor());
     register(new AbsFn.Descriptor());
@@ -384,6 +392,8 @@ public final class SystemNamespace extends Namespace {
     register(new BatchFn.Descriptor());
     register(new SerializeFn.Descriptor());
     register(new StrcatFn.Descriptor());
+    register(new StrToLowerCaseFn.Descriptor());
+    register(new StrToUpperCaseFn.Descriptor()); 
     register(new StrSplitNFn.Descriptor());
     register(new StrSplitFn.Descriptor());
     register(new StrJoinFn.Descriptor());
@@ -433,13 +443,16 @@ public final class SystemNamespace extends Namespace {
     register(new PowFn.Descriptor());
     register(new RandomLongFn.Descriptor());
     register(new RandomDoubleFn.Descriptor());
+    register(new UuidFn.Descriptor());
     register(new DistinctFn.Descriptor());
     register(new ReadFn.Descriptor());
     register(new WriteFn.Descriptor());
     register(new LocalWriteFn.Descriptor());
     register(new LocalReadFn.Descriptor());
-    register(new InputSplitsFn.Descriptor());
-    register(new ReadSplitFn.Descriptor());
+    register(new InputSplitsFn.Descriptor()); // TODO: experimental
+    register(new ReadSplitFn.Descriptor()); // TODO: experimental
+    register(new MakeFileSplitFn.Descriptor()); // TODO: experimental
+    register(new FileSplitToRecordFn.Descriptor()); // TODO: experimental
     register(new HdfsFn.Descriptor());
     register(new DelFn.Descriptor());
     register(new LinesFn.Descriptor());
@@ -475,6 +488,7 @@ public final class SystemNamespace extends Namespace {
     register(new HBaseShellExpr.Descriptor());
     register(new SharedHashtableNFn.Descriptor()); // TODO: experimental
     register(new KeyLookupFn.Descriptor()); // TODO: experimental
+    register(new KeyMergeFn.Descriptor()); // TODO: experimental
     register(new ProbeLongListFn.Descriptor()); // TODO: experimental
     register(new DaisyChainFn.Descriptor()); // TODO: experimental
     //register(new BuildLuceneFn.Descriptor()); // TODO: experimental
