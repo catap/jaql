@@ -396,7 +396,9 @@
       <fileset dir="${build.dir}/test/classes/" includes="JaqlShell.class" />
     </copy>
 
-    <copy todir="${tmp.dir}/org/apache/hadoop/mapred" file="${build.dir}/classes/org/apache/hadoop/mapred/PublicMergeSorter.class" />
+    <copy todir="${tmp.dir}/org/apache/hadoop/mapred">
+      <fileset dir="${build.dir}/classes/org/apache/hadoop/mapred" />
+    </copy>
 
     <copy todir="${tmp.dir}/com/ibm/jaql/json">
       <fileset dir="${build.dir}/classes/com/ibm/jaql/json" />

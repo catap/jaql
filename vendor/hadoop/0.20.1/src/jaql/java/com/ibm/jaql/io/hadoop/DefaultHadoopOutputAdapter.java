@@ -16,29 +16,32 @@
 package com.ibm.jaql.io.hadoop;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.FileOutputCommitter;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.ExposeJobContext;
+import org.apache.hadoop.mapred.ExposeTaskAttemptContext;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobConfigurable;
+import org.apache.hadoop.mapred.JobContext;
 import org.apache.hadoop.mapred.OutputCommitter;
 import org.apache.hadoop.mapred.OutputFormat;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.TaskAttemptContext;
 import org.apache.hadoop.mapred.TaskAttemptID;
-import org.apache.hadoop.mapred.Counters.Counter;
+import org.apache.hadoop.mapred.TaskID;
+import org.apache.hadoop.mapred.JobID;
 import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 
 /**
  * The default class for writing Items from jaql to Hadoop
@@ -46,6 +49,8 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
 {
   static final Logger                LOG    = Logger.getLogger(DefaultHadoopOutputAdapter.class.getName());
+
+  protected static final AtomicInteger jobCounter = new AtomicInteger(0);
 
   protected OutputFormat<?,?>             oFormat;
 
@@ -65,6 +70,9 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
   protected Progressable             reporter;
 
   protected RecordWriter<JsonHolder, JsonHolder> writer = null;
+
+  JobContext sequentialJob;  // job context for sequential mode
+  protected TaskAttemptContext sequentialTask; // task attempt for sequential mode
 
   @Override
   public void init(JsonValue args) throws Exception
@@ -120,9 +128,25 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
   {
     this.conf = new JobConf();
     this.reporter = Reporter.NULL;
+    
+    // Some OutputFormats (like FileOutputFormat) require that the job id/task id set.
+    // So let's set it for all output formats, just in case they need it too.
+    JobID jobid = new JobID("sequential", jobCounter.getAndIncrement());
+    TaskAttemptID taskid = new TaskAttemptID(new TaskID(jobid, true, 0),0);
+    conf.set("mapred.task.id", taskid.toString());
+
     setSequential(conf);
-    configurator.setSequential(conf);
-    Globals.setJobConf(conf);
+    
+    // Create a task so we can use committers.
+    sequentialJob = new ExposeJobContext(conf, jobid);
+    sequentialTask = new ExposeTaskAttemptContext(conf, taskid);
+
+    // Give the commiter a chance initialize.
+    OutputCommitter committer = conf.getOutputCommitter();
+    // FIXME: We skip job setup for now because  
+    committer.setupJob(sequentialJob);
+    committer.setupTask(sequentialTask);
+
     if (oFormat instanceof JobConfigurable)
       ((JobConfigurable) oFormat).configure(conf);
   }
@@ -137,39 +161,46 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     if (writer != null)
     {
       writer.close((Reporter) reporter);
+      writer = null;
       OutputCommitter committer = conf.getOutputCommitter();
-      if (committer instanceof FileOutputCommitter) {
-       
-        // for this case, only one file is expected
-        String fileName = new Path(location).getName();
-        Path pTgt = null;
-        Path src = null;
-        try {
-          pTgt = FileOutputFormat.getOutputPath(conf);
-          src = FileOutputFormat.getTaskOutputPath(conf, fileName);
-        } catch(Exception e) {
-          // TODO: this can happen if the OutputFormat is not a FileOutputFormat,
-          // i.e., for HBase
-          LOG.warn("task output files not found");
-        }
-        if(pTgt != null && src != null) {
-          Path tgt = new Path(FileOutputFormat.getOutputPath(conf), fileName);
-
-          FileSystem fs = src.getFileSystem(conf);
-          if(fs.exists(tgt)) {
-            fs.delete(tgt, true);
-          }
-
-
-          // rename src to tgt
-          fs.rename(src, tgt);
-
-          // clean-up the temp
-          Path tmp = new Path(FileOutputFormat.getOutputPath(conf), FileOutputCommitter.TEMP_DIR_NAME);
-          if(fs.exists(tmp))
-            fs.delete(tmp, true);
-        }
-      }
+      committer.commitTask(sequentialTask);
+      // FIXME: We skip the job cleanup because the FileOutputCommitter deletes the _temporary, which
+      // is shared by all sequential jobs.
+      committer.cleanupJob(sequentialJob);
+      sequentialTask = null;
+//      
+//      if (committer instanceof FileOutputCommitter) {
+//       
+//        // for this case, only one file is expected
+//        String fileName = new Path(location).getName();
+//        Path pTgt = null;
+//        Path src = null;
+//        try {
+//          pTgt = FileOutputFormat.getOutputPath(conf);
+//          src = FileOutputFormat.getTaskOutputPath(conf, fileName);
+//        } catch(Exception e) {
+//          // TODO: this can happen if the OutputFormat is not a FileOutputFormat,
+//          // i.e., for HBase
+//          LOG.warn("task output files not found");
+//        }
+//        if(pTgt != null && src != null) {
+//          Path tgt = new Path(FileOutputFormat.getOutputPath(conf), fileName);
+//
+//          FileSystem fs = src.getFileSystem(conf);
+//          if(fs.exists(tgt)) {
+//            fs.delete(tgt, true);
+//          }
+//
+//
+//          // rename src to tgt
+//          fs.rename(src, tgt);
+//
+//          // clean-up the temp
+//          Path tmp = new Path(FileOutputFormat.getOutputPath(conf), FileOutputCommitter.TEMP_DIR_NAME);
+//          if(fs.exists(tmp))
+//            fs.delete(tmp, true);
+//        }
+//      }
     }
   }
 
@@ -311,6 +342,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
   public void setSequential(JobConf conf) throws Exception
   {
     set(conf);
+    configurator.setSequential(conf);
   }
 
   /*
@@ -321,6 +353,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
   public void setParallel(JobConf conf) throws Exception
   {
     set(conf);
+    configurator.setParallel(conf);
   }
 
   /**
@@ -334,7 +367,6 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     AdapterStore.getStore().output.replaceOption(args, options);
     // write out args and options to the conf
     ConfUtil.writeConf(conf, ConfSetter.CONFOUTOPTIONS_NAME, args);
-    configurator.setParallel(conf);
     Globals.setJobConf(conf);
   }
 }
