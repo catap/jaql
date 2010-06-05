@@ -223,32 +223,39 @@ range(10)
  -> keyMerge( range(10) -> transform [$,$] )
 ;
 
+worklist = fn(array) { type: 'array', inoptions: { array }};
+
 fd1 = hdfs('R');
 fd2 = hdfs('S');
 
-range(1000,by=3) 
- -> write(HadoopTemp(schema long))
- -> read() 
- -> expand [ { fk: $, r: 'one' },
-             { fk: $, r: 'two' } ] 
- -> group by $.fk expand $  // TODO: this needs to be replaced by a partition expr so we don't rewrite it away
- -> perPartition( -> sort by [$.fk,$.r] ) // TODO: this is needed make the test work without map/reduce; the partition expr will eliminate it too.  We need the sort by $.r to get deterministic output for the test.
- -> write(fd1)
-;
+// generate 0,3,... upto 1000
+// produce two records with each value
+// partition and sort within the partition by the value.
+mapReduce({
+  input: worklist([1]),
+  output: fd1,
+  map: fn(i) 
+    range(1000,by=3) 
+      -> expand [ { fk: $, r: 'one' },
+                  { fk: $, r: 'two' } ]
+      -> transform [$.fk, $],
+  reduce: fn(k,v) v
+});
 
-range(1000,by=19) 
- -> write(HadoopTemp(schema long)) 
- -> read()
- -> transform { key: $, s: 'three' }
- -> group by $.key expand $ // TODO: this needs to be replaced by a partitioning function so we don't rewrite it away
- -> perPartition( -> sort by [$.key] ) // TODO: this is needed make the test work without map/reduce; the partition expr will eliminate it too
- -> write(fd2)
-;
-
-worklist = fn(array) { type: 'array', inoptions: { array }};
+// generate 0,19,... upto 1000
+// partition and sort within the partition by the value.
+mapReduce({
+  input: worklist([1]),
+  output: fd2,
+  map: fn(i) 
+    range(1000,by=19) 
+      -> transform { key: $, s: 'three' }
+      -> transform [$.key, $],
+  reduce: fn(k,v) v
+});
 
 // Expand a file descriptor into one descriptor per part.
-// If fd is a directory with part-* files, a new fd for each part,
+// If fd is a directory with part-* files, make a new fd for each part,
 // else just return fd.
 // TODO: Better error checking would be good:
 //    When not a directory with part-##### files, make sure it is a regular file.
@@ -295,10 +302,11 @@ mergeJoinParts = fn(fd1, key1, fd2, key2, proj)
 );
 
 mergeJoinParts(
-  fd1, fn(i) i.fk, 
-  fd2, fn(j) j.key,
-  fn(i,j) { i.*, j.* }
-);
+    fd1, fn(i) i.fk, 
+    fd2, fn(j) j.key,
+    fn(i,j) { i.*, j.* }
+  )
+-> sort by [$]; // sort needed to make test insensitive to different configurations
 
 //===========================================================================
 // done
