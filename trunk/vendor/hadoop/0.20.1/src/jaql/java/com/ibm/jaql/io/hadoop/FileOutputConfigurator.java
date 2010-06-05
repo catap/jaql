@@ -20,9 +20,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.JobID;
-import org.apache.hadoop.mapred.TaskAttemptID;
-import org.apache.hadoop.mapred.TaskID;
+import org.apache.hadoop.mapred.OutputCommitter;
 
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -44,7 +42,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
   {
     location = AdapterStore.getStore().getLocation((JsonRecord) options);
   }
-
+  
   /*
    * (non-Javadoc)
    * 
@@ -54,35 +52,23 @@ public class FileOutputConfigurator implements InitializableConfSetter
   {
     registerSerializers(conf);
     
-    // For an expression, the location is the final file name, so its directory
-    // must be the location's parent.
+    // For an expression, the location is the final file name
     Path outPath = new Path(location);
     FileSystem fs = outPath.getFileSystem(conf);
-    if (fs.exists(outPath) && fs.isFile(outPath)) fs.delete(outPath, true);
+    if (fs.exists(outPath) && fs.isFile(outPath)) fs.delete(outPath, true); // TODO: Jaql currently has overwrite semantics; add flag to control this
 
-    // the output path for FileOutputFormat is "foo's" parent
+//    // uses the same ./_temporary directory for multiple writes, 
+//    // which is removed by committer, causing trouble. 
+//    FileOutputFormat.setOutputPath(conf, outPath.getParent());
+//    
+//    // creates ./file/file
+//    // FileOutputFormat.setOutputPath(conf, outPath);
+    
+    // In sequential mode, we will write directly to the output file
+    // and bypass the _temporary directory and rename of the standard 
+    // FileOutputCommitter by using our own DirectFileOutputCommitter.
     FileOutputFormat.setOutputPath(conf, outPath.getParent());
-    
-    // HACK: copied from FileOutputFormat since it is package protected.
-    Path workOutputDir = new Path(fs.getWorkingDirectory(), outPath.getName());
-    conf.set("mapred.work.output.dir", workOutputDir.toString());
-    if (!fs.exists(workOutputDir))
-    {
-      if (!fs.mkdirs(workOutputDir))
-        throw new IllegalStateException("could not create work output directory: " + workOutputDir);
-    }
-    
-    // this is where the write happens 
-    Path tempDir = new Path(outPath.getParent(), FileOutputCommitter.TEMP_DIR_NAME);
-    if (!fs.exists(tempDir))
-    {
-      if (!fs.mkdirs(tempDir))
-        throw new IllegalStateException("could not create temporay directory: " + tempDir);
-    }
-    int jobId = (int)System.currentTimeMillis();
-    conf.set("mapred.task.id", new TaskAttemptID(new TaskID(new JobID("dummy", jobId), true, 0),0).toString());
-    
-    // see DefaultHadoopOutputAdapter.close() for cleanup, i.e., renaming the temp file to desired location
+    conf.setClass("mapred.output.committer.class", DirectFileOutputCommiter.class, OutputCommitter.class);
   }
 
   protected void registerSerializers(JobConf conf)
@@ -105,15 +91,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
     // parent directory.
     Path outPath = new Path(location);
     FileSystem fs = outPath.getFileSystem(conf);
-    fs.delete(outPath, true);
+    fs.delete(outPath, true); // TODO: Jaql currently has overwrite semantics; add flag to control this
     FileOutputFormat.setOutputPath(conf, outPath);
-    // HACK: copied from FileOutputFormat since it is package protected.
-//    Path workOutputDir = new Path(conf.getWorkingDirectory(), outPath);
-//    conf.set("mapred.work.output.dir", workOutputDir.toString());
-//    if (!fs.exists(workOutputDir))
-//    {
-//      if (!fs.mkdirs(workOutputDir))
-//        throw new IllegalStateException("could not create work output directory: " + workOutputDir);
-//    }
   }
 }

@@ -80,12 +80,9 @@ public abstract class AbstractWriteExpr extends Expr
     adapter.open();
     ClosableJsonWriter writer = adapter.getWriter();
     JsonIterator iter = dataExpr().iter(context);
-    if (iter != null)
+    for (JsonValue value : iter) 
     {
-      for (JsonValue value : iter) 
-      {
-        writer.write(value);
-      }
+      writer.write(value);
     }
     adapter.close();
   

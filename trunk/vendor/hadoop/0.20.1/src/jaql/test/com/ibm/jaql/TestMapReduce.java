@@ -1,12 +1,12 @@
 /*
  * Copyright (C) IBM Corp. 2008.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
  * the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql;
 
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -25,14 +23,21 @@ import java.io.OutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.MiniDFSCluster;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MiniMRCluster;
+import org.apache.hadoop.util.VersionInfo;
+
+import com.ibm.jaql.JaqlBaseTestCase;
+import com.ibm.jaql.TestMapReduce;
+import com.ibm.jaql.UtilForTest;
 
 /**
- * 
+ *
  */
 public class TestMapReduce extends JaqlBaseTestCase
 {
@@ -47,7 +52,7 @@ public class TestMapReduce extends JaqlBaseTestCase
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see com.ibm.jaql.lang.JaqlBaseTestCase#setUp()
    */
   @Override
@@ -94,7 +99,7 @@ public class TestMapReduce extends JaqlBaseTestCase
     // make the home directory if it does not exist
     Path hd = fs.getWorkingDirectory();
     if (!fs.exists(hd)) fs.mkdirs(hd);
-    
+   
     // make the $USER/_temporary directory if it does not exist
     Path tmpPath = new Path(hd, "_temporary");
     if (!fs.exists(tmpPath)) fs.mkdirs(tmpPath);
@@ -118,7 +123,7 @@ public class TestMapReduce extends JaqlBaseTestCase
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see com.ibm.jaql.lang.JaqlBaseTestCase#tearDown()
    */
   @Override
@@ -150,9 +155,8 @@ public class TestMapReduce extends JaqlBaseTestCase
     if (!overrideDir.exists()) fail("hadoop-override dir must exist");
 
     // write out the JobConf from MiniMR to the override dir
-    DataOutputStream out = new DataOutputStream(System.out); 
-    jconf.write(out);
-    out.flush();
+    jconf.writeXml(System.out);
+    System.out.flush();
     conf.set("mapred.job.tracker", jconf.get("mapred.job.tracker", null));
     String name = "mapred.job.tracker.info.port";
     String addr = jconf.get(name, null);
@@ -163,13 +167,17 @@ public class TestMapReduce extends JaqlBaseTestCase
     }
     conf.set(name, addr);
 
-    File f = new File(overrideDir.getCanonicalPath() + File.separator
-        + "hadoop-default.xml");
-    f.deleteOnExit();
-    out = new DataOutputStream(new FileOutputStream(f));
-    conf.write(out);
-    out.flush();
-    out.close();
-
+    OutputStream outCore = new FileOutputStream(overrideDir.getCanonicalPath()
+        + File.separator + "core-default.xml");
+    OutputStream outMapred = new FileOutputStream(overrideDir.getCanonicalPath()
+        + File.separator + "mapred-default.xml");
+    OutputStream outHdfs = new FileOutputStream(overrideDir.getCanonicalPath()
+        + File.separator + "hdfs-default.xml");
+    conf.writeXml(outCore);
+    conf.writeXml(outMapred);
+    conf.writeXml(outHdfs);
+    outCore.close();
+    outMapred.close();
+    outHdfs.close();
   }
 }

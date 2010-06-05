@@ -324,6 +324,9 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
   public void setSequential(JobConf conf) throws Exception
   {
     set(conf);
+    
+    // write the optional args for the configurator
+    configurator.setSequential(conf); // TODO: double-check what options the
   }
 
   /*
@@ -334,6 +337,9 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
   public void setParallel(JobConf conf) throws Exception
   {
     set(conf);
+    
+    // write the optional args for the configurator
+    configurator.setParallel(conf); // TODO: double-check what options the
   }
 
   /**
@@ -351,10 +357,8 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
 
     // write the top-level args for the adapter
     ConfUtil.writeConf(conf, ConfSetter.CONFINOPTIONS_NAME, args);
-
-    // write the optional args for the configurator
-    configurator.setParallel(conf); // TODO: double-check what options the
-    // configurator has at this point
+    
+    // Set the global options
     Globals.setJobConf(conf);
   }
   
