@@ -57,8 +57,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
     serializers.put(JsonEncoding.NULL, new NullSerializer());
     serializers.put(JsonEncoding.ARRAY_SPILLED, new ArraySerializer(this));
     serializers.put(JsonEncoding.ARRAY_BUFFERED, new ArraySerializer(this));
-    serializers.put(JsonEncoding.RECORD,
-                    new RecordSerializer(jstringSerializer, this));
+    serializers.put(JsonEncoding.RECORD, new RecordSerializer(jstringSerializer, this));
     serializers.put(JsonEncoding.BOOLEAN, new BoolSerializer());
     serializers.put(JsonEncoding.STRING, jstringSerializer);
     serializers.put(JsonEncoding.BINARY, new BinarySerializer());
@@ -67,8 +66,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
     serializers.put(JsonEncoding.DATE, new DateSerializer());
     serializers.put(JsonEncoding.FUNCTION, new FunctionSerializer());
     serializers.put(JsonEncoding.SCHEMA, new SchemaSerializer());
-    serializers.put(JsonEncoding.REGEX,
-                    new RegexSerializer(jstringSerializer));
+    serializers.put(JsonEncoding.REGEX, new RegexSerializer(jstringSerializer));
     serializers.put(JsonEncoding.SPAN, new SpanSerializer());
     serializers.put(JsonEncoding.DOUBLE, new DoubleSerializer());
   }
@@ -88,12 +86,9 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
   @SuppressWarnings("unchecked")
   @Override
   public void write(PrintStream out, JsonValue value, int indent) throws IOException {
-    JsonEncoding encoding;
-    if (value == null) {
-      encoding = JsonEncoding.NULL;
-    } else {
-      encoding = value.getEncoding();
-    }
+    JsonEncoding encoding = value == null
+        ? JsonEncoding.NULL
+        : value.getEncoding();
     TextBasicSerializer serializer = serializers.get(encoding);
     assert serializer != null : "No serializer defined for " + encoding;
     serializer.write(out, value, indent);
