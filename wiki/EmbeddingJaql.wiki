@@ -118,7 +118,7 @@ public class MyClazz2 {
 PyJaql is an effort to enable python programmers work with Jaql, it's achieved not through re-implementing Jaql in python, but rather through bridging jaql and python by the using of [http://jpype.sourceforge.net/ jpype], it provides a few simple and clean functions for python programmers to take the advantage of jaql's capability. This document introduces you how to setup pyJaql environment and few examples for you to start with.
 ===Ubuntu Installer===
 This chapter introduces you pyJaql installation and configuration steps.
-====Pyton====
+====Python====
 By default, [http://www.python.org/ python] is installed on ubuntu. If not, please read guide introduced by python official site to install. The recommended version is python 2.6.
 ====jpype====
 [http://sourceforge.net/projects/jpype/files/ Download] source from sourceforge, the latest version of jpype 0.5.4.1 is recommended.
