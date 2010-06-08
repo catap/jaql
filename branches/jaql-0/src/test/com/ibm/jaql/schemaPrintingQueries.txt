@@ -1,0 +1,10 @@
+// tests printing with the schema-aware serializer
+
+{ a: true, d:4, b: 2, c:3 };
+{ a: true, d:4, b: 2, c:3 } -> assert(schema { d,c,a: boolean,b });
+{ a: true, d:4, b: 2, c:3 } -> assert(schema { d,c,a: boolean,b, * });
+{ a: true, d:4, b: 2, c:3 } -> assert(schema { c,a: boolean,* });
+  
+[ { a: true, d:4, b: 2, c:3 }, { a: true, d:4, c: 3, b:2 } ];
+[ { a: true, d:4, b: 2, c:3 }, { a: true, d:4, c: 3, b:2 } ] -> assert(schema [ { d,c,a,b }, { a, b, d, c} ]);
+  

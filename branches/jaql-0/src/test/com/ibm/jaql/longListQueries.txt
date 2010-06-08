@@ -1,0 +1,340 @@
+//===========================================================================
+// probeLongList
+//===========================================================================
+
+// Useful function library that is built on probeLongList:
+// TODO: make a module!
+
+//---------------------------------------------------------------------------
+// Return p in probe where probeKeyFn(p) in longVals.
+// longVals will be loaded into memory (typically in each map task).
+//
+// probe is [T], T is any
+// probeKeyFn is fn(T) returns long?
+// longVals is [long?]
+// returns [T]
+//---------------------------------------------------------------------------
+inMemoryLongInList = fn( [any...] probe, function probeKeyFn, [long...] longVals)
+(
+  probe
+    -> transform [probeKeyFn($), $] // get the key form the probe (better be a long)
+    -> probeLongList( longVals ) // return [ [long key, any value, position] ]
+    -> filter $[2] >= 0 // only matching items
+    -> transform $[1] // return the original probe value
+);
+
+//---------------------------------------------------------------------------
+// Return p in probe where longHash(probeKeyFn(p)) in { longHash(i) : i in inList }
+//
+// The hash values will be temp'd on disk and then loaded into memory
+// (typically reloaded into memory on each map task).
+//
+// probe is [T], T is any
+// probeKeyFn is fn(T) returns any
+// inList is [any]
+// returns [T]
+//---------------------------------------------------------------------------
+fuzzyInList = fn(probe, probeKeyFn, inList) (
+  // Temp the hash codes so we don't recompute them on each mapper.
+  hashFd = inList -> transform longHash($) -> write(HadoopTemp()),
+  probe -> inMemoryLongInList( fn(p) longHash(probeKeyFn(p)), read(hashFd) )
+);
+
+//---------------------------------------------------------------------------
+// Return p in probe where probeKeyFn(p) in read(inListFd)
+// 
+// Uses fuzzyInList to find a superset of the probe values that might qualify.
+// Then in a second pass, joins these candidates with the full inList to
+// eliminate any false-positives.
+//
+// probe is [T], T is any
+// probeKeyFn is fn(T) returns any
+// inListFd is a file descriptor
+//    read(inListFd) is [any]
+// returns [T]
+//---------------------------------------------------------------------------
+twoPassInListFromFile = fn(probe, probeKeyFn, inListFd) (
+  candidates = probe -> fuzzyInList(probeKeyFn, read(inListFd)),
+  // we use cogroup instead of join just in case inListFd contains duplicates
+  group candidates     by k = probeKeyFn($) as cs,
+        read(inListFd) by     $ as i
+    expand if(exists(i)) cs // just return the matching probe records
+);
+
+//---------------------------------------------------------------------------
+// Return p in probe where probeKeyFn(p) in inList
+// 
+// Writes the inList to a temp and then runs twoPassInListFromFile.
+//
+// probe is [T], T is any
+// probeKeyFn is fn(T) returns any
+// inList is [any]
+// returns [T]
+//---------------------------------------------------------------------------
+twoPassInList = fn(probe, probeKeyFn, inList) (
+  // Temp the inList because we don't want to recompute it.
+  // TODO: would be nice to avoid temp when inList is simply a read; add writeIfNotWritten()
+  inListFd = inList -> write(HadoopTemp()),
+  twoPassInListFromFile( probe, probeKeyFn, inListFd )
+);
+
+//---------------------------------------------------------------------------
+// Join probe and build using a two-pass semi-join strategy that
+// requires enough memory to hold the hash code for every distinct build key.
+//
+// Equivalent to:
+// join p in probe,
+//      b in read(buildFd)
+//  where probeKeyFn(p) == buildKeyFn(b)
+//  into projectFn(p,b)
+//
+// Temps the hash codes to disk and (typically) loads them all in every map task.
+// Typically creates the following map/reduce jobs:
+//   1. map-only job to generate the hash of the build keys.
+//       This could be avoided if re-running the buildKeyFn + hash in every mapper
+//       is cheaper than writing the temp and reading just the keys.
+//       E.g., when the table is really skinny or in a column store (and we get
+//       projection push-down).
+//       To do this, we need to use inMemoryLongInList in place of fuzzyInList.
+//   2. map-reduce job
+//      map: will generate candidate probe values that will likely match + some false positives
+//      reduce: join the probe values with the build values.
+// 
+// probe is [T], T is any
+// probeKeyFn is fn(T) returns any  should be cheap and deterministic because called twice
+// buildFd is file descriptor
+//   read(buildFd) is [U], U is any
+// buildKeyFn is fn(U) return any   should be cheap and deterministic because called twice
+// projectFn is fn(T,U) returns V, V is any
+// returns [V]
+//---------------------------------------------------------------------------
+twoPassJoinFromFile = fn(probe, probeKeyFn, buildFd, buildKeyFn, projectFn) (
+  // TODO: add sortDistinct and optimized sortDistinctLong to avoid resorting magic set
+  magicSet = read(buildFd) -> transform buildKeyFn($),
+  candidates = probe -> fuzzyInList(probeKeyFn, magicSet),
+  join p in candidates,
+       b in read(buildFd)
+    where probeKeyFn(p) == buildKeyFn(b)
+    into projectFn(p,b)
+);
+
+//---------------------------------------------------------------------------
+// Join probe and build using a two-pass semi-join strategy that
+// requires enough memory to hold the hash code for every distinct build key.
+//
+// Temps the build to make two passes then uses twoPassJoinFromFile
+//
+// TODO: We could save one pass over the build file if we tee'd the hash
+// codes while writing the build temp. It means either we cannot always reuse
+// previous functions or we need to get clever in rewrites. eg,
+//   A -> map1 -> B -> map2 -> C
+// could be
+//   A -> map1 -> tee --> B
+//                    \-> map2 -> C
+// 
+// Equivalent to:
+// join p in probe,
+//      b in read(buildFd)
+//  where probeKeyFn(p) == buildKeyFn(b)
+//  into projectFn(p,b)
+//---------------------------------------------------------------------------
+twoPassJoin = fn(probe, probeKeyFn, build, buildKeyFn, projectFn) (
+  buildFd = build -> write(HadoopTemp()), // TODO: writeIfNotWritten
+  twoPassJoinFromFile(probe, probeKeyFn, buildFd, buildKeyFn, projectFn)
+);
+
+//---------------------------------------------------------------------------
+// Join probe and build using a two-pass semi-join strategy that
+// requires enough memory to hold the every distinct (long) build key.
+//
+// Unlike twoPassJoinFromFile, they keys must be long values, and it
+// does not have any false positives from the first pass.
+//
+// Equivalent to:
+// join p in probe,
+//      b in read(buildFd)
+//  where probeKeyFn(p) == buildKeyFn(b)
+//  into projectFn(p,b)
+//
+// Temps the build keys to disk and (typically) loads them all in every map task.
+// Typically creates the following map/reduce jobs:
+//   1. map-only job to generate the build keys
+//       This could be avoided if re-running the buildKeyFn in every mapper
+//       is cheaper than writing the temp and reading just the keys.
+//       E.g., when the table is really skinny or in a column store (and we get
+//       projection push-down).
+//       To do this, simply remove the write of the magicSet.
+//   2. map-reduce job
+//      map: will generate candidate probe values that will definitely match
+//      reduce: join the probe values with the build values.
+// 
+// probe is [T], T is any
+// probeKeyFn is fn(T) returns long?  should be cheap and deterministic because called twice
+// buildFd is file descriptor
+//   read(buildFd) is [U], U is any
+// buildKeyFn is fn(U) return long?   should be cheap and deterministic because called twice
+// projectFn is fn(T,U) returns V, V is any
+// returns [V]
+//---------------------------------------------------------------------------
+twoPassJoinLongFromFile = fn(probe, probeKeyFn, buildFd, buildKeyFn, projectFn) (
+  // TODO: add sortDistinct and optimized sortDistinctLong to avoid resorting magic set
+  magicSetFd = read(buildFd) -> transform buildKeyFn($) -> write(HadoopTemp()),
+  semijoin = probe -> inMemoryLongInList(probeKeyFn, read(magicSetFd)),
+  join p in semijoin,
+       b in read(buildFd)
+    where probeKeyFn(p) == buildKeyFn(b)
+    into projectFn(p,b)
+);
+
+//---------------------------------------------------------------------------
+// Join probe and build using a two-pass semi-join strategy that
+// requires enough memory to hold the distinct (long) build keys.
+//
+// Unlike twoPassJoin, they keys must be long values, and it
+// does not have any false positives from the first pass.
+//
+// Temps the build to make two passes then uses twoPassJoinLongFromFile
+// 
+// Equivalent to:
+// join p in probe,
+//      b in read(buildFd)
+//  where probeKeyFn(p) == buildKeyFn(b)
+//  into projectFn(p,b)
+//---------------------------------------------------------------------------
+twoPassLongJoin = fn(probe, probeKeyFn, build, buildKeyFn, projectFn) (
+  buildFd = build -> write(HadoopTemp()), // TODO: writeIfNotWritten
+  twoPassJoinLongFromFile(probe, probeKeyFn, buildFd, buildKeyFn, projectFn)
+);
+
+// Tests
+
+dataFd = hdfs('T');
+inFd = hdfs('I');
+
+// some fact-table-like data
+range(1,20) 
+  -> expand [ { fkey: $*2, value: $+100 },
+              { fkey: $*2, value: $+200 } ]
+  -> write(dataFd)
+;
+
+// some big (pretending for testing) integer in-list
+// Ideally the in list is distinct and sorted, otherwise that 
+// work is repeated in each map-task.
+range(1,20) 
+  -> transform $*3
+  // -> distinct()  << already unique
+  // -> sort by [$] << already sorted  // TODO: sortDistinct()
+  -> write(inFd)
+;
+
+// Test the basic probeLongList functionality
+read(dataFd)
+ -> transform [$.fkey, $.value]
+ -> probeLongList( read(inFd) )
+;
+
+// Test the basic probeLongList functionality
+// This shows in-list processing.
+read(dataFd)
+ -> transform [$.fkey, $.value]
+ -> probeLongList( read(inFd) )
+ -> filter $[2] >= 0 // only matched items
+ -> transform $[0]
+;
+
+// Use the wrapper to hide transforms and filter
+read(dataFd)
+ -> inMemoryLongInList( fn($) $.fkey, read(inFd) )
+;
+
+// Try fuzzyInList: use string keys (which get hashed)
+// We don't get any collisions... If our hash function is truly random,
+// we wouldn't expect a collision until we had something like 2^32 keys.
+read(dataFd)
+  -> transform { fkey: strcat('string',$.fkey), $.value }
+  -> fuzzyInList( fn($) $.fkey, read(inFd) -> transform strcat('string',$) )
+;
+
+// If we want to be sure we don't have any false-positives due to hash collisions
+// we can use a second pass.
+// We'll sort the results just to make sure the tests are happy.
+stringInFd = hdfs('S');
+read(inFd) 
+  -> transform strcat('string',$) 
+  -> write(stringInFd)
+;
+read(dataFd)
+  -> transform { fkey: strcat('string',$.fkey), $.value }
+  -> twoPassInListFromFile( fn($) $.fkey, stringInFd )
+  -> sort by [$]
+;
+
+// We can get the in list saved into a temp automagically
+read(dataFd)
+  -> transform { fkey: strcat('string',$.fkey), $.value }
+  -> twoPassInList( fn($) $.fkey, read(inFd) -> transform strcat('string',$) )
+  -> sort by [$]
+;
+
+// Now some joins
+
+// some dimension-table-like data with string key
+dimFd = hdfs('S');
+read(inFd)
+  -> transform { key: strcat('string',$), value: $+300 }
+  -> write(dimFd)
+;
+
+// join dimension-table in a file
+read(dataFd)
+  -> transform { fkey: strcat('string',$.fkey), $.value }
+  -> twoPassJoinFromFile( fn(f) f.fkey, dimFd, fn(d) d.key, fn(f,d) { f, d } )
+  -> sort by [$]
+;
+
+// join a computed dimension-table that will be temp'd
+read(dataFd)
+  -> transform { fkey: strcat('string',$.fkey), $.value }
+  -> twoPassJoin( fn(f) f.fkey, 
+                  read(dimFd) -> filter $.value < 325, 
+                  fn(d) d.key, 
+                  fn(f,d) { f, d } )
+  -> sort by [$]
+;
+
+// some dimension-table-like data with long key
+dimFd = hdfs('S');
+read(inFd)
+  -> transform { key: $, value: $+300 }
+  -> write(dimFd)
+;
+
+// join dimension-table with long key in a file
+read(dataFd)
+  -> twoPassJoinLongFromFile( fn(f) f.fkey, dimFd, fn(d) d.key, fn(f,d) { f, d } )
+  -> sort by [$]
+;
+
+// join a computed dimension-table with long key that will be temp'd
+read(dataFd)
+  -> twoPassLongJoin( fn(f) f.fkey, 
+                      read(dimFd) -> filter $.value < 325, 
+                      fn(d) d.key, 
+                      fn(f,d) { f, d } )
+  -> sort by [$]
+;
+
+daisyChain(1, null);
+daisyChain(1, []);
+daisyChain(1, [fn(x) x+10, fn(x) x+100, fn(x) x+1000]);
+range(1,4) -> daisyChain([-> filter $ > 3, -> filter $ > 2, -> filter $ > 1]);
+
+null -> powerset();
+[] -> powerset();
+[1] -> powerset();
+[1,2] -> powerset();
+[1,2,3] -> powerset();
+['a','b','c'] -> powerset();
+
+quit;

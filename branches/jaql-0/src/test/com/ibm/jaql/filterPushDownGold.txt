@@ -1,0 +1,1947 @@
+//===========================================================================
+// Testcases for FilterPushDown
+// It tests pushing Filter below Transform, Join, Group By, Sort
+// It handles predicate decomposition (Dividing Filter predicates into conjunctive sub-predicates)  
+//===========================================================================
+
+$data_books = [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007,
+     format: {cover: 'hard', pages: 1302},
+     price: [3, 34.0, 102222, 3.3]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     format: {cover: 'hard', pages: 1302}},
+
+    {publisher: 'XYZ',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 1998,
+      format: {cover: 'soft', pages: 1200},
+     price: [120.5, 110.0]},
+
+    {publisher: 'Ray ST',
+     author: 'New Rowling',
+     title: 'Chamber of Secrets',
+     year: 1998, 
+     reviews: [{rating: 10, user: 'joe', review: 'The best ...'}]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1996,
+     format: {cover: 'hard', pages: 742},
+     price: [11.0, 17.5]},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1995, 
+     format: {cover: 'soft', pages: 302}},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1988},
+     
+     
+     {publisher: 'Scholastic',
+          author: 'J. K. Rowling',
+          title: 'Deathly Hallows',
+          year: 1987},
+     
+         {publisher: 'Scholastic',
+          author: 'J. K. Rowling',
+          title: 'Chamber of Secrets',
+          year: 1987, 
+          reviews: [
+            {rating: 10, user: 'joe', review: 'The best ...'},
+            {rating: 6, user: 'mary', review: 'Average ...'}]},
+     
+         {publisher: 'XYZ',
+          author: 'J. K. Rowling',
+          title: 'Deathly Hallows',
+          year: 1986},
+     
+         {publisher: 'Foster',
+          author: 'Old Rowling',
+          title: 'Chamber of Secrets',
+          year: 1979, 
+          reviews: [{rating: 10, user: 'joe', review: 'The best ...'}]},
+     
+         {publisher: 'Scholastic',
+          author: 'J. K. Rowling',
+          title: 'Sorcerers Stone',
+          year: 1978},
+     
+         {publisher: 'Scholastic',
+          author: 'R. L. Stine',
+          title: 'Monster Blood IV',
+          year: 1977, 
+          price: [3.6, 20.5, 41.0]
+          },
+     
+         {publisher: 'Grosset',
+          author: 'Carolyn Keene',
+          title: 'The Secret of Kane',
+          year: 1920,
+          format: {cover: 'hard', pages: 66}}
+];##
+"$data_books"
+
+
+
+$data_books2 = [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007,
+     format: {cover: 'hard', pages: 1302},
+     price: [30.5, 33.5, 34.0]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     format: {cover: 'hard', pages: 1302},
+     price: [20.1, 25.0]
+     },
+
+    {publisher: 'XYZ',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 1998,
+      format: {cover: 'soft', pages: 1200},
+    price: [120.5, 110.0]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1996,
+     format: {cover: 'hard', pages: 742},
+     price: [11.0, 17.5]},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1995, 
+     format: {cover: 'soft', pages: 302}},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1988},
+     
+     
+     {publisher: 'Scholastic',
+          author: 'J. K. Rowling',
+          title: 'Deathly Hallows',
+          year: 1987},
+     
+         {publisher: 'Scholastic',
+          author: 'J. K. Rowling',
+          title: 'Chamber of Secrets',
+          year: 1987, 
+          reviews: [
+            {rating: 10, user: 'joe', review: 'The best ...'},
+            {rating: 6, user: 'mary', review: 'Average ...'}]},
+     
+         {publisher: 'XYZ',
+          author: 'J. K. Rowling',
+          title: 'Deathly Hallows',
+          year: 1986},
+     
+         {publisher: 'Foster',
+          author: 'Old Rowling',
+          title: 'Chamber of Secrets',
+          year: 1979, 
+          reviews: [{rating: 10, user: 'joe', review: 'The best ...'}]},
+     
+         {publisher: 'Scholastic',
+          author: 'J. K. Rowling',
+          title: 'Sorcerers Stone',
+          year: 1978},
+     
+         {publisher: 'Scholastic',
+          author: 'R. L. Stine',
+          title: 'Monster Blood IV',
+          year: 1977,
+          price: [3.6, 20.5, 41.0]
+          },
+     
+         {publisher: 'Grosset',
+          author: 'Carolyn Keene',
+          title: 'The Secret of Kane',
+          year: 1920,
+          format: {cover: 'hard', pages: 66}}   
+];##
+"$data_books2"
+
+
+
+//=========================Testing Filter-Transform===================================================
+
+//Returns 8 records  --Should be pusheddown 
+$data_books -> transform {x: $.author, $.year} -> filter $.x == 'J. K. Rowling';##
+[
+  {
+    "x": "J. K. Rowling",
+    "year": 2007
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1999
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1998
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1996
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1987
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1987
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1986
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1978
+  }
+]
+     
+
+//Returns count of 14 records  --Should be pusheddown TWICE
+$data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> transform each $g [$g.x, $g.y] -> filter true ->count();##
+14
+
+
+
+//Returns count of 3 records  --Should be pusheddown (All the three predicates)
+$data_books -> transform {n: $.author, x: $, $.year , $.format.cover, $, c: $.format.cover, f: $.price-> count(), k: "33333"} -> filter each $dd $dd.cover == 'hard' and $dd.k == '33333' and $dd."".author == 'J. K. Rowling' -> count();##
+3
+  
+
+//Returns count of 2 records  --(Predicates 1, 2, and 4 should be pusheddown) (Predicate 3 stays as is)
+$data_books -> transform {n: $.author, x: $, $.year , $.format.cover, $, c: $.format.cover, f: $.price-> count(), k: "33333"} -> filter $.cover == 'hard' and $.k == '33333' and $.f > 1 and $."".author == 'J. K. Rowling' -> count() ;##
+2
+  
+
+//Returns 3 records  --Should be pusheddown
+$data_books -> transform each $d {n: $d.author, m: $d.year, $d.year , c: $d.format} -> filter  each $x $x.m >= 2004 or $x.c.cover == 'soft';##
+[
+  {
+    "c": {
+      "cover": "hard",
+      "pages": 1302
+    },
+    "m": 2007,
+    "n": "J. K. Rowling",
+    "year": 2007
+  },
+  {
+    "c": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "m": 1998,
+    "n": "J. K. Rowling",
+    "year": 1998
+  },
+  {
+    "c": {
+      "cover": "soft",
+      "pages": 302
+    },
+    "m": 1995,
+    "n": "R. L. Stine",
+    "year": 1995
+  }
+]
+ 
+
+//Returns 6 records  --Should be pusheddown  
+$data_books -> transform ($.year) -> filter $ > 1990;##
+[
+  2007,
+  1999,
+  1998,
+  1998,
+  1996,
+  1995
+]
+
+
+
+//Returns 4 records  --Should be pusheddown  
+$data_books -> transform ($.format) -> filter $.cover == 'hard';##
+[
+  {
+    "cover": "hard",
+    "pages": 1302
+  },
+  {
+    "cover": "hard",
+    "pages": 1302
+  },
+  {
+    "cover": "hard",
+    "pages": 742
+  },
+  {
+    "cover": "hard",
+    "pages": 66
+  }
+]
+
+
+
+//Returns 4 records  --Should be pusheddown  
+$data_books -> transform {$.author, cnt: $.year + $.format.pages * 2} -> filter each $x $x.cnt > 3000;##
+[
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4611
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4603
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4398
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 3480
+  }
+]
+
+
+
+//Returns 2 records  --Should be pusheddown TWICE
+$data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> transform each $g [$g.x, $g.y] -> filter $[0] == 'R. L. Stine';##
+[
+  [
+    "R. L. Stine",
+    null
+  ],
+  [
+    "R. L. Stine",
+    [
+      3.6,
+      20.5,
+      41.0
+    ]
+  ]
+]
+
+
+//Returns 1 record  --First predicate should be pushed TWICE. The second predicate should be pusheddown ONCE
+$data_books -> transform each $d {x: $d.author, $d.format.cover, y:sum($d.price)} -> transform each $g [$g.x, $g.y] -> filter $[0] == 'R. L. Stine' and $[1]> 20;##
+[
+  [
+    "R. L. Stine",
+    65.1
+  ]
+]
+
+
+
+//Returns 4 records  --Should be pusheddown ONCE
+$data_books -> transform [$, $.author, $.format, "3333" ,{name: $.publisher, y: $.year}, max($.price)] -> transform {c:$[2].cover, $[4].name, max: $[5] } -> filter $.max > 2;##
+[
+  {
+    "c": "hard",
+    "max": 102222,
+    "name": "Scholastic"
+  },
+  {
+    "c": "soft",
+    "max": 120.5,
+    "name": "XYZ"
+  },
+  {
+    "c": "hard",
+    "max": 17.5,
+    "name": "Scholastic"
+  },
+  {
+    "c": null,
+    "max": 41.0,
+    "name": "Scholastic"
+  }
+]
+
+
+
+//Returns 2 records  --Should be pusheddown TWICE
+$data_books -> transform [$, $.author, $.format, "3333" ,{name: $.publisher, y: $.year}, max($.price)] -> transform {c:$[2].cover, $[4].name, max: $[5] } -> filter $.c == 'soft';##
+[
+  {
+    "c": "soft",
+    "max": 120.5,
+    "name": "XYZ"
+  },
+  {
+    "c": "soft",
+    "max": null,
+    "name": "Scholastic"
+  }
+]
+
+
+//Returns 2 records  --Should be pusheddown TWICE
+$data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> transform each $g [$g.x, $g.y] -> filter count($[1]) > 2;##
+[
+  [
+    "J. K. Rowling",
+    [
+      3,
+      34.0,
+      102222,
+      3.3
+    ]
+  ],
+  [
+    "R. L. Stine",
+    [
+      3.6,
+      20.5,
+      41.0
+    ]
+  ]
+]
+
+
+
+
+//====================Testing Filter-Transform-Join===================================================
+//Returns 0 records. --(Filter should be pushed down all the way in BOTH directions)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter false;##
+[]
+
+
+
+//Returns count of 8 records. --(Both predicates should be pushed down all the way in ONE direction)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007 -> count();##
+8
+
+
+
+//Returns count of  8 records. --(Both predicates should be pushed down all the way in ONE direction)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007 and $.r1.m == $.r1.year -> count();##
+8
+
+
+
+//Returns 2 records --(Predicate $.a ==  'soft' should be pushed after the first Transform
+//                     Predicate $.b > 1990 should be pushed below the second Transform)     
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2 -> transform {x: $.author, w:$.year};##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.x and $r1.m == $r2.w into {a: $r1.c, b: $r2.w} -> filter $.a ==  'soft' and $.b > 1990;##
+[
+  {
+    "a": "soft",
+    "b": 1998
+  },
+  {
+    "a": "soft",
+    "b": 1995
+  }
+]
+
+
+
+
+//Returns 5 records --(Predicates are pushed down only before the INTO clause but not before the join)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2 -> transform {x: $.author, w:$.year};##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.x and $r1.m == $r2.w into {a: $r1.c, b: $r2.w} -> filter $.a ==  'soft' or $.b > 1990;##
+[
+  {
+    "a": "hard",
+    "b": 1999
+  },
+  {
+    "a": "hard",
+    "b": 1996
+  },
+  {
+    "a": "soft",
+    "b": 1998
+  },
+  {
+    "a": "hard",
+    "b": 2007
+  },
+  {
+    "a": "soft",
+    "b": 1995
+  }
+]
+
+
+
+
+//Returns 2 records --(Predicate $.a ==  'soft' should be pushed after the first Transform
+//                     Predicate $.d2 == $.d3 should be pushed down only before the INTO clause but not before the join)     
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2 -> transform {x: $.author, w:$.year};##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.x and $r1.m == $r2.w into {d1: $r1.c, d2: $r2.w, d3: $r1.year} -> filter $.d1 ==  'soft' and $.d2 == $.d3;##
+[
+  {
+    "d1": "soft",
+    "d2": 1998,
+    "d3": 1998
+  },
+  {
+    "d1": "soft",
+    "d2": 1995,
+    "d3": 1995
+  }
+]
+
+
+//Returns 8 records --(Predicates are pushed down only before the INTO clause but not before the join)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join preserve $r1, preserve $r2 where $r1.n == $r2.author into {$r1, $r2} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007;##
+[
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "hard",
+        "pages": 1302
+      },
+      "price": [
+        30.5,
+        33.5,
+        34.0
+      ],
+      "publisher": "Scholastic",
+      "title": "Deathly Hallows",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "hard",
+        "pages": 1302
+      },
+      "price": [
+        20.1,
+        25.0
+      ],
+      "publisher": "Scholastic",
+      "title": "Chamber of Secrets",
+      "year": 1999
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "soft",
+        "pages": 1200
+      },
+      "price": [
+        120.5,
+        110.0
+      ],
+      "publisher": "XYZ",
+      "title": "Deathly Hallows",
+      "year": 1998
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "hard",
+        "pages": 742
+      },
+      "price": [
+        11.0,
+        17.5
+      ],
+      "publisher": "Scholastic",
+      "title": "Sorcerers Stone",
+      "year": 1996
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "title": "Deathly Hallows",
+      "year": 1987
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "reviews": [
+        {
+          "rating": 10,
+          "review": "The best ...",
+          "user": "joe"
+        },
+        {
+          "rating": 6,
+          "review": "Average ...",
+          "user": "mary"
+        }
+      ],
+      "title": "Chamber of Secrets",
+      "year": 1987
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "XYZ",
+      "title": "Deathly Hallows",
+      "year": 1986
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "title": "Sorcerers Stone",
+      "year": 1978
+    }
+  }
+]
+
+
+
+//Returns 8 records --(Predicates 1 & 2 are pushed down only before the INTO clause but not before the join,
+//                     Predicate 3 is pushed down all the way in BOTH sides)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join $r1, preserve $r2 where $r1.n == $r2.author into {$r1, $r2} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007  and true;##
+[
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "hard",
+        "pages": 1302
+      },
+      "price": [
+        30.5,
+        33.5,
+        34.0
+      ],
+      "publisher": "Scholastic",
+      "title": "Deathly Hallows",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "hard",
+        "pages": 1302
+      },
+      "price": [
+        20.1,
+        25.0
+      ],
+      "publisher": "Scholastic",
+      "title": "Chamber of Secrets",
+      "year": 1999
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "soft",
+        "pages": 1200
+      },
+      "price": [
+        120.5,
+        110.0
+      ],
+      "publisher": "XYZ",
+      "title": "Deathly Hallows",
+      "year": 1998
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "format": {
+        "cover": "hard",
+        "pages": 742
+      },
+      "price": [
+        11.0,
+        17.5
+      ],
+      "publisher": "Scholastic",
+      "title": "Sorcerers Stone",
+      "year": 1996
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "title": "Deathly Hallows",
+      "year": 1987
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "reviews": [
+        {
+          "rating": 10,
+          "review": "The best ...",
+          "user": "joe"
+        },
+        {
+          "rating": 6,
+          "review": "Average ...",
+          "user": "mary"
+        }
+      ],
+      "title": "Chamber of Secrets",
+      "year": 1987
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "XYZ",
+      "title": "Deathly Hallows",
+      "year": 1986
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    },
+    "r2": {
+      "author": "J. K. Rowling",
+      "publisher": "Scholastic",
+      "title": "Sorcerers Stone",
+      "year": 1978
+    }
+  }
+]
+
+
+
+//Returns 8 records --(Predicates are pushed down all the way in ONE side)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join preserve $r1,  $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007;##
+[
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  }
+]
+
+
+//===================Testing Filter-Transform-Join-Sort===================================================
+
+//Returns 8 records  --Should be pusheddown all the way
+$data_books -> transform {x: $.author, $.year} -> sort by [$.x, $.year asc] -> filter $.x == 'J. K. Rowling';##
+[
+  {
+    "x": "J. K. Rowling",
+    "year": 1978
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1986
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1987
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1987
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1996
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1998
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1999
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 2007
+  }
+]
+     
+
+//Returns 2 records  --Should be pusheddown all the way
+$data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> transform each $g [$g.x, $g.y] -> sort by [$[1]] -> filter $[0] == 'R. L. Stine';##
+[
+  [
+    "R. L. Stine",
+    null
+  ],
+  [
+    "R. L. Stine",
+    [
+      3.6,
+      20.5,
+      41.0
+    ]
+  ]
+]
+
+
+//Returns 1 record  --First predicate should be pushed FOUR TIMES (all the way down). The second predicate should be pusheddown THREE TIMES (after the first transform)
+$data_books -> transform each $d {x: $d.author, $d.format.cover, y:sum($d.price)} -> sort by [$.y * 2] -> transform each $g [$g.x, $g.y] -> sort by [$[1]] -> filter $[0] == 'R. L. Stine' and $[1]> 20;##
+[
+  [
+    "R. L. Stine",
+    65.1
+  ]
+]
+
+
+
+//Returns 4 records  --Should be pusheddown all the way  
+$data_books -> sort by [$.author] -> transform {$.author, cnt: $.year + $.format.pages * 2} -> filter each $x $x.cnt > 3000;##
+[
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4611
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4603
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4398
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 3480
+  }
+]
+
+
+
+//Returns 8 records. --(Both predicates should be pushed down all the way in ONE direction)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover}  -> sort by [$.year] ;##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.author into {$r1} -> sort by [$.r1 desc] -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007;##
+[
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  },
+  {
+    "r1": {
+      "c": "hard",
+      "m": 2007,
+      "n": "J. K. Rowling",
+      "year": 2007
+    }
+  }
+]
+
+
+
+//Returns 2 records --(Predicate $.a ==  'soft' should be pushed after the first Transform
+//                     Predicate $.d2 == $.d3 should be pushed down only before the INTO clause but not before the join)     
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2 -> transform {x: $.author, w:$.year} -> sort by [$.w * 4];##
+"$r2"
+
+join $r1, $r2 where $r1.n == $r2.x and $r1.m == $r2.w into {d1: $r1.c, d2: $r2.w, d3: $r1.year} -> sort by [$.d2] -> filter $.d1 ==  'soft' and $.d2 == $.d3;##
+[
+  {
+    "d1": "soft",
+    "d2": 1995,
+    "d3": 1995
+  },
+  {
+    "d1": "soft",
+    "d2": 1998,
+    "d3": 1998
+  }
+]
+
+
+
+//========================Testing Filter-GroupBy===================================================
+//Returns 1 record --(Filter should be pushed below the GroupBy)
+$data_books ->  group by v = $.author into {key: v, c: min($[*].format.cover), total: sum($[*].year)} -> filter $.key == 'New Rowling';##
+[
+  {
+    "c": null,
+    "key": "New Rowling",
+    "total": 1998
+  }
+]
+
+
+
+//Returns 1 record --(Filter should be pushed below the GroupBy)
+$data_books ->  group by v = {$.author, $.year} into {key: v, c: $[*].format.cover, total: sum($[*].year)} -> filter each $x $x.key.author == 'New Rowling';##
+[
+  {
+    "c": [
+      null
+    ],
+    "key": {
+      "author": "New Rowling",
+      "year": 1998
+    },
+    "total": 1998
+  }
+]
+ 
+
+
+//Returns 2 record --(The 1st predicate should be pushed below the GroupBy. The 2nd predicate remains as is)
+$data_books ->  group by v = {n: $.author, m: $.year} into {key: v, c: $[*].format.cover, total: sum($[*].year)} -> filter $.key.n > 'New Rowling' and $.total > 1978;##
+[
+  {
+    "c": [
+      null
+    ],
+    "key": {
+      "m": 1979,
+      "n": "Old Rowling"
+    },
+    "total": 1979
+  },
+  {
+    "c": [
+      "soft"
+    ],
+    "key": {
+      "m": 1995,
+      "n": "R. L. Stine"
+    },
+    "total": 1995
+  }
+]
+ 
+
+
+//Returns 3 record --(Filter remains as is)
+$data_books ->  group by v = {n: $.author, m: $.year} into {key: v, c: $[*].format.cover, total: sum($[*].year)} -> filter $.key.n == 'New Rowling' or $.total > 2000;##
+[
+  {
+    "c": [
+      null
+    ],
+    "key": {
+      "m": 1998,
+      "n": "New Rowling"
+    },
+    "total": 1998
+  },
+  {
+    "c": [
+      null,
+      null
+    ],
+    "key": {
+      "m": 1987,
+      "n": "J. K. Rowling"
+    },
+    "total": 3974
+  },
+  {
+    "c": [
+      "hard"
+    ],
+    "key": {
+      "m": 2007,
+      "n": "J. K. Rowling"
+    },
+    "total": 2007
+  }
+]
+ 
+
+
+//Returns 2 record --(Filter should be pushed below the GroupBy)
+$data_books ->  group by v = [$.author, $.year] into {key: v, c: $[*].format.cover, total: sum($[*].year)} -> filter $.key[0] == 'New Rowling' or $.key[1] == 1999;##
+[
+  {
+    "c": [
+      "hard"
+    ],
+    "key": [
+      "J. K. Rowling",
+      1999
+    ],
+    "total": 1999
+  },
+  {
+    "c": [
+      null
+    ],
+    "key": [
+      "New Rowling",
+      1998
+    ],
+    "total": 1998
+  }
+]
+ 
+
+
+//Returns 2 record --(The 1st predicate should be pushed below the GroupBy. The 2nd predicate remains as is)
+$data_books ->  group by v = $.author into [v, min($[*].format.cover),  sum($[*].year)] -> filter $[0] > 'A' and $[1] != 'soft';##
+[
+  [
+    "J. K. Rowling",
+    "hard",
+    15938
+  ],
+  [
+    "Carolyn Keene",
+    "hard",
+    3908
+  ]
+]
+
+
+
+//Returns 3 record --(Filter remains as is)
+$data_books ->  group by v = $.author into (sum($[*].year)) -> filter $ >2000;##
+[
+  15938,
+  3972,
+  3908
+]
+
+
+
+//Returns 7 record --(Filter should be pushed below the GroupBy)
+$data_books -> transform {x: $.author, $.year} -> distinct() -> filter $.x == 'J. K. Rowling';##
+[
+  {
+    "x": "J. K. Rowling",
+    "year": 1978
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1999
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 2007
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1996
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1986
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1987
+  },
+  {
+    "x": "J. K. Rowling",
+    "year": 1998
+  }
+]
+     
+
+
+//Returns 2 record --(Filter should be pushed below the GroupBy and the Transform)
+$data_books -> transform each $d {n: $d.author, m: $d.year, $d.year , c: $d.format} -> group by v = [$.n, $.m] into {key: v, cover: $[*].c.cover, Min: min($[*].year)} -> filter $.key[0] == 'New Rowling' or $.key[1] > 2005;##
+[
+  {
+    "Min": 2007,
+    "cover": [
+      "hard"
+    ],
+    "key": [
+      "J. K. Rowling",
+      2007
+    ]
+  },
+  {
+    "Min": 1998,
+    "cover": [
+      null
+    ],
+    "key": [
+      "New Rowling",
+      1998
+    ]
+  }
+]
+ 
+
+
+//Returns 1 record --(1st Predicate should be pushed below the Transform. 2nd Predicate remains as is)
+$data_books -> transform each $d {n: $d.author, m: $d.year, $d.year , c: $d.format} -> group by v = [$.n, $.m] into {key: v, cover: $[*].c.cover, Min: min($[*].year)} -> filter $.key[0] == 'New Rowling' and $.Min == 1998;##
+[
+  {
+    "Min": 1998,
+    "cover": [
+      null
+    ],
+    "key": [
+      "New Rowling",
+      1998
+    ]
+  }
+]
+ 
+
+
+//Returns 5 record --(Predicates "$.r1.n ==  'J. K. Rowling' and $.r1.m > 200" should be pushed down below the Join,
+//                      Predicate $.Key < 1999 should be pushed down below the GroupBy and Join,
+//                      Predicate $.Min == 'J. K. Rowling' should remain as is)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+K = join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m > 200;##
+"K"
+
+K -> group by v = $.r1.year into {Key:v, Min: min($[*].r1.n)} -> filter $.Key < 1999 and $.Min == 'J. K. Rowling';##
+[
+  {
+    "Key": 1986,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1998,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1978,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1987,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1996,
+    "Min": "J. K. Rowling"
+  }
+]
+
+
+
+//Returns 2 record --(Predicates "$.r1.n ==  'J. K. Rowling' and $.r1.m > 200" should be pushed down below the Join,
+//                      Predicate $.Key[0] < 1999 should be pushed down below the GroupBy and Join,
+//                      Predicate ($.Min == 'soft' or $.Min == 'hard') should remain as is)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+$r3 = join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m > 200;##
+"$r3"
+
+$r3 -> group by v = [$.r1.m, $.r1.n] into {Key:v, Min: min($[*].r1.c)} -> filter $.Key[0] < 1999 and ($.Min == 'soft' or $.Min == 'hard');##
+[
+  {
+    "Key": [
+      1998,
+      "J. K. Rowling"
+    ],
+    "Min": "soft"
+  },
+  {
+    "Key": [
+      1996,
+      "J. K. Rowling"
+    ],
+    "Min": "hard"
+  }
+]
+
+
+
+//Retuns 2 records --(Predicate should be pushed down in BOTH directions)
+group
+  [ {a:1, b:'b1x'}, {a:2, b:'b2x'}, {a:3, b:'b3x'}, {a:1, b:'b1y'}, {a:2, b:'b2y'} ] 
+     by g = ($.a) as i,
+  [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ]
+     by g = ($.c) as j
+  into { g:g, bs:i[*].b, ds:j[*].d } -> filter $.g <= 2;##
+[
+  {
+    "bs": [
+      "b2x",
+      "b2y"
+    ],
+    "ds": [
+      "d2x",
+      "d2y"
+    ],
+    "g": 2
+  },
+  {
+    "bs": [
+      "b1x",
+      "b1y"
+    ],
+    "ds": [
+      "d1x",
+      "d1y"
+    ],
+    "g": 1
+  }
+]
+
+  
+    
+//Retuns 2 records --(Predicate should be pushed down in BOTH directions)
+group
+    [ {a:{x:1, y:2}, b:'b1x'}, {a:{x:2, y:4}, b:'b2x'}, {a:{x:3, y:6}, b:'b3x'}, {a:{x:1, y:6}, b:'b1y'}, {a:{x:2, y:4}, b:'b2y'} ] 
+       by g = ($.a.x) as i,
+    [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ]
+       by g = ($.c) as j
+    into { g:g, bs:i[*].b, ds:j[*].d } -> filter $.g <= 2;##
+[
+  {
+    "bs": [
+      "b2x",
+      "b2y"
+    ],
+    "ds": [
+      "d2x",
+      "d2y"
+    ],
+    "g": 2
+  },
+  {
+    "bs": [
+      "b1x",
+      "b1y"
+    ],
+    "ds": [
+      "d1x",
+      "d1y"
+    ],
+    "g": 1
+  }
+]
+
+    
+    
+//Retuns 2 records --(Predicate remains as is)
+group
+    [ {a:{x:[1,10], y:2}, b:'b1x'}, {a:{x:[2,20], y:4}, b:'b2x'}, {a:{x:[3,30], y:6}, b:'b3x'}, {a:{x:[1,10], y:6}, b:'b1y'}, {a:{x:[2,20], y:4}, b:'b2y'} ] 
+       by g = (min($.a.x)) as i,
+    [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ]
+       by g = ($.c) as j
+    into { g:g, bs:i[*].b, ds:j[*].d } -> filter $.g <= 2;##
+[
+  {
+    "bs": [
+      "b2x",
+      "b2y"
+    ],
+    "ds": [
+      "d2x",
+      "d2y"
+    ],
+    "g": 2
+  },
+  {
+    "bs": [
+      "b1x",
+      "b1y"
+    ],
+    "ds": [
+      "d1x",
+      "d1y"
+    ],
+    "g": 1
+  }
+]
+
+    
+
+
+//Returns 5 record --(Predicates "$.r1.n ==  'J. K. Rowling' and $.r1.m > 200" should be pushed down below the Join,
+//                      Predicate $.Key[0] < 1999 should be pushed down below the GroupBy and Join in BOTH directions)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+$r3 = join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m > 200;##
+"$r3"
+
+$r4 = [{w:{year: 1996, author:'J. K. Rowling'}, z:10}, {w:{year: 1998, author:'J. K. Rowling'}, z:20}, {w:{year: 1998, author:'J. K. Rowling'}, z:30}];##
+"$r4"
+
+group $r3 by v = [$.r1.m, $.r1.n] as i,
+      $r4 by v = [$.w.year, $.w.author] as j
+into {Key:v, Min: min(i[*].r1.c), Count: j[*].z} -> filter $.Key[0] < 1999 ;##
+[
+  {
+    "Count": [],
+    "Key": [
+      1986,
+      "J. K. Rowling"
+    ],
+    "Min": null
+  },
+  {
+    "Count": [
+      20,
+      30
+    ],
+    "Key": [
+      1998,
+      "J. K. Rowling"
+    ],
+    "Min": "soft"
+  },
+  {
+    "Count": [],
+    "Key": [
+      1978,
+      "J. K. Rowling"
+    ],
+    "Min": null
+  },
+  {
+    "Count": [],
+    "Key": [
+      1987,
+      "J. K. Rowling"
+    ],
+    "Min": null
+  },
+  {
+    "Count": [
+      10
+    ],
+    "Key": [
+      1996,
+      "J. K. Rowling"
+    ],
+    "Min": "hard"
+  }
+]
+
+
+
+//Returns 5 record --(Predicates "$.r1.n ==  'J. K. Rowling' and $.r1.m > 200" should be pushed down below the Join,
+//                    Predicate ($.Key[1] == 'J. K. Rowling') should be pushed down below the GroupBy and Join in BOTH directions,
+//                    Predicate ($.Key[0] < 1999) should remain as is)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+$r3 = join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m > 200;##
+"$r3"
+
+$r4 = [{w:{year: [1996, 2000], author:'J. K. Rowling'}, z:10}, {w:{year: [1998,2000], author:'J. K. Rowling'}, z:20}, {w:{year: [1998,2000], author:'J. K. Rowling'}, z:30}];##
+"$r4"
+
+group $r3 by v = [$.r1.m, $.r1.n] as i,
+      $r4 by v = [min($.w.year), $.w.author] as j
+into {Key:v, Min: min(i[*].r1.c), Count: j[*].z} -> filter $.Key[0] < 1999 and $.Key[1] == 'J. K. Rowling';##
+[
+  {
+    "Count": [],
+    "Key": [
+      1986,
+      "J. K. Rowling"
+    ],
+    "Min": null
+  },
+  {
+    "Count": [
+      20,
+      30
+    ],
+    "Key": [
+      1998,
+      "J. K. Rowling"
+    ],
+    "Min": "soft"
+  },
+  {
+    "Count": [],
+    "Key": [
+      1978,
+      "J. K. Rowling"
+    ],
+    "Min": null
+  },
+  {
+    "Count": [],
+    "Key": [
+      1987,
+      "J. K. Rowling"
+    ],
+    "Min": null
+  },
+  {
+    "Count": [
+      10
+    ],
+    "Key": [
+      1996,
+      "J. K. Rowling"
+    ],
+    "Min": "hard"
+  }
+]
+
+
+
+//==========================Testing Filter-FunctionCalls===================================================
+
+registerFunction("split1", "com.acme.extensions.fn.Split1");##
+"split1"
+
+SplitCnt = fn($line) (
+	count(split1($line, " "))	
+);##
+"SplitCnt"
+
+$path = 'home mystuff stuff';##
+"$path"
+
+
+//Returns count of 14 records --(Filter should be pushed down)
+$data_books -> transform each $d {n: $d.author, m: $d.year} -> filter  SplitCnt($path) < $.m -> count();##
+14
+
+
+//Returns 4 records --(Filter should be pushed down)
+$data_books -> transform each $d {n: $d.author, m: $d.year} -> filter SplitCnt($.n) == 2;##
+[
+  {
+    "m": 1998,
+    "n": "New Rowling"
+  },
+  {
+    "m": 1988,
+    "n": "Carolyn Keene"
+  },
+  {
+    "m": 1979,
+    "n": "Old Rowling"
+  },
+  {
+    "m": 1920,
+    "n": "Carolyn Keene"
+  }
+]
+
+
+//Returns 4 records --(Filter should be pushed down)
+$data_books -> transform each $d {n: $d.author, m: $d.year, c: 2} -> filter SplitCnt($.n) == $.c;##
+[
+  {
+    "c": 2,
+    "m": 1998,
+    "n": "New Rowling"
+  },
+  {
+    "c": 2,
+    "m": 1988,
+    "n": "Carolyn Keene"
+  },
+  {
+    "c": 2,
+    "m": 1979,
+    "n": "Old Rowling"
+  },
+  {
+    "c": 2,
+    "m": 1920,
+    "n": "Carolyn Keene"
+  }
+]
+
+
+//Returns 6 records --(Filter should be pushed down)
+$data_books -> transform {$.author, cnt: $.year + $.format.pages * 2} -> filter each $x $x.cnt >  SplitCnt($x.author);##
+[
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4611
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4603
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 4398
+  },
+  {
+    "author": "J. K. Rowling",
+    "cnt": 3480
+  },
+  {
+    "author": "R. L. Stine",
+    "cnt": 2599
+  },
+  {
+    "author": "Carolyn Keene",
+    "cnt": 2052
+  }
+]
+
+
+//Returns 1 records --(1st Predicate should be pushed down. 2nd Predicate remains the same)
+$data_books -> transform each $d {n: $d.author, m: $d.year, c: SplitCnt($d.author)} -> filter $.m > 2000 and $.c == 3;##
+[
+  {
+    "c": 3,
+    "m": 2007,
+    "n": "J. K. Rowling"
+  }
+]
+
+
+
+//Returns 6 record --(Predicates "$.r1.n ==  'J. K. Rowling' and $.r1.m > 200" should be pushed down below the Join,
+//                      Predicate ($.Key < SplitCnt($path) * 667) should be pushed down below the GroupBy and Join,
+//                      Predicate $.Min == 'J. K. Rowling' should remain as is)
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+K = join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m > 200;##
+"K"
+
+K -> group by v = $.r1.year into {Key:v, Min: min($[*].r1.n)} -> filter ($.Key < SplitCnt($path) * 667) and $.Min == 'J. K. Rowling';##
+[
+  {
+    "Key": 1986,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1999,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1998,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1978,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1987,
+    "Min": "J. K. Rowling"
+  },
+  {
+    "Key": 1996,
+    "Min": "J. K. Rowling"
+  }
+]
+
+
+
+Median = fn($items) (
+$sorted = $items -> sort by [$],
+$sorted[long((count($sorted)/2))]);##
+"Median"
+
+
+//Returns 2 records --(Filter should be pushed down)
+$data_books -> transform each $d {n: $d.author, m: $d.year, c: $d.price}  -> filter each $x Median($x.c) > 20;##
+[
+  {
+    "c": [
+      120.5,
+      110.0
+    ],
+    "m": 1998,
+    "n": "J. K. Rowling"
+  },
+  {
+    "c": [
+      3.6,
+      20.5,
+      41.0
+    ],
+    "m": 1977,
+    "n": "R. L. Stine"
+  }
+]
+
+
+//=======================================================Testing Filter-Merge===================================================
+
+//Returns count of 16 records --(Predicate should be pushed below in the THREE directions
+$r1 = $data_books -> transform {author: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+$r3 = [{author:4}, {z:5}];##
+"$r3"
+
+merge ($r1, $r2, $r3) -> filter $.author == 'J. K. Rowling' -> count();##
+16
+
+
+
+//+++++Partial Failure (Filter followed by Filter)
+//Returns 8 records --(Predicate $.d1 ==  'soft' should be pushed below the first Transform,
+//                     Predicate $.d2 == $.d3 should be pushed down only before the INTO clause but not before the join,
+//                     Predicate $k.d3 > 1990 should be pushed down below the Transform in $r4 AND below the transform in $r1 )     
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover} -> sort by [$.c , $.m desc];##
+"$r1"
+
+$r2 = $data_books2 -> transform {x: $.author, w:$.year} -> sort by [$.w * 4];##
+"$r2"
+
+$r3 = join $r1, $r2 where $r1.n == $r2.x and $r1.m == $r2.w into {d1: $r1.c, d2: $r2.w, d3: $r1.year} -> filter $.d1 ==  'soft' and $.d2 == $.d3 -> sort by [$.d2] ;##
+"$r3"
+
+$r4 = $data_books -> transform each $v {d1: $v.format.cover, d3: $v.year};##
+"$r4"
+
+merge ($r3, $r4) -> filter each $k $k.d3 >1990;##
+[
+  {
+    "d1": "soft",
+    "d2": 1995,
+    "d3": 1995
+  },
+  {
+    "d1": "soft",
+    "d2": 1998,
+    "d3": 1998
+  },
+  {
+    "d1": "hard",
+    "d3": 2007
+  },
+  {
+    "d1": "hard",
+    "d3": 1999
+  },
+  {
+    "d1": "soft",
+    "d3": 1998
+  },
+  {
+    "d1": null,
+    "d3": 1998
+  },
+  {
+    "d1": "hard",
+    "d3": 1996
+  },
+  {
+    "d1": "soft",
+    "d3": 1995
+  }
+]
+
+
+  

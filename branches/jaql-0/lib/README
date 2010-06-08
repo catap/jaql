@@ -1,0 +1,7 @@
+* derby.jar
+- Derby 10.5.3.0 (http://db.apache.org/derby/)
+- Required for catalog server with embeded derby database
+
+* derbyclient.jar 
+- Derby 10.5.3.0 (http://db.apache.org/derby/)
+- Required for catalog server with server mode derby database
