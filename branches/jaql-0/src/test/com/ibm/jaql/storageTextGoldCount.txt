@@ -1,2 +1,0 @@
-com.ibm.jaql.lang.expr.io.WriteFn	10
-com.ibm.jaql.lang.expr.io.ReadFn	47

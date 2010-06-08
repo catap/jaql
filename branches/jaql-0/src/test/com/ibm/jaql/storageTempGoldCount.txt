@@ -1,3 +1,0 @@
-com.ibm.jaql.lang.expr.hadoop.MapReduceFn	27
-com.ibm.jaql.lang.expr.io.WriteFn	118
-com.ibm.jaql.lang.expr.io.ReadFn	66
