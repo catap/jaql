@@ -1,0 +1,40 @@
+// From JaqlOverview
+
+$books = [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     reviews: [
+       {rating: 10, user: 'joe', review: 'The best ...'},
+       {rating: 6, user: 'mary', review: 'Average ...'}]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1998},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1997, 
+     reviews: [
+       {rating: 8, user: 'rob', review: 'High on my list...'}, 
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
+        discussion:
+          [{user: 'ben', text: 'This is too harsh...'}, 
+           {user: 'jill', text: 'I agree ...'}]}]},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1930}
+  ];
+  
+// Write the books collection from data above.
+$books -> write(hdfs($test));

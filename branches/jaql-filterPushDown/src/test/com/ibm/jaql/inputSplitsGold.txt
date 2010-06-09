@@ -1,0 +1,444 @@
+//===========================================================================
+// runningSum and runningCombine
+//===========================================================================
+
+runningSum = fn(input, dataFn, intoFn) input -> runningCombine(0, fn(sum,i) sum + dataFn(i), intoFn);##
+"runningSum"
+
+
+range(10) -> transform { a: $, b: 'stuff' } -> runningSum( fn(i) i.a, fn(sum,i) { i.*, sum } );##
+[
+  {
+    "a": 0,
+    "b": "stuff",
+    "sum": 0
+  },
+  {
+    "a": 1,
+    "b": "stuff",
+    "sum": 1
+  },
+  {
+    "a": 2,
+    "b": "stuff",
+    "sum": 3
+  },
+  {
+    "a": 3,
+    "b": "stuff",
+    "sum": 6
+  },
+  {
+    "a": 4,
+    "b": "stuff",
+    "sum": 10
+  },
+  {
+    "a": 5,
+    "b": "stuff",
+    "sum": 15
+  },
+  {
+    "a": 6,
+    "b": "stuff",
+    "sum": 21
+  },
+  {
+    "a": 7,
+    "b": "stuff",
+    "sum": 28
+  },
+  {
+    "a": 8,
+    "b": "stuff",
+    "sum": 36
+  },
+  {
+    "a": 9,
+    "b": "stuff",
+    "sum": 45
+  }
+]
+
+
+
+//=================================================================================
+// A Converter on FileInputFormats to returns the file offset (key) plus the value
+//=================================================================================
+
+// delimited (csv) format
+delWithOffset = fn(location, options=null)
+  { location,
+    inoptions: {
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+          format:       'org.apache.hadoop.mapred.TextInputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.converter.LongKeyConverter',
+          value_converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter',
+          options.*
+      },
+    outoptions: { 
+          adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+          format:       'org.apache.hadoop.mapred.TextOutputFormat',
+          configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator',
+          converter:    'com.ibm.jaql.io.hadoop.converter.ToDelConverter',
+          options.*
+      }
+  };##
+"delWithOffset"
+
+
+// Each line is a textual json value
+jsonLinesWithOffset = fn(location, options=null)
+  { location,
+    inoptions: 
+      { adapter:         'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter',
+        format:          'org.apache.hadoop.mapred.TextInputFormat',
+        configurator:    'com.ibm.jaql.io.hadoop.FileInputConfigurator',
+        converter:       'com.ibm.jaql.io.hadoop.converter.LongKeyConverter',
+        value_converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+        options.* },
+    outoptions: 
+      { adapter:      'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
+        format:       'org.apache.hadoop.mapred.TextOutputFormat',
+        configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator',
+        converter:    'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter',
+        options.* }
+  };##
+"jsonLinesWithOffset"
+
+
+fd = jsonLinesWithOffset('t');##
+"fd"
+
+range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
+[
+  [
+    0,
+    {
+      "a": 0,
+      "b": 0
+    }
+  ],
+  [
+    20,
+    {
+      "a": 1,
+      "b": -1
+    }
+  ],
+  [
+    41,
+    {
+      "a": 2,
+      "b": -2
+    }
+  ],
+  [
+    62,
+    {
+      "a": 3,
+      "b": -3
+    }
+  ],
+  [
+    83,
+    {
+      "a": 4,
+      "b": -4
+    }
+  ]
+]
+
+
+fd = delWithOffset('t', { schema: schema { a: long, b: long }});##
+"fd"
+
+range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
+[
+  [
+    0,
+    {
+      "a": 0,
+      "b": 0
+    }
+  ],
+  [
+    4,
+    {
+      "a": 1,
+      "b": -1
+    }
+  ],
+  [
+    9,
+    {
+      "a": 2,
+      "b": -2
+    }
+  ],
+  [
+    14,
+    {
+      "a": 3,
+      "b": -3
+    }
+  ],
+  [
+    19,
+    {
+      "a": 4,
+      "b": -4
+    }
+  ]
+]
+
+
+//=================================================================================
+// inputSplits(fd): retrieving serialized splits
+// readSplit(fd,split): read the records in one split
+// These routines should work with any FD
+//=================================================================================
+
+// A "file" descriptor that results in one job per array element.
+worklist = fn(array) { type: 'array', inoptions: { array }};##
+"worklist"
+
+
+// We cannot display or count the result because it will vary based on configuration.
+// Instead we'll just make sure it returns at least one result.
+exists( inputSplits(fd) );##
+true
+
+
+// Count the entries in the file
+read(fd) -> count();##
+10000
+
+
+// Better be the same count as the previous result
+inputSplits(fd)
+ -> expand each split readSplit(fd, split)
+ -> count()
+;##
+10000
+
+
+// A complicated way to run map/reduce
+// Better be the same count as the previous result
+read( worklist( inputSplits(fd) ) )
+ -> expand each split readSplit(fd, split)
+ -> count()
+;##
+10000
+
+
+//=================================================================================
+// fileSplitToRecord( fileSplit ): deserialize a FileSplit
+//
+// makeFileSplit( rec ): construct and FileSplit serialize
+//   rec is { path:string, start:long, length:long, locations? }
+//=================================================================================
+
+// A convoluted way to read a FileInputFormat
+// Result should be the same as above.
+inputSplits(fd) 
+ -> transform fileSplitToRecord($)
+ -> transform makeFileSplit($.path, $.start, $.length, $.locations)
+ -> expand each split readSplit(fd, split)
+ -> count()
+;##
+10000
+
+
+//=================================================================================
+// Perform direct access into text file by playing with offsets and splits.
+//=================================================================================
+
+// Find the offset in the fd for the record where a == 17
+// Because we know that 'a' is distinct, we will only get one offset.
+offset = 
+  read(fd)
+   -> filter $[1].a == 17
+   -> transform $[0]
+   -> singleton()
+;##
+"offset"
+
+
+//
+// Now read just that record:
+//
+//   Find the split(s) that contain this offset.
+//     There could be multiple, if there are multiple files.
+//     We could potentially get the file name when we found the offset, but it's not easily found.
+//     Since we know that we only have one file in fd, we will find exactly one split.
+//   Make a new FileSplit that is like the one we found but starting at our offset.
+//     This makes a bunch of assumptions about the InputFormat and what it can tolerate.
+//     For a TextInputFormat, the offset needs to be backed up one byte unless it is 0 to
+//       so that it sees the carriage return.
+//     It's unclear how to muck with the length, but leaving it alone seems to work.
+//       You'd have trouble if you read multiple values from multiple splits because 
+//         you could read the same record multiple times.
+//   Read the split starting at our offset
+//   Only return the first record, without the offset.
+//
+inputSplits(fd)
+ -> transform fileSplitToRecord($)
+ -> filter $.start < offset <= $.start + $.length
+ -> transform makeFileSplit($.path, if(offset == 0) 0 else offset-1, $.length, $.locations)
+ -> transform readSplit(fd,$)[0][1]
+ -> singleton()
+;##
+{
+  "a": 17,
+  "b": -17
+}
+
+
+//======================================================================================
+// parallelRange: Produce 0..(numValues-1) in parallel using parallism number of tasks.
+// Produces the same result as range(numValues), but in parallel.
+//======================================================================================
+
+parallelRange = fn(long numValues, long parallelism=100)
+(
+  nPerTask = numValues / parallelism,
+  nPerTask1 = nPerTask + 1,
+  nExtra = mod(numValues, parallelism),
+  ranges = merge( range(parallelism - nExtra) -> transform nPerTask,
+                  range(nExtra) -> transform nPerTask1 )
+            -> runningSum( fn(i) i, fn(sum,i) { start: sum - i, end: sum - 1 } ),
+  read( worklist(ranges) )
+   -> expand range($.start, $.end)
+);##
+"parallelRange"
+
+
+parallelRange(1000, parallelism=2) 
+ -> filter mod($, 100) == 0
+;##
+[
+  0,
+  100,
+  200,
+  300,
+  400,
+  500,
+  600,
+  700,
+  800,
+  900
+]
+
+
+//======================================================================================
+// parallelEnumerate: Number the elements of a file from 0..n, distinctly and in order.
+// Runs in parallel over the splits of fd.
+// Makes two passes over fd.
+// Produces the same result as read(fd) -> enumerate().
+//======================================================================================
+
+parallelEnumerate = fn(fd) 
+(
+  // Pass 1:
+  // For each split, count the number of elements in that split.
+  // Annotate each split with the count in all prior splits.
+  annotatedSplits = 
+    read( worklist(inputSplits(fd)) )
+     -> transform each split { split, n: readSplit(fd, split) -> count() }
+     -> runningSum( fn(i) i.n, 
+                    fn(sum,i) { i.split, n: sum - i.n } ),
+
+  // Pass 2:
+  // For each split, enumerate the elements in that split and add the split's offset.
+  read( worklist(annotatedSplits) )
+   -> expand each s ( 
+       readSplit(fd, s.split) 
+        -> enumerate()
+        -> transform [s.n+$[0], $[1]] )
+);##
+"parallelEnumerate"
+
+
+parallelEnumerate(fd)
+ -> filter mod($[0], 1000) == 0
+ -> transform [$[0], $[1][1]] // remove file the offset, for stability
+;##
+[
+  [
+    0,
+    {
+      "a": 0,
+      "b": 0
+    }
+  ],
+  [
+    1000,
+    {
+      "a": 1000,
+      "b": -1000
+    }
+  ],
+  [
+    2000,
+    {
+      "a": 2000,
+      "b": -2000
+    }
+  ],
+  [
+    3000,
+    {
+      "a": 3000,
+      "b": -3000
+    }
+  ],
+  [
+    4000,
+    {
+      "a": 4000,
+      "b": -4000
+    }
+  ],
+  [
+    5000,
+    {
+      "a": 5000,
+      "b": -5000
+    }
+  ],
+  [
+    6000,
+    {
+      "a": 6000,
+      "b": -6000
+    }
+  ],
+  [
+    7000,
+    {
+      "a": 7000,
+      "b": -7000
+    }
+  ],
+  [
+    8000,
+    {
+      "a": 8000,
+      "b": -8000
+    }
+  ],
+  [
+    9000,
+    {
+      "a": 9000,
+      "b": -9000
+    }
+  ]
+]
+
+
+//======================================================================================
+// done
+//======================================================================================
