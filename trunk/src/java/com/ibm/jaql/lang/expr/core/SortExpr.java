@@ -135,11 +135,9 @@ public class SortExpr extends IterExpr
 
     temp.sort();
 
-//    final Item[] byItems = new Item[nby];
-//    for (int i = 0; i < nby; i++)
-//    {
-//      byItems[i] = new Item();
-//    }
+    //If the input is empty, i.e., [], then return empty output, i.e., [], instead of null
+    if (temp.iter().isNull())
+    	return JsonIterator.EMPTY;
 
     return temp.iter();
   }
