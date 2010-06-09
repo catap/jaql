@@ -28,6 +28,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.Bool3;
 
@@ -227,6 +228,31 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
     return numPreserved;
   }
   
+  
+  /**
+   * Return one mapping table that merges the mapping table from both children.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+
+	  mt.addAll((binding(0).inExpr()).getMappingTable());
+	  mt.addAll((binding(1).inExpr()).getMappingTable());
+	  return mt;
+  }
+  
+  
+  /**
+   * Return the mapping table for child "child_id".
+   */
+  @Override
+  public MappingTable getMappingTable(int child_id)
+  {
+	  assert (child_id == 0 || child_id == 1);
+	  return (binding(child_id).inExpr()).getMappingTable();
+  }
+   
   
   /*
    * (non-Javadoc)

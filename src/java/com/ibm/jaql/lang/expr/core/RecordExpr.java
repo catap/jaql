@@ -32,7 +32,10 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
+import com.ibm.jaql.lang.expr.path.PathExpr;
+import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
 
@@ -128,6 +131,25 @@ public class RecordExpr extends Expr
     return e;
   }
 
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  for (Expr e : exprs)
+		  mt.addAll(e.getMappingTable());
+
+	  //Add the mapping at the record level
+	  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  PathExpr pe = new PathExpr(ve, new PathReturn());
+	  mt.add(pe, this, false);                        //TODO: Is it really "false"  
+
+	  return mt;
+  }
+
+  
   @Override
   public Schema getSchema()
   {

@@ -43,6 +43,7 @@ import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -423,6 +424,21 @@ public class MathExpr extends Expr
     }
     return OrSchema.make(result);
   }
+  
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  boolean safety_flag = (exprs[0].getMappingTable().isSafeToMapAll()) && (exprs[1].getMappingTable().isSafeToMapAll());  
+	  VarExpr ve= new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));	  
+	  mt.add(ve, this, safety_flag);            
+	  return mt;
+  }
+  
   
   @Override
   public Schema getSchema()

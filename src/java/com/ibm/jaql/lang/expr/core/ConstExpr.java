@@ -32,6 +32,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 
 /**
  * 
@@ -98,6 +99,18 @@ public final class ConstExpr extends Expr
     return value;  
   }
   
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));  
+	  mt.add(ve, this, true);
+	  return mt;
+  }
+
   
   /*
    * (non-Javadoc)

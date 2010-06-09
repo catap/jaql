@@ -24,7 +24,11 @@ import com.ibm.jaql.json.schema.StringSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.IndexExpr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
 
 /** A step in a path expression */
@@ -175,6 +179,22 @@ public abstract class PathStep extends Expr
     }
   }
   
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  VarExpr ve= new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  if ((this instanceof PathReturn) || (this instanceof PathIndex) || (this instanceof PathFieldValue))
+		  mt.add(ve, this, true);
+	  else
+		  mt.add(ve, this, false);
+	  
+	  return mt;
+  }
+
   
   public abstract PathStepSchema getSchema(Schema inputSchema);
   

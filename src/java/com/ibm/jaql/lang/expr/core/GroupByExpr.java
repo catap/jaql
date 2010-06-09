@@ -28,6 +28,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
@@ -268,6 +269,54 @@ public class GroupByExpr extends IterExpr
   }
 
   /**
+   * Return the mapping table.
+   * GroupBy does implicitly two-level mappings: one in the BY clause(s), and one in the INTO clause.
+   * @param id: specifies which mapping table to return. 
+   *	 --if id < byBinding().numChildren(), then return the BY clause mapping of child "id"
+	*    --if id = byBinding().numChildren(), then return the INTO clause mapping.
+   */
+  @Override
+  public MappingTable getMappingTable(int id)
+  {
+	  assert (id <= byBinding().numChildren());    
+
+	  MappingTable mt = new MappingTable();
+	  BindingExpr grp_by = byBinding();
+	  int num_children = grp_by.numChildren();
+	  
+	  if (!(collectExpr() instanceof ArrayExpr))
+		  return mt;
+
+	  if (id < num_children)
+	  {
+		  //Return the mapping of the BY clause "by <variable> = <grouping items>" for child "id". 
+		  Expr grp_key = grp_by.child(id);
+		  
+		  if (grp_key instanceof ConstExpr)          //There is no grouping key
+			  return mt;
+		  
+		  MappingTable child_table = grp_key.getMappingTable();
+		  VarExpr ve = new VarExpr(new Var(grp_by.var.name()));
+		  if ((grp_key instanceof RecordExpr) || (grp_key instanceof ArrayExpr))
+		  {
+			  if (child_table.replaceVarInAfterExpr(new Var(grp_by.var.name())) == false)
+				  return mt;
+			  mt.addAll(child_table);
+		  }
+		  else   
+			  mt.add(ve, grp_key, child_table.isSafeToMapAll());		  
+	  }
+	  else
+	  {
+		  //Return the mappings of the grouping key(s) in the INTO clause
+		  mt = collectExpr().child(0).getMappingTable();
+	  }
+	  
+	  return mt;
+  }
+
+
+  /**
    * 
    */
   @Override
@@ -337,6 +386,16 @@ public class GroupByExpr extends IterExpr
     return byBinding().var;
   }
 
+  
+  /**
+   * @return
+   */
+  public final Var inVar()
+  {
+    return inBinding().var;
+  }
+  
+  
   /**
    * @param i
    * @return

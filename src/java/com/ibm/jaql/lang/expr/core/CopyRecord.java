@@ -10,6 +10,7 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -41,6 +42,16 @@ public class CopyRecord extends FieldExpr
   {
     return Bool3.TRUE;
   }
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  return (exprs[0].getMappingTable());
+  }
+
 
   /**
    * 

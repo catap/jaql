@@ -25,9 +25,11 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.lang.expr.path.PathReturn;
+import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.util.Bool3;
 
 // e.g., $.a
@@ -195,6 +197,52 @@ public class CopyField extends FieldExpr
   public Expr toPathExpr()
   {
     return new PathExpr(exprs[0], new PathFieldValue(exprs[1], new PathReturn()));
+  }
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  
+	  if (!(nameExpr() instanceof ConstExpr))
+		  return mt;
+	  
+	  MappingTable child_table = recExpr().getMappingTable();	  
+	  ConstExpr ce = new ConstExpr(staticName());
+	  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  PathFieldValue pfv = new PathFieldValue(ce);
+	  PathExpr pe = new PathExpr(ve, pfv);
+
+	  if (recExpr() instanceof PathExpr) 
+	  {
+		  //Create a PathExpr equivalent to this CopyField
+		  VarMap vm = new VarMap();	
+		  PathExpr pe_eq = (PathExpr) ((PathExpr)recExpr()).clone(vm);
+		  PathStep e = pe_eq.firstStep();
+		  while (!(e instanceof PathReturn))
+			  e = e.nextStep();
+
+		  PathFieldValue right_most = new PathFieldValue(new ConstExpr(staticName()));
+		  e.replaceInParent(right_most);
+		  mt.add(pe, pe_eq, child_table.isSafeToMapAll());
+	  }
+	  else if (recExpr() instanceof IndexExpr)
+	  {
+		  //Create a PathExpr equivalent to this CopyField
+		  VarMap vm = new VarMap();	
+		  Expr left_child = recExpr().clone(vm);
+		  PathFieldValue right_child = new PathFieldValue(new ConstExpr(staticName()));
+		  PathExpr pe_eq = new PathExpr(left_child, right_child);
+		  mt.add(pe, pe_eq, child_table.isSafeToMapAll());
+	  }
+	  else 
+	  {
+		  mt.add(pe, recExpr(), false);
+	  }
+	  return mt;
   }
   
   /*
