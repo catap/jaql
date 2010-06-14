@@ -23,6 +23,7 @@ import com.ibm.jaql.lang.expr.array.MergeFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.FilterExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.JoinExpr;
@@ -223,7 +224,7 @@ public class FilterPushDown extends Rewrite
 
 	  //Check each conjunctive predicate
 	  ArrayList<Expr> pushed_pred = new ArrayList<Expr>();
-	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k ++)
+	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
 	  {
 		  Expr crnt_pred = filter_expr.conjunctivePred(k);
 		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(crnt_pred, filter_pipe_var);  
@@ -279,7 +280,7 @@ public class FilterPushDown extends Rewrite
 	  //Check each conjunctive predicate
 	  ArrayList<Expr> left_pushed_pred = new ArrayList<Expr>();
 	  ArrayList<Expr> right_pushed_pred = new ArrayList<Expr>();
-	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k ++)
+	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
 	  {
 		  Expr crnt_pred = filter_expr.conjunctivePred(k);
 		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(crnt_pred, filter_pipe_var);  
@@ -370,7 +371,7 @@ public class FilterPushDown extends Rewrite
 	  
 	  //Check each conjunctive predicate. A predicate can be pushed down only if it can be pushed in ALL child branches.
 	  VarMap vm = new VarMap();
-	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k ++)
+	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
 	  {
 		  Expr crnt_pred = filter_expr.conjunctivePred(k);
 		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(crnt_pred, filter_pipe_var);  
@@ -426,7 +427,28 @@ public class FilterPushDown extends Rewrite
 	  return true;
   }
 
+  /**
+   * Returns true if the all predicates in the Filter have neither side effect nor non-determinism.
+   * Otherwise the filter cannot be changed.  
+   */
+  /*
+  private boolean deterministicFilter(FilterExpr fe)
+  {
+	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
+	  {
+		  Expr pred = fe.conjunctivePred(i);
+		  boolean noExternalEffects = 
+		        pred.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+		        pred.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never();
 
+		  if (!noExternalEffects)
+			  return false;
+		  
+	  }
+	  return true;
+  }	
+   */
+  
   /**
    * Rewrite rule for pushing the filter down in the query tree. 
    */
@@ -435,7 +457,7 @@ public class FilterPushDown extends Rewrite
   {
 	  FilterExpr fe = (FilterExpr) expr;
 	  BindingExpr filter_input = fe.binding();
-	  
+	  	  
 	  if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof TransformExpr))
 		  return filter_transform_rewrite(fe);
 	  else if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof JoinExpr))

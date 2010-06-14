@@ -31,7 +31,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[7];
+  protected RewritePhase[] phases      = new RewritePhase[6];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter
   protected long           counter     = 0;
@@ -81,10 +81,10 @@ public class RewriteEngine
     new UnnestFor(phase);
     new CheapConstEval(phase);
     new ConstIfElimination(phase);
-
-    phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
+    new FilterPredicateSimplification(phase);
     new FilterPushDown(phase);
-
+    new FilterMerge(phase);
+    
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     new LetInline(phase);
     new DoMerge(phase);
