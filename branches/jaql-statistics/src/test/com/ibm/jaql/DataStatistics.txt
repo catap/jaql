@@ -1,11 +1,12 @@
 /**
 * Examples for collecting data statistics.
 * These examples show the use of functions:
-*    1- paths(<JsonRecord>)                     //jaql.lang.expr.record.pathsFn
-*    2- pathValues(<JsonRecord>)                //jaql.lang.expr.record.pathValues
-*    3- FieldSortInfo(<JsonArray>)              //jaql.lang.expr.record.FieldSortInfo
+*    1- paths(<JsonRecord>)                                                                  //jaql.lang.expr.record.pathsFn
+*    2- pathValues(<JsonRecord>)                                                             //jaql.lang.expr.record.pathValues
+*    3- FieldSortInfo(<JsonArray>)                                                           //jaql.lang.expr.record.FieldSortInfo
 *    4- bucketize(<Sorted JsonArray of atom values>, max_step_size, comparison function)     //jaql.land.util.BucketizeFn
 *    5- bloomFilter(<JsonArray of atom values>, distinct_threshold)                          //jaql.lang.util.BloomFilterFn
+*    6- jaql function that generates statistics about the files and their splits
 */
 $books =
 [
@@ -14,7 +15,7 @@ $books =
      title: 'Deathly Hallows',
      year: 2007,
      format: {cover: 'hard', pages: 1302},
-     price: [3, 34.0, 102222, 3.3]},
+     price: [3.5, 34.0, 1022.22, 3.3]},
 
     {publisher: 'Scholastic',
      author: 'J. K. Rowling',
@@ -113,8 +114,8 @@ $books =
           title: 'The Secret of Kane',
           year: 1920,
           format: {cover: 'hard', pages: 66}
-	}
- ];
+}    
+];
  
 //Report the fields (entire paths) in each record 
 $books -> transform paths($);
@@ -224,7 +225,7 @@ CollectStatistics = fn($inputFile_descriptor, $output_dir, $bucketize_step_size,
 					Statistics($inputFile_descriptor, $rec.counter, readSplit($inputFile_descriptor, $rec.split), $bucketize_step_size, $filter_distinct_threshold) -> expand,
 	
 	$partition_level_output = $output_dir + "_partitionInfo",
-	$attribute_level_output = $output_dir  "_attributeInfo",
+	$attribute_level_output = $output_dir + "_attributeInfo",
 	$range_level_output = $output_dir + "_rangeInfo",
 	
 	//2- Write the partition_level output					
@@ -240,7 +241,13 @@ CollectStatistics = fn($inputFile_descriptor, $output_dir, $bucketize_step_size,
 		-> write(del($range_level_output, {schema: schema{FileName, PartitionId, AttrName, AttrType, Min, Max}}))
 );
 
+$books -> write(hdfs('books'));
 
+//CollectStatistics() takes the following parameters:
+//     1-<input_file_descriptor>: The input file to coolect statistics about
+//     2-<output_directory>: the directory where the output files (three files) will be written
+//     3-<bucketize_step_size>: configuration parameter for bucketization (can be null)
+//     4-<filter_distinct_threshold>: configuration parameter for BloomFilters (can be null)    
 $f = hdfs('books');
 CollectStatistics($f, '', null, 0.4);
 
