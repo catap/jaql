@@ -1,0 +1,82 @@
+package com.ibm.jaql;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.util.List;
+
+import org.junit.Test;
+
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.JaqlQuery;
+
+public class TestJaqlQuery {
+
+	private static String publishers = "[{name: 'Scholastic', country: 'USA'}, "
+			+ "{name: 'Grosset', country: 'UK'}, "
+			+ "{name: 'Writers Publishing House', country: 'China'}]";
+	
+	@Test
+	public void testIterate() {
+		try{
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString(publishers + " -> filter $.country=='UK';");
+			JsonIterator it = q.iterate();
+			while(it.moveNext()){
+				String p = ((JsonRecord)it.current()).get(new JsonString("name")).toString();
+				assertEquals("Grosset", p);
+			}
+		}catch(Exception ex){
+			fail("runs into error");
+		}
+	}
+	
+	@Test
+	public void testEvaluate() {
+		try{
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString(publishers + " -> filter $.country=='UK';");
+			JsonValue v = q.evaluate();
+			List<JsonValue> list = ((JsonArray)v).asList();
+			for(JsonValue t:list) {
+				String p = ((JsonRecord)t).get(new JsonString("name")).toString();
+				assertEquals("Grosset", p);
+			}
+		}catch(Exception ex){
+			fail("runs into error");
+		}
+	}
+	
+	@Test
+	public void testSetVar() {
+		try{
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString(publishers + " -> filter $.country=='UK';");
+			JsonValue v1 = q.evaluate();
+			q.setQueryString(publishers + " -> filter $.country==$c;");
+			q.setVar("$c", "UK");
+			JsonValue v2 = q.evaluate();
+			assertEquals(v1, v2);
+		}catch(Exception ex){
+			fail("runs into error");
+		}
+	}
+	
+	@Test
+	public void testGetVar() {
+		try{
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString("(" + publishers + " -> filter $.country==$c)[0].country;");
+			q.setVar("$c", "UK");
+			JsonValue v = q.evaluate();
+			assertEquals(new JsonString("UK"), v);
+		}catch(Exception ex){
+			fail("runs into error");
+		}
+	}
+
+}
