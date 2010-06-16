@@ -237,9 +237,12 @@ public class SpilledJsonArray extends JsonArray
 //      return value.getCopy(null);
     } else {                  // read from file
       JsonIterator iter = iter();
-      boolean valid = iter.moveN(n-cacheSize);
+      boolean valid = iter.moveN(n+1);
       assert valid;
-      return iter.current();
+      JsonValue v = iter.current();
+      if(v != null)
+    	  return v.getImmutableCopy();
+      return v;
     }
   }
 
