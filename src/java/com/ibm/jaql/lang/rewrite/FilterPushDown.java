@@ -222,6 +222,13 @@ public class FilterPushDown extends Rewrite
 	  if (mt.replaceVarInAfterExpr(filter_pipe_var) == false)
 		  return false;
 
+	  //If the "filter" or the "transform" is non-deterministic, then do not push the filter
+	  Expr projection_expr = transform_expr.projection(); 
+	  boolean hasEffect_transform = !(projection_expr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+	  								 projection_expr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never());
+	  if (ExternalEffectFilter(filter_expr) || hasEffect_transform)
+		  return false;
+	  
 	  //Check each conjunctive predicate
 	  ArrayList<Expr> pushed_pred = new ArrayList<Expr>();
 	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
@@ -265,6 +272,10 @@ public class FilterPushDown extends Rewrite
 	  VarMap vm = new VarMap();
 	  JoinExpr join_expr = (JoinExpr) filter_expr.binding().inExpr();
 	  
+	  //If the "filter" is non-deterministic, then do not push the filter
+	  if (ExternalEffectFilter(filter_expr))
+		  return false;
+
 	  boolean left_preserve = join_expr.binding(0).preserve;
 	  boolean right_preserve = join_expr.binding(1).preserve;
 	  Expr left_child = join_expr.binding(0).inExpr();
@@ -354,6 +365,13 @@ public class FilterPushDown extends Rewrite
 	  GroupByExpr grp_expr = (GroupByExpr) filter_expr.binding().inExpr();
 	  Var filter_pipe_var = filter_expr.binding().var;
 
+	  //If the "filter" or the "group by" is non-deterministic, then do not push the filter
+	  Expr into_expr = grp_expr.collectExpr(); 
+	  boolean hasEffect_grp = !(into_expr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+	  							into_expr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never());
+	  if (ExternalEffectFilter(filter_expr) || hasEffect_grp)
+		  return false;
+
 	  //get the Group By mapping tables
 	  int grp_childNum = grp_expr.byBinding().numChildren();
 	  MappingTable into_mt = grp_expr.getMappingTable(grp_childNum);         //get the mapping table of the INTO clause
@@ -428,11 +446,9 @@ public class FilterPushDown extends Rewrite
   }
 
   /**
-   * Returns true if the all predicates in the Filter have neither side effect nor non-determinism.
-   * Otherwise the filter cannot be changed.  
+   * Returns false if all predicates in the Filter have neither side effect nor non-determinism. Otherwise return true.  
    */
-  /*
-  private boolean deterministicFilter(FilterExpr fe)
+  public static boolean ExternalEffectFilter(FilterExpr fe)
   {
 	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
 	  {
@@ -442,15 +458,13 @@ public class FilterPushDown extends Rewrite
 		        pred.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never();
 
 		  if (!noExternalEffects)
-			  return false;
-		  
+			  return true;		  
 	  }
-	  return true;
+	  return false;
   }	
-   */
   
   /**
-   * Rewrite rule for pushing the filter down in the query tree. 
+   * Rewrite rule for pushing the filter down in the query tree.
    */
   @Override
   public boolean rewrite(Expr expr)
@@ -477,7 +491,7 @@ public class FilterPushDown extends Rewrite
 		  for (int i = 0; i < expr_below.numChildren(); i++)
 			  child_ids.add(i);		  
 		  return filter_directPush_rewrite(fe, child_ids);
-	  }
+	  }	  
 	  return false;
   }
 }

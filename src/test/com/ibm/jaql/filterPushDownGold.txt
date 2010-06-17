@@ -963,6 +963,20 @@ join preserve $r1,  $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==
 ]
 
 
+//Returns count of 8 records --(Predicate is pushed all the way to $r1 side)
+$r1 = $data_books;##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+$r3 = $data_books -> transform {x: $.author, y: $.year * 2};##
+"$r3"
+
+join $r1, $r2, $r3 where $r1.author == $r2.author and $r1.author == $r3.x and $r2.author == $r3.x into {$r1.*, $r3.*} -> filter $.author == 'R. L. Stine' -> count();##
+8
+
+
 //===================Testing Filter-Transform-Join-Sort===================================================
 
 //Returns 8 records  --Should be pusheddown all the way
@@ -1942,6 +1956,64 @@ merge ($r3, $r4) -> filter each $k $k.d3 >1990;##
     "d3": 1995
   }
 ]
+
+
+//====================================================Side Effect and non-deterministic=========================================
+//Delete the 'true' predicate
+$r1 = [1,2,3,4,5];##
+"$r1"
+
+$r1 -> filter $ > 1 and true and $> randomLong();##
+[]
+
+
+
+//Replace the whole query with empty input, i.e., []
+$r1 = [1,2,3,4,5];##
+"$r1"
+
+$r1 -> filter $ > 1 and false and $> randomLong();##
+[]
+
+
+
+//Replace the whole query with empty input, i.e., []
+$r1 = [1,2,3,4,5];##
+"$r1"
+
+$r1 -> filter $ > 1 and null and $> randomLong();##
+[]
+
+
+
+//Convert the query to a DO expression that reports empty output, i.e., []
+$effect = fn($data)(
+	$data -> write(file('dd')),
+	[1] -> transform ($)
+);##
+"$effect"
+
+$r1 = [1,2,3,4,5];##
+"$r1"
+
+$r1 -> $effect() -> filter $ > 1 and false and $> randomLong();##
+[]
+
+
+
+
+//Remove the first predicate ($>1) since it is not a side effecting predicate
+$effect = fn($data)(
+	$data -> write(file('dd')),
+	[1] -> transform ($)
+);##
+"$effect"
+
+$r1 = [1,2,3,4,5];##
+"$r1"
+
+$r1 ->  filter $ > 1 and false and $ > $effect($r1);##
+[]
 
 
   
