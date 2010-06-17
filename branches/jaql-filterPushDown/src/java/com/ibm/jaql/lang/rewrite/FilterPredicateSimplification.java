@@ -20,7 +20,9 @@ import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.FilterExpr;
 
 
@@ -41,10 +43,65 @@ public class FilterPredicateSimplification extends Rewrite
     super(phase, FilterExpr.class);
   }
 
+  /**
+   * Returns false if all predicates in the Filter have no side effect. Otherwise return true.  
+   */
+  private boolean sideEffectFilter(FilterExpr fe)
+  {
+	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
+	  {
+		  Expr pred = fe.conjunctivePred(i);
+		  boolean noExternalEffects = pred.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never();
+		  if (!noExternalEffects)
+			  return true;		  
+	  }
+	  return false;
+  }	
+
+  /**
+   * Delete any predicate that is not side-effecting except constant predicates.
+   */
+  private boolean delete_nonEffectingPred(FilterExpr fe) 
+  {
+	  boolean modify_flag = false;
+	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
+	  {
+		  Expr pred = fe.conjunctivePred(i);
+		  if ((pred.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never()) && (!(pred instanceof ConstExpr)))
+		  {
+			  pred.detach();
+			  modify_flag = true;
+		  }
+	  }
+	  return modify_flag;
+  }
+
+
+  /**
+   * Converts expression e -> filter ..., false, ...  ---> Do (e, [])
+   * Converts expression e -> filter ..., null, ...  ---> Do (e, [])
+   */
+  private boolean convert_toDoExpr(FilterExpr fe) 
+  {
+	  ArrayExpr empty_input = new ArrayExpr();
+	  Expr filter_input = fe.binding().inExpr();
+	  DoExpr  do_expr = new DoExpr(filter_input, empty_input);
+	  fe.replaceInParent(do_expr);
+	  return true;
+  }
+
+  
+  /**
+   * Simplify the predicates.
+   */
   private boolean predicate_simplification(FilterExpr fe) 
   {
 	  ArrayExpr empty_input = new ArrayExpr();
 	  
+	  //If the filter tree may have side effect, then the tree can not be eliminated
+	  boolean noEffect_filterInput = fe.binding().getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never();
+	  boolean noEffect_filterPred = !sideEffectFilter(fe);
+
 	  //Loop over the conjunctive predicates 
 	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
 	  {
@@ -52,15 +109,20 @@ public class FilterPredicateSimplification extends Rewrite
 		  if (pred instanceof ConstExpr)
 		  {
 			  JsonValue pred_val = ((ConstExpr)pred).value;
-			  if (pred_val == null)
+			  if ((pred_val == null) || (pred_val.equals(JsonBool.FALSE)))
 			  {
-				  fe.replaceInParent(empty_input);                 //Replace filter with empty input
-				  return true;
-			  }
-			  else if (pred_val.equals(JsonBool.FALSE))
-			  {
-				  fe.replaceInParent(empty_input);                 //Replace filter with empty input
-				  return true;
+				  if (noEffect_filterInput && noEffect_filterPred)
+				  {
+					  fe.replaceInParent(empty_input);                 //Replace filter with empty input
+					  return true;
+				  }
+				  else if (!noEffect_filterInput && !noEffect_filterPred)
+					  return delete_nonEffectingPred(fe);
+				  else if (noEffect_filterInput && !noEffect_filterPred)
+					  return delete_nonEffectingPred(fe);
+				  else
+					  return convert_toDoExpr(fe);
+				  
 			  }
 			  else if (pred_val.equals(JsonBool.TRUE))
 			  {
@@ -74,8 +136,8 @@ public class FilterPredicateSimplification extends Rewrite
 	  return false;
   }
   
-  
-  /**
+
+/**
    * Rewrite rule for simplifying a filter conjunctive predicates. 
    */
   @Override

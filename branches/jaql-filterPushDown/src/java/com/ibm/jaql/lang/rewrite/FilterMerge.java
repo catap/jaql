@@ -38,11 +38,16 @@ public class FilterMerge extends Rewrite
     super(phase, FilterExpr.class);
   }
   
-  //Merge two filters together. Move the predicates from 'child_filter' to 'parent_filter'
+  //Merge two filters together. Move the predicates from 'child_filter' to 'parent_filter'.
   private boolean merge_filter_exprs(FilterExpr partent_filter) 
   {
-	  Var crnt_filter_var = partent_filter.binding().var;
 	  FilterExpr child_filter = (FilterExpr) partent_filter.binding().inExpr();
+
+	  //If any of the two filter exprs has "non-deterministic" or "side effecting" predicates, then do not merge them.
+	  if (FilterPushDown.ExternalEffectFilter(partent_filter) || FilterPushDown.ExternalEffectFilter(child_filter))
+		  return false;
+	  
+	  Var crnt_filter_var = partent_filter.binding().var;
 	  BindingExpr child_filter_input = child_filter.binding();
 	  Var child_filter_var = child_filter_input.var;
 	  VarMap vm = new VarMap();
