@@ -242,7 +242,7 @@ In Query 2, we show how to compute *word-count*, the canonical map-reduce exampl
 {{{
 
   // register the splitArr function
-  registerFunction("splitArr", "com.acme.extensions.expr.SplitIterExpr");
+  splitArr = builtin("com.acme.extensions.expr.SplitIterExpr$Descriptor");
   splitArr("something simple with five words", " ");
 
   // results ...
