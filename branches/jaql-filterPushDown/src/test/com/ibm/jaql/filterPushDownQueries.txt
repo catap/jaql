@@ -1,6 +1,6 @@
 //===========================================================================
 // Testcases for FilterPushDown
-// It tests pushing Filter below Transform, Join, Group By, Sort
+// It tests pushing Filter below Transform, Join, Group By, Sort, Merge
 // It handles predicate decomposition (Dividing Filter predicates into conjunctive sub-predicates)  
 //===========================================================================
 
@@ -228,6 +228,11 @@ $data_books -> transform [$, $.author, $.format, "3333" ,{name: $.publisher, y: 
 $data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> transform each $g [$g.x, $g.y] -> filter count($[1]) > 2;
 
 
+//Returns 1 record --(Predicate $.a == 1 should be pushed down.
+//                    Predicate count($.less)>4 remains as is).
+[{a:1, b:[1,2,3,4,5,6,6,77,87,43,122]}, {a:2, b:[12,3,34434,766,33,11,10,2]}] -> 
+	transform{$.a, less: $.b -> filter $ <100, more:$.b -> filter $ >= 100 } -> filter $.a == 1 and count($.less) > 4;
+
 
 //====================Testing Filter-Transform-Join===================================================
 //Returns 0 records. --(Filter should be pushed down all the way in BOTH directions)
@@ -291,7 +296,7 @@ join preserve $r1,  $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==
 $r1 = $data_books;
 $r2 = $data_books2;
 $r3 = $data_books -> transform {x: $.author, y: $.year * 2};
-join $r1, $r2, $r3 where $r1.author == $r2.author and $r1.author == $r3.x and $r2.author == $r3.x into {$r1.*, $r3.*} -> filter $.author == 'R. L. Stine' -> count();
+join $r1, $r2, $r3 where $r1.author == $r2.author and $r1.author == $r3.x and $r2.author == $r3.x into {$r1.author, $r3.*} -> filter $.author == 'R. L. Stine' -> count();
 
 //===================Testing Filter-Transform-Join-Sort===================================================
 

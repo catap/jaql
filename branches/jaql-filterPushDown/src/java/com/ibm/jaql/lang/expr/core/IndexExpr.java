@@ -82,12 +82,6 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
 	  VarExpr ve= new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
 	  Expr input = this.arrayExpr(); 
 	  
-	  /*
-	  if ((input instanceof VarExpr) || (input instanceof PathExpr) || (input instanceof IndexExpr)) 
-		  mt.add(ve, this, this.arrayExpr().getMappingTable().isSafeToMapAll());
-	  else
-		  mt.add(ve, this, false);
-	  */
 	  mt.add(ve, this, input.getMappingTable().isSafeToMapAll());
 	  return mt;
   }
