@@ -2,12 +2,15 @@ package com.ibm.jaql.lang.expr.metadata;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.path.PathExpr;
+import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.lang.walk.ExprWalker;
@@ -68,7 +71,7 @@ public class MappingTable
 		Enumeration<ExprMapping> e = mappings.elements();
 		while (e.hasMoreElements())
 		{
-			flag = flag && (e.nextElement().isSafeToMap());
+			flag =  (e.nextElement().isSafeToMap()) && flag;
 		}
 		return flag;
 	}
@@ -154,7 +157,7 @@ public class MappingTable
 		this.mappings = mt.mappings;
 		return true;
 	}
-
+		
 	/**
 	 * Find the var used inside this expression. It has to have one, otherwise it returns null.
 	 */
@@ -217,7 +220,19 @@ public class MappingTable
 		return ps_super.clone(vm);
 	}
 	
-
+	/**
+	 * Add a mapping record with 'isSafeToMap' flag unset. This records ensures that function isSafeToMapAll() return false.
+	 */
+	public void addUnsafeMappingRecord()
+	{
+		ConstExpr ce = new ConstExpr(new JsonString("_UnSafeToMap_"));
+		PathFieldValue pfv = new PathFieldValue(ce);
+		VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+		PathExpr pe = new PathExpr(ve, pfv);
+		ExprMapping mr = new ExprMapping(ce, false);
+		mappings.put(pe, mr);
+	}
+	
 	/**
 	 * try attaching the expr_diff to the end of before_expr.  
 	 */

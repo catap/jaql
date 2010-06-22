@@ -235,10 +235,10 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
   @Override
   public MappingTable getMappingTable()
   {
-	  MappingTable mt = new MappingTable();
-
+	  MappingTable mt = new MappingTable();	  
 	  mt.addAll((binding(0).inExpr()).getMappingTable());
 	  mt.addAll((binding(1).inExpr()).getMappingTable());
+	  mt.addUnsafeMappingRecord();
 	  return mt;
   }
   

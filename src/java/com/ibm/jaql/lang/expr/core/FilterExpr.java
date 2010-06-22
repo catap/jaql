@@ -187,7 +187,10 @@ public final class FilterExpr extends IterExpr
   @Override
   public MappingTable getMappingTable()
   {
-	  return (binding().inExpr()).getMappingTable();
+	  MappingTable mt = new MappingTable();
+	  mt.addAll((binding().inExpr()).getMappingTable());
+	  mt.addUnsafeMappingRecord();
+	  return mt;
   }
    
   /**

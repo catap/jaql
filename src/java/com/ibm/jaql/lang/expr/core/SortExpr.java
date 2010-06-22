@@ -160,7 +160,10 @@ public class SortExpr extends IterExpr
   @Override
   public MappingTable getMappingTable()
   {
-	  return (exprs[0].getMappingTable());
+	  MappingTable mt = new MappingTable();
+	  mt.addAll(exprs[0].getMappingTable());
+	  mt.addUnsafeMappingRecord();
+	  return mt;
   }
    
   

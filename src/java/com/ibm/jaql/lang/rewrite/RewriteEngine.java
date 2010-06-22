@@ -84,6 +84,7 @@ public class RewriteEngine
     new FilterPredicateSimplification(phase);
     new FilterPushDown(phase);
     new FilterMerge(phase);
+    new OuterJoinToInner(phase);
     
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     new LetInline(phase);
@@ -153,7 +154,7 @@ public class RewriteEngine
     new PerPartitionElimination(phase);
     new PragmaElimination(phase);
     
-    phases[++phaseId] = basicPhase;
+    phases[++phaseId] = phases[1];
   }
 
   /**

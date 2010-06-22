@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.array.MergeFn;
-import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
@@ -49,34 +48,7 @@ public class FilterPushDown extends Rewrite
   {
     super(phase, FilterExpr.class);
   }
-
-  
-  /**
-   * Find PathExprs and VarExprs(that are not children of PathExpr) that contain the given var
-   */
-  ArrayList<Expr> findVarUseInPathExprOrVarExpr(Expr expr, Var var)
-  {
-    ExprWalker walker = engine.walker;
-    walker.reset(expr);
-    ArrayList<Expr> list = new ArrayList<Expr>();
-    
-    while ((expr = walker.next()) != null)
-    {
-    	if (expr instanceof VarExpr) 
-    	{
-    		VarExpr ve = (VarExpr) expr;
-    		if (ve.var() == var)
-    		{
-    			if (expr.parent() instanceof PathExpr)
-    				list.add((PathExpr) expr.parent());
-    			else
-    				list.add((VarExpr) expr);
-    		}
-    	}
-    }
-    return list;
-  }
-
+ 
   /**
    * Make sure the VARs under the FilterExpr are correct. The easiest and safest way  is
    * to check all Vars under the Filter predicates and if a var is not global, then replace it with the Filter var.
@@ -194,7 +166,7 @@ public class FilterPushDown extends Rewrite
   /**
    * If the expressions in "usedIn_list" can be mapped according to the mapping table "mt", then return the mappings. Otherwise return NULL.
    */
-  private ArrayList<Expr> predMappedTo(ArrayList<Expr> usedIn_list, MappingTable mt, boolean safeMappingOnly)
+  public static ArrayList<Expr> predMappedTo(ArrayList<Expr> usedIn_list, MappingTable mt, boolean safeMappingOnly)
   {
 	  ArrayList<Expr> mapped_to_list = new ArrayList<Expr>();
 
@@ -491,7 +463,7 @@ public class FilterPushDown extends Rewrite
 		  for (int i = 0; i < expr_below.numChildren(); i++)
 			  child_ids.add(i);		  
 		  return filter_directPush_rewrite(fe, child_ids);
-	  }	  
+	  }	
 	  return false;
   }
 }

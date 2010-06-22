@@ -44,16 +44,6 @@ public class CopyRecord extends FieldExpr
   }
   
   /**
-   * Return the mapping table.
-   */
-  @Override
-  public MappingTable getMappingTable()
-  {
-	  return (exprs[0].getMappingTable());
-  }
-
-
-  /**
    * 
    */
   @Override

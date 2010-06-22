@@ -103,7 +103,8 @@ public final class TransformExpr extends IterExpr
 		  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));  
 		  mt.add(ve, projection(), false);
 	  }
-
+	  mt.addUnsafeMappingRecord();
+	  
 	  return mt;
   }
   
