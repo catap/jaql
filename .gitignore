@@ -25,5 +25,6 @@ vendor/hadoop/*/logs**
 src/java/com/ibm/jaql/lang/parser/*.java
 src/java/com/ibm/jaql/lang/parser/*.smap
 src/java/com/ibm/jaql/lang/parser/*.txt
+jaqlTest/*
 
 !.gitignore
