@@ -27,7 +27,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.top.ExplainExpr;
 
 /**
  * A printer using a print stream. It is used in the following situations:
@@ -38,10 +37,10 @@ import com.ibm.jaql.lang.expr.top.ExplainExpr;
  */
 public class StreamPrinter implements JaqlPrinter {
 
-  private PrintStream output;
+  protected PrintStream output;
   protected String prompt = "\njaql> ";
-  private boolean batchMode;
-  private boolean printTime = 
+  protected boolean batchMode;
+  protected boolean printTime = 
     System.getProperty("jaql.time.results", "false").toLowerCase().equals("true");
 
   public StreamPrinter(PrintStream output, boolean batchMode) {
@@ -53,26 +52,16 @@ public class StreamPrinter implements JaqlPrinter {
   public void print(Expr expr, Context context) throws Exception {
     Schema schema = expr.getSchema();
     long time = System.currentTimeMillis();;
-    if (expr.getSchema().is(ARRAY, NULL).always()) {
+    
+    if (schema.is(ARRAY, NULL).always()) 
+    {
       JsonIterator iter = expr.iter(context);
-      Schema elementSchema = schema.elements();
-      if (elementSchema != null) {
-        iter.print(output, 0, elementSchema);
-      }
-      else
-      {
-        // empty array or null
-        iter.print(output, 0);
-      }
-      
-    } else {
+      iter.print(output, 0, schema);
+    }
+    else 
+    {
       JsonValue value = expr.eval(context);
-      // special casing of explains: result should not be converted
-      if (expr instanceof ExplainExpr) {
-        output.print(value);
-      } else {
-        JsonUtil.getDefaultSerializer(schema).write(output, value);
-      }
+      JsonUtil.getDefaultSerializer(schema).write(output, value);
     }
     output.println();
     if( printTime )

@@ -1,0 +1,1388 @@
+
+;//------------------- TEST-CASE -----------------
+hdfsShell("-copyFromLocal "+DATADIR+"delimited.del delimited.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted.del delimited-quoted.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid1.del delimited-invalid1.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid2.del delimited-invalid2.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid3.del delimited-invalid3.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines.txt lines.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-boolean.txt lines-boolean.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-invalid.txt lines-invalid.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-numeric.txt lines-numeric.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-with-null.txt lines-with-null.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// test readers
+$f = "delimited.del";
+;//------------------- TEST-CASE -----------------
+
+read(lines($f));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+read(del($f, { quoted: null }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+read(del($f, { delimiter: null }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// test field information
+read(del($f, { schema: schema { c1, c2, c3 } }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { schema: schema { c3, c1, c2 } }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read(del($f, { schema: schema { c1, c2 } }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+read(del($f, { schema: schema { c1, c2, c3, c4 } }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// test quoted delimited file (does not work when not escaping)
+$f = "delimited-quoted.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: true}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: false}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// test quoted delimited file (works when not escaping)
+$f = "delimited-quoted-ok.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: true }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: false, escape: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// test invalid files
+$f = "delimited-invalid1.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+                      // should fail
+read(del($f, { quoted: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+   // should work
+
+$f = "delimited-invalid2.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+                      // should fail
+read(del($f, { quoted: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+   // should work
+
+$f = "delimited-invalid3.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+                      // should fail
+read(del($f, { quoted: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+   // should fail
+
+// test conversion of atomic types
+convert("1", schema long);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema double);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema decfloat);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("abcd", schema string);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("true", schema boolean);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("1", schema long?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema double?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema decfloat?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("abcd", schema string?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert("true", schema boolean?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema long?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema double?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema decfloat?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema string?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema boolean?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema long);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert("1", schema long(0));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail (for the moment)
+
+// test conversion of arrays
+convert(["a","1"], schema [ string, long ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(["a","1"], schema [ string, long ]?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema [ string, long ]?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(["a","1"], schema [ string, long? ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(["a",null], schema [ string, long? ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+convert(["a","1","1"], schema [ string, long ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(["a"], schema [ string, long ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(["a",1], schema [ string, long ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(null, schema [ string, long ]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// test conversion of records
+convert({a:"a", b:"2"}, schema { a:string, b: long });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert({a:"a", b:"2"}, schema { a:string, b: long }?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema { a:string, b: long }?);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert({a:"a", b:"2"}, schema { a:string, b: long? });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert({a:"a", b:null}, schema { a:string, b: long? });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+convert({a:"a", b:"2", c:"1"}, schema { a:string, b: long });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert({a:"a"}, schema { a:string, b: long });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert({a:"a", b:1}, schema { a:string, b: long });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(null, schema { a:string, b: long });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// all together
+read(del("delimited.del", { schema: schema [ string?, string?, long? ] }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(read(del("delimited.del", { schema: schema [ string?, string?, long? ] })));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } })));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } })));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Tests for the lines() interface method
+$l = "lines.txt";
+;//------------------- TEST-CASE -----------------
+
+$lb = "lines-boolean.txt";
+;//------------------- TEST-CASE -----------------
+
+$li = "lines-invalid.txt";
+;//------------------- TEST-CASE -----------------
+
+$ln = "lines-numeric.txt";
+;//------------------- TEST-CASE -----------------
+
+$lwn = "lines-with-null.txt";
+;//------------------- TEST-CASE -----------------
+
+
+// Test read(lines()) which should return an array of strings. This should succeed for all the files.
+read(lines($l));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lb));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($li));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($ln));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lwn));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Test read(lines()) with the convert option.
+read(lines($l,{schema: schema string}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // Test for the default schema.
+read(lines($l,{schema: schema long}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the file is mixture of multiple types.
+read(lines($li,{schema: schema long}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the file has non-numeric characters.
+read(lines($ln,{schema: schema long}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($ln,{schema: schema double}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lb,{schema: schema boolean}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lb,{schema: schema long}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the input file contains booleans.
+read(lines($lwn,{schema: schema string}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the input file has nulls.
+read(lines($lwn,{schema: schema long?}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Test for invalid arguments to the convert option.
+read(lines($l,{schema: schema [long]}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($l,{schema: schema {f1: long}}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+$out = "tmpout/out-file.txt";
+;//------------------- TEST-CASE -----------------
+
+
+// Test for write(lines()) and checking whether the written files have data in the specified format
+[1,2,3,4,5,6,7,8,9,10,100,1000,10000,100000] -> write(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema long}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema double}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+[true,false,false,false,true,true,false] -> write(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema boolean}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+[1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+[1,2,3,4,null,6] -> write(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema long?}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema long}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the file contains null.
+
+[true, false, null] -> write(lines($out));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out, {schema: schema boolean?}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//-- test jsonToDel --
+[[1,2]] -> jsonToDel();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$arrays1 = [[1,2],[3,4]];
+;//------------------- TEST-CASE -----------------
+
+$arrays1 -> jsonToDel();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$arrays2 = [['one','two'],['three','four']];
+;//------------------- TEST-CASE -----------------
+
+$arrays2 -> jsonToDel();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 = [["\"", "\na"]];
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({escape: true});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({escape: false});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
+;//------------------- TEST-CASE -----------------
+
+$records -> jsonToDel({schema: schema { name, age }});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$mixed =  [{name: 'mike', age: 10}, [100, 200]];
+;//------------------- TEST-CASE -----------------
+
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//-- testJsonToXml --
+{content: 12} -> jsonToXml();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// json format
+[[1,2],[3,4]] -> write({type: 'jsonStream'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// del format
+[[1,2],[3,4]]->write({type: 'delStream'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// xml format
+[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// -- Remove all the temporary files created.
+hdfsShell("-rm delimited.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-quoted.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-quoted-ok.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-invalid1.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-invalid2.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-invalid3.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-boolean.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-invalid.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-numeric.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-with-null.txt") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rmr tmpout") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

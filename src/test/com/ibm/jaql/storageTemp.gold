@@ -1,0 +1,2234 @@
+
+;//------------------- TEST-CASE -----------------
+jaqltemp("tempfile", schema null);
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tempfile",
+  "options": {
+    "schema": schema null
+  },
+  "type": "jaqltemp"
+}
+
+;//------------------- TEST-CASE -----------------
+
+r = fn(schema) read(jaqltemp("tempfile", schema));
+;//------------------- TEST-CASE -----------------
+
+w = fn(what, schema) what -> write(jaqltemp("tempfile", schema));
+;//------------------- TEST-CASE -----------------
+
+
+// -- test schema reporting of read ---------------------------------------------------------------
+
+schemaof(read(jaqltemp("tempfile", schema null | long | nonnull)));
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long | any * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// BELOW: COMMENTED OUT BECAUSE ONLY WORKS WITH REWRITE
+
+//s = schema null | long | nonnull;
+//schemaof(read(jaqltemp("tempfile", s)));
+
+//schemaof(r(schema null | long | nonnull));
+
+
+// -- null ----------------------------------------------------------------------------------------
+
+s = schema null;
+;//------------------- TEST-CASE -----------------
+
+( [ ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+( [ null, null ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+( [ null, null, null ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema null
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- nonnull -----------------------------------------------------------------------------------------
+
+s = schema nonnull;
+;//------------------- TEST-CASE -----------------
+
+( [ 1, "abc", { a: 5 }, [ 1, true ] ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  "abc",
+  {
+    "a": 5
+  },
+  [
+    1,
+    true
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ null ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- boolean -------------------------------------------------------------------------------------
+
+s = schema boolean;
+;//------------------- TEST-CASE -----------------
+
+( [ true, false, true ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  true,
+  false,
+  true
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+s = schema boolean(value = true);
+;//------------------- TEST-CASE -----------------
+
+( [ true, true ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  true,
+  true
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ true, false ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- long ----------------------------------------------------------------------------------------
+
+s = schema long;
+;//------------------- TEST-CASE -----------------
+
+( [ -9223372036854775807-1, 0, 9223372036854775807 ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  -9223372036854775808,
+  0,
+  9223372036854775807
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1d ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1.0 does not match this serializer's schema schema long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail: non-integer
+[ 1m ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1m does not match this serializer's schema schema long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail: non-integer
+
+s = schema long(22);
+;//------------------- TEST-CASE -----------------
+
+( [ 22, 22, 22 ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  22,
+  22,
+  22
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ -101 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- decfloat ------------------------------------------------------------------------------------
+
+s = schema decfloat;
+;//------------------- TEST-CASE -----------------
+
+( [ -9223372036854775808m, 0.5m, 9223372036854775807m ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  -9223372036854775808m,
+  0.5m,
+  9223372036854775807m
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+   // should fail: non-decimal
+[ 1.0 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1.0 does not match this serializer's schema schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail: non-decimal
+
+s = schema decfloat(22m);
+;//------------------- TEST-CASE -----------------
+
+( [ 22m, 22m, 22m ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  22m,
+  22m,
+  22m
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ -101m ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- double --------------------------------------------------------------------------------------
+
+s = schema double;
+;//------------------- TEST-CASE -----------------
+
+( [ -9223372036854775807d-1d, 0.5d, 9223372036854775807d ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  -9.223372036854776E18,
+  0.5,
+  9.223372036854776E18
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema double
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+   // should fail: non-double
+[ 1m ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1m does not match this serializer's schema schema double
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+  // should fail: non-double
+
+s = schema double(22d);
+;//------------------- TEST-CASE -----------------
+
+( [ 22d, 22d, 22d ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  22.0,
+  22.0,
+  22.0
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ -101d ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- string --------------------------------------------------------------------------------------
+
+s = schema string;
+;//------------------- TEST-CASE -----------------
+
+( [ "abc", "", "!@#dsggb34" ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  "abc",
+  "",
+  "!@#dsggb34"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema string
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema string(value="abc");
+;//------------------- TEST-CASE -----------------
+
+( [ "abc", "abc", "abc" ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  "abc",
+  "abc",
+  "abc"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ "abd" ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema string(2);
+;//------------------- TEST-CASE -----------------
+
+( [ "ab", "ac", "ad" ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  "ab",
+  "ac",
+  "ad"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ "a" ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ "abd" ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// -- binary --------------------------------------------------------------------------------------
+
+s = schema binary;
+;//------------------- TEST-CASE -----------------
+
+( [ hex(""), hex("11"), hex("11AA") ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  hex(''),
+  hex('11'),
+  hex('11AA')
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ "" ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value  does not match this serializer's schema schema binary
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema binary(value=hex("11"));
+;//------------------- TEST-CASE -----------------
+
+( [ hex("11"), hex("11"), hex("11") ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  hex('11'),
+  hex('11'),
+  hex('11')
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ hex("12") ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema binary(2);
+;//------------------- TEST-CASE -----------------
+
+( [ hex("1111"), hex("2222"), hex("FFFF") ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  hex('1111'),
+  hex('2222'),
+  hex('FFFF')
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ hex("11") ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ hex("112233") ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- date ----------------------------------------------------------------------------------------
+
+s = schema date;
+;//------------------- TEST-CASE -----------------
+
+( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:00Z'), date('2000-01-01T12:00:01Z') ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  date('2000-01-01T11:59:59Z'),
+  date('2000-01-01T12:00:00Z'),
+  date('2000-01-01T12:00:01Z')
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema date
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema date(date('2000-01-01T11:59:59Z'));
+;//------------------- TEST-CASE -----------------
+
+( [ date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z'), date('2000-01-01T11:59:59Z') ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  date('2000-01-01T11:59:59Z'),
+  date('2000-01-01T11:59:59Z'),
+  date('2000-01-01T11:59:59Z')
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ date('2000-01-01T11:59:60Z') ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- functions -----------------------------------------------------------------------------------
+
+s = schema function;
+;//------------------- TEST-CASE -----------------
+
+( [ fn(x) x ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  fn(x) (x)
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ schema long ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value schema long does not match this serializer's schema schema function
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- schema --------------------------------------------------------------------------------------
+
+s = schema schematype;
+;//------------------- TEST-CASE -----------------
+
+( [ schema long, schema [ long, boolean * ], schema null ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  schema long,
+  schema [
+           long,
+           boolean * 
+         ],
+  schema null
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ fn(x) x ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value fn(x) (x) does not match this serializer's schema schema schematype
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema schematype(schema long);
+;//------------------- TEST-CASE -----------------
+
+( [ schema long, schema long ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  schema long,
+  schema long
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ schema boolean ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- arrays --------------------------------------------------------------------------------------
+
+s = schema [ ];
+;//------------------- TEST-CASE -----------------
+
+( [ [], [], [] ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  [],
+  [],
+  []
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ [1] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// input array has invalid length
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema [ * ];
+;//------------------- TEST-CASE -----------------
+
+( [ [], [0], [1,"a"], [2,"b",true], [3,"c",null] ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  [],
+  [
+    0
+  ],
+  [
+    1,
+    "a"
+  ],
+  [
+    2,
+    "b",
+    true
+  ],
+  [
+    3,
+    "c",
+    null
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema [ * ]
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema [ long, boolean ];
+;//------------------- TEST-CASE -----------------
+
+( [ [1,true], [2,false], [3,true] ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    true
+  ],
+  [
+    2,
+    false
+  ],
+  [
+    3,
+    true
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ [1] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// input array has invalid length
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ [1,true,0] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// input array has invalid length
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ [true,1] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value true does not match this serializer's schema schema long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ [1,1] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ [true,true] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value true does not match this serializer's schema schema long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema [ long * ];
+;//------------------- TEST-CASE -----------------
+
+( [ [1], [1,2], [1,2,3] ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1
+  ],
+  [
+    1,
+    2
+  ],
+  [
+    1,
+    2,
+    3
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ [true,true] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value true does not match this serializer's schema schema long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema [ string, long * ];
+;//------------------- TEST-CASE -----------------
+
+( [ ["1"], ["3",4], ["4",5,6] ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "1"
+  ],
+  [
+    "3",
+    4
+  ],
+  [
+    "4",
+    5,
+    6
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ [] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// input array has invalid length
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ [ 1,2,3,4 ] ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema string
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// -- records -------------------------------------------------------------------------------------
+
+// empty record
+s = schema { };
+;//------------------- TEST-CASE -----------------
+
+( [ {}, {}, {} ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  {},
+  {},
+  {}
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: 1 } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// invalid field: a
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// only required fields
+s = schema { b: boolean, a: long, c:string };
+;//------------------- TEST-CASE -----------------
+
+( [ { a:1, b:true, c:"!" }, { a:-1, c:"?", b:false } ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": 1,
+    "b": true,
+    "c": "!"
+  },
+  {
+    "a": -1,
+    "b": false,
+    "c": "?"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ {} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// missing field: a
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:1, b:true, c:"!",d:null } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// invalid field: d
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:true, b:true, c:"!"} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value true does not match this serializer's schema schema long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:1, b:1, c:"!"} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1 does not match this serializer's schema schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:1, b:true, c:true} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value true does not match this serializer's schema schema string
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// only optional fields
+s = schema { b?: boolean, a?: long, c?:string };
+;//------------------- TEST-CASE -----------------
+
+( [ {}, { a:1, c:"!", b:true }, { a:-1 }, { a:-1, c:"!" } ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  {},
+  {
+    "a": 1,
+    "b": true,
+    "c": "!"
+  },
+  {
+    "a": -1
+  },
+  {
+    "a": -1,
+    "c": "!"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a:1, b:true, c:"!",d:null } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// invalid field: d
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:null, b:true, c:"!"} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:1, b:null, c:"!"} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:1, b:true, c:null} ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// only rest fields
+s = schema { *: long };
+;//------------------- TEST-CASE -----------------
+
+( [ {}, { a:1, c:3, b:2 }, { a:-1 }, { a:-1, c:2 } ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  {},
+  {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  {
+    "a": -1
+  },
+  {
+    "a": -1,
+    "c": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: null } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// wild mix
+s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
+;//------------------- TEST-CASE -----------------
+
+( [ { a: true, d:"!" }, { a: true, d:"!", b: 1 }, 
+    { a: true, d:"!", f:null }, { a: true, d:"!", f:null, b:3 },
+    { a: true, d:"!", c:1d }, { a: true, d:"!", b: 1, c:1d, e:1d }, 
+    { a: true, d:"!", f:null, "0":1d, g:2d }, { a: true, d:"!", f:null, b:3, c:1d },
+    {a: true, d: "d", "0": 1d, "c":2d, "g":3d }
+    ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "d": "!"
+  },
+  {
+    "a": true,
+    "b": 1,
+    "d": "!"
+  },
+  {
+    "a": true,
+    "d": "!",
+    "f": null
+  },
+  {
+    "a": true,
+    "b": 3,
+    "d": "!",
+    "f": null
+  },
+  {
+    "a": true,
+    "c": 1.0,
+    "d": "!"
+  },
+  {
+    "a": true,
+    "b": 1,
+    "c": 1.0,
+    "d": "!",
+    "e": 1.0
+  },
+  {
+    "0": 1.0,
+    "a": true,
+    "d": "!",
+    "f": null,
+    "g": 2.0
+  },
+  {
+    "a": true,
+    "b": 3,
+    "c": 1.0,
+    "d": "!",
+    "f": null
+  },
+  {
+    "0": 1.0,
+    "a": true,
+    "c": 2.0,
+    "d": "d",
+    "g": 3.0
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a:true, d:null } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a:null, d:"!" } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a: true, d:"!", b:null } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ { a: true, d:"!", e:null } ] -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema { a: long, b: long, c: long, *: long };
+;//------------------- TEST-CASE -----------------
+
+( [ { d:4, e:5, a: 1, b:2, c:3 } ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": 1,
+    "b": 2,
+    "c": 3,
+    "d": 4,
+    "e": 5
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+ 
+
+
+// -- or ------------------------------------------------------------------------------------------
+
+s = schema long | decfloat;
+;//------------------- TEST-CASE -----------------
+
+( [ -1.5m, -1m, 0m, 1, 0 ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  -1.5m,
+  -1m,
+  0m,
+  1,
+  0
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ null ]  -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+[ 1d ]    -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// value 1.0 does not match this serializer's schema schema long | decfloat
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema long(0) | decfloat(0m) | nonnull;
+;//------------------- TEST-CASE -----------------
+
+( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1 ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  -1.5m,
+  -1m,
+  0m,
+  1,
+  0,
+  1m,
+  1.5,
+  -1
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ null ]  -> w(s);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// null value is not matched by this serializer
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+s = schema long(0) | decfloat(0m) | any;
+;//------------------- TEST-CASE -----------------
+
+( [ -1.5m, -1m, 0m, 1, 0, 1m, 1.5, -1, null ] -> w(s), r(s) );
+
+;//--------------------- RESULT ------------------
+
+[
+  -1.5m,
+  -1m,
+  0m,
+  1,
+  0,
+  1m,
+  1.5,
+  -1,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- binary comparison ---------------------------------------------------------------------------
+
+// hack: sort using MR and one reducer (enforces usage of binary comparators)
+sort = fn(what, schema) (
+    what -> write(jaqltemp("tempfile", schema)),
+    mapReduce({
+        input: jaqltemp("tempfile", schema),
+        output: jaqltemp("tempfile_sorted", schema),
+        map: fn($) $ -> transform [$, null],
+        reduce: fn(k, v) [ k ],
+        schema: { key: schema, value: schema null }
+    }),
+    read(jaqltemp("tempfile_sorted", schema))
+);
+;//------------------- TEST-CASE -----------------
+ 
+
+// single schemata
+sort([ 23512, -45346, 0,  9223372036854775807, -9223372036854775807-1 ], schema long);
+
+;//--------------------- RESULT ------------------
+
+[
+  -9223372036854775808,
+  -45346,
+  0,
+  23512,
+  9223372036854775807
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ 23512d, -45346d, 0d, 9223372036854775807d, -9223372036854775809d ], schema double);
+
+;//--------------------- RESULT ------------------
+
+[
+  -9.223372036854776E18,
+  -45346.0,
+  0.0,
+  23512.0,
+  9.223372036854776E18
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ 23512m, -45346m, 0m, 0.002m, 0.001m, 9223372036854775807m, -9223372036854775808m ], schema decfloat);
+
+;//--------------------- RESULT ------------------
+
+[
+  -9223372036854775808m,
+  -45346m,
+  0m,
+  0.001m,
+  0.002m,
+  23512m,
+  9223372036854775807m
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ "abcc", "abc", "bcd", "abcd" ], schema string);
+
+;//--------------------- RESULT ------------------
+
+[
+  "abc",
+  "abcc",
+  "abcd",
+  "bcd"
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ true, false ], schema boolean);
+
+;//--------------------- RESULT ------------------
+
+[
+  false,
+  true
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ date('2000-01-01T11:59:59Z'), date('2000-01-01T12:00:01Z'), date('2000-01-01T12:00:00Z'), ], schema date);
+
+;//--------------------- RESULT ------------------
+
+[
+  date('2000-01-01T11:59:59Z'),
+  date('2000-01-01T12:00:00Z'),
+  date('2000-01-01T12:00:01Z')
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ hex("abcc"), hex("abc0"), hex("bcd0"), hex("abcd") ], schema binary);
+
+;//--------------------- RESULT ------------------
+
+[
+  hex('ABC0'),
+  hex('ABCC'),
+  hex('ABCD'),
+  hex('BCD0')
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// arrays
+sort([ [5], [4], [1], [3], [2] ], schema [ long ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1
+  ],
+  [
+    2
+  ],
+  [
+    3
+  ],
+  [
+    4
+  ],
+  [
+    5
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ [1], [2,2], [2,3], [2], [], [1,2], [1,1] ], schema [ long * ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  [],
+  [
+    1
+  ],
+  [
+    1,
+    1
+  ],
+  [
+    1,
+    2
+  ],
+  [
+    2
+  ],
+  [
+    2,
+    2
+  ],
+  [
+    2,
+    3
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    false
+  ],
+  [
+    1,
+    true
+  ],
+  [
+    2,
+    false
+  ],
+  [
+    2,
+    true
+  ],
+  [
+    3,
+    false
+  ],
+  [
+    3,
+    true
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ [3, false], [3, true], [1, true], [1, false], [2,false], [2, true] ], schema [ long, boolean * ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    false
+  ],
+  [
+    1,
+    true
+  ],
+  [
+    2,
+    false
+  ],
+  [
+    2,
+    true
+  ],
+  [
+    3,
+    false
+  ],
+  [
+    3,
+    true
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// records
+sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": 1
+  },
+  {
+    "a": 2
+  },
+  {
+    "a": 3
+  },
+  {
+    "a": 4
+  },
+  {
+    "a": 5
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2} ], schema { a?:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": 1
+  },
+  {
+    "a": 2
+  },
+  {
+    "a": 3
+  },
+  {
+    "a": 4
+  },
+  {
+    "a": 5
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {a: 5}, {a: 4}, {a:1}, {a:3}, {a:2}, {} ], schema { *:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {},
+  {
+    "a": 1
+  },
+  {
+    "a": 2
+  },
+  {
+    "a": 3
+  },
+  {
+    "a": 4
+  },
+  {
+    "a": 5
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+sort([ {c: 5}, {d: 4}, {b:1}, {c:3}, {c:2}, {} ], schema { *:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {},
+  {
+    "b": 1
+  },
+  {
+    "c": 2
+  },
+  {
+    "c": 3
+  },
+  {
+    "c": 5
+  },
+  {
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {b: 1}, {b: 1, c:1}, {b:1, c:0}, {b:2}, {b:0}, {} ], schema { *:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {},
+  {
+    "b": 0
+  },
+  {
+    "b": 1
+  },
+  {
+    "b": 1,
+    "c": 0
+  },
+  {
+    "b": 1,
+    "c": 1
+  },
+  {
+    "b": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, c?:decfloat });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0
+  },
+  {
+    "b": 1,
+    "c": 0m
+  },
+  {
+    "b": 1,
+    "c": 1m
+  },
+  {
+    "b": 1,
+    "c": 2m
+  },
+  {
+    "b": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, c?:decfloat });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0
+  },
+  {
+    "b": 1,
+    "c": 0m
+  },
+  {
+    "b": 1,
+    "c": 1m
+  },
+  {
+    "b": 1,
+    "c": 2m
+  },
+  {
+    "b": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b:long, *:decfloat });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0
+  },
+  {
+    "b": 1,
+    "c": 0m
+  },
+  {
+    "b": 1,
+    "c": 1m
+  },
+  {
+    "b": 1,
+    "c": 2m
+  },
+  {
+    "b": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {b: 1, c:1m}, {b: 1, c:2m}, {b:1, c:0m}, {b:2}, {b:0} ], schema { b?:long, *:decfloat });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0
+  },
+  {
+    "b": 1,
+    "c": 0m
+  },
+  {
+    "b": 1,
+    "c": 1m
+  },
+  {
+    "b": 1,
+    "c": 2m
+  },
+  {
+    "b": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0m,
+    "c": 1
+  },
+  {
+    "b": 1m,
+    "c": 1
+  },
+  {
+    "b": 2m,
+    "c": 1
+  },
+  {
+    "c": 0
+  },
+  {
+    "c": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { b?:decfloat, c?:long });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0m,
+    "c": 1
+  },
+  {
+    "b": 1m,
+    "c": 1
+  },
+  {
+    "b": 2m,
+    "c": 1
+  },
+  {
+    "c": 0
+  },
+  {
+    "c": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c:long, *:decfloat });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0m,
+    "c": 1
+  },
+  {
+    "b": 1m,
+    "c": 1
+  },
+  {
+    "b": 2m,
+    "c": 1
+  },
+  {
+    "c": 0
+  },
+  {
+    "c": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ {c: 1, b:1m}, {c: 1, b:2m}, {c:1, b:0m}, {c:2}, {c:0} ], schema { c?:long, *:decfloat });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "b": 0m,
+    "c": 1
+  },
+  {
+    "b": 1m,
+    "c": 1
+  },
+  {
+    "b": 2m,
+    "c": 1
+  },
+  {
+    "c": 0
+  },
+  {
+    "c": 2
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// encodings
+sort([ 1, 3, 2, "b", "a", "c", false, true, null ], schema long | boolean | string | null );
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  false,
+  true,
+  "a",
+  "b",
+  "c",
+  1,
+  2,
+  3
+]
+
+;//------------------- TEST-CASE -----------------
+
+sort([ 1, 3, 2, "b", "a", "c", false, true, null, {}, [] ], schema long | boolean(true) | string | any );
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  [],
+  {},
+  false,
+  true,
+  "a",
+  "b",
+  "c",
+  1,
+  2,
+  3
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+;//------------------- TEST-DONE -----------------

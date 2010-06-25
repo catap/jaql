@@ -47,8 +47,10 @@ if [ "$HBASE_HOME" = "" ]; then
 	HBASE_HOME=${JAQL_HOME}/vendor/hbase/${DFLT_HBASE_VERSION}
 fi
 
-HADOOP_OVERRIDE=$$_hadoop-override
-HADOOP_CONF_OVERRIDE_DIR=/tmp/$HADOOP_OVERRIDE
+if [ "$HADOOP_CONF_OVERRIDE_DIR" = "" ]; then
+	HADOOP_OVERRIDE=$$_hadoop-override
+	HADOOP_CONF_OVERRIDE_DIR=/tmp/$HADOOP_OVERRIDE
+fi
 
 cygwin=false
 case "`uname`" in
@@ -215,9 +217,9 @@ fi
 # default log directory & file
 if [ "$HADOOP_LOG_DIR" = "" ]; then
   HADOOP_LOG_DIR="$HADOOP_HOME/logs"
-  if [ ! -d "$HADOOP_LOG_DIR" ]; then
-      mkdir "$HADOOP_LOG_DIR"
-  fi
+fi
+if [ ! -d "$HADOOP_LOG_DIR" ]; then
+  mkdir "$HADOOP_LOG_DIR"
 fi
 if [ "$HADOOP_LOGFILE" = "" ]; then
   HADOOP_LOGFILE='hadoop.log'
@@ -274,4 +276,4 @@ fi
 # echo $CLASSPATH 1>&2
 
 # run it
-"$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"
+exec "$JAVA" $JAVA_HEAP_MAX $HADOOP_OPTS -classpath "$CLASSPATH" $CLASS "$@"

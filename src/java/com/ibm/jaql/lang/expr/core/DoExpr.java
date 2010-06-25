@@ -30,10 +30,7 @@ import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**
- * Run a list of pipes, perserving order as required.  Return the last pipe.
- * 
- * @author kbeyer
- *
+ * Run a list of expressions, perserving order as required.  Return the result of the last expression.
  */
 public class DoExpr extends Expr
 {
@@ -49,13 +46,25 @@ public class DoExpr extends Expr
       exprs = Arrays.copyOf(exprs, n + 1);
       exprs[n] = new ConstExpr(null);
     }
+    // Propagate schema to vars.
+    for( Expr e: exprs )
+    {
+      if( e instanceof BindingExpr )
+      {
+        BindingExpr b = (BindingExpr)e;
+        if( b.var.getSchema().isAny() )
+        {
+          b.var.setSchema( b.child(0).getSchema() );
+        }
+      }
+    }
     return exprs;
   }
   
   public DoExpr(Expr ... exprs)
   {
     super(canonicalForm(exprs));
-  }
+  }    
 
   public DoExpr(ArrayList<? extends Expr> exprs)
   {

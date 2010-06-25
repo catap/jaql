@@ -15,12 +15,17 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
+import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
-import static com.ibm.jaql.json.type.JsonType.*;
+import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
 
 /**
  *     e1 -> transform $ $
@@ -57,9 +62,21 @@ public class TrivialTransformElimination extends Rewrite
       if( ve.var() == te.binding().var )
       {
         Expr e = b.inExpr();
-        if( e.getSchema().is(ARRAY,NULL).maybeNot() )
+        Schema s = e.getSchema();
+        if( s.is(ARRAY).maybeNot() )
         {
-          e = new AsArrayFn(e);
+          if( s.is(ARRAY,NULL).maybeNot() )
+          {
+            e = new AsArrayFn(e);
+          }
+          else if( s.is(NULL).always() )
+          {
+            e = new ArrayExpr();
+          }
+          else
+          {
+            e = new EmptyOnNullFn(e);
+          }
         }
         te.replaceInParent(e);
         return true;

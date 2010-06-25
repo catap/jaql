@@ -15,36 +15,6 @@
  */
 package com.ibm.jaql;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.ibm.jaql.TestMapReduce;
-import com.ibm.jaql.util.ClassLoaderMgr;
-
-/**
- * 
- */
-public class TestRegistry extends TestMapReduce
+public class TestRegistry extends JaqlScriptTestCase
 {
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.TestMapReduce#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    super.setUp();
-    setFilePrefix("registry");
-    try
-    {
-      ClassLoaderMgr.addExtensionJars(new String[]{System.getProperty("build")
-          + File.separator + "extension.jar"});
-    }
-    catch (Exception e)
-    {
-      throw new RuntimeException(e);
-    }
-  }
 }

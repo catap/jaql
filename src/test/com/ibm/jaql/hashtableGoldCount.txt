@@ -1,4 +1,0 @@
-com.ibm.jaql.lang.expr.hadoop.MapReduceFn	6
-com.ibm.jaql.lang.expr.io.WriteFn	5
-com.ibm.jaql.lang.expr.hadoop.MRAggregate	8
-com.ibm.jaql.lang.expr.io.ReadFn	39

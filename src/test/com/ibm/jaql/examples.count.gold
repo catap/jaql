@@ -1,0 +1,1245 @@
+
+;//------------------- TEST-CASE -----------------
+// the data
+
+books = [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     reviews: [
+       {rating: 10, user: 'joe', review: 'The best ...'},
+       {rating: 6, user: 'mary', review: 'Average ...'}]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1998},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1997, 
+     reviews: [
+       {rating: 8, user: 'rob', review: 'High on my list...'}, 
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
+        discussion:
+          [{user: 'ben', text: 'This is too harsh...'}, 
+           {user: 'jill', text: 'I agree ...'}]}]},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1930}
+  ];
+;//------------------- TEST-CASE -----------------
+
+  
+// Example 1. Write to a file named 'hey.dat'.
+[{text: 'Hello World'}] -> localWrite(file('hey.dat'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.LocalWriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+	
+// Read it back...
+read(file('hey.dat'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
+[
+    {order: 1, cust: 'c1', items: [ 
+      {item: 1, qty: 2},
+      {item: 3, qty: 6},
+      {item: 5, qty: 10}]},
+    {order: 2, cust: 'c2', items: [
+      {item: 2, qty: 1},
+      {item: 5, qty: 2},
+      {item: 7, qty: 3}]},
+    {order: 3, cust: 'c1', items: [
+      {item: 1, qty: 2},
+      {item: 7, qty: 14},
+      {item: 5, qty: 10}]} 
+] 
+-> write(hdfs('orders.dat'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Read it back...
+read(hdfs('orders.dat'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Example 3. Write to an HBase table named 'webcrawl'. (see hbaseQueries.txt)
+	
+// Read it back... (see hbaseQueries.txt)
+
+// Write the books collection from data above. DIFF
+books -> write(hdfs('books'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// Query 1. Return the publisher and title of each book. DIFF
+read(hdfs('books'))
+-> transform {$.publisher, $.title};
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// Query 2. Find the authors and titles of books that have received 
+// a review. DIFF
+read(hdfs('books'))
+-> filter exists($.reviews)
+-> transform {$.author, $.title};
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 3a. Project the title from each book using the short-hand
+// projection notation. DIFF
+read(hdfs('books'))[*].title;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 3a-alt. Or using equivalent the long-hand notation. DIFF
+read(hdfs('books'))
+-> transform $.title;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// Query 3b. Project the user from each review of each book using the short-hand
+// projection notation.  The double-stars flattens the contained arrays.
+// TODO: lost this notation; bring it back?
+// read(hdfs('books'))[**].reviews[*].user;
+read(hdfs('books'))[*].reviews[*].user -> expand;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 3b-alt. Or using equivalent the long-hand notation.
+read(hdfs('books'))
+-> expand $.reviews
+-> transform $.user;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 4. Find authors, titles, and reviews of books where a review
+// prompted a discussion by the user 'ben'. DIFF
+read(hdfs('books'))
+-> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
+-> transform { $.author, $.title, $.reviews };
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 5. Find the authors and titles of books that had an
+// average review rating over 5. DIFF
+read(hdfs('books'))
+-> filter avg($.reviews[*].rating) > 5
+-> transform {$.author, $.title};
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 6. Show how many books each publisher has published. DIFF
+read(hdfs('books'))
+-> group by p = ($.publisher)
+    into {publisher: p, num: count($)}
+-> sort by [$.publisher];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// Query 7. Find the publisher who published the most books. DIFF
+read(hdfs('books'))
+-> group by p = ($.publisher)
+    into {publisher: p, num: count($)}
+-> top 1 by [$.num desc];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Setup for co-group example DIFF
+[
+  {a:1, b:1}, 
+  {a:1, b:2}, 
+  {a:2, b:3}, 
+  {a:2, b:4}
+]
+-> write(hdfs('X'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+[
+  {c:2, d:1}, 
+  {c:2, d:2}, 
+  {c:3, d:3}, 
+  {c:3, d:4}
+]
+-> write(hdfs('Y'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 8. Co-group X and Y. DIFF
+x = read(hdfs('X'));
+;//------------------- TEST-CASE -----------------
+
+y = read(hdfs('Y'));
+;//------------------- TEST-CASE -----------------
+
+group x by g = ($.a),
+      y by g = ($.c)
+ into {g: g, b: x[*].b, d: y[*].d}
+-> sort by [$];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Query 9. Join X and Y. DIFF: sort to ensure order
+join x, y
+where x.a == y.c
+into {x.a, x.b, y.c, y.d}
+-> sort by [$];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Write to an HDFS file called 'sample'.
+[
+    {x: 0, text: 'zero'},
+    {x: 1, text: 'one'},
+    {x: 0, text: 'two'},
+    {x: 1, text: 'three'},
+    {x: 0, text: 'four'},
+    {x: 1, text: 'five'},
+    {x: 0, text: 'six'},
+    {x: 1, text: 'seven'},
+    {x: 0, text: 'eight'}
+]
+-> write(hdfs('sample.dat'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+  median = fn(items) (
+    sorted = items -> sort by [$],
+
+    sorted[long(count(sorted)/2)]
+  );
+;//------------------- TEST-CASE -----------------
+
+
+  median( [ 1, 4, 5, 3, 2 ] );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 3
+
+  var = fn(items) (
+    init = 
+       items
+       -> filter not isnull($)
+       -> transform { n: 1, s1: $, s2: $*$ },
+
+    combined =
+       init 
+       -> combine( fn(a,b)
+              { n:  a.n  + b.n,
+               s1: a.s1 + b.s1,
+               s2: a.s2 + b.s2 }),
+
+    E_X  = combined.s1 / combined.n,
+    E_X2 = combined.s2 / combined.n,
+
+    E_X2 - E_X * E_X
+  );
+;//------------------- TEST-CASE -----------------
+
+
+  var( [ 1, 4, 5, 3, 2 ] );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 2
+
+// Run a map/reduce job that counts the number objects
+// for each 'x' value. DIFF
+mapReduce( 
+    { input:  {type: 'hdfs', location: 'sample.dat'}, 
+      output: {type: 'hdfs', location: 'results.dat'}, 
+      map:    fn(v) ( v -> transform [$.x, 1] ),
+      reduce: fn(x, v) ( v -> aggregate into {x: x, num: count($)} )
+    });
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+    
+read(hdfs('results.dat'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Define a function that returns the most recent book
+// written by a given author. DIFF
+  mostRecent = 
+    fn(author) (
+         read(hdfs('books'))
+         -> filter $.author == author
+         -> top 1 by [$.year desc]
+         -> transform $.title
+         -> singleton()
+    );
+;//------------------- TEST-CASE -----------------
+
+
+  // Invoke the function.
+  mostRecent('J. K. Rowling');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// non-deterministic function-- do not test this for now...
+// Get albums recorded by "The Police" using Freebase.  DIFF
+// (
+//    artist = "The Police",
+//    freebase = 
+//      httpGet('http://www.freebase.com/api/service/mqlread', 
+//        { queries: 
+//           serialize(
+//              { myquery: 
+//                { query:
+//                  [{ type: "/music/artist",
+//                     name: artist,
+//                     album: []
+//                   }] 
+//                }
+//              }
+//            ) }) [0],
+//  
+//    freebase.myquery.result[*].album -> expand
+//  );
+
+// non-deterministic function-- do not test this for now...  
+// Get traffic incidents from Yahoo!. DIFF
+// (
+//    trafficData = 
+//      httpGet('http://local.yahooapis.com/MapsService/V1/trafficData',
+//        { appid:  "YahooDemo",
+//          street: "701 First Street",
+//          city:   "Sunnyvale",
+//          state:  "CA",
+//          output: "json"
+//        })[0],
+//  
+//    trafficData.ResultSet.Result[*].title
+// );
+
+// ====== SPLIT1 ======
+
+    split1 = javaudf("com.acme.extensions.fn.Split1");
+;//------------------- TEST-CASE -----------------
+
+    path = '/home/mystuff/stuff';
+;//------------------- TEST-CASE -----------------
+
+
+    split1(path, "/");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // [ "", "home", "mystuff", "stuff" ]
+
+    count(split1(path, "/"));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // 4
+
+    split1(path, "/")[1];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ 
+    // "home"
+
+// ====== SPLIT2 ======
+
+    split2 = javaudf("com.acme.extensions.fn.Split2");
+;//------------------- TEST-CASE -----------------
+
+    path = '/home/mystuff/stuff';
+;//------------------- TEST-CASE -----------------
+
+
+    split2(path, "/");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // [ "", "home", "mystuff", "stuff"]
+
+    count(split2(path, "/"));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // 4
+
+    split2(path, "/")[1];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // "home"
+
+// ====== GREP ======
+
+    grep = javaudf("com.acme.extensions.fn.Grep");
+;//------------------- TEST-CASE -----------------
+
+    data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];
+;//------------------- TEST-CASE -----------------
+
+
+    grep("a\\d*b", data);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // [ "a1b", "a3b", "a5b", "a7b" ]
+
+    grep("a\\d*b", null, data );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // [ "a1b", "a3b", "a5b", "a7b" ]
+
+    grep("a\\d*b", "g", data );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // [ "a1b", "a2b", "a3b", "a4b", "a5b", "a6b", "a7b", "a8b" ]
+
+// ====== GCD ======
+
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");
+;//------------------- TEST-CASE -----------------
+
+    gcd1(null);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // null
+    gcd1([]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // null
+    gcd1(3) -> expectException("java.lang.ClassCastException");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // correctly produces cast error: array expected
+    gcd1([3]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 3
+    gcd1([0,0]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 0
+    gcd1([3,0]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 3
+    gcd1([0,3]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 3
+    gcd1([17,13]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 1
+    gcd1([12,18]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 6
+    gcd1([36,18]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 18
+    gcd1([36,18,12]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 6
+    gcd1(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 31*3 = 93
+
+
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");
+;//------------------- TEST-CASE -----------------
+
+
+    gcd2("x","y") -> expectException("java.lang.IllegalArgumentException");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // correctly produces error: numbers expected
+    gcd2(17,13);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 1
+    gcd2(12,18);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 6
+
+
+    gcd = fn(nums) combine(nums, fn(a,b) gcd2(a,b));
+;//------------------- TEST-CASE -----------------
+
+
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 31*3 = 93
+
+
+    gcd = fn(nums) (nums -> combine( fn(a,b) gcd1( [a,b] ) ));
+;//------------------- TEST-CASE -----------------
+
+
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ // 31*3 = 93
+
+
+    range(1,100)
+    -> expand each i (
+         range(1,100)
+         -> transform each j { a: i, b: i * j }
+       )
+    -> write(hdfs('nums'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");
+;//------------------- TEST-CASE -----------------
+
+    gcd = fn(nums) gcd1( nums );
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF: sort added for stabilty
+read(hdfs('nums'))
+-> group by a = ($.a)
+    into { a: a, g: gcd($[*].b) }
+-> sort by [$.a];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+// [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
+
+
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");
+;//------------------- TEST-CASE -----------------
+
+    gcd = fn(nums) ( nums -> combine( fn(a,b) gcd2( a,b ) ) );
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF: sort added for stabilty
+
+read(hdfs('nums'))
+-> group by a = ($.a)
+    into { a: a, g: gcd($[*].b) }
+-> sort by [$.a];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+    // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
+
+// DIFF: this is unstable during testing (because of different options):
+//  explain 
+// read(hdfs('nums'))
+// -> group by a = ($.a)
+//     into { a: a, g: gcd($[*].b) }
+
+      mrAggregate( {
+         input: { type: "hdfs", location: "nums" }, 
+         output: HadoopTemp(),
+         map: fn ($) ( $ -> transform [ $.a, $ ] ),
+         aggregate: fn (k, $) [ combine($[*].b, fn(a,b) gcd2( a,b ) ) ],
+         final: fn (k, aggs) [{ a:k, g: aggs[0] }]
+     } )
+     -> read()
+     -> sort by [$.a];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// ======== EveryType ==========
+
+    everyType = javaudf("com.acme.extensions.fn.EveryType");
+;//------------------- TEST-CASE -----------------
+
+
+    data = [
+      null, 
+      [0,1,2,3,4], 
+      { x:1, y:[2,"two"], z: { a:3, b:"four" } },
+      true,
+      "world",
+      23,
+      38.9,
+      x'ADEADFAD',
+      d'2008-03-14T12:15:00Z',
+      fn(x) x + 1
+    ];
+;//------------------- TEST-CASE -----------------
+
+
+    everyType( null );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+    pairwise(everyType( data ), data);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// =============================================================================
+
+// DIFF: not in docs
+books -> write(hdfs('books.jqlb'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF
+read(hdfs('books.jqlb'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF: not in docs
+books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
+                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF
+read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}})
+ -> expectException("java.lang.ClassCastException");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF
+read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
+                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+myRead = fn(path) read({type:'hdfs', location:path, 
+                          inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
+                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});
+;//------------------- TEST-CASE -----------------
+
+                                
+myRead('example.jql');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// DIFF
+registerAdapter({type     :	'myHDFSFile',
+                 inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                             format       : 'org.apache.hadoop.mapred.TextInputFormat', 
+                             converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
+                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
+;//------------------- TEST-CASE -----------------
+
+
+read({type:'myHDFSFile', location:'example.jql'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// variant of Query 1 in overview
+// DIFF: sort added because of different outputs from map/reduce
+read({type:'myHDFSFile', location:'example.jql'})
+-> transform {key: $.publisher, ($.title): $.year}
+-> sort by [$];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// (see hbaseQueries.txt)
+// hbaseWrite('example', []);
+
+// (see hbaseQueries.txt)
+// hbaseWrite('example', q);
+
+read({type:"local", location:DATADIR+'books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// TODO: move into data
+hdfsShell("-copyFromLocal "+DATADIR+"jaql-overview.html lines") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+lineRdr = read(lines("lines"));
+;//------------------- TEST-CASE -----------------
+
+
+splitArr = builtin("com.acme.extensions.expr.SplitIterExpr$Descriptor");
+;//------------------- TEST-CASE -----------------
+
+
+lineRdr
+-> expand splitArr($, " ")
+-> transform [$,1]
+-> group by w = ($[0])
+    into [w, sum($[*][1])]
+-> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+lineRdr
+-> expand splitArr($, " ")
+-> group by w = ($)
+    into [w, count($)]
+-> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// -- user-defined aggregates ---------------------------------------------------------------------
+
+f = hdfs("nums");
+;//------------------- TEST-CASE -----------------
+                                    // defined above
+
+// create a UDA using combine()
+myavg1 = fn($) (
+  p = $ -> transform [ $, 1 ]
+        -> combine( fn(p, q) [ p[0]+q[0], p[1]+q[1] ] ),
+  p[0] / p[1]
+);
+;//------------------- TEST-CASE -----------------
+
+read(f) -> group by (1) into myavg1($[*].b);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// create a UDA using uda()
+myavg2 = uda(fn()     [ 0        , 0         ],            // init
+             fn(p, v) [ p[0]+v   , p[1]+1    ],            // accumulate
+             fn(p, q) [ p[0]+q[0], p[1]+q[1] ],            // combine
+             fn(p)    p[0]/p[1] );
+;//------------------- TEST-CASE -----------------
+                         // final
+read(f) -> group by (1) into myavg2($[*].b);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// create a UDA using javauda()
+myavg3 = javauda("com.ibm.jaql.udf.LongAvgUda");
+;//------------------- TEST-CASE -----------------
+
+read(f) -> group by (1) into myavg3($[*].b);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// try out argument passing
+myavg4 = javauda("com.ibm.jaql.udf.LongAvgUda", 2);
+;//------------------- TEST-CASE -----------------
+        // average of squares
+read(f) -> group by (1) into myavg4($[*].b);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+     
+
+
+;//------------------- TEST-DONE -----------------

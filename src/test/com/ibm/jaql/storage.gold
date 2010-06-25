@@ -1,30 +1,47 @@
+
+;//------------------- TEST-CASE -----------------
 //-- hdfs write/read expressions --
 
 // write/read Items to SequenceFile: default adapter, default format, no converter
 [1,2,3]
--> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+-> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test1.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+
+read({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 [1,2,3]
 -> write({type: 'hdfs', location: 'jaqlTest/test1alt.dat'})
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // write/read Items to SequenceFile: specify FileAdapter, SequenceFileFormat, no converter
@@ -32,7 +49,10 @@ read({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
 -> write({location: 'jaqlTest/test2.dat', 
          outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter', 
                          format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat',
-                         configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}});##
+                         configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test2.dat",
   "outoptions": {
@@ -42,16 +62,23 @@ read({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
   }
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 read({location: 'jaqlTest/test2.dat', 
         inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                   format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
-                  configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
+                  configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
                   
 [1,2,3]
@@ -62,12 +89,17 @@ read({location: 'jaqlTest/test2.dat',
                 inoptions:  {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
                              configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}})
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
                         
 // write/read Items to Text in a SequenceFile: specify ConverterAdapter, SequenceFileFormat, Item <-> Text (JSON)
@@ -75,7 +107,10 @@ read({location: 'jaqlTest/test2.dat',
 [{one: '1'}, {two: '2'}, {three: '3'}]
 -> write({type: 'hdfs', location: 'jaqlTest/test3.dat', 
          outoptions: {converter: 'com.foobar.store.ToJSONSeqConverter',
-                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});##
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test3.dat",
   "outoptions": {
@@ -85,9 +120,14 @@ read({location: 'jaqlTest/test2.dat',
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
               
 read({type: 'hdfs', location: 'jaqlTest/test3.dat', 
-        inoptions: {converter: 'com.foobar.store.FromJSONSeqConverter'}});##
+        inoptions: {converter: 'com.foobar.store.FromJSONSeqConverter'}});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "one": "1"
@@ -99,6 +139,8 @@ read({type: 'hdfs', location: 'jaqlTest/test3.dat',
     "three": "3"
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 [{one: '1'}, {two: '2'}, {three: '3'}]
@@ -106,7 +148,10 @@ read({type: 'hdfs', location: 'jaqlTest/test3.dat',
                outoptions: {converter: 'com.foobar.store.ToJSONSeqConverter',
                             configurator: 'com.foobar.store.TextFileOutputConfigurator'},
                inoptions: {converter: 'com.foobar.store.FromJSONSeqConverter'}})
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "one": "1"
@@ -119,13 +164,18 @@ read({type: 'hdfs', location: 'jaqlTest/test3.dat',
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // write/read Items to Text in a TextFile: specify ConverterAdapter, TextFormat, Item <-> Text (JSON)
 [{one: '1'}, {two: '2'}, {three: '3'}]
 -> write({type: 'hdfs', location: 'jaqlTest/test4.txt', 
          outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
                       converter: 'com.foobar.store.ToJSONTxtConverter',
-                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});##
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test4.txt",
   "outoptions": {
@@ -136,10 +186,15 @@ read({type: 'hdfs', location: 'jaqlTest/test3.dat',
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
               
 read({type: 'hdfs', location: 'jaqlTest/test4.txt',
 	    inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
-			  		converter: 'com.foobar.store.FromJSONTxtConverter'}});##
+			  		converter: 'com.foobar.store.FromJSONTxtConverter'}});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "one": "1"
@@ -151,6 +206,8 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
     "three": "3"
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 [{one: '1'}, {two: '2'}, {three: '3'}]
@@ -160,7 +217,10 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
                              configurator: 'com.foobar.store.TextFileOutputConfigurator'},
                 inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
 			  		        converter: 'com.foobar.store.FromJSONTxtConverter'}})
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "one": "1"
@@ -173,47 +233,69 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 //-- local file read/write expressions
 
 // write/read Items to/from a local file
 [1,2,3]
--> write({location: 'build/test/cache/mynewfile.txt', 
+-> write({location: 'mynewfile.txt', 
          outoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
-                      format  : 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}});##
+                      format  : 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}});
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/mynewfile.txt",
+  "location": "mynewfile.txt",
   "outoptions": {
     "adapter": "com.ibm.jaql.io.stream.FileStreamOutputAdapter",
     "format": "com.ibm.jaql.io.stream.converter.JsonOutputStream"
   }
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({location: 'build/test/cache/mynewfile.txt', 
+
+read({location: 'mynewfile.txt', 
         inoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
-                    format  : 'com.ibm.jaql.io.stream.converter.JsonInputStream'}});##
+                    format  : 'com.ibm.jaql.io.stream.converter.JsonInputStream'}});
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 [1,2,3]
--> localWrite({type: 'local', location: 'build/test/cache/myotherfile.txt'});##
+-> localWrite({type: 'local', location: 'myotherfile.txt'});
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/myotherfile.txt",
+  "location": "myotherfile.txt",
   "type": "local"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'local', location: 'build/test/cache/myotherfile.txt'});##
+
+read({type: 'local', location: 'myotherfile.txt'});
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 //-- test map/reduce --
@@ -232,14 +314,22 @@ read({type: 'local', location: 'build/test/cache/myotherfile.txt'});##
   { key: 7, g:"1", text: 'seven' },
   { key: 8, g:"0", text: 'eight' },
 ]
--> write({ type: 'hdfs', location: 'jaqlTest/test6.dat'});##
+-> write({ type: 'hdfs', location: 'jaqlTest/test6.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test6.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'hdfs', location: 'jaqlTest/test6.dat'});##
+
+read({type: 'hdfs', location: 'jaqlTest/test6.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": "0",
@@ -287,6 +377,8 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'});##
     "text": "eight"
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // input is a file with JSON text (one record per line), output is a SequenceFile of items
@@ -304,7 +396,10 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'});##
 -> write({type: 'hdfs', location: 'jaqlTest/test8.txt', 
          outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
                       converter: 'com.foobar.store.ToJSONTxtConverter',
-                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});##
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test8.txt",
   "outoptions": {
@@ -315,10 +410,15 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'});##
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 read({type: 'hdfs', location: 'jaqlTest/test8.txt',
 	    inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
-			  		converter: 'com.foobar.store.FromJSONTxtConverter'}});##
+			  		converter: 'com.foobar.store.FromJSONTxtConverter'}});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -367,6 +467,8 @@ read({type: 'hdfs', location: 'jaqlTest/test8.txt',
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 			  		    
 mapReduce( {
     'input' : {type: 'hdfs', location: 'jaqlTest/test8.txt', 
@@ -376,7 +478,10 @@ mapReduce( {
     'reduce': fn(key, values) [{ g: key, n: count(values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test8.dat'}
     })
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -387,6 +492,8 @@ mapReduce( {
     "n": 4
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 //-- test composite input adapter (see hbaseQueries.txt)
@@ -399,147 +506,233 @@ mapReduce( {
   { key: "3", g:1, text: 'three' },
   { key: "4", g:0, text: 'four' }
 ]
--> write({ type: 'hdfs', location: 'jaqlTest/test9.dat'});##
+-> write({ type: 'hdfs', location: 'jaqlTest/test9.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test9.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 //-- test higher level interfaces
 
-[1,2,3] -> localWrite(file('build/test/cache/test11a.dat'));##
+[1,2,3] -> localWrite(file('test11a.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/test11a.dat",
+  "location": "test11a.dat",
   "type": "local"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read(file('build/test/cache/test11a.dat'));##
+
+read(file('test11a.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
 
+;//------------------- TEST-CASE -----------------
 
-[1,2,3] -> localWrite(file('build/test/cache/test11b.dat'));##
+
+[1,2,3] -> localWrite(file('test11b.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/test11b.dat",
+  "location": "test11b.dat",
   "type": "local"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read(file('build/test/cache/test11b.dat'));##
+
+read(file('test11b.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
 
+;//------------------- TEST-CASE -----------------
 
-[1,2,3] -> write(hdfs('jaqlTest/test12a.dat'));##
+
+[1,2,3] -> write(hdfs('jaqlTest/test12a.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test12a.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read(hdfs('jaqlTest/test12a.dat'));##
+
+read(hdfs('jaqlTest/test12a.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
 
+;//------------------- TEST-CASE -----------------
 
-[1,2,3] -> write(hdfs('jaqlTest/test12b.dat'));##
+
+[1,2,3] -> write(hdfs('jaqlTest/test12b.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test12b.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read(hdfs('jaqlTest/test12b.dat'));##
+
+read(hdfs('jaqlTest/test12b.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
 
-
-path = "build/test/cache/data/";##
-"path"
+;//------------------- TEST-CASE -----------------
 
 
-r1 = read(file(path + "books.json"));##
-"r1"
+r1 = read(file(DATADIR+"books.json"));
+;//------------------- TEST-CASE -----------------
 
 
-r1 -> write(file(path + "b1"));##
+r1 -> write(file("b1"));
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/data/b1",
+  "location": "b1",
   "type": "local"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read(file(path + "b1")) == read(file(path + "books.json"));##
+
+read(file("b1")) == read(file(DATADIR+"books.json"));
+
+;//--------------------- RESULT ------------------
+
 true
 
+;//------------------- TEST-CASE -----------------
 
-r1 -> write(file(path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));##
+
+r1 -> write(file("b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/data/b2",
+  "location": "b2",
   "options": {
     "format": "com.ibm.jaql.io.stream.converter.JsonOutputStream"
   },
   "type": "local"
 }
 
-
-r2 = read(file(path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));##
-"r2"
+;//------------------- TEST-CASE -----------------
 
 
-r1 == r2;##
+r2 = read(file("b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));
+;//------------------- TEST-CASE -----------------
+
+
+r1 == r2;
+
+;//--------------------- RESULT ------------------
+
 true
 
+;//------------------- TEST-CASE -----------------
 
-r1 -> write(hdfs("jaqlTest/b1"));##
+
+r1 -> write(hdfs("jaqlTest/b1"));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/b1",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-r1 == read(hdfs("jaqlTest/b1"));##
+
+r1 == read(hdfs("jaqlTest/b1"));
+
+;//--------------------- RESULT ------------------
+
 true
 
-
-v = {someField: "some value"};##
-"v"
+;//------------------- TEST-CASE -----------------
 
 
-[v] -> write(file(path + "b2", {asArray: false}));##
+v = {someField: "some value"};
+;//------------------- TEST-CASE -----------------
+
+
+[v] -> write(file("b2", {asArray: false}));
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/data/b2",
+  "location": "b2",
   "options": {
     "asArray": false
   },
   "type": "local"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read(file(path + "b2", {asArray: false}))[0] == v;##
+
+read(file("b2", {asArray: false}))[0] == v;
+
+;//--------------------- RESULT ------------------
+
 true
 
+;//------------------- TEST-CASE -----------------
 
-hdfsShell("-copyFromLocal "+path+"test.json jaqlTest/test") * 0;##
+
+hdfsShell("-copyFromLocal "+DATADIR+"test.json jaqlTest/test") * 0;
+
+;//--------------------- RESULT ------------------
+
 0
 
+;//------------------- TEST-CASE -----------------
 
-r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));##
-"r"
+
+r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
+;//------------------- TEST-CASE -----------------
 
 
 l = [
@@ -552,11 +745,14 @@ l = [
     "b": 2,
     "c": 3
   }
-];##
-"l"
+];
+;//------------------- TEST-CASE -----------------
 
 
-l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));##
+l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test2",
   "options": {
@@ -566,8 +762,13 @@ l -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputF
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));##
+
+r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputFormat", converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"}));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test2",
   "options": {
@@ -577,13 +778,20 @@ r -> write(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextOutputF
   "type": "hdfs"
 }
 
-
-r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));##
-"r2"
+;//------------------- TEST-CASE -----------------
 
 
-(r -> sort by [$]) == (r2 -> sort by [$]);##
+r2 = read(hdfs("jaqlTest/test2", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
+;//------------------- TEST-CASE -----------------
+
+
+(r -> sort by [$]) == (r2 -> sort by [$]);
+
+;//--------------------- RESULT ------------------
+
 true
+
+;//------------------- TEST-CASE -----------------
 
 
 //artist = "The Police";
@@ -593,20 +801,30 @@ true
 //read(http(url, {query: serialize(query)}))[0].result.album;
 
 //-- test array read
-read({type: 'array', inoptions: {array: [1,2,3]}});##
+read({type: 'array', inoptions: {array: [1,2,3]}});
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
 
+;//------------------- TEST-CASE -----------------
 
-arrayRead([1,2,3]);##
+
+arrayRead([1,2,3]);
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 mapReduce( {
@@ -614,12 +832,17 @@ mapReduce( {
     'map'   : fn($) ( $ -> transform [ null, $ ] ),
     'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
   })
--> read() -> sort by [$];##
+-> read() -> sort by [$];
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 mapReduce( {
@@ -629,7 +852,10 @@ mapReduce( {
                 fn($) ($ -> transform [ null, $ + 20 ]) ],
     'output': {type: 'hdfs', location: 'jaqlTest/test14out.dat'}
   })
--> read() -> sort by [$];##
+-> read() -> sort by [$];
+
+;//--------------------- RESULT ------------------
+
 [
   11,
   12,
@@ -639,6 +865,8 @@ mapReduce( {
   25
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 //-- test rewrites --
 
@@ -646,7 +874,10 @@ mapReduce( {
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 -> group by a = ($.g)
     into { g:a, i:count($) }
--> sort by [$.g];##
+-> sort by [$.g];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": "0",
@@ -658,10 +889,15 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // for loop over hdfs read
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
--> transform $.key;##
+-> transform $.key;
+
+;//--------------------- RESULT ------------------
+
 [
   0,
   1,
@@ -673,3 +909,8 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
   7,
   8
 ]
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

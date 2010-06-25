@@ -20,8 +20,11 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 
@@ -202,23 +205,52 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   {
     if (this.isNull())
     {
-      out.println("null");
+      out.print("null");
     }
     else
     {
-      TextFullSerializer valueSerializer = JsonUtil.getDefaultSerializer(valueSchema);
+      ArraySchema arraySchema = (ArraySchema)SchemaTransformation.restrictTo(valueSchema, JsonType.ARRAY);
+      if( arraySchema == null )
+      {
+        throw new IllegalArgumentException("schema does not match array: "+valueSchema);
+      }
+
       String sep = "";
       out.print("[");
       indent += 2;
-      for (JsonValue value : this)
+      
+      int i = 0;
+      for( Schema elementSchema: arraySchema.getHeadSchemata() )
       {
+        if( ! this.moveNext() )
+        {
+          throw new IllegalArgumentException("missing required element "+i+" in schema "+valueSchema);
+        }
         out.println(sep);
         for (int s = 0; s < indent; s++)
         {
           out.print(' ');
         }
-        valueSerializer.write(out, value, indent);
+        JsonUtil.getDefaultSerializer(elementSchema).write(out, this.current(), indent);
         sep = ",";
+        i++;
+      }
+      
+      Schema rest = arraySchema.getRestSchema();
+      if( rest != null )
+      {
+        TextFullSerializer valueSerializer = JsonUtil.getDefaultSerializer(rest);
+        for (JsonValue value : this)
+        {
+          out.println(sep);
+          for (int s = 0; s < indent; s++)
+          {
+            out.print(' ');
+          }
+          valueSerializer.write(out, value, indent);
+          sep = ",";
+          i++;
+        }
       }
       indent -= 2;
       if (sep.length() > 0) // if not empty array

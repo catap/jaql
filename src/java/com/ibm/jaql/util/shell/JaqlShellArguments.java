@@ -19,15 +19,13 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.util.List;
-
-import jline.ConsoleReader;
-import jline.ConsoleReaderInputStream;
-import jline.History;
 
 import org.apache.commons.cli2.CommandLine;
 import org.apache.commons.cli2.DisplaySetting;
@@ -50,6 +48,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.JaqlQuery;
 import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.EchoedReader;
 
 /** Parser for arguments of JaqlShell. */
 public class JaqlShellArguments {
@@ -63,7 +62,7 @@ public class JaqlShellArguments {
   String[] searchPath = Module.defaultSearchPath();
   String hdfsDir = DEFAULT_HDFS_DIR;
   int numNodes = DEFAULT_NUM_NODES;
-  ChainedInputStream chainedIn = new ChainedInputStream();
+  ChainedReader chainedIn = new ChainedReader();
   boolean batchMode = DEFAULT_BATCH_MODE;
   OutputAdapter logAdapter;
 
@@ -91,40 +90,39 @@ public class JaqlShellArguments {
    * 
    * @param in An input stream
    */
-  private void addInputStream(InputStream in) {
-    chainedIn.add(batchMode ? in : new EchoedInputStream(in));
+  private void addInputStream(InputStream in) 
+  {
+    try
+    {
+      Reader reader = new InputStreamReader(in, "UTF-8");
+      if( !batchMode )
+      {
+        Writer writer = new OutputStreamWriter(System.out, "UTF-8");
+        reader = new EchoedReader(reader, writer);
+      }
+      chainedIn.add( reader );
+    }
+    catch( UnsupportedEncodingException e )
+    {
+      JaqlUtil.rethrow(e);
+    }
   }
   
   /**
    * Adds STDIN to the chained input stream.
    */
-  private void addStdin() {
-    try {
-      chainedIn.add(configureConsoleInput());
-    } catch (IOException e) {
-      chainedIn.add(System.in);
+  private void addStdin()
+  {
+    try
+    {
+      chainedIn.add( new InputStreamReader(System.in, "UTF-8") );
+    }
+    catch( UnsupportedEncodingException e )
+    {
+      JaqlUtil.rethrow(e);
     }
   }
 
-  /**
-   * Configures a console reader input stream. History file
-   * <tt>.jaql_history</tt> in <tt>user.home</tt> is used to store command
-   * history. The max line number of the history file is 500 (It can be
-   * specified with the use of {@link History#setMaxSize(int)}). When the
-   * history file is loaded, old entries beyond 500 are removed.
-   * 
-   * @return The console reader input stream
-   * @throws IOException
-   */
-  private ConsoleReaderInputStream configureConsoleInput() throws IOException {
-    ConsoleReader cr = new ConsoleReader();
-    String historyFile = System.getProperty("user.home") + File.separator
-        + ".jaql_history";
-    cr.setHistory(new History(new File(historyFile)));
-    ConsoleReaderInputStream crIn = new ConsoleReaderInputStream(cr);
-    return crIn;
-  }
-  
   @SuppressWarnings("unchecked")
   static JaqlShellArguments parseArgs(String... args) {
     // option builders
@@ -409,23 +407,5 @@ public class JaqlShellArguments {
     hf.print();
     hf.printHelp();
     System.exit(1);
-  }
-  
-  private static class EchoedInputStream extends InputStream {
-    InputStream in;
-    public EchoedInputStream(InputStream in) {
-      this.in = in;    
-    }
-    
-    @Override
-    public int read() throws IOException
-    {
-      int b = in.read();
-      if (b>0)
-      {
-        System.out.print((char)b);
-      }
-      return b;
-    }    
   }
 }

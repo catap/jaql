@@ -18,7 +18,8 @@ package com.ibm.jaql.io.stream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.net.URI;
+
+import com.ibm.jaql.io.registry.RegistryUtil;
 
 /** Output adapter that writes to a file.
  * 
@@ -34,16 +35,7 @@ public class FileStreamOutputAdapter extends StreamOutputAdapter
   @Override
   protected OutputStream openStream(String location) throws Exception
   {
-    File f = null;
-    if (location.startsWith("file"))
-    {
-      URI uri = new URI(location);
-      f = new File(uri);
-    }
-    else
-    {
-      f = new File(location);
-    }
+    File f = RegistryUtil.resolveFile(location);
     return new FileOutputStream(f);
   }
 

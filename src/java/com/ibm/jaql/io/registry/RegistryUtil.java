@@ -17,12 +17,16 @@ package com.ibm.jaql.io.registry;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
-import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.conf.Configuration;
 
 import com.ibm.jaql.util.ClassLoaderMgr;
 
@@ -31,6 +35,29 @@ import com.ibm.jaql.util.ClassLoaderMgr;
  */
 public class RegistryUtil
 {
+  // TODO: is there a better place for this?
+  /** 
+   * Resolve a local file path to an absolute path using the configurable
+   * default current working directory. 
+   */
+  public static File resolveFile(String location) throws URISyntaxException
+  {
+    if( location.startsWith("file:") )
+    {
+      URI uri = new URI(location);
+      location = uri.getPath();
+    }
+    File f = new File(location);
+    if( ! f.isAbsolute() )
+    {
+      String cwd = System.getProperty("jaql.local.dir"); // TODO: better place to get this from? Context would be good!
+      if( cwd != null )
+      {
+        f = new File(cwd + File.separatorChar + location);
+      }
+    }
+    return f;
+  }
 
   /** Read a registry from a file.
    * 
@@ -43,7 +70,17 @@ public class RegistryUtil
   public static <K, V> void readFile(String fileName, Registry<K, V> registry)
       throws Exception
   {
-    InputStream input = ClassLoaderMgr.getResourceAsStream(fileName);
+    URL url = ClassLoaderMgr.getResource(fileName);
+    InputStream input;
+    if( url != null )
+    {
+      input = url.openStream();
+    }
+    else
+    {
+      File file = resolveFile(fileName);
+      input = new FileInputStream(file);
+    }
     registry.readRegistry(input);
     input.close();
   }
@@ -56,7 +93,7 @@ public class RegistryUtil
    * @param registry
    * @throws Exception
    */
-  public static <K, V> void readConf(JobConf conf, String name,
+  public static <K, V> void readConf(Configuration conf, String name,
       Registry<K, V> registry) throws Exception
   {
     String val = conf.get(name);
@@ -78,7 +115,8 @@ public class RegistryUtil
   public static <K, V> void writeFile(String fileName, Registry<K, V> registry)
       throws Exception
   {
-    OutputStream ostr = new FileOutputStream(fileName);
+    File file = resolveFile(fileName);
+    OutputStream ostr = new FileOutputStream(file);
     registry.writeRegistry(ostr);
     ostr.close();
   }
@@ -92,7 +130,7 @@ public class RegistryUtil
    * @param registry
    * @throws Exception
    */
-  public static <K, V> void writeConf(JobConf conf, String name,
+  public static <K, V> void writeConf(Configuration conf, String name,
       Registry<K, V> registry) throws Exception
   {
     ByteArrayOutputStream ostr = new ByteArrayOutputStream();
