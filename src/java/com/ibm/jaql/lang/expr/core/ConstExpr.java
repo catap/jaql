@@ -78,7 +78,7 @@ public final class ConstExpr extends Expr
       value instanceof JsonDate     || // TODO: parser should recognize constructors and eval during parse
       value instanceof JsonRegex;
     if (annotate) exprText.print("system::const("); // FIXME: remove
-    JsonUtil.print(exprText, value, 2);
+    JsonUtil.getDefaultSerializer(getSchema()).write(exprText, value, 2);
     if (annotate) exprText.print(")");// FIXME: remove
   }
 

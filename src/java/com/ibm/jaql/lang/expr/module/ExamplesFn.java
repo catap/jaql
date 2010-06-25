@@ -3,7 +3,10 @@ package com.ibm.jaql.lang.expr.module;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -13,7 +16,7 @@ import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.Namespace;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.util.TeeInputStream;
+import com.ibm.jaql.util.EchoedReader;
 
 public class ExamplesFn extends Expr {
 	
@@ -53,13 +56,15 @@ public class ExamplesFn extends Expr {
 		return null;
 	}
 	
-	public void executeTest(File f) throws FileNotFoundException {
-		InputStream in = new FileInputStream(f);
-		TeeInputStream tin = new TeeInputStream(in, System.out);
-		try {
-			Jaql.run(f.getName(), tin);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public void executeTest(File f) throws FileNotFoundException 
+	{
+	  FileInputStream fis = new FileInputStream(f);
+	  try {
+        Writer writer = new OutputStreamWriter(System.out, "UTF-8");
+	    Reader reader = new EchoedReader(new InputStreamReader(fis, "UTF-8"), writer);
+	    Jaql.run(f.getName(), reader);
+	  } catch (Exception e) {
+	    e.printStackTrace();
+	  }
 	}
 }

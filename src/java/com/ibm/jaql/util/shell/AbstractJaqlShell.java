@@ -16,9 +16,7 @@
 
 package com.ibm.jaql.util.shell;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.Reader;
 
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.lang.core.Module;
@@ -46,7 +44,7 @@ public abstract class AbstractJaqlShell {
   /**
    * @throws Exception
    */
-  public void run(InputStream in,
+  public void run(Reader in,
                    OutputAdapter outputAdapter,
                    OutputAdapter logAdapter,
                    boolean batchMode) throws Exception

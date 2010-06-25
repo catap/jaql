@@ -1,3 +1,5 @@
+
+;//------------------- TEST-CASE -----------------
 // the data
 
 books = [
@@ -34,25 +36,35 @@ books = [
      author: 'Carolyn Keene',
      title: 'The Secret of Kane',
      year: 1930}
-  ];##
-"books"
+  ];
+;//------------------- TEST-CASE -----------------
 
   
-// Example 1. Write to a file named 'hey.dat'. DIFF
-[{text: 'Hello World'}] -> localWrite(file('build/test/cache/hey.dat'));##
+// Example 1. Write to a file named 'hey.dat'.
+[{text: 'Hello World'}] -> localWrite(file('hey.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
-  "location": "build/test/cache/hey.dat",
+  "location": "hey.dat",
   "type": "local"
 }
 
+;//------------------- TEST-CASE -----------------
+
 	
-// Read it back... DIFF
-read(file('build/test/cache/hey.dat'));##
+// Read it back...
+read(file('hey.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "text": "Hello World"
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
@@ -70,15 +82,23 @@ read(file('build/test/cache/hey.dat'));##
       {item: 7, qty: 14},
       {item: 5, qty: 10}]} 
 ] 
--> write(hdfs('orders.dat'));##
+-> write(hdfs('orders.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "orders.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 // Read it back...
-read(hdfs('orders.dat'));##
+read(hdfs('orders.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "cust": "c1",
@@ -136,22 +156,32 @@ read(hdfs('orders.dat'));##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Example 3. Write to an HBase table named 'webcrawl'. (see hbaseQueries.txt)
 	
 // Read it back... (see hbaseQueries.txt)
 
 // Write the books collection from data above. DIFF
-books -> write(hdfs('books'));##
+books -> write(hdfs('books'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "books",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
   
 // Query 1. Return the publisher and title of each book. DIFF
 read(hdfs('books'))
--> transform {$.publisher, $.title};##
+-> transform {$.publisher, $.title};
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "publisher": "Scholastic",
@@ -175,12 +205,17 @@ read(hdfs('books'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
   
 // Query 2. Find the authors and titles of books that have received 
 // a review. DIFF
 read(hdfs('books'))
 -> filter exists($.reviews)
--> transform {$.author, $.title};##
+-> transform {$.author, $.title};
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -192,10 +227,15 @@ read(hdfs('books'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Query 3a. Project the title from each book using the short-hand
 // projection notation. DIFF
-read(hdfs('books'))[*].title;##
+read(hdfs('books'))[*].title;
+
+;//--------------------- RESULT ------------------
+
 [
   "Deathly Hallows",
   "Chamber of Secrets",
@@ -203,11 +243,16 @@ read(hdfs('books'))[*].title;##
   "Monster Blood IV",
   "The Secret of Kane"
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // Query 3a-alt. Or using equivalent the long-hand notation. DIFF
 read(hdfs('books'))
--> transform $.title;##
+-> transform $.title;
+
+;//--------------------- RESULT ------------------
+
 [
   "Deathly Hallows",
   "Chamber of Secrets",
@@ -215,38 +260,53 @@ read(hdfs('books'))
   "Monster Blood IV",
   "The Secret of Kane"
 ]
+
+;//------------------- TEST-CASE -----------------
 
   
 // Query 3b. Project the user from each review of each book using the short-hand
 // projection notation.  The double-stars flattens the contained arrays.
 // TODO: lost this notation; bring it back?
 // read(hdfs('books'))[**].reviews[*].user;
-read(hdfs('books'))[*].reviews[*].user -> expand;##
+read(hdfs('books'))[*].reviews[*].user -> expand;
+
+;//--------------------- RESULT ------------------
+
 [
   "joe",
   "mary",
   "rob",
   "mike"
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // Query 3b-alt. Or using equivalent the long-hand notation.
 read(hdfs('books'))
 -> expand $.reviews
--> transform $.user;##
+-> transform $.user;
+
+;//--------------------- RESULT ------------------
+
 [
   "joe",
   "mary",
   "rob",
   "mike"
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // Query 4. Find authors, titles, and reviews of books where a review
 // prompted a discussion by the user 'ben'. DIFF
 read(hdfs('books'))
 -> filter 'ben' in ($.reviews[*].discussion[*].user -> expand)
--> transform { $.author, $.title, $.reviews };##
+-> transform { $.author, $.title, $.reviews };
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "R. L. Stine",
@@ -276,12 +336,17 @@ read(hdfs('books'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Query 5. Find the authors and titles of books that had an
 // average review rating over 5. DIFF
 read(hdfs('books'))
 -> filter avg($.reviews[*].rating) > 5
--> transform {$.author, $.title};##
+-> transform {$.author, $.title};
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -289,12 +354,17 @@ read(hdfs('books'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Query 6. Show how many books each publisher has published. DIFF
 read(hdfs('books'))
 -> group by p = ($.publisher)
     into {publisher: p, num: count($)}
--> sort by [$.publisher];##
+-> sort by [$.publisher];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "num": 1,
@@ -306,18 +376,25 @@ read(hdfs('books'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
   
 // Query 7. Find the publisher who published the most books. DIFF
 read(hdfs('books'))
 -> group by p = ($.publisher)
     into {publisher: p, num: count($)}
--> top 1 by [$.num desc];##
+-> top 1 by [$.num desc];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "num": 4,
     "publisher": "Scholastic"
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // Setup for co-group example DIFF
@@ -327,11 +404,16 @@ read(hdfs('books'))
   {a:2, b:3}, 
   {a:2, b:4}
 ]
--> write(hdfs('X'));##
+-> write(hdfs('X'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "X",
   "type": "hdfs"
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 [
@@ -340,24 +422,32 @@ read(hdfs('books'))
   {c:3, d:3}, 
   {c:3, d:4}
 ]
--> write(hdfs('Y'));##
+-> write(hdfs('Y'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "Y",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 // Query 8. Co-group X and Y. DIFF
-x = read(hdfs('X'));##
-"x"
+x = read(hdfs('X'));
+;//------------------- TEST-CASE -----------------
 
-y = read(hdfs('Y'));##
-"y"
+y = read(hdfs('Y'));
+;//------------------- TEST-CASE -----------------
 
 group x by g = ($.a),
       y by g = ($.c)
  into {g: g, b: x[*].b, d: y[*].d}
--> sort by [$];##
+-> sort by [$];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "b": [],
@@ -388,12 +478,17 @@ group x by g = ($.a),
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Query 9. Join X and Y. DIFF: sort to ensure order
 join x, y
 where x.a == y.c
 into {x.a, x.b, y.c, y.d}
--> sort by [$];##
+-> sort by [$];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "a": 2,
@@ -421,6 +516,8 @@ into {x.a, x.b, y.c, y.d}
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Write to an HDFS file called 'sample'.
 [
@@ -434,11 +531,16 @@ into {x.a, x.b, y.c, y.d}
     {x: 1, text: 'seven'},
     {x: 0, text: 'eight'}
 ]
--> write(hdfs('sample.dat'));##
+-> write(hdfs('sample.dat'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "sample.dat",
   "type": "hdfs"
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 
@@ -446,12 +548,17 @@ into {x.a, x.b, y.c, y.d}
     sorted = items -> sort by [$],
 
     sorted[long(count(sorted)/2)]
-  );##
-"median"
+  );
+;//------------------- TEST-CASE -----------------
 
 
-  median( [ 1, 4, 5, 3, 2 ] );##
+  median( [ 1, 4, 5, 3, 2 ] );
+
+;//--------------------- RESULT ------------------
+
 3
+
+;//------------------- TEST-CASE -----------------
  // 3
 
   var = fn(items) (
@@ -471,12 +578,17 @@ into {x.a, x.b, y.c, y.d}
     E_X2 = combined.s2 / combined.n,
 
     E_X2 - E_X * E_X
-  );##
-"var"
+  );
+;//------------------- TEST-CASE -----------------
 
 
-  var( [ 1, 4, 5, 3, 2 ] );##
+  var( [ 1, 4, 5, 3, 2 ] );
+
+;//--------------------- RESULT ------------------
+
 2
+
+;//------------------- TEST-CASE -----------------
  // 2
 
 // Run a map/reduce job that counts the number objects
@@ -486,14 +598,22 @@ mapReduce(
       output: {type: 'hdfs', location: 'results.dat'}, 
       map:    fn(v) ( v -> transform [$.x, 1] ),
       reduce: fn(x, v) ( v -> aggregate into {x: x, num: count($)} )
-    });##
+    });
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "results.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
     
-read(hdfs('results.dat'));##
+read(hdfs('results.dat'));
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "num": 5,
@@ -505,6 +625,8 @@ read(hdfs('results.dat'));##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // Define a function that returns the most recent book
 // written by a given author. DIFF
@@ -515,13 +637,18 @@ read(hdfs('results.dat'));##
          -> top 1 by [$.year desc]
          -> transform $.title
          -> singleton()
-    );##
-"mostRecent"
+    );
+;//------------------- TEST-CASE -----------------
 
 
   // Invoke the function.
-  mostRecent('J. K. Rowling');##
+  mostRecent('J. K. Rowling');
+
+;//--------------------- RESULT ------------------
+
 "Deathly Hallows"
+
+;//------------------- TEST-CASE -----------------
 
 
 // non-deterministic function-- do not test this for now...
@@ -562,14 +689,17 @@ read(hdfs('results.dat'));##
 
 // ====== SPLIT1 ======
 
-    split1 = javaudf("com.acme.extensions.fn.Split1");##
-"split1"
+    split1 = javaudf("com.acme.extensions.fn.Split1");
+;//------------------- TEST-CASE -----------------
 
-    path = '/home/mystuff/stuff';##
-"path"
+    path = '/home/mystuff/stuff';
+;//------------------- TEST-CASE -----------------
 
 
-    split1(path, "/");##
+    split1(path, "/");
+
+;//--------------------- RESULT ------------------
+
 [
   "",
   "home",
@@ -577,28 +707,43 @@ read(hdfs('results.dat'));##
   "stuff"
 ]
 
+;//------------------- TEST-CASE -----------------
+
     // [ "", "home", "mystuff", "stuff" ]
 
-    count(split1(path, "/"));##
+    count(split1(path, "/"));
+
+;//--------------------- RESULT ------------------
+
 4
+
+;//------------------- TEST-CASE -----------------
 
     // 4
 
-    split1(path, "/")[1];##
+    split1(path, "/")[1];
+
+;//--------------------- RESULT ------------------
+
 "home"
+
+;//------------------- TEST-CASE -----------------
  
     // "home"
 
 // ====== SPLIT2 ======
 
-    split2 = javaudf("com.acme.extensions.fn.Split2");##
-"split2"
+    split2 = javaudf("com.acme.extensions.fn.Split2");
+;//------------------- TEST-CASE -----------------
 
-    path = '/home/mystuff/stuff';##
-"path"
+    path = '/home/mystuff/stuff';
+;//------------------- TEST-CASE -----------------
 
 
-    split2(path, "/");##
+    split2(path, "/");
+
+;//--------------------- RESULT ------------------
+
 [
   "",
   "home",
@@ -606,28 +751,43 @@ read(hdfs('results.dat'));##
   "stuff"
 ]
 
+;//------------------- TEST-CASE -----------------
+
     // [ "", "home", "mystuff", "stuff"]
 
-    count(split2(path, "/"));##
+    count(split2(path, "/"));
+
+;//--------------------- RESULT ------------------
+
 4
+
+;//------------------- TEST-CASE -----------------
 
     // 4
 
-    split2(path, "/")[1];##
+    split2(path, "/")[1];
+
+;//--------------------- RESULT ------------------
+
 "home"
+
+;//------------------- TEST-CASE -----------------
 
     // "home"
 
 // ====== GREP ======
 
-    grep = javaudf("com.acme.extensions.fn.Grep");##
-"grep"
+    grep = javaudf("com.acme.extensions.fn.Grep");
+;//------------------- TEST-CASE -----------------
 
-    data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];##
-"data"
+    data = [ "a1bxa2b", "a3bxa4b", "a5bxa6b", null, "a7bxa8b" ];
+;//------------------- TEST-CASE -----------------
 
 
-    grep("a\\d*b", data);##
+    grep("a\\d*b", data);
+
+;//--------------------- RESULT ------------------
+
 [
   "a1b",
   "a3b",
@@ -635,9 +795,14 @@ read(hdfs('results.dat'));##
   "a7b"
 ]
 
+;//------------------- TEST-CASE -----------------
+
     // [ "a1b", "a3b", "a5b", "a7b" ]
 
-    grep("a\\d*b", null, data );##
+    grep("a\\d*b", null, data );
+
+;//--------------------- RESULT ------------------
+
 [
   "a1b",
   "a3b",
@@ -645,9 +810,14 @@ read(hdfs('results.dat'));##
   "a7b"
 ]
 
+;//------------------- TEST-CASE -----------------
+
     // [ "a1b", "a3b", "a5b", "a7b" ]
 
-    grep("a\\d*b", "g", data );##
+    grep("a\\d*b", "g", data );
+
+;//--------------------- RESULT ------------------
+
 [
   "a1b",
   "a2b",
@@ -659,81 +829,168 @@ read(hdfs('results.dat'));##
   "a8b"
 ]
 
+;//------------------- TEST-CASE -----------------
+
     // [ "a1b", "a2b", "a3b", "a4b", "a5b", "a6b", "a7b", "a8b" ]
 
 // ====== GCD ======
 
-    gcd1 = javaudf("com.acme.extensions.fn.GCD1");##
-"gcd1"
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");
+;//------------------- TEST-CASE -----------------
 
-    gcd1(null);##
+    gcd1(null);
+
+;//--------------------- RESULT ------------------
+
 null
+
+;//------------------- TEST-CASE -----------------
  // null
-    gcd1([]);##
+    gcd1([]);
+
+;//--------------------- RESULT ------------------
+
 null
+
+;//------------------- TEST-CASE -----------------
  // null
-    gcd1(3);##
-FAILURE
+    gcd1(3) -> expectException("java.lang.ClassCastException");
+
+;//--------------------- RESULT ------------------
+
+"Expected exception occured"
+
+;//------------------- TEST-CASE -----------------
  // correctly produces cast error: array expected
-    gcd1([3]);##
+    gcd1([3]);
+
+;//--------------------- RESULT ------------------
+
 3
+
+;//------------------- TEST-CASE -----------------
  // 3
-    gcd1([0,0]);##
+    gcd1([0,0]);
+
+;//--------------------- RESULT ------------------
+
 0
+
+;//------------------- TEST-CASE -----------------
  // 0
-    gcd1([3,0]);##
+    gcd1([3,0]);
+
+;//--------------------- RESULT ------------------
+
 3
+
+;//------------------- TEST-CASE -----------------
  // 3
-    gcd1([0,3]);##
+    gcd1([0,3]);
+
+;//--------------------- RESULT ------------------
+
 3
+
+;//------------------- TEST-CASE -----------------
  // 3
-    gcd1([17,13]);##
+    gcd1([17,13]);
+
+;//--------------------- RESULT ------------------
+
 1
+
+;//------------------- TEST-CASE -----------------
  // 1
-    gcd1([12,18]);##
+    gcd1([12,18]);
+
+;//--------------------- RESULT ------------------
+
 6
+
+;//------------------- TEST-CASE -----------------
  // 6
-    gcd1([36,18]);##
+    gcd1([36,18]);
+
+;//--------------------- RESULT ------------------
+
 18
+
+;//------------------- TEST-CASE -----------------
  // 18
-    gcd1([36,18,12]);##
+    gcd1([36,18,12]);
+
+;//--------------------- RESULT ------------------
+
 6
+
+;//------------------- TEST-CASE -----------------
  // 6
-    gcd1(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    gcd1(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);
+
+;//--------------------- RESULT ------------------
+
 93
+
+;//------------------- TEST-CASE -----------------
  // 31*3 = 93
 
 
-    gcd2 = javaudf("com.acme.extensions.fn.GCD2");##
-"gcd2"
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");
+;//------------------- TEST-CASE -----------------
 
 
-    gcd2("x","y");##
-FAILURE
+    gcd2("x","y") -> expectException("java.lang.IllegalArgumentException");
+
+;//--------------------- RESULT ------------------
+
+"Expected exception occured"
+
+;//------------------- TEST-CASE -----------------
  // correctly produces error: numbers expected
-    gcd2(17,13);##
+    gcd2(17,13);
+
+;//--------------------- RESULT ------------------
+
 1
+
+;//------------------- TEST-CASE -----------------
  // 1
-    gcd2(12,18);##
+    gcd2(12,18);
+
+;//--------------------- RESULT ------------------
+
 6
+
+;//------------------- TEST-CASE -----------------
  // 6
 
 
-    gcd = fn(nums) combine(nums, fn(a,b) gcd2(a,b));##
-"gcd"
+    gcd = fn(nums) combine(nums, fn(a,b) gcd2(a,b));
+;//------------------- TEST-CASE -----------------
 
 
-    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);
+
+;//--------------------- RESULT ------------------
+
 93
+
+;//------------------- TEST-CASE -----------------
  // 31*3 = 93
 
 
-    gcd = fn(nums) (nums -> combine( fn(a,b) gcd1( [a,b] ) ));##
-"gcd"
+    gcd = fn(nums) (nums -> combine( fn(a,b) gcd1( [a,b] ) ));
+;//------------------- TEST-CASE -----------------
 
 
-    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);##
+    gcd(range(1000,2000) -> filter mod($,3) == 0 -> transform $ * 31);
+
+;//--------------------- RESULT ------------------
+
 93
+
+;//------------------- TEST-CASE -----------------
  // 31*3 = 93
 
 
@@ -742,25 +999,33 @@ FAILURE
          range(1,100)
          -> transform each j { a: i, b: i * j }
        )
-    -> write(hdfs('nums'));##
+    -> write(hdfs('nums'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "nums",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
 
-    gcd1 = javaudf("com.acme.extensions.fn.GCD1");##
-"gcd1"
 
-    gcd = fn(nums) gcd1( nums );##
-"gcd"
+    gcd1 = javaudf("com.acme.extensions.fn.GCD1");
+;//------------------- TEST-CASE -----------------
+
+    gcd = fn(nums) gcd1( nums );
+;//------------------- TEST-CASE -----------------
 
 
 // DIFF: sort added for stabilty
 read(hdfs('nums'))
 -> group by a = ($.a)
     into { a: a, g: gcd($[*].b) }
--> sort by [$.a];##
+-> sort by [$.a];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "a": 1,
@@ -1163,15 +1428,17 @@ read(hdfs('nums'))
     "g": 100
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
 
 
-    gcd2 = javaudf("com.acme.extensions.fn.GCD2");##
-"gcd2"
+    gcd2 = javaudf("com.acme.extensions.fn.GCD2");
+;//------------------- TEST-CASE -----------------
 
-    gcd = fn(nums) ( nums -> combine( fn(a,b) gcd2( a,b ) ) );##
-"gcd"
+    gcd = fn(nums) ( nums -> combine( fn(a,b) gcd2( a,b ) ) );
+;//------------------- TEST-CASE -----------------
 
 
 // DIFF: sort added for stabilty
@@ -1179,7 +1446,10 @@ read(hdfs('nums'))
 read(hdfs('nums'))
 -> group by a = ($.a)
     into { a: a, g: gcd($[*].b) }
--> sort by [$.a];##
+-> sort by [$.a];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "a": 1,
@@ -1582,6 +1852,8 @@ read(hdfs('nums'))
     "g": 100
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
     // [ {a:1, g:1}, {a:2, g:2}, ..., {a:100, g: 100} ]
 
@@ -1599,7 +1871,10 @@ read(hdfs('nums'))
          final: fn (k, aggs) [{ a:k, g: aggs[0] }]
      } )
      -> read()
-     -> sort by [$.a];##
+     -> sort by [$.a];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "a": 1,
@@ -2003,12 +2278,14 @@ read(hdfs('nums'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 
 // ======== EveryType ==========
 
-    everyType = javaudf("com.acme.extensions.fn.EveryType");##
-"everyType"
+    everyType = javaudf("com.acme.extensions.fn.EveryType");
+;//------------------- TEST-CASE -----------------
 
 
     data = [
@@ -2022,15 +2299,23 @@ read(hdfs('nums'))
       x'ADEADFAD',
       d'2008-03-14T12:15:00Z',
       fn(x) x + 1
-    ];##
-"data"
+    ];
+;//------------------- TEST-CASE -----------------
 
 
-    everyType( null );##
+    everyType( null );
+
+;//--------------------- RESULT ------------------
+
 null
 
+;//------------------- TEST-CASE -----------------
 
-    pairwise(everyType( data ), data);##
+
+    pairwise(everyType( data ), data);
+
+;//--------------------- RESULT ------------------
+
 [
   [
     null,
@@ -2106,19 +2391,29 @@ null
   ]
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // =============================================================================
 
 // DIFF: not in docs
-books -> write(hdfs('books.jqlb'));##
+books -> write(hdfs('books.jqlb'));
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "books.jqlb",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 // DIFF
-read(hdfs('books.jqlb'));##
+read(hdfs('books.jqlb'));
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -2186,10 +2481,15 @@ read(hdfs('books.jqlb'));##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // DIFF: not in docs
 books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'org.apache.hadoop.mapred.TextOutputFormat',
-                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});##
+                              converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "example.jql",
   "outoptions": {
@@ -2199,15 +2499,26 @@ books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'or
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 // DIFF
-read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}});##
-FAILURE
+read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}})
+ -> expectException("java.lang.ClassCastException");
+
+;//--------------------- RESULT ------------------
+
+"Expected exception occured"
+
+;//------------------- TEST-CASE -----------------
 
 
 // DIFF
 read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
-                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
+                             converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -2274,15 +2585,20 @@ read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.ha
     "year": 1930
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 myRead = fn(path) read({type:'hdfs', location:path, 
                           inoptions: {format    : 'org.apache.hadoop.mapred.TextInputFormat', 
-                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});##
-"myRead"
+                                      converter : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});
+;//------------------- TEST-CASE -----------------
 
                                 
-myRead('example.jql');##
+myRead('example.jql');
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -2349,6 +2665,8 @@ myRead('example.jql');##
     "year": 1930
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // DIFF
@@ -2356,19 +2674,14 @@ registerAdapter({type     :	'myHDFSFile',
                  inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
                              format       : 'org.apache.hadoop.mapred.TextInputFormat', 
                              converter    : 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter',
-                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});##
-{
-  "inoptions": {
-    "adapter": "com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter",
-    "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "converter": "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter",
-    "format": "org.apache.hadoop.mapred.TextInputFormat"
-  },
-  "type": "myHDFSFile"
-}
+                             configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
+;//------------------- TEST-CASE -----------------
 
 
-read({type:'myHDFSFile', location:'example.jql'});##
+read({type:'myHDFSFile', location:'example.jql'});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -2436,12 +2749,17 @@ read({type:'myHDFSFile', location:'example.jql'});##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // variant of Query 1 in overview
 // DIFF: sort added because of different outputs from map/reduce
 read({type:'myHDFSFile', location:'example.jql'})
 -> transform {key: $.publisher, ($.title): $.year}
--> sort by [$];##
+-> sort by [$];
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "Chamber of Secrets": 1999,
@@ -2465,6 +2783,8 @@ read({type:'myHDFSFile', location:'example.jql'})
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // (see hbaseQueries.txt)
 // hbaseWrite('example', []);
@@ -2472,7 +2792,10 @@ read({type:'myHDFSFile', location:'example.jql'})
 // (see hbaseQueries.txt)
 // hbaseWrite('example', q);
 
-read({type:"local", location:'build/test/cache/data/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});##
+read({type:"local", location:DATADIR+'books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "author": "J. K. Rowling",
@@ -2540,17 +2863,25 @@ read({type:"local", location:'build/test/cache/data/books.json', inoptions:{form
   }
 ]
 
+;//------------------- TEST-CASE -----------------
 
-hdfsShell("-copyFromLocal docs/jaql-overview.html lines") * 0;##
+
+// TODO: move into data
+hdfsShell("-copyFromLocal "+DATADIR+"jaql-overview.html lines") * 0;
+
+;//--------------------- RESULT ------------------
+
 0
 
-
-lineRdr = read(lines("lines"));##
-"lineRdr"
+;//------------------- TEST-CASE -----------------
 
 
-splitArr = builtin("com.acme.extensions.expr.SplitIterExpr$Descriptor");##
-"splitArr"
+lineRdr = read(lines("lines"));
+;//------------------- TEST-CASE -----------------
+
+
+splitArr = builtin("com.acme.extensions.expr.SplitIterExpr$Descriptor");
+;//------------------- TEST-CASE -----------------
 
 
 lineRdr
@@ -2558,22 +2889,32 @@ lineRdr
 -> transform [$,1]
 -> group by w = ($[0])
     into [w, sum($[*][1])]
--> count();##
+-> count();
+
+;//--------------------- RESULT ------------------
+
 1341
+
+;//------------------- TEST-CASE -----------------
 
 
 lineRdr
 -> expand splitArr($, " ")
 -> group by w = ($)
     into [w, count($)]
--> count();##
+-> count();
+
+;//--------------------- RESULT ------------------
+
 1341
+
+;//------------------- TEST-CASE -----------------
 
 
 // -- user-defined aggregates ---------------------------------------------------------------------
 
-f = hdfs("nums");##
-"f"
+f = hdfs("nums");
+;//------------------- TEST-CASE -----------------
                                     // defined above
 
 // create a UDA using combine()
@@ -2581,45 +2922,67 @@ myavg1 = fn($) (
   p = $ -> transform [ $, 1 ]
         -> combine( fn(p, q) [ p[0]+q[0], p[1]+q[1] ] ),
   p[0] / p[1]
-);##
-"myavg1"
+);
+;//------------------- TEST-CASE -----------------
 
-read(f) -> group by (1) into myavg1($[*].b);##
+read(f) -> group by (1) into myavg1($[*].b);
+
+;//--------------------- RESULT ------------------
+
 [
   2550
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // create a UDA using uda()
 myavg2 = uda(fn()     [ 0        , 0         ],            // init
              fn(p, v) [ p[0]+v   , p[1]+1    ],            // accumulate
              fn(p, q) [ p[0]+q[0], p[1]+q[1] ],            // combine
-             fn(p)    p[0]/p[1] );##
-"myavg2"
+             fn(p)    p[0]/p[1] );
+;//------------------- TEST-CASE -----------------
                          // final
-read(f) -> group by (1) into myavg2($[*].b);##
+read(f) -> group by (1) into myavg2($[*].b);
+
+;//--------------------- RESULT ------------------
+
 [
   2550
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // create a UDA using javauda()
-myavg3 = javauda("com.ibm.jaql.udf.LongAvgUda");##
-"myavg3"
+myavg3 = javauda("com.ibm.jaql.udf.LongAvgUda");
+;//------------------- TEST-CASE -----------------
 
-read(f) -> group by (1) into myavg3($[*].b);##
+read(f) -> group by (1) into myavg3($[*].b);
+
+;//--------------------- RESULT ------------------
+
 [
   2550
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // try out argument passing
-myavg4 = javauda("com.ibm.jaql.udf.LongAvgUda", 2);##
-"myavg4"
+myavg4 = javauda("com.ibm.jaql.udf.LongAvgUda", 2);
+;//------------------- TEST-CASE -----------------
         // average of squares
-read(f) -> group by (1) into myavg4($[*].b);##
+read(f) -> group by (1) into myavg4($[*].b);
+
+;//--------------------- RESULT ------------------
+
 [
   11448072
 ]
+
+;//------------------- TEST-CASE -----------------
      
 
+
+;//------------------- TEST-DONE -----------------

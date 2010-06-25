@@ -15,26 +15,6 @@
  */
 package com.ibm.jaql;
 
-import java.io.IOException;
-
-import com.ibm.jaql.TestMapReduce;
-
-/**
- * 
- */
-public class TestLongList extends TestMapReduce
+public class TestLongList extends JaqlScriptTestCase
 {
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.TestMapReduce#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    super.setUp();
-    setFilePrefix("longList");
-  }
-
 }

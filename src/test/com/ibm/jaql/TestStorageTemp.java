@@ -14,23 +14,6 @@
  * the License.
  */package com.ibm.jaql;
 
-import java.io.IOException;
-
-/**
- * 
- */
-public class TestStorageTemp extends TestMapReduce
+public class TestStorageTemp extends JaqlScriptTestCase
 {
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.TestMapReduce#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    super.setUp();
-    setFilePrefix("storageTemp");
-  }
 }

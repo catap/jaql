@@ -97,7 +97,7 @@ options {
 
 // top-level rule
 parse returns [Expr r=null]
-    : r=stmt ( SEMI | EOF { oops("; expected"); } ) 
+    : r=stmt ( SEMI | EOF ) 
     | SEMI
     | EOF { done = true; }
     ;

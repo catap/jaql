@@ -1,0 +1,2400 @@
+
+;//------------------- TEST-CASE -----------------
+hdfsShell("-copyFromLocal "+DATADIR+"delimited.del delimited.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted.del delimited-quoted.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid1.del delimited-invalid1.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid2.del delimited-invalid2.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid3.del delimited-invalid3.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines.txt lines.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-boolean.txt lines-boolean.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-invalid.txt lines-invalid.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-numeric.txt lines-numeric.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"lines-with-null.txt lines-with-null.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+
+// test readers
+$f = "delimited.del";
+;//------------------- TEST-CASE -----------------
+
+read(lines($f));
+
+;//--------------------- RESULT ------------------
+
+[
+  "HELLO,world,1",
+  "hello , world,2",
+  "\"hello\",\"world\",3",
+  "\"hello\",\"\"\"world\"\"\",4",
+  "\"\",\"\"\"\",5",
+  "\"\"\"\"\"\",\"\"\"\"\"\"\"\",6",
+  "a,a,",
+  "a,,",
+  ",,",
+  "\"A\"\",\",\"1\",1"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "HELLO",
+    "world",
+    "1"
+  ],
+  [
+    "hello ",
+    " world",
+    "2"
+  ],
+  [
+    "hello",
+    "world",
+    "3"
+  ],
+  [
+    "hello",
+    "\"world\"",
+    "4"
+  ],
+  [
+    "",
+    "\"",
+    "5"
+  ],
+  [
+    "\"\"",
+    "\"\"\"",
+    "6"
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ],
+  [
+    "A\",",
+    "1",
+    "1"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "HELLO",
+    "world",
+    "1"
+  ],
+  [
+    "hello ",
+    " world",
+    "2"
+  ],
+  [
+    "\"hello\"",
+    "\"world\"",
+    "3"
+  ],
+  [
+    "\"hello\"",
+    "\"\"\"world\"\"\"",
+    "4"
+  ],
+  [
+    "\"\"",
+    "\"\"\"\"",
+    "5"
+  ],
+  [
+    "\"\"\"\"\"\"",
+    "\"\"\"\"\"\"\"\"",
+    "6"
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ]
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 110
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+read(del($f, { quoted: null }));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// parameter "quoted" must not be null
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+read(del($f, { delimiter: null }));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// parameter "delimiter" must not be null
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// test field information
+read(del($f, { schema: schema { c1, c2, c3 } }));
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "c1": "HELLO",
+    "c2": "world",
+    "c3": "1"
+  },
+  {
+    "c1": "hello ",
+    "c2": " world",
+    "c3": "2"
+  },
+  {
+    "c1": "hello",
+    "c2": "world",
+    "c3": "3"
+  },
+  {
+    "c1": "hello",
+    "c2": "\"world\"",
+    "c3": "4"
+  },
+  {
+    "c1": "",
+    "c2": "\"",
+    "c3": "5"
+  },
+  {
+    "c1": "\"\"",
+    "c2": "\"\"\"",
+    "c3": "6"
+  },
+  {
+    "c1": "a",
+    "c2": "a",
+    "c3": null
+  },
+  {
+    "c1": "a",
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": "A\",",
+    "c2": "1",
+    "c3": "1"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { schema: schema { c3, c1, c2 } }));
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "c1": "world",
+    "c2": "1",
+    "c3": "HELLO"
+  },
+  {
+    "c1": " world",
+    "c2": "2",
+    "c3": "hello "
+  },
+  {
+    "c1": "world",
+    "c2": "3",
+    "c3": "hello"
+  },
+  {
+    "c1": "\"world\"",
+    "c2": "4",
+    "c3": "hello"
+  },
+  {
+    "c1": "\"",
+    "c2": "5",
+    "c3": ""
+  },
+  {
+    "c1": "\"\"\"",
+    "c2": "6",
+    "c3": "\"\""
+  },
+  {
+    "c1": "a",
+    "c2": null,
+    "c3": "a"
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": "a"
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": "1",
+    "c2": "1",
+    "c3": "A\","
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+read(del($f, { schema: schema { c1, c2 } }));
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 0
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+read(del($f, { schema: schema { c1, c2, c3, c4 } }));
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 0
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// test quoted delimited file (does not work when not escaping)
+$f = "delimited-quoted.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: true}));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "this",
+    "is",
+    "jaql"
+  ],
+  [
+    "\'=\\=\b=\f=\n=\r=\t",
+    "\"",
+    "A"
+  ],
+  [
+    "\u0000",
+    "\u001f",
+    "\u007f\u0010~"
+  ],
+  [
+    "\u0080",
+    "\u008a",
+    "\u008a\u009f"
+  ],
+  [
+    "中",
+    "舜雨",
+    "国"
+  ],
+  [
+    "a\"\t\u001f舜雨 ",
+    "2",
+    "3"
+  ],
+  [
+    " a",
+    "b ",
+    " c "
+  ],
+  [
+    "\\\"",
+    "\"\\\"",
+    "\\\"\""
+  ],
+  [
+    "some bad esca\\pe",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok \'whoops\\",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok{\\\"whoops",
+    "another field",
+    "yet another"
+  ],
+  [
+    "mistaken \\use of backslash",
+    "another field",
+    "yet another"
+  ],
+  [
+    "confusion \\\"blah\\\", more blah",
+    "another field",
+    "yet another"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: false}));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "this",
+    "is",
+    "jaql"
+  ],
+  [
+    "\\\'=\\\\=\\b=\\f=\\n=\\r=\\t",
+    "\"\"",
+    "A"
+  ],
+  [
+    "\\u0000",
+    "\\u001f",
+    "\\u007f\\u0010\\u007e"
+  ],
+  [
+    "\\u0080",
+    "\\u008a",
+    "\\u008a\\u009f"
+  ],
+  [
+    "\\u4E2D",
+    "\\u821c\\u96E8",
+    "\\u56FD"
+  ],
+  [
+    "a\"\"\\t\\u001f\\u821c\\u96E8 ",
+    "2",
+    "3"
+  ],
+  [
+    " a",
+    "b ",
+    " c "
+  ],
+  [
+    "\\\"\"",
+    "\"\"\\\"\"",
+    "\\\"\"\"\""
+  ],
+  [
+    "some bad esca\\pe",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok \\\'whoops\\",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok{\\\"\"whoops",
+    "another field",
+    "yet another"
+  ],
+  [
+    "mistaken \\use of backslash",
+    "another field",
+    "yet another"
+  ]
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 427
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "\"this\"",
+    "\"is\"",
+    "\"jaql\""
+  ],
+  [
+    "\"\\\'=\\\\=\\b=\\f=\\n=\\r=\\t\"",
+    "\"\"\"\"",
+    "\"A\""
+  ],
+  [
+    "\"\\u0000\"",
+    "\"\\u001f\"",
+    "\"\\u007f\\u0010\\u007e\""
+  ],
+  [
+    "\"\\u0080\"",
+    "\"\\u008a\"",
+    "\"\\u008a\\u009f\""
+  ],
+  [
+    "\"\\u4E2D\"",
+    "\"\\u821c\\u96E8\"",
+    "\"\\u56FD\""
+  ],
+  [
+    "\"a\"\"\\t\\u001f\\u821c\\u96E8 \"",
+    "\"2\"",
+    "\"3\""
+  ],
+  [
+    "\" a\"",
+    "\"b \"",
+    "\" c \""
+  ],
+  [
+    "\"\\\"\"\"",
+    "\"\"\"\\\"\"\"",
+    "\"\\\"\"\"\"\""
+  ],
+  [
+    "\"some bad esca\\pe\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"ok \\\'whoops\\\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"ok{\\\"\"whoops\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"mistaken \\use of backslash\"",
+    "\"another field\"",
+    "\"yet another\""
+  ]
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 427
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// test quoted delimited file (works when not escaping)
+$f = "delimited-quoted-ok.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: true }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "this",
+    "is",
+    "jaql"
+  ],
+  [
+    "\'=\\=\b=\f=\n=\r=\t",
+    "\"",
+    "A"
+  ],
+  [
+    "\u0000",
+    "\u001f",
+    "\u007f\u0010~"
+  ],
+  [
+    "\u0080",
+    "\u008a",
+    "\u008a\u009f"
+  ],
+  [
+    "中",
+    "舜雨",
+    "国"
+  ],
+  [
+    "a\"\t\u001f舜雨 ",
+    "2",
+    "3"
+  ],
+  [
+    " a",
+    "b ",
+    " c "
+  ],
+  [
+    "\\\"",
+    "\"\\\"",
+    "\\\"\""
+  ],
+  [
+    "some bad esca\\pe",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok \'whoops\\",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok{\\\"whoops",
+    "another field",
+    "yet another"
+  ],
+  [
+    "mistaken \\use of backslash",
+    "another field",
+    "yet another"
+  ],
+  [
+    "confusion \\\"blah\\\" more blah",
+    "another field",
+    "yet another"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, escape: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "this",
+    "is",
+    "jaql"
+  ],
+  [
+    "\\\'=\\\\=\\b=\\f=\\n=\\r=\\t",
+    "\"\"",
+    "A"
+  ],
+  [
+    "\\u0000",
+    "\\u001f",
+    "\\u007f\\u0010\\u007e"
+  ],
+  [
+    "\\u0080",
+    "\\u008a",
+    "\\u008a\\u009f"
+  ],
+  [
+    "\\u4E2D",
+    "\\u821c\\u96E8",
+    "\\u56FD"
+  ],
+  [
+    "a\"\"\\t\\u001f\\u821c\\u96E8 ",
+    "2",
+    "3"
+  ],
+  [
+    " a",
+    "b ",
+    " c "
+  ],
+  [
+    "\\\"\"",
+    "\"\"\\\"\"",
+    "\\\"\"\"\""
+  ],
+  [
+    "some bad esca\\pe",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok \\\'whoops\\",
+    "another field",
+    "yet another"
+  ],
+  [
+    "ok{\\\"\"whoops",
+    "another field",
+    "yet another"
+  ],
+  [
+    "mistaken \\use of backslash",
+    "another field",
+    "yet another"
+  ],
+  [
+    "confusion \\\"\"blah\\\"\" more blah",
+    "another field",
+    "yet another"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: false, escape: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "\"this\"",
+    "\"is\"",
+    "\"jaql\""
+  ],
+  [
+    "\"\\\'=\\\\=\\b=\\f=\\n=\\r=\\t\"",
+    "\"\"\"\"",
+    "\"A\""
+  ],
+  [
+    "\"\\u0000\"",
+    "\"\\u001f\"",
+    "\"\\u007f\\u0010\\u007e\""
+  ],
+  [
+    "\"\\u0080\"",
+    "\"\\u008a\"",
+    "\"\\u008a\\u009f\""
+  ],
+  [
+    "\"\\u4E2D\"",
+    "\"\\u821c\\u96E8\"",
+    "\"\\u56FD\""
+  ],
+  [
+    "\"a\"\"\\t\\u001f\\u821c\\u96E8 \"",
+    "\"2\"",
+    "\"3\""
+  ],
+  [
+    "\" a\"",
+    "\"b \"",
+    "\" c \""
+  ],
+  [
+    "\"\\\"\"\"",
+    "\"\"\"\\\"\"\"",
+    "\"\\\"\"\"\"\""
+  ],
+  [
+    "\"some bad esca\\pe\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"ok \\\'whoops\\\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"ok{\\\"\"whoops\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"mistaken \\use of backslash\"",
+    "\"another field\"",
+    "\"yet another\""
+  ],
+  [
+    "\"confusion \\\"\"blah\\\"\" more blah\"",
+    "\"another field\"",
+    "\"yet another\""
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// test invalid files
+$f = "delimited-invalid1.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// ending quote missing in field starting at position 7
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+                      // should fail
+read(del($f, { quoted: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "hello",
+    "\"wo",
+    "1"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+   // should work
+
+$f = "delimited-invalid2.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// ending quote missing in field starting at position 7
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+                      // should fail
+read(del($f, { quoted: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "hello",
+    "\"wo\"\"",
+    "1"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+   // should work
+
+$f = "delimited-invalid3.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "1",
+    "2",
+    "3"
+  ]
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 6
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+                      // should fail
+read(del($f, { quoted: false }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "1",
+    "2",
+    "3"
+  ]
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Wrong number of fields on input at position 6
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+   // should fail
+
+// test conversion of atomic types
+convert("1", schema long);
+
+;//--------------------- RESULT ------------------
+
+1
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema double);
+
+;//--------------------- RESULT ------------------
+
+1.123
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema decfloat);
+
+;//--------------------- RESULT ------------------
+
+1.123m
+
+;//------------------- TEST-CASE -----------------
+
+convert("abcd", schema string);
+
+;//--------------------- RESULT ------------------
+
+"abcd"
+
+;//------------------- TEST-CASE -----------------
+
+convert("true", schema boolean);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+convert("1", schema long?);
+
+;//--------------------- RESULT ------------------
+
+1
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema double?);
+
+;//--------------------- RESULT ------------------
+
+1.123
+
+;//------------------- TEST-CASE -----------------
+
+convert("1.123", schema decfloat?);
+
+;//--------------------- RESULT ------------------
+
+1.123m
+
+;//------------------- TEST-CASE -----------------
+
+convert("abcd", schema string?);
+
+;//--------------------- RESULT ------------------
+
+"abcd"
+
+;//------------------- TEST-CASE -----------------
+
+convert("true", schema boolean?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema long?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema double?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema decfloat?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema string?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema boolean?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema long);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// found null value, expected long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert("1", schema long(0));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// type modifiers are currently not allowed for conversion
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail (for the moment)
+
+// test conversion of arrays
+convert(["a","1"], schema [ string, long ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "a",
+  1
+]
+
+;//------------------- TEST-CASE -----------------
+
+convert(["a","1"], schema [ string, long ]?);
+
+;//--------------------- RESULT ------------------
+
+[
+  "a",
+  1
+]
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema [ string, long ]?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert(["a","1"], schema [ string, long? ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "a",
+  1
+]
+
+;//------------------- TEST-CASE -----------------
+
+convert(["a",null], schema [ string, long? ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "a",
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+convert(["a","1","1"], schema [ string, long ]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// input array has invalid length
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(["a"], schema [ string, long ]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// input array has invalid length
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(["a",1], schema [ string, long ]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+// com.ibm.jaql.json.type.JsonLong cannot be cast to com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(null, schema [ string, long ]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// found null value, expected array
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+
+// test conversion of records
+convert({a:"a", b:"2"}, schema { a:string, b: long });
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "a",
+  "b": 2
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert({a:"a", b:"2"}, schema { a:string, b: long }?);
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "a",
+  "b": 2
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert(null, schema { a:string, b: long }?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+convert({a:"a", b:"2"}, schema { a:string, b: long? });
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "a",
+  "b": 2
+}
+
+;//------------------- TEST-CASE -----------------
+
+convert({a:"a", b:null}, schema { a:string, b: long? });
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "a",
+  "b": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+convert({a:"a", b:"2", c:"1"}, schema { a:string, b: long });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// input record has invalid number of fields
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert({a:"a"}, schema { a:string, b: long });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// input record has invalid number of fields
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert({a:"a", b:1}, schema { a:string, b: long });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+// com.ibm.jaql.json.type.JsonLong cannot be cast to com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+convert(null, schema { a:string, b: long });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// found null value, expected record
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // should fail
+
+// all together
+read(del("delimited.del", { schema: schema [ string?, string?, long? ] }));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "HELLO",
+    "world",
+    1
+  ],
+  [
+    "hello ",
+    " world",
+    2
+  ],
+  [
+    "hello",
+    "world",
+    3
+  ],
+  [
+    "hello",
+    "\"world\"",
+    4
+  ],
+  [
+    "",
+    "\"",
+    5
+  ],
+  [
+    "\"\"",
+    "\"\"\"",
+    6
+  ],
+  [
+    "a",
+    "a",
+    null
+  ],
+  [
+    "a",
+    null,
+    null
+  ],
+  [
+    null,
+    null,
+    null
+  ],
+  [
+    "A\",",
+    "1",
+    1
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(read(del("delimited.del", { schema: schema [ string?, string?, long? ] })));
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           string?,
+           string?,
+           long?
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } }));
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "c1": "HELLO",
+    "c2": "world",
+    "c3": 1
+  },
+  {
+    "c1": "hello ",
+    "c2": " world",
+    "c3": 2
+  },
+  {
+    "c1": "hello",
+    "c2": "world",
+    "c3": 3
+  },
+  {
+    "c1": "hello",
+    "c2": "\"world\"",
+    "c3": 4
+  },
+  {
+    "c1": "",
+    "c2": "\"",
+    "c3": 5
+  },
+  {
+    "c1": "\"\"",
+    "c2": "\"\"\"",
+    "c3": 6
+  },
+  {
+    "c1": "a",
+    "c2": "a",
+    "c3": null
+  },
+  {
+    "c1": "a",
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": "A\",",
+    "c2": "1",
+    "c3": 1
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } })));
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "c1": string?,
+           "c2": string?,
+           "c3": long?
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } }));
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "c1": "world",
+    "c2": "HELLO",
+    "c3": 1
+  },
+  {
+    "c1": " world",
+    "c2": "hello ",
+    "c3": 2
+  },
+  {
+    "c1": "world",
+    "c2": "hello",
+    "c3": 3
+  },
+  {
+    "c1": "\"world\"",
+    "c2": "hello",
+    "c3": 4
+  },
+  {
+    "c1": "\"",
+    "c2": "",
+    "c3": 5
+  },
+  {
+    "c1": "\"\"\"",
+    "c2": "\"\"",
+    "c3": 6
+  },
+  {
+    "c1": "a",
+    "c2": "a",
+    "c3": null
+  },
+  {
+    "c1": null,
+    "c2": "a",
+    "c3": null
+  },
+  {
+    "c1": null,
+    "c2": null,
+    "c3": null
+  },
+  {
+    "c1": "1",
+    "c2": "A\",",
+    "c3": 1
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } })));
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "c2": string?,
+           "c1": string?,
+           "c3": long?
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Tests for the lines() interface method
+$l = "lines.txt";
+;//------------------- TEST-CASE -----------------
+
+$lb = "lines-boolean.txt";
+;//------------------- TEST-CASE -----------------
+
+$li = "lines-invalid.txt";
+;//------------------- TEST-CASE -----------------
+
+$ln = "lines-numeric.txt";
+;//------------------- TEST-CASE -----------------
+
+$lwn = "lines-with-null.txt";
+;//------------------- TEST-CASE -----------------
+
+
+// Test read(lines()) which should return an array of strings. This should succeed for all the files.
+read(lines($l));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "Hello",
+  "8",
+  "World",
+  "0.78"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lb));
+
+;//--------------------- RESULT ------------------
+
+[
+  "true",
+  "false",
+  "false",
+  "false",
+  "true",
+  "true",
+  "false"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($li));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7,8"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($ln));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "100",
+  "1000",
+  "10000",
+  "100000"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lwn));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  null,
+  "7",
+  null,
+  "9",
+  "10",
+  "100",
+  "1000"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Test read(lines()) with the convert option.
+read(lines($l,{schema: schema string}));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "Hello",
+  "8",
+  "World",
+  "0.78"
+]
+
+;//------------------- TEST-CASE -----------------
+ // Test for the default schema.
+read(lines($l,{schema: schema long}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2
+
+;//----- EXCEPTION -----
+
+// java.lang.NumberFormatException
+// For input string: "3.4"
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the file is mixture of multiple types.
+read(lines($li,{schema: schema long}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  6
+
+;//----- EXCEPTION -----
+
+// java.lang.NumberFormatException
+// For input string: "7,8"
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the file has non-numeric characters.
+read(lines($ln,{schema: schema long}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  100,
+  1000,
+  10000,
+  100000
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($ln,{schema: schema double}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1.0,
+  2.0,
+  3.0,
+  4.0,
+  5.0,
+  6.0,
+  7.0,
+  8.0,
+  9.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lb,{schema: schema boolean}));
+
+;//--------------------- RESULT ------------------
+
+[
+  true,
+  false,
+  false,
+  false,
+  true,
+  true,
+  false
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($lb,{schema: schema long}));
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.NumberFormatException
+// For input string: "true"
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the input file contains booleans.
+read(lines($lwn,{schema: schema string}));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  "5"
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// found null value, expected string
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the input file has nulls.
+read(lines($lwn,{schema: schema long?}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  null,
+  7,
+  null,
+  9,
+  10,
+  100,
+  1000
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Test for invalid arguments to the convert option.
+read(lines($l,{schema: schema [long]}));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// lines() is for atomic types, use del() for complex types
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($l,{schema: schema {f1: long}}));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// lines() is for atomic types, use del() for complex types
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+$out = "tmpout/out-file.txt";
+;//------------------- TEST-CASE -----------------
+
+
+// Test for write(lines()) and checking whether the written files have data in the specified format
+[1,2,3,4,5,6,7,8,9,10,100,1000,10000,100000] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema long}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  100,
+  1000,
+  10000,
+  100000
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema double}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1.0,
+  2.0,
+  3.0,
+  4.0,
+  5.0,
+  6.0,
+  7.0,
+  8.0,
+  9.0,
+  10.0,
+  100.0,
+  1000.0,
+  10000.0,
+  100000.0
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+[true,false,false,false,true,true,false] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema boolean}));
+
+;//--------------------- RESULT ------------------
+
+[
+  true,
+  false,
+  false,
+  false,
+  true,
+  true,
+  false
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+[1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "Hello",
+  "8",
+  "World",
+  "0.78"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+[1,2,3,4,null,6] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3",
+  "4",
+  null,
+  "6"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema long?}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  4,
+  null,
+  6
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out,{schema: schema long}));
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  4
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// found null value, expected long
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // This should fail since the file contains null.
+
+[true, false, null] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/out-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out, {schema: schema boolean?}));
+
+;//--------------------- RESULT ------------------
+
+[
+  true,
+  false,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//-- test jsonToDel --
+[[1,2]] -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+[
+  "1,2"
+]
+
+;//------------------- TEST-CASE -----------------
+
+$arrays1 = [[1,2],[3,4]];
+;//------------------- TEST-CASE -----------------
+
+$arrays1 -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+[
+  "1,2",
+  "3,4"
+]
+
+;//------------------- TEST-CASE -----------------
+
+$arrays2 = [['one','two'],['three','four']];
+;//------------------- TEST-CASE -----------------
+
+$arrays2 -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"one\",\"two\"",
+  "\"three\",\"four\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 = [["\"", "\na"]];
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({escape: true});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"\"\"\",\"\\na\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({escape: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"\"\",\"\na\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
+;//------------------- TEST-CASE -----------------
+
+$records -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\",10",
+  "\"john\",20"
+]
+
+;//------------------- TEST-CASE -----------------
+
+$mixed =  [{name: 'mike', age: 10}, [100, 200]];
+;//------------------- TEST-CASE -----------------
+
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\"<=>10",
+  "100<=>200"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//-- testJsonToXml --
+{content: 12} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+[
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+  "<content>12</content>"
+]
+
+;//------------------- TEST-CASE -----------------
+
+{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+[
+  "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+  "<content>",
+  "  <city>Beijing</city>",
+  "  <no>1</no>",
+  "  <no>2</no>",
+  "  <no>3</no>",
+  "</content>"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// json format
+[[1,2],[3,4]] -> write({type: 'jsonStream'});
+
+;//--------------------- RESULT ------------------
+
+{
+  "type": "jsonStream"
+}
+
+;//------------------- TEST-CASE -----------------
+
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});
+
+;//--------------------- RESULT ------------------
+
+{
+  "type": "jsonStream"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// del format
+[[1,2],[3,4]]->write({type: 'delStream'});
+
+;//--------------------- RESULT ------------------
+
+{
+  "type": "delStream"
+}
+
+;//------------------- TEST-CASE -----------------
+
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});
+
+;//--------------------- RESULT ------------------
+
+{
+  "outoptions": {
+    "delimiter": "=",
+    "schema": schema {
+             "lang",
+             "no"
+           }
+  },
+  "type": "delStream"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// xml format
+[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});
+
+;//--------------------- RESULT ------------------
+
+{
+  "type": "xmlStream"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// -- Remove all the temporary files created.
+hdfsShell("-rm delimited.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-quoted.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-quoted-ok.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-invalid1.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-invalid2.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-invalid3.del") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-boolean.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-invalid.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-numeric.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm lines-with-null.txt") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rmr tmpout") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

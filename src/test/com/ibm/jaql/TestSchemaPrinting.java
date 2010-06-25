@@ -15,34 +15,6 @@
  */
 package com.ibm.jaql;
 
-import java.io.IOException;
-
-
-/**
- * 
- */
-public class TestSchemaPrinting extends JaqlBaseTestCase
+public class TestSchemaPrinting extends JaqlScriptTestCase
 {
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.JaqlBaseTestCase#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    setFilePrefix("schemaPrinting");
-    schemaAwarePrinting = true;
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.JaqlBaseTestCase#tearDown()
-   */
-  @Override
-  protected void tearDown() throws IOException
-  {
-  }
-
 }

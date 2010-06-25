@@ -1,0 +1,1336 @@
+
+;//------------------- TEST-CASE -----------------
+//===========================================================================
+// Create data
+//===========================================================================
+
+N = 10000;
+;//------------------- TEST-CASE -----------------
+
+fd = hdfs('test');
+;//------------------- TEST-CASE -----------------
+
+
+range(1,N) 
+ -> transform { i: $, key1: $, key2: $, key3: $, more: -$ }
+ -> write(fd);
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "test",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//===========================================================================
+// keyLookup tests
+//===========================================================================
+
+[ [1,1], [1,2], [2,3], [3,4] ] -> keyLookup( [ [1,5], [1,6], [3,7] ] );
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    1,
+    6
+  ],
+  [
+    1,
+    2,
+    6
+  ],
+  [
+    2,
+    3,
+    null
+  ],
+  [
+    3,
+    4,
+    7
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Only outer keys that match to a non-null inner key are returned
+memoryJoin = fn(outer, outerKeyFn, inner, innerKeyFn, projectFn) (
+  outer
+    -> transform [outerKeyFn($), $]
+    -> keyLookup( inner -> transform [innerKeyFn($), $] )
+    -> filter exists($[2]) // make into inner join
+    -> transform projectFn($[1], $[2])
+);
+;//------------------- TEST-CASE -----------------
+
+
+// All outer rows will survive the join
+memoryJoinPreserve = fn(outer, outerKeyFn, inner, innerKeyFn, projectFn) (
+  outer
+    -> transform [outerKeyFn($), $]
+    -> keyLookup( inner -> transform [innerKeyFn($), $] )
+    -> transform projectFn($[1], $[2])
+);
+;//------------------- TEST-CASE -----------------
+
+
+inner = range(1,3) -> transform { x: $*2, y: $ };
+;//------------------- TEST-CASE -----------------
+
+outer = range(0,7) -> transform { a: $, b: $ };
+;//------------------- TEST-CASE -----------------
+
+
+memoryJoin( outer, fn(o) o.b,
+            inner, fn(i) i.x,
+            fn(o,i) { o, i } )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "i": {
+      "x": 2,
+      "y": 1
+    },
+    "o": {
+      "a": 2,
+      "b": 2
+    }
+  },
+  {
+    "i": {
+      "x": 4,
+      "y": 2
+    },
+    "o": {
+      "a": 4,
+      "b": 4
+    }
+  },
+  {
+    "i": {
+      "x": 6,
+      "y": 3
+    },
+    "o": {
+      "a": 6,
+      "b": 6
+    }
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+memoryJoinPreserve(
+    outer, fn(o) o.b,
+    inner, fn(i) i.x,
+    fn(o,i) { o, i } )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "i": null,
+    "o": {
+      "a": 0,
+      "b": 0
+    }
+  },
+  {
+    "i": null,
+    "o": {
+      "a": 1,
+      "b": 1
+    }
+  },
+  {
+    "i": {
+      "x": 2,
+      "y": 1
+    },
+    "o": {
+      "a": 2,
+      "b": 2
+    }
+  },
+  {
+    "i": null,
+    "o": {
+      "a": 3,
+      "b": 3
+    }
+  },
+  {
+    "i": {
+      "x": 4,
+      "y": 2
+    },
+    "o": {
+      "a": 4,
+      "b": 4
+    }
+  },
+  {
+    "i": null,
+    "o": {
+      "a": 5,
+      "b": 5
+    }
+  },
+  {
+    "i": {
+      "x": 6,
+      "y": 3
+    },
+    "o": {
+      "a": 6,
+      "b": 6
+    }
+  },
+  {
+    "i": null,
+    "o": {
+      "a": 7,
+      "b": 7
+    }
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+memoryJoin( read(fd) -> filter mod($.key3,3) == 0, fn(o) o.key1,
+            read(fd) -> filter mod($.key3,5) == 0, fn(i) i.key2,
+            fn(o,i) { o, i } )
+ -> count()
+;
+
+;//--------------------- RESULT ------------------
+
+666
+
+;//------------------- TEST-CASE -----------------
+
+
+memoryJoinPreserve( 
+     read(fd) -> filter mod($.key3,3) == 0, fn(o) o.key1,
+     read(fd) -> filter mod($.key3,5) == 0, fn(i) i.key2,
+     fn(o,i) { o, i } )
+ -> count()
+;
+
+;//--------------------- RESULT ------------------
+
+3333
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//===========================================================================
+// sharedHashtableN tests
+//===========================================================================
+
+//---------------------------------------------------------------------------
+// htJoin hides the detail of the batches but it is a little slower because
+// it materializes a batch for each use.  It also has less room for (thread)
+// parallelism (pairwise could run each leg in parallel).  On the other hand,
+// it filters non-matching items
+// TODO: Move these into a module!
+//---------------------------------------------------------------------------
+htJoinPair = fn(input, keyFn, probeFn, batchSize=100)
+  input 
+   -> batch(batchSize) 
+   -> expand pairwise( $, $ -> transform keyFn($) -> probeFn() -> transform $[1] )
+;
+;//------------------- TEST-CASE -----------------
+
+
+htJoin = fn(input, keyFn, probeFn, projectFn, batchSize=100)
+  input 
+   -> htJoinPair(keyFn, probeFn, batchSize)
+   -> filter not isnull($[1])
+   -> transform projectFn($[0], $[1])
+;
+;//------------------- TEST-CASE -----------------
+
+
+htJoinPreserve = fn(input, keyFn, probeFn, projectFn, batchSize=100)
+  input 
+   -> htJoinPair(keyFn, probeFn, batchSize)
+   -> transform projectFn($[0], $[1])
+;
+;//------------------- TEST-CASE -----------------
+
+
+
+buildN = fn(url, buildfn, scheme) 
+  fn(keys) 
+    sharedHashtableN( keys, url, buildfn, scheme,
+                      serverThread=true, // server thread used to keep ant from waiting on us (we could also reduce timeout or create a shutdown command)
+                      serverTimeout=2*60*1000) // 2 minutes
+;
+;//------------------- TEST-CASE -----------------
+
+
+// Build a hash table that maps for every k * [1..N] to a record
+probeI = fn(k) 
+  buildN(strcat('http://localhost:9055/table',k),
+         fn() read(fd) -> transform [$.i*k, { k, x: -$.i }],
+         schema [ long, { k:long, x:long } ]);
+;//------------------- TEST-CASE -----------------
+
+
+probe2 = probeI(2);
+;//------------------- TEST-CASE -----------------
+
+probe3 = probeI(3);
+;//------------------- TEST-CASE -----------------
+
+probe5 = probeI(5);
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 2
+read(fd)
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  5000
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 3
+read(fd)
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  3333
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 5
+read(fd)
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  2000
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 5 with twice the effort
+read(fd)
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5b) { i.*, value5b } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  2000
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 2, 3
+read(fd)
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  1666
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 2, 3, and 5 
+read(fd)
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  333
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 5, 3, and 2
+read(fd)
+ -> htJoin( fn(i) i.key3, probe5, fn(i,value5) { i.*, value5 } )
+ -> htJoin( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> htJoin( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  333
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 2 OR 3
+read(fd)
+ -> htJoinPreserve( fn(i) i.key1, probe2, fn(i,value2) { i.*, value2 } )
+ -> htJoinPreserve( fn(i) i.key2, probe3, fn(i,value3) { i.*, value3 } )
+ -> filter not isnull($.value2) or not isnull($.value3)
+ -> group into count($)
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  6667
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// Count the multiples of 2, 3, and 5 
+read(fd)
+ -> batch(100) 
+ -> expand pairwise( $,
+                     $ -> transform $.key1 -> probe2() -> transform { value2: $[1] },
+                     $ -> transform $.key2 -> probe3() -> transform { value3: $[1] },
+                     $ -> transform $.key3 -> probe5() -> transform { value5: $[1] } )
+ -> transform record($)
+ -> filter not isnull($.value2) 
+       and not isnull($.value3)
+       and not isnull($.value5)
+ -> count()
+;
+
+;//--------------------- RESULT ------------------
+
+333
+
+;//------------------- TEST-CASE -----------------
+
+
+//===========================================================================
+// keyMerge tests
+//===========================================================================
+
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( range(10) -> transform [$,$+100] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    101
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    3,
+    3,
+    103
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    5,
+    5,
+    105
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    7,
+    7,
+    107
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    9,
+    9,
+    109
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+range(10) 
+ -> expand [ [$,$], [$,-$] ]
+ -> keyMerge( range(10) -> transform [$,$+100] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    101
+  ],
+  [
+    1,
+    -1,
+    101
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    2,
+    -2,
+    102
+  ],
+  [
+    3,
+    3,
+    103
+  ],
+  [
+    3,
+    -3,
+    103
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    4,
+    -4,
+    104
+  ],
+  [
+    5,
+    5,
+    105
+  ],
+  [
+    5,
+    -5,
+    105
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    6,
+    -6,
+    106
+  ],
+  [
+    7,
+    7,
+    107
+  ],
+  [
+    7,
+    -7,
+    107
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    8,
+    -8,
+    108
+  ],
+  [
+    9,
+    9,
+    109
+  ],
+  [
+    9,
+    -9,
+    109
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+range(10) 
+ -> expand [ [$,$], [$,-$] ]
+ -> keyMerge( range(10) -> filter mod($,2) == 0 -> transform [$,$+100] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    null
+  ],
+  [
+    1,
+    -1,
+    null
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    2,
+    -2,
+    102
+  ],
+  [
+    3,
+    3,
+    null
+  ],
+  [
+    3,
+    -3,
+    null
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    4,
+    -4,
+    104
+  ],
+  [
+    5,
+    5,
+    null
+  ],
+  [
+    5,
+    -5,
+    null
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    6,
+    -6,
+    106
+  ],
+  [
+    7,
+    7,
+    null
+  ],
+  [
+    7,
+    -7,
+    null
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    8,
+    -8,
+    108
+  ],
+  [
+    9,
+    9,
+    null
+  ],
+  [
+    9,
+    -9,
+    null
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+[0,null,4,null,8,null]
+ -> transform [$,'==>']
+ -> keyMerge( [0,null,5,null,8,null] -> transform [$,$] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    "==>",
+    0
+  ],
+  [
+    null,
+    "==>",
+    null
+  ],
+  [
+    4,
+    "==>",
+    null
+  ],
+  [
+    null,
+    "==>",
+    null
+  ],
+  [
+    8,
+    "==>",
+    8
+  ],
+  [
+    null,
+    "==>",
+    null
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// This could/should raise an error for duplicate inner keys?
+// Right now dups are ignored
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( range(10) -> expand [ [$,$+100], [$,$+200] ] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    0,
+    100
+  ],
+  [
+    1,
+    1,
+    101
+  ],
+  [
+    2,
+    2,
+    102
+  ],
+  [
+    3,
+    3,
+    103
+  ],
+  [
+    4,
+    4,
+    104
+  ],
+  [
+    5,
+    5,
+    105
+  ],
+  [
+    6,
+    6,
+    106
+  ],
+  [
+    7,
+    7,
+    107
+  ],
+  [
+    8,
+    8,
+    108
+  ],
+  [
+    9,
+    9,
+    109
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// This could/should raise an error for out of order inner keys?
+// Right now, weird results
+range(10) 
+ -> transform [$,$]
+ -> keyMerge( [0,5,1,6,2,7,3,8,4,9] -> transform [$,$] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    0,
+    0
+  ],
+  [
+    1,
+    1,
+    null
+  ],
+  [
+    2,
+    2,
+    null
+  ],
+  [
+    3,
+    3,
+    null
+  ],
+  [
+    4,
+    4,
+    null
+  ],
+  [
+    5,
+    5,
+    5
+  ],
+  [
+    6,
+    6,
+    6
+  ],
+  [
+    7,
+    7,
+    7
+  ],
+  [
+    8,
+    8,
+    8
+  ],
+  [
+    9,
+    9,
+    9
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// This could/should raise an error for out of order outer keys?
+// Right now, weird results
+[0,5,1,6,2,7,3,8,4,9]
+ -> transform [$,$]
+ -> keyMerge( range(10) -> transform [$,$] )
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    0,
+    0,
+    0
+  ],
+  [
+    5,
+    5,
+    5
+  ],
+  [
+    1,
+    1,
+    null
+  ],
+  [
+    6,
+    6,
+    6
+  ],
+  [
+    2,
+    2,
+    null
+  ],
+  [
+    7,
+    7,
+    7
+  ],
+  [
+    3,
+    3,
+    null
+  ],
+  [
+    8,
+    8,
+    8
+  ],
+  [
+    4,
+    4,
+    null
+  ],
+  [
+    9,
+    9,
+    9
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+worklist = fn(array) { type: 'array', inoptions: { array }};
+;//------------------- TEST-CASE -----------------
+
+
+fd1 = hdfs('R');
+;//------------------- TEST-CASE -----------------
+
+fd2 = hdfs('S');
+;//------------------- TEST-CASE -----------------
+
+
+// generate 0,3,... upto 1000
+// produce two records with each value
+// partition and sort within the partition by the value.
+mapReduce({
+  input: worklist([1]),
+  output: fd1,
+  map: fn(i) 
+    range(1000,by=3) 
+      -> expand [ { fk: $, r: 'one' },
+                  { fk: $, r: 'two' } ]
+      -> transform [$.fk, $],
+  reduce: fn(k,v) v
+});
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "R",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// generate 0,19,... upto 1000
+// partition and sort within the partition by the value.
+mapReduce({
+  input: worklist([1]),
+  output: fd2,
+  map: fn(i) 
+    range(1000,by=19) 
+      -> transform { key: $, s: 'three' }
+      -> transform [$.key, $],
+  reduce: fn(k,v) v
+});
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "S",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Expand a file descriptor into one descriptor per part.
+// If fd is a directory with part-* files, make a new fd for each part,
+// else just return fd.
+// TODO: Better error checking would be good:
+//    When not a directory with part-##### files, make sure it is a regular file.
+fdParts = fn(fd) 
+  ls( strcat(fd.location, '/part-*') )
+   -> transform { fd{*-.location}, location: $.path }
+   -> onEmpty( [fd] )
+;
+;//------------------- TEST-CASE -----------------
+
+  
+
+// Check if we have parts and that the file lists will match up.
+// We cannot list or return count the parts because it differs 
+// in local vs cluster mode and between different cluster configurations.
+// Best we can do is check that we have at least one part and 
+// the same number of parts in each file.
+0 < count(fdParts(fd1)) == count(fdParts(fd2));
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+// Zip the corresponding parts of a file together.
+// TODO: Better error checking would be good:
+//    When not a directory with part-##### files
+//    When different number of part files
+samePartFiles = fn(fd1, fd2) pairwise( fdParts(fd1), fdParts(fd2) );
+;//------------------- TEST-CASE -----------------
+
+
+
+// Join two files, fd1 and fd2, 
+//
+// Requires:
+//   1. fd1 and fd2 are multi-part files (ie directories with .../part-##### files)
+//   2. Each file is partitioned by the same key as used here.
+//   3. Each file was partitioned with the same degree (same number of parts)
+//      ie, The keys of fd1/part-i only occur in fd2/part-i, and vice versa
+//   4. Each part is sorted by the same key as used here.
+//   5. fd2 has distinct keys (fd1 can have duplicate keys)
+//
+mergeJoinParts = fn(fd1, key1, fd2, key2, proj) 
+(
+  read( worklist(samePartFiles(fd1, fd2)) )
+   -> expand each part (
+        keyMerge( read(part[0]) -> transform [key1($),$] -> filter not isnull($[0]),
+                  read(part[1]) -> transform [key2($),$] )
+         -> filter not isnull($[2]) // inner join
+         -> transform proj($[1],$[2])
+      )
+);
+;//------------------- TEST-CASE -----------------
+
+
+mergeJoinParts(
+    fd1, fn(i) i.fk, 
+    fd2, fn(j) j.key,
+    fn(i,j) { i.*, j.* }
+  )
+-> sort by [$];
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "fk": 0,
+    "key": 0,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 0,
+    "key": 0,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 57,
+    "key": 57,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 57,
+    "key": 57,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 114,
+    "key": 114,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 114,
+    "key": 114,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 171,
+    "key": 171,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 171,
+    "key": 171,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 228,
+    "key": 228,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 228,
+    "key": 228,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 285,
+    "key": 285,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 285,
+    "key": 285,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 342,
+    "key": 342,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 342,
+    "key": 342,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 399,
+    "key": 399,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 399,
+    "key": 399,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 456,
+    "key": 456,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 456,
+    "key": 456,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 513,
+    "key": 513,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 513,
+    "key": 513,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 570,
+    "key": 570,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 570,
+    "key": 570,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 627,
+    "key": 627,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 627,
+    "key": 627,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 684,
+    "key": 684,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 684,
+    "key": 684,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 741,
+    "key": 741,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 741,
+    "key": 741,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 798,
+    "key": 798,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 798,
+    "key": 798,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 855,
+    "key": 855,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 855,
+    "key": 855,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 912,
+    "key": 912,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 912,
+    "key": 912,
+    "r": "two",
+    "s": "three"
+  },
+  {
+    "fk": 969,
+    "key": 969,
+    "r": "one",
+    "s": "three"
+  },
+  {
+    "fk": 969,
+    "key": 969,
+    "r": "two",
+    "s": "three"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+ // sort needed to make test insensitive to different configurations
+
+//===========================================================================
+// done
+//===========================================================================
+
+;//------------------- TEST-DONE -----------------

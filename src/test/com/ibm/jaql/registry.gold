@@ -1,3 +1,5 @@
+
+;//------------------- TEST-CASE -----------------
 //-- test user defined storage registration
 
 registerAdapter({type: 'myAdapter1', 
@@ -6,20 +8,8 @@ registerAdapter({type: 'myAdapter1',
                              configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}, 
                  outoptions: {adapter: 'com.foobar.store.MyOutputAdapter1', 
                              format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
-                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });##
-{
-  "inoptions": {
-    "adapter": "com.foobar.store.MyInputAdapter1",
-    "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "format": "org.apache.hadoop.mapred.SequenceFileInputFormat"
-  },
-  "outoptions": {
-    "adapter": "com.foobar.store.MyOutputAdapter1",
-    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
-  },
-  "type": "myAdapter1"
-}
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });
+;//------------------- TEST-CASE -----------------
 
 
 [
@@ -33,14 +23,22 @@ registerAdapter({type: 'myAdapter1',
   { key: 7, g:1, text: 'seven' },
   { key: 8, g:0, text: 'eight' }
 ]
--> write({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+-> write({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test10.dat",
   "type": "myAdapter1"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+
+read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -89,31 +87,56 @@ read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
   }
 ]
 
-
-writeAdapterRegistry('build/test/cache/registryTest1.dat');##
-"build/test/cache/registryTest1.dat"
+;//------------------- TEST-CASE -----------------
 
 
-readAdapterRegistry('registryTest1.dat');##
+writeAdapterRegistry('registryTest1.dat');
+
+;//--------------------- RESULT ------------------
+
 "registryTest1.dat"
 
+;//------------------- TEST-CASE -----------------
 
-[1,2,3] -> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+
+readAdapterRegistry('registryTest1.dat');
+
+;//--------------------- RESULT ------------------
+
+"registryTest1.dat"
+
+;//------------------- TEST-CASE -----------------
+
+
+[1,2,3] -> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test1.dat",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
         
-read({type: 'hdfs', location: 'jaqlTest/test1.dat'});##
+read({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   1,
   2,
   3
 ]
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
+
+read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -162,9 +185,16 @@ read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
 
-readAdapterRegistry('data/registryTest2.dat');##
-"data/registryTest2.dat"
+
+readAdapterRegistry(DATADIR+'registryTest2.dat');
+
+;//--------------------- RESULT ------------------
+
+"../../../src/test/com/ibm/jaql/data/registryTest2.dat"
+
+;//------------------- TEST-CASE -----------------
 
 
 [
@@ -178,14 +208,22 @@ readAdapterRegistry('data/registryTest2.dat');##
   { key: 7, g:1, text: 'seven' },
   { key: 8, g:0, text: 'eight' }
 ]
--> write({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+-> write({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test11.dat",
   "type": "myAdapter2"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
+
+read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -234,13 +272,35 @@ read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
 
-unregisterAdapter('myAdapter2');##
+
+unregisterAdapter('myAdapter2');
+
+;//--------------------- RESULT ------------------
+
 "myAdapter2"
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});##
-FAILURE
+
+read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// adapter not found for i/o descriptor: {
+//  "location": "jaqlTest/test11.dat",
+//  "type": "myAdapter2"
+//}
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
 
 
 mapReduce( {
@@ -249,7 +309,10 @@ mapReduce( {
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test10out.dat'}
   })
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -261,6 +324,8 @@ mapReduce( {
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 registerAdapter({type: 'myAdapter3', 
                  inoptions: {adapter: 'com.foobar.store.MyInputAdapter3', 
@@ -268,20 +333,8 @@ registerAdapter({type: 'myAdapter3',
                              configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}, 
                  outoptions: {adapter: 'com.foobar.store.MyOutputAdapter3', 
                              format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
-                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });##
-{
-  "inoptions": {
-    "adapter": "com.foobar.store.MyInputAdapter3",
-    "configurator": "com.ibm.jaql.io.hadoop.FileInputConfigurator",
-    "format": "org.apache.hadoop.mapred.SequenceFileInputFormat"
-  },
-  "outoptions": {
-    "adapter": "com.foobar.store.MyOutputAdapter3",
-    "configurator": "com.ibm.jaql.io.hadoop.FileOutputConfigurator",
-    "format": "org.apache.hadoop.mapred.SequenceFileOutputFormat"
-  },
-  "type": "myAdapter3"
-}
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });
+;//------------------- TEST-CASE -----------------
 
 
 [
@@ -295,14 +348,22 @@ registerAdapter({type: 'myAdapter3',
   { key: 7, g:1, text: 'seven' },
   { key: 8, g:0, text: 'eight' }
 ]
--> write({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
+-> write({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "jaqlTest/test12.dat",
   "type": "myAdapter3"
 }
 
+;//------------------- TEST-CASE -----------------
 
-read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
+
+read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -351,6 +412,8 @@ read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});##
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 mapReduce( {
     'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
@@ -358,7 +421,10 @@ mapReduce( {
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test12out.dat'}
   })
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": 0,
@@ -370,14 +436,21 @@ mapReduce( {
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 //-- test user defined storage registration
-heyya = javaudf('com.foobar.function.MyNewFunction');##
-"heyya"
+heyya = javaudf('com.foobar.function.MyNewFunction');
+;//------------------- TEST-CASE -----------------
 
 
-heyya('world');##
+heyya('world');
+
+;//--------------------- RESULT ------------------
+
 "Hello, world!"
+
+;//------------------- TEST-CASE -----------------
 
 
 mapReduce( {
@@ -386,10 +459,18 @@ mapReduce( {
     'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
     'output': {type: 'hdfs', location: 'jaqlTest/test13out.dat'}
   })
--> read();##
+-> read();
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "g": "Hello, world!",
     "n": 9
   }
 ]
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------
