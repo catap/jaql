@@ -67,9 +67,9 @@ public class JsonUtil
    */
   public static String printToString(JsonValue value) throws IOException {
     ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(bout);
+    PrintStream out = new PrintStream(bout, false, "UTF-8");
     print(out, value);
-    return bout.toString();
+    return bout.toString("UTF-8");
   }
 
   /** Handles null (nulls go first) */
