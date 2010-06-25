@@ -59,7 +59,7 @@ public abstract class AbstractJaqlShell {
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      throw e;
     }
   }
 
@@ -106,7 +106,8 @@ public abstract class AbstractJaqlShell {
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      //e.printStackTrace();
+      throw new RuntimeException(e);
     }
     finally
     {

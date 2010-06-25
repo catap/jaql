@@ -323,7 +323,6 @@ public class JaqlShell extends AbstractJaqlShell
     } catch(Exception e) {
       System.exit(1);
     }
-       
     System.exit(0);
   }
 
