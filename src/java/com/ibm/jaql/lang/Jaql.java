@@ -86,9 +86,10 @@ public class Jaql implements CoreJaql
       engine.setJaqlPrinter(new IODescriptorPrinter(outputAdapter.getWriter()));
     }
     
-    if (logAdapter != null)
-    {
-      engine.setExceptionHandler(new JsonWriterExceptionHandler(logAdapter.getWriter()));
+    engine.setProperty("stopOnException", Boolean.toString(batchMode));
+    
+    if (logAdapter != null) {
+    	engine.setExceptionHandler(new JsonWriterExceptionHandler(logAdapter.getWriter()));
     }
     
     engine.run();

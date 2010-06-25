@@ -45,9 +45,9 @@ public abstract class JsonValue implements Comparable<Object>
     try
     {
       ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      PrintStream out = new PrintStream(bout);
+      PrintStream out = new PrintStream(bout, false, "UTF-8");
       TextFullSerializer.getDefault().write(out, this);    
-      return bout.toString();
+      return bout.toString("UTF-8");
     } 
     catch (IOException e)
     {
