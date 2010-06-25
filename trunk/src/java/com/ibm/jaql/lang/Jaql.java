@@ -21,26 +21,17 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.StringWriter;
-
-import jline.ConsoleReader;
-import jline.ConsoleReaderInputStream;
 
 import org.apache.commons.lang.BooleanUtils;
 
+import antlr.TokenStreamException;
 import antlr.collections.impl.BitSet;
 
-import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.OutputAdapter;
-import com.ibm.jaql.json.type.BufferedJsonArray;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.SingleJsonValueIterator;
@@ -48,6 +39,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.MaterializeExpr;
@@ -68,36 +60,25 @@ public class Jaql implements CoreJaql
     if (args.length > 0) {
         in = new FileInputStream(args[0]);
     } else {
-        try {
-            in = new ConsoleReaderInputStream(new ConsoleReader());
-        } catch (IOException e) {
-            in = System.in;
-        }
+      in = System.in;
     }
-    run("<stdin>",in);
+    run("<stdin>", new InputStreamReader(in, "UTF-8"));
     // System.exit(0); // possible jvm 1.6 work around for "JDWP Unable to get JNI 1.2 environment"
   }
 
   public static void run(String filename,
-                         InputStream in) throws Exception
+                         Reader in) throws Exception
   {
     run(filename, in, null, null, false);
   }
   
   public static void run(String filename,
-                         InputStream in,
+                         Reader reader,
                          OutputAdapter outputAdapter,
                          OutputAdapter logAdapter,
                          boolean batchMode) throws Exception
   {
-    // FIXME: The following is required to get Jaql to parse UTF-8 properly, but
-    // for some reason the JaqlShell interactive mode doesn't work with these lines.
-    //
-    // Reader reader = new InputStreamReader(in, "UTF-8"); // TODO: use system encoding? have jaql encoding parameter?
-    // Jaql engine = new Jaql(filename, reader);
-    
-    Jaql engine = new Jaql(filename, in);
-
+    Jaql engine = new Jaql(filename, reader);
     if (outputAdapter == null) {
       PrintStream out = new PrintStream(System.out, true, "UTF-8"); // TODO: use system encoding? have jaql encoding parameter?
       engine.setJaqlPrinter(new StreamPrinter(out, batchMode));
@@ -105,8 +86,9 @@ public class Jaql implements CoreJaql
       engine.setJaqlPrinter(new IODescriptorPrinter(outputAdapter.getWriter()));
     }
     
-    if (logAdapter != null) {
-      engine.setError(logAdapter.getWriter());
+    if (logAdapter != null)
+    {
+      engine.setExceptionHandler(new JsonWriterExceptionHandler(logAdapter.getWriter()));
     }
     
     engine.run();
@@ -132,8 +114,10 @@ public class Jaql implements CoreJaql
   protected boolean stopOnException = false;
   protected String explainMode = System.getProperty("jaql.explain.mode"); // eventually more modes: jaql, graphical, json, logJaql?
   protected boolean explainOnly = "jaql".equals(explainMode);
-  private JaqlPrinter printer = NullPrinter.get();
-  private ClosableJsonWriter log = null;
+  
+  protected JaqlPrinter printer = NullPrinter.get();
+  protected ExceptionHandler exceptionHandler = new DefaultExceptionHandler();
+  protected ExplainHandler explainHandler = new DefaultExplainHandler(System.out);
   
   static
   {
@@ -151,19 +135,22 @@ public class Jaql implements CoreJaql
     setInput(jaql);
   }
   
-  public Jaql(String filename, InputStream in)
-  {
-    setInput(filename, in);
-  }
+//  public Jaql(String filename, InputStream in)
+//  {
+//    setInput(filename, in);
+//  }
   
   public Jaql(String filename, Reader in)
   {
     setInput(filename, in);
   }
   
-  public void close()
+  public void close() throws IOException
   {
     context.reset();
+    explainHandler.close();
+    printer.close();
+    exceptionHandler.close();
   }
   
   public void setInput(String filename, InputStream in)
@@ -187,10 +174,10 @@ public class Jaql implements CoreJaql
     setInput("<string>", new StringReader(jaql));
   }
   
-  public void setError(ClosableJsonWriter writer)
-  {
-    log = writer;
-  }
+//  public void setError(ClosableJsonWriter writer)
+//  {
+//    log = writer;
+//  }
   
   /**
    * Turn on and off the query rewrite engine.
@@ -219,6 +206,21 @@ public class Jaql implements CoreJaql
   public void stopOnException(boolean stopOnException)
   {
     this.stopOnException = stopOnException;
+  }
+  
+  public void setExplainOnly(boolean explainOnly)
+  {
+    this.explainOnly = explainOnly;
+  }
+  
+  public void setExplainHandler(ExplainHandler explainHandler)
+  {
+    this.explainHandler = explainHandler;
+  }
+  
+  public void setExceptionHandler(ExceptionHandler exceptionHandler)
+  {
+    this.exceptionHandler = exceptionHandler;
   }
   
   public void setProperty(String name, String value) {
@@ -351,12 +353,21 @@ public class Jaql implements CoreJaql
 //    return iter;
 //  }
 
-  public Expr expr() throws Exception {
+  public Expr expr() throws Exception
+  {
 	  return prepareNext();
   }
   
-  public String explain() throws Exception {
-	  return prepareNext().toString();
+  public String explain() throws Exception
+  {
+    Expr expr = prepareNext();
+    expr = explainHandler.explain(expr);
+    String s = "(explain unavailable)";
+    if( expr != null )
+    {
+      s = expr.eval(context).toString();
+    }
+    return s;
   }
   
   /**
@@ -377,69 +388,102 @@ public class Jaql implements CoreJaql
   public Expr prepareNext() throws Exception
   {
     Expr expr;
-    while( true )
+    nextStmt: while( true )
     {
       parser.env.reset();
       context.reset(); // close the last query, if still open
+      
       try
       {
         printer.printPrompt();
         expr = parser.parse();
+        if( parser.done )
+        {
+          return null;
+        }
+        if( expr == null )
+        {
+          continue nextStmt;
+        }
       }
       catch (Throwable error)
       {
         BitSet bs = new BitSet();
         bs.add(JaqlParser.EOF);
         bs.add(JaqlParser.SEMI);
-        parser.consumeUntil(bs);
-        handleError(error);
-        expr = null;
-      }
-      
-      if( parser.done )
-      {
-        return null;
-      }
-      
-      if( expr != null )
-      {
-        if( explainOnly && 
-            !(expr instanceof AssignExpr) &&
-            !(expr instanceof ExplainExpr) )
-        {
-          expr = new ExplainExpr(expr);
-        }
-        
-        if( doRewrite )
+        while(true)
         {
           try
           {
-            expr = rewriter.run(expr);
+            parser.consumeUntil(bs);
+            break;
           }
-          catch( Throwable error )
+          catch( TokenStreamException tse )
           {
-            expr = null;
-            handleError(error);
+            lexer.consume();
           }
         }
-        
-        if (expr != null)
+        handleError(error);
+        continue nextStmt;
+      }
+
+      try
+      {
+//        if( explainOnly && 
+//            !(expr instanceof AssignExpr) &&
+//            !(expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr) && // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
+//            !(expr instanceof ExplainExpr) )
+//        {
+//          expr = new ExplainExpr(expr);
+//        }
+          
+        if( doRewrite )
         {
-          VarTagger.tag(expr);
+          expr = rewriter.run(expr);
         }
-        
-        if( expr instanceof AssignExpr )
+
+        VarTagger.tag(expr);
+
+        if( explainOnly || expr instanceof ExplainExpr )
+        {
+          expr = explainHandler.explain(expr);
+        }
+
+        if( expr instanceof AssignExpr ||
+            expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
         {
           expr.eval(context);
-        }
-        else if( expr instanceof ExplainExpr )
-        {
-          printer.print(expr, context);
         }
         else if( expr != null )
         {
           return expr;
         }
+
+//        if( expr instanceof AssignExpr ||
+//            expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
+//        {
+//          expr.eval(context);
+//          if( explainOnly && 
+//              expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
+//          {
+//            expr = explainHandler.explain(expr);
+//          }
+//        }
+//        else 
+//        {
+//          if( expr instanceof ExplainExpr )
+//          {
+//            expr = explainHandler.explain(expr);
+//          }
+//          if( expr != null )
+//          {
+//            return expr;
+//          }
+//        }
+      }
+      catch( Throwable error )
+      {
+        handleError(error);
       }
     }
   }
@@ -509,28 +553,20 @@ public class Jaql implements CoreJaql
   public boolean run() throws Exception
   {
     Expr expr;
-    try {
-      while( (expr = prepareNext()) != null )
-      {
-        try
-        {
-          printer.print(expr, context);
-        }
-        catch( Throwable error )
-        {
-          handleError(error);
-        }
-        finally
-        {
-          context.reset(); 
-        }
-      }
-    } 
-    finally 
+    while( (expr = prepareNext()) != null )
     {
-      printer.close();
-      if(log != null)
-        log.close();
+      try
+      {
+        printer.print(expr, context);
+      }
+      catch( Throwable error )
+      {
+        handleError(error);
+      }
+      finally
+      {
+        context.reset(); 
+      }
     }
     return true;
   }
@@ -543,10 +579,7 @@ public class Jaql implements CoreJaql
    */
   protected void handleError(Throwable error) throws Exception
   {
-    //error.printStackTrace();
-    //System.err.flush();
-    writeException(error);
-    
+    exceptionHandler.handleException(error);
     if( stopOnException )
     {
       if( error instanceof Exception )
@@ -558,33 +591,6 @@ public class Jaql implements CoreJaql
         throw (Error)error;
       }
       throw new RuntimeException(error);
-    }
-  }
-  
-  private void writeException(Throwable e) {
-
-    if(log == null) {
-      e.printStackTrace();
-    } else {
-      // the message
-      JsonString msg = new JsonString(e.getMessage());
-
-      // the stack trace
-      StringWriter sw = new StringWriter();
-      PrintWriter pw = new PrintWriter(sw);
-      e.printStackTrace(pw);
-
-      // create a record
-      BufferedJsonRecord eRec = new BufferedJsonRecord();
-      eRec.add(new JsonString("stack"), new JsonString(sw.toString()));
-      eRec.add(new JsonString("msg"), msg);
-
-      // write out the record
-      try {
-        log.write(eRec);
-      } catch(Exception ioe) {
-        ioe.printStackTrace(System.err);
-      }
     }
   }
 }

@@ -77,6 +77,7 @@ import com.ibm.jaql.lang.expr.catalog.CatalogUpdateFn;
 import com.ibm.jaql.lang.expr.catalog.UpdateCommentFn;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.DaisyChainFn;
+import com.ibm.jaql.lang.expr.core.ExpectExceptionFn;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GetOptionsFn;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
@@ -335,6 +336,7 @@ public final class SystemNamespace extends Namespace {
     register(new TeeExpr.Descriptor());
     register(new PerPartitionFn.Descriptor());
     register(new PerfFn.Descriptor());
+    register(new ExpectExceptionFn.Descriptor());
     register(new ShiftFn.Descriptor());
     register(new PrevElementFn.Descriptor());
     register(new NextElementFn.Descriptor());

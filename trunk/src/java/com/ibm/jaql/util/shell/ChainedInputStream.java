@@ -35,24 +35,41 @@ public class ChainedInputStream extends InputStream {
   }
 
   @Override
+  public int available() throws IOException 
+  {
+    if (inputStreams.size() > 0) 
+    {
+      return inputStreams.peek().available();
+    }
+    return 0;
+  }
+
+  // TODO: public int read(byte b[], int off, int len) throws IOException {}
+
+  @Override
   public int read() throws IOException {
     // check if there an input stream
     if (inputStreams.size() == 0) {
       return -1;
     }
-
+System.err.println("here: 1");
     // read from it
     int result = inputStreams.peek().read();
+System.err.println("here: 2: "+(char)result);
 
     // switch to next stream, if EOS
     while (result < 0 && inputStreams.size()>1) {
+System.err.println("here: 3");
       inputStreams.remove().close(); // remove and close the current input stream
       result = inputStreams.peek().read(); // and read from the next one
+System.err.println("here: 4 "+(char)result);
     }
     if (result<0) {
+System.err.println("here: 5");
       inputStreams.remove().close();
     }
     
+System.err.println("here: 6 "+(char)result);
 
     return result;
   }

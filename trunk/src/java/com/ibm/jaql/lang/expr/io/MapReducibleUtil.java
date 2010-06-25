@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.io;
 
-import java.lang.reflect.UndeclaredThrowableException;
-
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.OutputAdapter;
@@ -209,7 +207,9 @@ public class MapReducibleUtil
     }
     catch(Exception e)
     {
-      throw new UndeclaredThrowableException(e); // TODO: shouldn't need wrapper here
+      // TODO: log or pass upward? Passing upwards causes exception in rewrites which causes difference in no_rewrite and rewrite tests.
+      // throw new UndeclaredThrowableException(e); // TODO: shouldn't need wrapper here
+      return false;
     }
   }
 }

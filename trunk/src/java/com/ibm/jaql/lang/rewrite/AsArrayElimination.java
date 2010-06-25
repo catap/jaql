@@ -15,6 +15,10 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
@@ -24,7 +28,6 @@ import com.ibm.jaql.lang.expr.core.GroupByExpr;
 import com.ibm.jaql.lang.expr.core.IfExpr;
 import com.ibm.jaql.lang.expr.core.TransformExpr;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 // TODO: This rewrite possibly go away with the change in FOR definition to preserve input.
 
@@ -53,16 +56,18 @@ public class AsArrayElimination extends Rewrite
   public boolean rewrite(Expr expr)
   {
     Expr input = expr.child(0);
+    
+    Schema schema = input.getSchema();
 
     // asArray(null) -> []
-    if (input.getSchema().is(NULL).always())
+    if (schema.is(NULL).always())
     {
       expr.replaceInParent(new ArrayExpr());
       return true;
     }
 
     // asArray( non-nullable array expr ) -> expr
-    if (input.getSchema().is(NULL).always())
+    if (schema.is(ARRAY).always())
     {
       expr.replaceInParent(input);
       return true;
@@ -94,16 +99,9 @@ public class AsArrayElimination extends Rewrite
       return true;
     }
 
-    if (input.getSchema().is(ARRAY,NULL).always() )
+    if (schema.is(ARRAY,NULL).always() )
     {
-      if( input.getSchema().is(NULL).never() )  // asArray( nonnull array expr ) -> expr   
-      {
-        expr.replaceInParent(input);
-      }
-      else  // asArray( nullable array expr ) -> emptyOnNull(expr)
-      {
-        expr.replaceInParent(new EmptyOnNullFn(input));
-      }
+      expr.replaceInParent(new EmptyOnNullFn(input));
       return true;
     }
 
@@ -114,21 +112,23 @@ public class AsArrayElimination extends Rewrite
       expr.replaceInParent(ifExpr); // remove asArray
 
       Expr e = ifExpr.trueExpr();
-      if (e.getSchema().is(NULL).always())
+      schema = e.getSchema();
+      if (schema.is(NULL).always())
       {
         e.replaceInParent(new ArrayExpr());
       }
-      else if (!(e.getSchema().is(ARRAY).always()))
+      else if (!(schema.is(ARRAY).always()))
       {
         ifExpr.setChild(1, new AsArrayFn(e));
       }
 
       e = ifExpr.falseExpr();
-      if (e.getSchema().is(NULL).always())
+      schema = e.getSchema();
+      if (schema.is(NULL).always())
       {
         e.replaceInParent(new ArrayExpr());
       }
-      else if (!(e.getSchema().is(ARRAY).always()))
+      else if (!(schema.is(ARRAY).always()))
       {
         ifExpr.setChild(2, new AsArrayFn(e));
       }

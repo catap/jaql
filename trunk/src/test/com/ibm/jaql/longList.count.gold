@@ -1,3 +1,5 @@
+
+;//------------------- TEST-CASE -----------------
 //===========================================================================
 // probeLongList
 //===========================================================================
@@ -21,8 +23,8 @@ inMemoryLongInList = fn( [any...] probe, function probeKeyFn, [long...] longVals
     -> probeLongList( longVals ) // return [ [long key, any value, position] ]
     -> filter $[2] >= 0 // only matching items
     -> transform $[1] // return the original probe value
-);##
-"inMemoryLongInList"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -40,8 +42,8 @@ fuzzyInList = fn(probe, probeKeyFn, inList) (
   // Temp the hash codes so we don't recompute them on each mapper.
   hashFd = inList -> transform longHash($) -> write(HadoopTemp()),
   probe -> inMemoryLongInList( fn(p) longHash(probeKeyFn(p)), read(hashFd) )
-);##
-"fuzzyInList"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -63,8 +65,8 @@ twoPassInListFromFile = fn(probe, probeKeyFn, inListFd) (
   group candidates     by k = probeKeyFn($) as cs,
         read(inListFd) by     $ as i
     expand if(exists(i)) cs // just return the matching probe records
-);##
-"twoPassInListFromFile"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -82,8 +84,8 @@ twoPassInList = fn(probe, probeKeyFn, inList) (
   // TODO: would be nice to avoid temp when inList is simply a read; add writeIfNotWritten()
   inListFd = inList -> write(HadoopTemp()),
   twoPassInListFromFile( probe, probeKeyFn, inListFd )
-);##
-"twoPassInList"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -124,8 +126,8 @@ twoPassJoinFromFile = fn(probe, probeKeyFn, buildFd, buildKeyFn, projectFn) (
        b in read(buildFd)
     where probeKeyFn(p) == buildKeyFn(b)
     into projectFn(p,b)
-);##
-"twoPassJoinFromFile"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -151,8 +153,8 @@ twoPassJoinFromFile = fn(probe, probeKeyFn, buildFd, buildKeyFn, projectFn) (
 twoPassJoin = fn(probe, probeKeyFn, build, buildKeyFn, projectFn) (
   buildFd = build -> write(HadoopTemp()), // TODO: writeIfNotWritten
   twoPassJoinFromFile(probe, probeKeyFn, buildFd, buildKeyFn, projectFn)
-);##
-"twoPassJoin"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -196,8 +198,8 @@ twoPassJoinLongFromFile = fn(probe, probeKeyFn, buildFd, buildKeyFn, projectFn) 
        b in read(buildFd)
     where probeKeyFn(p) == buildKeyFn(b)
     into projectFn(p,b)
-);##
-"twoPassJoinLongFromFile"
+);
+;//------------------- TEST-CASE -----------------
 
 
 //---------------------------------------------------------------------------
@@ -218,17 +220,17 @@ twoPassJoinLongFromFile = fn(probe, probeKeyFn, buildFd, buildKeyFn, projectFn) 
 twoPassLongJoin = fn(probe, probeKeyFn, build, buildKeyFn, projectFn) (
   buildFd = build -> write(HadoopTemp()), // TODO: writeIfNotWritten
   twoPassJoinLongFromFile(probe, probeKeyFn, buildFd, buildKeyFn, projectFn)
-);##
-"twoPassLongJoin"
+);
+;//------------------- TEST-CASE -----------------
 
 
 // Tests
 
-dataFd = hdfs('T');##
-"dataFd"
+dataFd = hdfs('T');
+;//------------------- TEST-CASE -----------------
 
-inFd = hdfs('I');##
-"inFd"
+inFd = hdfs('I');
+;//------------------- TEST-CASE -----------------
 
 
 // some fact-table-like data
@@ -236,11 +238,15 @@ range(1,20)
   -> expand [ { fkey: $*2, value: $+100 },
               { fkey: $*2, value: $+200 } ]
   -> write(dataFd)
-;##
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
 {
-  "location": "T",
-  "type": "hdfs"
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 // some big (pretending for testing) integer in-list
@@ -251,220 +257,31 @@ range(1,20)
   // -> distinct()  << already unique
   // -> sort by [$] << already sorted  // TODO: sortDistinct()
   -> write(inFd)
-;##
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
 {
-  "location": "I",
-  "type": "hdfs"
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 // Test the basic probeLongList functionality
 read(dataFd)
  -> transform [$.fkey, $.value]
  -> probeLongList( read(inFd) )
-;##
-[
-  [
-    2,
-    101,
-    -1
-  ],
-  [
-    2,
-    201,
-    -1
-  ],
-  [
-    4,
-    102,
-    -2
-  ],
-  [
-    4,
-    202,
-    -2
-  ],
-  [
-    6,
-    103,
-    1
-  ],
-  [
-    6,
-    203,
-    1
-  ],
-  [
-    8,
-    104,
-    -3
-  ],
-  [
-    8,
-    204,
-    -3
-  ],
-  [
-    10,
-    105,
-    -4
-  ],
-  [
-    10,
-    205,
-    -4
-  ],
-  [
-    12,
-    106,
-    3
-  ],
-  [
-    12,
-    206,
-    3
-  ],
-  [
-    14,
-    107,
-    -5
-  ],
-  [
-    14,
-    207,
-    -5
-  ],
-  [
-    16,
-    108,
-    -6
-  ],
-  [
-    16,
-    208,
-    -6
-  ],
-  [
-    18,
-    109,
-    5
-  ],
-  [
-    18,
-    209,
-    5
-  ],
-  [
-    20,
-    110,
-    -7
-  ],
-  [
-    20,
-    210,
-    -7
-  ],
-  [
-    22,
-    111,
-    -8
-  ],
-  [
-    22,
-    211,
-    -8
-  ],
-  [
-    24,
-    112,
-    7
-  ],
-  [
-    24,
-    212,
-    7
-  ],
-  [
-    26,
-    113,
-    -9
-  ],
-  [
-    26,
-    213,
-    -9
-  ],
-  [
-    28,
-    114,
-    -10
-  ],
-  [
-    28,
-    214,
-    -10
-  ],
-  [
-    30,
-    115,
-    9
-  ],
-  [
-    30,
-    215,
-    9
-  ],
-  [
-    32,
-    116,
-    -11
-  ],
-  [
-    32,
-    216,
-    -11
-  ],
-  [
-    34,
-    117,
-    -12
-  ],
-  [
-    34,
-    217,
-    -12
-  ],
-  [
-    36,
-    118,
-    11
-  ],
-  [
-    36,
-    218,
-    11
-  ],
-  [
-    38,
-    119,
-    -13
-  ],
-  [
-    38,
-    219,
-    -13
-  ],
-  [
-    40,
-    120,
-    -14
-  ],
-  [
-    40,
-    220,
-    -14
-  ]
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // Test the basic probeLongList functionality
@@ -474,77 +291,31 @@ read(dataFd)
  -> probeLongList( read(inFd) )
  -> filter $[2] >= 0 // only matched items
  -> transform $[0]
-;##
-[
-  6,
-  6,
-  12,
-  12,
-  18,
-  18,
-  24,
-  24,
-  30,
-  30,
-  36,
-  36
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // Use the wrapper to hide transforms and filter
 read(dataFd)
  -> inMemoryLongInList( fn($) $.fkey, read(inFd) )
-;##
-[
-  {
-    "fkey": 6,
-    "value": 103
-  },
-  {
-    "fkey": 6,
-    "value": 203
-  },
-  {
-    "fkey": 12,
-    "value": 106
-  },
-  {
-    "fkey": 12,
-    "value": 206
-  },
-  {
-    "fkey": 18,
-    "value": 109
-  },
-  {
-    "fkey": 18,
-    "value": 209
-  },
-  {
-    "fkey": 24,
-    "value": 112
-  },
-  {
-    "fkey": 24,
-    "value": 212
-  },
-  {
-    "fkey": 30,
-    "value": 115
-  },
-  {
-    "fkey": 30,
-    "value": 215
-  },
-  {
-    "fkey": 36,
-    "value": 118
-  },
-  {
-    "fkey": 36,
-    "value": 218
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // Try fuzzyInList: use string keys (which get hashed)
@@ -553,129 +324,51 @@ read(dataFd)
 read(dataFd)
   -> transform { fkey: strcat('string',$.fkey), $.value }
   -> fuzzyInList( fn($) $.fkey, read(inFd) -> transform strcat('string',$) )
-;##
-[
-  {
-    "fkey": "string6",
-    "value": 103
-  },
-  {
-    "fkey": "string6",
-    "value": 203
-  },
-  {
-    "fkey": "string12",
-    "value": 106
-  },
-  {
-    "fkey": "string12",
-    "value": 206
-  },
-  {
-    "fkey": "string18",
-    "value": 109
-  },
-  {
-    "fkey": "string18",
-    "value": 209
-  },
-  {
-    "fkey": "string24",
-    "value": 112
-  },
-  {
-    "fkey": "string24",
-    "value": 212
-  },
-  {
-    "fkey": "string30",
-    "value": 115
-  },
-  {
-    "fkey": "string30",
-    "value": 215
-  },
-  {
-    "fkey": "string36",
-    "value": 118
-  },
-  {
-    "fkey": "string36",
-    "value": 218
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 2,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // If we want to be sure we don't have any false-positives due to hash collisions
 // we can use a second pass.
 // We'll sort the results just to make sure the tests are happy.
-stringInFd = hdfs('S');##
-"stringInFd"
+stringInFd = hdfs('S');
+;//------------------- TEST-CASE -----------------
 
 read(inFd) 
   -> transform strcat('string',$) 
   -> write(stringInFd)
-;##
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
 {
-  "location": "S",
-  "type": "hdfs"
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
 }
+
+;//------------------- TEST-CASE -----------------
 
 read(dataFd)
   -> transform { fkey: strcat('string',$.fkey), $.value }
   -> twoPassInListFromFile( fn($) $.fkey, stringInFd )
   -> sort by [$]
-;##
-[
-  {
-    "fkey": "string12",
-    "value": 106
-  },
-  {
-    "fkey": "string12",
-    "value": 206
-  },
-  {
-    "fkey": "string18",
-    "value": 109
-  },
-  {
-    "fkey": "string18",
-    "value": 209
-  },
-  {
-    "fkey": "string24",
-    "value": 112
-  },
-  {
-    "fkey": "string24",
-    "value": 212
-  },
-  {
-    "fkey": "string30",
-    "value": 115
-  },
-  {
-    "fkey": "string30",
-    "value": 215
-  },
-  {
-    "fkey": "string36",
-    "value": 118
-  },
-  {
-    "fkey": "string36",
-    "value": 218
-  },
-  {
-    "fkey": "string6",
-    "value": 103
-  },
-  {
-    "fkey": "string6",
-    "value": 203
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 2,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // We can get the in list saved into a temp automagically
@@ -683,73 +376,36 @@ read(dataFd)
   -> transform { fkey: strcat('string',$.fkey), $.value }
   -> twoPassInList( fn($) $.fkey, read(inFd) -> transform strcat('string',$) )
   -> sort by [$]
-;##
-[
-  {
-    "fkey": "string12",
-    "value": 106
-  },
-  {
-    "fkey": "string12",
-    "value": 206
-  },
-  {
-    "fkey": "string18",
-    "value": 109
-  },
-  {
-    "fkey": "string18",
-    "value": 209
-  },
-  {
-    "fkey": "string24",
-    "value": 112
-  },
-  {
-    "fkey": "string24",
-    "value": 212
-  },
-  {
-    "fkey": "string30",
-    "value": 115
-  },
-  {
-    "fkey": "string30",
-    "value": 215
-  },
-  {
-    "fkey": "string36",
-    "value": 118
-  },
-  {
-    "fkey": "string36",
-    "value": 218
-  },
-  {
-    "fkey": "string6",
-    "value": 103
-  },
-  {
-    "fkey": "string6",
-    "value": 203
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 3,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // Now some joins
 
 // some dimension-table-like data with string key
-dimFd = hdfs('S');##
-"dimFd"
+dimFd = hdfs('S');
+;//------------------- TEST-CASE -----------------
 
 read(inFd)
   -> transform { key: strcat('string',$), value: $+300 }
   -> write(dimFd)
-;##
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
 {
-  "location": "S",
-  "type": "hdfs"
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 // join dimension-table in a file
@@ -757,129 +413,16 @@ read(dataFd)
   -> transform { fkey: strcat('string',$.fkey), $.value }
   -> twoPassJoinFromFile( fn(f) f.fkey, dimFd, fn(d) d.key, fn(f,d) { f, d } )
   -> sort by [$]
-;##
-[
-  {
-    "d": {
-      "key": "string12",
-      "value": 312
-    },
-    "f": {
-      "fkey": "string12",
-      "value": 106
-    }
-  },
-  {
-    "d": {
-      "key": "string12",
-      "value": 312
-    },
-    "f": {
-      "fkey": "string12",
-      "value": 206
-    }
-  },
-  {
-    "d": {
-      "key": "string18",
-      "value": 318
-    },
-    "f": {
-      "fkey": "string18",
-      "value": 109
-    }
-  },
-  {
-    "d": {
-      "key": "string18",
-      "value": 318
-    },
-    "f": {
-      "fkey": "string18",
-      "value": 209
-    }
-  },
-  {
-    "d": {
-      "key": "string24",
-      "value": 324
-    },
-    "f": {
-      "fkey": "string24",
-      "value": 112
-    }
-  },
-  {
-    "d": {
-      "key": "string24",
-      "value": 324
-    },
-    "f": {
-      "fkey": "string24",
-      "value": 212
-    }
-  },
-  {
-    "d": {
-      "key": "string30",
-      "value": 330
-    },
-    "f": {
-      "fkey": "string30",
-      "value": 115
-    }
-  },
-  {
-    "d": {
-      "key": "string30",
-      "value": 330
-    },
-    "f": {
-      "fkey": "string30",
-      "value": 215
-    }
-  },
-  {
-    "d": {
-      "key": "string36",
-      "value": 336
-    },
-    "f": {
-      "fkey": "string36",
-      "value": 118
-    }
-  },
-  {
-    "d": {
-      "key": "string36",
-      "value": 336
-    },
-    "f": {
-      "fkey": "string36",
-      "value": 218
-    }
-  },
-  {
-    "d": {
-      "key": "string6",
-      "value": 306
-    },
-    "f": {
-      "fkey": "string6",
-      "value": 103
-    }
-  },
-  {
-    "d": {
-      "key": "string6",
-      "value": 306
-    },
-    "f": {
-      "fkey": "string6",
-      "value": 203
-    }
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 2,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // join a computed dimension-table that will be temp'd
@@ -890,232 +433,50 @@ read(dataFd)
                   fn(d) d.key, 
                   fn(f,d) { f, d } )
   -> sort by [$]
-;##
-[
-  {
-    "d": {
-      "key": "string12",
-      "value": 312
-    },
-    "f": {
-      "fkey": "string12",
-      "value": 106
-    }
-  },
-  {
-    "d": {
-      "key": "string12",
-      "value": 312
-    },
-    "f": {
-      "fkey": "string12",
-      "value": 206
-    }
-  },
-  {
-    "d": {
-      "key": "string18",
-      "value": 318
-    },
-    "f": {
-      "fkey": "string18",
-      "value": 109
-    }
-  },
-  {
-    "d": {
-      "key": "string18",
-      "value": 318
-    },
-    "f": {
-      "fkey": "string18",
-      "value": 209
-    }
-  },
-  {
-    "d": {
-      "key": "string24",
-      "value": 324
-    },
-    "f": {
-      "fkey": "string24",
-      "value": 112
-    }
-  },
-  {
-    "d": {
-      "key": "string24",
-      "value": 324
-    },
-    "f": {
-      "fkey": "string24",
-      "value": 212
-    }
-  },
-  {
-    "d": {
-      "key": "string6",
-      "value": 306
-    },
-    "f": {
-      "fkey": "string6",
-      "value": 103
-    }
-  },
-  {
-    "d": {
-      "key": "string6",
-      "value": 306
-    },
-    "f": {
-      "fkey": "string6",
-      "value": 203
-    }
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 3,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // some dimension-table-like data with long key
-dimFd = hdfs('S');##
-"dimFd"
+dimFd = hdfs('S');
+;//------------------- TEST-CASE -----------------
 
 read(inFd)
   -> transform { key: $, value: $+300 }
   -> write(dimFd)
-;##
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
 {
-  "location": "S",
-  "type": "hdfs"
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 // join dimension-table with long key in a file
 read(dataFd)
   -> twoPassJoinLongFromFile( fn(f) f.fkey, dimFd, fn(d) d.key, fn(f,d) { f, d } )
   -> sort by [$]
-;##
-[
-  {
-    "d": {
-      "key": 6,
-      "value": 306
-    },
-    "f": {
-      "fkey": 6,
-      "value": 103
-    }
-  },
-  {
-    "d": {
-      "key": 6,
-      "value": 306
-    },
-    "f": {
-      "fkey": 6,
-      "value": 203
-    }
-  },
-  {
-    "d": {
-      "key": 12,
-      "value": 312
-    },
-    "f": {
-      "fkey": 12,
-      "value": 106
-    }
-  },
-  {
-    "d": {
-      "key": 12,
-      "value": 312
-    },
-    "f": {
-      "fkey": 12,
-      "value": 206
-    }
-  },
-  {
-    "d": {
-      "key": 18,
-      "value": 318
-    },
-    "f": {
-      "fkey": 18,
-      "value": 109
-    }
-  },
-  {
-    "d": {
-      "key": 18,
-      "value": 318
-    },
-    "f": {
-      "fkey": 18,
-      "value": 209
-    }
-  },
-  {
-    "d": {
-      "key": 24,
-      "value": 324
-    },
-    "f": {
-      "fkey": 24,
-      "value": 112
-    }
-  },
-  {
-    "d": {
-      "key": 24,
-      "value": 324
-    },
-    "f": {
-      "fkey": 24,
-      "value": 212
-    }
-  },
-  {
-    "d": {
-      "key": 30,
-      "value": 330
-    },
-    "f": {
-      "fkey": 30,
-      "value": 115
-    }
-  },
-  {
-    "d": {
-      "key": 30,
-      "value": 330
-    },
-    "f": {
-      "fkey": 30,
-      "value": 215
-    }
-  },
-  {
-    "d": {
-      "key": 36,
-      "value": 336
-    },
-    "f": {
-      "fkey": 36,
-      "value": 118
-    }
-  },
-  {
-    "d": {
-      "key": 36,
-      "value": 336
-    },
-    "f": {
-      "fkey": 36,
-      "value": 218
-    }
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 2,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 // join a computed dimension-table with long key that will be temp'd
@@ -1125,200 +486,119 @@ read(dataFd)
                       fn(d) d.key, 
                       fn(f,d) { f, d } )
   -> sort by [$]
-;##
-[
-  {
-    "d": {
-      "key": 6,
-      "value": 306
-    },
-    "f": {
-      "fkey": 6,
-      "value": 103
-    }
-  },
-  {
-    "d": {
-      "key": 6,
-      "value": 306
-    },
-    "f": {
-      "fkey": 6,
-      "value": 203
-    }
-  },
-  {
-    "d": {
-      "key": 12,
-      "value": 312
-    },
-    "f": {
-      "fkey": 12,
-      "value": 106
-    }
-  },
-  {
-    "d": {
-      "key": 12,
-      "value": 312
-    },
-    "f": {
-      "fkey": 12,
-      "value": 206
-    }
-  },
-  {
-    "d": {
-      "key": 18,
-      "value": 318
-    },
-    "f": {
-      "fkey": 18,
-      "value": 109
-    }
-  },
-  {
-    "d": {
-      "key": 18,
-      "value": 318
-    },
-    "f": {
-      "fkey": 18,
-      "value": 209
-    }
-  },
-  {
-    "d": {
-      "key": 24,
-      "value": 324
-    },
-    "f": {
-      "fkey": 24,
-      "value": 112
-    }
-  },
-  {
-    "d": {
-      "key": 24,
-      "value": 324
-    },
-    "f": {
-      "fkey": 24,
-      "value": 212
-    }
-  }
-]
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 3,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2
+}
+
+;//------------------- TEST-CASE -----------------
 
 
-daisyChain(1, null);##
-1
+daisyChain(1, null);
 
-daisyChain(1, []);##
-1
+;//------------------- EXPR-COUNTS -----------------
 
-daisyChain(1, [fn(x) x+10, fn(x) x+100, fn(x) x+1000]);##
-1111
+{
 
-range(1,4) -> daisyChain([-> filter $ > 3, -> filter $ > 2, -> filter $ > 1]);##
-[
-  4
-]
+}
+
+;//------------------- TEST-CASE -----------------
+
+daisyChain(1, []);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+daisyChain(1, [fn(x) x+10, fn(x) x+100, fn(x) x+1000]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+range(1,4) -> daisyChain([-> filter $ > 3, -> filter $ > 2, -> filter $ > 1]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
 
 
-null -> powerset();##
-[
-  []
-]
+null -> powerset();
 
-[] -> powerset();##
-[
-  []
-]
+;//------------------- EXPR-COUNTS -----------------
 
-[1] -> powerset();##
-[
-  [],
-  [
-    1
-  ]
-]
+{
 
-[1,2] -> powerset();##
-[
-  [],
-  [
-    1
-  ],
-  [
-    2
-  ],
-  [
-    1,
-    2
-  ]
-]
+}
 
-[1,2,3] -> powerset();##
-[
-  [],
-  [
-    1
-  ],
-  [
-    2
-  ],
-  [
-    1,
-    2
-  ],
-  [
-    3
-  ],
-  [
-    1,
-    3
-  ],
-  [
-    2,
-    3
-  ],
-  [
-    1,
-    2,
-    3
-  ]
-]
+;//------------------- TEST-CASE -----------------
 
-['a','b','c'] -> powerset();##
-[
-  [],
-  [
-    "a"
-  ],
-  [
-    "b"
-  ],
-  [
-    "a",
-    "b"
-  ],
-  [
-    "c"
-  ],
-  [
-    "a",
-    "c"
-  ],
-  [
-    "b",
-    "c"
-  ],
-  [
-    "a",
-    "b",
-    "c"
-  ]
-]
+[] -> powerset();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+[1] -> powerset();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+[1,2] -> powerset();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+[1,2,3] -> powerset();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+['a','b','c'] -> powerset();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
 
 
 quit;
+;//------------------- TEST-DONE -----------------

@@ -15,33 +15,6 @@
  */
 package com.ibm.jaql;
 
-import java.io.IOException;
-
-/**
- * 
- */
-public class TestCore extends JaqlBaseTestCase
+public class TestCore extends JaqlScriptTestCase
 {
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.JaqlBaseTestCase#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    setFilePrefix("core");
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.JaqlBaseTestCase#tearDown()
-   */
-  @Override
-  protected void tearDown() throws IOException
-  {
-  }
-
 }

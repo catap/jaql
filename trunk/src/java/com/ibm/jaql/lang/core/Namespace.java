@@ -18,7 +18,8 @@ package com.ibm.jaql.lang.core;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.util.ClassLoaderMgr;
-import com.ibm.jaql.util.shell.ChainedInputStream;
+import com.ibm.jaql.util.shell.ChainedReader;
 
 /** A namespace is a collection of named variables. */
 public class Namespace {
@@ -358,10 +359,10 @@ public class Namespace {
 				}
 		  	
 		  	// load jaql files
-		  	ChainedInputStream jaqlIn = new ChainedInputStream();
+		  	ChainedReader jaqlIn = new ChainedReader();
 		  	for (File jaql : module.getJaqlFiles()) {
-					jaqlIn.add(new FileInputStream(jaql));
-				}
+              jaqlIn.add(new InputStreamReader(new FileInputStream(jaql), "UTF-8"));
+		  	}
 		  	load(name, jaqlIn, namespace);
 		  	
 		  	// set exports
@@ -393,7 +394,7 @@ public class Namespace {
 			}
 	  }
 	  
-	  private static void load(String name, InputStream in, Namespace namespace) {
+	  private static void load(String name, Reader in, Namespace namespace) {
 			JaqlLexer lexer = new JaqlLexer(in);
 			
 			Context context = new Context();

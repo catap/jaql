@@ -14,7 +14,8 @@ export PATH=${JAQL_HOME}/bin:$PATH
 # Linux platforms. So terminal settings are saved here and restored when
 # exiting Jaql shell. And saving of terminal settings must be done before the
 # following line invoking JaqlShellGetJars class.
-STTY_STATE=`stty -g 2>/dev/null` 
+# jline only
+# STTY_STATE=`stty -g 2>/dev/null` 
 
 # add user-defined jars to classpath
 JAQLSHELL_CLASSPATH=""
@@ -37,12 +38,15 @@ case "`uname`" in
 esac
 
 
+
 # CYGWIN ONLY: modify terminal settings 
-if $cygwin; then
-    "stty -icanon min 1 -echo;" 2>/dev/null
-fi
+# jline only
+#if $cygwin; then
+#    "stty -icanon min 1 -echo;" 2>/dev/null
+#fi
 
 jaql JaqlShell "$@"
 
 # restore terminal settings
-stty $STTY_STATE 2>/dev/null
+# jline only
+# stty $STTY_STATE 2>/dev/null

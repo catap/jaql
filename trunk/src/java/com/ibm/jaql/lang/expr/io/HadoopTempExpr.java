@@ -17,6 +17,10 @@ package com.ibm.jaql.lang.expr.io;
 
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+
 import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
@@ -127,7 +131,11 @@ public class HadoopTempExpr extends Expr
     JsonSchema schema = (JsonSchema)exprs[0].eval(context);
     options.add(new JsonString("schema"), schema);
     r.add(Adapter.OPTIONS_NAME, options);
-    context.doAtReset(new DeleteFileTask(filename));
+    
+    Configuration conf = new Configuration(); // TODO: where to get this from?
+    Path path = new Path(filename);
+    FileSystem fs = path.getFileSystem(conf);
+    context.doAtReset(new DeleteFileTask(fs, path));
     return r; // TODO: memory
   }
 }

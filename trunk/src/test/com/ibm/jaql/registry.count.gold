@@ -1,0 +1,282 @@
+
+;//------------------- TEST-CASE -----------------
+//-- test user defined storage registration
+
+registerAdapter({type: 'myAdapter1', 
+                 inoptions: {adapter: 'com.foobar.store.MyInputAdapter1', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}, 
+                 outoptions: {adapter: 'com.foobar.store.MyOutputAdapter1', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });
+;//------------------- TEST-CASE -----------------
+
+
+[
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' }
+]
+-> write({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+writeAdapterRegistry('registryTest1.dat');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+readAdapterRegistry('registryTest1.dat');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+[1,2,3] -> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+        
+read({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+readAdapterRegistry(DATADIR+'registryTest2.dat');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+[
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' }
+]
+-> write({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+unregisterAdapter('myAdapter2');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+mapReduce( {
+    'input': {type: 'myAdapter1', location: 'jaqlTest/test10.dat'},
+    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test10out.dat'}
+  })
+-> read();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+registerAdapter({type: 'myAdapter3', 
+                 inoptions: {adapter: 'com.foobar.store.MyInputAdapter3', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}, 
+                 outoptions: {adapter: 'com.foobar.store.MyOutputAdapter3', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                             configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'} });
+;//------------------- TEST-CASE -----------------
+
+
+[
+  { key: 0, g:0, text: 'zero' },
+  { key: 1, g:1, text: 'one' },
+  { key: 2, g:0, text: 'two' },
+  { key: 3, g:1, text: 'three' },
+  { key: 4, g:0, text: 'four' },
+  { key: 5, g:1, text: 'five' },
+  { key: 6, g:0, text: 'six' },
+  { key: 7, g:1, text: 'seven' },
+  { key: 8, g:0, text: 'eight' }
+]
+-> write({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read({type: 'myAdapter3', location: 'jaqlTest/test12.dat'});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+mapReduce( {
+    'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
+    'map'   : fn($) ( $ -> transform [ $.g, 1 ] ),
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test12out.dat'}
+  })
+-> read();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//-- test user defined storage registration
+heyya = javaudf('com.foobar.function.MyNewFunction');
+;//------------------- TEST-CASE -----------------
+
+
+heyya('world');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+mapReduce( {
+    'input': {type: 'myAdapter3', location: 'jaqlTest/test12.dat'},
+    'map'   : fn($) ( $ -> transform [ heyya('world'), 1 ] ),
+    'reduce': fn($key, $values) [{ g: $key, n: count($values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test13out.dat'}
+  })
+-> read();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

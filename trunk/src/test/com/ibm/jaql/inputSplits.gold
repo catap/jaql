@@ -1,12 +1,17 @@
+
+;//------------------- TEST-CASE -----------------
 //===========================================================================
 // runningSum and runningCombine
 //===========================================================================
 
-runningSum = fn(input, dataFn, intoFn) input -> runningCombine(0, fn(sum,i) sum + dataFn(i), intoFn);##
-"runningSum"
+runningSum = fn(input, dataFn, intoFn) input -> runningCombine(0, fn(sum,i) sum + dataFn(i), intoFn);
+;//------------------- TEST-CASE -----------------
 
 
-range(10) -> transform { a: $, b: 'stuff' } -> runningSum( fn(i) i.a, fn(sum,i) { i.*, sum } );##
+range(10) -> transform { a: $, b: 'stuff' } -> runningSum( fn(i) i.a, fn(sum,i) { i.*, sum } );
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "a": 0,
@@ -60,6 +65,8 @@ range(10) -> transform { a: $, b: 'stuff' } -> runningSum( fn(i) i.a, fn(sum,i) 
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 
 //=================================================================================
@@ -84,8 +91,8 @@ delWithOffset = fn(location, options=null)
           converter:    'com.ibm.jaql.io.hadoop.converter.ToDelConverter',
           options.*
       }
-  };##
-"delWithOffset"
+  };
+;//------------------- TEST-CASE -----------------
 
 
 // Each line is a textual json value
@@ -104,14 +111,17 @@ jsonLinesWithOffset = fn(location, options=null)
         configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator',
         converter:    'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter',
         options.* }
-  };##
-"jsonLinesWithOffset"
+  };
+;//------------------- TEST-CASE -----------------
 
 
-fd = jsonLinesWithOffset('t');##
-"fd"
+fd = jsonLinesWithOffset('t');
+;//------------------- TEST-CASE -----------------
 
-range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
+range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;
+
+;//--------------------- RESULT ------------------
+
 [
   [
     0,
@@ -150,11 +160,16 @@ range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
   ]
 ]
 
+;//------------------- TEST-CASE -----------------
 
-fd = delWithOffset('t', { schema: schema { a: long, b: long }});##
-"fd"
 
-range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
+fd = delWithOffset('t', { schema: schema { a: long, b: long }});
+;//------------------- TEST-CASE -----------------
+
+range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;
+
+;//--------------------- RESULT ------------------
+
 [
   [
     0,
@@ -193,6 +208,8 @@ range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
   ]
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 //=================================================================================
 // inputSplits(fd): retrieving serialized splits
@@ -201,27 +218,42 @@ range(10000) -> transform { a: $, b: -$ } -> write(fd) -> read() -> top 5;##
 //=================================================================================
 
 // A "file" descriptor that results in one job per array element.
-worklist = fn(array) { type: 'array', inoptions: { array }};##
-"worklist"
+worklist = fn(array) { type: 'array', inoptions: { array }};
+;//------------------- TEST-CASE -----------------
 
 
 // We cannot display or count the result because it will vary based on configuration.
 // Instead we'll just make sure it returns at least one result.
-exists( inputSplits(fd) );##
+exists( inputSplits(fd) );
+
+;//--------------------- RESULT ------------------
+
 true
+
+;//------------------- TEST-CASE -----------------
 
 
 // Count the entries in the file
-read(fd) -> count();##
+read(fd) -> count();
+
+;//--------------------- RESULT ------------------
+
 10000
+
+;//------------------- TEST-CASE -----------------
 
 
 // Better be the same count as the previous result
 inputSplits(fd)
  -> expand each split readSplit(fd, split)
  -> count()
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 10000
+
+;//------------------- TEST-CASE -----------------
 
 
 // A complicated way to run map/reduce
@@ -229,8 +261,13 @@ inputSplits(fd)
 read( worklist( inputSplits(fd) ) )
  -> expand each split readSplit(fd, split)
  -> count()
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 10000
+
+;//------------------- TEST-CASE -----------------
 
 
 //=================================================================================
@@ -247,8 +284,13 @@ inputSplits(fd)
  -> transform makeFileSplit($.path, $.start, $.length, $.locations)
  -> expand each split readSplit(fd, split)
  -> count()
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 10000
+
+;//------------------- TEST-CASE -----------------
 
 
 //=================================================================================
@@ -262,8 +304,8 @@ offset =
    -> filter $[1].a == 17
    -> transform $[0]
    -> singleton()
-;##
-"offset"
+;
+;//------------------- TEST-CASE -----------------
 
 
 //
@@ -289,11 +331,16 @@ inputSplits(fd)
  -> transform makeFileSplit($.path, if(offset == 0) 0 else offset-1, $.length, $.locations)
  -> transform readSplit(fd,$)[0][1]
  -> singleton()
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 {
   "a": 17,
   "b": -17
 }
+
+;//------------------- TEST-CASE -----------------
 
 
 //======================================================================================
@@ -311,13 +358,16 @@ parallelRange = fn(long numValues, long parallelism=100)
             -> runningSum( fn(i) i, fn(sum,i) { start: sum - i, end: sum - 1 } ),
   read( worklist(ranges) )
    -> expand range($.start, $.end)
-);##
-"parallelRange"
+);
+;//------------------- TEST-CASE -----------------
 
 
 parallelRange(1000, parallelism=2) 
  -> filter mod($, 100) == 0
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 [
   0,
   100,
@@ -330,6 +380,8 @@ parallelRange(1000, parallelism=2)
   800,
   900
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 //======================================================================================
@@ -357,14 +409,17 @@ parallelEnumerate = fn(fd)
        readSplit(fd, s.split) 
         -> enumerate()
         -> transform [s.n+$[0], $[1]] )
-);##
-"parallelEnumerate"
+);
+;//------------------- TEST-CASE -----------------
 
 
 parallelEnumerate(fd)
  -> filter mod($[0], 1000) == 0
  -> transform [$[0], $[1][1]] // remove file the offset, for stability
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 [
   [
     0,
@@ -438,7 +493,11 @@ parallelEnumerate(fd)
   ]
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 //======================================================================================
 // done
 //======================================================================================
+
+;//------------------- TEST-DONE -----------------

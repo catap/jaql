@@ -104,7 +104,7 @@ public abstract class Module {
 	  }
 	  while( path.endsWith("/") )
 	  {
-	    path.substring(0, path.length() - 1 );
+	    path = path.substring(0, path.length() - 1 );
 	  }
 	  File f = new File(path);
 	  if( ! f.isDirectory() )

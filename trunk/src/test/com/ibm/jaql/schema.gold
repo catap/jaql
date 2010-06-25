@@ -1,0 +1,4235 @@
+
+;//------------------- TEST-CASE -----------------
+// -- parsing and matching: simple schemata -------------------------------------------------------
+
+x = schema null;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+
+x = schema nonnull;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema nonnull
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+x = schema any;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema any
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+x = schema function;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema function
+
+;//------------------- TEST-CASE -----------------
+
+(fn(x) x) instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+
+// -- parsing and matching: schema ----------------------------------------------------------------
+
+x = schema schematype;
+;//------------------- TEST-CASE -----------------
+
+schema long instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+
+x = schema schematype(value=schema long);
+;//------------------- TEST-CASE -----------------
+
+schema long instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+   
+schema boolean instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+
+// -- parsing and matching: boolean ---------------------------------------------------------------
+
+x = schema boolean;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+true instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+false instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+        // incompatible
+
+x = schema boolean(true);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=true)
+
+;//------------------- TEST-CASE -----------------
+
+true instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+false instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+    // incompatible
+
+x = schema boolean(false);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=false)
+
+;//------------------- TEST-CASE -----------------
+
+true instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+     // incompatible
+false instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ 
+
+
+
+// -- parsing and matching: long ------------------------------------------------------------------
+
+x = schema long;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema long
+
+;//------------------- TEST-CASE -----------------
+
+5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+5d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+"a" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+x = schema long(5);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema long(value=5)
+
+;//------------------- TEST-CASE -----------------
+
+4 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+5d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+6 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+
+schema long(5d);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: invalid argument
+schema long(5m);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: invalid argument
+schema long(5.1);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: invalid argument
+
+
+// -- parsing and matching: double ----------------------------------------------------------------
+
+x = schema double;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema double
+
+;//------------------- TEST-CASE -----------------
+
+5d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+5.5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+  
+5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+    // incompatible
+5.5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+"a" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+x = schema double(5d);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema double(value=5.0)
+
+;//------------------- TEST-CASE -----------------
+
+4.99d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+5d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+5.01d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+schema double(5);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+     // must fail: invalid argument
+schema double(5.0);
+
+;//--------------------- RESULT ------------------
+
+schema double(value=5.0)
+
+;//------------------- TEST-CASE -----------------
+  // should be ok
+schema double(5.1m);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: invalid argument
+
+
+// -- parsing and matching: decfloat --------------------------------------------------------------
+
+x = schema decfloat;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+5.5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+  
+5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+    // incompatible
+5.5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+"a" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+
+x = schema decfloat(5m);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema decfloat(value=5m)
+
+;//------------------- TEST-CASE -----------------
+
+4.99m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+5m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+5 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+       // incompatible
+5d instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+5.01m instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+schema decfloat(5);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+    // must fail: invalid argument
+schema decfloat(5.0);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+  // must fail: invalid argument
+schema decfloat(5d);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// argument "value" has an invalid schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+   // must fail: invalid argument
+
+// -- parsing and matching: date ------------------------------------------------------------------
+
+x = schema date;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema date
+
+;//------------------- TEST-CASE -----------------
+
+date('2000-01-01T12:00:00Z') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+'2000-01-01T12:00:00Z' instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible, that's a string
+
+x = schema date(date('2000-01-01T12:00:00Z'));
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema date(value=date('2000-01-01T12:00:00Z'))
+
+;//------------------- TEST-CASE -----------------
+
+date('2000-01-01T11:59:59Z') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+date('2000-01-01T12:00:00Z') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+date('2000-01-01T12:00:01Z') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+
+
+// -- parsing and matching: string ----------------------------------------------------------------
+
+x = schema string;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+"1" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+        // incompatible
+
+x = schema string(5);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema string(length=5)
+
+;//------------------- TEST-CASE -----------------
+
+"1234" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+"12345" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+"123456" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+x = schema string(value="ba*b");
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema string(length=4, value="ba*b")
+
+;//------------------- TEST-CASE -----------------
+
+"ba*b" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+"baab" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+
+schema string(-1);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// length attribute must be non-negative
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+      // must fail: invalid length
+schema string(1, "ab");
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// length does not match length of specified value
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: length does not match
+
+
+// -- parsing and matching: binary ----------------------------------------------------------------
+
+x = schema binary;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+hex('00') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+"1" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+        // incompatible
+
+x = schema binary(5);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema binary(length=5)
+
+;//------------------- TEST-CASE -----------------
+
+hex('11223344') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+hex('1122334455') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+hex('112233445566') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+x = schema binary(value=hex('001122'));
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema binary(length=3, value=hex('001122'))
+
+;//------------------- TEST-CASE -----------------
+
+hex('001122') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+hex('001123') instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+
+schema binary(-1);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// length attribute must be non-negative
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+      // must fail: invalid length
+schema binary(2, hex('11'));
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// length does not match length of specified value
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: length does not match
+
+
+// -- parsing and matching: arrays ----------------------------------------------------------------
+
+x = schema [];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+[] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[ null ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+    // incompatible
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+           // incompatible
+{} instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+          // incompatible
+
+x = schema [ null ];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         null
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+[ null ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+       // incompatible
+[] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+       // incompatible
+[ 1 ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+    // incompatible
+
+x = schema [ long(value=1), string(value="a"), boolean ];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long(value=1),
+         string(length=1, value="a"),
+         boolean
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1, "a", true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[ 1, "a", true, 1 ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+[ 11, "a", true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+[ 1, "b", true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+[ 1, "a", null ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+
+x = schema [ * ];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema [ * ]
+
+;//------------------- TEST-CASE -----------------
+
+[ ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ 
+[ 1, true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[ 1, true, "a" ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+  
+
+x = schema [ long, * ];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         any * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ 
+[ 1, true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[ 1, true, "a" ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+  
+[ ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+[ "a" ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+x = schema [ long, boolean * ];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         boolean * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+[ 1 ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ 
+[ 1, true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[ 1, true, true ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+  
+[ ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+[ "a" ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+[ 1, 1 ] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+schema [ null * ];
+
+;//--------------------- RESULT ------------------
+
+schema [
+         null * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schema [ long(0) * ];
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long(value=0) * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// -- parsing and matching: records ---------------------------------------------------------------
+
+x = schema {};
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {}
+
+;//------------------- TEST-CASE -----------------
+
+{} instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+[] instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+               // incompatible
+{ a: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+                // incompatible
+
+x = schema { a };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a"
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ "a": 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+              // incompatible
+{ a: 1, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+   // incompatible
+{ b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+         // incompatible
+
+x = schema { "a" };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a"
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ "a": 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+              // incompatible
+{ b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+         // incompatible
+
+x = schema { a? };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a"?
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ 
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ 
+{ b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+         // incompatible
+
+x = schema { a: long };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+       // incompatible
+
+x = schema { a: nonnull };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": nonnull
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+x = schema { a: long, b: null };
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ b: null, a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+           // incompatible
+{ b: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+        // incompatible
+{ a: null, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+{ b: 1, a: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+
+x = schema { b: null, a: long };
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ b: null, a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+           // incompatible
+{ b: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+        // incompatible
+{ a: null, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+{ b: 1, a: null } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+  // incompatible
+
+x = schema { * };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema { * }
+
+;//------------------- TEST-CASE -----------------
+
+{ } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+x = schema { a: long, * };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         *
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+         // incompatible
+
+x = schema { a?: long, * };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a"?: long,
+         *
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+       // incompatible
+
+x = schema { a: long, *: long };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         *: long
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ // incompatible
+
+x = schema { a?: long, *: string };
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a"?: long,
+         *: string
+       }
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1 } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: 1, b: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ b: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+{ a: "1" } instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+       // incompatible
+
+// keyword checks (disabled; enable when soft keyword implemented)
+// schema { for }; // does not work currently
+schema { for: nonnull };
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "for": nonnull
+       }
+
+;//------------------- TEST-CASE -----------------
+
+schema { "for" };
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "for"
+       }
+
+;//------------------- TEST-CASE -----------------
+
+// schema { null }; // does not work currently
+schema { null: nonnull };
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "null": nonnull
+       }
+
+;//------------------- TEST-CASE -----------------
+ // treated as "null"
+
+schema { "1" };
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "1"
+       }
+
+;//------------------- TEST-CASE -----------------
+
+schema { 1: nonnull };
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+// unexpected token: 1
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: invalid field name (numbers must be quoted)
+schema { *, * };
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+// only one wildcard field is allowed in a record schema
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: wildcard field occurs twice
+schema { a, b, c, a, * };
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// duplicate field names not allowed: a
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ // must fail: field name occurs twice
+
+
+// -- parsing and matching: alternatives ----------------------------------------------------------
+
+x = schema null?;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+        // incompatible
+
+x = schema long?;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema long?
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+        
+"1" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+
+x = schema null | long;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema long?
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+        
+"1" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+
+x = schema string(value="a") | string(value="b") | long;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema long | string(length=1, value="a") | string(length=1, value="b")
+
+;//------------------- TEST-CASE -----------------
+
+"a" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+"b" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+     // incompatible
+"c" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+
+
+x = schema string(value="a") | string(value="b") | long?;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+schema long | string(length=1, value="a") | string(length=1, value="b") | null
+
+;//------------------- TEST-CASE -----------------
+
+"a" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+"b" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+1 instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+null instanceof x;
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+"c" instanceof x;
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+      // incompatible
+
+
+//-------------------------- SCHEMAOF -----------------------------
+
+schemaof(null);
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(false);
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=false)
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(1);
+
+;//--------------------- RESULT ------------------
+
+schema long(value=1)
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(1d);
+
+;//--------------------- RESULT ------------------
+
+schema double(value=1.0)
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(1.0);
+
+;//--------------------- RESULT ------------------
+
+schema double(value=1.0)
+
+;//------------------- TEST-CASE -----------------
+
+schemaof("a string");
+
+;//--------------------- RESULT ------------------
+
+schema string(value="a string")
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(date('2001-07-04T12:08:56Z'));
+
+;//--------------------- RESULT ------------------
+
+schema date(value=date('2001-07-04T12:08:56Z'))
+
+;//------------------- TEST-CASE -----------------
+
+schemaof({ a: 1, b: "2" });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long(value=1),
+         "b": string(value="2")
+       }
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ 1, "2" ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long(value=1),
+         string(value="2")
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- schema comparison ---------------------------------------------------------------------------
+
+x = [ schema nonnull, 
+       schema [], schema [ long ], schema [ long, decfloat ], schema [ long, decfloat, string * ],
+       schema binary, 
+       schema boolean, 
+       schema date, 
+       schema decfloat, 
+       schema double, 
+       schema long, 
+       schema null, 
+       schema {}, schema { a: long }, schema { a?: long }, schema { b: long }, schema { *: long },  
+       schema string,
+       schema any,
+       schema decfloat | long, schema date | double  
+];
+;//------------------- TEST-CASE -----------------
+
+x -> sort by [$];
+
+;//--------------------- RESULT ------------------
+
+[
+  schema boolean,
+  schema long,
+  schema double,
+  schema decfloat,
+  schema string,
+  schema binary,
+  schema date,
+  schema [],
+  schema [
+           long
+         ],
+  schema [
+           long,
+           decfloat,
+           string * 
+         ],
+  schema [
+           long,
+           decfloat
+         ],
+  schema {
+           *: long
+         },
+  schema {},
+  schema {
+           "a": long
+         },
+  schema {
+           "a"?: long
+         },
+  schema {
+           "b": long
+         },
+  schema long | decfloat,
+  schema double | date,
+  schema any,
+  schema nonnull,
+  schema null
+]
+
+;//------------------- TEST-CASE -----------------
+
+x -> sort by [$ desc];
+
+;//--------------------- RESULT ------------------
+
+[
+  schema null,
+  schema nonnull,
+  schema any,
+  schema double | date,
+  schema long | decfloat,
+  schema {
+           "b": long
+         },
+  schema {
+           "a"?: long
+         },
+  schema {
+           "a": long
+         },
+  schema {},
+  schema {
+           *: long
+         },
+  schema [
+           long,
+           decfloat
+         ],
+  schema [
+           long,
+           decfloat,
+           string * 
+         ],
+  schema [
+           long
+         ],
+  schema [],
+  schema date,
+  schema binary,
+  schema string,
+  schema decfloat,
+  schema double,
+  schema long,
+  schema boolean
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- schema merging ------------------------------------------------------------------------------
+
+mergeSchemata = javaudf('com.ibm.jaql.udf.MergeSchemataUdf');
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema binary, schema binary);
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema binary(1), schema binary);
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema binary(value=hex('11')), schema binary);
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema binary(1), schema binary(value=hex('11')));
+
+;//--------------------- RESULT ------------------
+
+schema binary(length=1)
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema boolean, schema boolean);
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema boolean, schema boolean(false));
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema boolean, schema boolean(true));
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema boolean(false), schema boolean(true));
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema boolean(false), schema boolean(false));
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=false)
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema boolean(true), schema boolean(true));
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=true)
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema date, schema date);
+
+;//--------------------- RESULT ------------------
+
+schema date
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema date, schema date(date('2001-07-04T12:08:56Z')));
+
+;//--------------------- RESULT ------------------
+
+schema date
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema decfloat, schema decfloat);
+
+;//--------------------- RESULT ------------------
+
+schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema decfloat, schema decfloat(value=1m));
+
+;//--------------------- RESULT ------------------
+
+schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema double, schema double);
+
+;//--------------------- RESULT ------------------
+
+schema double
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema double, schema double(value=1.0));
+
+;//--------------------- RESULT ------------------
+
+schema double
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema long, schema long);
+
+;//--------------------- RESULT ------------------
+
+schema long
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema long, schema long(value=1));
+
+;//--------------------- RESULT ------------------
+
+schema long
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema null, schema null);
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema string, schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema string(1), schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema string(value="a"), schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema string(1), schema string(value="a"));
+
+;//--------------------- RESULT ------------------
+
+schema string(length=1)
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema null, schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string?
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema null, schema string|long);
+
+;//--------------------- RESULT ------------------
+
+schema long | string | null
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema null, schema string|null);
+
+;//--------------------- RESULT ------------------
+
+schema string?
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema long(1)|string(8)|null, schema date|long(2)|string(8));
+
+;//--------------------- RESULT ------------------
+
+schema long | string(length=8) | date | null
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema nonnull, schema nonnull);
+
+;//--------------------- RESULT ------------------
+
+schema nonnull
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema nonnull, schema long);
+
+;//--------------------- RESULT ------------------
+
+schema nonnull
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema nonnull, schema long|date);
+
+;//--------------------- RESULT ------------------
+
+schema nonnull
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema nonnull, schema null);
+
+;//--------------------- RESULT ------------------
+
+schema any
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema nonnull, schema long|null);
+
+;//--------------------- RESULT ------------------
+
+schema any
+
+;//------------------- TEST-CASE -----------------
+
+
+mergeSchemata(schema [], schema []);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         boolean | string,
+         date?
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema [ long, decfloat ], schema [ long ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema [ long, decfloat * ], schema [ long ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema [ long, decfloat * ], schema [ long, decfloat ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema [ long, decfloat * ], schema [ long, date ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat | date * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// merging sorted
+mergeSchemata(schema {}, schema {});
+
+;//--------------------- RESULT ------------------
+
+schema {}
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, b:long, c: null }, schema { a:long, b:long, c:null });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "b": long,
+         "c": null
+       }
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, b:long, c:null, e?: date }, schema { a: long, b:string, d:null, e:date });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "b": long | string,
+         "c"?: null,
+         "d"?: null,
+         "e"?: date
+       }
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, *:date }, schema { a: long });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         *: date
+       }
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, *:date }, schema { a: long, *:null });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         *: date?
+       }
+
+;//------------------- TEST-CASE -----------------
+
+
+// test merge order
+mergeSchemata(schema { a: long, b:long, d:long, f: long }, schema { a: long, c:long, b:long, f: long});
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "c"?: long,
+         "b": long,
+         "d"?: long,
+         "f": long
+       }
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, c:long, b:long }, schema { b: long, a:long });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "c"?: long,
+         "b": long
+       }
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, c:long, b:long }, schema { b: long, c: long, a:long });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "b": long,
+         "c": long
+       }
+
+;//------------------- TEST-CASE -----------------
+
+mergeSchemata(schema { a: long, c:long, b:long }, schema { c: long, b: long, a:long });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "c": long,
+         "b": long
+       }
+
+;//------------------- TEST-CASE -----------------
+
+
+// -- schema compaction ---------------------------------------------------------------------------
+
+compactSchemata = javaudf('com.ibm.jaql.udf.CompactSchemataUdf');
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema binary, schema binary);
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema binary(1), schema binary);
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema binary(value=hex('11')), schema binary);
+
+;//--------------------- RESULT ------------------
+
+schema binary
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema binary(1), schema binary(value=hex('11')));
+
+;//--------------------- RESULT ------------------
+
+schema binary(length=1)
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema boolean, schema boolean);
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema boolean, schema boolean(false));
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema boolean, schema boolean(true));
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema boolean(false), schema boolean(true));
+
+;//--------------------- RESULT ------------------
+
+schema boolean
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema boolean(false), schema boolean(false));
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=false)
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema boolean(true), schema boolean(true));
+
+;//--------------------- RESULT ------------------
+
+schema boolean(value=true)
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema date, schema date);
+
+;//--------------------- RESULT ------------------
+
+schema date
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema date, schema date(date('2001-07-04T12:08:56Z')));
+
+;//--------------------- RESULT ------------------
+
+schema date
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema decfloat, schema decfloat);
+
+;//--------------------- RESULT ------------------
+
+schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema decfloat, schema decfloat(value=1m));
+
+;//--------------------- RESULT ------------------
+
+schema decfloat
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema double, schema double);
+
+;//--------------------- RESULT ------------------
+
+schema double
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema double, schema double(value=1.0));
+
+;//--------------------- RESULT ------------------
+
+schema double
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema long, schema long);
+
+;//--------------------- RESULT ------------------
+
+schema long
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema long, schema long(value=1));
+
+;//--------------------- RESULT ------------------
+
+schema long
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema null, schema null);
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema string, schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema string(1), schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema string(value="a"), schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema string(1), schema string(value="a"));
+
+;//--------------------- RESULT ------------------
+
+schema string(length=1)
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema null, schema string);
+
+;//--------------------- RESULT ------------------
+
+schema string?
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema null, schema string|long);
+
+;//--------------------- RESULT ------------------
+
+schema long | string | null
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema null, schema string|null);
+
+;//--------------------- RESULT ------------------
+
+schema string?
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema long(1)|string(8)|null, schema date|long(2)|string(8));
+
+;//--------------------- RESULT ------------------
+
+schema long | string(length=8) | date | null
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema nonnull, schema nonnull);
+
+;//--------------------- RESULT ------------------
+
+schema nonnull
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema nonnull, schema long);
+
+;//--------------------- RESULT ------------------
+
+schema long | nonnull
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema nonnull, schema long|date);
+
+;//--------------------- RESULT ------------------
+
+schema long | date | nonnull
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema nonnull, schema null);
+
+;//--------------------- RESULT ------------------
+
+schema any
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema nonnull, schema long|null);
+
+;//--------------------- RESULT ------------------
+
+schema long | any
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema [], schema []);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema [ long, boolean, date ], schema [ long, string, null ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         boolean | string,
+         date?
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema [ long, decfloat ], schema [ long ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema [ long, decfloat * ], schema [ long ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema [ long, decfloat * ], schema [ long, decfloat ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema [ long, decfloat * ], schema [ long, date ]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long,
+         decfloat | date * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+compactSchemata(schema {}, schema {});
+
+;//--------------------- RESULT ------------------
+
+schema {}
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema { c: null, a: long, b:long }, schema { a:long, b:long, c:null });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "b": long,
+         "c": null
+       }
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema { a: long, b:long, c:null, e?: date }, schema { a: long, b:string, d:null, e:date });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         "b": long | string,
+         "c"?: null,
+         "d"?: null,
+         "e"?: date
+       }
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema { a: long, *:date }, schema { a: long });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         *: date
+       }
+
+;//------------------- TEST-CASE -----------------
+
+compactSchemata(schema { a: long, *:date }, schema { a: long, *:null });
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": long,
+         *: date?
+       }
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- path expressions and schemata --------------------------------------------------------------
+
+// records
+schemaof ({ a: "yes", b: 0 }.a);
+
+;//--------------------- RESULT ------------------
+
+schema string(value="yes")
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ({ a: "yes", b: 0 }.c);
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ({ a: { c: "yes" }, b: 0 }.a.c) ;
+
+;//--------------------- RESULT ------------------
+
+schema string(value="yes")
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ({ a: "yes", b: 0 }{*});
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": string(value="yes"),
+         "b": long(value=0)
+       }
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ({ a: "yes", b: 0 }{*-.b});
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": string(value="yes")
+       }
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ({ a: "yes", b: 0, c:2 }{*-.b,.c});
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": string(value="yes")
+       }
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ({ a:"yes", { b: 0, c: 2 }.*});
+
+;//--------------------- RESULT ------------------
+
+schema {
+         "a": string(value="yes"),
+         "b": long(value=0),
+         "c": long(value=2)
+       }
+
+;//------------------- TEST-CASE -----------------
+
+
+// arrays
+schemaof ([ "yes", 0, 1][0]);
+
+;//--------------------- RESULT ------------------
+
+schema string(value="yes")
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", 0, 1][1]);
+
+;//--------------------- RESULT ------------------
+
+schema long(value=0)
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", 0, 1][4]);
+
+;//--------------------- RESULT ------------------
+
+schema any
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", 0, 1][0:1]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long | string(value="yes") * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", 0, 1][1:*]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long | string(value="yes") * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", 0, 1][*:1]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long | string(value="yes") * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", 0, 1][*:*]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes"),
+         long(value=0),
+         long(value=1)
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// arrays: nulls
+schemaof ([ "yes", [ 0 ], 1, null] [?]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes"),
+         [
+           long(value=0)
+         ],
+         long(value=1),
+         null
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", [ 0 ], 1, [ null ]] [?]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes"),
+         [
+           long(value=0)
+         ],
+         long(value=1),
+         [
+           null
+         ]
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ null ] [?]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         null
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// arrays: expanding
+schemaof ([ "yes", [ 0 ], 1, null] []);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long | string(value="yes") * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ "yes", [ 0 ], 1, [ null ]] []);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long | string(value="yes") | null * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ null ] []);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- transforms ---------------------------------------------------------------------------------
+
+schemaof(null -> transform $);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([]  -> transform $);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ 1, 2, 3]  -> transform $);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long(value=1),
+         long(value=2),
+         long(value=3)
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// records
+schemaof ([{ a: "yes", b: 0 }] -> transform $.a) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes") * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform $.a) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes")? * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0}] -> transform { $.a });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a": string(value="yes")
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform { $.a }) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a"?: string(value="yes")
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }] -> transform { b: $.a }) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "b": string(value="yes")
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform { b: $.a }) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "b": string(value="yes")?
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0}] -> transform ${.a});
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a": string(value="yes")
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }, {b:1} ] -> transform ${.a});
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a"?: string(value="yes")
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// records with copying
+schemaof ([{ a: "yes", b: 0 }] -> transform { $.* }) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a": string(value="yes"),
+           "b": long(value=0)
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }, { b: 1} ] -> transform  { $.* }) ;
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a"?: string(value="yes"),
+           "b": long
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }] -> transform { c:1, $.* });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "c": long(value=1),
+           "a": string(value="yes"),
+           "b": long(value=0)
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }] -> transform ${*});
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "a": string(value="yes"),
+           "b": long(value=0)
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0 }] -> transform ${*-.a});
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "b": long(value=0)
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([{ a: "yes", b: 0, c:2 }] -> transform ${*-.a,.c});
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "b": long(value=0)
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// arrays
+schemaof ([ [ 0, "yes" ] ] -> transform $[1]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes") * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ [ 0, "yes" ], [ 1 ] ] -> transform $[1]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         string(value="yes")? * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ [ true, "a", 1 ] ] -> transform $[0:1]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ [ true, "a", 1 ] ] -> transform $[1:*]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ [ true, "a", 1 ] ] -> transform $[*:1]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           boolean(value=true) | long(value=1) | string(value="a") * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof ([ [ true, "a", 1 ] ] -> transform $[*:*]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           boolean(value=true),
+           string(value="a"),
+           long(value=1)
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+// records and arrays
+schemaof ([ { a: { a: "no", b: [ {c: "yes"}, 2], c: "no"}, c: "no"}  ] -> transform $.a.b[0]{.a,.c});
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "c": string(value="yes")
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof([ [ {a: 1 } ] ] -> transform $[*]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           {
+             "a": long(value=1)
+           }
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ [ {a: 1 } ] ] -> transform $[*].a);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long(value=1) * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ [ {a: 1 } ] ] -> transform $[*].b);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           null * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ [ {a: 1 }, {b: 2} ] ] -> transform $[*].a);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long(value=1)? * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof([ [ {a: 1 } ], {a: 2}, null ] -> transform $[?]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [] | [
+           {
+             "a": long(value=1)
+           }
+         ] | [
+           {
+             "a": long(value=2)
+           }
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ [ {a: 1 } ], {a: 2}, null ] -> transform $[?].a);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof([ [ {a: [1, 2, "a", null] } ], null, 1 ] -> transform $[]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long(value=1) | {
+             "a": [
+                    long(value=1),
+                    long(value=2),
+                    string(value="a"),
+                    null
+                  ]
+           } * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ [ {a: [1, 2, "a", null] } ], null ] -> transform $[].a);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long | string(value="a") | null * 
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- group by-------------------------------------------------------------------------------------
+
+schemaof(null -> group by k=$ as $ into $);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([] -> group by k=$ as $ into $);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ {a: 1, b: "b1"}, {a: 1, b: "b2"} ] -> group by k=$.a into { key: k, values: $ });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long(value=1),
+           "values": [
+                       {
+                         "a": long(value=1),
+                         "b": string
+                       } * 
+                     ]
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] -> group by k=$.a into { key: k, values: $ });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long,
+           "values": [
+                       {
+                         "a": long,
+                         "b": string
+                       } * 
+                     ]
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([ {a: 1, b: "b1"}, {b:"b2"} ] -> group by k=$.a into { key: k, values: $ });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long(value=1)?,
+           "values": [
+                       {
+                         "a"?: long(value=1),
+                         "b": string
+                       } * 
+                     ]
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof(group null by k=$ as $ into $);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group []  by k=$ as $ into $);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group [ {a: 1, b: "b1"}, {a: 1, b: "b1"} ] by k=$.a as g1 into { key: k, values: g1 });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long(value=1),
+           "values": [
+                       {
+                         "a": long(value=1),
+                         "b": string(value="b1")
+                       } * 
+                     ]
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group [ {a: 1, b: "b1"}, {a: 2, b: "b2"} ] by k=$.a as g1 into { key: k, values: g1 });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long,
+           "values": [
+                       {
+                         "a": long,
+                         "b": string
+                       } * 
+                     ]
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group [ {a: 1, b: "b1"}, {b: "b1"} ] by k=$.a as g1 into { key: k, values: g1 });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long(value=1)?,
+           "values": [
+                       {
+                         "a"?: long(value=1),
+                         "b": string(value="b1")
+                       } * 
+                     ]
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof(group null by k=$ as g1, null by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group []  by k=$ as g1, []  by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group []  by k=$ as g1, null  by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof(group null by k=$ as g1, [ 1 ] by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long(value=1),
+           "values1": null,
+           "values2": [
+                        long(value=1) * 
+                      ]?
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(group [] by k=$ as g1, [ 1 ] by k=$ as g2 
+         into { key: k, values1: g1, values2: g2 });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long(value=1),
+           "values1": null,
+           "values2": [
+                        long(value=1) * 
+                      ]?
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof(
+  group [ {a: 1, b:"b1"}, {a: 1, b: "b2"} ] by k=$.a as g1,
+        [ {c: 3, d:"d1"}, {c: 4, b: "bbb"} ] by k=$.c as g2
+  into { key: k, values1: g1, values2: g2 });
+
+;//--------------------- RESULT ------------------
+
+schema [
+         {
+           "key": long?,
+           "values1": [
+                        {
+                          "a": long(value=1),
+                          "b": string
+                        } * 
+                      ]?,
+           "values2": [
+                        {
+                          "c": long,
+                          "b"?: string(value="bbb"),
+                          "d"?: string(value="d1")
+                        } * 
+                      ]?
+         } * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- filter/sort/expand --------------------------------------------------------------------------
+
+schemaof( null -> filter $>1);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [] -> filter $>1);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [ 1, 2, 3 ] -> filter $>1);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( null -> sort by [$] );
+
+;//--------------------- RESULT ------------------
+
+schema null
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [] -> sort by [$] );
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [ 2, 1, 3 ] -> sort by [$]);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         long * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( null -> expand);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [] -> expand);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [[]] -> expand);
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [[[]]] -> expand);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         []
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof( [ [1,2], ["a","b"], [true], null ] -> expand);
+
+;//--------------------- RESULT ------------------
+
+schema [
+         boolean(value=true) | long | string * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// -- other expressions --------------------------------------------------------------------------
+
+schemaof(read("anything"));
+
+;//--------------------- RESULT ------------------
+
+schema [ * ]
+
+;//------------------- TEST-CASE -----------------
+
+
+schemaof(null -> keyLookup(null));
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([[1, "a"]] -> keyLookup(null));
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long(value=1),
+           string(value="a"),
+           null
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+schemaof(null -> keyLookup([[1, "a"]]));
+
+;//--------------------- RESULT ------------------
+
+schema []
+
+;//------------------- TEST-CASE -----------------
+
+schemaof([[1, "a"]] -> keyLookup([[1, "b"]]));
+
+;//--------------------- RESULT ------------------
+
+schema [
+         [
+           long(value=1),
+           string(value="a"),
+           string(value="b")?
+         ] * 
+       ]
+
+;//------------------- TEST-CASE -----------------
+
+
+//-------------------------- QUIT ---------------------------------
+
+quit;
+;//------------------- TEST-DONE -----------------

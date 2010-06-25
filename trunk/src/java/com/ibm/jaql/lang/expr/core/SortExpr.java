@@ -135,10 +135,6 @@ public class SortExpr extends IterExpr
 
     temp.sort();
 
-    //If the input is empty, i.e., [], then return empty output, i.e., [], instead of null
-    if (temp.iter().isNull())
-    	return JsonIterator.EMPTY;
-
     return temp.iter();
   }
   

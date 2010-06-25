@@ -100,13 +100,13 @@ public class PrevElementFn extends IterExpr
       
       public boolean moveNext() throws Exception
       {
-        if( ! iter.moveNext() )
-        {
-          return false;
-        }
         if( numFields > 1 )
         {
           values[1] = JsonUtil.getCopy(values[0], values[1]); /// prev = cur
+        }
+        if( ! iter.moveNext() )
+        {
+          return false;
         }
         values[0] = iter.current(); // cur
         rec.set(names, values, numFields, true);

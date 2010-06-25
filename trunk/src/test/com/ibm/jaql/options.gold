@@ -1,18 +1,25 @@
+
+;//------------------- TEST-CASE -----------------
 range(0,100)
  -> transform { key: mod($,7), b: $ }
  -> write(hdfs('data'))
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 {
   "location": "data",
   "type": "hdfs"
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 conf = { 
   "mapred.job.name":     "options test query",
   "mapred.reduce.tasks": 10,
-};##
-"conf"
+};
+;//------------------- TEST-CASE -----------------
 
 
 read(hdfs('data'))
@@ -20,7 +27,10 @@ read(hdfs('data'))
     options { conf }
     into { key, n: count($) }
  -> sort by [$]
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "key": 0,
@@ -52,6 +62,8 @@ read(hdfs('data'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 join i in read(hdfs('data')),
      j in read(hdfs('data'))
@@ -60,7 +72,10 @@ join i in read(hdfs('data')),
   into { i: i.key, j: j.key }
 -> distinct()
 -> sort by [$]
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "i": 0,
@@ -92,33 +107,58 @@ join i in read(hdfs('data')),
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
 
 // No options set yet
-getOptions();##
+getOptions();
+
+;//--------------------- RESULT ------------------
+
 {}
+
+;//------------------- TEST-CASE -----------------
 
 
 // Set some options:
-setOptions( { conf: { "io.sort.factor": 20  }} );##
+setOptions( { conf: { "io.sort.factor": 20  }} );
+
+;//--------------------- RESULT ------------------
+
 true
+
+;//------------------- TEST-CASE -----------------
 
 
 // And see them:
-getOptions();##
+getOptions();
+
+;//--------------------- RESULT ------------------
+
 {
   "conf": {
     "io.sort.factor": 20
   }
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 // Add more options:
-setOptions( { conf: { "io.sort.mb": 100  }} );##
+setOptions( { conf: { "io.sort.mb": 100  }} );
+
+;//--------------------- RESULT ------------------
+
 true
+
+;//------------------- TEST-CASE -----------------
 
 
 // See both sets of options.
-getOptions();##
+getOptions();
+
+;//--------------------- RESULT ------------------
+
 {
   "conf": {
     "io.sort.factor": 20,
@@ -126,13 +166,18 @@ getOptions();##
   }
 }
 
+;//------------------- TEST-CASE -----------------
+
 
 // pickup global options
 read(hdfs('data'))
  -> group by key = $.key
     into { key, n: count($) }
  -> sort by [$]
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "key": 0,
@@ -163,6 +208,8 @@ read(hdfs('data'))
     "n": 14
   }
 ]
+
+;//------------------- TEST-CASE -----------------
 
 
 // pickup global options + local options
@@ -171,7 +218,10 @@ read(hdfs('data'))
     options { conf }
     into { key, n: count($) }
  -> sort by [$]
-;##
+;
+
+;//--------------------- RESULT ------------------
+
 [
   {
     "key": 0,
@@ -203,3 +253,7 @@ read(hdfs('data'))
   }
 ]
 
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------
