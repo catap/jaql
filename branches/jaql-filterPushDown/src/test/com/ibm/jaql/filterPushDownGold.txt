@@ -989,7 +989,9 @@ join preserve $r1,  $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==
 ]
 
 
-//Returns count of 8 records --(Predicate is pushed all the way to $r1 side)
+//Returns count of 8 records --(Predicate ($.author == 'R. L. Stine') is pushed all the way to $r1 side,
+//                              Predicate ($.x == 'R. L. Stine') is pushed all the way to $r3 side,
+//                              Predicate ($.z > 2400) is pushed all the way to $r4 side)
 $r1 = $data_books;##
 "$r1"
 
@@ -999,8 +1001,92 @@ $r2 = $data_books2;##
 $r3 = $data_books -> transform {x: $.author, y: $.year * 2};##
 "$r3"
 
-join $r1, $r2, $r3 where $r1.author == $r2.author and $r1.author == $r3.x and $r2.author == $r3.x into {$r1.author, $r3.*} -> filter $.author == 'R. L. Stine' -> count();##
+$r4 = $data_books2 -> transform {w: $.author, z: $.year * 2};##
+"$r4"
+
+join $r1, $r2, $r3, $r4 where $r1.author == $r2.author and $r1.author == $r3.x and $r3.y == $r4.z 
+			into {$r1.author, $r2.year, $r3.x, $r4.w, $r4.z} -> filter $.author == 'R. L. Stine' and 
+										   $.x == 'R. L. Stine' and 
+										   $.z > 2400 -> count();##
 8
+
+
+
+//Returns 1 record --(Predicates below the join should be pushed all the way before the Transform in $r1,
+//                    Predicates ($[0] == 1) and ($[1][0] == 'hard') should be pushed before their Transform,
+//                    Predicate count($[2]) > 4  remains as is
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+$r3 = join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007 -> top 1 -> transform ($.r1.c);##
+"$r3"
+
+[{a:1, b:[1,2,3,4,5,6,6,77,87,43,122]}, {a:2, b:[12,3,34434,766,33,11,10,2]}] -> 
+	transform[$.a, $r3 , $.b -> filter $ <100, $.b -> filter $ >= 100] -> filter $[0] == 1 and count($[2]) > 4 and $[1][0] == 'hard';##
+[
+  [
+    1,
+    [
+      "hard"
+    ],
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      6,
+      77,
+      87,
+      43
+    ],
+    [
+      122
+    ]
+  ]
+]
+
+
+
+//Returns 1 record --(Predicates below the join should be pushed all the way before the join,
+//                    Predicate ($[0] == 1) should be pushed before its Transform,
+//                    Predicates (count($[2]) > 4) and ($[1][0] == 'hard')  remain as is
+$r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};##
+"$r1"
+
+$r2 = $data_books2;##
+"$r2"
+
+[{a:1, b:[1,2,3,4,5,6,6,77,87,43,122]}, {a:2, b:[12,3,34434,766,33,11,10,2]}] -> 
+	transform[$.a, join $r1, $r2 where $r1.n == $r2.author into {$r1} -> filter $.r1.n ==  'J. K. Rowling' and $.r1.m == 2007 -> top 1 -> transform ($.r1.c) , $.b -> filter $ <100, $.b -> filter $ >= 100] -> filter $[0] == 1 and count($[2]) > 4 and $[1][0] == 'hard';##
+[
+  [
+    1,
+    [
+      "hard"
+    ],
+    [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      6,
+      77,
+      87,
+      43
+    ],
+    [
+      122
+    ]
+  ]
+]
+
 
 
 //===================Testing Filter-Transform-Join-Sort===================================================
@@ -1731,6 +1817,44 @@ into {Key:v, Min: min(i[*].r1.c), Count: j[*].z} -> filter $.Key[0] < 1999 and $
 ]
 
 
+
+//Returns 2 records -- (Predicate ($.year > 1960) should be pushed all the way to $r1,
+//                      Predicate ($.array[1] == 'b2y') should be pushed after the GroupBy,
+//                      Predicate ($.grp_key == 2) should be pushed down before the GroupBy
+$r1 = $data_books;##
+"$r1"
+
+$r2 = group
+  [ {a:1, b:'R. L. Stine'}, {a:2, b:'R. L. Stine'}, {a:3, b:'b3x'}, {a:1, b:'b1y'}, {a:2, b:'b2y'} ] 
+     by g = ($.a) as i,
+  [ {c:1, d:'d1x'}, {c:2, d:'d2x'}, {c:4, d:'d4x'}, {c:1, d:'d1y'}, {c:2, d:'d2y'} ]
+     by g = ($.c) as j
+  into { g:g, bs:i[*].b, ds:j[*].d };##
+"$r2"
+ 
+join $r1, $r2 where $r1.author == $r2.bs[0] into {$r1.author, $r1.year, grp_key: $r2.g, array: $r2.bs} -> filter $.year > 1960 and $.array[1] == 'b2y' and $.grp_key == 2;##
+[
+  {
+    "array": [
+      "R. L. Stine",
+      "b2y"
+    ],
+    "author": "R. L. Stine",
+    "grp_key": 2,
+    "year": 1995
+  },
+  {
+    "array": [
+      "R. L. Stine",
+      "b2y"
+    ],
+    "author": "R. L. Stine",
+    "grp_key": 2,
+    "year": 1977
+  }
+]
+			  
+      
 
 //==========================Testing Filter-FunctionCalls===================================================
 

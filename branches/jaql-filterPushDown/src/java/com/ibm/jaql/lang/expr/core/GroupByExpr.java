@@ -269,6 +269,17 @@ public class GroupByExpr extends IterExpr
   }
 
   /**
+   * Returns the mapping table of the INTO clause.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = getMappingTable(byBinding().numChildren());
+	  mt.addUnsafeMappingRecord();
+	  return mt;
+  }
+    
+  /**
    * Return the mapping table.
    * GroupBy does implicitly two-level mappings: one in the BY clause(s), and one in the INTO clause.
    * @param id: specifies which mapping table to return. 
@@ -284,9 +295,6 @@ public class GroupByExpr extends IterExpr
 	  BindingExpr grp_by = byBinding();
 	  int num_children = grp_by.numChildren();
 	  
-	  if (!(collectExpr() instanceof ArrayExpr))
-		  return mt;
-
 	  if (id < num_children)
 	  {
 		  //Return the mapping of the BY clause "by <variable> = <grouping items>" for child "id". 
@@ -309,9 +317,11 @@ public class GroupByExpr extends IterExpr
 	  else
 	  {
 		  //Return the mappings of the grouping key(s) in the INTO clause
-		  mt = collectExpr().child(0).getMappingTable();
-	  }
-	  
+		  if (collectExpr() instanceof ArrayExpr)
+			  mt = (collectExpr().child(0)).getMappingTable();
+		  else
+			  mt = collectExpr().getMappingTable();
+	  }	  
 	  return mt;
   }
 
