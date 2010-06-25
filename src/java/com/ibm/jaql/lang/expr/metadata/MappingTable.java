@@ -67,13 +67,13 @@ public class MappingTable
 		if (mappings.isEmpty())
 			return false;
 		
-		boolean flag = true;
 		Enumeration<ExprMapping> e = mappings.elements();
 		while (e.hasMoreElements())
 		{
-			flag =  (e.nextElement().isSafeToMap()) && flag;
+			if (e.nextElement().isSafeToMap() == false)
+				return false;
 		}
-		return flag;
+		return true;
 	}
 
 	/**
@@ -157,7 +157,54 @@ public class MappingTable
 		this.mappings = mt.mappings;
 		return true;
 	}
+
+	/**
+	 * Add a mapping record with 'isSafeToMap' flag unset. This records ensures that function isSafeToMapAll() return false.
+	 */
+	public void addUnsafeMappingRecord()
+	{
+		ConstExpr ce = new ConstExpr(new JsonString("_UnSafeToMap_"));
+		PathFieldValue pfv = new PathFieldValue(ce);
+		VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+		PathExpr pe = new PathExpr(ve, pfv);
 		
+		if (QuickExactMatch(pe) == null)
+		{
+			ExprMapping mr = new ExprMapping(ce, false);
+			mappings.put(pe, mr);
+		}
+	}
+
+	/**
+	 * Find the mapping expression to the given 'pe' expression. If SafeOnly is true, then we search only 
+	 * for expression that is safe to map to. 
+	 */
+	public ExprMapping findPatternMatch(Expr pe, boolean safeOnly) 
+	{
+		//Lets try fast search where pe matches exactly what we have in the mapping table
+		ExprMapping mapped_to = QuickExactMatch(pe);
+		if (mapped_to != null)
+		{
+			if (safeOnly && !mapped_to.isSafeToMap())
+				return null;
+			else
+				return mapped_to;
+		}
+
+		//Lets try fast partial match (the prefix of 'pe' matches what we have in the mapping table
+		mapped_to = QuickPartialMatch(pe);
+		if (mapped_to != null)
+		{
+			if (safeOnly && !mapped_to.isSafeToMap())
+				return null;
+			else
+				return mapped_to;
+		}
+		
+		//TODO: More complex searching
+		return null;
+	}
+	
 	/**
 	 * Find the var used inside this expression. It has to have one, otherwise it returns null.
 	 */
@@ -219,20 +266,7 @@ public class MappingTable
 		}
 		return ps_super.clone(vm);
 	}
-	
-	/**
-	 * Add a mapping record with 'isSafeToMap' flag unset. This records ensures that function isSafeToMapAll() return false.
-	 */
-	public void addUnsafeMappingRecord()
-	{
-		ConstExpr ce = new ConstExpr(new JsonString("_UnSafeToMap_"));
-		PathFieldValue pfv = new PathFieldValue(ce);
-		VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
-		PathExpr pe = new PathExpr(ve, pfv);
-		ExprMapping mr = new ExprMapping(ce, false);
-		mappings.put(pe, mr);
-	}
-	
+		
 	/**
 	 * try attaching the expr_diff to the end of before_expr.  
 	 */
@@ -265,36 +299,6 @@ public class MappingTable
 	}
 
 	
-	/**
-	 * Find the mapping expression to the given 'pe' expression. If SafeOnly is true, then we search only 
-	 * for expression that is safe to map to. 
-	 */
-	public ExprMapping findPatternMatch(Expr pe, boolean safeOnly) 
-	{
-		//Lets try fast search where pe matches exactly what we have in the mapping table
-		ExprMapping mapped_to = QuickExactMatch(pe);
-		if (mapped_to != null)
-		{
-			if (safeOnly && !mapped_to.isSafeToMap())
-				return null;
-			else
-				return mapped_to;
-		}
-
-		//Lets try fast partial match (the prefix of 'pe' matches what we have in the mapping table
-		mapped_to = QuickPartialMatch(pe);
-		if (mapped_to != null)
-		{
-			if (safeOnly && !mapped_to.isSafeToMap())
-				return null;
-			else
-				return mapped_to;
-		}
-		
-		//TODO: More complex searching
-		return null;
-	}
-
 	/**
 	 * Search for an expression with the exact same structure
 	 */
