@@ -1332,6 +1332,14 @@ void MoreLexicalActions()
       image.setLength(l-5);
       image.setCharAt(l-6, c);
          break;
+      case 44 :
+         image.append(input_stream.GetSuffix(jjimageLen));
+         jjimageLen = 0;
+          // This is a real hack to shrink the buffer in SimpleCharStream.
+          // We remove any characters read for this stream from the buffer.
+          // We already copied the bytes into the image anyway.
+      input_stream.tokenBegin = input_stream.bufpos;
+         break;
       default : 
          break;
    }

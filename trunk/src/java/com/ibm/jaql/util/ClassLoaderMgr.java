@@ -319,6 +319,7 @@ final class JarCreator extends Thread {
 							jout.write(chunk, 0, bytesRead);
 						}
 					}
+					jout.closeEntry();
 				} catch (ZipException ex) {
 					System.out.println(entry.getName());
 					ex.printStackTrace();
