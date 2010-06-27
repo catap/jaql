@@ -73,29 +73,30 @@ public abstract class AbstractJaqlShell {
     JaqlShellArguments jaqlArgs = JaqlShellArguments.parseArgs(args);
     try
     {
-      try {
-        jaqlArgs.enableConsolePrint(false);
-        //Set module search path
-        Module.setSearchPath(jaqlArgs.searchPath);
-      	
-        if (!jaqlArgs.batchMode) {
-          // TODO startup text
-          System.out.println("\nInitializing Jaql.");
-        }
-        if (jaqlArgs.useExistingCluster) 
-        {
-          shell.init();
-        } 
-        else
-        {
-          shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
-        }
-        if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
-      } 
-      finally 
-      {
-        jaqlArgs.enableConsolePrint(true);
+      //Set module search path
+      Module.setSearchPath(jaqlArgs.searchPath);
+
+      if (!jaqlArgs.batchMode) {
+        // TODO startup text
+        System.out.println("\nInitializing Jaql.");
       }
+      if (jaqlArgs.useExistingCluster) 
+      {
+        shell.init();
+      } 
+      else
+      {
+        try {
+          jaqlArgs.enableConsolePrint(false);
+          shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
+        } 
+        finally 
+        {
+          jaqlArgs.enableConsolePrint(true);
+        }
+      }
+      if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
+
       shell.run(jaqlArgs.chainedIn, 
                 jaqlArgs.outputAdapter,
                 jaqlArgs.logAdapter,
