@@ -81,7 +81,7 @@ public class JaqlShellArguments {
    * @see ConsolePrintEnabler
    */
   public void enableConsolePrint(boolean enable) {
-    if (batchMode)
+    if (batchMode && !useExistingCluster)
       ConsolePrintEnabler.enable(enable);
   }
 
