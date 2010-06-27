@@ -69,11 +69,12 @@ public class JaqlShellArguments {
   private JaqlShellArguments() {};
   
   /**
-   * Enable or disable the output to console. It does nothing in Jaql Shell
-   * interactive model. It means to disable console print in batch mode. It is
-   * used to disable console print in <code>MiniHBaseCluster</code>,
-   * <code>MiniHBaseCluster</code> and <code>MiniDFSCluster</code>. Among these
-   * classes, <code>MiniDFSCluster</code> prints startup information to stderr.
+   * Enable or disable the output to console. It is in effect only if running
+   * Jaql shell in batch mode with mini clusters. It means to disable console
+   * print in batch mode. It is used to disable console print in
+   * <code>MiniHBaseCluster</code>, <code>MiniHBaseCluster</code> and
+   * <code>MiniDFSCluster</code>. Among these classes,
+   * <code>MiniDFSCluster</code> prints startup information to stderr.
    * 
    * @param enable <code>true</code> to enable output to stdout and stderr;
    *          <code>false</code> to disable to output to stdout and stderr.
