@@ -15,34 +15,6 @@
  */
 package com.ibm.jaql;
 
-import java.io.IOException;
-
-
-/**
- * 
- */
-public class TestSchema extends JaqlBaseTestCase
+public class TestSchema extends JaqlScriptTestCase
 {
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.JaqlBaseTestCase#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    setFilePrefix("schema");
-    runRewriteResult = false; // disabled for the moment
-  }
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.JaqlBaseTestCase#tearDown()
-   */
-  @Override
-  protected void tearDown() throws IOException
-  {
-  }
-
 }

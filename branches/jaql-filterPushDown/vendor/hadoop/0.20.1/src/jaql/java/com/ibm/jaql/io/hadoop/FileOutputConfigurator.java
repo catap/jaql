@@ -15,8 +15,12 @@
  */
 package com.ibm.jaql.io.hadoop;
 
+import java.io.IOException;
+
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
@@ -55,15 +59,41 @@ public class FileOutputConfigurator implements InitializableConfSetter
     // For an expression, the location is the final file name
     Path outPath = new Path(location);
     FileSystem fs = outPath.getFileSystem(conf);
-    if (fs.exists(outPath) && fs.isFile(outPath)) fs.delete(outPath, true); // TODO: Jaql currently has overwrite semantics; add flag to control this
+    if( fs.exists(outPath))
+    {
+      // TODO: Jaql currently has overwrite semantics; add flag to control this
+      if( fs.isFile(outPath))
+      {
+        fs.delete(outPath, false); 
+      }
+      else
+      {
+        // Look for a map-reduce output directory
+        FileStatus[] nonMR = fs.listStatus(outPath, new PathFilter() {
+          boolean onlyOne = true;
+          public boolean accept(Path path)
+          {
+            String name = path.getName();
+            if( name.matches("([.][.]?)|([.]part-[0-9]+.crc)|(part-[0-9]+)") )
+            {
+              return false;
+            }
+            if( onlyOne )
+            {
+              onlyOne = false;
+              return true;
+            }
+            return false;
+          }
+        });
+        if( nonMR.length > 0 )
+        {
+          throw new IOException("directory exists and is not a map-reduce output directory: "+nonMR[0].getPath());
+        }
+        fs.delete(outPath, true); 
+      }
+    }
 
-//    // uses the same ./_temporary directory for multiple writes, 
-//    // which is removed by committer, causing trouble. 
-//    FileOutputFormat.setOutputPath(conf, outPath.getParent());
-//    
-//    // creates ./file/file
-//    // FileOutputFormat.setOutputPath(conf, outPath);
-    
     // In sequential mode, we will write directly to the output file
     // and bypass the _temporary directory and rename of the standard 
     // FileOutputCommitter by using our own DirectFileOutputCommitter.

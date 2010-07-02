@@ -144,12 +144,6 @@ public class SortExpr extends IterExpr
     
     temp.sort();
 
-//    final Item[] byItems = new Item[nby];
-//    for (int i = 0; i < nby; i++)
-//    {
-//      byItems[i] = new Item();
-//    }
-
     return temp.iter();
   }
   

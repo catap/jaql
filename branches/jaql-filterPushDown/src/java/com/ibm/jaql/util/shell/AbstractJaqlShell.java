@@ -16,9 +16,7 @@
 
 package com.ibm.jaql.util.shell;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.Reader;
 
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.lang.core.Module;
@@ -46,7 +44,7 @@ public abstract class AbstractJaqlShell {
   /**
    * @throws Exception
    */
-  public void run(InputStream in,
+  public void run(Reader in,
                    OutputAdapter outputAdapter,
                    OutputAdapter logAdapter,
                    boolean batchMode) throws Exception
@@ -61,7 +59,7 @@ public abstract class AbstractJaqlShell {
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      throw e;
     }
   }
 
@@ -75,29 +73,30 @@ public abstract class AbstractJaqlShell {
     JaqlShellArguments jaqlArgs = JaqlShellArguments.parseArgs(args);
     try
     {
-      try {
-        jaqlArgs.enableConsolePrint(false);
-        //Set module search path
-        Module.setSearchPath(jaqlArgs.searchPath);
-      	
-        if (!jaqlArgs.batchMode) {
-          // TODO startup text
-          System.out.println("\nInitializing Jaql.");
-        }
-        if (jaqlArgs.useExistingCluster) 
-        {
-          shell.init();
-        } 
-        else
-        {
-          shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
-        }
-        if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
-      } 
-      finally 
-      {
-        jaqlArgs.enableConsolePrint(true);
+      //Set module search path
+      Module.setSearchPath(jaqlArgs.searchPath);
+
+      if (!jaqlArgs.batchMode) {
+        // TODO startup text
+        System.out.println("\nInitializing Jaql.");
       }
+      if (jaqlArgs.useExistingCluster) 
+      {
+        shell.init();
+      } 
+      else
+      {
+        try {
+          jaqlArgs.enableConsolePrint(false);
+          shell.init(jaqlArgs.hdfsDir, jaqlArgs.numNodes);
+        } 
+        finally 
+        {
+          jaqlArgs.enableConsolePrint(true);
+        }
+      }
+      if (jaqlArgs.jars != null) shell.addExtensions(jaqlArgs.jars);
+
       shell.run(jaqlArgs.chainedIn, 
                 jaqlArgs.outputAdapter,
                 jaqlArgs.logAdapter,
@@ -108,7 +107,8 @@ public abstract class AbstractJaqlShell {
     }
     catch (Exception e)
     {
-      e.printStackTrace();
+      //e.printStackTrace();
+      throw new RuntimeException(e);
     }
     finally
     {

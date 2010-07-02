@@ -14,22 +14,7 @@
  * the License.
  */package com.ibm.jaql;
 
-import java.io.IOException;
 
-/**
- * 
- */
-public class TestOptions extends TestMapReduce
+public class TestOptions extends JaqlScriptTestCase
 {
-
-  /*
-   * (non-Javadoc)
-   * 
-   * @see com.ibm.jaql.lang.TestMapReduce#setUp()
-   */
-  @Override
-  protected void setUp() throws IOException
-  {
-    setFilePrefix("options");
-  }
 }

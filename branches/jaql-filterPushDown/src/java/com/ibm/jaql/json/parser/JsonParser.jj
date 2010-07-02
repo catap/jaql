@@ -80,7 +80,7 @@ public class JsonParser
       throw new UnsupportedOperationException();
     }
   };
-    
+  
   public JsonParser() 
   {
     this(new StringReader(""));
@@ -235,7 +235,12 @@ MORE:
       image.setLength(l-5);
       image.setCharAt(l-6, c);
   }
-| <~["\\", "\n","\r"]>
+| <~["\\", "\n","\r"]> {
+	  // This is a real hack to shrink the buffer in SimpleCharStream.
+	  // We remove any characters read for this stream from the buffer.
+	  // We already copied the bytes into the image anyway.
+      input_stream.tokenBegin = input_stream.bufpos;
+    }
 }
 
 SKIP :

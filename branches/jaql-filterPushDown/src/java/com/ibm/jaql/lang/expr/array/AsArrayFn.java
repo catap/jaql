@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.expr.array;
 
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -57,7 +57,9 @@ public class AsArrayFn extends IterExpr
   @Override
   public Schema getSchema()
   {
-    return SchemaFactory.arraySchema();
+    Schema s = exprs[0].getSchema();
+    s = SchemaTransformation.restrictToArrayWithNullPromotion(s);
+    return s;
   }
 
 

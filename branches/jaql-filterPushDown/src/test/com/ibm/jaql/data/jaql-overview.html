@@ -1,0 +1,717 @@
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="jaql.css">
+<!-- /*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */ -->
+<html>
+<head>
+<title> Jaql: A JSON Query Language </title>
+</head>
+<body>
+
+<h1 align="center"> Jaql: A JSON Query Language </h1>
+
+<div align="center">
+Kevin Beyer, Vuk Ercegovac, Jun Rao, Eugene Shekita
+<br/>
+{kbeyer,vercego,junrao,shekita}@us.ibm.com
+</div>
+
+<h2>Introduction</h2>
+
+<p/>
+JavaScript Object Notation or <a href="http://www.json.org/">JSON</a>
+has become a popular data format for many Web-based applications
+because of its simplicity and modeling flexibility.
+Wikipedia includes a nice
+<a href="http://en.wikipedia.org/wiki/JSON">summary</a>
+of JSON's advantages over other data formats like XML.
+In contrast to XML, which was originally designed as a markup language,
+JSON was actually designed for data.
+Moreover, JSON is a language-independent format, with bindings
+in a variety of programming languages.
+In short, JSON makes it easy to model a wide spectrum of 
+data, ranging from homogenous flat data to 
+heterogeneous nested data, and it can do this  
+in a language-independent format.
+We believe that these characteristics make JSON
+an ideal data format for many Hadoop applications
+and databases in general.
+
+<a name="overview"></a><h2>Overview</h2>
+<p/>
+In this document, we introduce Jaql, a query language for JSON.
+Although Jaql has been designed specifically for JSON,
+we have tried to borrow some of the best features of
+<a href="http://en.wikipedia.org/wiki/SQL">SQL</a>,
+<a href="http://www.w3.org/TR/xquery/">XQuery</a>, and
+<a href="http://wiki.apache.org/pig/PigLatin">PigLatin</a>.
+We begin with an example of JSON data, then go on to describe
+the key features of Jaql and show how it can be used to process
+JSON data in parallel using Hadoop's map/reduce framework.
+
+<p/>
+Jaql is also designed to be extended. Both Jaql's <a href="jaql-java-functions.html">functions</a>
+as well as its <a href="datasrc-extensibility.html">data-sources</a> can be extended so as to facilitate
+plugging in your computation for your data. While
+only a high-level description of Jaql is presented here,
+all examples can be <a href="running.html">run</a> by 
+<a href="releases/0.2/jaql-0.1pre.tgz">downloading</a> the
+most recent release of Jaql.
+
+<p/>
+<i>Note: </i>Jaql is still in early development, 
+so beware that it is likely to change over the next few months.
+The future development plans are outlined in the <a href="roadmap.html">roadmap</a>.
+
+<h2 id='data_model'>A JSON Example</h2> 
+
+<p/>
+Let's start off with an example of books and their reviews in JSON format:
+
+<pre>
+  [
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Deathly Hallows',
+     year: 2007},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Chamber of Secrets',
+     year: 1999, 
+     reviews: [
+       {rating: 10, user: 'joe', review: 'The best ...'},
+       {rating: 6, user: 'mary', review: 'Average ...'}]},
+
+    {publisher: 'Scholastic',
+     author: 'J. K. Rowling',
+     title: 'Sorcerers Stone',
+     year: 1998},
+
+    {publisher: 'Scholastic',
+     author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     year: 1997, 
+     reviews: [
+       {rating: 8, user: 'rob', review: 'High on my list...'}, 
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...', 
+        discussion:
+          [{user: 'ben', text: 'This is too harsh...'}, 
+           {user: 'jill', text: 'I agree ...'}]}]},
+
+    {publisher: 'Grosset',
+     author: 'Carolyn Keene',
+     title: 'The Secret of Kane',
+     year: 1930}
+  ]
+</pre>
+
+<p/>
+This example shows an <i>array</i> of JSON <i>objects.</i>
+Arrays are delimited by brackets '[]' and objects are delimited by braces '{}'.
+Objects contain name:value pairs or <i>members</i>, where the
+value can be an atomic type or a nested value.
+In contrast to XML, the type of an atomic value is always known in JSON.
+Here, each top-level object represents a book and its reviews.
+The 'reviews' for a book object is an array and each entry
+in the array corresponds to a review.
+Each review consists of a 'rating', its 'user', and the text of the review. 
+Each review can also contain a 'discussion', which
+itself can be discussed, forming a discussion thread.
+
+<p/> 
+It is important to point out that the Jaql 
+data model is actually a superset of JSON.
+The only difference is that atomic types like date have been added to Jaql to
+make certain database operations more efficient.
+Also, for readability, the names in name:value pairs
+do not always need to be quoted.
+When data needs to be exported in standard JSON format,
+Jaql can convert non-standard atomic types to strings
+and add quotes to names.
+For the remainder of this document, we will use the Jaql data
+model and JSON interchangeably, although strictly speaking
+the Jaql data model is a superset of JSON.
+
+<h2 id='io'>Reading and Writing JSON Data</h2>
+
+<p/>
+Using Jaql, JSON data can be stored and retrieved
+from a variety of data sources including ordinary files.
+Jaql queries can take a <i>collection</i> as input and generate
+a new collection as output, where a
+collection corresponds to a JSON array.
+An example using an ordinary file to store a collection
+is as follows:
+
+<pre>
+  // Example 1. Write to a file named 'hey.dat'.
+  localWrite('hey.dat', [{text: 'Hello World'}]);
+	
+  // Read it back...
+  localRead('hey.dat');
+</pre>
+
+<p/> 
+Here, a single object with the 'Hello World' string is 
+being written to a file called 'hey.dat' in the current directory. 
+It is also possible to read and write JSON data to
+Hadoop <a href="http://lucene.apache.org/hadoop/hdfs_design.html">HDFS</a> files and
+<a href="http://wiki.apache.org/lucene-hadoop/Hbase">HBase</a> tables.
+We have made integration with Hadoop a priority by having all data types implement the 
+<a href="http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/WritableComparable.html">WritableComparable</a> interface.
+By integrating Jaql with HDFS and HBase, we are able to store JSON data
+and process it in parallel using Hadoop's map/reduce framework.
+
+<p/>
+Examples using Hadoop are provided below.
+Our second example writes to an HDFS 
+<a href="http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/SequenceFile.html">SequenceFile</a>.
+A SequenceFile is a collection of key-value pairs. 
+Jaql's hdfsWrite() function only writes data into the value field, leaving the key field empty.
+In example 2, the input data is represented as a literal, but in general the input
+can be an expression that is the result of a Jaql query.
+
+<pre>
+  // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
+  hdfsWrite('orders.dat', [
+    {order: 1, cust: 'c1', items: [ 
+      {item: 1, qty: 2},
+      {item: 3, qty: 6},
+      {item: 5, qty: 10}]},
+    {order: 2, cust: 'c2', items: [
+      {item: 2, qty: 1},
+      {item: 5, qty: 2},
+      {item: 7, qty: 3}]},
+    {order: 3, cust: 'c1', items: [
+      {item: 1, qty: 2},
+      {item: 7, qty: 14},
+      {item: 5, qty: 10}]} 
+  ]);
+	
+  // Read it back...
+  hdfsRead('orders.dat');
+</pre>
+
+<p/>
+Our third example writes to an HBase table.
+An HBase table is a collection of records, with each record containing a 
+primary key and a set of column name-value pairs.
+Column names in HBase are of type
+<a href="http://lucene.apache.org/hadoop/api/org/apache/hadoop/io/Text.html">Text</a>,
+while column values are simply byte arrays.
+HBase uses a two-part naming scheme for columns of the form 'column family:column'.
+In Jaql, we use a sharp '#' instead of a colon ':' to separate column families from columns,
+since the colon is already used as a separator in JSON.
+If a column family is not specified, a special 'default' column family is used, as in the
+following example.
+
+<pre>
+  // Example 3. Write to an HBase table named 'webcrawl'.
+  hbaseWrite('webcrawl', [
+    {key: "www.cnn.com", page:'...', rank: 0.9,
+     inlinks:[
+       {link: 'www.news.com', anchor: 'newsite'},
+       {link: 'www.jscript.com', anchor: 'look here'}]},
+    {key: "www.json.org", page:'...', rank: 0.8}
+  ]);
+	
+  // Read it back...
+  hbaseRead('webcrawl');
+</pre>
+
+<p/> 
+In hbaseWrite(), all objects in the input are written to a 
+single HBase table.
+Each top-level JSON object is stored as an Hbase record with the specified key,
+and each name:value pair in the object is stored as a separate column-value pair in
+the record.
+Values are serialized as a byte array.
+Note that only the outermost name:value pairs in top-level objects are 
+stored as separate columns in Hbase.
+Nested arrays and objects are serialized within these.
+In example 3, two HBase records are written.
+Each record is used to store the content, rank, and in-links (if any) of a web page.
+
+<h2 id='queries'>The Jaql Query Language</h2>
+
+<p/>
+Jaql is a functional query language that provides users with a simple,
+declarative syntax to do things like filter, join, and group JSON data.
+Jaql also allows user-defined functions to be written and used in expressions. 
+Let's begin with some examples using the book data presented earlier:
+Our first two queries illustrate selection, projection, and filtering.
+
+<pre>	
+  // Write the books collection from data above.
+  // hdfsWrite('books', [ {publisher... ] )
+  
+  // Query 1. Return the publisher and title of each book.
+  for( $b in hdfsRead('books') )
+    [{ $b.publisher, $b.title }];
+	
+  // result...
+  [  
+    {publisher: 'Scholastic', title: 'Deathly Hallows'},
+    {publisher: 'Scholastic', title: 'Chamber of Secrets'},
+    {publisher: 'Scholastic', title: 'Sorcerers Stone'},
+    {publisher: 'Scholastic', title: 'Monster Blood IV'},
+    {publisher: 'Grosset',    title: 'The Secret of Kane'}
+  ];
+  
+  // Query 2. Find the authors and titles of books that have received
+  // a review.
+  for( $b in hdfsRead('books') )
+   if( exists($b.reviews) )
+    [{ $b.author, $b.title }];
+    
+  // result...
+  [  
+    {author: 'J. K. Rowling', title: 'Chamber of Secrets'},
+    {author: 'R. L. Stine',   title: 'Monster Blood IV'}
+  ];
+</pre>
+
+<p/> Query 1 uses a <b>for</b> expression to loop over the books
+collection.  Each book is bound to the variable $b and the loop body
+is evaluated.  Both the in-expression and the loop body must produce
+arrays.  The result of the for is an array that contains all of the
+loop iteration results. In Query 1, every iteration returns a record
+containing the publisher and title.  In Query 2, the <b>if</b>
+expression causes only books with reviews to be output.
+
+<pre>		   	
+  // Query 3a. Project the title from each book using the short-hand
+  // projection notation. 
+  hdfsRead('books')[*].title;
+  
+  // Query 3a-alt. Or using equivalent the long-hand notation.
+  for( $b in hdfsRead('books') )
+    [ $b.title ];
+
+  // Query 3b. Project the user from each review of each book using the short-hand
+  // projection notation.  The double-stars flattens the contained arrays.
+  hdfsRead('books')[**].reviews[*].user;
+
+  // Query 3b-alt. Or using equivalent the long-hand notation.
+  for( $b in hdfsRead('books') )
+    for( $r in $b.reviews )
+      [ $r.user ];
+
+  // result...
+  [ "Deathly Hallows",
+    "Chamber of Secrets",
+    "Sorcerers Stone",
+    "Monster Blood IV",
+    "The Secret of Kane" ];
+
+  // Query 4. Find authors, titles, and reviews of books where a review
+  // prompted a discussion by the user 'ben'.
+  for( $b in hdfsRead('books') )
+   if( 'ben' in $b.reviews[**].discussion[*].user )
+    [{ $b.author, $b.title, $b.reviews }];
+	
+  // result...
+  [  
+    {author: 'R. L. Stine',
+     title: 'Monster Blood IV',
+     reviews: [
+       {rating: 8, user: 'rob', review: 'High on my list...'},
+       {rating: 2, user: 'mike', review: 'Not worth the paper ...',
+        discussion: [
+          {user: 'ben', text: 'This is too harsh...'},
+          {user: 'jill', text: 'I agree ...'}]}]}
+  ];
+</pre>
+
+<p/> Queries 3a and 3b shows two short-hand notations for projecting
+from an array, as well as their equivalent long-hand notations.
+
+<p/> Query 4 is a more complicated variation of Query 2.  Now the
+predicate is based on values that are nested three levels deep (books,
+reviews, discussion). The <b>in</b> predicate checks if the user 'ben'
+discussed any book review.
+
+<pre>  	 		
+  // Query 5. Find the authors and titles of books that had an
+  // average review rating over 5.
+  for( $b in hdfsRead('books') )
+   if( avg($b.reviews[*].rating) > 5 )
+    [{ $b.author, $b.title }];
+		 	
+  // result...
+  [  
+    {author: 'J. K. Rowling', title: 'Chamber of Secrets'}
+  ];
+</pre>
+
+<p/>
+Query 5 filters books by their average rating.
+For each book $b, the syntax $b.reviews[*].rating creates an array of review
+ratings for each book $b. The average rating for book $b is then computed and tested
+to see if it is greater than 5.
+
+<pre>
+  // Query 6. Show how many books each publisher has published.
+  group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
+      [{ publisher: $p, num: count($pubs) }];
+	
+  // result...
+  [  
+    {publisher: 'Scholastic', num: 4},
+    {publisher: 'Grosset', num: 1}
+  ];
+</pre>
+
+<p/> 
+Query 6 illustrates grouping and aggregation.
+The <b>group</b> expression partitions an input collection into groups.
+Books are partitioned into groups by the grouping value $p,
+which is set to $b.publisher.
+The $pubs variable is bound to an array associated with each
+group and used to count how many books each publisher has published.
+
+<pre>
+  // Query 7. Find the publisher who published the most books.
+
+  // group books by publisher and compute their book count
+  $g = group( $b in hdfsRead('books') by $p = $b.publisher into $pubs )
+           [{ publisher: $p, num: count($pubs) }];
+    
+  // sort publishers by descending book count
+  $sorted = sort( $i in $g by $i.num desc );
+
+  // return the top publisher
+  $sorted[0];
+	 
+  // result...
+  {publisher: 'Scholastic', num: 4};
+
+</pre>
+
+<p/> Query 7 illustrates grouping and sorting.  It shows how
+<b>group</b> and <b>sort</b> can be used to find the publisher who
+published the most books.  Variables are used to make it easier to
+write the query.  The <b>group</b> expression can also be used to
+group multiple collections.  To illustrate group, we define the
+collections X and Y:
+
+<pre>
+  hdfsWrite('X',
+    [
+      {a:1, b:1}, 
+      {a:1, b:2}, 
+      {a:2, b:3}, 
+      {a:2, b:4}
+    ] );
+
+  hdfsWrite('Y',
+    [
+      {c:2, d:1}, 
+      {c:2, d:2}, 
+      {c:3, d:3}, 
+      {c:3, d:4}
+    ] );
+</pre>
+
+<p/> Query 8 groups both X and Y, which is similar to a group over the
+union of the input collections, except that two arrays are generated
+for each group, one for each input collection.
+
+<pre>
+  // Query 8. Co-group X and Y.
+  group( $x in hdfsRead('X') by $g = $x.a into $xgroup,
+         $y in hdfsRead('Y') by $g = $y.c into $ygroup )
+      [{ g: $g, b: $xgroup[*].b, d: $ygroup[*].d }];
+
+  // result...
+  [ 
+    {g: 1, b: [1,2], d: []},
+    {g: 2, b: [3,4], d: [1,2]},
+    {g: 3, b: [],    d: [3,4]}
+  ];
+</pre>
+
+<p/> In Query 8, both X and Y need to be grouped on the same value,
+namely $g.  The syntax $xgroup[*].b and $ygroup[*].d in the return
+expression projects the 'b' and 'd' values in the arrays created for
+each X and Y group, respectively.
+
+<p/>
+Joins can be expressed using group, but the syntax can get a little messy.
+Since joins are common, special syntax has been introduced for them:
+
+<pre>
+  // Query 9. Join X and Y.
+  join( $x in hdfsRead('X') on $x.a,
+        $y in hdfsRead('Y') on $y.c )
+     [{ $x.a, $x.b, $y.c, $y.d }];
+  
+  // result...
+  [ 
+    {a: 2, b: 3, c: 2, d: 1},
+    {a: 2, b: 3, c: 2, d: 2},
+    {a: 2, b: 4, c: 2, d: 1},
+    {a: 2, b: 4, c: 2, d: 2},
+  ];
+</pre>
+
+<p/>
+Query 9 shows an inner join on 'a' and 'c' in X and Y, respectively.
+Although it has not be shown, left-, right-, and full-outer joins 
+can also be specified using modifiers.
+
+
+<h2 id='combine'>Writing Aggregate Functions</h2>
+
+Jaql includes standard database aggregate functions, like <code>sum,
+count, min, max,</code> and <code>avg</code>.  Starting with Release
+0.2, Jaql supports partial aggregation for these functions using
+"combiners" inside Hadoop's map/reduce framework for greater
+parallelism and reduced data shipping.  Syntactically, these functions
+look like "holistic" aggregate functions -- an aggregate that requires
+all the data before returning an answer.  However, they actually
+expand into "algebraic" aggregates using the combine expression.
+Median is the typical example of a holistic function:
+
+<pre>
+  $median = fn($items) (
+    $sorted = sort( $i in $items by $i ),
+
+    $sorted[int(count($sorted)/2)]
+  );
+
+  $median( [ 1, 4, 5, 3, 2 ] ); // 3
+</pre>
+
+If you need the exact median, we cannot improve upon this much.  But
+consider variance instead.  It can be computed from the sum of the
+numbers and the sum of squares.  The <code>combine</code> expression
+is used to define "algebraic" aggregates -- an aggregate that can be
+applied on portions of the data and combined to produce a final
+result.  Such aggregates typically have an "initialization phase" that
+creates a partial aggregate from a single item, a "combining phase"
+where partial aggregates are combined into larger partial aggregates,
+and a "final phase" that transforms the largest partial aggregate into
+the desired result.
+
+<p/> The <code>combine</code> expression handles the combining
+phase. It takes any two partial aggregates from its input, aggregates
+them using the combining expression, and conceptually puts the result
+back into the input until the input is reduced to a single item.  The
+following example defines variance completely in Jaql using
+<code>combine</code>:
+
+<pre>
+  $var = fn($items) (
+    $init = 
+       for( $i in $items )
+        if( not isnull($i) )
+         [{ n: 1, s1: $i, s2: $i*$i }],
+    $combined =
+       combine( $a, $b in $init )
+           { n: $a.n  + $b.n,
+            s1: $a.s1 + $b.s1,
+            s2: $a.s2 + $b.s2 },
+    $E_X  = $combined.s1 / $combined.n,
+    $E_X2 = $combined.s2 / $combined.n,
+
+    $E_X2 - $E_X * $E_X
+  );
+
+  $var( [ 1, 4, 5, 3, 2 ] ); // 2
+</pre>
+
+Many functions are cumbersome to define in a query language.  <a
+href="jaql-java-functions.html#aggregate">Java functions</a> are also
+useful for defining both holistic and algebraic aggregates.
+
+<h2 id='queries'>Extending Jaql</h2>
+
+<p/> Jaql has been designed to be extensible.  Custom code can be
+plugged-in to extend Jaql's capability in two different ways:
+
+<ol>
+<li>Jaql's library of <a href="jaql-java-functions.html">functions</a> to transform JSON data, and
+<li>Jaql's <a href="datasrc-extensibility.html">input/output</a> to access any data and possibly convert into JSON.
+</ol>
+
+In this section, we briefly describe some interesting functions that
+we have added to Jaql.  The first example is <span
+id='mapreduce'>mapReduce()</span>, which takes a Jaql description of
+the map and reduce functions as input, and uses it to run a map/reduce
+job in Hadoop.
+
+<pre>
+  // Write to an HDFS file called 'sample'.
+  hdfsWrite('sample.dat', [
+    {x: 0, text: 'zero'},
+    {x: 1, text: 'one'},
+    {x: 0, text: 'two'},
+    {x: 1, text: 'three'},
+    {x: 0, text: 'four'},
+    {x: 1, text: 'five'},
+    {x: 0, text: 'six'},
+    {x: 1, text: 'seven'},
+    {x: 0, text: 'eight'}
+  ]);
+	
+  // Run a map/reduce job that counts the number objects
+  // for each 'x' value.
+  mapReduce( 
+    { input:  {type: 'hdfs', location: 'sample.dat'}, 
+      output: {type: 'hdfs', location: 'results.dat'}, 
+      map:    fn($i) [ [$i.x, 1] ], 
+      reduce: fn($x, $v) [ {x: $x, num: count($v)} ]
+    });
+	
+  // Read the results...
+  hdfsRead('results.dat');
+	
+  // result...
+  [
+    {x: '0', num: 5},
+    {x: '1', num: 4}
+  ];
+</pre>
+
+<p/>
+This example groups the input on 'x' and counts the 
+number of objects in each group.
+The map function must specify how to extract a key-value pair, 
+and the reduce function must specify how to aggregate the
+values for a given key.
+Here, the key value is set to $i.x and count($v) is 
+used to count the values $v associated with each key.
+Note that both the map and reduce functions need to output an array
+because each input is allowed to produce multiple outputs.
+
+<p/>
+We have found mapReduce() to come in handy for many map/reduce jobs.
+In general, the body of the map and reduce functions can
+be Jaql expressions, so a lot of expressive power is available
+to programmers who want to work with JSON data.
+By working in Jaql, programmers are freed from all the little
+details required to actually set up and run a map/reduce job.
+
+<p/> 
+The mapReduce() function touches on a interesting feature of Jaql,
+namely that Jaql is a second-order language.
+This allows function definitions to be assigned to variables
+-- even stored in the database --
+and later evaluated, as shown in the following example.
+
+<pre> 
+  // Define a function that returns the most recent book
+  // written by a given author.
+  $mostRecent = fn($author) (
+        $authorsBooks =
+           for( $b in hdfsRead('books') )
+            if( $b.author == $author )
+             [{ title: $b.title, year: $b.year }],
+         $sorted = sort( $b in $authorsBooks by $b.year desc ),
+        
+      $sorted[0].title
+    );
+    
+		// Invoke the function.
+  $mostRecent('J. K. Rowling');
+
+  // result...
+  'Deathly Hallows';
+</pre>
+
+<p/>
+
+<p/> Finally, to work with external data sources, we recently added a
+jaqlGet() function that can retrieve JSON data from a URL.  Below are
+two examples of jaqlGet() that get data from <a
+href="http://www.freebase.com">Freebase</a> and <a
+href="http://developer.yahoo.com/traffic/">Yahoo! Traffic</a> (the
+latter requires you to supply an <a
+href="http://developer.yahoo.com/faq/#appid">application id</a>).
+
+<pre>
+  // Get albums recorded by "The Police" using Freebase.
+  $artist = "The Police";
+  $freebase = 
+      httpGet('http://www.freebase.com/api/service/mqlread', 
+        { queries: 
+            serialize(
+              { myquery: 
+                { query:
+                  [{ type: "/music/artist",
+                     name: $artist,
+                     album: []
+                   }] 
+                }
+              }
+            ) })[0];
+  
+  $freebase.myquery.result[**].album;
+      
+  // result...
+  [ "Outlandos d\'Amour",
+    "Reggatta de Blanc",
+    "Zenyatta Mondatta",
+    "Ghost in the Machine",
+    "Synchronicity",
+    "Every Breath You Take: The Singles",
+    "Greatest Hits",
+    "Message in a Box: The Complete Recordings (disc 1)",
+    "Message in a Box: The Complete Recordings (disc 2)",
+    "Message in a Box: The Complete Recordings (disc 3)",
+    "Message in a Box: The Complete Recordings (disc 4)",
+    "Live! (disc 1: Orpheum WBCN/Boston Broadcast)",
+    "Live! (disc 2: Atlanta/Synchronicity Concert)",
+    "Every Breath You Take: The Classics",
+    "Their Greatest Hits",
+    "Can\'t Stand Losing You",
+    "Roxanne \'97 (Puff Daddy remix)",
+    "Roxanne \'97"];
+  
+  // Get traffic incidents from Yahoo!.
+  $appid = "YahooDemo"; // Set to your yahoo application ID
+  $trafficData = 
+      httpGet('http://local.yahooapis.com/MapsService/V1/trafficData',
+        { appid:  $appid,
+          street: "701 First Street",
+          city:   "Sunnyvale",
+          state:  "CA",
+          output: "json"
+        })[0];
+
+  $trafficData.ResultSet.Result[*].Title;
+  
+  // result...
+  [ "Road construction, on US-101 NB at FAIROAKS AVE TONBTO NB MATHILDA",
+    "Road construction, on CA-85 SB at MOFFETT BLVD",
+    "Road construction, on CA-237 EB at MATHILDA AVE TOEBTO FAIR OAKS AVE",
+    "Road construction, on CA-237 WB at CROSSMAN AVE",
+    "Road construction, on I-880 at GATEWAY BLVD"];
+</pre>
+
+<p/>
+<p/>
+<center> 
+<a href="jaql-overview.html">Overview</a> | 
+<a href="jaql-java-functions.html">Java Functions</a> | 
+<a href="datasrc-extensibility.html">Extending Data-sources</a> | 
+<a href="running.html">Running Jaql</a> | 
+<a href="roadmap.html">Roadmap</a> 
+</center>
+
+</body>
+</html>

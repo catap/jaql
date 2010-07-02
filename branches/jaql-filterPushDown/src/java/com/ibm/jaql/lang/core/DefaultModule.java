@@ -24,7 +24,16 @@ public class DefaultModule extends Module {
 			return false;
 		}
 	};
-	
+
+	   private static final FilenameFilter jaqlFileFilter = new FilenameFilter() {
+	        @Override
+	        public boolean accept(File dir, String name) 
+	        {
+	          name = name.toLowerCase();
+	          return name.endsWith(".jaql") || name.endsWith(".jql");
+	        }
+	    };
+
 	public DefaultModule(File dir) {
 		if(!isModuleDirectory(dir)) {
 			throw new RuntimeException("Directory is not a module directory " + dir);
@@ -47,9 +56,8 @@ public class DefaultModule extends Module {
 		//Create file list
 		ensureMetaData();
 		if(!meta.containsKey(SCRIPTS_FIELD)) {
-			//All files inside the jaql directory are assumed to be jaql
-			//independent of the file suffix
-			return jaqlDir.listFiles();
+			// All *.jql and *.jaql files inside the jaql directory are assumed to be jaql
+			return jaqlDir.listFiles(jaqlFileFilter);
 		} else {
 			//Load files based on meta data
 			ArrayList<File> files = new ArrayList<File>();
@@ -92,7 +100,7 @@ public class DefaultModule extends Module {
 			throw new RuntimeException("Cannot read example directory " + exampleDir);
 		}
 		
-		return exampleDir.listFiles();
+		return exampleDir.listFiles(jaqlFileFilter);
 	}
 	
 	/* (non-Javadoc)

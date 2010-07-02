@@ -16,38 +16,32 @@
 package com.ibm.jaql.util;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
 
+/**
+ * When run, recursively delete the path from the filesystem.  
+ */
 public class DeleteFileTask implements Runnable
 {
+  protected FileSystem fs;
   protected Path path;
   
-  public DeleteFileTask(Path path)
+  public DeleteFileTask(FileSystem fs, Path path)
   {
+    this.fs = fs;
     this.path = path;
   }
 
-  public DeleteFileTask(String path) throws URISyntaxException
-  {
-    this.path = new Path(path);
-  }
-
-  // fails on java 1.5: @Override
-  @SuppressWarnings("deprecation")
+  @Override
   public void run()
   {
     try
     {
-      Configuration conf = new JobConf(); // TODO: where to get this from?
-      FileSystem fs = path.getFileSystem(conf);
       if( fs.exists(path) ) 
       {
-        fs.delete(path);
+        fs.delete(path, true);
       }
     }
     catch(IOException e)

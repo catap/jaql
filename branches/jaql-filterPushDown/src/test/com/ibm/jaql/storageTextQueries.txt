@@ -1,20 +1,20 @@
-hdfsShell("-copyFromLocal build/test/cache/data/delimited.del delimited.del") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/delimited-quoted.del delimited-quoted.del") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid1.del delimited-invalid1.del") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid2.del delimited-invalid2.del") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/delimited-invalid3.del delimited-invalid3.del") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/lines.txt lines.txt") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/lines-boolean.txt lines-boolean.txt") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/lines-invalid.txt lines-invalid.txt") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/lines-numeric.txt lines-numeric.txt") * 0;
-hdfsShell("-copyFromLocal build/test/cache/data/lines-with-null.txt lines-with-null.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited.del delimited.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted.del delimited-quoted.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid1.del delimited-invalid1.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid2.del delimited-invalid2.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid3.del delimited-invalid3.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines.txt lines.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-boolean.txt lines-boolean.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-invalid.txt lines-invalid.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-numeric.txt lines-numeric.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-with-null.txt lines-with-null.txt") * 0;
 
 // test readers
 $f = "delimited.del";
 read(lines($f));
 read(del($f));
-read(del($f, { quoted: false })); / should fail
+read(del($f, { quoted: false })); // should fail
 read(del($f, { quoted: null })); // should fail
 read(del($f, { delimiter: null })); // should fail
 

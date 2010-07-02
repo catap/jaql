@@ -1,0 +1,184 @@
+
+;//------------------- TEST-CASE -----------------
+registerRNG('r1', fn() 17);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+registerRNG('r2', fn() 5);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,5) -> transform sampleRNG('r1');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+range(1,10) -> transform sampleRNG('r2');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+[1,2,3,4,5] -> write(hdfs('test'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+registerRNG('r3', fn() 17);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// test map-reduce using the same seed per-split
+read(hdfs('test')) -> transform sampleRNG('r3');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+registerRNG('r4', fn() 5);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+  
+
+// test map-reduce using the same seed per-split
+read(hdfs('test')) -> transform sampleRNG('r4');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// test map-reduce and reading a variable from the jobConf
+read({type:'hdfs', location:'test', inoptions:
+                  {seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
+	              configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}})
+-> transform readConf("seed", 17);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// seed based on the value in the jobConf named "seed"
+registerRNG('r5', fn() readConf("seed", 17));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// test map-reduce using a variable seed per-split. this example has one split
+// so expect repeated value
+read({type:'hdfs', location:'test', inoptions:{seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter', 
+                             format: 'org.apache.hadoop.mapred.SequenceFileInputFormat',
+                      configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}})
+-> transform sampleRNG('r5');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+  
+// test seeding adapter with composite split
+$a = 
+  read({type:'hdfs', location:'test', inoptions:{seed: 17, adapter: 'com.acme.extensions.data.SeedingHadoopAdapter'}})
+  -> transform {k:$};
+;//------------------- TEST-CASE -----------------
+
+
+[ {k:2}, {k:2}, {k:3} ] -> write(hdfs('test2'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+join $a, $j in read(hdfs('test2'))
+where $a.k == $j.k
+into $a -> sort by [$];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

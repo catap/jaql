@@ -16,11 +16,15 @@
 
 package com.ibm.jaql.lang;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-public interface CoreJaql {
+public interface CoreJaql extends Closeable
+{
 
 	/**
 	 * Sets the query to process.
@@ -138,8 +142,9 @@ public interface CoreJaql {
 	 * 
 	 * Close a jaql query
 	 * Jaql query statement should be closed after all the query is done, else it will cause a shutdown in progress exception
+	 * @throws IOException 
 	 *
 	 */
-	void close();
+	void close() throws IOException;
 
 }

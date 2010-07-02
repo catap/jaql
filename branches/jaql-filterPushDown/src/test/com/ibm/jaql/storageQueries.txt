@@ -73,18 +73,18 @@ read({type: 'hdfs', location: 'jaqlTest/test4.txt',
 
 // write/read Items to/from a local file
 [1,2,3]
--> write({location: 'build/test/cache/mynewfile.txt', 
+-> write({location: 'mynewfile.txt', 
          outoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
                       format  : 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}});
 
-read({location: 'build/test/cache/mynewfile.txt', 
+read({location: 'mynewfile.txt', 
         inoptions: {adapter : 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
                     format  : 'com.ibm.jaql.io.stream.converter.JsonInputStream'}});
 
 [1,2,3]
--> localWrite({type: 'local', location: 'build/test/cache/myotherfile.txt'});
+-> localWrite({type: 'local', location: 'myotherfile.txt'});
 
-read({type: 'local', location: 'build/test/cache/myotherfile.txt'});
+read({type: 'local', location: 'myotherfile.txt'});
 
 //-- test map/reduce --
 
@@ -151,13 +151,13 @@ mapReduce( {
 
 //-- test higher level interfaces
 
-[1,2,3] -> localWrite(file('build/test/cache/test11a.dat'));
+[1,2,3] -> localWrite(file('test11a.dat'));
 
-read(file('build/test/cache/test11a.dat'));
+read(file('test11a.dat'));
 
-[1,2,3] -> localWrite(file('build/test/cache/test11b.dat'));
+[1,2,3] -> localWrite(file('test11b.dat'));
 
-read(file('build/test/cache/test11b.dat'));
+read(file('test11b.dat'));
 
 [1,2,3] -> write(hdfs('jaqlTest/test12a.dat'));
 
@@ -167,17 +167,15 @@ read(hdfs('jaqlTest/test12a.dat'));
 
 read(hdfs('jaqlTest/test12b.dat'));
 
-path = "build/test/cache/data/";
+r1 = read(file(DATADIR+"books.json"));
 
-r1 = read(file(path + "books.json"));
+r1 -> write(file("b1"));
 
-r1 -> write(file(path + "b1"));
+read(file("b1")) == read(file(DATADIR+"books.json"));
 
-read(file(path + "b1")) == read(file(path + "books.json"));
+r1 -> write(file("b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));
 
-r1 -> write(file(path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonOutputStream"}));
-
-r2 = read(file(path + "b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));
+r2 = read(file("b2", {format: "com.ibm.jaql.io.stream.converter.JsonInputStream"}));
 
 r1 == r2;
 
@@ -187,11 +185,11 @@ r1 == read(hdfs("jaqlTest/b1"));
 
 v = {someField: "some value"};
 
-[v] -> write(file(path + "b2", {asArray: false}));
+[v] -> write(file("b2", {asArray: false}));
 
-read(file(path + "b2", {asArray: false}))[0] == v;
+read(file("b2", {asArray: false}))[0] == v;
 
-hdfsShell("-copyFromLocal "+path+"test.json jaqlTest/test") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"test.json jaqlTest/test") * 0;
 
 r = read(hdfs("jaqlTest/test", {format: "org.apache.hadoop.mapred.TextInputFormat", converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"}));
 
