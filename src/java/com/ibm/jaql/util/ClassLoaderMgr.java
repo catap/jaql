@@ -43,11 +43,16 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 public class ClassLoaderMgr
 {
   private static ClassLoader classLoader     = null;
-  private final static JarCreator creator = new JarCreator();
+  private static JarCreator creator;
   
-  static {
-  	creator.setDaemon(true);
-  	creator.start();
+  static { reset(); }
+  
+  /** Reset the class loader manager - use with caution */
+  public static void reset()
+  {
+    creator = new JarCreator();
+    creator.setDaemon(true);
+    creator.start();
   }
   
   /**
@@ -314,6 +319,7 @@ final class JarCreator extends Thread {
 							jout.write(chunk, 0, bytesRead);
 						}
 					}
+					jout.closeEntry();
 				} catch (ZipException ex) {
 					System.out.println(entry.getName());
 					ex.printStackTrace();

@@ -47,6 +47,7 @@ public class RecordSerializer extends TextBasicSerializer<JsonRecord>
     indent += 2;
     String sep = "";
     Iterator<Entry<JsonString, JsonValue>> it = value.iteratorSorted();
+    // Iterator<Entry<JsonString, JsonValue>> it = value.iterator();
     while (it.hasNext())
     {
       Entry<JsonString, JsonValue> e = it.next();

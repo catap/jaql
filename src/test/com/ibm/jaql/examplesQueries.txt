@@ -36,11 +36,11 @@ books = [
      year: 1930}
   ];
   
-// Example 1. Write to a file named 'hey.dat'. DIFF
-[{text: 'Hello World'}] -> localWrite(file('build/test/cache/hey.dat'));
+// Example 1. Write to a file named 'hey.dat'.
+[{text: 'Hello World'}] -> localWrite(file('hey.dat'));
 	
-// Read it back... DIFF
-read(file('build/test/cache/hey.dat'));
+// Read it back...
+read(file('hey.dat'));
 
 // Example 2. Write to a Hadoop SequenceFile named: 'orders.dat'.
 [
@@ -305,7 +305,7 @@ read(hdfs('results.dat'));
     gcd1 = javaudf("com.acme.extensions.fn.GCD1");
     gcd1(null); // null
     gcd1([]); // null
-    gcd1(3); // correctly produces cast error: array expected
+    gcd1(3) -> expectException("java.lang.ClassCastException"); // correctly produces cast error: array expected
     gcd1([3]); // 3
     gcd1([0,0]); // 0
     gcd1([3,0]); // 3
@@ -319,7 +319,7 @@ read(hdfs('results.dat'));
 
     gcd2 = javaudf("com.acme.extensions.fn.GCD2");
 
-    gcd2("x","y"); // correctly produces error: numbers expected
+    gcd2("x","y") -> expectException("java.lang.IllegalArgumentException"); // correctly produces error: numbers expected
     gcd2(17,13); // 1
     gcd2(12,18); // 6
 
@@ -414,7 +414,8 @@ books -> write({type:'hdfs', location:'example.jql', outoptions:{format    : 'or
                               converter : 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}});
 
 // DIFF
-read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}});
+read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat'}})
+ -> expectException("java.lang.ClassCastException");
 
 // DIFF
 read({type:'hdfs', location:'example.jql', inoptions:{format    : 'org.apache.hadoop.mapred.TextInputFormat',
@@ -447,9 +448,10 @@ read({type:'myHDFSFile', location:'example.jql'})
 // (see hbaseQueries.txt)
 // hbaseWrite('example', q);
 
-read({type:"local", location:'build/test/cache/data/books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});
+read({type:"local", location:DATADIR+'books.json', inoptions:{format : 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}});
 
-hdfsShell("-copyFromLocal docs/jaql-overview.html lines") * 0;
+// TODO: move into data
+hdfsShell("-copyFromLocal "+DATADIR+"jaql-overview.html lines") * 0;
 
 lineRdr = read(lines("lines"));
 

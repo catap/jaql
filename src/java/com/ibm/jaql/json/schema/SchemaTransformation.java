@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import static com.ibm.jaql.json.type.JsonType.*;
 
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.util.Bool3;
 
@@ -179,6 +180,32 @@ public class SchemaTransformation
   {
     return restrictTo(schema, JsonType.ARRAY, JsonType.NULL);
   }
+  
+  /** Restrict schema to an array or null, but convert nulls to [] */
+  public static Schema restrictToArrayWithNullPromotion(Schema schema)
+  {
+    if( schema == null )
+    {
+      return null;
+    }
+    if( schema.is(JsonType.NULL).never() )
+    {
+      return restrictToArray(schema);
+    }
+    Schema empty = SchemaFactory.emptyArraySchema();
+    Schema array = SchemaTransformation.restrictToArray(schema);
+    if( array == null )
+    {
+      return empty;
+    }
+    JsonLong min = array.minElements();
+    if( min != null && min.get() == 0 )
+    {
+      return array;
+    }
+    return OrSchema.make(array, empty);
+  }
+  
 
   /** Shortcut for <code>restrictTo(schema, JsonType.RECORD)</code> */
   public static Schema restrictToRecord(Schema schema)

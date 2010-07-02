@@ -26,7 +26,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -50,7 +55,7 @@ import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.rewrite.VarTagger;
-import com.ibm.jaql.util.TeeInputStream;
+import com.ibm.jaql.util.EchoedReader;
 
 /**
  * 
@@ -142,15 +147,19 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	protected abstract void tearDown() throws IOException;
 
 	private void execute(String inputFileName, String outputFilename, int type)
-			throws FileNotFoundException, IOException {
-		// Initialize input, output streams
-		InputStream input = new FileInputStream(inputFileName);
-		input = new TeeInputStream(input, System.err);
-		PrintStream oStr = new PrintStream(new FileOutputStream(outputFilename));
-		TeeInputStream teeInput = new TeeInputStream(input, oStr);
+			throws FileNotFoundException, IOException 
+    {
+	  // Initialize input, output streams
+      // TODO: switch jaql output to PrintWriter instead of PrintStream
+	  FileOutputStream fos = new FileOutputStream(outputFilename);
+      PrintStream oStr = new PrintStream(fos);
+	  Writer writer = new PrintWriter(new OutputStreamWriter(fos, "UTF-8"));
+	  Reader reader = new InputStreamReader(new FileInputStream(inputFileName), "UTF-8");
+	  reader = new EchoedReader(reader, writer);
+//		TeeInputStream teeInput = new TeeInputStream(input, oStr);
 
 		// Initialize parser
-		JaqlLexer lexer = new JaqlLexer(teeInput);
+		JaqlLexer lexer = new JaqlLexer(reader);
 		JaqlParser parser = new JaqlParser(lexer);
 		Context context = new Context();
 
@@ -165,7 +174,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				parsing = false;
 				System.err.println("\n\nParsing query at " + inputFileName
 						+ ":" + lexer.getLine());
-				oStr.flush();
+				writer.flush();
 				if (parser.done) {
 					break;
 				}
@@ -228,7 +237,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		context.reset();
 		oStr.flush();
 		oStr.close();
-		teeInput.close();
+		reader.close();
 
 	}
 

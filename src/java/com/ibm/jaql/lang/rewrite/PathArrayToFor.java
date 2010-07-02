@@ -15,7 +15,11 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.SliceFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
@@ -34,7 +38,6 @@ import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.lang.expr.path.PathToArray;
-import static com.ibm.jaql.json.type.JsonType.*;
 /**
  * e [*] p ==> for( $i in         e  ) [ $i p ]
  * e [?] p ==> for( $i in toArray(e) ) [ $i p ]
@@ -69,7 +72,16 @@ public class PathArrayToFor extends Rewrite
     Schema outerSchema = outer.getSchema();
     // FIXME: (kbeyer) What is the problem here? It is preventing combiners in map/reduce jobs... 
     // if (outerSchema.isArray().maybeNot()) return false; // otherwise problems with schema inference
-    Var v = engine.env.makeVar("$", outerSchema.elements());
+    Schema elements = outerSchema.elements();
+    if( elements == null )
+    {
+      // The var schema really should be null because it will never be set to a value.
+      // But makeVar raises an exception in this case.
+      // FIXME: (kbeyer) remove assertion?
+      // We could also avoid generating the loop when outerSchema.is(ARRAY,NULL).always() but no elements.
+      elements = SchemaFactory.anySchema();
+    }
+    Var v = engine.env.makeVar("$", elements);
     Expr inner = new VarExpr(v);
     
     if( expr instanceof PathArrayAll ||

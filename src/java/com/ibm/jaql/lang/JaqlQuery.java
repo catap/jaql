@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonDouble;
 import com.ibm.jaql.json.type.JsonLong;
@@ -34,8 +37,8 @@ import com.ibm.jaql.json.util.JsonIterator;
  * q.close();
  * </code>
  * */
-public class JaqlQuery {
-	
+public class JaqlQuery implements Closeable
+{
 	private CoreJaql jq;
 	
 	public JaqlQuery() {
@@ -145,10 +148,12 @@ public class JaqlQuery {
 	 * 
 	 * Close a jaql query
 	 * Jaql query statement should be closed after all the query is done, else it will cause a shutdown in progress exception
+	 * @throws IOException 
 	 *
 	 */
-	public void close(){
-		jq.close();
+	public void close() throws IOException
+	{
+	  jq.close();
 	}
 
 }

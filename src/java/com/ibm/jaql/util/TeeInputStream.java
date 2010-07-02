@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-// TODO: this should really work on Readers instead of InputStreams
+// TODO: This has been replaced by EchoedReader
 /**
  * InputStream that forwards everything that is read from it to the provided
  * output stream.
@@ -51,7 +51,7 @@ public class TeeInputStream extends InputStream {
 
   @Override
   public int read(byte[] b, int off, int len) throws IOException {
-    len = read(b, off, len);
+    len = in.read(b, off, len);
     out.write(b, off, len);
     return len;
   }

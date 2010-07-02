@@ -23,7 +23,7 @@ registerAdapter({type: 'myAdapter1',
 
 read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
 
-writeAdapterRegistry('build/test/cache/registryTest1.dat');
+writeAdapterRegistry('registryTest1.dat');
 
 readAdapterRegistry('registryTest1.dat');
 
@@ -33,7 +33,7 @@ read({type: 'hdfs', location: 'jaqlTest/test1.dat'});
 
 read({type: 'myAdapter1', location: 'jaqlTest/test10.dat'});
 
-readAdapterRegistry('data/registryTest2.dat');
+readAdapterRegistry(DATADIR+'registryTest2.dat');
 
 [
   { key: 0, g:0, text: 'zero' },

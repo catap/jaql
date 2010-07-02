@@ -59,8 +59,7 @@ public class ConsolePrintEnabler {
     String str = buf.toString();
     if (!str.equals("")) {
       LOG.info("content sent to " + outName + " when " + outName
-          + " is disabled:");
-      LOG.info(str);
+          + " is disabled:\n" + str);
     }
   }
 

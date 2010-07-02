@@ -151,9 +151,7 @@
     <unjar src="${build.dir}/jaql.jar" dest="${build.dir}/classes" />
 
     <junit showoutput="${test.output}" printsummary="yes" haltonfailure="no" fork="yes" maxmemory="256m" errorProperty="tests.failed" failureProperty="tests.failed">
-      <assertions>
-        <enable />
-      </assertions>
+      <assertions> <enable /> </assertions>
       <!-- users should set JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8 -->
       <sysproperty key="file.encoding" value="UTF8" />
       <sysproperty key="test.build.data" value="${test.build.data}" />
@@ -166,8 +164,10 @@
       <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
       <sysproperty key="test.cleanup" value="${test.cleanup}" />
       <sysproperty key="build" value="${build.dir}" />
-      <sysproperty key="test.plain" value="${test.plain}" />
-      <sysproperty key="test.explain" value="${test.explain}" />
+      <sysproperty key="test.no_rewrite" value="${test.no_rewrite}" />
+      <sysproperty key="test.plain" value="${test.no_rewrite}" /> <!-- old name -->
+      <sysproperty key="test.decompile" value="${test.decompile}" />
+      <sysproperty key="test.explain" value="${test.decompile}" /> <!-- old name -->
       <sysproperty key="test.rewrite" value="${test.rewrite}" />
       <sysproperty key="test.count" value="${test.count}" />
       <classpath refid="${test.classpath.id}" />
@@ -183,6 +183,73 @@
     </junit>
     <fail if="tests.failed">Tests failed!</fail>
   </target>
+
+  <!-- ================================================================== -->
+  <!-- Tests that use the basic TestScript driver                         -->
+  <!-- ================================================================== -->
+  <target name="test-scripts">
+    <mkdir dir="${build.dir}" />
+    <mkdir dir="${test.build.dir}" />
+
+    <junit showoutput="${test.output}"
+	   printsummary="yes"
+	   haltonfailure="no"
+	   fork="yes"
+	   forkmode="once"
+	   maxmemory="256m"
+	   errorProperty="tests.failed"
+	   failureProperty="tests.failed">
+      <!-- on ant 1.8.2 we can use methods="testNoRewrite" instead of jaql.test.mode=no_rewrite-->
+      <test name="com.ibm.jaql.JaqlScriptTestSuite" />
+      <assertions> <enable /> </assertions>
+      <!-- users should set JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8 -->
+      <sysproperty key="file.encoding" value="UTF8" />
+      <sysproperty key="test.build.data" value="${test.build.data}" />
+      <sysproperty key="test.cache.data" value="${test.cache.data}" />
+      <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
+      <sysproperty key="build" value="${build.dir}" />
+      <sysproperty key="jaql.test.modes" value="${jaql.test.mode}" />
+      <classpath refid="${test.classpath.id}" />
+      <formatter type="${test.junit.output.format}" />
+    </junit>
+    <fail if="tests.failed">Tests failed!</fail>
+  </target>
+
+  <target name="kb">
+    <jaqlTestScript test="com.ibm.jaql.TestSchemaPrinting" mode="count"/>
+    <jaqlTestScript test="com.ibm.jaql.TestSchemaPrinting" mode="no_rewrite"/>
+    <jaqlTestScript test="com.ibm.jaql.TestSchemaPrinting" mode="rewrite"/>
+    <jaqlTestScript test="com.ibm.jaql.TestSchemaPrinting" mode="decompile"/>
+    <fail if="tests.failed">Tests failed!</fail>
+  </target>
+
+  <macrodef name="jaqlTestScript">
+    <attribute name="test"/>
+    <attribute name="mode" default="no_rewrite"/>
+    <element name="junit-elements" implicit="yes"/>
+    <sequential>
+    <junit description="running @{script}"
+	   showoutput="${test.output}"
+	   printsummary="no"
+	   haltonfailure="no"
+	   fork="yes"
+	   forkmode="once"
+	   maxmemory="256m"
+	   errorProperty="tests.failed"
+	   failureProperty="tests.failed">
+      <test name="@{test}" todir="${test.build.dir}" />
+      <assertions> <enable /> </assertions>
+      <!-- users should set JAVA_TOOL_OPTIONS: -Dfile.encoding=UTF8 -->
+      <sysproperty key="jaql.test.modes" value="@{mode}" />
+      <sysproperty key="file.encoding" value="UTF8" />
+      <sysproperty key="jaql.mapred.mode" value="${test.jaql.mapred.mode}" />
+      <sysproperty key="build" value="${build.dir}" />
+      <classpath refid="${test.classpath.id}" />
+      <formatter type="${test.junit.output.format}" usefile="false"/>
+    </junit>
+    </sequential>
+  </macrodef>
+
 
   <!-- ================================================================== -->
   <!-- pyJaql test running environment check tasks                        -->
@@ -231,15 +298,27 @@
     </antcall>
   </target>
 
-  <target name="test-plain">
+  <target name="test-plain"> <!-- old name -->
     <antcall target="test-internal">
-      <param name="test.plain" value="true" />
+      <param name="test.no_rewrite" value="true" />
     </antcall>
   </target>
 
-  <target name="test-explain">
+  <target name="test-no_rewrite">
     <antcall target="test-internal">
-      <param name="test.explain" value="true" />
+      <param name="test.no_rewrite" value="true" />
+    </antcall>
+  </target>
+
+  <target name="test-explain"> <!-- old name -->
+    <antcall target="test-internal">
+      <param name="test.decompile" value="true" />
+    </antcall>
+  </target>
+
+  <target name="test-decompile">
+    <antcall target="test-internal">
+      <param name="test.decompile" value="true" />
     </antcall>
   </target>
 
@@ -252,7 +331,7 @@
 
   <target name="test">
     <antcall target="test-internal">
-      <param name="test.plain" value="true" />
+      <param name="test.no_rewrite" value="true" />
       <param name="test.explain" value="true" />
       <param name="test.rewrite" value="true" />
       <param name="test.count" value="true" />
@@ -437,7 +516,6 @@
     </copy>
 
     <unjar src="lib/antlr.jar" dest="${tmp.dir}" />
-    <unjar src="lib/jline-0.9.94.jar" dest="${tmp.dir}" />
     <unjar src="lib/commons-lang-2.4.jar" dest="${tmp.dir}" />
 
     <!-- make the jar -->

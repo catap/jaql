@@ -18,8 +18,8 @@ package com.ibm.jaql.io.stream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.net.URI;
 
+import com.ibm.jaql.io.registry.RegistryUtil;
 import com.ibm.jaql.json.type.JsonRecord;
 
 /** Input adapter that reads from a file.
@@ -37,16 +37,7 @@ public class FileStreamInputAdapter extends StreamInputAdapter
   protected InputStream openStream(String location, JsonRecord args)
       throws Exception
   {
-    File f = null;
-    if (location.startsWith("file"))
-    {
-      URI uri = new URI(location);
-      f = new File(uri);
-    }
-    else
-    {
-      f = new File(location);
-    }
+    File f = RegistryUtil.resolveFile(location);
     return new FileInputStream(f);
   }
 }
