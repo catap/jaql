@@ -569,4 +569,22 @@ $effect = fn($data)(
 $r1 = [1,2,3,4,5];
 $r1 ->  filter $ > 1 and false and $ > $effect($r1);
 
-  
+
+//=======================================================Testing Filter-Expand===================================================
+
+//Returns 3 records --(Predicate is pushed inside the expand,
+//                     UnnestFor rule will push it back outside)
+$data_books -> filter exists($.price) -> transform {$.author, $.price} -> expand $.price -> filter each $d $d> 100;
+
+//Returns 3 records --(Predicate is pushed inside the expand
+//                     UnnestFor rule will push it back outside)
+$data_books  -> expand unroll $.price -> filter $.price > 100;
+
+//Returns 2 records --(1st Predicate is pushed inside the expand,
+//                     2nd Predicate is pushed before the expand )
+//                     UnnestFor rule will push 1st Predicate back outside)
+$data_books  -> expand unroll $.price -> filter each $d $d.price > 100 and $d.publisher == 'XYZ';
+
+//Returns 4 records --(Predicates are pushed inside the expand)
+//                     UnnestFor rule will push it back outside)
+$data_books  -> expand unroll $.price -> filter $.price > 100 or $.publisher == 'XYZ';

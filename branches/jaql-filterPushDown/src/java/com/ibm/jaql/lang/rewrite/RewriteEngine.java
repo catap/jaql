@@ -78,7 +78,6 @@ public class RewriteEngine
     new DoConstPragma(phase);
     new UnrollTransformLoop(phase);
     new SimplifyRecord(phase);
-    new UnnestFor(phase);
     new CheapConstEval(phase);
     new ConstIfElimination(phase);
     new FilterPredicateSimplification(phase);
