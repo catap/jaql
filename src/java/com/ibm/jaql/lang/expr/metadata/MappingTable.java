@@ -25,6 +25,29 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
  */
 public class MappingTable
 {
+	
+	public static class ExprMapping
+	{
+		private Expr beforeExpr;
+		private boolean isSafeToMap;
+		
+		public ExprMapping(Expr e, boolean safetyFlag)
+		{
+			beforeExpr = e;
+			isSafeToMap = safetyFlag;
+		}
+		
+		public boolean isSafeToMap()
+		{
+			return isSafeToMap;
+		}
+
+		public Expr getBeforeExpr()
+		{
+			return beforeExpr;
+		}
+	}
+	
 	//------- Data Members
 	//In the hashtable, we store:
 	//	  --Expr: It is the expression that we want to map from

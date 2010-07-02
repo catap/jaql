@@ -2166,4 +2166,131 @@ $r1 ->  filter $ > 1 and false and $ > $effect($r1);##
 []
 
 
-  
+
+//=======================================================Testing Filter-Expand===================================================
+
+//Returns 3 records --(Predicate is pushed inside the expand,
+//                     UnnestFor rule will push it back outside)
+$data_books -> filter exists($.price) -> transform {$.author, $.price} -> expand $.price -> filter each $d $d> 100;##
+[
+  102222,
+  120.5,
+  110.0
+]
+
+
+//Returns 3 records --(Predicate is pushed inside the expand
+//                     UnnestFor rule will push it back outside)
+$data_books  -> expand unroll $.price -> filter $.price > 100;##
+[
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    },
+    "price": 102222,
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": 120.5,
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": 110.0,
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  }
+]
+
+
+//Returns 2 records --(1st Predicate is pushed inside the expand,
+//                     2nd Predicate is pushed before the expand )
+//                     UnnestFor rule will push 1st Predicate back outside)
+$data_books  -> expand unroll $.price -> filter each $d $d.price > 100 and $d.publisher == 'XYZ';##
+[
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": 120.5,
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": 110.0,
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  }
+]
+
+
+//Returns 4 records --(Predicates are pushed inside the expand)
+//                     UnnestFor rule will push it back outside)
+$data_books  -> expand unroll $.price -> filter $.price > 100 or $.publisher == 'XYZ';##
+[
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    },
+    "price": 102222,
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": 120.5,
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": 110.0,
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  },
+  {
+    "author": "J. K. Rowling",
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1986
+  }
+]
+
