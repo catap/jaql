@@ -17,6 +17,7 @@ package com.ibm.jaql.json.util;
 
 import java.io.PrintStream;
 
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 
@@ -25,9 +26,6 @@ import com.ibm.jaql.json.type.SpilledJsonArray;
  */
 public class JsonUtil
 {
-  public static final char DOUBLE_QUOTE = '\"';
-  public static final char BACK_SLASH = '\\';
-  
   public static char[] hex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
   
   /**
@@ -43,117 +41,125 @@ public class JsonUtil
   }
 
   /**
-   * Quotes the text.
-   * 
-   * @param text text to be quoted
-   * @param escape <code>true</code> to escape the text; otherwise not.
-   * @param doubleQuoteEscapeChar character to escape double quote <tt>"</tt>. 
-   * @return quoted text
-   * @throws NullPointerException If <code>text</code> is <code>null</code>.
+   * @param text
+   * @return
    */
-  public static String quote(String text, boolean escape, char doubleQuoteEscapeChar)
+  public static String quote(String text)
   {
     StringBuilder buf = new StringBuilder();
     buf.append("\"");
     for (int i = 0; i < text.length(); i++)
     {
       char c = text.charAt(i);
-      if (escape) 
+      switch (c)
       {
-        if (c == DOUBLE_QUOTE) 
-        {
-          buf.append((char) doubleQuoteEscapeChar);
-          buf.append("\"");
-        } 
-        else 
-        {
-          buf.append(escape(c));
-        }
-      } 
-      else 
-      {
-        buf.append(c);
+        case '\'' :
+          buf.append("\\'");
+          break;
+        case '\"' :
+          buf.append("\\\"");
+          break;
+        case '\\' :
+          buf.append("\\\\");
+          break;
+        case '\b' :
+          buf.append("\\b");
+          break;
+        case '\f' :
+          buf.append("\\f");
+          break;
+        case '\n' :
+          buf.append("\\n");
+          break;
+        case '\r' :
+          buf.append("\\r");
+          break;
+        case '\t' :
+          buf.append("\\t");
+          break;
+        default :
+          if (Character.isISOControl(c))
+          {
+            buf.append("\\u");
+            buf.append( hex[ ((c & 0xf000) >>> 12) ] );
+            buf.append( hex[ ((c & 0x0f00) >>> 8) ] );
+            buf.append( hex[ ((c & 0x00f0) >>> 4) ] );
+            buf.append( hex[ (c & 0x000f) ] );
+          }
+          else
+          {
+            buf.append(c);
+          }
       }
     }
     buf.append("\"");
     return buf.toString();
   }
 
+  /**
+   * @param out
+   * @param text
+   */
+  public static void printQuoted(PrintStream out, String text)
+  {
+    out.print("\"");
+    for (int i = 0; i < text.length(); i++)
+    {
+      char c = text.charAt(i);
+      switch (c)
+      {
+        case '\'' :
+          out.print("\\'");
+          break;
+        case '\"' :
+          out.print("\\\"");
+          break;
+        case '\\' :
+          out.print("\\\\");
+          break;
+        case '\b' :
+          out.print("\\b");
+          break;
+        case '\f' :
+          out.print("\\f");
+          break;
+        case '\n' :
+          out.print("\\n");
+          break;
+        case '\r' :
+          out.print("\\r");
+          break;
+        case '\t' :
+          out.print("\\t");
+          break;
+        default :
+          if (Character.isISOControl(c))
+          {
+            out.print("\\u");
+            out.print( hex[ ((c & 0xf000) >>> 12) ] );
+            out.print( hex[ ((c & 0x0f00) >>> 8) ] );
+            out.print( hex[ ((c & 0x00f0) >>> 4) ] );
+            out.print( hex[ (c & 0x000f) ] );
+          }
+          else
+          {
+            out.print(c);
+          }
+      }
+    }
+    out.print("\"");
+  }
 
   /**
-   * Escapes the character in Java way.
-   * 
-   * @param c character
-   * @return escaped string
+   * @param out
+   * @param str
    */
-  public static String escape(char c) {
-    switch (c)
-    {
-      case '\'' :
-        return "\\'";
-      case '\\' :
-        return "\\\\";
-      case '\b' :
-        return "\\b";
-      case '\f' :
-        return "\\f";
-      case '\n' :
-        return "\\n";
-      case '\r' :
-        return "\\r";
-      case '\t' :
-        return "\\t";
-      default :
-        if (Character.isISOControl(c))
-        {
-          StringBuilder buf = new StringBuilder();
-          buf.append("\\u");
-          buf.append( hex[ ((c & 0xf000) >>> 12) ] );
-          buf.append( hex[ ((c & 0x0f00) >>> 8) ] );
-          buf.append( hex[ ((c & 0x00f0) >>> 4) ] );
-          buf.append( hex[ (c & 0x000f) ] );
-          return buf.toString();
-        }
-        else
-        {
-          return String.valueOf(c);
-        }
-    }
+  public static void printQuoted(PrintStream out, JsonString str)
+  {
+    String s = str.toString(); // TODO: memory; efficient JString to escaped string
+    printQuoted(out, s);
   }
-  
-  
 
-  /**
-   * Prints the JSON value as a quoted string.
-   * 
-   * @param out print stream
-   * @param value JSON value
-   * @param escape <code>ture</code> to escape characters in Java way;
-   *          otherwise, not to escape.
-   */
-  public static void printQuoted(PrintStream out,
-                                 JsonValue value,
-                                 boolean escape,
-                                 char doubleEscapeCharacter)
-  {
-    if (value != null) 
-    {
-      String text = value.toString(); // TODO: memory; efficient JString to escaped string
-      String quotedStr = quote(text, escape, doubleEscapeCharacter);
-      out.print(quotedStr);
-    }
-  }
-  
-  public static void printQuotedDel(PrintStream out, JsonValue value, boolean escape) 
-  {
-    printQuoted(out, value, escape, DOUBLE_QUOTE);
-  }
-  
-  public static void printQuotedJson(PrintStream out, JsonValue value)
-  {
-    printQuoted(out, value, true, BACK_SLASH);
-  }
-  
   //  public static void print(PrintStream out, JaqlType value, int indent) throws Exception
   //  {
   //    if( value == null )
@@ -291,5 +297,4 @@ public class JsonUtil
     
     return !hasNext1 ? (!hasNext2 ? 0 : -1) : 1;
   }
-
 }

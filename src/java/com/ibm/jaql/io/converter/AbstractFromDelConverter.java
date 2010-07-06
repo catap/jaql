@@ -27,57 +27,48 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.schema.RecordSchema.Field;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SubJsonString;
+import com.ibm.jaql.lang.expr.del.DelOptionParser;
 import com.ibm.jaql.lang.expr.string.DelParser;
 import com.ibm.jaql.lang.expr.string.StringConverter;
 
 /**
- * Base class for converters that convert a delimited file into JSON. The
- * default implementation can be found in the vendor package.
+ * Base class for converters that convert a delimited file into JSON.
  * <p>
  * 
- * Incoming lines are first tokenized using an ASCII delimiter and then,
+ * Incoming lines are first tokenized using <code>delimiter</code> and then,
  * optionally, converted into a JSON type. The output depends on whether field
  * names have been provided to the converter. If so, the converter produces a
  * record for each input line; otherwise, it produces an array.
  * <p>
  * 
  * The converter handle quoted values in the input data if option
- * <tt>quoted</tt> is set to <tt>true</tt>. It can be parameterized by an ASCII
- * quote character (defaults to <code>'"'</code>). Quotes may be escaped using
- * double-quoting, i.e. <code>"te""st"</code> will produce a single string
- * <code>"te\"st"</code>.
+ * <code>quoted</code> is set to <code>true</code>. It can be parameterized by
+ * an ASCII quote character (defaults to <code>'"'</code>). Quotes may be
+ * escaped using double-quoting, i.e. <code>"te""st"</code> will produce a
+ * single string <code>"te\"st"</code>.
  * <p>
  * 
- * Option <tt>escape</tt> is only in effect if option <tt>quoted</tt> is
- * <tt>true</tt>. Otherwise, it is ignored. If <tt>escape</tt> is <tt>true</tt>,
- * 2-character escape sequences such as <tt>\n</tt> and 6-character escape
- * sequences such as <tt>\u008a</tt> are unescaped.
+ * If <code>quoted</code> and <code>escape</code> are <code>true</code>,
+ * 2-character escape sequences such as <code>\n</code> and 6-character escape
+ * sequences such as <code>&#92;u008a</code> are unescaped. Illegal escape
+ * sequences such as <code>\x</code> and <code>&#92;uwe12</code> are just
+ * converted literally. For example, <code>\x</code> are just converted into
+ * <code>\x</code> (2 characters) and <code>&#92;uwe12</code> are just converted
+ * into <code>&#92;uwe12</code> (6 characters).
  * <p>
  * 
  * This converter is UTF-8 compatible. (This is due to the fact that ASCII
  * characters cannot occur within a multi-byte UTF-8 codepoint).
+ * 
+ * @see DelOptionParser
  */
 public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K, V> {
-  
-  // -- constants ---------------------------------------------------------------------------------
-  
-  public static final JsonString DELIMITER_NAME = new JsonString("delimiter");
-  public static final byte DELIMITER_DEFAULT = ',';
-  public static final JsonString QUOTED_NAME = new JsonString("quoted");
-  public static final boolean QUOTED_DEFAULT = true;
-  public static final JsonString SCHEMA_NAME = new JsonString("schema");
-  public static final JsonString ESCAPE_NAME = new JsonString("escape"); 
-  public static final boolean ESCAPE_DEFAULT = true;
-
   // TODO: feature for skipping header lines
   
-
   public AbstractFromDelConverter()
   {
     init(null);
@@ -89,8 +80,6 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   private Schema schema;
 
   private byte delimiter;
-  private boolean quoted;
-  private boolean escape;
   private DelParser reader;
   private boolean isRecord;
   private static JsonString fieldNames[];
@@ -104,74 +93,22 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   @Override
   public void init(JsonRecord options)
   {
-    // TODO: better error reporting when handling arguments
-    if (options == null) options = JsonRecord.EMPTY;
+    DelOptionParser handler = new DelOptionParser();
+    handler.handle(options);
     
-    JsonValue arg;
-    
-    // check for delimiter/quote override
-    delimiter = DELIMITER_DEFAULT;
-    if (options.containsKey(DELIMITER_NAME))
-    {
-      delimiter = getCharacter(options, DELIMITER_NAME, false);
-    }
-    
-    quoted = QUOTED_DEFAULT;
-    if (options.containsKey(QUOTED_NAME))
-    {
-      JsonValue value = options.get(QUOTED_NAME);
-      if (value == null)
-      {
-        throw new IllegalArgumentException("parameter \"" + QUOTED_NAME + "\" must not be null");
-      }
-      if (!(value instanceof JsonBool))
-      {
-        throw new IllegalArgumentException("parameter \"" + QUOTED_NAME + "\" must be boolean");
-      }
-      quoted = ((JsonBool)value).get();
-    }
-
-    /// escape is valid only if quoted is true
-    if (quoted) {
-      escape = ESCAPE_DEFAULT;
-      if (options.containsKey(ESCAPE_NAME)) {
-        JsonValue value = options.get(ESCAPE_NAME);
-        if (value == null) {
-          throw new IllegalArgumentException("parameter \"" + ESCAPE_NAME
-              + "\" must not be null");
-        }
-        if (!(value instanceof JsonBool)) {
-          throw new IllegalArgumentException("parameter \"" + ESCAPE_NAME
-              + "\" must be boolean");
-        }
-        escape = ((JsonBool) value).get();
-      }
-    }
+    delimiter = handler.getDelimiter();
+    schema = handler.getSchema();
     
     // make reader
-    reader = DelParser.make(delimiter, quoted, escape);
+    reader = DelParser.make(delimiter, handler.getQuoted(), handler.getEscape());
 
-    // TODO: remove check for deprecated options
-    if (options.containsKey(new JsonString("convert"))) {
-      throw new IllegalArgumentException(
-          "The \"convert\" option is deprecated. Use the \"schema\" option instead.");
-    }
-    if (options.containsKey(new JsonString("fields"))) {
-      throw new IllegalArgumentException(
-          "The \"fields\" option is deprecated. Use the \"schema\" option instead.");
-    }
-    
     // check for schema
     isRecord = false;
     fieldNames = null;
     fieldIndexes = null;
     firstRow = true;
     noFields = -1;
-    arg = options.get(SCHEMA_NAME);
-    if (arg != null && !(arg instanceof JsonSchema)) {
-      throw new IllegalArgumentException("parameter \"" + SCHEMA_NAME + "\" must be a schema");
-    }
-    schema = arg != null ? ((JsonSchema)arg).get() : null;
+
     if (schema instanceof RecordSchema) {
       try {
         RecordSchema recordSchema = (RecordSchema)schema;
@@ -232,35 +169,6 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
     }
   }
 
-  /** Checks whether <code>arg</code> consists of a single character and returns it, if so. 
-   * Otherwise, fails with an exception. If <code>allowNull</code> is set, returns 
-   * <code>null</code> on <code>null</code> input, otherwise fails on <code>null</code> input. */
-  private final Byte getCharacter(JsonRecord record, JsonString name, boolean allowNull)
-  {
-    JsonValue arg = record.get(name);
-    
-    // check for null
-    if (arg == null)
-    {
-      if (allowNull) return null;
-      throw new IllegalArgumentException("parameter \"" + name.toString() + "\" must not be null");
-    }
-    
-    // check for type and length
-    if (!(arg instanceof JsonString))
-    {
-      throw new IllegalArgumentException("parameter \"" + name.toString() + "\" must be a string");
-    }
-    JsonString s = (JsonString)arg;
-    if (s.bytesLength() != 1)
-    {
-      throw new RuntimeException("parameter \"" + name.toString() + "\" must be consist of a single character");
-    }
-
-    // return it
-    return s.get(0);
-  }
-  
   /** Creates a fresh target. */
   @Override
   public JsonValue createTarget()

@@ -209,7 +209,7 @@ read(del($f, { schema: schema { c1, c2, c3, c4 } }));
 ;//------------------- TEST-CASE -----------------
  // should fail
 
-// test quoted delimited file (does not work when not escaping)
+// test quoted delimited file (does not work when not quoting)
 $f = "delimited-quoted.del";
 ;//------------------- TEST-CASE -----------------
 
@@ -244,7 +244,7 @@ read(del($f, { quoted: false }));
 ;//------------------- TEST-CASE -----------------
 
 
-// test quoted delimited file (works when not escaping)
+// test quoted delimited file (works when not quoting)
 $f = "delimited-quoted-ok.del";
 ;//------------------- TEST-CASE -----------------
 
@@ -1099,7 +1099,7 @@ read(lines($out, {schema: schema boolean?}));
 
 
 //-- test jsonToDel --
-[[1,2]] -> jsonToDel();
+[[null, 1, null, 2, null]] -> jsonToDel();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1112,7 +1112,7 @@ read(lines($out, {schema: schema boolean?}));
 $arrays1 = [[1,2],[3,4]];
 ;//------------------- TEST-CASE -----------------
 
-$arrays1 -> jsonToDel();
+$arrays1 -> jsonToDel({quoted: false});
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1122,10 +1122,7 @@ $arrays1 -> jsonToDel();
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays2 = [['one','two'],['three','four']];
-;//------------------- TEST-CASE -----------------
-
-$arrays2 -> jsonToDel();
+$arrays1 -> jsonToDel({quoted: true});
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1135,10 +1132,10 @@ $arrays2 -> jsonToDel();
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 = [["\"", "\na"]];
+$arrays2 = [[1.23, 'one','two'],[100, 'three','four']];
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 -> jsonToDel({escape: true});
+$arrays2 -> jsonToDel({quoted: false});
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1148,7 +1145,30 @@ $arrays3 -> jsonToDel({escape: true});
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 -> jsonToDel({escape: false});
+$arrays2 -> jsonToDel({quoted: true});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 = [["\"", "\na", "1\u007fX", "\u0081-\u009f"]];
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({quoted: true, escape: false});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({quoted: true, escape: true});
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1174,7 +1194,7 @@ $records -> jsonToDel({schema: schema { name, age }});
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];
 ;//------------------- TEST-CASE -----------------
 
-$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '='});
 
 ;//------------------- EXPR-COUNTS -----------------
 

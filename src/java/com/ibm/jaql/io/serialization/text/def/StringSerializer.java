@@ -29,6 +29,6 @@ public class StringSerializer extends TextBasicSerializer<JsonString>
   public void write(PrintStream out, JsonString value, int indent)
       throws IOException
   {
-    JsonUtil.printQuotedJson(out, value);
+    JsonUtil.printQuoted(out, value);
   }
 }
