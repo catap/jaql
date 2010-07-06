@@ -25,13 +25,13 @@ read(del($f, { schema: schema { c3, c1, c2 } }));
 read(del($f, { schema: schema { c1, c2 } })); // should fail
 read(del($f, { schema: schema { c1, c2, c3, c4 } })); // should fail
 
-// test quoted delimited file (does not work when not escaping)
+// test quoted delimited file (does not work when not quoting)
 $f = "delimited-quoted.del";
 read(del($f, { quoted: true, escape: true}));
 read(del($f, { quoted: true, escape: false}));
 read(del($f, { quoted: false }));
 
-// test quoted delimited file (works when not escaping)
+// test quoted delimited file (works when not quoting)
 $f = "delimited-quoted-ok.del";
 read(del($f, { quoted: true, escape: true }));
 read(del($f, { quoted: true, escape: false }));
@@ -155,18 +155,20 @@ read(lines($out,{schema: schema long})); // This should fail since the file cont
 read(lines($out, {schema: schema boolean?}));
 
 //-- test jsonToDel --
-[[1,2]] -> jsonToDel();
+[[null, 1, null, 2, null]] -> jsonToDel();
 $arrays1 = [[1,2],[3,4]];
-$arrays1 -> jsonToDel();
-$arrays2 = [['one','two'],['three','four']];
-$arrays2 -> jsonToDel();
-$arrays3 = [["\"", "\na"]];
-$arrays3 -> jsonToDel({escape: true});
-$arrays3 -> jsonToDel({escape: false});
+$arrays1 -> jsonToDel({quoted: false});
+$arrays1 -> jsonToDel({quoted: true});
+$arrays2 = [[1.23, 'one','two'],[100, 'three','four']];
+$arrays2 -> jsonToDel({quoted: false});
+$arrays2 -> jsonToDel({quoted: true});
+$arrays3 = [["\"", "\na", "1\u007fX", "\u0081-\u009f"]];
+$arrays3 -> jsonToDel({quoted: true, escape: false});
+$arrays3 -> jsonToDel({quoted: true, escape: true});
 $records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
 $records -> jsonToDel({schema: schema { name, age }});
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];
-$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '='});
 
 //-- testJsonToXml --
 {content: 12} -> jsonToXml();

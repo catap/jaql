@@ -108,9 +108,13 @@ public abstract class DelParser
    * is escaped. It is the reverse of {@link JsonUtil#quote(String, boolean,
    * char)}.
    */
-  static int readFieldQuoted(
-      SubJsonString target, byte[] bytes, int length, int start, byte delimiter, boolean escape)
-  {
+  static int readFieldQuoted(SubJsonString target,
+                             byte[] bytes,
+                             int length,
+                             int start,
+                             byte delimiter,
+                             boolean escape)
+ {
     // there is a quote
     ++start;
     int end = start;
@@ -120,140 +124,108 @@ public abstract class DelParser
     int capacity = length - start; // play it safe
     int outputSize = 0;
     boolean unescaped = false;
-    boolean firstEscaped = true; 
-
-    if (escape) { 
-      next_byte_loop : while (end < length) {
-        switch (bytes[end]) {
-          case DOUBLE_QUOTE :
-            if (end + 1 >= length) 
-            {
-              // The double quote is the last character
-              end--;
-              break next_byte_loop;
-            } 
-            else if (bytes[end + 1] == DOUBLE_QUOTE) 
-            {
-              // escaped double quote
-              if (firstEscaped) 
-              {
-                output = new byte[capacity];
-                outputSize = end - start;
-                System.arraycopy(bytes, start, output, 0, outputSize);
-                unescaped = true;
-                firstEscaped = false;
-              }
-              output[outputSize++] = DOUBLE_QUOTE;
-              end += 2;
-              break;
-            } 
-            else 
-            {
-              // The character following double quote is not a double quote
-              end--;
-              break next_byte_loop;
-            }
+    boolean firstEscaped = true;
+    
+    while (end < length) {
+      if (bytes[end] == DOUBLE_QUOTE) {
+        if (end + 1 >= length) {
+          // The double quote is the last character
+          end--;
+          break;
+        } else if (bytes[end + 1] == DOUBLE_QUOTE) {
+          // escaped double quote
+          if (firstEscaped) {
+            output = new byte[capacity];
+            outputSize = end - start;
+            System.arraycopy(bytes, start, output, 0, outputSize);
+            unescaped = true;
+            firstEscaped = false;
+          }
+          output[outputSize++] = DOUBLE_QUOTE;
+          end += 2;
+        } else {
+          // The character following double quote is not a double quote
+          end--;
+          break;
+        }
+      } else if (escape && bytes[end] == BACK_SLASH) {
+        if (firstEscaped) {
+          output = new byte[capacity];
+          outputSize = end - start;
+          System.arraycopy(bytes, start, output, 0, outputSize);
+          unescaped = true;
+          firstEscaped = false;
+        }
+        switch (bytes[end + 1]) {
+          case SINGLE_QUOTE :
+            output[outputSize++] = SINGLE_QUOTE;
+            end += 2;
+            break;
           case BACK_SLASH :
-            if (firstEscaped) 
-            {
-              output = new byte[capacity];
-              outputSize = end - start;
-              System.arraycopy(bytes, start, output, 0, outputSize);
-              unescaped = true;
-              firstEscaped = false;
-            }
-            switch (bytes[end + 1]) {
-              case DOUBLE_QUOTE :
-        	// double-quote takes precedence: BACK_SLASH is not treated as an escape
-        	// note the following ambiguity: "a b \"",	vs. 	"a b \"", a b",
-        	output[outputSize++] = BACK_SLASH;
-        	++end;
-                break;
-              case SINGLE_QUOTE :
-                output[outputSize++] = SINGLE_QUOTE;
-                end += 2;
-                break;
-              case BACK_SLASH :
-                output[outputSize++] = BACK_SLASH;
-                end += 2;
-                break;
-              case 'b' :
-                output[outputSize++] = BACKSPACE;
-                end += 2;
-                break;
-              case 'f' :
-                output[outputSize++] = FORM_FEED;
-                end += 2;
-                break;
-              case 'n' :
-                output[outputSize++] = LINE_FEED;
-                end += 2;
-                break;
-              case 'r' :
-                output[outputSize++] = CARRIAGE_RETURN;
-                end += 2;
-                break;
-              case 't' :
-                output[outputSize++] = TAB;
-                end += 2;
-                break;
-              case 'u' :
-        	try {
-        	  byte[] utf8 = toBytes(bytes, end + 2);
-        	  int utf8Len = utf8.length;
-        	  System.arraycopy(utf8, 0, output, outputSize, utf8Len);
-        	  outputSize += utf8Len;
-        	  end += 6;
-        	} catch(Exception e) {
-        	  // perhaps it was just "BAKC_SLASHublahblah" ... keep BACK_SLASH and u
-        	  output[outputSize++] = bytes[end++];
-        	  output[outputSize++] = bytes[end++];
-        	}
-                break;
-              default :
-        	output[outputSize++] = bytes[end++]; // swallow the backslash as a literal
-                //throw new RuntimeException("invalid escape sequence: "
-                //    + (char) BACK_SLASH + (char) bytes[end + 1]);
+            output[outputSize++] = BACK_SLASH;
+            end += 2;
+            break;
+          case 'b' :
+            output[outputSize++] = BACKSPACE;
+            end += 2;
+            break;
+          case 'f' :
+            output[outputSize++] = FORM_FEED;
+            end += 2;
+            break;
+          case 'n' :
+            output[outputSize++] = LINE_FEED;
+            end += 2;
+            break;
+          case 'r' :
+            output[outputSize++] = CARRIAGE_RETURN;
+            end += 2;
+            break;
+          case 't' :
+            output[outputSize++] = TAB;
+            end += 2;
+            break;
+          case 'u' :
+            try {
+              byte[] utf8 = toBytes(bytes, end + 2);
+              int utf8Len = utf8.length;
+              System.arraycopy(utf8, 0, output, outputSize, utf8Len);
+              outputSize += utf8Len;
+              end += 6;
+            } catch(Exception e) {
+              // perhaps it was just "BAKC_SLASHublahblah" ... keep BACK_SLASH and u
+              output[outputSize++] = bytes[end++];
+              output[outputSize++] = bytes[end++];
             }
             break;
           default :
-            if (unescaped) 
-              output[outputSize++] = bytes[end++];
-            else
-              end++;
-            break;
+            output[outputSize++] = bytes[end++]; // swallow the backslash as a literal
         }
+      } else {
+        if (unescaped)
+          output[outputSize++] = bytes[end++];
+        else
+          end++;
       }
-    } 
-    else 
-    {
-      // move to next byte until a double quote and a delimiter are founded. 
-      while (end < length - 1
-          && !(bytes[end] == DOUBLE_QUOTE && bytes[end + 1] == delimiter))
-        end++;
-      end--;
     }
 
     // checks closing quote
     ++end;
-    if ((end >= length) || (end < length && bytes[end] != DOUBLE_QUOTE)) 
-    {
+    if ((end >= length) || (end < length && bytes[end] != DOUBLE_QUOTE)) {
       throw new RuntimeException("ending quote missing in field starting at position "
           + start);
     }
 
     // check that there is a delimiter
     ++end;
-    if (end < length && bytes[end] != delimiter) 
-    {
+    if (end < length && bytes[end] != delimiter) {
       throw new RuntimeException("delimiter missing in field starting at position "
           + start);
     }
 
     // process the field
-    if (target != null) 
-    {
-      if (unescaped) 
+    if (target != null) {
+      if (unescaped)
         target.set(output, 0, outputSize);
       else
         target.set(bytes, start, end - start - 1);

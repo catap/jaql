@@ -71,6 +71,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.del.DelOptionParser;
 
 /**
  * This class provides the interface to drive Jaql from within R.
@@ -323,7 +324,7 @@ public class RJaqlInterface extends Jaql {
         schema = new RecordSchema(fields, null); 
       }
       if (schema != null)
-        options.add(AbstractFromDelConverter.SCHEMA_NAME, new JsonSchema(schema));
+        options.add(DelOptionParser.SCHEMA_NAME, new JsonSchema(schema));
       KeyValueImport<LongWritable, Text> converter = null;
       if (vector) {
         converter = new FromLinesConverter();

@@ -24,7 +24,6 @@ import org.apache.hadoop.io.Text;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.del.JsonToDel;
-import com.ibm.jaql.util.RandomAccessBuffer;
 
 /** Converts JSON array or record to a delimited text value. */
 public final class ToDelConverter implements KeyValueExport<NullWritable, Text> {
@@ -54,8 +53,7 @@ public final class ToDelConverter implements KeyValueExport<NullWritable, Text> 
   @Override
   public void convert(JsonValue src, NullWritable key, Text text) {
     try {
-      RandomAccessBuffer buf = toDel.convert(src);
-      text.set(buf.getBuffer(), 0, buf.size());
+      toDel.convert(src, text);
     } catch (Exception e) {
       throw new UndeclaredThrowableException(e);
     }
