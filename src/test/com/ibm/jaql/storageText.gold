@@ -413,7 +413,7 @@ read(del($f, { schema: schema { c1, c2, c3, c4 } }));
 ;//------------------- TEST-CASE -----------------
  // should fail
 
-// test quoted delimited file (does not work when not escaping)
+// test quoted delimited file (does not work when not quoting)
 $f = "delimited-quoted.del";
 ;//------------------- TEST-CASE -----------------
 
@@ -503,7 +503,7 @@ read(del($f, { quoted: true, escape: false}));
   ],
   [
     "\\\'=\\\\=\\b=\\f=\\n=\\r=\\t",
-    "\"\"",
+    "\"",
     "A"
   ],
   [
@@ -522,7 +522,7 @@ read(del($f, { quoted: true, escape: false}));
     "\\u56FD"
   ],
   [
-    "a\"\"\\t\\u001f\\u821c\\u96E8 ",
+    "a\"\\t\\u001f\\u821c\\u96E8 ",
     "2",
     "3"
   ],
@@ -532,9 +532,9 @@ read(del($f, { quoted: true, escape: false}));
     " c "
   ],
   [
-    "\\\"\"",
-    "\"\"\\\"\"",
-    "\\\"\"\"\""
+    "\\\"",
+    "\"\\\"",
+    "\\\"\""
   ],
   [
     "some bad esca\\pe",
@@ -547,7 +547,7 @@ read(del($f, { quoted: true, escape: false}));
     "yet another"
   ],
   [
-    "ok{\\\"\"whoops",
+    "ok{\\\"whoops",
     "another field",
     "yet another"
   ],
@@ -555,14 +555,13 @@ read(del($f, { quoted: true, escape: false}));
     "mistaken \\use of backslash",
     "another field",
     "yet another"
+  ],
+  [
+    "confusion \\\"blah\\\", more blah",
+    "another field",
+    "yet another"
   ]
-
-;//----- EXCEPTION -----
-
-// java.lang.RuntimeException
-// Wrong number of fields on input at position 427
-
-;//------------------- TEST-CASE -----------------
+]
 
 ;//------------------- TEST-CASE -----------------
 
@@ -642,7 +641,7 @@ read(del($f, { quoted: false }));
 ;//------------------- TEST-CASE -----------------
 
 
-// test quoted delimited file (works when not escaping)
+// test quoted delimited file (works when not quoting)
 $f = "delimited-quoted-ok.del";
 ;//------------------- TEST-CASE -----------------
 
@@ -732,7 +731,7 @@ read(del($f, { quoted: true, escape: false }));
   ],
   [
     "\\\'=\\\\=\\b=\\f=\\n=\\r=\\t",
-    "\"\"",
+    "\"",
     "A"
   ],
   [
@@ -751,7 +750,7 @@ read(del($f, { quoted: true, escape: false }));
     "\\u56FD"
   ],
   [
-    "a\"\"\\t\\u001f\\u821c\\u96E8 ",
+    "a\"\\t\\u001f\\u821c\\u96E8 ",
     "2",
     "3"
   ],
@@ -761,9 +760,9 @@ read(del($f, { quoted: true, escape: false }));
     " c "
   ],
   [
-    "\\\"\"",
-    "\"\"\\\"\"",
-    "\\\"\"\"\""
+    "\\\"",
+    "\"\\\"",
+    "\\\"\""
   ],
   [
     "some bad esca\\pe",
@@ -776,7 +775,7 @@ read(del($f, { quoted: true, escape: false }));
     "yet another"
   ],
   [
-    "ok{\\\"\"whoops",
+    "ok{\\\"whoops",
     "another field",
     "yet another"
   ],
@@ -786,7 +785,7 @@ read(del($f, { quoted: true, escape: false }));
     "yet another"
   ],
   [
-    "confusion \\\"\"blah\\\"\" more blah",
+    "confusion \\\"blah\\\" more blah",
     "another field",
     "yet another"
   ]
@@ -2117,12 +2116,12 @@ read(lines($out, {schema: schema boolean?}));
 
 
 //-- test jsonToDel --
-[[1,2]] -> jsonToDel();
+[[null, 1, null, 2, null]] -> jsonToDel();
 
 ;//--------------------- RESULT ------------------
 
 [
-  "1,2"
+  ",1,,2,"
 ]
 
 ;//------------------- TEST-CASE -----------------
@@ -2130,7 +2129,7 @@ read(lines($out, {schema: schema boolean?}));
 $arrays1 = [[1,2],[3,4]];
 ;//------------------- TEST-CASE -----------------
 
-$arrays1 -> jsonToDel();
+$arrays1 -> jsonToDel({quoted: false});
 
 ;//--------------------- RESULT ------------------
 
@@ -2141,39 +2140,61 @@ $arrays1 -> jsonToDel();
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays2 = [['one','two'],['three','four']];
-;//------------------- TEST-CASE -----------------
-
-$arrays2 -> jsonToDel();
+$arrays1 -> jsonToDel({quoted: true});
 
 ;//--------------------- RESULT ------------------
 
 [
-  "\"one\",\"two\"",
-  "\"three\",\"four\""
+  "1,2",
+  "3,4"
 ]
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 = [["\"", "\na"]];
+$arrays2 = [[1.23, 'one','two'],[100, 'three','four']];
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 -> jsonToDel({escape: true});
+$arrays2 -> jsonToDel({quoted: false});
 
 ;//--------------------- RESULT ------------------
 
 [
-  "\"\"\"\",\"\\na\""
+  "1.23,one,two",
+  "100,three,four"
 ]
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 -> jsonToDel({escape: false});
+$arrays2 -> jsonToDel({quoted: true});
 
 ;//--------------------- RESULT ------------------
 
 [
-  "\"\"\",\"\na\""
+  "1.23,\"one\",\"two\"",
+  "100,\"three\",\"four\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 = [["\"", "\na", "1\u007fX", "\u0081-\u009f"]];
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({quoted: true, escape: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"\"\"\",\"\na\",\"1\u007fX\",\"\u0081-\u009f\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+$arrays3 -> jsonToDel({quoted: true, escape: true});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"\"\"\",\"\\na\",\"1\\u007fX\",\"\\u0081-\\u009f\""
 ]
 
 ;//------------------- TEST-CASE -----------------
@@ -2195,13 +2216,13 @@ $records -> jsonToDel({schema: schema { name, age }});
 $mixed =  [{name: 'mike', age: 10}, [100, 200]];
 ;//------------------- TEST-CASE -----------------
 
-$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '<=>'});
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '='});
 
 ;//--------------------- RESULT ------------------
 
 [
-  "\"mike\"<=>10",
-  "100<=>200"
+  "\"mike\"=10",
+  "100=200"
 ]
 
 ;//------------------- TEST-CASE -----------------
