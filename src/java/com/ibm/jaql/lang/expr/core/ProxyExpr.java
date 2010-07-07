@@ -41,7 +41,7 @@ public class ProxyExpr extends PseudoExpr
   /**
    * @param exprs
    */
-  public ProxyExpr(Expr[] exprs)
+  public ProxyExpr(Expr... exprs)
   {
     super(exprs);
   }
@@ -58,7 +58,15 @@ public class ProxyExpr extends PseudoExpr
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("@proxy()");
+    exprText.print("@proxy(");
+    String sep = "";
+    for( Expr e: exprs )
+    {
+      exprText.print(sep);
+      e.decompile(exprText, capturedVars);
+      sep = ", ";
+    }
+    exprText.print(")");
   }
   
 }

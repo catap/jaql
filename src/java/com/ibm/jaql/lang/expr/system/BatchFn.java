@@ -15,8 +15,8 @@
  */
 package com.ibm.jaql.lang.expr.system;
 
+import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -78,21 +78,30 @@ public class BatchFn extends IterExpr
     {
       return JsonIterator.EMPTY;
     }
-    final SpilledJsonArray block = new SpilledJsonArray();
+    // TODO: keep all in memory or allow to spill?
+    // final SpilledJsonArray block = new SpilledJsonArray();
+    final BufferedJsonArray block = new BufferedJsonArray();
     
     return new JsonIterator(block)
     {
+      boolean atEnd = false;
+      
       @Override
       public boolean moveNext() throws Exception
       {
         block.clear();
-        if( ! input.moveNext() )
+        if( atEnd || ! input.moveNext() )
         {
           return false;
         }
         block.addCopy(input.current());
-        for(int i = 1 ; i < batchSize && input.moveNext() ; i++)
+        for(int i = 1 ; i < batchSize ; i++)
         {
+          if( ! input.moveNext() )
+          {
+            atEnd = true;
+            break;
+          }
           block.addCopy(input.current());
         }
         return true;

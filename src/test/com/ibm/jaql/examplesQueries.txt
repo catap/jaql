@@ -203,7 +203,7 @@ mapReduce(
     { input:  {type: 'hdfs', location: 'sample.dat'}, 
       output: {type: 'hdfs', location: 'results.dat'}, 
       map:    fn(v) ( v -> transform [$.x, 1] ),
-      reduce: fn(x, v) ( v -> aggregate into {x: x, num: count($)} )
+      reduce: fn(x, v) ( v -> aggregate into [{x: x, num: count($)}] )
     });
     
 read(hdfs('results.dat'));

@@ -41,7 +41,7 @@ public class DefaultBinaryFullSerializer extends BinaryFullSerializer
   
   // -- default instance --------------------------------------------------------------------------
   
-  private static DefaultBinaryFullSerializer defaultInstance = new DefaultBinaryFullSerializer();
+  private static DefaultBinaryFullSerializer defaultInstance;
   public static DefaultBinaryFullSerializer getInstance() {
     if (defaultInstance == null) { 
       // TODO: code block needed; why is defaultInstance not initialized?
@@ -54,7 +54,7 @@ public class DefaultBinaryFullSerializer extends BinaryFullSerializer
   
   // -- construction ------------------------------------------------------------------------------
 
-  public DefaultBinaryFullSerializer() {
+  private DefaultBinaryFullSerializer() {
     assert JsonEncoding.LIMIT == 20; // change when adding the encodings
     
     serializers = new EnumMap<JsonEncoding, BinaryBasicSerializer<?>>(JsonEncoding.class);
