@@ -15,17 +15,9 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.agg.Aggregate;
-import com.ibm.jaql.lang.expr.array.AsArrayFn;
-import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.core.AggregateFullExpr;
-import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
-import com.ibm.jaql.lang.expr.core.ProxyExpr;
-import com.ibm.jaql.lang.expr.core.VarExpr;
-import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
 
 // TODO: This rewrite possibly go away with the change in FOR definition to preserve input.
 
@@ -63,66 +55,22 @@ public class InjectAggregate extends Rewrite
     GroupByExpr g = (GroupByExpr)expr;
     if( g.numInputs() != 1 )
     {
+      // Don't try this with co-group.  
+      // TODO: aggregating co-group needs work. 
       return false;
     }
-    Var groupVar = g.getAsVar(0);
-    Expr collect = g.collectExpr();
 
-    // Check if every use of the group variable is used appropriately in an aggregate function.
-    engine.exprList.clear();
-    collect.getVarUses(groupVar, engine.exprList);
-    if( engine.exprList.size() == 0 )
-    {
-      // Don't inject aggregate if there are no aggregate functions.
-      return false;
-    }
-    for( Expr e: engine.exprList )
-    {
-      assert e instanceof VarExpr;
-      int slot = e.getChildSlot();
-      Expr p = e.parent();
-      if( p instanceof ToArrayFn ||
-          p instanceof AsArrayFn ||
-          p instanceof EmptyOnNullFn )
-      {
-        slot = p.getChildSlot();
-        p = p.parent();
-      }
-      while( p != g && !(p instanceof Aggregate) )
-      {
-        if( p instanceof BindingExpr )
-        {
-          slot = p.getChildSlot();
-          p = p.parent();
-        }
-        if( ! p.isMappable(slot) )
-        {
-          return false;
-        }
-        slot = p.getChildSlot();
-        p = p.parent();
-      }
-      if( p == g )
-      {
-        return false;
-      }
-    }
-    // We can transform!
+    Expr aggExpr = AggregateFullExpr.makeIfAggregating(
+        engine.env, g.getAsVar(0), null, g.collectExpr(), 
+        engine.exprList, engine.aggList, false);
     
-    // Replace all uses of the group variable with the aggregate variable.
-    g.getSchema();
-    Var aggVar = engine.env.makeVar("$", groupVar.getSchema());
-    for( Expr e: engine.exprList )
+    if( aggExpr == null )
     {
-      ((VarExpr)e).setVar(aggVar);
+      // We couldn't inject AggregateFull.
+      return false;
     }
-    // Inject the aggregate expr
-    Expr proxy = new ProxyExpr();
-    collect.replaceInParent(proxy);
-    BindingExpr b = new BindingExpr(BindingExpr.Type.EQ, aggVar, null, new VarExpr(groupVar));
-    Expr agg = AggregateFullExpr.make(engine.env, b, collect, true);
-    proxy.replaceInParent(agg);
-
+    
+    g.setCollectExpr(aggExpr);
     return true;
   }
 }

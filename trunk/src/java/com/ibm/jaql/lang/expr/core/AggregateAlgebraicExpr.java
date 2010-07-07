@@ -17,11 +17,9 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
@@ -69,29 +67,23 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
     }
   }
 
-  /**
+  /** Combine partial aggregates
    * 
    * @param context
-   * @param aggs
-   * @param tempAggs
-   * @return true if we had at least one input row
    * @throws Exception
    */
-  public boolean evalPartial(Context context)
-    throws Exception
+  public void evalPartial(Context context) throws Exception
   {
     for(int i = 0 ; i < aggs.length ; i++)
     {
       aggs[i].init(context);
     }
 
-    boolean hadInput = false;
     BindingExpr in = binding();
     // in.var.set(tmpItem); // TODO: allow expressions on partial aggregates?
     JsonIterator iter = in.inExpr().iter(context);
     for (JsonValue value : iter)
     {
-      hadInput = true;
       JsonArray arr = (JsonArray)value;
       arr.getAll(tempAggs);
       for(int i = 0 ; i < aggs.length ; i++)
@@ -99,36 +91,16 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
         aggs[i].combine(tempAggs[i]);
       }
     }
-
-    return hadInput;
   }
 
-  protected JsonIterator partialResult(boolean hadInput) throws Exception
+  protected JsonArray partialResult() throws Exception
   {
-    if( ! hadInput )
-    {
-      return JsonIterator.EMPTY;
-    }
     for(int i = 0 ; i < aggs.length ; i++)
     {
       tempAggs[i] = aggs[i].getPartial();
     }
-    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs, false); // TODO: memory
-    return new SingleJsonValueIterator(tuple); // TODO: memory
-  }
-
-  protected JsonIterator finalResult(boolean hadInput) throws Exception
-  {
-    if( ! hadInput )
-    {
-      return JsonIterator.EMPTY;
-    }
-    for(int i = 0 ; i < aggs.length ; i++)
-    {
-      tempAggs[i] = aggs[i].getFinal();
-    }
-    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs, false); // TODO: memory
-    return new SingleJsonValueIterator(tuple); // TODO: memory
+    tuple.set(tempAggs, tempAggs.length);
+    return tuple;
   }
 
 }

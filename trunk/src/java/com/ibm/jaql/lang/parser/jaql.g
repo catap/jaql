@@ -903,7 +903,7 @@ aggregate[Expr in] returns [Expr r=null]
            //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
            b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
          }
-      ( kwInto    r=expr { r = AggregateFullExpr.make(env, b, r, false); }
+      ( kwInto    r=expr        { r = AggregateFullExpr.make(env, b, r); }
       | kwFull    a=aggList     { r = new AggregateFullExpr(b, a); }
       | kwInitial aa=algAggList { r = new AggregateInitialExpr(b, aa); }
       | kwPartial aa=algAggList { r = new AggregatePartialExpr(b, aa); }
@@ -1463,6 +1463,7 @@ softkw : kwAggregate
        | kwInto
        | kwMaterialize
        | kwOn
+       | kwPartial
        | kwSchema
        | kwSort
        | kwUsing

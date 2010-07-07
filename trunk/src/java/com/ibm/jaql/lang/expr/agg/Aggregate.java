@@ -60,10 +60,7 @@ public abstract class Aggregate extends Expr
     JsonIterator it = exprs[0].iter(context);
     for (JsonValue value : it) 
     {
-      if (value != null)
-      {
-        accumulate(value);
-      }
+      accumulate(value);
     }
   }
 

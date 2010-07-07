@@ -21,9 +21,9 @@ import java.util.HashSet;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
@@ -35,6 +35,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
 {
   protected JsonValue[] tempAggs;
   protected BufferedJsonArray tmpArray;
+  protected BufferedJsonArray tuple = new BufferedJsonArray();
 
   public static enum AggType
   {
@@ -154,6 +155,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
   {
     tempAggs = new JsonValue[numAggs()];
     tmpArray = new BufferedJsonArray(1);
+    tuple = new BufferedJsonArray();
   }
   
   /**
@@ -164,7 +166,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
    * @return true if we had at least one input row
    * @throws Exception
    */
-  public boolean evalInitial(Context context, Aggregate[] aggs)
+  public void evalInitial(Context context, Aggregate[] aggs)
     throws Exception
   {
     for(int i = 0 ; i < aggs.length ; i++)
@@ -172,12 +174,10 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
       aggs[i].init(context);
     }
 
-    boolean hadInput = false;
     BindingExpr in = binding();    
     JsonIterator iter = in.inExpr().iter(context);
     for (JsonValue value : iter)
     {
-      hadInput = true;
       tmpArray.set(0, value);
       in.var.setValue(tmpArray);
       for(int i = 0 ; i < aggs.length ; i++)
@@ -185,23 +185,29 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
         aggs[i].evalInitialized(context);
       }
     }
-    
-    return hadInput;
   }
-
   
-  protected JsonIterator finalResult(boolean hadInput, Aggregate[] aggs) throws Exception
+  protected JsonArray finalResult(Aggregate[] aggs) throws Exception
   {
-    if( ! hadInput )
-    {
-      return JsonIterator.EMPTY;
-    }
     for(int i = 0 ; i < aggs.length ; i++)
     {
       tempAggs[i] = aggs[i].getFinal();
     }
-    BufferedJsonArray tuple = new BufferedJsonArray(tempAggs, false); // TODO: memory
-    return new SingleJsonValueIterator(tuple); // TODO: memory
+    tuple.set(tempAggs, tempAggs.length);
+    return tuple;
   }
 
+  @Override
+  public abstract JsonArray eval(Context context) throws Exception;
+  
+  /*
+   * (non-Javadoc)
+   * 
+   * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
+   */
+  @Override
+  public JsonIterator iter(final Context context) throws Exception
+  {
+    return eval(context).iter();
+  }
 }

@@ -329,6 +329,12 @@ public class GroupByExpr extends IterExpr
     return exprs[exprs.length - 1];
   }
 
+  /** Replace the collect expression (during rewrites) */
+  public final void setCollectExpr(Expr expr)
+  {
+    setChild(exprs.length - 1, expr);
+  }
+
   /**
    * @return
    */

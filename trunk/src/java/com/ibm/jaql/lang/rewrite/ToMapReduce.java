@@ -28,7 +28,7 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 import com.ibm.jaql.lang.expr.array.DeemptyFn;
-import com.ibm.jaql.lang.expr.core.AggregateExpr;
+import com.ibm.jaql.lang.expr.core.AggregateFullExpr;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
@@ -179,7 +179,7 @@ public class ToMapReduce extends Rewrite
     
     assert reduceSeg.type == Type.FINAL_GROUP;
     
-    AggregateExpr ae = null;
+    AggregateFullExpr ae = null;
     AlgebraicAggregate[] aggs;
     if( reduceSeg.firstChild == null )
     {
@@ -188,7 +188,7 @@ public class ToMapReduce extends Rewrite
     else
     {
       assert reduceSeg.firstChild.type == Type.COMBINE_GROUP;
-      ae = (AggregateExpr)reduceSeg.firstChild.root;
+      ae = (AggregateFullExpr)reduceSeg.firstChild.root;
       aggs = new AlgebraicAggregate[ae.numAggs()];
       for(int i = 0 ; i < aggs.length ; i++)
       {
@@ -248,7 +248,6 @@ public class ToMapReduce extends Rewrite
     if( ae != null )
     {
       valVar = ae.binding().var;
-      expr.replaceVar(ae.binding().var, valVar);       // useless?
     }
     else
     {
@@ -262,7 +261,7 @@ public class ToMapReduce extends Rewrite
     expr = group.collectExpr();
     if( ae != null )
     {
-      Expr inexpr = new ArrayExpr(new VarExpr(valVar));
+      Expr inexpr = new VarExpr(valVar);
       if( ae == expr )
       {
         expr = inexpr;
@@ -940,9 +939,9 @@ public class ToMapReduce extends Rewrite
       {
         VarExpr ve = (VarExpr)uses.get(0);
         if( ve.parent() instanceof BindingExpr &&
-            ve.parent().parent() instanceof AggregateExpr )
+            ve.parent().parent() instanceof AggregateFullExpr )
         {
-          AggregateExpr ae = (AggregateExpr)ve.parent().parent();
+          AggregateFullExpr ae = (AggregateFullExpr)ve.parent().parent();
           if( ae.isAlgebraic() )
           {
             seg = new Segment(Segment.Type.COMBINE_GROUP);
