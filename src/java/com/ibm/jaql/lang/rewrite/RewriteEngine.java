@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
@@ -36,12 +37,13 @@ public class RewriteEngine
   protected boolean        explainFire = false;                    // traceFire must true for this to matter
   protected long           counter     = 0;
 
-  // These are for use by rewrites.
+  // These are work areas for use by rewrites.
   public Env               env;
   public ExprWalker        walker      = new PostOrderExprWalker();
   public ExprFlow          flow        = new ExprFlow();
   public VarMap            varMap      = new VarMap();
   public ArrayList<Expr>   exprList    = new ArrayList<Expr>();
+  public ArrayList<Aggregate> aggList  = new ArrayList<Aggregate>();
 
   /**
    * 

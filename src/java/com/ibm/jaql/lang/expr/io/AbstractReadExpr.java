@@ -149,7 +149,12 @@ public abstract class AbstractReadExpr extends IterExpr
       @Override
       public boolean moveNext() throws Exception
       {
-        if (reader.moveNext()) 
+        if( reader == null )
+        {
+          // If anyone calls moveNext() after EOF, we safely handle return EOF again.
+          return false;
+        }
+        else if (reader.moveNext()) 
         {
           currentValue = reader.current();
           return true;

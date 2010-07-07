@@ -69,7 +69,8 @@ public class ChainedReader extends Reader
         assert n != 0: "read should block until some input is available";
         return n;
       }
-      readers.remove().close();
+      reader.close();
+      readers.remove();
     }
     return -1; // eof
   }

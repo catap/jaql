@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.util.ArrayList;
 
-import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
@@ -48,11 +48,11 @@ public class AggregatePartialExpr extends AggregateAlgebraicExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  public JsonArray eval(final Context context) throws Exception
   {
     makeWorkingArea();
-    boolean hadInput = evalPartial(context);
-    return partialResult(hadInput);
+    evalPartial(context);
+    return partialResult();
   }
 
 }
