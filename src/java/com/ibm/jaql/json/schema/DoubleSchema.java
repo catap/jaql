@@ -81,12 +81,19 @@ public final class DoubleSchema extends AtomSchema<JsonDouble>
   @Override
   public boolean matches(JsonValue value)
   {
-    if (!(value instanceof JsonDouble))
+    if (!(value instanceof JsonDouble)) 
     {
+      // TODO: be friendly to other numbers? should 1 be instanceof schema double?
       return false;
     }
     if (this.value != null && !this.value.equals(value))
     {
+      if( Double.isNaN(this.value.doubleValue()) &&  
+          Double.isNaN( ((JsonDouble)value).doubleValue() ))
+      {
+        // TODO: need different equals that says NaN == NaN (needed for group by, sort, etc) 
+        return true;
+      }
       return false;
     }    
     return true;

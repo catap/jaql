@@ -140,6 +140,14 @@ public class AggregateFullExpr extends AggregateExpr
       }
     }
     
+    // If we are rewriting (vs a direct call) and there are no aggregates
+    // then we don't rewrite.  We could, but then we will fight with LetInline
+    // which undoes what InjectAggregate does.
+    if( ! raiseException && aggs.size() == 0 )
+    {
+      return false;
+    }
+    
     return true;
   }
 

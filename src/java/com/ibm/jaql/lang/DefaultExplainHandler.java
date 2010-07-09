@@ -22,7 +22,10 @@ import java.util.Iterator;
 
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
+import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
+import com.ibm.jaql.lang.expr.top.QueryExpr;
 
 public class DefaultExplainHandler extends ExplainHandler
 {
@@ -38,6 +41,11 @@ public class DefaultExplainHandler extends ExplainHandler
   {
     String stmt = decompile(expr);
     out.println(stmt);
+    if( expr instanceof AssignExpr ||
+        expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
+    {
+      return expr;
+    }
     return null;
     // return new ConstExpr(new JsonString(query));
   }
