@@ -106,16 +106,16 @@ final class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
   }
   
   /** Stores a name/value pair */
-  private static class NameValue
-  {
-    JsonString name = null;
-    JsonValue value = null;
-    
-    public String toString()
-    {
-      return name + ": " + value;
-    }
-  }
+//  private static class NameValue
+//  {
+//    JsonString name = null;
+//    JsonValue value = null;
+//    
+//    public String toString()
+//    {
+//      return name + ": " + value;
+//    }
+//  }
   
   // -- construction ------------------------------------------------------------------------------
   
@@ -216,11 +216,12 @@ final class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
       // we do not HAVE to sort the names/values in the record, but it is much cheaper to 
       // do that now because we can exploit the knowledge that the additional names and 
       // required/optional names are sorted among themselves
-      merge(names, values, noAdditional, n);
-      t.set(names, values, n, true);   
+      // TODO: there is a bug in merge, so we disable it for now.
+      //merge(names, values, noAdditional, n);
+      //t.set(names, values, n, true);   
 
       // alternatively, do not sort
-      // t.set(names, values, n, false);
+      t.set(names, values, n, false);
     }
     else
     {
@@ -231,115 +232,116 @@ final class RecordSerializer extends BinaryBasicSerializer<JsonRecord>
     return t;
   }
   
-  /** Sorts the name array (and the corresponding values). This implementation makes use of the
-   * fact that the intervals [0...noAdditional-1] and [noAdditional...n-1] are both sorted. */
-  private void merge(JsonString[] names, JsonValue[] values, int noAdditional, int n)
-  {
-
-    NameValue temp = new NameValue(); // when temp.name != null, stores a value to be inserted
-    int p0=0, p1=noAdditional; 
-    
-    
-    while (p0<p1 && p1<n)
-    {
-      // check whether p0 reached a position that we marked unused
-      if (names[p0]==null)
-      {
-        swap(names, values, p0, temp);
-        // temp.name = null --> temp is unused
-      }
-      
-      // put smallest of names[p0], names[p1], temp.name to position p0 
-      int cmp = names[p0].compareTo(names[p1]);
-      if (cmp < 0)
-      {
-        // p0 < p1
-        if (temp.name != null && names[p0].compareTo(temp.name) > 0)
-        {
-          // temp < p0 < p1
-          swap(names, values, p0, temp);
-        }
-        p0++;
-      }
-      else
-      {
-        // p1 < p0
-        if (temp.name == null)
-        {
-          temp.name = names[p0];
-          temp.value = values[p0];
-          names[p0] = names[p1];
-          values[p0] = values[p1];
-          names[p1] = null; // mark as unused
-          p1++;
-        } 
-        else if (names[p1].compareTo(temp.name) > 0)
-        {
-          // temp < p1 < p0
-          swap(names, values, p0, temp);
-        }
-        else 
-        {
-          // p1 < temp, p1 < p0
-          swap(names, values, p0, p1);
-
-          // now the value at p1 might be in a wrong place; move it to the right place
-          // this should be rare/inexpensive in common cases
-          insertionSort(names, values, p1, n);
-        }
-        p0++;
-      }
-    }
-    
-    // insert temp when necessary
-    if (names[p0] == null)
-    {
-      names[p0] = temp.name;
-      values[p0] = temp.value;
-      insertionSort(names, values, p0, n);
-    }     
-  }
-  
-  /** Exchanges name/value pairs at positions i and j */
-  private final void swap(JsonString[] names, JsonValue[] values, int i, int j)
-  {
-    JsonString tn = names[i];
-    JsonValue tv = values[i];
-    names[i] = names[j];
-    values[i] = values[j];
-    names[j] = tn;
-    values[j] = tv;
-  }
-
-  /** Exchanges name/value pair at positions i with t */
-  private final void swap(JsonString[] names, JsonValue[] values, int i, NameValue t)
-  {
-    JsonString tn = names[i];
-    JsonValue tv = values[i];
-    names[i] = t.name;
-    values[i] = t.value;
-    t.name = tn;
-    t.value = tv;
-  }
-  
-  /** Requires that [i+1,n) is sorted, ensures that [i,n) is sorted. */
-  private final void insertionSort(JsonString[] names, JsonValue[] values, int i, int n)
-  {
-    int p = Arrays.binarySearch(names, i+1, n, names[i]);
-    assert p<0;
-    p = -(p+1);
-    if (p > i+1) // not at beginning
-    {
-      p--;
-      JsonString ts = names[i];
-      JsonValue tv = values[i];
-      int l = p-i;
-      System.arraycopy(names, i+1, names, i, l);
-      System.arraycopy(values, i+1, values, i, l);
-      names[p] = ts;
-      values[p] = tv;
-    }
-  }
+// TODO: bug in merge somewhere
+//  /** Sorts the name array (and the corresponding values). This implementation makes use of the
+//   * fact that the intervals [0...noAdditional-1] and [noAdditional...n-1] are both sorted. */
+//  private void merge(JsonString[] names, JsonValue[] values, int noAdditional, int n)
+//  {
+//
+//    NameValue temp = new NameValue(); // when temp.name != null, stores a value to be inserted
+//    int p0=0, p1=noAdditional; 
+//    
+//    
+//    while (p0<p1 && p1<n)
+//    {
+//      // check whether p0 reached a position that we marked unused
+//      if (names[p0]==null)
+//      {
+//        swap(names, values, p0, temp);
+//        // temp.name = null --> temp is unused
+//      }
+//      
+//      // put smallest of names[p0], names[p1], temp.name to position p0 
+//      int cmp = names[p0].compareTo(names[p1]);
+//      if (cmp < 0)
+//      {
+//        // p0 < p1
+//        if (temp.name != null && names[p0].compareTo(temp.name) > 0)
+//        {
+//          // temp < p0 < p1
+//          swap(names, values, p0, temp);
+//        }
+//        p0++;
+//      }
+//      else
+//      {
+//        // p1 < p0
+//        if (temp.name == null)
+//        {
+//          temp.name = names[p0];
+//          temp.value = values[p0];
+//          names[p0] = names[p1];
+//          values[p0] = values[p1];
+//          names[p1] = null; // mark as unused
+//          p1++;
+//        } 
+//        else if (names[p1].compareTo(temp.name) > 0)
+//        {
+//          // temp < p1 < p0
+//          swap(names, values, p0, temp);
+//        }
+//        else 
+//        {
+//          // p1 < temp, p1 < p0
+//          swap(names, values, p0, p1);
+//
+//          // now the value at p1 might be in a wrong place; move it to the right place
+//          // this should be rare/inexpensive in common cases
+//          insertionSort(names, values, p1, n);
+//        }
+//        p0++;
+//      }
+//    }
+//    
+//    // insert temp when necessary
+//    if (names[p0] == null)
+//    {
+//      names[p0] = temp.name;
+//      values[p0] = temp.value;
+//      insertionSort(names, values, p0, n);
+//    }     
+//  }
+//  
+//  /** Exchanges name/value pairs at positions i and j */
+//  private final void swap(JsonString[] names, JsonValue[] values, int i, int j)
+//  {
+//    JsonString tn = names[i];
+//    JsonValue tv = values[i];
+//    names[i] = names[j];
+//    values[i] = values[j];
+//    names[j] = tn;
+//    values[j] = tv;
+//  }
+//
+//  /** Exchanges name/value pair at positions i with t */
+//  private final void swap(JsonString[] names, JsonValue[] values, int i, NameValue t)
+//  {
+//    JsonString tn = names[i];
+//    JsonValue tv = values[i];
+//    names[i] = t.name;
+//    values[i] = t.value;
+//    t.name = tn;
+//    t.value = tv;
+//  }
+//  
+//  /** Requires that [i+1,n) is sorted, ensures that [i,n) is sorted. */
+//  private final void insertionSort(JsonString[] names, JsonValue[] values, int i, int n)
+//  {
+//    int p = Arrays.binarySearch(names, i+1, n, names[i]);
+//    assert p<0;
+//    p = -(p+1);
+//    if (p > i+1) // not at beginning
+//    {
+//      p--;
+//      JsonString ts = names[i];
+//      JsonValue tv = values[i];
+//      int l = p-i;
+//      System.arraycopy(names, i+1, names, i, l);
+//      System.arraycopy(values, i+1, values, i, l);
+//      names[p] = ts;
+//      values[p] = tv;
+//    }
+//  }
 
   /** Read <code>length</code> additional fields from the provided input stream into the 
    * <code>names</code> and <code>values</code> arrays at the specified <code>offset</code>. 
