@@ -27,6 +27,8 @@ import org.apache.hadoop.fs.PathFilter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.ExceptionHandler;
+import com.ibm.jaql.lang.ThresholdExceptionHandler;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
@@ -140,7 +142,16 @@ public class JaqlUtil
     return store;
   }
 
-
+  private static ExceptionHandler handler = new ThresholdExceptionHandler();
+  
+  public static ExceptionHandler getExceptionHandler()
+  {
+	 return handler;
+  }
+  
+  public synchronized static void setExceptionHandler(ExceptionHandler h) {
+	  handler = h;
+  }
 
   /**
    * @param varSet1

@@ -319,7 +319,7 @@ read(hdfs('results.dat'));
 
     gcd2 = javaudf("com.acme.extensions.fn.GCD2");
 
-    gcd2("x","y") -> expectException("java.lang.IllegalArgumentException"); // correctly produces error: numbers expected
+    gcd2("x","y") -> expectException("java.lang.RuntimeException"); // correctly produces error: numbers expected
     gcd2(17,13); // 1
     gcd2(12,18); // 6
 

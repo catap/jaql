@@ -385,6 +385,10 @@ public class JaqlScriptTestCase
       String msg = cause.getMessage();
       msg = msg.replace(pathToRemove, ".../");
       msg = msg.replace("\n", "\n//");
+      // get rid of object specific debug statements (not repeatable)
+      int atIdx = msg.indexOf('@'); 
+      if(atIdx >= 0)
+    	  msg = msg.substring(0, atIdx);
       ps.println("// " + msg );
       ps.println("\n;//------------------- TEST-CASE -----------------");
       ps.flush();
