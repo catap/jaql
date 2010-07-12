@@ -1,0 +1,120 @@
+// utility function to catch and skip
+catchSkip = fn(e) (
+  catch(e, { errThresh: 1000 })
+);
+
+// utility function to catch and abort
+catchAbort = fn(e) (
+  catch(e, { errThresh: 0 })
+);
+
+// utility function to catch and abort after k errors
+catchThresh = fn(e) (
+  catch(e, { errThresh: 2 })
+);
+
+// generate different types of errors from a udf
+errFn = javaudf("com.ibm.jaql.fail.fn.ErrorFn");
+
+// utility function to generate no errors in a udf
+errNone = fn(a, b) ( errFn("ok", 0, "NONE") );
+
+// utility function to generate args errors in a udf
+errArgs = fn(a, b) ( errFn(b, a, "NONE") ); 
+
+// utility function to generate a shallow errors in a udf
+errShallow = fn(a, b) ( errFn(a, b, "SHALLOW_ERROR") );
+
+// utility function to generate deep errors in a udf
+errDeep = fn(a, b) ( errFn(a, b, "DEEP_ERROR") );
+
+// invoking the udf stand-alone
+errNone("ok", 0);
+
+errArgs("ok", 0);
+
+errShallow("ok", 0);
+
+errDeep("ok", 0);
+
+// invoking the udf stand-alone (with catch)
+catchAbort(errNone("ok", 0));
+catchSkip(errNone("ok", 0));
+catchThresh(errNone("ok", 0));
+
+catch(errArgs("ok", 0), { errThresh: 0 });
+catch(errArgs("ok", 0), { errThresh: 1000 });
+catch(errArgs("ok", 0), { errThresh: 2 });
+
+catch(errShallow("ok", 0), { errThresh: 0 });
+catch(errShallow("ok", 0), { errThresh: 1000 });
+catch(errShallow("ok", 0), { errThresh: 2 });
+
+catch(errDeep("ok", 0), { errThresh: 0 });
+catch(errDeep("ok", 0), { errThresh: 1000 });
+catch(errDeep("ok", 0), { errThresh: 2 });
+
+// invoking the udf in sequential operator
+range(1,100) -> transform errNone("ok", $) -> count();
+
+range(1,100) -> transform errArgs("ok", $) -> count();
+
+range(1,100) -> transform errShallow("ok", $) -> count();
+
+range(1,100) -> transform errDeep("ok", $) -> count();
+
+// invoking the udf in sequential operator (with catch)
+range(1,100) -> transform catchAbort(errNone("ok", $)) -> count();
+range(1,100) -> transform catchSkip(errNone("ok", $)) -> count();
+range(1,100) -> transform catchThresh(errNone("ok", $)) -> count();
+
+range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 0 }) -> count();
+range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 1000 }) -> count();
+range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 2 }) -> count();
+
+range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 0 }) -> count();
+range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 1000 }) -> count();
+range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 2 }) -> count();
+
+range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 0 }) -> count();
+range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 1000 }) -> count();
+range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 2 }) -> count();
+
+// invoking the udf in map-only job
+
+// invoking the udf in map-reduce job
+
+// invoking the udf in map-reduce job
+
+// new data for reducer tests
+test2 = [ ["a",0], ["a",1], ["b",0], ["c",0], ["c",1], ["c",2]];
+test2-> write(hdfs("bar"));
+
+// error on both map and reduce (MRAggregate) skip
+read(hdfs("bar")) 
+-> transform catch(if ($[0] == "a") ($.badFieldAccess) else ($), { errThresh: 1000 })
+-> group by g = $[0] into { g: g, num: count($), err: catch(if(g == "b") (g.badFieldAccess) else ("ok"), { errThresh: 1000 }) };
+
+// error on both map and reduce (MapReduceFn) skip
+read(hdfs("bar")) 
+-> transform catch(if ($[0] == "a") ($.badFieldAccess) else ($), { errThresh: 1000 })
+-> group by g = $[0] into { g: g, err: ($ -> transform catch(if($[0] == "b") (g.badFieldAccess) else ("ok"), { errThresh: 1000 })) }  -> sort by [$.g];
+
+// use the registered exception handler
+range(1,100) -> transform catch(errNone("ok", $)) -> count();
+range(1,100) -> transform catch(errArgs("ok", $)) -> count();
+range(1,100) -> transform catch(errShallow("ok", $)) -> count();
+range(1,100) -> transform catch(errDeep("ok", $)) -> count();
+
+// register a new exception handler
+registerExceptionHandler({errThresh: 5});
+range(1,4) -> transform catch(errArgs("ok", $)) -> count();
+
+registerExceptionHandler({errThresh: 5});
+range(1,6) -> transform catch(errArgs("ok", $)) -> count();
+
+registerExceptionHandler({errThresh: 5});
+read(hdfs("bar")) -> transform catch(errArgs("ok", $));
+
+registerExceptionHandler({errThresh: 5});
+read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $));

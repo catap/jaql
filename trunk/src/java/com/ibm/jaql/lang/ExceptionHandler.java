@@ -120,7 +120,9 @@ public abstract class ExceptionHandler implements Closeable
     BufferedJsonRecord rec = new BufferedJsonRecord();
     rec.add(CLASS, new JsonString(error.getClass().getName()));
     rec.add(STACK, makeStackTrace(error));
-    rec.add(MESSAGE, new JsonString(error.getMessage()));
+    String msg = error.getMessage();
+    if( msg != null )
+    	rec.add(MESSAGE, new JsonString(msg));
     if( causeRec != null )
     {
       rec.add(CAUSE, causeRec);

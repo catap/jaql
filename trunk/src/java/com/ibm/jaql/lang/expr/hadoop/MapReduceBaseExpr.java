@@ -56,6 +56,7 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.core.RegisterExceptionHandler;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -75,6 +76,7 @@ public abstract class MapReduceBaseExpr extends Expr
   public final static String    REGISTRY_VAR_NAM           = BASE_NAME + ".registry";
   public final static String    NUM_INPUTS_NAME            = BASE_NAME + ".numInputs";
   public final static String    SCHEMA_NAME                = BASE_NAME + ".schema";
+  public final static String    EXCEPTION_NAME			   = BASE_NAME + ".exceptions";
   
   // Argument keys
   public final static JsonString INPUT_KEY = new JsonString("input");
@@ -230,6 +232,7 @@ public abstract class MapReduceBaseExpr extends Expr
     RegistryUtil.writeConf(conf, HadoopAdapter.storeRegistryVarName, JaqlUtil
         .getAdapterStore());
     RegistryUtil.writeConf(conf, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
+    RegisterExceptionHandler.writeConf(EXCEPTION_NAME, conf);
 
     return args;
   }
@@ -304,6 +307,7 @@ public abstract class MapReduceBaseExpr extends Expr
         RegistryUtil.readConf(job, HadoopAdapter.storeRegistryVarName, JaqlUtil
             .getAdapterStore());
         RegistryUtil.readConf(job, RNG_REGISTRY_VAR_NAME, JaqlUtil.getRNGStore());
+        RegisterExceptionHandler.readConf(EXCEPTION_NAME, job);
         //FunctionStore.readRegistryFromConf(funcRegistryVarName, job);
         //RNGStore.readFromConf(rngRegistryVarName, job);
       }

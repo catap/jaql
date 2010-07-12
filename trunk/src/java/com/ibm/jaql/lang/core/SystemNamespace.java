@@ -75,6 +75,7 @@ import com.ibm.jaql.lang.expr.catalog.CatalogInsertFn;
 import com.ibm.jaql.lang.expr.catalog.CatalogLookupFn;
 import com.ibm.jaql.lang.expr.catalog.CatalogUpdateFn;
 import com.ibm.jaql.lang.expr.catalog.UpdateCommentFn;
+import com.ibm.jaql.lang.expr.core.CatchExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.DaisyChainFn;
 import com.ibm.jaql.lang.expr.core.ExpectExceptionFn;
@@ -86,6 +87,7 @@ import com.ibm.jaql.lang.expr.core.MergeContainersFn;
 import com.ibm.jaql.lang.expr.core.PerPartitionFn;
 import com.ibm.jaql.lang.expr.core.PerfFn;
 import com.ibm.jaql.lang.expr.core.RangeExpr;
+import com.ibm.jaql.lang.expr.core.RegisterExceptionHandler;
 import com.ibm.jaql.lang.expr.core.SetOptionsFn;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
 import com.ibm.jaql.lang.expr.date.DateFn;
@@ -509,7 +511,8 @@ public final class SystemNamespace extends Namespace {
     //register(new TestFn.Descriptor());
     register(new ListExportsFn.Descriptor());
     register(new TestFn.Descriptor());
-
+    register(new CatchExpr.Descriptor());
+    register(new RegisterExceptionHandler.Descriptor());
   } 
 
 }
