@@ -940,7 +940,7 @@ null
 ;//------------------- TEST-CASE -----------------
 
 
-    gcd2("x","y") -> expectException("java.lang.IllegalArgumentException");
+    gcd2("x","y") -> expectException("java.lang.RuntimeException");
 
 ;//--------------------- RESULT ------------------
 

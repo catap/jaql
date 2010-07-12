@@ -776,7 +776,7 @@ read(hdfs('results.dat'));
 ;//------------------- TEST-CASE -----------------
 
 
-    gcd2("x","y") -> expectException("java.lang.IllegalArgumentException");
+    gcd2("x","y") -> expectException("java.lang.RuntimeException");
 
 ;//------------------- EXPR-COUNTS -----------------
 

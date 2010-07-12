@@ -241,7 +241,16 @@ public class JavaFunctionCallExpr extends Expr
       Class<?> p = paramTypes[i];
       if (JsonValue.class.isAssignableFrom(p))
       {
-        args[i] = exprs[i].eval(context);
+        JsonValue v = exprs[i].eval(context);
+        if(v == null) {
+        	args[i] = v;
+        } else if(p.isAssignableFrom(v.getClass())) {
+        	args[i] = v;
+        } else {
+        	throw new RuntimeException("Mismatched arg type. UDF: " + 
+        			instance.getClass().getName() + " invoked with " + 
+        			v.getClass().getName() + " for "+i+"th arg, expected: " + p.getName());
+        }
       }
       else if (JsonIterator.class.isAssignableFrom(p))
       {
@@ -262,6 +271,7 @@ public class JavaFunctionCallExpr extends Expr
       }
     }
     Object result = method.invoke(instance, args);
+    
     return result;
   }
 
