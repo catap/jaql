@@ -167,8 +167,8 @@ public class JsonToDel {
           JsonRecord rec = (JsonRecord) src;
           JsonValue only = rec.get(fieldNames[0]);
           if (only instanceof JsonString) {
-            byte[] utf8 = ((JsonString) only).getInternalBytes();
-            text.set(utf8, 0, utf8.length);
+            JsonString js = (JsonString) only;
+            text.set(js.getInternalBytes(), js.bytesOffset(), js.bytesLength());
             return;
           }
         } else if (src instanceof JsonArray) {
@@ -176,14 +176,14 @@ public class JsonToDel {
           if (arr.count() == 1) {
             JsonValue only = arr.get(0);
             if (only instanceof JsonString) {
-              byte[] utf8 = ((JsonString) src).getInternalBytes();
-              text.set(utf8, 0, utf8.length);
+              JsonString js = (JsonString) only;
+              text.set(js.getInternalBytes(), js.bytesOffset(), js.bytesLength());
               return;
             }
           }
         } else if (src instanceof JsonString) {
-          byte[] utf8 = ((JsonString) src).getInternalBytes();
-          text.set(utf8, 0, utf8.length);
+          JsonString js = (JsonString) src;
+          text.set(js.getInternalBytes(), js.bytesOffset(), js.bytesLength());
           return;
         }
       }
@@ -235,22 +235,23 @@ public class JsonToDel {
 
     if (value instanceof JsonString) {
       JsonString js = (JsonString) value;
-      byte[] utf8 = js.getInternalBytes();
-      printUtf8Quoted(out, escape, utf8, utf8.length);
+      printUtf8Quoted(out, escape, js.getInternalBytes(), js.bytesOffset(), js.bytesLength());
     } else {
       fieldBuf.reset();
       fullSer.write(fieldOut, value);
       fieldOut.flush();
-      printUtf8Quoted(out, escape, fieldBuf.getBuffer(), fieldBuf.size());
+      printUtf8Quoted(out, escape, fieldBuf.getBuffer(), 0, fieldBuf.size());
     }
   }
 
   private void printUtf8Quoted(OutputStream out,
                                boolean escape,
                                byte[] utf8,
+                               int offset, 
                                int length) throws IOException {
     out.write(DOUBLE_QUOTE);
-    for (int i = 0; i < length; i++) {
+    int end = offset + length;
+    for (int i = offset; i < end; i++) {
       byte b = utf8[i];
       if (b == DOUBLE_QUOTE) {
         out.write(DOUBLE_QUOTE);

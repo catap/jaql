@@ -2228,6 +2228,74 @@ $mixed -> jsonToDel({schema: schema { name, age }, delimiter: '='});
 ;//------------------- TEST-CASE -----------------
 
 
+// make sure that json string buffers are cleared correctly
+$data1 = [
+ {publisher: 'p1', author: 'J. K. Rowling'},
+ {publisher: 'p2', author: 'xyz'},
+ {publisher: 'p3', author: 'aaaaaaaabbbbbbb'}
+];
+;//------------------- TEST-CASE -----------------
+
+$data2 = [
+    {publisher: 'p4', author: 'J. K. Rowling'},
+    {publisher: 'p5', author: 'xyz'},
+    {publisher: 'p6', author: 'xyz'},
+    {publisher: 'p7', author: 'aaaaaaaabbbbbbb'}
+];
+;//------------------- TEST-CASE -----------------
+
+join $data1, $data2 
+where $data1.author == $data2.author 
+into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.publisher} 
+->jsonToDel({schema: schema {a1, a2, a3, a4}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"J. K. Rowling\",\"p1\",\"J. K. Rowling\",\"p4\"",
+  "\"aaaaaaaabbbbbbb\",\"p3\",\"aaaaaaaabbbbbbb\",\"p7\"",
+  "\"xyz\",\"p2\",\"xyz\",\"p5\"",
+  "\"xyz\",\"p2\",\"xyz\",\"p6\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// unquoted and single json string in a del line
+[["one"], ["two"]] -> jsonToDel({quoted: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "one",
+  "two"
+]
+
+;//------------------- TEST-CASE -----------------
+
+["one", "two"] -> jsonToDel({quoted: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "one",
+  "two"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{sn: "one"}, {sn: "two"}] -> jsonToDel({quoted: false, schema: schema {sn}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "one",
+  "two"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
 //-- testJsonToXml --
 {content: 12} -> jsonToXml();
 
