@@ -251,3 +251,12 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 // for loop over hdfs read
 read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 -> transform $.key;
+
+// test out sequence file with Text value, using non-test classes
+read(hdfs('jaqlTest/test1.dat')) 
+-> transform $ + 1 
+-> write(hdfs('jaqlTest/test15out.dat', 
+              {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+               configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
+               
+read(hdfs('jaqlTest/test15out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' })); 

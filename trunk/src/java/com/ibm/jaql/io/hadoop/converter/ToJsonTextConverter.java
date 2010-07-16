@@ -18,6 +18,7 @@ package com.ibm.jaql.io.hadoop.converter;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 
@@ -36,6 +37,15 @@ public class ToJsonTextConverter extends JsonToHadoopRecord<WritableComparable<?
   {
     return null;
   }
+  
+  /* (non-Javadoc)
+   * @see com.ibm.jaql.io.hadoop.converter.ItemToHadoopRecord#createKeyTarget()
+   */
+  @Override
+  public WritableComparable<?> createKeyTarget() 
+  {
+    return NullWritable.get();
+  };
 
   @Override
   protected FromJson<Text> createValueConverter()
