@@ -913,4 +913,37 @@ read({type: 'hdfs', location: 'jaqlTest/test6.dat'})
 ;//------------------- TEST-CASE -----------------
 
 
+// test out sequence file with Text value, using non-test classes
+read(hdfs('jaqlTest/test1.dat')) 
+-> transform $ + 1 
+-> write(hdfs('jaqlTest/test15out.dat', 
+              {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+               configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "jaqlTest/test15out.dat",
+  "options": {
+    "configurator": "com.ibm.jaql.io.hadoop.TextFileOutputConfigurator",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"
+  },
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+               
+read(hdfs('jaqlTest/test15out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' }));
+
+;//--------------------- RESULT ------------------
+
+[
+  2,
+  3,
+  4
+]
+
+;//------------------- TEST-CASE -----------------
+ 
 ;//------------------- TEST-DONE -----------------

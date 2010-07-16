@@ -15,7 +15,7 @@
 	<classpathentry exported="true" kind="lib" path="vendor/hadoop/0.18.3/lib/jetty-ext/commons-el.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-lang-2.4.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/hadoop-0.20.1-ant.jar"/>
-	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/hadoop-0.20.1-core.jar" sourcepath="C:/kbeyer/eclipse/hadoop-0.20/src/mapred"/>
+	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/hadoop-0.20.1-core.jar" sourcepath="/Hadoop-0.20.2/src/mapred"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/hadoop-0.20.1-examples.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/hadoop-0.20.1-test.jar"/>
 	<classpathentry kind="lib" path="vendor/hadoop/0.20.1/hadoop-0.20.1-tools.jar"/>
