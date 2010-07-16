@@ -1,0 +1,52 @@
+#!/bin/sh
+# 
+# Run the jaql shell
+# Jaql shell has been tested with JAQL_HOME containing whitespaces on Cygwin.
+# But it has not been tried with such a JAQL_HOME on Linux.
+
+if [ "$JAQL_HOME" = "" ]; then
+	echo "Error, JAQL_HOME must be set"
+	exit 1
+fi
+export PATH=${JAQL_HOME}/bin:$PATH
+
+# jline can't restore terminal settings correctly when using IBM JDK on some
+# Linux platforms. So terminal settings are saved here and restored when
+# exiting Jaql shell. And saving of terminal settings must be done before the
+# following line invoking JaqlShellGetJars class.
+# jline only
+# STTY_STATE=`stty -g 2>/dev/null` 
+
+# add user-defined jars to classpath
+JAQLSHELL_CLASSPATH=""
+JARS=$(jaql com.ibm.jaql.util.shell.JaqlShellGetJars $* 2>/dev/null)
+if [ $? -eq 0 ]; then
+    for jar in $JARS; do
+        if [ "$JAQLSHELL_CLASSPATH" = "" ]; then
+            JAQLSHELL_CLASSPATH=$jar
+        else
+            JAQLSHELL_CLASSPATH=${JAQLSHELL_CLASSPATH}:$jar
+        fi
+    done
+fi
+export JAQLSHELL_CLASSPATH
+
+# check for cygwin
+cygwin=false
+case "`uname`" in
+    CYGWIN*) cygwin=true;;
+esac
+
+
+
+# CYGWIN ONLY: modify terminal settings 
+# jline only
+#if $cygwin; then
+#    "stty -icanon min 1 -echo;" 2>/dev/null
+#fi
+
+jaql JaqlShell "$@"
+
+# restore terminal settings
+# jline only
+# stty $STTY_STATE 2>/dev/null

@@ -1,0 +1,409 @@
+
+;//------------------- TEST-CASE -----------------
+//Test standard import statement
+
+//FAIL: Not yet imported
+fuzzy_join::cleanTitle;
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// unknown namespace fuzzy_join
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+import fuzzy_join;
+;//------------------- TEST-CASE -----------------
+
+//Test imported JavaUDF
+fuzzy_join::cleanTitle("XY");
+
+;//--------------------- RESULT ------------------
+
+"XY"
+
+;//------------------- TEST-CASE -----------------
+
+//Test imported JaqlFunction
+fuzzy_join::$normalize([{a:"a"},{a:"XY"}],"a");
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": "A"
+  },
+  {
+    "a": "XY"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+//FAIL: Only namespace got imported, not functions
+cleanTitle("AB");
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+// variable not defined: cleanTitle
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$normalize([{a:"a"},{a:"XY"}],"a");
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+// variable not defined: $normalize
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test module directory detection
+//Has no namespace file and no scripts directory
+import fail_not_detected;
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Could not find module fail_not_detected in:
+// .../src/test/com/ibm/jaql/modules/
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//Exports variables that do not exist
+import fail_wrong_exports;
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// export normalize does not exist
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+import fail_invalid_namespace_file;
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Module namespace is too new.  Version=9999 Max Version=1
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test import all statement
+import scripts_and_udf (*);
+;//------------------- TEST-CASE -----------------
+
+roundUp(0.1);
+
+;//--------------------- RESULT ------------------
+
+1
+
+;//------------------- TEST-CASE -----------------
+
+qgram("ab");
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "§§a",
+    1
+  ],
+  [
+    "§ab",
+    1
+  ],
+  [
+    "ab§",
+    1
+  ],
+  [
+    "b§§",
+    1
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+pi;
+
+;//--------------------- RESULT ------------------
+
+3
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test import namespace + functions statement
+import scripts_only (three,four);
+;//------------------- TEST-CASE -----------------
+
+three;
+
+;//--------------------- RESULT ------------------
+
+2
+
+;//------------------- TEST-CASE -----------------
+
+four;
+
+;//--------------------- RESULT ------------------
+
+3
+
+;//------------------- TEST-CASE -----------------
+
+//FAIL: not imported
+five;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+// variable not defined: five
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//Should work
+scripts_only::five;
+
+;//--------------------- RESULT ------------------
+
+5
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//Test meta modules (reexport variables from other modules)
+import meta;
+;//------------------- TEST-CASE -----------------
+
+meta::cleanTitle("ab");
+
+;//--------------------- RESULT ------------------
+
+"AB"
+
+;//------------------- TEST-CASE -----------------
+
+meta::$normalize([{a:"a"},{a:"XY"}],"a");
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": "A"
+  },
+  {
+    "a": "XY"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test scope & shadowing
+import scripts_with_namespace(*);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+23
+
+;//------------------- TEST-CASE -----------------
+
+y;
+
+;//--------------------- RESULT ------------------
+
+46
+
+;//------------------- TEST-CASE -----------------
+
+::x;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+// variable not defined: x
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ //FAIL: doesn't exist
+x=1;
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+1
+
+;//------------------- TEST-CASE -----------------
+
+::x;
+
+;//--------------------- RESULT ------------------
+
+1
+
+;//------------------- TEST-CASE -----------------
+
+scripts_with_namespace::x;
+
+;//--------------------- RESULT ------------------
+
+23
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test exports
+//FAIL: It is not exported
+fuzzy_join::qgram;
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+// namespace fuzzy_join does not export a variable of name qgram
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+//FAIL: scripts_with_namespaces has this should not be imported
+z;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+// variable not defined: z
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test export lists
+listExports("fuzzy_join");
+
+;//--------------------- RESULT ------------------
+
+[
+  "$fuzzy_join",
+  "$normalize",
+  "cleanTitle"
+]
+
+;//------------------- TEST-CASE -----------------
+
+listExports("meta");
+
+;//--------------------- RESULT ------------------
+
+[
+  "fuzzy_join",
+  "$normalize",
+  "cleanTitle"
+]
+
+;//------------------- TEST-CASE -----------------
+
+listExports("scripts_and_udf");
+
+;//--------------------- RESULT ------------------
+
+[
+  "qgram",
+  "jaccard",
+  "cleanTitle",
+  "roundUp",
+  "memHashMap",
+  "nullToZero",
+  "pi"
+]
+
+;//------------------- TEST-CASE -----------------
+
+listExports("scripts_only");
+
+;//--------------------- RESULT ------------------
+
+[
+  "five",
+  "three",
+  "four"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Test reassigning values
+meta::cleanTitle = 2;
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+// unexpected token: =
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//Test examples function
+examples("fuzzy_join");
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------

@@ -1,0 +1,660 @@
+
+;//------------------- TEST-CASE -----------------
+// utility function to catch and skip
+catchSkip = fn(e) (
+  catch(e, { errThresh: 1000 })
+);
+;//------------------- TEST-CASE -----------------
+
+
+// utility function to catch and abort
+catchAbort = fn(e) (
+  catch(e, { errThresh: 0 })
+);
+;//------------------- TEST-CASE -----------------
+
+
+// utility function to catch and abort after k errors
+catchThresh = fn(e) (
+  catch(e, { errThresh: 2 })
+);
+;//------------------- TEST-CASE -----------------
+
+
+// generate different types of errors from a udf
+errFn = javaudf("com.ibm.jaql.fail.fn.ErrorFn");
+;//------------------- TEST-CASE -----------------
+
+
+// utility function to generate no errors in a udf
+errNone = fn(a, b) ( errFn("ok", 0, "NONE") );
+;//------------------- TEST-CASE -----------------
+
+
+// utility function to generate args errors in a udf
+errArgs = fn(a, b) ( errFn(b, a, "NONE") ); 
+;//------------------- TEST-CASE -----------------
+
+
+// utility function to generate a shallow errors in a udf
+errShallow = fn(a, b) ( errFn(a, b, "SHALLOW_ERROR") );
+;//------------------- TEST-CASE -----------------
+
+
+// utility function to generate deep errors in a udf
+errDeep = fn(a, b) ( errFn(a, b, "DEEP_ERROR") );
+;//------------------- TEST-CASE -----------------
+
+
+// invoking the udf stand-alone
+errNone("ok", 0);
+
+;//--------------------- RESULT ------------------
+
+"ok"
+
+;//------------------- TEST-CASE -----------------
+
+
+errArgs("ok", 0);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.JsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+errShallow("ok", 0);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+// shallow
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+errDeep("ok", 0);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+// caused by IO
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoking the udf stand-alone (with catch)
+catchAbort(errNone("ok", 0));
+
+;//--------------------- RESULT ------------------
+
+"ok"
+
+;//------------------- TEST-CASE -----------------
+
+catchSkip(errNone("ok", 0));
+
+;//--------------------- RESULT ------------------
+
+"ok"
+
+;//------------------- TEST-CASE -----------------
+
+catchThresh(errNone("ok", 0));
+
+;//--------------------- RESULT ------------------
+
+"ok"
+
+;//------------------- TEST-CASE -----------------
+
+
+catch(errArgs("ok", 0), { errThresh: 0 });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.JsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+catch(errArgs("ok", 0), { errThresh: 1000 });
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+catch(errArgs("ok", 0), { errThresh: 2 });
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+
+catch(errShallow("ok", 0), { errThresh: 0 });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+// shallow
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+catch(errShallow("ok", 0), { errThresh: 1000 });
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+catch(errShallow("ok", 0), { errThresh: 2 });
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+
+catch(errDeep("ok", 0), { errThresh: 0 });
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+// caused by IO
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+catch(errDeep("ok", 0), { errThresh: 1000 });
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+catch(errDeep("ok", 0), { errThresh: 2 });
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoking the udf in sequential operator
+range(1,100) -> transform errNone("ok", $) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> transform errArgs("ok", $) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> transform errShallow("ok", $) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+// shallow
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> transform errDeep("ok", $) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+// caused by IO
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoking the udf in sequential operator (with catch)
+range(1,100) -> transform catchAbort(errNone("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catchSkip(errNone("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catchThresh(errNone("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 0 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 1000 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 2 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 0 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+// shallow
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 1000 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 2 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+// shallow
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 0 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+// caused by IO
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 1000 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 2 }) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+// caused by IO
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoking the udf in map-only job
+
+// invoking the udf in map-reduce job
+
+// invoking the udf in map-reduce job
+
+// new data for reducer tests
+test2 = [ ["a",0], ["a",1], ["b",0], ["c",0], ["c",1], ["c",2]];
+;//------------------- TEST-CASE -----------------
+
+test2-> write(hdfs("bar"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "bar",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// error on both map and reduce (MRAggregate) skip
+read(hdfs("bar")) 
+-> transform catch(if ($[0] == "a") ($.badFieldAccess) else ($), { errThresh: 1000 })
+-> group by g = $[0] into { g: g, num: count($), err: catch(if(g == "b") (g.badFieldAccess) else ("ok"), { errThresh: 1000 }) };
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "err": "ok",
+    "g": null,
+    "num": 2
+  },
+  {
+    "err": null,
+    "g": "b",
+    "num": 1
+  },
+  {
+    "err": "ok",
+    "g": "c",
+    "num": 3
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// error on both map and reduce (MapReduceFn) skip
+read(hdfs("bar")) 
+-> transform catch(if ($[0] == "a") ($.badFieldAccess) else ($), { errThresh: 1000 })
+-> group by g = $[0] into { g: g, err: ($ -> transform catch(if($[0] == "b") (g.badFieldAccess) else ("ok"), { errThresh: 1000 })) }  -> sort by [$.g];
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "err": [
+      "ok",
+      "ok"
+    ],
+    "g": null
+  },
+  {
+    "err": [
+      null
+    ],
+    "g": "b"
+  },
+  {
+    "err": [
+      "ok",
+      "ok",
+      "ok"
+    ],
+    "g": "c"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// use the registered exception handler
+range(1,100) -> transform catch(errNone("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+100
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errArgs("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errShallow("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+// shallow
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+range(1,100) -> transform catch(errDeep("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+// caused by IO
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// register a new exception handler
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+range(1,4) -> transform catch(errArgs("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+4
+
+;//------------------- TEST-CASE -----------------
+
+
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+range(1,6) -> transform catch(errArgs("ok", $)) -> count();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> transform catch(errArgs("ok", $));
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null,
+  null,
+  null
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.BufferedJsonArray for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $));
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------

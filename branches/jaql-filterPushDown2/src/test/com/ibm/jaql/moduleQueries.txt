@@ -1,0 +1,70 @@
+//Test standard import statement
+
+//FAIL: Not yet imported
+fuzzy_join::cleanTitle;
+
+import fuzzy_join;
+//Test imported JavaUDF
+fuzzy_join::cleanTitle("XY");
+//Test imported JaqlFunction
+fuzzy_join::$normalize([{a:"a"},{a:"XY"}],"a");
+//FAIL: Only namespace got imported, not functions
+cleanTitle("AB");
+$normalize([{a:"a"},{a:"XY"}],"a");
+
+//Test module directory detection
+//Has no namespace file and no scripts directory
+import fail_not_detected;
+//Exports variables that do not exist
+import fail_wrong_exports;
+import fail_invalid_namespace_file;
+
+//Test import all statement
+import scripts_and_udf (*);
+roundUp(0.1);
+qgram("ab");
+pi;
+
+//Test import namespace + functions statement
+import scripts_only (three,four);
+three;
+four;
+//FAIL: not imported
+five;
+//Should work
+scripts_only::five;
+
+
+//Test meta modules (reexport variables from other modules)
+import meta;
+meta::cleanTitle("ab");
+meta::$normalize([{a:"a"},{a:"XY"}],"a");
+
+//Test scope & shadowing
+import scripts_with_namespace(*);
+x;
+y;
+::x; //FAIL: doesn't exist
+x=1;
+x;
+::x;
+scripts_with_namespace::x;
+
+//Test exports
+//FAIL: It is not exported
+fuzzy_join::qgram; 
+//FAIL: scripts_with_namespaces has this should not be imported
+z;
+
+//Test export lists
+listExports("fuzzy_join");
+listExports("meta");
+listExports("scripts_and_udf");
+listExports("scripts_only");
+
+//Test reassigning values
+meta::cleanTitle = 2;
+
+
+//Test examples function
+examples("fuzzy_join");

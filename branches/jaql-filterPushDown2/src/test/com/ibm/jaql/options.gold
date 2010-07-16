@@ -1,0 +1,259 @@
+
+;//------------------- TEST-CASE -----------------
+range(0,100)
+ -> transform { key: mod($,7), b: $ }
+ -> write(hdfs('data'))
+;
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "data",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+conf = { 
+  "mapred.job.name":     "options test query",
+  "mapred.reduce.tasks": 10,
+};
+;//------------------- TEST-CASE -----------------
+
+
+read(hdfs('data'))
+ -> group by key = $.key
+    options { conf }
+    into { key, n: count($) }
+ -> sort by [$]
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "key": 0,
+    "n": 15
+  },
+  {
+    "key": 1,
+    "n": 15
+  },
+  {
+    "key": 2,
+    "n": 15
+  },
+  {
+    "key": 3,
+    "n": 14
+  },
+  {
+    "key": 4,
+    "n": 14
+  },
+  {
+    "key": 5,
+    "n": 14
+  },
+  {
+    "key": 6,
+    "n": 14
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+join i in read(hdfs('data')),
+     j in read(hdfs('data'))
+  where i.key == j.key
+  options { conf }
+  into { i: i.key, j: j.key }
+-> distinct()
+-> sort by [$]
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "i": 0,
+    "j": 0
+  },
+  {
+    "i": 1,
+    "j": 1
+  },
+  {
+    "i": 2,
+    "j": 2
+  },
+  {
+    "i": 3,
+    "j": 3
+  },
+  {
+    "i": 4,
+    "j": 4
+  },
+  {
+    "i": 5,
+    "j": 5
+  },
+  {
+    "i": 6,
+    "j": 6
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// No options set yet
+getOptions();
+
+;//--------------------- RESULT ------------------
+
+{}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Set some options:
+setOptions( { conf: { "io.sort.factor": 20  }} );
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+// And see them:
+getOptions();
+
+;//--------------------- RESULT ------------------
+
+{
+  "conf": {
+    "io.sort.factor": 20
+  }
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Add more options:
+setOptions( { conf: { "io.sort.mb": 100  }} );
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+// See both sets of options.
+getOptions();
+
+;//--------------------- RESULT ------------------
+
+{
+  "conf": {
+    "io.sort.factor": 20,
+    "io.sort.mb": 100
+  }
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// pickup global options
+read(hdfs('data'))
+ -> group by key = $.key
+    into { key, n: count($) }
+ -> sort by [$]
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "key": 0,
+    "n": 15
+  },
+  {
+    "key": 1,
+    "n": 15
+  },
+  {
+    "key": 2,
+    "n": 15
+  },
+  {
+    "key": 3,
+    "n": 14
+  },
+  {
+    "key": 4,
+    "n": 14
+  },
+  {
+    "key": 5,
+    "n": 14
+  },
+  {
+    "key": 6,
+    "n": 14
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// pickup global options + local options
+read(hdfs('data'))
+ -> group by key = $.key
+    options { conf }
+    into { key, n: count($) }
+ -> sort by [$]
+;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "key": 0,
+    "n": 15
+  },
+  {
+    "key": 1,
+    "n": 15
+  },
+  {
+    "key": 2,
+    "n": 15
+  },
+  {
+    "key": 3,
+    "n": 14
+  },
+  {
+    "key": 4,
+    "n": 14
+  },
+  {
+    "key": 5,
+    "n": 14
+  },
+  {
+    "key": 6,
+    "n": 14
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

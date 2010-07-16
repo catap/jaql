@@ -1,0 +1,320 @@
+<link rel="stylesheet" type="text/css" charset="utf-8" media="all" href="jaql.css">
+<!-- /*
+ * Copyright (C) IBM Corp. 2008.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */ -->
+<html>
+<head>
+<title> Jaql Input/Output </title>
+</head>
+<body>
+
+<h1 align="center"> Jaql Input/Output </h1>
+<p/>
+<h2>Introduction</h2>
+<p/>
+Jaql has been designed to flexibly read and write data 
+from a variety of data stores and formats.
+Input and output are handled through read/write expressions;
+several examples are introduced in the <a href="jaql-overview.html">overview</a>.
+For example, <code>localRead, localWrite</code> access locally stored files, 
+<code>hdfsRead, hdfsWrite</code> access 
+<a href="http://hadoop.apache.org/core/docs/r0.15.3/hdfs_design.html">HDFS</a> files, and
+<code>hbaseRead, hbaseWrite</code> access <a href="http://hadoop.apache.org/hbase/">HBase</a> tables.
+In this section, we show how to extend Jaql to access new data stores and formats.
+We first look into data stores that are supported by Jaql: Hadoop's HDFS and HBase
+as well as input/output <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/io/package-summary.html">streams</a>. 
+Then we look into plugging-in data stores that do not work with Hadoop or stream interfaces.
+
+<a name="hadoop"></a><h2>Hadoop-based Input/Output</h2>
+<p/>
+In Hadoop's <a href="http://hadoop.apache.org/core/docs/r0.15.3/mapred_tutorial.html">MapReduce</a>, data is accessed using 
+<a href="http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/InputFormat.html"><code>InputFormat</code></a> 
+and <a href="http://hadoop.apache.org/core/docs/r0.15.3/api/org/apache/hadoop/mapred/OutputFormat.html"><code>OutputFormat</code></a>.
+Classes that implement these interfaces provide enough information to the MapReduce framework so that
+the data can be partitioned and processed in parallel.
+
+<p/>
+Jaql's I/O framework supports any Input(Output)Format to be plugged-in. 
+However, Input(Output)Formats work with <code>Writables</code> while Jaql expects <code>Items</code>.
+Thus, the framework makes it easy to convert <code>Writables</code> to and from <code>Items</code>.
+In order to make the discussion more concrete, lets look under the hood of the 
+<code>hdfsRead('books.jqlb')</code> expression.
+First, <code>hdfsRead</code> is a <strong>macro</strong> expression that 
+makes use of a more generic expression called <code>read</code>. 
+The following is the actual <code>read</code> expression that is invoked 
+when using <code>hdfsRead</code>:
+
+<pre>
+  read('hdfs', 'books.jqlb');
+</pre>
+
+The first argument to the <code>read</code> expression is the name
+associated with a type of data store.  Just as names are associated to
+function implementations in the function registry, names are
+associated to data store types in the storage registry. The second
+argument to <code>read</code> is the path of a file stored in HDFS.
+
+<p/>
+For the hdfs data store type, the registry entry specifies default Input(Output)Formats.
+The defaults for Jaql are <code>SequenceFileInputFormat</code> and <code>SequenceFileOutputFormat</code>.
+However, suppose that the HDFS file is a text file (i.e, new-line delimitted records). The InputFormat to use
+in this case is <code>TextInputFormat</code>. For this case, Jaql's default can be overriden as follows:
+
+<pre>
+  read('hdfs', 'books.jql', {format: 'org.apache.hadoop.mapred.TextInputFormat'});
+</pre>
+
+The additional argument to <code>read</code> is a record that specifies which class
+will implement the InputFormat. More generally, this record can specify any options that 
+are specific to a give data store type. In the example above, it is necessary to specify 
+a converter from <code>Writables</code> to <code>Items</code>. Why?
+A TextFile's records are <code>Text</code> writables, not Jaql <code>Items</code> (i.e., binary JSON).
+What is needed is a way to convert a <code>Text Writable</code> into an <code>Item</code>. 
+This is done by implementing the appropriate converter, then specifying it
+as an option to <code>read</code>. An example converter is implemented as follows:
+
+<pre>
+  public class FromJSONTxtConverter extends HadoopRecordToItem { 
+  ...
+  @Override
+  protected WritableToItem createValConverter() {
+    return new WritableToItem() {
+      public void convert(Writable src, Item tgt) {
+        // expect src is of type Text
+        // use a JSON parser to parse it
+        // set tgt
+      }
+      ...
+    };
+    ...
+  }
+</pre>
+
+<!--
+ByteArrayInputStream input = new ByteArrayInputStream(((Text)src).getBytes());
+        JaqlLexer  lexer           = new JaqlLexer(input);
+        JaqlParser parser          = new JaqlParser(lexer);
+        Context context            = new Context();
+        
+        try {
+          Expr expr                = parser.query();
+          
+          if (expr == null) 
+            return false;
+          // evaluate the expression  
+          Item data                = expr.eval(context);
+          // set result in the target
+          tgt.set(data.get());
+          return true;
+        } catch(EOFException eof) {
+          return false;
+        } catch(Exception e) {
+          throw new RuntimeException(e);
+        }
+-->
+The <code>FromJSONTxtConverter</code> takes as input a <code>Writable</code> value and sets the 
+<code>Item</code> to the parsed result. The following shows how to use it in <code>read</code>:
+
+<pre>
+  read('hdfs', 'books.jql', {format    : 'org.apache.hadoop.mapred.TextInputFormat',
+                             converter : 'com.acme.extensions.data.FromJSONTxtConverter'});
+</pre>
+
+The <code>read</code> expression uses <code>TextInputFormat</code> to read the file
+specified at 'path' in HDFS. For each record retrieved from the file, it will use 
+<code>FromJSONTxtConverter</code> to convert each <code>Text Writable</code> to an <code>Item</code>.
+While extensible, the <code>read</code> expression is cumbersome to specify in this manner.
+There are several options to hide the details. The simplest is to define a function:
+
+<pre>
+  $myRead = fn($path) read('hdfs', $path, 
+                            {format    : 'org.apache.hadoop.mapred.TextInputFormat',
+                             converter : 'com.acme.extensions.data.FromJSONTxtConverter'});
+  
+  $myRead('books.jql');
+</pre>
+
+Another option is to register a new data store type. This is done through
+a storage registry that maps a <strong>name</strong> to records that specify options for input and output.
+This is how Jaql keeps track of defaults for each data store. For example, the registry
+entry for 'hdfs' files is the following:
+
+<pre>
+  {type:       'hdfs',
+   inoptions :	{adapter      : 'com.ibm.impliance.jaql.DefaultHadoopInputAdapter', 
+                 format       : 'org.apache.hadoop.mapred.SequenceFileInputFormat', 
+                 configurator : 'com.ibm.impliance.jaql.FileInputConfigurator'},
+   outoptions:	{adapter      : 'com.ibm.impliance.jaql.DefaultHadoopOutputAdapter', 
+                 format       : 'org.apache.hadoop.mapred.SequenceFileOutputFormat', 
+                 configurator : 'com.ibm.impliance.jaql.FileOutputConfigurator'}};
+</pre>
+
+A data store is named by (type:'hdfs') which is used by <code>read</code> to find
+associated options. There are two sets of options, one for input and one for output.
+The default file format is a <code>SequenceFile</code> whose records are key, value
+pairs whose types are <code>WritableComparable</code> and <code>Writable</code>, respectively. 
+By default, Jaql ignores the key. Since a converter is not specified, Jaql assumes that the
+value's type is an <code>Item</code>. 
+
+<p/>
+The 'hdfs' registry example includes additional options. The first is an <code>Adapter</code>. This is the glue
+that brings together all other options for a data source and encapsulates how to access data and how to 
+convert the data to <code>Items</code> (if needed). Thus, it produces an <code>Item</code> iterator
+for Jaql from any data store. For Hadoop data, the adapter to use is <code>DefaultHadoopInput(Output)Adapter</code>.
+The Hadoop adapter allows any existing Input(Output)Format to be swapped in along with any converter
+(as shown by the earlier example). Another example of an adapter in Jaql is the StreamAdapter. It allows
+access directly to byte stream data. Access to other data stores is possible by implementing the Adapter interface.
+
+<p/>
+If an Input(Output)Format can be specified for a given data store, Hadoop's MapReduce can use it as an input(output).
+Accordingly, the Hadoop adapter informs the Jaql compiler that Hadoop's MapReduce can be used if appropriate.
+However, Input(Output)Formats may require specific configuration prior to submitting a MapReduce job.
+In Jaql, this is exposed through the "configurator" option. For example, an Input(Output)Format requires
+that a file path be specified before the job is submitted. The <code>com.ibm.impliance.jaql.FileInputConfigurator</code>
+does exactly this: the Adapter passes 'books.jql' and all options to the configurator, which then configures
+the job appropriately. For many HDFS files, <code>com.ibm.impliance.jaql.FileInputConfigurator</code> is sufficient,
+but if needed, it can be overriden. 
+
+<p/>
+Returning to the example, the new data store type is registered as follows:
+
+<pre>
+  registerAdapter({type     :	'myHDFSFile',
+                   inoptions:	{adapter      : 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter', 
+                                 format       : 'org.apache.hadoop.mapred.TextInputFormat', 
+                                 converter    : 'com.acme.extensions.data.FromJSONTxtConverter',
+                                 configurator : 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}});
+</pre>
+
+The Hadoop adapter and configurator are specified, along with the TextInputFormat and custom converter.
+The newly registered data store is used as follows:
+
+<pre>
+  read('myHDFSFile', 'books.jql');
+</pre>
+
+If a new data store type is very common, it may be convenient to
+define a Jaql function that hides some of the details:
+
+<pre>
+  $readMyFile = fn($name) read('myHDFSFile', $name);
+
+  $readMyFile('books.jql');
+</pre>
+
+<p/>
+In addition to HDFS files, Jaql supports HBase as a data source. This is supported by
+the same Hadoop adapter, but parameterized by Input(Output)Formats and configurators that are specific to HBase.
+For HBase, the 'path' represents a table name. Columns and column families can be specified as additional options.
+
+<p/>
+Finally, in order to do something more interesting with these examples,
+consider a query that will be rewritten to 
+Map/Reduce. The simplest example is a for-loop over a <code>read</code> expression. Jaql translates such
+a query into the following Map/Reduce expression:
+
+<pre>
+  $q = for( $i in read('myHDFSFile', 'example.jql') )
+         [ {key: $i.publisher, ($i.title): $i.year} ];
+  
+  hbaseWrite('mytable', $q);
+  
+  // translates to:
+  mapReduce({
+    input:  {type: 'myHDFSFile', location: 'example.jql'},
+    output: {type: 'hbase'     , location: 'mytable'},
+    map:    fn($i) [ [null, {$i.key, $i.abc, $i.xyz}] ] 
+  });
+  
+</pre>
+
+In this example, an HBase table is loaded in parallel with a projection from a JSON text formatted file.
+The <code>mapReduce</code> function specifies its input and output using records. Each record specifies
+the data store type, a location, and possibly additional options. 
+
+<a name="stream"></a><h2>Stream-based Input/Output</h2>
+<p/>
+The Hadoop-based Input/Output is useful when processing large data sets.
+However, we expect that reading from an <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/io/InputStream.html">InputStream</a> 
+or writing to an <a href="http://java.sun.com/j2se/1.5.0/docs/api/java/io/OutputStream.html">OutputStream</a>
+will also be needed when manipulating small data sets. 
+For this purpose, we provide an additional type of adapter: <i>StreamAdapters</i>. 
+StreamAdapeters open an input or output stream given a URI. 
+For example, <code>localRead, localWrite</code> and <code>httpGet</code> expressions
+are based on StreamAdapters. Just as Hadoop adapters allow for conversions between <code>Writables</code>
+and <code>Items</code>, Stream adapters also provide for converting between bytes and <code>Items</code>.
+
+<p/>
+For example, consider accessing a local file that is formatted as JSON text. The only
+class to implement is a converter that can borrow from the previous example:
+
+<pre>
+  public class FromJSONTxtConverter implements StreamToItem {
+    ...
+    public void setInputStream(InputStream in) {
+      // set the input stream
+    }
+    
+    public boolean read(Item v) throws IOException {
+      // parse the input stream to get the next v
+    }
+    ...
+  }
+</pre>
+
+The new data source is registered and tested as follows: 
+
+<pre>
+  localRead('books.jql', {format: 'com.acme.extensions.data.FromJSONTxtConverter'});
+</pre>
+
+<h2>Other Input/Output</h2>
+<p/>
+Adapters can be extended in order to access data that are not suitable for
+Hadoop and Stream adapters. An example is access to relational databases, e.g., through a JDBC driver.
+The following lists the Adapter interface:
+
+<pre>
+  public interface StorableInputAdapter {
+    
+    protected void initializeFrom(Item args);
+    
+    public void open() throws IOException;
+    
+    public abstract ItemReader getItemReader() throws IOException;
+    
+    public void close() throws IOException;
+  }
+</pre>
+
+<p/>
+
+The <code>initializeFrom</code> method is used to bind-in arguments that are passed in from the expression
+(e.g., <code>'path'</code> from <code>myRead('path')</code>).
+The <code>open</code> sets up access to a data store whereas <code>close</code> releases resources.
+Finally, the <code>Iter</code> consumes data from the data source and produces <code>Items</code> as input to Jaql.
+
+<p/>
+<p/>
+<center> 
+<a href="jaql-overview.html">Overview</a> | 
+<a href="jaql-java-functions.html">Java Functions</a> | 
+<a href="datasrc-extensibility.html">Extending Data-sources</a> | 
+<a href="running.html">Running Jaql</a> | 
+<a href="roadmap.html">Roadmap</a> 
+</center>
+
+</body>
+</html>
