@@ -32,6 +32,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -269,6 +270,32 @@ public class BindingExpr extends Expr
   {
     return exprs[i];
   }
+
+  
+  /**
+   * Return one mapping table that merges the mapping table from all children.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+
+      for (int i = 0; i < exprs.length; i++)
+    	  mt.addAll(exprs[i].getMappingTable());
+      return mt;
+  }
+  
+  
+  /**
+   * Return the mapping table for child "child_id".
+   */
+  @Override
+  public MappingTable getMappingTable(int child_id)
+  {
+	  assert (child_id < exprs.length);
+	  return (exprs[child_id].getMappingTable());
+  }
+   
 
   /** 
    * Returns an array of schemata that are bound to the variable, respecting order, and sets

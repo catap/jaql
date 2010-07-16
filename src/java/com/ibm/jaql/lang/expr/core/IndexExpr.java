@@ -27,7 +27,10 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
+import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -69,7 +72,20 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
   {
     this(expr, new ConstExpr(JsonLong.make(i)));
   }
-
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  VarExpr ve= new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  Expr input = this.arrayExpr(); 
+	  
+	  mt.add(ve, this, input.getMappingTable().isSafeToMapAll());
+	  return mt;
+  }
+  
   @Override
   public Schema getSchema()
   {

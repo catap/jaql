@@ -28,6 +28,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JsonComparator;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.function.JaqlFunction;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.util.JsonSorter;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
@@ -54,6 +55,14 @@ public class SortExpr extends IterExpr
   public Expr cmpExpr()
   {
     return exprs[1];
+  }
+
+  /** 
+   * Returns the input to the sort
+   */
+  public Expr inputExpr()
+  {
+    return exprs[0];
   }
 
   //  public SortExpr(Env env, String varName, Expr inputExpr)
@@ -132,11 +141,25 @@ public class SortExpr extends IterExpr
       JsonValue byValue = cmp.eval(context);
       temp.add(byValue, value);
     }
-
+    
     temp.sort();
 
     return temp.iter();
   }
+  
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  mt.addAll(exprs[0].getMappingTable());
+	  mt.addUnsafeMappingRecord();
+	  return mt;
+  }
+   
   
   @Override
   public Schema getSchema()
