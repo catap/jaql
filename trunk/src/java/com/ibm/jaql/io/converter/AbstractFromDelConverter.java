@@ -93,14 +93,14 @@ public abstract class AbstractFromDelConverter<K,V> implements KeyValueImport<K,
   @Override
   public void init(JsonRecord options)
   {
-    DelOptionParser handler = new DelOptionParser();
-    handler.handle(options);
+    DelOptionParser optParser = new DelOptionParser();
+    optParser.handle(options);
     
-    delimiter = handler.getDelimiter();
-    schema = handler.getSchema();
+    delimiter = optParser.getDelimiter();
+    schema = optParser.getSchema();
     
     // make reader
-    reader = DelParser.make(delimiter, handler.getQuoted(), handler.getEscape());
+    reader = DelParser.make(delimiter, optParser.getQuoted(), optParser.getDdquote(), optParser.getEscape());
 
     // check for schema
     isRecord = false;
