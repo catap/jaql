@@ -31,9 +31,9 @@ public abstract class DelParser
   // -- factory methods ---------------------------------------------------------------------------
   
   /** Delimited but not quoted */
-  public static DelParser make(byte delimiter, boolean quoted, boolean escape)
+  public static DelParser make(byte delimiter, boolean quoted, boolean _2dqoute, boolean escape)
   {
-    return quoted ? new QuotedDelParser(delimiter, escape) : new UnquotedDelParser(delimiter);
+    return quoted ? new QuotedDelParser(delimiter, _2dqoute, escape) : new UnquotedDelParser(delimiter);
   }
   
   // -- implementing classes ----------------------------------------------------------------------
@@ -56,11 +56,13 @@ public abstract class DelParser
   private static final class QuotedDelParser extends DelParser
   {
     private byte delimiter;
+    private boolean ddquote;
     private boolean escape;
     
-    QuotedDelParser(byte delimiter, boolean escape)
+    QuotedDelParser(byte delimiter, boolean ddquote, boolean escape)
     {
       this.delimiter = delimiter;
+      this.ddquote = ddquote;
       this.escape = escape;
     }
     
@@ -68,7 +70,7 @@ public abstract class DelParser
     {
       if (bytes[start] == DOUBLE_QUOTE)
       {
-        return readFieldQuoted(target, bytes, length, start, delimiter, escape);
+        return readFieldQuoted(target, bytes, length, start, delimiter, ddquote, escape);
       }
       else
       {
@@ -101,18 +103,16 @@ public abstract class DelParser
   }
 
   /**
-   * Escape sequence is converted into the escaped character. Escape sequence
-   * is prefixed with <tt>"</tt> or <tt>\</tt>. Both <tt>""</tt> and
-   * <tt>\"</tt> are converted into <tt>"</tt>. Both 2-char escape sequence and
-   * 6-char unicode sequence are supported. Copying is necessary if the field
-   * is escaped. It is the reverse of {@link JsonUtil#quote(String, boolean,
-   * char)}.
+   * Escape sequence is converted into the escaped character. Copying is
+   * necessary if the field is escaped. It is the reverse of
+   * {@link JsonUtil#quote(String, boolean, char)} .
    */
   static int readFieldQuoted(SubJsonString target,
                              byte[] bytes,
                              int length,
                              int start,
                              byte delimiter,
+                             boolean ddquote,
                              boolean escape)
  {
     // there is a quote
@@ -132,7 +132,7 @@ public abstract class DelParser
           // The double quote is the last character
           end--;
           break;
-        } else if (bytes[end + 1] == DOUBLE_QUOTE) {
+        } else if (ddquote && bytes[end + 1] == DOUBLE_QUOTE) {
           // escaped double quote
           if (firstEscaped) {
             output = new byte[capacity];
@@ -148,7 +148,7 @@ public abstract class DelParser
           end--;
           break;
         }
-      } else if (escape && bytes[end] == BACK_SLASH) {
+      } else if (bytes[end] == BACK_SLASH) {
         if (firstEscaped) {
           output = new byte[capacity];
           outputSize = end - start;
@@ -156,50 +156,57 @@ public abstract class DelParser
           unescaped = true;
           firstEscaped = false;
         }
-        switch (bytes[end + 1]) {
-          case SINGLE_QUOTE :
-            output[outputSize++] = SINGLE_QUOTE;
-            end += 2;
-            break;
-          case BACK_SLASH :
-            output[outputSize++] = BACK_SLASH;
-            end += 2;
-            break;
-          case 'b' :
-            output[outputSize++] = BACKSPACE;
-            end += 2;
-            break;
-          case 'f' :
-            output[outputSize++] = FORM_FEED;
-            end += 2;
-            break;
-          case 'n' :
-            output[outputSize++] = LINE_FEED;
-            end += 2;
-            break;
-          case 'r' :
-            output[outputSize++] = CARRIAGE_RETURN;
-            end += 2;
-            break;
-          case 't' :
-            output[outputSize++] = TAB;
-            end += 2;
-            break;
-          case 'u' :
-            try {
-              byte[] utf8 = toBytes(bytes, end + 2);
-              int utf8Len = utf8.length;
-              System.arraycopy(utf8, 0, output, outputSize, utf8Len);
-              outputSize += utf8Len;
-              end += 6;
-            } catch(Exception e) {
-              // perhaps it was just "BAKC_SLASHublahblah" ... keep BACK_SLASH and u
-              output[outputSize++] = bytes[end++];
-              output[outputSize++] = bytes[end++];
-            }
-            break;
-          default :
-            output[outputSize++] = bytes[end++]; // swallow the backslash as a literal
+        if (!ddquote && bytes[end + 1] == DOUBLE_QUOTE) {
+          output[outputSize++] = DOUBLE_QUOTE;
+          end += 2;
+        } else if (escape) {
+          switch (bytes[end + 1]) {
+            case SINGLE_QUOTE :
+              output[outputSize++] = SINGLE_QUOTE;
+              end += 2;
+              break;
+            case BACK_SLASH :
+              output[outputSize++] = BACK_SLASH;
+              end += 2;
+              break;
+            case 'b' :
+              output[outputSize++] = BACKSPACE;
+              end += 2;
+              break;
+            case 'f' :
+              output[outputSize++] = FORM_FEED;
+              end += 2;
+              break;
+            case 'n' :
+              output[outputSize++] = LINE_FEED;
+              end += 2;
+              break;
+            case 'r' :
+              output[outputSize++] = CARRIAGE_RETURN;
+              end += 2;
+              break;
+            case 't' :
+              output[outputSize++] = TAB;
+              end += 2;
+              break;
+            case 'u' :
+              try {
+                byte[] utf8 = toBytes(bytes, end + 2);
+                int utf8Len = utf8.length;
+                System.arraycopy(utf8, 0, output, outputSize, utf8Len);
+                outputSize += utf8Len;
+                end += 6;
+              } catch(Exception e) {
+                // perhaps it was just "BAKC_SLASHublahblah" ... keep BACK_SLASH and u
+                output[outputSize++] = bytes[end++];
+                output[outputSize++] = bytes[end++];
+              }
+              break;
+            default :
+              output[outputSize++] = bytes[end++]; // swallow the backslash as a literal
+          }
+        } else {
+          output[outputSize++] = bytes[end++];
         }
       } else {
         if (unescaped)

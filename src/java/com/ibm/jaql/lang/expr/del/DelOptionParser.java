@@ -10,13 +10,21 @@ import com.ibm.jaql.json.type.JsonValue;
  * Parsing options for the conversion between JSON and del (delimited) from an
  * JSON record.
  * 
- * <code>schema</code>, <code>delimiter</code>, <code>quoted</code> and
- * <code>escape</code> fields of the option records are used. Valid arguments
- * for the <code>schema</code> field are: <code>null</code>, an array schema, or
- * a record schema. <code>delimiter</code> is an ASCII character (defaults to
- * <code>,</code>). <code>quoted</code> defaults to
- * <code>true</true>. <code>escape</code> is only in effect if
- * <code>quote</code> is <code>true</code>.
+ * <ul>
+ * <li><code>schema</code>: JSON schema. Valid values are <code>null</code>, an
+ * array schema, or a record schema.</li>
+ * <li><code>delimiter</code>: An ASCII character for separating a line into
+ * delimited fields. The default value is comma (<code>,<code>).</li>
+ * <li><code>quoted</code>: If <code>true</code>, delimited fields are
+ * surrounded with double quotes. The default value is <code>true</code>.</li>
+ * <li><code>ddquote</code>: If <code>true</code>, use another double quote to
+ * escape a double quote. Otherwise, use bachslash to escape a double quote.
+ * Only effect if <code>quoted</code> is <code>true</code>. The default value is
+ * <code>true</code>.</li>
+ * <li><code>escape</code>: If <code>true</code>, handle 2-character escape
+ * sequences and 6-character escape sequences. Only in effect if
+ * <code>quoted</code> is true. The default value is <code>true</code>.</li>
+ * </ul>
  */
 public class DelOptionParser {
 
@@ -24,6 +32,8 @@ public class DelOptionParser {
   public static final byte DELIMITER_DEFAULT = ',';
   public static final JsonString QUOTED_NAME = new JsonString("quoted");
   public static final boolean QUOTED_DEFAULT = true;
+  public static final JsonString DDQUOTE_NAME = new JsonString("ddquote");
+  public static final boolean DDQUOTE_DEFAULT = true;
   public static final JsonString SCHEMA_NAME = new JsonString("schema");
   public static final JsonString ESCAPE_NAME = new JsonString("escape");
   public static final boolean ESCAPE_DEFAULT = true;
@@ -31,6 +41,7 @@ public class DelOptionParser {
   private Schema schema;
   private byte delimiter;
   private boolean quoted;
+  private boolean ddquote;
   private boolean escape;
 
   public void handle(JsonRecord options) {
@@ -59,6 +70,20 @@ public class DelOptionParser {
 
     // / escape is valid only if quoted is true
     if (quoted) {
+      ddquote = DDQUOTE_DEFAULT;
+      if (options.containsKey(DDQUOTE_NAME)) {
+        JsonValue value = options.get(DDQUOTE_NAME);
+        if (value == null) {
+          throw new IllegalArgumentException("parameter \"" + DDQUOTE_NAME
+              + "\" must not be null");
+        }
+        if (!(value instanceof JsonBool)) {
+          throw new IllegalArgumentException("parameter \"" + DDQUOTE_NAME
+              + "\" must be boolean");
+        }
+        ddquote = ((JsonBool) value).get();
+      }
+
       escape = ESCAPE_DEFAULT;
       if (options.containsKey(ESCAPE_NAME)) {
         JsonValue value = options.get(ESCAPE_NAME);
@@ -135,6 +160,10 @@ public class DelOptionParser {
 
   public boolean getEscape() {
     return escape;
+  }
+
+  public boolean getDdquote() {
+    return ddquote;
   }
 
   public Schema getSchema() {

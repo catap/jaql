@@ -30,6 +30,16 @@ hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted-ok.del delimited-quoted-ok
 
 ;//------------------- TEST-CASE -----------------
 
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-ddquote.del delimited-ddquote.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
 hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid1.del delimited-invalid1.del") * 0;
 
 ;//------------------- EXPR-COUNTS -----------------
@@ -269,6 +279,41 @@ read(del($f, { quoted: true, escape: false }));
 ;//------------------- TEST-CASE -----------------
 
 read(del($f, { quoted: false, escape: false }));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// test dquote option
+$f = "delimited-ddquote.del";
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, ddquote: true, escape: false}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, ddquote: false, escape: false}));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(del($f, { quoted: true, ddquote: false, escape: true}));
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1267,6 +1312,28 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 ;//------------------- TEST-CASE -----------------
 
 
+// 2dquote option
+[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: true});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: false});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
 //-- testJsonToXml --
 {content: 12} -> jsonToXml();
 
@@ -1367,6 +1434,16 @@ hdfsShell("-rm delimited-quoted.del") * 0;
 ;//------------------- TEST-CASE -----------------
 
 hdfsShell("-rm delimited-quoted-ok.del") * 0;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-rm delimited-ddquote.del") * 0;
 
 ;//------------------- EXPR-COUNTS -----------------
 
