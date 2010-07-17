@@ -1,6 +1,7 @@
 hdfsShell("-copyFromLocal "+DATADIR+"delimited.del delimited.del") * 0;
 hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted.del delimited-quoted.del") * 0;
 hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-ddquote.del delimited-ddquote.del") * 0;
 hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid1.del delimited-invalid1.del") * 0;
 hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid2.del delimited-invalid2.del") * 0;
 hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid3.del delimited-invalid3.del") * 0;
@@ -36,6 +37,12 @@ $f = "delimited-quoted-ok.del";
 read(del($f, { quoted: true, escape: true }));
 read(del($f, { quoted: true, escape: false }));
 read(del($f, { quoted: false, escape: false }));
+
+// test dquote option
+$f = "delimited-ddquote.del";
+read(del($f, { quoted: true, ddquote: true, escape: false}));
+read(del($f, { quoted: true, ddquote: false, escape: false}));
+read(del($f, { quoted: true, ddquote: false, escape: true}));
 
 // test invalid files
 $f = "delimited-invalid1.del";
@@ -192,6 +199,10 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 ["one", "two"] -> jsonToDel({quoted: false});
 [{sn: "one"}, {sn: "two"}] -> jsonToDel({quoted: false, schema: schema {sn}});
 
+// 2dquote option
+[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: true});
+[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: false});
+
 //-- testJsonToXml --
 {content: 12} -> jsonToXml();
 {content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
@@ -211,6 +222,7 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 hdfsShell("-rm delimited.del") * 0;
 hdfsShell("-rm delimited-quoted.del") * 0;
 hdfsShell("-rm delimited-quoted-ok.del") * 0;
+hdfsShell("-rm delimited-ddquote.del") * 0;
 hdfsShell("-rm delimited-invalid1.del") * 0;
 hdfsShell("-rm delimited-invalid2.del") * 0;
 hdfsShell("-rm delimited-invalid3.del") * 0;

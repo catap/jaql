@@ -44,6 +44,8 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.JsonUtil;
 import com.ibm.jaql.util.RandomAccessBuffer;
 
+import static com.ibm.jaql.lang.expr.string.DelParser.*;
+
 /**
  * Converts a JSON value to a del(delimited) string.
  * 
@@ -62,12 +64,10 @@ public class JsonToDel {
 
   public static final String UTF_8 = "UTF-8";
 
-  public static final byte DOUBLE_QUOTE = '"';
-  public static final byte BACK_SLASH = '\\';
-
   private byte delimiter;
   private boolean quoted;
   private boolean escape;
+  private byte doubleQuoteEscapePrefix;
 
   private JsonString[] fieldNames = new JsonString[0];
 
@@ -101,6 +101,7 @@ public class JsonToDel {
     quoted = parser.getQuoted();
     escape = parser.getEscape();
     delimiter = parser.getDelimiter();
+    doubleQuoteEscapePrefix = parser.getDdquote() ? DOUBLE_QUOTE : BACK_SLASH;
 
     if (schema instanceof RecordSchema) {
       RecordSchema recordSchema = (RecordSchema) schema;
@@ -254,7 +255,7 @@ public class JsonToDel {
     for (int i = offset; i < end; i++) {
       byte b = utf8[i];
       if (b == DOUBLE_QUOTE) {
-        out.write(DOUBLE_QUOTE);
+        out.write(doubleQuoteEscapePrefix);
         out.write(DOUBLE_QUOTE);
       } else if (escape) {
         switch (b) {
