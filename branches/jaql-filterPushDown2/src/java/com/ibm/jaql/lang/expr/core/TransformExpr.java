@@ -108,6 +108,18 @@ public final class TransformExpr extends IterExpr
 	  return mt;
   }
   
+  /**
+   * Returns true if the projection list has side-effect, otherwise return false.
+   */
+  public boolean externalEffectProjection()
+  {
+	  if (projection().getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+			  projection().getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never())
+		  return false;
+	  else
+		  return true;
+  }
+  
   
   @Override
   public Schema getSchema()

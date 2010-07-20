@@ -23,7 +23,6 @@ import com.ibm.jaql.lang.expr.array.MergeFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.FilterExpr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.core.GroupByExpr;
@@ -52,11 +51,9 @@ public class FilterPushDown extends Rewrite
   }
  
   /**
-   * Make sure the VARs under the FilterExpr are correct. The easiest and safest way  is
-   * to check all Vars under the Filter predicates and if a var is not global, then replace it with the Filter var.
-   * TODO: Store the global vars in a table (stored in the TopExpr) and access it here
+   * Replace the filter variable from 'old_var' to 'new_var'
    */  
-  private boolean consistent_filter_vars(FilterExpr filter_expr, Var old_var, Var new_var) 
+  private boolean replaceVarInFilter(FilterExpr filter_expr, Var old_var, Var new_var) 
   {
 	  BindingExpr filter_input = filter_expr.binding();
 	  filter_input.var = new_var;
@@ -64,48 +61,6 @@ public class FilterPushDown extends Rewrite
 	  filter_expr.replaceVarInPredicates(old_var, new_var);
 	  return true;
   } 
-
-  /**
-   * plugin a new Filter below the child expr in all input branches specified in branch_ids.
-   */
-  private boolean plugin_filter_below_childExpr(ArrayList<Expr> pred_list, Var filter_var, Expr child_expr, ArrayList<Integer> branch_ids)
-  {
-	  VarMap vm = new VarMap();
-	  for (int i  = 0 ; i < branch_ids.size(); i++)
-	  {
-		  //Clone the predicates 
-		  ArrayList<Expr> predClone_list = new ArrayList<Expr>();
-		  for (int j = 0; j < pred_list.size(); j++)
-			  predClone_list.add(pred_list.get(j).clone(vm));
-		  
-		  //Create the new filter
-		  Expr branch = child_expr.child(branch_ids.get(i));
-		  BindingExpr new_filter_input = new BindingExpr(Type.IN, new Var(filter_var.name()), null, branch);
-		  FilterExpr new_fe = new FilterExpr(new_filter_input, predClone_list);
-		  new_fe.replaceVarInPredicates(filter_var, new_filter_input.var);
-		  child_expr.setChild(branch_ids.get(i), new_fe);
-	  }
-	  return true;
-  }  
-
-  
-  /**
-   * plugin a new Filter below a Transform
-   */
-  private boolean plugin_filter_below_transform(ArrayList<Expr> pred_list, Var filter_var, TransformExpr transform_expr)
-  {
-	  BindingExpr transform_input = transform_expr.binding();
-	  Var tansform_var = transform_input.var;
-	  Var tansform_var2 = transform_input.var2;
-	  
-	  FilterExpr new_fe = new FilterExpr(transform_input, pred_list);
-	  BindingExpr new_transform_input = new BindingExpr(Type.IN, tansform_var, tansform_var2, new_fe);
-	  transform_expr.setChild(0, new_transform_input);
-
-	  //Make sure the VARs under the FilterExpr are correct. 
-	  consistent_filter_vars(new_fe, filter_var, new Var(filter_var.name()));
-	  return true;
-  }  
   
   /**
    * plugin a new Filter below a Join in the given child direction
@@ -121,111 +76,56 @@ public class FilterPushDown extends Rewrite
 	  input.setChild(slot_num, new_fe);
 	  
 	  //Make sure the VARs under the FilterExpr are correct. 
-	  consistent_filter_vars(new_fe, filter_var, new_filter_input.var);
+	  replaceVarInFilter(new_fe, filter_var, new_filter_input.var);
 	  return true;
   }  
  
-  /**
-   * plugin a new Filter below a GroupBy 
-   */
-  private boolean plugin_filter_below_groupBy(ArrayList<Expr>[] pred_list_arr, Var filter_var, GroupByExpr grp_expr) 
-  {
-	  BindingExpr grp_input = grp_expr.inBinding();
-	  int child_cnt = grp_input.numChildren();
-	  assert (child_cnt == pred_list_arr.length);
-	  
-	  for (int i = 0; i < child_cnt; i++)
-	  {
-		  BindingExpr new_filter_input = new BindingExpr(Type.IN, new Var(filter_var.name()), null, grp_input.child(i));
-		  FilterExpr new_fe = new FilterExpr(new_filter_input, pred_list_arr[i]);
-		  grp_input.setChild(i, new_fe);
-
-		  //Make sure the VARs under the FilterExpr are correct. 
-		  consistent_filter_vars(new_fe, filter_var, new_filter_input.var);
-	  }
-	  return true;
-  }
-
-  
-  /**
-   * plugin a new Filter below Expand
-   */
-  private boolean plugin_filter_below_expand(ArrayList<Expr> pred_list, Var filter_var, ForExpr for_expr)
-  {
-	  BindingExpr for_input = for_expr.binding();	  
-	  BindingExpr new_filter_input = new BindingExpr(Type.IN, filter_var, null, for_input.child(0));
-	  FilterExpr new_fe = new FilterExpr(new_filter_input, pred_list);
-	  for_input.setChild(0, new_fe);
-
-	  //Make sure the VARs under the FilterExpr are correct. 
-	  consistent_filter_vars(new_fe, filter_var, new Var(filter_var.name()));
-	  return true;
-  }  
-
-
   /**
    * Change the expressions in usedIn_list according to the mapping in mappedTo_list.
    * -- usedIn_list points to Exprs in one predicate
    * -- mappedTo_list points to Exprs in the query tree
    */
-  private boolean change_predicate(ArrayList<Expr> usedIn_list, ArrayList<Expr> mappedTo_list, Var old_var, Var new_var) 
+  private boolean changePredicate(ArrayList<Expr> usedIn_list, ArrayList<Expr> mappedTo_list, Var old_var, Var new_var) 
   {
 	  VarMap vm = new VarMap();
+	  vm.put(old_var, new_var);
 	  for (int i = 0; i < usedIn_list.size(); i++)
 	  {
 		  Expr src_expr = usedIn_list.get(i);
 		  assert((src_expr instanceof PathExpr) || (src_expr instanceof VarExpr));
 		  Expr  map_to = mappedTo_list.get(i).clone(vm);
-		  map_to.replaceVar(old_var, new_var);
 		  src_expr.replaceInParent(map_to);
 	  }
 	  return true;
   }
 
-  /**
-   * If the expressions in "usedIn_list" can be mapped according to the mapping table "mt", then return the mappings. Otherwise return NULL.
-   */
-  public static ArrayList<Expr> predMappedTo(ArrayList<Expr> usedIn_list, MappingTable mt, boolean safeMappingOnly)
-  {
-	  ArrayList<Expr> mapped_to_list = new ArrayList<Expr>();
-
-	  //If we managed to do the mapping for all exprs in usedIn_list, then the predicate can be mapped and pushed down
-	  for (int i = 0; i < usedIn_list.size(); i++)
-	  {
-		  Expr pe = usedIn_list.get(i);
-		  MappingTable.ExprMapping mapped_to = mt.findPatternMatch(pe, safeMappingOnly);
-		  if (mapped_to == null)
-			  return null;
-		  mapped_to_list.add(mapped_to.getBeforeExpr());
-	  }
-	return mapped_to_list;
-  }
   
   /**
    * Try to push Filter below the Transform
    */
-  private boolean filter_transform_rewrite(FilterExpr filter_expr)
+  private boolean filterTransformRewrite(FilterExpr filter_expr)
   {
 	  TransformExpr transform_expr = (TransformExpr) filter_expr.binding().inExpr();
 	  Var transform_var = transform_expr.var();
 	  Var filter_pipe_var = filter_expr.binding().var;
+
+	  //If the "filter" or the "transform" is non-deterministic, then do not push the filter
+	  if (transform_expr.externalEffectProjection())
+		  return false;
+
 	  MappingTable mt = transform_expr.getMappingTable();
 	  if (mt.replaceVarInAfterExpr(filter_pipe_var) == false)
 		  return false;
 
-	  //If the "filter" or the "transform" is non-deterministic, then do not push the filter
-	  Expr projection_expr = transform_expr.projection(); 
-	  boolean hasEffect_transform = !(projection_expr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
-	  								 projection_expr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never());
-	  if (ExternalEffectFilter(filter_expr) || hasEffect_transform)
-		  return false;
-	  
+	  //A new variable for the new filter	
+	  Var newVar = engine.env.makeVar(filter_pipe_var.name());
+
 	  //Check each conjunctive predicate
 	  ArrayList<Expr> pushed_pred = new ArrayList<Expr>();
 	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
 	  {
 		  Expr crnt_pred = filter_expr.conjunctivePred(k);
-		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(crnt_pred, filter_pipe_var);  
+		  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(crnt_pred, filter_pipe_var);  
 		  if (usedIn_list.size() == 0)
 		  {
 			  pushed_pred.add(crnt_pred);
@@ -236,7 +136,9 @@ public class FilterPushDown extends Rewrite
 		  ArrayList<Expr> mappedTo_list = predMappedTo(usedIn_list, mt, true);		  
 		  if (mappedTo_list != null)
 		  {
-			  change_predicate(usedIn_list, mappedTo_list, transform_var, filter_pipe_var);        //has the side effect of changing "crnt_pred"
+			  //change_predicate() has the side effect of changing "crnt_pred"
+			  //Warning: It also make the query tree in-consistent at this moment
+			  changePredicate(usedIn_list, mappedTo_list, transform_var, newVar);       
 			  pushed_pred.add(crnt_pred);
 		  }
 	  }
@@ -250,7 +152,11 @@ public class FilterPushDown extends Rewrite
 	  if  (filter_expr.conjunctivePred_count() == 0)
 		  filter_expr.replaceInParent(filter_expr.binding().inExpr());
   
-	  plugin_filter_below_transform(pushed_pred, filter_pipe_var, transform_expr);
+	  //plugin the new filter
+	  BindingExpr transformBind = transform_expr.binding();
+	  BindingExpr bind = new BindingExpr(Type.IN, newVar, null, transformBind.inExpr());
+	  FilterExpr newFilter = new FilterExpr(bind, pushed_pred);
+	  transformBind.setChild(0, newFilter);	  
 	  return true;
   }
 
@@ -258,13 +164,14 @@ public class FilterPushDown extends Rewrite
   /**
    * Try to push Filter below the Join
    */
-  private boolean filter_join_rewrite(FilterExpr filter_expr) 
+  private boolean filterJoinRewrite(FilterExpr filter_expr) 
   {
 	  VarMap vm = new VarMap();
 	  JoinExpr join_expr = (JoinExpr) filter_expr.binding().inExpr();
 	  
-	  //If the "filter" is non-deterministic, then do not push the filter
-	  if (ExternalEffectFilter(filter_expr))
+	  //If the "filter" has side effect, then do not push the filter.
+	  //Right now, we are limited to only 2-way joins
+	  if (join_expr.numBindings() > 2) 
 		  return false;
 
 	  boolean left_preserve = join_expr.binding(0).preserve;
@@ -285,7 +192,7 @@ public class FilterPushDown extends Rewrite
 	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
 	  {
 		  Expr crnt_pred = filter_expr.conjunctivePred(k);
-		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(crnt_pred, filter_pipe_var);  
+		  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(crnt_pred, filter_pipe_var);  
 		  if (usedIn_list.size() == 0)
 		  {
 			  left_pushed_pred.add(crnt_pred);
@@ -336,12 +243,32 @@ public class FilterPushDown extends Rewrite
    * Push the filter below the child expression without restrictions, i.e., including all the predicates.
    * The child_ids are specified in the given array 'child_ids'.
    */
-  private boolean filter_directPush_rewrite(FilterExpr filter_expr, ArrayList<Integer> child_ids) 
+  private boolean filterDirectpushRewrite(FilterExpr filter_expr, ArrayList<Integer> child_ids) 
   {
 	  Expr input_expr = filter_expr.binding().inExpr();
 	  Var filter_pipe_var = filter_expr.binding().var;
+	  ArrayList<Expr> pred_list = filter_expr.conjunctivePredList();
 	  
-	  plugin_filter_below_childExpr(filter_expr.conjunctivePredList(), filter_pipe_var, input_expr, child_ids);
+	  //pluginFilterBelowExpr(filter_expr.conjunctivePredList(), filter_pipe_var, input_expr, child_ids);
+	  for (int i  = 0 ; i < child_ids.size(); i++)
+	  {
+		  Var newVar = new Var(filter_pipe_var.name());
+		  VarMap vm = new VarMap();
+		  vm.put(filter_pipe_var, newVar);
+		  
+		  //Clone the predicates 
+		  ArrayList<Expr> predClone_list = new ArrayList<Expr>();
+		  for (int j = 0; j < pred_list.size(); j++)
+			  predClone_list.add(pred_list.get(j).clone(vm));
+		  
+		  //Create the new filter
+		  Expr branch = input_expr.child(child_ids.get(i));
+		  BindingExpr new_filter_input = new BindingExpr(Type.IN, newVar, null, branch);
+		  FilterExpr new_fe = new FilterExpr(new_filter_input, predClone_list);
+		  //new_fe.replaceVarInPredicates(filter_pipe_var, new_filter_input.var);
+		  input_expr.setChild(child_ids.get(i), new_fe);
+	  }
+	  
 	  filter_expr.replaceInParent(input_expr);
 	  return true;
   }
@@ -349,19 +276,16 @@ public class FilterPushDown extends Rewrite
   
   /**
    * Try to push Filter below the GroupBy
-   * A filter predicate can be pushed below the GroupBy if it does not reference any of the columns in the INTO clause except the grouping keys. 
+   * A filter predicate can be pushed below the GroupBy if it references only the grouping keys. 
    * If there are multiple inputs to the GroupBy, then a predicate is pushed down only if it can be pushed over all child branches.
    */
-  private boolean filter_groupBy_rewrite(FilterExpr filter_expr) 
+  private boolean filterGroupbyRewrite(FilterExpr filter_expr) 
   {
 	  GroupByExpr grp_expr = (GroupByExpr) filter_expr.binding().inExpr();
 	  Var filter_pipe_var = filter_expr.binding().var;
 
 	  //If the "filter" or the "group by" is non-deterministic, then do not push the filter
-	  Expr into_expr = grp_expr.collectExpr(); 
-	  boolean hasEffect_grp = !(into_expr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
-	  							into_expr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never());
-	  if (ExternalEffectFilter(filter_expr) || hasEffect_grp)
+	  if (grp_expr.externalEffectIntoClause())
 		  return false;
 
 	  //get the Group By mapping tables
@@ -384,7 +308,7 @@ public class FilterPushDown extends Rewrite
 	  for (int k = 0; k < filter_expr.conjunctivePred_count(); k++)
 	  {
 		  Expr crnt_pred = filter_expr.conjunctivePred(k);
-		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(crnt_pred, filter_pipe_var);  
+		  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(crnt_pred, filter_pipe_var);  
 		  if (usedIn_list.size() == 0)
 		  {
 			  //Predicate will be removed from the Filter and pushed to all child branches.	
@@ -418,8 +342,11 @@ public class FilterPushDown extends Rewrite
 		  for (int i = 0; i < grp_childNum; i++)
 		  {
 			  Expr crnt_pred_clone = crnt_pred.clone(vm);
-			  ArrayList<Expr> usedIn_list_clone = findVarUseInPathExprOrVarExpr(crnt_pred_clone, filter_pipe_var);  
-			  change_predicate(usedIn_list_clone, mappedTo_list2[i], grp_expr.inVar(), filter_pipe_var);         //has the side effect of changing "crnt_pred_clone"
+			  ArrayList<Expr> usedIn_list_clone = findMaximalVarOrPathExpr(crnt_pred_clone, filter_pipe_var);  
+			  
+			  //change_predicate() has the side effect of changing "crnt_pred"
+			  //Warning: It also make the query tree in-consistent at this moment
+			  changePredicate(usedIn_list_clone, mappedTo_list2[i], grp_expr.inVar(), filter_pipe_var);         
 			  pushed_to_child[i].add(crnt_pred_clone);			  
 		  }		  
 		  pushed_pred.add(crnt_pred);
@@ -433,7 +360,20 @@ public class FilterPushDown extends Rewrite
 	  if  (filter_expr.conjunctivePred_count() == 0)
 		  filter_expr.replaceInParent(filter_expr.binding().inExpr());
 
-	  plugin_filter_below_groupBy(pushed_to_child, filter_pipe_var, grp_expr);
+
+	  //Push the predicates to each of the groupBy children
+	  BindingExpr grp_input = grp_expr.inBinding();
+	  int child_cnt = grp_input.numChildren();	  
+	  for (int i = 0; i < child_cnt; i++)
+	  {
+		  BindingExpr new_filter_input = new BindingExpr(Type.IN, new Var(filter_pipe_var.name()), null, grp_input.child(i));
+		  FilterExpr new_fe = new FilterExpr(new_filter_input, pushed_to_child[i]);
+		  grp_input.setChild(i, new_fe);
+
+		  //Make sure the VARs under the FilterExpr are correct. 
+		  replaceVarInFilter(new_fe, filter_pipe_var, new_filter_input.var);
+	  }
+
 	  return true;
   }
 
@@ -441,7 +381,7 @@ public class FilterPushDown extends Rewrite
    * Try to push Filter below the Expand (For) expression.
    * Filter can be always pushed inside the expand expression. However, in case of 'expand unroll' we may push predicates before (not inside) the expand.
    */
-  private boolean filter_expand_rewrite(FilterExpr filter_expr) 
+  private boolean filterExpandRewrite(FilterExpr filter_expr) 
   {
 	  ForExpr for_expr = (ForExpr) filter_expr.binding().inExpr();
 	  Var filter_pipe_var = filter_expr.binding().var;
@@ -471,12 +411,12 @@ public class FilterPushDown extends Rewrite
 		  }
 	  }
 	  
-	  if ((!is_unroll) || ExternalEffectFilter(filter_expr) || !is_unroll_over_pathExpr)
+	  if ((!is_unroll) || !is_unroll_over_pathExpr)
 	  {
 		  //Push the filter inside the expand.
 		  ArrayList<Integer> child_ids = new ArrayList<Integer>();
 		  child_ids.add(1);
-		  return filter_directPush_rewrite(filter_expr, child_ids);		  
+		  return filterDirectpushRewrite(filter_expr, child_ids);		  
 	  }
 	  
 	  //We have 'Expand Unroll', so if a filter predicate is on attribute(s) other than the unrolled one, 
@@ -486,7 +426,7 @@ public class FilterPushDown extends Rewrite
 	  for (int i = 0; i < filter_expr.conjunctivePred_count(); i++)
 	  {
 		  Expr pred = filter_expr.conjunctivePred(i);
-		  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(pred, filter_pipe_var);  
+		  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(pred, filter_pipe_var);  
 		  if (usedIn_list.size() == 0)
 		  {
 			  pushed_pred.add(pred);
@@ -501,10 +441,21 @@ public class FilterPushDown extends Rewrite
 	  
 	  //Remove the pushed predicates from the main Filter. 
 	  for (int i = 0; i < pushed_pred.size(); i++)
-		  pushed_pred.get(i).detach();	  
+		  pushed_pred.get(i).detach();	 
+	  
+	  //Push the predicates before the expand
 	  if (pushed_pred.size() > 0)
-		  plugin_filter_below_expand(pushed_pred, filter_pipe_var, for_expr);
+	  {
+		  //plugin_filter_below_expand(pushed_pred, filter_pipe_var, for_expr);
+		  BindingExpr for_input = for_expr.binding();	  
+		  BindingExpr new_filter_input = new BindingExpr(Type.IN, filter_pipe_var, null, for_input.child(0));
+		  FilterExpr new_fe = new FilterExpr(new_filter_input, pushed_pred);
+		  for_input.setChild(0, new_fe);
 
+		  //Make sure the VARs under the FilterExpr are correct. 
+		  replaceVarInFilter(new_fe, filter_pipe_var, new Var(filter_pipe_var.name()));
+	  }
+	  
 	  //If Filter becomes empty, then delete it. Otherwise push the remaining predicates inside the expand expression. 
 	  if  (filter_expr.conjunctivePred_count() == 0)
 		  filter_expr.replaceInParent(filter_expr.binding().inExpr());
@@ -512,29 +463,30 @@ public class FilterPushDown extends Rewrite
 	  {
 		  ArrayList<Integer> child_ids = new ArrayList<Integer>();
 		  child_ids.add(1);
-		  filter_directPush_rewrite(filter_expr, child_ids);		  		  
+		  filterDirectpushRewrite(filter_expr, child_ids);		  		  
 	  }
 	  return true;
   }
   
-  
   /**
-   * Returns false if all predicates in the Filter have neither side effect nor non-determinism. Otherwise return true.  
+   * If the expressions in "usedIn_list" can be mapped according to the mapping table "mt", then return the mappings. Otherwise return NULL.
+   * If safeMappingOnly = true, then we are looking for safe-mappings only. Otherwise, un-safe mappings are accepted as well. 
    */
-  public static boolean ExternalEffectFilter(FilterExpr fe)
+  public static ArrayList<Expr> predMappedTo(ArrayList<Expr> usedIn_list, MappingTable mt, boolean safeMappingOnly)
   {
-	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
-	  {
-		  Expr pred = fe.conjunctivePred(i);
-		  boolean noExternalEffects = 
-		        pred.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
-		        pred.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never();
+	  ArrayList<Expr> mapped_to_list = new ArrayList<Expr>();
 
-		  if (!noExternalEffects)
-			  return true;		  
+	  //If we managed to do the mapping for all exprs in usedIn_list, then the predicate can be mapped and pushed down
+	  for (int i = 0; i < usedIn_list.size(); i++)
+	  {
+		  Expr pe = usedIn_list.get(i);
+		  MappingTable.ExprMapping mapped_to = mt.findPatternMatch(pe, safeMappingOnly);
+		  if (mapped_to == null)
+			  return null;
+		  mapped_to_list.add(mapped_to.getBeforeExpr());
 	  }
-	  return false;
-  }	
+	return mapped_to_list;
+  }
   
   /**
    * Rewrite rule for pushing the filter down in the query tree.
@@ -544,28 +496,32 @@ public class FilterPushDown extends Rewrite
   {
 	  FilterExpr fe = (FilterExpr) expr;
 	  BindingExpr filter_input = fe.binding();
-	  	  
-	  if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof TransformExpr))
-		  return filter_transform_rewrite(fe);
-	  else if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof JoinExpr))
-		  return filter_join_rewrite(fe);
-	  else if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof GroupByExpr))
-		  return filter_groupBy_rewrite(fe);
-	  else if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof ForExpr))
-		  return filter_expand_rewrite(fe);
-	  else if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof SortExpr))
+	  
+	  //If the Filter has side-effect or non-determinism then return.
+	  if (fe.externalEffectPredicates())
+		  return false;
+			  
+	  if (filter_input.inExpr() instanceof TransformExpr)
+		  return filterTransformRewrite(fe);
+	  else if (filter_input.inExpr() instanceof JoinExpr)
+		  return filterJoinRewrite(fe);
+	  else if (filter_input.inExpr() instanceof GroupByExpr)
+		  return filterGroupbyRewrite(fe);
+	  else if (filter_input.inExpr() instanceof ForExpr)
+		  return filterExpandRewrite(fe);
+	  else if (filter_input.inExpr() instanceof SortExpr)
 	  {
 		  ArrayList<Integer> child_ids = new ArrayList<Integer>();
 		  child_ids.add(0);
-		  return filter_directPush_rewrite(fe, child_ids);
+		  return filterDirectpushRewrite(fe, child_ids);
 	  }
-	  else if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof MergeFn))
+	  else if (filter_input.inExpr() instanceof MergeFn)
 	  {
 		  MergeFn expr_below = (MergeFn) filter_input.inExpr();
 		  ArrayList<Integer> child_ids = new ArrayList<Integer>();
 		  for (int i = 0; i < expr_below.numChildren(); i++)
 			  child_ids.add(i);		  
-		  return filter_directPush_rewrite(fe, child_ids);
+		  return filterDirectpushRewrite(fe, child_ids);
 	  }
 	  return false;
   }

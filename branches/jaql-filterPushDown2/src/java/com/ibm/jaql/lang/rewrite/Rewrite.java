@@ -226,7 +226,7 @@ public abstract class Rewrite
   /**
    * Find PathExprs and VarExprs(that are not children of PathExpr) that contain the given var
    */
-  ArrayList<Expr> findVarUseInPathExprOrVarExpr(Expr expr, Var var)
+  ArrayList<Expr> findMaximalVarOrPathExpr(Expr expr, Var var)
   {
     ExprWalker walker = engine.walker;
     walker.reset(expr);
@@ -239,7 +239,7 @@ public abstract class Rewrite
     		VarExpr ve = (VarExpr) expr;
     		if (ve.var() == var)
     		{
-    			if (expr.parent() instanceof PathExpr)
+    			if ((expr.parent() instanceof PathExpr) && (expr.getChildSlot() == 0))
     				list.add((PathExpr) expr.parent());
     			else
     				list.add((VarExpr) expr);

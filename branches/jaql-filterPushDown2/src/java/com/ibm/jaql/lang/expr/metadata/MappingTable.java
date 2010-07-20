@@ -172,7 +172,7 @@ public class MappingTable
 			ExprMapping r = mappings.get(key);
 			VarExpr ve = findVarInExpr(key);
 			if (ve == null)
-				return false;
+			      throw new IllegalStateException("The After-Expr in the mapping table has no variables!");
 			
 			key.replaceVar(ve.var(), replaceBy);
 			mt.add(key, r.getBeforeExpr(), r.isSafeToMap());
@@ -308,7 +308,7 @@ public class MappingTable
 			ps.replaceInParent(expr_diff);			
 			VarExpr ve = findVarInExpr(before_expr);
 			if (ve == null)
-				return null;
+			      throw new IllegalStateException("The After-Expr in the mapping table has no variables!");
 			else
 				return before_expr;
 		}

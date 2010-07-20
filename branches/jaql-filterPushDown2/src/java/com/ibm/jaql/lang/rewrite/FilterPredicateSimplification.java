@@ -61,7 +61,7 @@ public class FilterPredicateSimplification extends Rewrite
   /**
    * Delete any predicate that is not side-effecting except constant predicates.
    */
-  private boolean delete_nonEffectingPred(FilterExpr fe) 
+  private boolean deleteNonEffectingPred(FilterExpr fe) 
   {
 	  boolean modify_flag = false;
 	  for (int i = 0; i < fe.conjunctivePred_count(); i++)
@@ -81,7 +81,7 @@ public class FilterPredicateSimplification extends Rewrite
    * Converts expression e -> filter ..., false, ...  ---> Do (e, [])
    * Converts expression e -> filter ..., null, ...  ---> Do (e, [])
    */
-  private boolean convert_toDoExpr(FilterExpr fe) 
+  private boolean convertToDoExpr(FilterExpr fe) 
   {
 	  ArrayExpr empty_input = new ArrayExpr();
 	  Expr filter_input = fe.binding().inExpr();
@@ -94,7 +94,7 @@ public class FilterPredicateSimplification extends Rewrite
   /**
    * Simplify the predicates.
    */
-  private boolean predicate_simplification(FilterExpr fe) 
+  private boolean predicateSimplification(FilterExpr fe) 
   {
 	  ArrayExpr empty_input = new ArrayExpr();
 	  
@@ -116,17 +116,14 @@ public class FilterPredicateSimplification extends Rewrite
 					  fe.replaceInParent(empty_input);                 //Replace filter with empty input
 					  return true;
 				  }
-				  else if (!noEffect_filterInput && !noEffect_filterPred)
-					  return delete_nonEffectingPred(fe);
-				  else if (noEffect_filterInput && !noEffect_filterPred)
-					  return delete_nonEffectingPred(fe);
+				  else if ((!noEffect_filterInput && !noEffect_filterPred) || (noEffect_filterInput && !noEffect_filterPred))
+					  return deleteNonEffectingPred(fe);
 				  else
-					  return convert_toDoExpr(fe);
-				  
+					  return convertToDoExpr(fe);
 			  }
 			  else if (pred_val.equals(JsonBool.TRUE))
 			  {
-				  pred.detach();                                  //Remove the predicate (and the filter expr if becomes empty)
+				  pred.detach();                           //Remove the predicate (and the filter expr if becomes empty)
 				  if  (fe.conjunctivePred_count() == 0)
 					  fe.replaceInParent(fe.binding().inExpr());
 				  return true;
@@ -144,6 +141,6 @@ public class FilterPredicateSimplification extends Rewrite
   public boolean rewrite(Expr expr)
   {
 	  FilterExpr fe = (FilterExpr) expr;
-	  return predicate_simplification(fe);
+	  return predicateSimplification(fe);
   }
 }

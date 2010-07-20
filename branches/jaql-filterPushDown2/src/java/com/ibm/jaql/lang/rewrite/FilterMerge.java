@@ -39,20 +39,20 @@ public class FilterMerge extends Rewrite
   }
   
   //Merge two filters together. Move the predicates from 'child_filter' to 'parent_filter'.
-  private boolean merge_filter_exprs(FilterExpr partent_filter) 
+  private boolean mergeFilterExprs(FilterExpr partent_filter) 
   {
 	  FilterExpr child_filter = (FilterExpr) partent_filter.binding().inExpr();
 
 	  //If any of the two filter exprs has "non-deterministic" or "side effecting" predicates, then do not merge them.
-	  if (FilterPushDown.ExternalEffectFilter(partent_filter) || FilterPushDown.ExternalEffectFilter(child_filter))
+	  if (partent_filter.externalEffectPredicates() || child_filter.externalEffectPredicates())
 		  return false;
 	  
 	  Var crnt_filter_var = partent_filter.binding().var;
 	  BindingExpr child_filter_input = child_filter.binding();
 	  Var child_filter_var = child_filter_input.var;
 	  VarMap vm = new VarMap();
-
 	  vm.put(child_filter_var, crnt_filter_var);	  
+
 	  for (int i = 0; i < child_filter.conjunctivePred_count(); i++)
 	  {
 		  Expr pred = child_filter.conjunctivePred(i).clone(vm);
@@ -73,8 +73,8 @@ public class FilterMerge extends Rewrite
 	  FilterExpr fe = (FilterExpr) expr;
 	  BindingExpr filter_input = fe.binding();
 	  
-	  if ((filter_input.type == Type.IN) && (filter_input.inExpr() instanceof FilterExpr))		  
-		  return merge_filter_exprs(fe);
+	  if (filter_input.inExpr() instanceof FilterExpr)		  
+		  return mergeFilterExprs(fe);
 	  else
 		  return false;
   }
