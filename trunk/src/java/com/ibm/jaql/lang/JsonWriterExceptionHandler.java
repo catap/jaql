@@ -34,6 +34,7 @@ import java.io.IOException;
 
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
 
 /**
  * Converts the Exception to a JSON record and writes it to an error log.
@@ -48,7 +49,7 @@ public class JsonWriterExceptionHandler extends ExceptionHandler
   }
 
   @Override
-  public void handleException(Throwable e)
+  public void handleException(Throwable e, JsonValue ctx)
   {
     try
     {

@@ -15,11 +15,13 @@
  */
 package com.ibm.jaql.lang;
 
+import com.ibm.jaql.json.type.JsonValue;
+
 /** Handle exceptions by simply printing the stack trace to stderr. */
 public class DefaultExceptionHandler extends ExceptionHandler
-{
+{ 
   @Override
-  public void handleException(Throwable ex)
+  public void handleException(Throwable ex, JsonValue ctx)
   {
     ex.printStackTrace();
   }
