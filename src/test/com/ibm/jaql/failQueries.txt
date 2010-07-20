@@ -118,3 +118,6 @@ read(hdfs("bar")) -> transform catch(errArgs("ok", $));
 
 registerExceptionHandler({errThresh: 5});
 read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $));
+
+registerExceptionHandler({errThresh: 5});
+read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $), null, $);

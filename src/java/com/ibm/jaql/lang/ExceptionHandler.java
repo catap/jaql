@@ -41,7 +41,20 @@ public abstract class ExceptionHandler implements Closeable
    * If an exception is thrown, typically by rethrowing the same error,
    * then caller will typically propagate the exception upwards to the 
    * next handler. */
-  public abstract void handleException(Throwable error) throws Exception;
+  public void handleException(Throwable error) throws Exception
+  {
+	  handleException(error, null);
+  }
+  
+  /**
+   * Like handleException(Throwable error) except that an additional JsonValue
+   * for improved logging, for example, can also be passed in.
+   * 
+   * @param error
+   * @param ctx
+   * @throws Exception
+   */
+  public abstract void handleException(Throwable error, JsonValue ctx) throws Exception;
   
   /** Close any underlying resources of this handler. */
   @Override

@@ -17,6 +17,9 @@ package com.ibm.jaql.lang;
 
 import org.apache.log4j.Logger;
 
+import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.json.type.JsonValue;
+
 public class ThresholdExceptionHandler extends ExceptionHandler {
 
 	private static final Logger LOG = Logger.getLogger(ThresholdExceptionHandler.class.getName());
@@ -31,12 +34,13 @@ public class ThresholdExceptionHandler extends ExceptionHandler {
 	}
 	
 	@Override
-	public synchronized void handleException(Throwable error) throws Exception {
+	public synchronized void handleException(Throwable error, JsonValue ctx) throws Exception {
 		++cur_exps;
+		String context = JsonUtil.printToString(ctx);
 		if( cur_exps > max_exps ) {
-			throw new Exception("Number of exceptions ["+cur_exps+"] exceeded threshold [" + max_exps + "]", error);
+			throw new Exception("Number of exceptions ["+cur_exps+"] exceeded threshold [" + max_exps + "], data context: " + context, error);
 		} else {
-			LOG.warn("Processing exception ["+cur_exps+"] out of ["+max_exps+"]: ", error);
+			LOG.warn("Processing exception ["+cur_exps+"] out of ["+max_exps+"]: " + ", data context: " + context, error);
 		}
 	}
 	

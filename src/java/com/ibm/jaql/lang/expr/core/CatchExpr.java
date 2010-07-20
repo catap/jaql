@@ -53,7 +53,7 @@ public class CatchExpr extends Expr {
 	private boolean configured = false;
 	private ExceptionHandler handler;
 
-	public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
+	public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par13
 	{
 		public Descriptor()
 		{
@@ -74,16 +74,25 @@ public class CatchExpr extends Expr {
 				JsonRecord opts = (JsonRecord)exprs[1].eval(context);
 				JsonNumber tval = (JsonNumber)opts.get(RegisterExceptionHandler.ERROR_THRESH_FIELD_NAME);
 				if(tval != null) handler = new ThresholdExceptionHandler(tval.intValue());
-			} else {
+			} 
+			if(handler == null)
 				handler = JaqlUtil.getExceptionHandler();
-			}
 			configured = true;
 		}
 		
 		try {
 			v = exprs[0].eval(context);
 		} catch(Throwable e) {
-			handler.handleException(e);
+			JsonValue c = null;
+			// get the context if it exists
+			if( exprs[2] != null) {
+				try {
+					c = exprs[2].eval(context);
+				} catch(Throwable ee) {
+					throw new RuntimeException(ee);
+				}
+			}
+			handler.handleException(e, c);
 		}
 		return v;
 	}
