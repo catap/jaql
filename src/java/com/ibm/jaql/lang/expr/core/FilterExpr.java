@@ -192,6 +192,24 @@ public final class FilterExpr extends IterExpr
 	  mt.addUnsafeMappingRecord();
 	  return mt;
   }
+  
+  /**
+   * Returns true if any predicate in the Filter has side effect nor non-determinism. Otherwise returns false.  
+   */
+  public boolean externalEffectPredicates()
+  {
+	  for (int i = 0; i < conjunctivePred_count(); i++)
+	  {
+		  Expr pred = conjunctivePred(i);
+		  boolean noExternalEffects = 
+		        pred.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+		        pred.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never();
+
+		  if (!noExternalEffects)
+			  return true;		  
+	  }
+	  return false;
+  }	
    
   /**
    * @return

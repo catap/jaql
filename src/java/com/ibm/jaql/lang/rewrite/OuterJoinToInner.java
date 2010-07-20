@@ -32,9 +32,9 @@ public class OuterJoinToInner extends Rewrite
 
   
   /**
-   * Returns true if 'filter_expr' has at least one "null-rejecting" predicate over 'input' expression.
+   * Returns true if 'filter_expr' has at least one "null-rejecting" predicate (pred. that rejects NULLs) over 'input' expression.
    */
-  private boolean null_rejecting_predicate(FilterExpr filter_expr, Expr input) 
+  private boolean nullRejectingPredicate(FilterExpr filter_expr, Expr input) 
   {
 	  MappingTable mt = input.getMappingTable();  
 	  Var filter_pipe_var = filter_expr.binding().var;
@@ -53,7 +53,7 @@ public class OuterJoinToInner extends Rewrite
 			  Expr right_side = pred.child(1);
 			  if ((left_side instanceof PathExpr) || (left_side instanceof VarExpr))
 			  {
-				  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(left_side, filter_pipe_var);  
+				  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(left_side, filter_pipe_var);  
 				  if (usedIn_list.size() > 0)
 				  {
 					  ArrayList<Expr> mappedTo_list = FilterPushDown.predMappedTo(usedIn_list, mt, false);		  
@@ -67,7 +67,7 @@ public class OuterJoinToInner extends Rewrite
 
 			  if ((right_side instanceof PathExpr) || (right_side instanceof VarExpr))
 			  {
-				  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(right_side, filter_pipe_var);  
+				  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(right_side, filter_pipe_var);  
 				  if (usedIn_list.size() > 0)
 				  {
 					  ArrayList<Expr> mappedTo_list = FilterPushDown.predMappedTo(usedIn_list, mt, false);		  
@@ -84,7 +84,7 @@ public class OuterJoinToInner extends Rewrite
 			  Expr child = pred.child(1);
 			  if ((child instanceof PathExpr) || (child instanceof VarExpr))
 			  {
-				  ArrayList<Expr> usedIn_list = findVarUseInPathExprOrVarExpr(child, filter_pipe_var);  
+				  ArrayList<Expr> usedIn_list = findMaximalVarOrPathExpr(child, filter_pipe_var);  
 				  if (usedIn_list.size() > 0)
 				  {
 					  ArrayList<Expr> mappedTo_list = FilterPushDown.predMappedTo(usedIn_list, mt, false);		  
@@ -110,7 +110,7 @@ public class OuterJoinToInner extends Rewrite
 	  boolean turned_off = false;
 	  if (left_preserve)
 	  {
-		  if (null_rejecting_predicate(filter_expr, right_child))
+		  if (nullRejectingPredicate(filter_expr, right_child))
 		  {
 			  join_expr.binding(0).preserve = false;
 			  turned_off = true;
@@ -119,7 +119,7 @@ public class OuterJoinToInner extends Rewrite
 	  
 	  if (right_preserve)
 	  {
-		  if (null_rejecting_predicate(filter_expr, left_child))
+		  if (nullRejectingPredicate(filter_expr, left_child))
 		  {
 			  join_expr.binding(1).preserve = false;
 			  turned_off = true;
@@ -131,12 +131,17 @@ public class OuterJoinToInner extends Rewrite
 
 /**
    * If the join is outer join, i.e., at least one of the two children has 'preserve' flag set,
-   * then the 'preserve' flag can be turned off iff there is a "null-rejecting" condition of the other child. 
+   * then the 'preserve' flag can be turned off iff there is a "null-rejecting" condition (condition that rejects NULLs) of the other child. 
    */
   @Override
   public boolean rewrite(Expr expr)
   {
 	  JoinExpr join_expr = (JoinExpr) expr;
+	  
+	  //We are limited right now to 2-way joins
+	  if (join_expr.numBindings() > 2)
+		  return false;
+	  
 	  Expr parent = join_expr.parent();
 	  boolean left_preserve = join_expr.binding(0).preserve;
 	  boolean right_preserve = join_expr.binding(1).preserve;
@@ -148,7 +153,7 @@ public class OuterJoinToInner extends Rewrite
 		  return false;
 
 	  FilterExpr fe = (FilterExpr) parent.parent();	  
-	  if (FilterPushDown.ExternalEffectFilter(fe))
+	  if (fe.externalEffectPredicates())
 		  return false;
 	  
 	  return OuterToInnerConversion(join_expr, fe);

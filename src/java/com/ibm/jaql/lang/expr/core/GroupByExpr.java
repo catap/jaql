@@ -268,6 +268,19 @@ public class GroupByExpr extends IterExpr
     }
   }
 
+  
+  /**
+   * Returns true if the Into clause list has side-effect, otherwise return false.
+   */
+  public boolean externalEffectIntoClause()
+  {
+	  if (collectExpr().getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+			  collectExpr().getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never())
+		  return false;
+	  else
+		  return true;
+  }
+  
   /**
    * Returns the mapping table of the INTO clause.
    */
