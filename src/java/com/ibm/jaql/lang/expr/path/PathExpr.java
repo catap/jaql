@@ -26,6 +26,9 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.IndexExpr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.path.PathStep.PathStepSchema;
 import com.ibm.jaql.util.Bool3;
 
@@ -90,6 +93,28 @@ public final class PathExpr extends Expr
     return i == 0 ? Bool3.TRUE : Bool3.UNKNOWN;
   }
 
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  VarExpr ve= new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  if ((input() instanceof VarExpr) || (input() instanceof PathExpr) || (input() instanceof IndexExpr) )
+	  {
+		  boolean safeToMap = input().getMappingTable().isSafeToMapAll();
+		  safeToMap = safeToMap && firstStep().getMappingTable().isSafeToMapAll();
+		  mt.add(ve, this, safeToMap);
+	  }
+	  else
+		  mt.add(ve, this, false);
+	  
+	  return mt;
+  }
+
+  
   /**
    * 
    */

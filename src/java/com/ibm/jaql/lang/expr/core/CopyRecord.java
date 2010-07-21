@@ -10,6 +10,7 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -53,6 +54,22 @@ public class CopyRecord extends FieldExpr
     exprs[0].decompile(exprText, capturedVars);
     exprText.print(").*");
   }
+
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+
+	  //If the input is a record expression then we can return its mapping, otherwise the mapping is lost.
+	  if (exprs[0] instanceof RecordExpr)
+		  return exprs[0].getMappingTable();
+	  else
+		  return mt;
+  }
+
 
   /**
    * 
