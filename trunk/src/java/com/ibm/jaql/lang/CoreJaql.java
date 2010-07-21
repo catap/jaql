@@ -19,12 +19,17 @@ package com.ibm.jaql.lang;
 import java.io.Closeable;
 import java.io.IOException;
 
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
+
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
+import com.ibm.jaql.lang.parser.JaqlLexer;
 
-public interface CoreJaql extends Closeable
-{
+public interface CoreJaql extends Closeable {
 
 	/**
 	 * Sets the query to process.
@@ -33,6 +38,22 @@ public interface CoreJaql extends Closeable
 	 *            jaql query string
 	 * */
 	void setInput(String string);
+
+	/**
+	 * whether stops when exception occurs
+	 * 
+	 * @param bool
+	 *            true / false
+	 */
+	void stopOnException(boolean bool);
+
+	/**
+	 * Set exception handler for jaql engine
+	 * 
+	 * @param exceptionHandler
+	 *            exception handler class, extends ExceptionHandler
+	 */
+	void setExceptionHandler(ExceptionHandler exceptionHandler);
 
 	/**
 	 * Sets the designated global variable to the given value.
@@ -48,7 +69,9 @@ public interface CoreJaql extends Closeable
 	 * Sets the designated global variable to the given value.
 	 * 
 	 * @param varName
+	 *            the variable name
 	 * @param iter
+	 *            the variable value
 	 */
 	void setVar(String varName, JsonIterator iter);
 
@@ -56,7 +79,8 @@ public interface CoreJaql extends Closeable
 	 * Gets the value of the designated global variable.
 	 * 
 	 * @param varName
-	 * @return JsonValue
+	 *            the variable name
+	 * @return JsonValue the variable value
 	 */
 	JsonValue getVarValue(String varName) throws Exception;
 
@@ -64,7 +88,8 @@ public interface CoreJaql extends Closeable
 	 * Gets the value of the designated global variable.
 	 * 
 	 * @param varName
-	 * @return JsonIterator
+	 *            the variable name
+	 * @return JsonIterator the variable name
 	 */
 	JsonIterator getVarIter(String varName) throws Exception;
 
@@ -79,14 +104,14 @@ public interface CoreJaql extends Closeable
 	/**
 	 * Explains the statement
 	 * 
-	 * @return String
+	 * @return String explain result
 	 */
 	String explain() throws Exception;
 
 	/**
 	 * Prepares the statement
 	 * 
-	 * @return
+	 * @return prepared statement
 	 * @throws Exception
 	 */
 	Expr expr() throws Exception;
@@ -96,7 +121,7 @@ public interface CoreJaql extends Closeable
 	 * result. If the result is not an array or null, it is coerced into an
 	 * array. If there is no such query, return null.
 	 * 
-	 * @return JsonIterator
+	 * @return JsonIterator query result
 	 * @throws Exception
 	 */
 	JsonIterator iter() throws Exception;
@@ -106,7 +131,7 @@ public interface CoreJaql extends Closeable
 	 * is no such query, return null (which is ambiguous with a query that
 	 * returns null).
 	 * 
-	 * @return JsonValue
+	 * @return JsonValue query result
 	 * @throws Exception
 	 */
 	JsonValue eval() throws Exception;
@@ -126,7 +151,9 @@ public interface CoreJaql extends Closeable
 	 * Gets the value of the designated property.
 	 * 
 	 * @param name
-	 * @return String
+	 *            The property name
+	 * @return String The property value
+	 * 
 	 */
 	String getProperty(String name);
 
@@ -137,13 +164,55 @@ public interface CoreJaql extends Closeable
 	 *            The jar file's path
 	 */
 	void addJar(String path) throws Exception;
-	
+
+	/**
+	 * Invoke a jaql function by name with the given arguments, return the
+	 * JsonValue result
+	 * 
+	 * @param fnName
+	 *            jaql function's name
+	 * @param args
+	 *            jaql function arguments
+	 * @return json iterator result
+	 * @throws Exception
+	 * 
+	 */
+	JsonIterator iterate(String fnName, FunctionArgs args) throws Exception;
+
+	/**
+	 * Invoke a jaql function by name with the given arguments, return the
+	 * JsonValue result
+	 * 
+	 * @param fnName
+	 *            jaql function's name
+	 * @param args
+	 *            jaql function arguments
+	 * @return json value result
+	 * @throws Exception
+	 * 
+	 */
+	JsonValue evaluate(String fnName, FunctionArgs args) throws Exception;
+
 	/**
 	 * 
-	 * Close a jaql query
-	 * Jaql query statement should be closed after all the query is done, else it will cause a shutdown in progress exception
-	 * @throws IOException 
-	 *
+	 * Register a java udf function to jaql's context
+	 * 
+	 * @param udfName
+	 *            udf name, which will be reused in jaql query, e.g "split"
+	 * @param udfPath
+	 *            udf path specifies udf class path, e.g
+	 *            com.acme.extensions.fn.Split1
+	 * @throws Exception
+	 */
+	void registerJavaUDF(String udfName, String udfPath) throws Exception;
+
+	/**
+	 * 
+	 * Close a jaql query Jaql query statement should be closed after all the
+	 * query is done, else it will cause a shutdown in progress exception
+	 * 
+	 * @throws IOException
+	 * 
 	 */
 	void close() throws IOException;
 
