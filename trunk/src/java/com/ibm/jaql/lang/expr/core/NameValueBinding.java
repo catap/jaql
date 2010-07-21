@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
+import java.util.Enumeration;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -24,6 +25,10 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
+import com.ibm.jaql.lang.expr.path.PathExpr;
+import com.ibm.jaql.lang.expr.path.PathFieldValue;
+import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -193,6 +198,52 @@ public class NameValueBinding extends FieldExpr
     return Bool3.TRUE;
   }
 
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+
+	  if (!(nameExpr() instanceof ConstExpr))
+		  return mt;
+	  
+	  MappingTable child_table = valueExpr().getMappingTable();
+	  ConstExpr ce = new ConstExpr(((ConstExpr)nameExpr()).value);
+	  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  PathFieldValue pfv = new PathFieldValue(ce);
+	  PathExpr pe = new PathExpr(ve, pfv);
+
+	  if ((valueExpr() instanceof RecordExpr) || (valueExpr() instanceof ArrayExpr))
+	  {
+		  //Add the mapping at the field level: We need to change the AfterExpr in the mappings returned from the RecordExpr/ArrayExpr
+		  Enumeration<Expr> e = child_table.KeyEnum();
+		  while (e.hasMoreElements())
+		  {
+			  Expr after_expr = e.nextElement();
+			  Expr before_expr = child_table.BeforeExpr(after_expr);
+			  boolean safetyFlag = child_table.isSafeToMapExpr(after_expr);
+			  
+			  if (after_expr instanceof PathExpr)
+			  {
+				  VarMap vm = new VarMap();
+				  ce = new ConstExpr(((ConstExpr)nameExpr()).value);
+				  ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+				  PathStep ps = (PathStep)(((PathExpr)(after_expr)).firstStep()).clone(vm);
+				  pfv = new PathFieldValue(ce, ps);
+				  pe = new PathExpr(ve, pfv);
+				  mt.add(pe, before_expr, safetyFlag);					  
+			  }
+		  }
+	  }
+	  else  //if ((valueExpr() instanceof PathExpr) || (valueExpr() instanceof VarExpr) || (valueExpr() instanceof ConstExpr) || (valueExpr() instanceof MathExpr)) 
+		  mt.add(pe, valueExpr(), child_table.isSafeToMapAll());
+		  
+	  return mt;
+  }
+
+  
   /*
    * (non-Javadoc)
    * 

@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
+import java.util.ArrayList;
+
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Var;
@@ -27,6 +29,7 @@ import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.hadoop.MRAggregate;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
+import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.util.Bool3;
@@ -220,6 +223,31 @@ public abstract class Rewrite
     return null;
   }
   
+  /**
+   * Find PathExprs and VarExprs(that are not children of PathExpr) that contain the given var
+   */
+  ArrayList<Expr> findMaximalVarOrPathExpr(Expr expr, Var var)
+  {
+    ExprWalker walker = engine.walker;
+    walker.reset(expr);
+    ArrayList<Expr> list = new ArrayList<Expr>();
+    
+    while ((expr = walker.next()) != null)
+    {
+    	if (expr instanceof VarExpr) 
+    	{
+    		VarExpr ve = (VarExpr) expr;
+    		if (ve.var() == var)
+    		{
+    			if ((expr.parent() instanceof PathExpr) && (expr.getChildSlot() == 0))
+    				list.add((PathExpr) expr.parent());
+    			else
+    				list.add((VarExpr) expr);
+    		}
+    	}
+    }
+    return list;
+  }
 
   /**
    * @return true if expr and all its ancestors are evaluated at most once all the

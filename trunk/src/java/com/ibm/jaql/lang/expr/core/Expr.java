@@ -40,6 +40,7 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.top.EnvExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.util.Bool3;
@@ -59,6 +60,8 @@ public abstract class Expr
   protected Expr[]           exprs           = NO_EXPRS;
   protected Module module;
 
+  public final static MappingTable  EMPTY_MAPPING = new MappingTable();
+  
   /**
    * @param exprs
    */
@@ -950,5 +953,23 @@ public abstract class Expr
 //    }
 //    return false;
 //  }
+
+  /*
+   * Compute the mapping table and return it. Most expressions need only to implement this function, i.e., the 
+   * one that takes no arguments. 
+   */
+  public MappingTable getMappingTable()
+  {
+	  return  EMPTY_MAPPING;
+  }
+
+  /*
+   * Compute the mapping table for child 'child_id' and return it. Few expressions need to implement this function
+   * such as JOIN and GroupBy.
+   */
+  public MappingTable getMappingTable(int child_id)
+  {
+	  return  EMPTY_MAPPING;
+  }
 
 }
