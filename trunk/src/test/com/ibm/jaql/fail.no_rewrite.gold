@@ -678,4 +678,176 @@ read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $), null,
 
 ;//------------------- TEST-CASE -----------------
 
+
+// transform exception, abort
+registerExceptionHandler({errThresh: 0});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.BufferedJsonArray for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// transform exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+// transform exception, abort
+registerExceptionHandler({errThresh: 0});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+test2 -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.BufferedJsonArray for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// transform exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+test2 -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+// filter exception, abort
+registerExceptionHandler({errThresh: 0});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> filter errArgs("ok", $[1]) == 0;
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// filter exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> filter $[1] == 0 -> filter errArgs("ok", $[1]) == 0;
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+// filter exception, abort
+registerExceptionHandler({errThresh: 0});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+test2 -> filter errArgs("ok", $[1]) == 0;
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.JsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// filter exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+test2 -> filter $[1] == 0 -> filter errArgs("ok", $[1]) == 0;
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
 ;//------------------- TEST-DONE -----------------

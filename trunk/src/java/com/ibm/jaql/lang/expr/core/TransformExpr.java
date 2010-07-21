@@ -21,9 +21,11 @@ import java.util.HashSet;
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
 
@@ -150,8 +152,16 @@ public final class TransformExpr extends IterExpr
     return new JsonIterator() {
       public boolean moveNext() throws Exception
       {
-        if (inIter.moveNext()) { // sets inBinding.var
-          currentValue = proj.eval(context);
+        while (inIter.moveNext()) { // sets inBinding.var
+          boolean skip = false;
+          try {
+            currentValue = proj.eval(context);
+          } catch(Throwable t) {
+            JsonValue v = inBinding.var.getValue(context);
+            JaqlUtil.getExceptionHandler().handleException(t, v);
+            skip = true;
+          }
+          if(skip) continue;
           return true;
         }
         return false;
