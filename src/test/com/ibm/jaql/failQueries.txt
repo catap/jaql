@@ -121,3 +121,35 @@ read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $));
 
 registerExceptionHandler({errThresh: 5});
 read(hdfs("bar")) -> filter $[1] == 0 -> transform catch(errArgs("ok", $), null, $);
+
+// transform exception, abort
+registerExceptionHandler({errThresh: 0});
+read(hdfs("bar")) -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+// transform exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+read(hdfs("bar")) -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+// transform exception, abort
+registerExceptionHandler({errThresh: 0});
+test2 -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+// transform exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+test2 -> filter $[1] == 0 -> transform errArgs("ok", $);
+
+// filter exception, abort
+registerExceptionHandler({errThresh: 0});
+read(hdfs("bar")) -> filter errArgs("ok", $[1]) == 0;
+
+// filter exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+read(hdfs("bar")) -> filter $[1] == 0 -> filter errArgs("ok", $[1]) == 0;
+
+// filter exception, abort
+registerExceptionHandler({errThresh: 0});
+test2 -> filter errArgs("ok", $[1]) == 0;
+
+// filter exception, continue to empty array
+registerExceptionHandler({errThresh: 5});
+test2 -> filter $[1] == 0 -> filter errArgs("ok", $[1]) == 0;
