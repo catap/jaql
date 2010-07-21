@@ -25,6 +25,8 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
+import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 import static com.ibm.jaql.json.type.JsonType.*;
@@ -85,6 +87,42 @@ public final class TransformExpr extends IterExpr
     return exprs[1];
   }
 
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  if ( (projection() instanceof RecordExpr) || (projection() instanceof PathExpr) ||
+			  (projection() instanceof VarExpr) || (projection() instanceof ArrayExpr) ||
+			  (projection() instanceof ConstExpr))
+	  {	
+		  mt.addAll(projection().getMappingTable());
+	  }
+	  else
+	  {
+		  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));  
+		  mt.add(ve, projection(), false);
+	  }
+	  mt.addUnsafeMappingRecord();
+	  
+	  return mt;
+  }
+  
+  /**
+   * Returns true if the projection list has side-effect, otherwise return false.
+   */
+  public boolean externalEffectProjection()
+  {
+	  if (projection().getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() &&
+			  projection().getProperty(ExprProperty.IS_NONDETERMINISTIC, true).never())
+		  return false;
+	  else
+		  return true;
+  }
+  
+  
   @Override
   public Schema getSchema()
   {

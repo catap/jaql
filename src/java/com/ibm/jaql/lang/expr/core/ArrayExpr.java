@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -28,6 +29,12 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
+import com.ibm.jaql.lang.expr.path.PathExpr;
+import com.ibm.jaql.lang.expr.path.PathIndex;
+import com.ibm.jaql.lang.expr.path.PathReturn;
+import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.util.Bool3;
 
 /**
@@ -62,6 +69,56 @@ public class ArrayExpr extends IterExpr
   {
     super(exprs.toArray(new Expr[exprs.size()]));
   }
+
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	MappingTable mt = new MappingTable();
+  		
+	for (int i=0; i<exprs.length; i++)
+	{
+		MappingTable child_table = exprs[i].getMappingTable();
+		VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+		PathIndex pi = new PathIndex(new ConstExpr(i));
+		PathExpr pe = new PathExpr(ve, pi);
+		
+		if (exprs[i] instanceof RecordExpr)
+		{
+			//Add the mapping at the field level: We need to change the AfterExpr in the mappings returned from the RecordExpr
+			Enumeration<Expr> e = child_table.KeyEnum();
+			while (e.hasMoreElements())
+			{
+				Expr after_expr = e.nextElement();
+				Expr before_expr = child_table.BeforeExpr(after_expr);
+				boolean safetyFlag = child_table.isSafeToMapExpr(after_expr);
+				  
+				if (after_expr instanceof PathExpr)
+				{
+					VarMap vm = new VarMap();
+					ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+					PathStep ps = (PathStep)(((PathExpr)(after_expr)).firstStep()).clone(vm);
+					pi = new PathIndex(new ConstExpr(i), ps);
+					pe = new PathExpr(ve, pi);
+					mt.add(pe, before_expr, safetyFlag);					  
+				}	
+			}
+		}
+		else   
+			mt.add(pe, exprs[i], child_table.isSafeToMapAll());
+	}
+
+	//Add the mapping at the array level
+	VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	PathExpr pe = new PathExpr(ve, new PathReturn());
+	mt.add(pe, this, false);                        //TODO: Is it really "false"  
+
+	return mt;
+  }
+  
 
   public Schema getSchema()
   {

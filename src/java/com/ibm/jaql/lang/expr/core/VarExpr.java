@@ -26,6 +26,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.path.PathFieldValue;
 
 /** A variable.
@@ -57,6 +58,19 @@ public class VarExpr extends Expr
 //    //    }
 //    return false;
 //  }
+  
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  VarExpr ve = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));  
+	  mt.add(ve, this, true);
+	  return mt;
+  }
+  
 
   @Override
   public Schema getSchema()
