@@ -18,6 +18,7 @@ package com.ibm.jaql;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -196,7 +197,12 @@ public class TestJaqlQuery extends TestCase{
 	public void testRegisterFunction(){
 		try{
 			JaqlQuery q = new JaqlQuery();
-			q.addJar( BASE_DIR + "/build/extension.jar");
+			String path = BASE_DIR + "/build/extension.jar";
+			File p = new File (path);
+			if(!p.isFile()){
+				return; 
+			}
+			q.addJar( path);
 			q.registerJavaUDF("split","com.acme.extensions.fn.Split1");
 			q.setQueryString("split('a,b,c,d,e',',');");
 			JsonArray v = (JsonArray)q.evaluate();
@@ -215,8 +221,12 @@ public class TestJaqlQuery extends TestCase{
 	public void testImportModule(){
 		try{
 			JaqlQuery q = new JaqlQuery();
-			this.getClass().getResource("");
-			q.setModuleSeachPath(BASE_DIR+"/src/test/com/ibm/jaql/modules");
+			String path = BASE_DIR+"/src/test/com/ibm/jaql/modules";
+			File p = new File (path);
+			if(!p.isDirectory()){
+				return;
+			}
+			q.setModuleSeachPath(path);
 			q.setQueryString("import fuzzy_join;");
 			q.evaluate();
 			q.setQueryString("fuzzy_join::cleanTitle('XY');");
