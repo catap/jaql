@@ -22,6 +22,7 @@ import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import static com.ibm.jaql.json.type.JsonType.*;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
@@ -159,7 +160,16 @@ public final class FilterExpr extends IterExpr
         while (true)
         {
           if (inIter.moveNext()) {
-            if( JaqlUtil.ebv(pred.eval(context)) )
+            boolean pVal = false;
+            try {
+              pVal = JaqlUtil.ebv(pred.eval(context));
+            } catch(Throwable t) {
+              JsonValue v = inBinding.var.getValue(context);
+              JaqlUtil.getExceptionHandler().handleException(t, v);
+            }
+            // this will be false on skipped exception or false predicate
+            // and true only on true predicate
+            if( pVal )
             {
               currentValue = inIter.current();
               return true;
