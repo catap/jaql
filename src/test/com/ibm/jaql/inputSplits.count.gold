@@ -261,7 +261,7 @@ parallelRange = fn(long numValues, long parallelism=100)
 
 
 parallelRange(1000, parallelism=2) 
- -> filter mod($, 100) == 0
+ -> filter mod($, 100) == 0 -> sort by [$]
 ;
 
 ;//------------------- EXPR-COUNTS -----------------
@@ -305,7 +305,7 @@ parallelEnumerate = fn(fd)
 
 parallelEnumerate(fd)
  -> filter mod($[0], 1000) == 0
- -> transform [$[0], $[1][1]] // remove file the offset, for stability
+ -> transform [$[0], $[1][1]] -> sort by [$[0]] // remove file the offset, for stability
 ;
 
 ;//------------------- EXPR-COUNTS -----------------
