@@ -169,7 +169,7 @@ $arrays1 -> jsonToDel({quoted: true});
 $arrays2 = [[1.23, 'one','two'],[100, 'three','four']];
 $arrays2 -> jsonToDel({quoted: false});
 $arrays2 -> jsonToDel({quoted: true});
-$arrays3 = [["\"", "\na", "1\u007fX", "\u0081-\u009f"]];
+$arrays3 = [["\"\'\\\b\f\n\r\t", "\na", "1\u007fX", "\u0081-\u009f"]];
 $arrays3 -> jsonToDel({quoted: true, escape: false});
 $arrays3 -> jsonToDel({quoted: true, escape: true});
 $records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
@@ -199,9 +199,10 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 ["one", "two"] -> jsonToDel({quoted: false});
 [{sn: "one"}, {sn: "two"}] -> jsonToDel({quoted: false, schema: schema {sn}});
 
-// 2dquote option
-[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: true});
-[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: false});
+// ddquote option
+$ddquoteData = [["\"\"\'\'"], ["a\"\'b"]];
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: true});
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: false});
 
 //-- testJsonToXml --
 {content: 12} -> jsonToXml();

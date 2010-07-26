@@ -259,31 +259,31 @@ public class JsonToDel {
         out.write(DOUBLE_QUOTE);
       } else if (escape) {
         switch (b) {
-          case '\'' :
+          case SINGLE_QUOTE :
             out.write(BACK_SLASH);
-            out.write('\\');
+            out.write(SINGLE_QUOTE);
             break;
-          case '\\' :
+          case BACK_SLASH :
             out.write(BACK_SLASH);
             out.write(BACK_SLASH);
             break;
-          case '\b' :
+          case BACKSPACE :
             out.write(BACK_SLASH);
             out.write('b');
             break;
-          case '\f' :
+          case FORM_FEED :
             out.write(BACK_SLASH);
             out.write('f');
             break;
-          case '\n' :
+          case LINE_FEED :
             out.write(BACK_SLASH);
             out.write('n');
             break;
-          case '\r' :
+          case CARRIAGE_RETURN :
             out.write(BACK_SLASH);
             out.write('r');
             break;
-          case '\t' :
+          case TAB :
             out.write(BACK_SLASH);
             out.write('t');
             break;

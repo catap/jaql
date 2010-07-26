@@ -1200,7 +1200,7 @@ $arrays2 -> jsonToDel({quoted: true});
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 = [["\"", "\na", "1\u007fX", "\u0081-\u009f"]];
+$arrays3 = [["\"\'\\\b\f\n\r\t", "\na", "1\u007fX", "\u0081-\u009f"]];
 ;//------------------- TEST-CASE -----------------
 
 $arrays3 -> jsonToDel({quoted: true, escape: false});
@@ -1312,8 +1312,11 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 ;//------------------- TEST-CASE -----------------
 
 
-// 2dquote option
-[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: true});
+// ddquote option
+$ddquoteData = [["\"\"\'\'"], ["a\"\'b"]];
+;//------------------- TEST-CASE -----------------
+
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: true});
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -1323,7 +1326,7 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 
 ;//------------------- TEST-CASE -----------------
 
-[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: false});
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: false});
 
 ;//------------------- EXPR-COUNTS -----------------
 

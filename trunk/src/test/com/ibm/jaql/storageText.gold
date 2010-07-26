@@ -902,13 +902,13 @@ read(del($f, { quoted: true, ddquote: false, escape: false}));
 [
   [
     "\"",
-    "abc",
+    "ab\\\'c",
     "12"
   ],
   [
     "\"\"",
     null,
-    "a\"b"
+    "a\"b\\\'\\\'"
   ]
 ]
 
@@ -921,13 +921,13 @@ read(del($f, { quoted: true, ddquote: false, escape: true}));
 [
   [
     "\"",
-    "abc",
+    "ab\'c",
     "12"
   ],
   [
     "\"\"",
     null,
-    "a\"b"
+    "a\"b\'\'"
   ]
 ]
 
@@ -2242,7 +2242,7 @@ $arrays2 -> jsonToDel({quoted: true});
 
 ;//------------------- TEST-CASE -----------------
 
-$arrays3 = [["\"", "\na", "1\u007fX", "\u0081-\u009f"]];
+$arrays3 = [["\"\'\\\b\f\n\r\t", "\na", "1\u007fX", "\u0081-\u009f"]];
 ;//------------------- TEST-CASE -----------------
 
 $arrays3 -> jsonToDel({quoted: true, escape: false});
@@ -2250,7 +2250,7 @@ $arrays3 -> jsonToDel({quoted: true, escape: false});
 ;//--------------------- RESULT ------------------
 
 [
-  "\"\"\"\",\"\na\",\"1\u007fX\",\"\u0081-\u009f\""
+  "\"\"\"\'\\\b\f\n\r\t\",\"\na\",\"1\u007fX\",\"\u0081-\u009f\""
 ]
 
 ;//------------------- TEST-CASE -----------------
@@ -2260,7 +2260,7 @@ $arrays3 -> jsonToDel({quoted: true, escape: true});
 ;//--------------------- RESULT ------------------
 
 [
-  "\"\"\"\",\"\\na\",\"1\\u007fX\",\"\\u0081-\\u009f\""
+  "\"\"\"\\\'\\\\\\b\\f\\n\\r\\t\",\"\\na\",\"1\\u007fX\",\"\\u0081-\\u009f\""
 ]
 
 ;//------------------- TEST-CASE -----------------
@@ -2362,25 +2362,28 @@ into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.pub
 ;//------------------- TEST-CASE -----------------
 
 
-// 2dquote option
-[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: true});
+// ddquote option
+$ddquoteData = [["\"\"\'\'"], ["a\"\'b"]];
+;//------------------- TEST-CASE -----------------
+
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: true});
 
 ;//--------------------- RESULT ------------------
 
 [
-  "\"\\\"\\\"\"",
-  "\"a\\\"b\""
+  "\"\\\"\\\"\\\'\\\'\"",
+  "\"a\\\"\\\'b\""
 ]
 
 ;//------------------- TEST-CASE -----------------
 
-[["\"\""], ["a\"b"]] -> jsonToDel({quoted: true, ddquote: false, escape: false});
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: false});
 
 ;//--------------------- RESULT ------------------
 
 [
-  "\"\\\"\\\"\"",
-  "\"a\\\"b\""
+  "\"\\\"\\\"\'\'\"",
+  "\"a\\\"\'b\""
 ]
 
 ;//------------------- TEST-CASE -----------------
