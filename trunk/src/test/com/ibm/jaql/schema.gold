@@ -356,7 +356,6 @@ schema long(5d);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -369,7 +368,6 @@ schema long(5m);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -382,7 +380,6 @@ schema long(5.1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -503,7 +500,6 @@ schema double(5);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -524,7 +520,6 @@ schema double(5.1m);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -645,7 +640,6 @@ schema decfloat(5);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -658,7 +652,6 @@ schema decfloat(5.0);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -671,7 +664,6 @@ schema decfloat(5d);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// argument "value" has an invalid schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -846,7 +838,6 @@ schema string(-1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// length attribute must be non-negative
 
 ;//------------------- TEST-CASE -----------------
 
@@ -859,7 +850,6 @@ schema string(1, "ab");
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// length does not match length of specified value
 
 ;//------------------- TEST-CASE -----------------
 
@@ -976,7 +966,6 @@ schema binary(-1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// length attribute must be non-negative
 
 ;//------------------- TEST-CASE -----------------
 
@@ -989,7 +978,6 @@ schema binary(2, hex('11'));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// length does not match length of specified value
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1935,7 +1923,6 @@ schema { 1: nonnull };
 ;//----- EXCEPTION -----
 
 // antlr.NoViableAltException
-// unexpected token: 1
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1948,7 +1935,6 @@ schema { *, * };
 ;//----- EXCEPTION -----
 
 // antlr.RecognitionException
-// only one wildcard field is allowed in a record schema
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1961,7 +1947,6 @@ schema { a, b, c, a, * };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// duplicate field names not allowed: a
 
 ;//------------------- TEST-CASE -----------------
 

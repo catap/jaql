@@ -233,7 +233,6 @@ read(del($f, { quoted: false }));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Wrong number of fields on input at position 110
 
 ;//------------------- TEST-CASE -----------------
 
@@ -248,7 +247,6 @@ read(del($f, { quoted: null }));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// parameter "quoted" must not be null
 
 ;//------------------- TEST-CASE -----------------
 
@@ -263,7 +261,6 @@ read(del($f, { delimiter: null }));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// parameter "delimiter" must not be null
 
 ;//------------------- TEST-CASE -----------------
 
@@ -399,7 +396,6 @@ read(del($f, { schema: schema { c1, c2 } }));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Wrong number of fields on input at position 0
 
 ;//------------------- TEST-CASE -----------------
 
@@ -414,7 +410,6 @@ read(del($f, { schema: schema { c1, c2, c3, c4 } }));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Wrong number of fields on input at position 0
 
 ;//------------------- TEST-CASE -----------------
 
@@ -642,7 +637,6 @@ read(del($f, { quoted: false }));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Wrong number of fields on input at position 427
 
 ;//------------------- TEST-CASE -----------------
 
@@ -889,7 +883,6 @@ read(del($f, { quoted: true, ddquote: true, escape: false}));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// delimiter missing in field starting at position 1
 
 ;//------------------- TEST-CASE -----------------
 
@@ -947,7 +940,6 @@ read(del($f));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// ending quote missing in field starting at position 7
 
 ;//------------------- TEST-CASE -----------------
 
@@ -980,7 +972,6 @@ read(del($f));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// ending quote missing in field starting at position 7
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1018,7 +1009,6 @@ read(del($f));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Wrong number of fields on input at position 6
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1038,7 +1028,6 @@ read(del($f, { quoted: false }));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Wrong number of fields on input at position 6
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1175,7 +1164,6 @@ convert(null, schema long);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// found null value, expected long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1190,7 +1178,6 @@ convert("1", schema long(0));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// type modifiers are currently not allowed for conversion
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1260,7 +1247,6 @@ convert(["a","1","1"], schema [ string, long ]);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// input array has invalid length
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1275,7 +1261,6 @@ convert(["a"], schema [ string, long ]);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// input array has invalid length
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1290,7 +1275,6 @@ convert(["a",1], schema [ string, long ]);
 ;//----- EXCEPTION -----
 
 // java.lang.ClassCastException
-// com.ibm.jaql.json.type.JsonLong cannot be cast to com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1305,7 +1289,6 @@ convert(null, schema [ string, long ]);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// found null value, expected array
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1376,7 +1359,6 @@ convert({a:"a", b:"2", c:"1"}, schema { a:string, b: long });
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// input record has invalid number of fields
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1391,7 +1373,6 @@ convert({a:"a"}, schema { a:string, b: long });
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// input record has invalid number of fields
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1406,7 +1387,6 @@ convert({a:"a", b:1}, schema { a:string, b: long });
 ;//----- EXCEPTION -----
 
 // java.lang.ClassCastException
-// com.ibm.jaql.json.type.JsonLong cannot be cast to com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1421,7 +1401,6 @@ convert(null, schema { a:string, b: long });
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// found null value, expected record
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1796,7 +1775,6 @@ read(lines($l,{schema: schema long}));
 ;//----- EXCEPTION -----
 
 // java.lang.NumberFormatException
-// For input string: "3.4"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1817,7 +1795,6 @@ read(lines($li,{schema: schema long}));
 ;//----- EXCEPTION -----
 
 // java.lang.NumberFormatException
-// For input string: "7,8"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1894,7 +1871,6 @@ read(lines($lb,{schema: schema long}));
 ;//----- EXCEPTION -----
 
 // java.lang.NumberFormatException
-// For input string: "true"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1914,7 +1890,6 @@ read(lines($lwn,{schema: schema string}));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// found null value, expected string
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1952,7 +1927,6 @@ read(lines($l,{schema: schema [long]}));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// lines() is for atomic types, use del() for complex types
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1967,7 +1941,6 @@ read(lines($l,{schema: schema {f1: long}}));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// lines() is for atomic types, use del() for complex types
 
 ;//------------------- TEST-CASE -----------------
 
@@ -2150,7 +2123,6 @@ read(lines($out,{schema: schema long}));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// found null value, expected long
 
 ;//------------------- TEST-CASE -----------------
 

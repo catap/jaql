@@ -8,7 +8,6 @@ fuzzy_join::cleanTitle;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// unknown namespace fuzzy_join
 
 ;//------------------- TEST-CASE -----------------
 
@@ -51,7 +50,6 @@ cleanTitle("AB");
 ;//----- EXCEPTION -----
 
 // java.lang.IndexOutOfBoundsException
-// variable not defined: cleanTitle
 
 ;//------------------- TEST-CASE -----------------
 
@@ -64,7 +62,6 @@ $normalize([{a:"a"},{a:"XY"}],"a");
 ;//----- EXCEPTION -----
 
 // java.lang.IndexOutOfBoundsException
-// variable not defined: $normalize
 
 ;//------------------- TEST-CASE -----------------
 
@@ -80,8 +77,6 @@ import fail_not_detected;
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Could not find module fail_not_detected in:
-// .../src/test/com/ibm/jaql/modules/
 
 ;//------------------- TEST-CASE -----------------
 
@@ -95,7 +90,6 @@ import fail_wrong_exports;
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// export normalize does not exist
 
 ;//------------------- TEST-CASE -----------------
 
@@ -108,7 +102,6 @@ import fail_invalid_namespace_file;
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Module namespace is too new.  Version=9999 Max Version=1
 
 ;//------------------- TEST-CASE -----------------
 
@@ -189,7 +182,6 @@ five;
 ;//----- EXCEPTION -----
 
 // java.lang.IndexOutOfBoundsException
-// variable not defined: five
 
 ;//------------------- TEST-CASE -----------------
 
@@ -261,7 +253,6 @@ y;
 ;//----- EXCEPTION -----
 
 // java.lang.IndexOutOfBoundsException
-// variable not defined: x
 
 ;//------------------- TEST-CASE -----------------
 
@@ -304,7 +295,6 @@ fuzzy_join::qgram;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// namespace fuzzy_join does not export a variable of name qgram
 
 ;//------------------- TEST-CASE -----------------
 
@@ -318,7 +308,6 @@ z;
 ;//----- EXCEPTION -----
 
 // java.lang.IndexOutOfBoundsException
-// variable not defined: z
 
 ;//------------------- TEST-CASE -----------------
 
@@ -387,7 +376,6 @@ meta::cleanTitle = 2;
 ;//----- EXCEPTION -----
 
 // antlr.NoViableAltException
-// unexpected token: =
 
 ;//------------------- TEST-CASE -----------------
 
