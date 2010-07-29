@@ -57,10 +57,10 @@ fuzzy_join::qgram;
 z;
 
 //Test export lists
-listExports("fuzzy_join");
-listExports("meta");
-listExports("scripts_and_udf");
-listExports("scripts_only");
+listExports("fuzzy_join") -> sort by [$];
+listExports("meta") -> sort by [$];
+listExports("scripts_and_udf") -> sort by [$];
+listExports("scripts_only") -> sort by [$];
 
 //Test reassigning values
 meta::cleanTitle = 2;

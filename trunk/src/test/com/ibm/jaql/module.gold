@@ -317,7 +317,7 @@ z;
 
 
 //Test export lists
-listExports("fuzzy_join");
+listExports("fuzzy_join") -> sort by [$];
 
 ;//--------------------- RESULT ------------------
 
@@ -329,42 +329,42 @@ listExports("fuzzy_join");
 
 ;//------------------- TEST-CASE -----------------
 
-listExports("meta");
+listExports("meta") -> sort by [$];
 
 ;//--------------------- RESULT ------------------
 
 [
-  "fuzzy_join",
   "$normalize",
-  "cleanTitle"
+  "cleanTitle",
+  "fuzzy_join"
 ]
 
 ;//------------------- TEST-CASE -----------------
 
-listExports("scripts_and_udf");
+listExports("scripts_and_udf") -> sort by [$];
 
 ;//--------------------- RESULT ------------------
 
 [
-  "qgram",
-  "jaccard",
   "cleanTitle",
-  "roundUp",
+  "jaccard",
   "memHashMap",
   "nullToZero",
-  "pi"
+  "pi",
+  "qgram",
+  "roundUp"
 ]
 
 ;//------------------- TEST-CASE -----------------
 
-listExports("scripts_only");
+listExports("scripts_only") -> sort by [$];
 
 ;//--------------------- RESULT ------------------
 
 [
   "five",
-  "three",
-  "four"
+  "four",
+  "three"
 ]
 
 ;//------------------- TEST-CASE -----------------
