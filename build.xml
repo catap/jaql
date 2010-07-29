@@ -58,8 +58,17 @@
   <!-- <property name="jaql.mapred.mode" value="cluster"/> -->
   <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
   <property name="tmp.dir" value="${build.dir}/tmp" />
-  <property name="year" value="2009" />
+  <property name="year" value="2010" />
   <property name="version" value="0.4" />
+	
+	<!-- Release version information -->
+	<property name="major" value="0" />
+	<property name="minor" value="5" />
+	<property name="point" value="0" />
+	<tstamp>
+	    <format property="release.timestamp" pattern="MMMM dd, yyyy, HH:mm:ss" locale="en,US" />
+	</tstamp>
+	
   <property name="Name" value="jaql" />
   <property name="name" value="jaql" />
 
@@ -522,6 +531,11 @@
     <jar jarfile="${build.dir}/jaql.jar" basedir="${tmp.dir}">
       <manifest>
         <attribute name="Main-Class" value="JaqlShell" />
+      	<section name="versioninfo">
+      	          <attribute name="JaqlVersion" value="${major}.${minor}.${point}" />
+      	          <attribute name="BuildTime" value="${release.timestamp}" />
+      	          <attribute name="HadoopVersion" value="${hadoop.version}" />
+      	</section>
       </manifest>
     </jar>
   </target>
