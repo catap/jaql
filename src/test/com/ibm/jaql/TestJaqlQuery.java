@@ -56,6 +56,7 @@ public class TestJaqlQuery extends TestCase{
 			"]";
 	
 	private static final String BASE_DIR = System.getProperty("user.dir");
+	private static final String DATADIR = BASE_DIR.replace('\\', '/') + "/build/src/test/com/ibm/jaql/data/";
 	
 	/**
 	 * Write data to hdfs and read it back
@@ -63,10 +64,10 @@ public class TestJaqlQuery extends TestCase{
 	@Test
 	public void testHDFSWriteAndRead(){
 		try{
-			JaqlQuery q = new JaqlQuery(employees + "->write(hdfs('" + JaqlScriptTestCase.DATADIR_DIR+ "emps'));");
+			JaqlQuery q = new JaqlQuery(employees + "->write(hdfs('" + DATADIR+ "emps'));");
 			//q.setQueryString();
 			q.evaluate();
-			q.setQueryString("read(hdfs('"+JaqlScriptTestCase.DATADIR_DIR+"emps'))->filter $.income==10000->transform $.id;");
+			q.setQueryString("read(hdfs('"+DATADIR+"emps'))->filter $.income==10000->transform $.id;");
 			JsonArray v = (JsonArray) q.evaluate();
 			assertEquals(new JsonLong(4),  v.get(0) );
 			q.close();
@@ -158,7 +159,7 @@ public class TestJaqlQuery extends TestCase{
 	public void testGroup(){
 		try{
 			JaqlQuery q = new JaqlQuery();
-			q.setQueryString("read(hdfs('"+JaqlScriptTestCase.DATADIR_DIR+"emps')) -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};");
+			q.setQueryString("read(hdfs('"+DATADIR+"emps')) -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};");
 			JsonIterator it = q.iterate();
 			int[] expected = {59000,20000,8000};
 			int i = 0;
@@ -491,9 +492,9 @@ public class TestJaqlQuery extends TestCase{
 	public void testNullFnArgument() {
 		try {
 			JaqlQuery jq = new JaqlQuery();
-			jq.setQueryString("[1,2,3,4,5]->write(hdfs('"+JaqlScriptTestCase.DATADIR_DIR+"foo'));");
+			jq.setQueryString("[1,2,3,4,5]->write(hdfs('"+DATADIR+"foo'));");
 			jq.evaluate();
-			jq.setQueryString("sample=fn()(read(hdfs('"+JaqlScriptTestCase.DATADIR_DIR+"foo'))->transform $+1);");
+			jq.setQueryString("sample=fn()(read(hdfs('"+DATADIR+"foo'))->transform $+1);");
 			JsonArray array = (JsonArray)jq.evaluate("sample", null);
 			int[] expected = {2,3,4,5,6};
 			int i = 0;
@@ -513,9 +514,9 @@ public class TestJaqlQuery extends TestCase{
 	public void testNullObject() {
 		try {
 			JaqlQuery jq = new JaqlQuery();
-			jq.setQueryString("[1,2,3,4,5]->write(hdfs('"+JaqlScriptTestCase.DATADIR_DIR+"foo'));");
+			jq.setQueryString("[1,2,3,4,5]->write(hdfs('"+DATADIR+"foo'));");
 			jq.evaluate();
-			jq.setQueryString("sample=fn()(read(hdfs('"+JaqlScriptTestCase.DATADIR_DIR+"foo'))->transform $+1);");
+			jq.setQueryString("sample=fn()(read(hdfs('"+DATADIR+"foo'))->transform $+1);");
 			JsonArray array = (JsonArray)jq.evaluate("sample", new FunctionArgs());
 			int[] expected = {2,3,4,5,6};
 			int i = 0;
