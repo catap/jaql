@@ -65,7 +65,6 @@ errArgs("ok", 0);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.JsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -81,7 +80,6 @@ errShallow("ok", 0);
 ;//----- EXCEPTION -----
 
 // java.lang.Exception
-// shallow
 
 ;//------------------- TEST-CASE -----------------
 
@@ -97,7 +95,6 @@ errDeep("ok", 0);
 ;//----- EXCEPTION -----
 
 // java.io.IOException
-// caused by IO
 
 ;//------------------- TEST-CASE -----------------
 
@@ -139,7 +136,6 @@ catch(errArgs("ok", 0), { errThresh: 0 });
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.JsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -171,7 +167,6 @@ catch(errShallow("ok", 0), { errThresh: 0 });
 ;//----- EXCEPTION -----
 
 // java.lang.Exception
-// shallow
 
 ;//------------------- TEST-CASE -----------------
 
@@ -203,7 +198,6 @@ catch(errDeep("ok", 0), { errThresh: 0 });
 ;//----- EXCEPTION -----
 
 // java.io.IOException
-// caused by IO
 
 ;//------------------- TEST-CASE -----------------
 
@@ -245,7 +239,6 @@ range(1,100) -> transform errArgs("ok", $) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -261,7 +254,6 @@ range(1,100) -> transform errShallow("ok", $) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.Exception
-// shallow
 
 ;//------------------- TEST-CASE -----------------
 
@@ -277,7 +269,6 @@ range(1,100) -> transform errDeep("ok", $) -> count();
 ;//----- EXCEPTION -----
 
 // java.io.IOException
-// caused by IO
 
 ;//------------------- TEST-CASE -----------------
 
@@ -319,7 +310,6 @@ range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 0 }) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -342,7 +332,6 @@ range(1,100) -> transform catch(errArgs("ok", $), { errThresh: 2 }) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -358,7 +347,6 @@ range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 0 }) -> count(
 ;//----- EXCEPTION -----
 
 // java.lang.Exception
-// shallow
 
 ;//------------------- TEST-CASE -----------------
 
@@ -381,7 +369,6 @@ range(1,100) -> transform catch(errShallow("ok", $), { errThresh: 2 }) -> count(
 ;//----- EXCEPTION -----
 
 // java.lang.Exception
-// shallow
 
 ;//------------------- TEST-CASE -----------------
 
@@ -397,7 +384,6 @@ range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 0 }) -> count();
 ;//----- EXCEPTION -----
 
 // java.io.IOException
-// caused by IO
 
 ;//------------------- TEST-CASE -----------------
 
@@ -420,7 +406,6 @@ range(1,100) -> transform catch(errDeep("ok", $), { errThresh: 2 }) -> count();
 ;//----- EXCEPTION -----
 
 // java.io.IOException
-// caused by IO
 
 ;//------------------- TEST-CASE -----------------
 
@@ -529,7 +514,6 @@ range(1,100) -> transform catch(errArgs("ok", $)) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -544,7 +528,6 @@ range(1,100) -> transform catch(errShallow("ok", $)) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.Exception
-// shallow
 
 ;//------------------- TEST-CASE -----------------
 
@@ -559,7 +542,6 @@ range(1,100) -> transform catch(errDeep("ok", $)) -> count();
 ;//----- EXCEPTION -----
 
 // java.io.IOException
-// caused by IO
 
 ;//------------------- TEST-CASE -----------------
 
@@ -601,7 +583,6 @@ range(1,6) -> transform catch(errArgs("ok", $)) -> count();
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -630,7 +611,6 @@ read(hdfs("bar")) -> transform catch(errArgs("ok", $));
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.BufferedJsonArray for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -697,7 +677,6 @@ read(hdfs("bar")) -> filter $[1] == 0 -> transform errArgs("ok", $);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.BufferedJsonArray for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -740,7 +719,6 @@ test2 -> filter $[1] == 0 -> transform errArgs("ok", $);
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.BufferedJsonArray for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -783,7 +761,6 @@ read(hdfs("bar")) -> filter errArgs("ok", $[1]) == 0;
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.MutableJsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -826,7 +803,6 @@ test2 -> filter errArgs("ok", $[1]) == 0;
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// Mismatched arg type. UDF: com.ibm.jaql.fail.fn.ErrorFn invoked with com.ibm.jaql.json.type.JsonLong for 0th arg, expected: com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 

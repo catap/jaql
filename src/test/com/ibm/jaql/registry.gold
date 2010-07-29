@@ -293,10 +293,6 @@ read({type: 'myAdapter2', location: 'jaqlTest/test11.dat'});
 ;//----- EXCEPTION -----
 
 // java.lang.RuntimeException
-// adapter not found for i/o descriptor: {
-//  "location": "jaqlTest/test11.dat",
-//  "type": "myAdapter2"
-//}
 
 ;//------------------- TEST-CASE -----------------
 
