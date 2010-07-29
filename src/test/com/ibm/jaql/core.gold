@@ -120,7 +120,6 @@ d'12/10/1999';
 ;//----- EXCEPTION -----
 
 // java.text.ParseException
-// Unparseable date: "12/10/1999"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -278,7 +277,6 @@ null
 ;//----- EXCEPTION -----
 
 // java.lang.ClassCastException
-// com.ibm.jaql.json.type.JsonLong cannot be cast to com.ibm.jaql.json.type.JsonString
 
 ;//------------------- TEST-CASE -----------------
 
@@ -291,7 +289,6 @@ null
 ;//----- EXCEPTION -----
 
 // antlr.RecognitionException
-// field name required, or use (expr).* to copy records
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1021,7 +1018,6 @@ group [ 1 ] by k=$ as x, [ 1 ] by k#1=$ as y into { x, y };
 ;//----- EXCEPTION -----
 
 // antlr.RecognitionException
-// all group by variables must have the same name:k != k#1
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1039,7 +1035,6 @@ group
 ;//----- EXCEPTION -----
 
 // antlr.RecognitionException
-// all group by variables must have the same name:g != h
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1582,7 +1577,6 @@ compare(1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of builtin function compare: missing value for parameter: y
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1593,7 +1587,6 @@ compare(1,2,3);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of builtin function compare: too many arguments provided
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1604,7 +1597,6 @@ compare(1,x=1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of builtin function compare: duplicate argument: x
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1615,7 +1607,6 @@ compare(1,2,x=1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of builtin function compare: too many arguments provided
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1703,7 +1694,6 @@ f(1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of Jaql function with signature fn(x, y): missing value for parameter: y
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1714,7 +1704,6 @@ f(1,2,3);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of Jaql function with signature fn(x, y): too many arguments provided
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1725,7 +1714,6 @@ f(1,x=1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of Jaql function with signature fn(x, y): duplicate argument: x
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1736,7 +1724,6 @@ f(1,2,x=1);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// In call of Jaql function with signature fn(x, y): too many arguments provided
 
 ;//------------------- TEST-CASE -----------------
 
@@ -2275,7 +2262,6 @@ null = 1;
 ;//----- EXCEPTION -----
 
 // antlr.NoViableAltException
-// unexpected token: =
 
 ;//------------------- TEST-CASE -----------------
 
@@ -2293,7 +2279,6 @@ f = fn(x) x -> transform (1);
 ;//----- EXCEPTION -----
 
 // antlr.NoViableAltException
-// unexpected token: #transform
 
 ;//------------------- TEST-CASE -----------------
 
@@ -2343,7 +2328,6 @@ transform = fn(x,y) "test";
 ;//----- EXCEPTION -----
 
 // antlr.NoViableAltException
-// unexpected token: #sort
 
 ;//------------------- TEST-CASE -----------------
 
@@ -2371,7 +2355,6 @@ sort = fn(x) x;
 ;//----- EXCEPTION -----
 
 // antlr.NoViableAltException
-// unexpected token: #sort
 
 ;//------------------- TEST-CASE -----------------
 

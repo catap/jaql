@@ -87,7 +87,6 @@ s = schema null;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema null
 
 ;//------------------- TEST-CASE -----------------
 
@@ -127,7 +126,6 @@ s = schema nonnull;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -176,7 +174,6 @@ s = schema boolean(value = true);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -210,7 +207,6 @@ s = schema long;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1.0 does not match this serializer's schema schema long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -225,7 +221,6 @@ s = schema long;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1m does not match this serializer's schema schema long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -256,7 +251,6 @@ s = schema long(22);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -290,7 +284,6 @@ s = schema decfloat;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema decfloat
 
 ;//------------------- TEST-CASE -----------------
 
@@ -305,7 +298,6 @@ s = schema decfloat;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1.0 does not match this serializer's schema schema decfloat
 
 ;//------------------- TEST-CASE -----------------
 
@@ -336,7 +328,6 @@ s = schema decfloat(22m);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -370,7 +361,6 @@ s = schema double;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema double
 
 ;//------------------- TEST-CASE -----------------
 
@@ -385,7 +375,6 @@ s = schema double;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1m does not match this serializer's schema schema double
 
 ;//------------------- TEST-CASE -----------------
 
@@ -416,7 +405,6 @@ s = schema double(22d);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -450,7 +438,6 @@ s = schema string;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema string
 
 ;//------------------- TEST-CASE -----------------
 
@@ -481,7 +468,6 @@ s = schema string(value="abc");
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -512,7 +498,6 @@ s = schema string(2);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -527,7 +512,6 @@ s = schema string(2);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -560,7 +544,6 @@ s = schema binary;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value  does not match this serializer's schema schema binary
 
 ;//------------------- TEST-CASE -----------------
 
@@ -591,7 +574,6 @@ s = schema binary(value=hex("11"));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -622,7 +604,6 @@ s = schema binary(2);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -637,7 +618,6 @@ s = schema binary(2);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -671,7 +651,6 @@ s = schema date;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema date
 
 ;//------------------- TEST-CASE -----------------
 
@@ -702,7 +681,6 @@ s = schema date(date('2000-01-01T11:59:59Z'));
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -734,7 +712,6 @@ s = schema function;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value schema long does not match this serializer's schema schema function
 
 ;//------------------- TEST-CASE -----------------
 
@@ -771,7 +748,6 @@ s = schema schematype;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value fn(x) (x) does not match this serializer's schema schema schematype
 
 ;//------------------- TEST-CASE -----------------
 
@@ -801,7 +777,6 @@ s = schema schematype(schema long);
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -835,7 +810,6 @@ s = schema [ ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// input array has invalid length
 
 ;//------------------- TEST-CASE -----------------
 
@@ -881,7 +855,6 @@ s = schema [ * ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema [ * ]
 
 ;//------------------- TEST-CASE -----------------
 
@@ -921,7 +894,6 @@ s = schema [ long, boolean ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// input array has invalid length
 
 ;//------------------- TEST-CASE -----------------
 
@@ -936,7 +908,6 @@ s = schema [ long, boolean ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// input array has invalid length
 
 ;//------------------- TEST-CASE -----------------
 
@@ -951,7 +922,6 @@ s = schema [ long, boolean ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value true does not match this serializer's schema schema long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -966,7 +936,6 @@ s = schema [ long, boolean ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema boolean
 
 ;//------------------- TEST-CASE -----------------
 
@@ -981,7 +950,6 @@ s = schema [ long, boolean ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value true does not match this serializer's schema schema long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1021,7 +989,6 @@ s = schema [ long * ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value true does not match this serializer's schema schema long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1061,7 +1028,6 @@ s = schema [ string, long * ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// input array has invalid length
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1076,7 +1042,6 @@ s = schema [ string, long * ];
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema string
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1111,7 +1076,6 @@ s = schema { };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// invalid field: a
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1150,7 +1114,6 @@ s = schema { b: boolean, a: long, c:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// missing field: a
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1165,7 +1128,6 @@ s = schema { b: boolean, a: long, c:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// invalid field: d
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1180,7 +1142,6 @@ s = schema { b: boolean, a: long, c:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value true does not match this serializer's schema schema long
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1195,7 +1156,6 @@ s = schema { b: boolean, a: long, c:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1 does not match this serializer's schema schema boolean
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1210,7 +1170,6 @@ s = schema { b: boolean, a: long, c:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value true does not match this serializer's schema schema string
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1252,7 +1211,6 @@ s = schema { b?: boolean, a?: long, c?:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// invalid field: d
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1267,7 +1225,6 @@ s = schema { b?: boolean, a?: long, c?:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1282,7 +1239,6 @@ s = schema { b?: boolean, a?: long, c?:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1297,7 +1253,6 @@ s = schema { b?: boolean, a?: long, c?:string };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1339,7 +1294,6 @@ s = schema { *: long };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1426,7 +1380,6 @@ s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1441,7 +1394,6 @@ s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1456,7 +1408,6 @@ s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1471,7 +1422,6 @@ s = schema { a: boolean, b?: long, d:string, f?:null, *:double };
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1527,7 +1477,6 @@ s = schema long | decfloat;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1542,7 +1491,6 @@ s = schema long | decfloat;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// value 1.0 does not match this serializer's schema schema long | decfloat
 
 ;//------------------- TEST-CASE -----------------
 
@@ -1578,7 +1526,6 @@ s = schema long(0) | decfloat(0m) | nonnull;
 ;//----- EXCEPTION -----
 
 // java.lang.IllegalArgumentException
-// null value is not matched by this serializer
 
 ;//------------------- TEST-CASE -----------------
 

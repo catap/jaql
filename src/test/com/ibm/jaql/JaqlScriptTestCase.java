@@ -66,6 +66,9 @@ import com.ibm.jaql.util.EchoedReader;
 // @RunWith(Parameterized.class)
 public class JaqlScriptTestCase
 {
+  public static final String DATADIR_NAME = "DATADIR";
+  public static final String DATADIR_DIR = "../../../src/test/com/ibm/jaql/data/";
+  public static final JsonString DATADIR_VALUE = new JsonString(DATADIR_DIR);
   public enum Mode
   {
     NO_REWRITE,
@@ -237,7 +240,7 @@ public class JaqlScriptTestCase
       jaql.setJaqlPrinter(new TestPrinter(resultStream, schemaPrinting));
 
       jaql.addJar( jaqlHome + "build/extension.jar" );
-      jaql.setVar("DATADIR", new JsonString("../../../src/test/com/ibm/jaql/data/"));
+      jaql.setVar(DATADIR_NAME, DATADIR_VALUE);
       
       // run the script
       jaql.run();
@@ -382,14 +385,15 @@ public class JaqlScriptTestCase
       ps.println("\n\n;//----- EXCEPTION -----\n");
       // error.printStackTrace(ps);
       ps.println("// "+cause.getClass().getName());
-      String msg = cause.getMessage();
-      msg = msg.replace(pathToRemove, ".../");
-      msg = msg.replace("\n", "\n//");
-      // get rid of object specific debug statements (not repeatable)
-      int atIdx = msg.indexOf('@'); 
-      if(atIdx >= 0)
-    	  msg = msg.substring(0, atIdx);
-      ps.println("// " + msg );
+      // MODIFIED: this is not portable across JVM's (e.g., IBM and Sun)
+//      String msg = cause.getMessage();
+//      msg = msg.replace(pathToRemove, ".../");
+//      msg = msg.replace("\n", "\n//");
+//      // get rid of object specific debug statements (not repeatable)
+//      int atIdx = msg.indexOf('@'); 
+//      if(atIdx >= 0)
+//    	  msg = msg.substring(0, atIdx);
+//      ps.println("// " + msg );
       ps.println("\n;//------------------- TEST-CASE -----------------");
       ps.flush();
 
