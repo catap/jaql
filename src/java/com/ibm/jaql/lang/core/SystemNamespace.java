@@ -90,6 +90,7 @@ import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.RegisterExceptionHandler;
 import com.ibm.jaql.lang.expr.core.SetOptionsFn;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
+import com.ibm.jaql.lang.expr.core.TimeoutExpr;
 import com.ibm.jaql.lang.expr.date.DateFn;
 import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.DatePartsFn;
@@ -512,6 +513,7 @@ public final class SystemNamespace extends Namespace {
     register(new ListExportsFn.Descriptor());
     register(new TestFn.Descriptor());
     register(new CatchExpr.Descriptor());
+    register(new TimeoutExpr.Descriptor());
     register(new RegisterExceptionHandler.Descriptor());
   } 
 

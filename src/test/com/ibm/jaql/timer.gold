@@ -1,0 +1,262 @@
+
+;//------------------- TEST-CASE -----------------
+// function that sleeps... to test out timer
+sleep = javaudf("com.ibm.jaql.fail.fn.SleepFn");
+;//------------------- TEST-CASE -----------------
+
+
+// function that throws an error
+errFn = javaudf("com.ibm.jaql.fail.fn.ErrorFn");
+;//------------------- TEST-CASE -----------------
+
+
+// function takes less time than the timeout
+timeout(sleep(5000), 10000);
+
+;//--------------------- RESULT ------------------
+
+"done!"
+
+;//------------------- TEST-CASE -----------------
+
+
+// function takes more time than the timeout
+timeout(sleep(10000), 5000);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// function throws an error
+timeout(errFn("ok", 0, "SHALLOW_ERROR"), 10000);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// catch + function takes less time than the timeout
+catch(timeout(sleep(5000), 10000));
+
+;//--------------------- RESULT ------------------
+
+"done!"
+
+;//------------------- TEST-CASE -----------------
+
+
+// catch + function takes more time than the timeout
+registerExceptionHandler({errThresh: 1});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+catch(timeout(sleep(10000), 5000));
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+
+// some data
+data = [ 1, 2, 3 ];
+;//------------------- TEST-CASE -----------------
+
+data -> write(hdfs("foo"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// map side + function takes less time than the timeout
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform timeout(sleep(5000), 10000);
+
+;//--------------------- RESULT ------------------
+
+[
+  "done!",
+  "done!",
+  "done!"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// map side + function takes more time than the timeout
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform timeout(sleep(10000), 5000);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// reduce side + function takes less time than the timeout
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(5000), 10000) };
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "num": 1,
+    "status": "done!"
+  },
+  {
+    "num": 1,
+    "status": "done!"
+  },
+  {
+    "num": 1,
+    "status": "done!"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// reduce side + function takes more time than the timeout
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(10000), 5000) };
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// catch + map side + function takes less time than the timeout
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform catch(timeout(sleep(5000), 10000));
+
+;//--------------------- RESULT ------------------
+
+[
+  "done!",
+  "done!",
+  "done!"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// catch + map side + function takes more time than the timeout
+registerExceptionHandler({errThresh: 5});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform catch(timeout(sleep(10000), 5000));
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// catch + reduce side + function takes less time than the timeout
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(5000), 10000) };
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "num": 1,
+    "status": "done!"
+  },
+  {
+    "num": 1,
+    "status": "done!"
+  },
+  {
+    "num": 1,
+    "status": "done!"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// catch + reduce side + function takes more time than the timeout
+registerExceptionHandler({errThresh: 1});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(10000), 5000) };
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.io.IOException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------
