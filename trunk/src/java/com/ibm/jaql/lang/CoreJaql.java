@@ -18,12 +18,14 @@ package com.ibm.jaql.lang;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.List;
 
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
@@ -215,5 +217,33 @@ public interface CoreJaql extends Closeable {
 	 * 
 	 */
 	void close() throws IOException;
+
+	/**
+	 * Prepares the next evaluate-able statement, if there isn't any, return false
+	 * else return true. 
+	 * And set current value to the evaluation result of current statement.
+	 * 
+	 * @return 
+	 * 		true | false
+	 */
+	boolean moveNextQuery() throws Exception;
+
+	/**
+	 * return the evaluation result of current statement
+	 * @return
+	 * 		evaluation result of current statement
+	 */
+	JsonIterator currentQuery();
+
+	/**
+	 * evaluate given statement and return a json value, if multiple sentence is given, throw a illegal statement exception
+	 */
+	JsonValue evaluate() throws Exception ;
+
+	/**
+	 * evaluate given statement and return a json iterator, if multiple sentence is given, throw a illegal statement exception
+	 * 
+	 */
+	JsonIterator iterate() throws Exception;
 
 }
