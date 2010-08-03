@@ -17,6 +17,10 @@ package com.ibm.jaql.lang;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
+
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonBool;
@@ -26,6 +30,8 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Module;
+import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.function.JavaFunctionCallExpr;
 
 /**
  * This is for Java developers to call JAQL in their Java applications. Typical
@@ -44,6 +50,8 @@ public class JaqlQuery implements Closeable {
 
 	private CoreJaql jq;
 	private String query;
+	
+	List<JsonIterator> result = null; 
 
 	public JaqlQuery() {
 		jq = new Jaql();
@@ -63,9 +71,9 @@ public class JaqlQuery implements Closeable {
 	 * 
 	 * @param string
 	 * */
-	public void setQueryString(String string) {
-		this.query = string;
-		jq.setInput(string);
+	public void setQueryString(String query) {
+		this.query = query;
+		jq.setInput(query);
 	}
 
 	/**
@@ -75,7 +83,7 @@ public class JaqlQuery implements Closeable {
 	 * */
 	public JsonIterator iterate() throws Exception {
 
-		JsonIterator it = jq.iter();
+		JsonIterator it = jq.iterate();
 		setQueryString(query);
 		return it;
 	}
@@ -86,10 +94,12 @@ public class JaqlQuery implements Closeable {
 	 * @return JsonValue
 	 * */
 	public JsonValue evaluate() throws Exception {
-		JsonValue v = jq.eval();
+		
+		JsonValue v = jq.evaluate();
 		// set query again to rewind the statement
 		setQueryString(query);
 		return v;
+		
 	}
 
 	/**
@@ -333,5 +343,27 @@ public class JaqlQuery implements Closeable {
 	public void close() throws IOException {
 		jq.close();
 	}
+	
+	/**
+	 * Prepares the next evaluate-able statement, if there isn't any, return false
+	 * else return true. 
+	 * And set current value to the evaluation result of current statement.
+	 * 
+	 * @return 
+	 * 		true | false
+	 */
+	public boolean moveNextQuery() throws Exception {
+		return jq.moveNextQuery();
+	}
+
+	/**
+	 * Evaluate current statement and return the result(JsonIterator)
+	 * @return
+	 */
+	public JsonIterator currentQuery() {
+		return jq.currentQuery();
+	}
+
+	
 
 }
