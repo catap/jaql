@@ -417,6 +417,7 @@ public class TestJaqlQuery extends TestCase{
 				totalSize +=  Integer.parseInt(v.get(0).toString());
 			}
 			assertEquals(150, totalSize);
+			q.close();
 		}catch(Exception ex){
 			fail(ex.getMessage());
 		}
@@ -437,6 +438,7 @@ public class TestJaqlQuery extends TestCase{
 			args.setArguments(1, 2, 3, 4, 5);
 			JsonValue v = jaql.evaluate("samplefn", args);
 			assertEquals(new JsonLong(15), (JsonLong) v);
+			jaql.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail(ex.getMessage());
@@ -456,6 +458,7 @@ public class TestJaqlQuery extends TestCase{
 			args.setArgument("b", 1200);
 			JsonValue v = jaql.evaluate("samplefn", args);
 			assertEquals(new JsonLong(2400), (JsonLong) v);
+			jaql.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail(ex.getMessage());
@@ -479,6 +482,7 @@ public class TestJaqlQuery extends TestCase{
 				latest = (JsonString) rec.get(new JsonString("a"));
 			}
 			assertEquals(new JsonString("c"), latest);
+			jaql.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail(ex.getMessage());
@@ -502,6 +506,7 @@ public class TestJaqlQuery extends TestCase{
 				assertEquals(new JsonLong(expected[i]), (JsonLong) x);
 				i++;
 			}
+			jq.close();
 		} catch (Exception ex) {
 			fail(ex.getMessage());
 		}
@@ -524,6 +529,7 @@ public class TestJaqlQuery extends TestCase{
 				assertEquals(new JsonLong(expected[i]), (JsonLong) x);
 				i++;
 			}
+			jq.close();
 		} catch (Exception ex) {
 			fail(ex.getMessage());
 		}
@@ -547,6 +553,7 @@ public class TestJaqlQuery extends TestCase{
 			JsonValue v = jq.evaluate("sample", args);
 			JsonArray arr = (JsonArray) v;
 			assertEquals(new JsonString("jack"), arr.get(0));
+			jq.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			fail(ex.getMessage());
@@ -555,18 +562,59 @@ public class TestJaqlQuery extends TestCase{
 	
 	
 	
-	/////////////////////////////////////////////////
-	////Muti statement , what we expected ?? //FIXME
-	////////////////////////////////////////////////
+	/**
+	 * when given a query including multiple statements, use an iterator manner to execute the query.
+	 */
 	@Test
-	public void testMultiStatement(){
+	public void testExecuteBatchScript(){
 		try{
-			JaqlQuery jaql = new JaqlQuery();
-			jaql.setQueryString("1+1;1+2;1+3;");
-			JsonValue v = jaql.evaluate();
-			assertEquals(new JsonLong(2), (JsonLong)v); // now we expect 2
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString("1+1;2+2;3+3;");
+			int[] expected = {2,4,6};
+			int i = 0;
+			while(q.moveNextQuery()){
+				JsonIterator it = q.currentQuery(); 
+				while(it.moveNext()){
+					JsonValue v = it.current(); // 2 - 4 - 6
+					assertEquals(new JsonLong(expected[i]), (JsonLong)v); 
+				}
+				i++;
+			}
+			q.close();
 		}catch(Exception ex){
-			fail(ex.getMessage());
+			ex.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Multiple statements is not allowed when using evaluate()
+	 */
+	@Test
+	public void testMultipleStatementsExceptionWhenEval(){
+		try{
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString("1+1;1+2;");
+			q.evaluate();
+			q.close();
+		}catch(Exception ex){
+			assertEquals(IllegalArgumentException.class, ex.getClass());
+			assertEquals("Illegal statements, multiple statements not allowed.", ex.getMessage());
+		}
+	}
+	
+	/**
+	 * Multiple statements is not allowed when using iterate()
+	 */
+	@Test
+	public void testMultipleStatementsExceptionWhenIter(){
+		try{
+			JaqlQuery q = new JaqlQuery();
+			q.setQueryString("1+1;1+2;");
+			q.iterate();
+			q.close();
+		}catch(Exception ex){
+			assertEquals(IllegalArgumentException.class, ex.getClass());
+			assertEquals("Illegal statements, multiple statements not allowed.", ex.getMessage());
 		}
 	}
 
