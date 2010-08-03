@@ -26,6 +26,8 @@ import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringBufferInputStream;
 import java.io.StringReader;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -47,6 +49,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
 import com.ibm.jaql.lang.expr.function.JaqlFunction;
 import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
+import com.ibm.jaql.lang.expr.function.JavaUdfFunction;
 import com.ibm.jaql.lang.expr.function.VarParameter;
 import com.ibm.jaql.lang.expr.function.VarParameters;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
@@ -138,7 +141,8 @@ public class Jaql implements CoreJaql {
 	protected ExceptionHandler exceptionHandler = new DefaultExceptionHandler();
 	protected ExplainHandler explainHandler = new DefaultExplainHandler(
 			System.out);
-
+	protected JsonIterator currentValue;
+	
 	static {
 		// TODO: This was added to get Hadoop to find it's class path correctly
 		// when called from R
@@ -734,4 +738,83 @@ public class Jaql implements CoreJaql {
 		registerFunction(fnName, fn, args);
 		return fn.eval(context);
 	}
+	
+	/**
+	 * Prepares the next evaluate-able statement, if there isn't any, return false
+	 * else return true. 
+	 * And set current value to the evaluation result of current statement.
+	 */
+	@Override
+	public boolean moveNextQuery() throws Exception {
+		Expr expr = prepareNext(); 
+		if (expr == null) {
+			return false;
+		}
+		context.reset();
+		JsonIterator iter;
+		if (expr.getSchema().is(ARRAY, NULL).always()) {
+			iter = expr.iter(context);
+		} else {
+			JsonValue value = expr.eval(context);
+			iter = new SingleJsonValueIterator(value);
+		}
+		currentValue = iter;
+		return true;
+	}
+
+	/**
+	 * return the evaluation result of current statement
+	 * @return
+	 * 		evaluation result of current statement
+	 */
+	@Override
+	public JsonIterator currentQuery() {
+		return currentValue;
+	}
+
+	/**
+	 * evaluate given statement and return a json value, if multiple sentence is given, throw a illegal statement exception
+	 */
+	@Override
+	public JsonValue evaluate() throws Exception{
+		Expr expr = prepareNext();
+		if (expr == null) {
+			return null;
+		}
+		context.reset();
+		JsonValue value = expr.eval(context);
+		expr = parser.parse();
+		if (parser.done || expr == null) {
+			return value;
+		}else{
+			throw new IllegalArgumentException("Illegal statements, multiple statements not allowed.");
+		}
+	}
+	
+	/**
+	 * evaluate given statement, and return a json iterator, if multiple sentence is given, throw a illegal statement exception
+	 */
+	@Override
+	public JsonIterator iterate() throws Exception {
+		Expr expr = prepareNext();
+		if (expr == null) {
+			return null;
+		}
+		context.reset();
+		JsonIterator iter;
+		if (expr.getSchema().is(ARRAY, NULL).always()) {
+			iter = expr.iter(context);
+		} else {
+			JsonValue value = expr.eval(context);
+			iter = new SingleJsonValueIterator(value);
+		}
+		expr = parser.parse();
+		if (parser.done || expr == null) {
+			return iter;
+		}else{
+			throw new IllegalArgumentException("Illegal statements, multiple statements not allowed.");
+		}
+	}
+
+
 }
