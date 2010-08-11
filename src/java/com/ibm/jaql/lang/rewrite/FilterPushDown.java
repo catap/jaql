@@ -85,7 +85,7 @@ public class FilterPushDown extends Rewrite
    * -- usedIn_list points to Exprs in one predicate
    * -- mappedTo_list points to Exprs in the query tree
    */
-  private boolean changePredicate(ArrayList<Expr> usedIn_list, ArrayList<Expr> mappedTo_list, Var old_var, Var new_var) 
+  private Expr changePredicate(Expr crnt_pred, ArrayList<Expr> usedIn_list, ArrayList<Expr> mappedTo_list, Var old_var, Var new_var) 
   {
 	  VarMap vm = new VarMap();
 	  vm.put(old_var, new_var);
@@ -94,9 +94,20 @@ public class FilterPushDown extends Rewrite
 		  Expr src_expr = usedIn_list.get(i);
 		  assert((src_expr instanceof PathExpr) || (src_expr instanceof VarExpr));
 		  Expr  map_to = mappedTo_list.get(i).clone(vm);
-		  src_expr.replaceInParent(map_to);
+		  
+		  //If the predicate is entirely being replaced, i.e., src_expr == crnt_pred, then we return the new 'map_to' expression. Otherwise,
+		  // we return the 'crnt_pred' after modifying it.
+		  if (src_expr.equals(crnt_pred))
+		  {
+			  assert (usedIn_list.size() == 1);
+			  if (src_expr.parent() != null)                         //The parent can be null in the case of GroupBy because the predicate is cloned.
+				  src_expr.replaceInParent(map_to);
+			  return map_to;
+		  }
+		  else
+			  src_expr.replaceInParent(map_to);
 	  }
-	  return true;
+	  return crnt_pred;
   }
 
   
@@ -138,8 +149,8 @@ public class FilterPushDown extends Rewrite
 		  {
 			  //change_predicate() has the side effect of changing "crnt_pred"
 			  //Warning: It also make the query tree in-consistent at this moment
-			  changePredicate(usedIn_list, mappedTo_list, transform_var, newVar);       
-			  pushed_pred.add(crnt_pred);
+			  Expr modifiedPred = changePredicate(crnt_pred, usedIn_list, mappedTo_list, transform_var, newVar);       
+			  pushed_pred.add(modifiedPred);
 		  }
 	  }
 	
@@ -341,13 +352,13 @@ public class FilterPushDown extends Rewrite
 		  //Clone the crnt_pred and push it down over each child
 		  for (int i = 0; i < grp_childNum; i++)
 		  {
-			  Expr crnt_pred_clone = crnt_pred.clone(vm);
-			  ArrayList<Expr> usedIn_list_clone = findMaximalVarOrPathExpr(crnt_pred_clone, filter_pipe_var);  
+			  Expr crntPredClone = crnt_pred.clone(vm);
+			  ArrayList<Expr> usedIn_list_clone = findMaximalVarOrPathExpr(crntPredClone, filter_pipe_var);  
 			  
 			  //change_predicate() has the side effect of changing "crnt_pred"
 			  //Warning: It also make the query tree in-consistent at this moment
-			  changePredicate(usedIn_list_clone, mappedTo_list2[i], grp_expr.inVar(), filter_pipe_var);         
-			  pushed_to_child[i].add(crnt_pred_clone);			  
+			  Expr modifiedPred = changePredicate(crntPredClone, usedIn_list_clone, mappedTo_list2[i], grp_expr.inVar(), filter_pipe_var);         
+			  pushed_to_child[i].add(modifiedPred);			  
 		  }		  
 		  pushed_pred.add(crnt_pred);
 	  }	

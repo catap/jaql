@@ -526,6 +526,35 @@ $data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> 
 ;//------------------- TEST-CASE -----------------
 
 
+//Returns 1 record --(Filter should be pushed below Transform)
+[true,false] -> transform [1,$] -> filter $[1];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    true
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 1 record --(Filter should be pushed below Transform)
+[true,false] -> transform {a:1 ,b:$} -> filter $.b;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": 1,
+    "b": true
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
 
 //====================Testing Filter-Transform-Join===================================================
 //Returns 0 records. --(Filter should be pushed down all the way in BOTH directions)
@@ -2107,6 +2136,21 @@ join $r1, $r2 where $r1.author == $r2.bs[0] into {$r1.author, $r1.year, grp_key:
 ;//------------------- TEST-CASE -----------------
 			  
       
+//Returns 1 record --(Filter should be pushed below GroupBy)
+[true, false, true, true, false]
+	->  group by v = $ into {key: v, count: count($[*])} 
+	-> filter $.key;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "count": 3,
+    "key": true
+  }
+]
+
+;//------------------- TEST-CASE -----------------
 
 //==========================Testing Filter-FunctionCalls===================================================
 
