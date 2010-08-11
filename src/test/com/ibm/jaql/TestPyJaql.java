@@ -70,7 +70,7 @@ public class TestPyJaql extends TestCase {
 		try {
 			// record the test result in "testPyJaql.log"
 			BufferedWriter recorder = new BufferedWriter(new FileWriter(
-					"build/test/logs/testPyJaql.log"));
+					"build/test/run.pyJaqlTest"));
 			int lineNum = 0;
 			while ((line = br.readLine()) != null) {
 				lineNum++;
