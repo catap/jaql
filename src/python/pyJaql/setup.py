@@ -27,7 +27,7 @@ class pyJaqlSetup:
 			packages = ['pyJaql','pyJaql.ut'],
 			#configurate file			
 			package_data={'pyJaql': ['ut/*.jql']},
-		    	version = '0.1',
+		    	version = '0.2',
 		    	description = 'jaql - python - bridge',
 		    	author='Wei Wei Yang-Jaql-IBM',
 		    	author_email='impliance-jaql@cs.opensource.ibm.com'
