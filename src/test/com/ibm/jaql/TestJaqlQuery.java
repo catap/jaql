@@ -440,7 +440,6 @@ public class TestJaqlQuery extends TestCase{
 			assertEquals(new JsonLong(15), (JsonLong) v);
 			jaql.close();
 		} catch (Exception ex) {
-			ex.printStackTrace();
 			fail(ex.getMessage());
 		}
 
@@ -460,7 +459,6 @@ public class TestJaqlQuery extends TestCase{
 			assertEquals(new JsonLong(2400), (JsonLong) v);
 			jaql.close();
 		} catch (Exception ex) {
-			ex.printStackTrace();
 			fail(ex.getMessage());
 		}
 	}
@@ -555,7 +553,6 @@ public class TestJaqlQuery extends TestCase{
 			assertEquals(new JsonString("jack"), arr.get(0));
 			jq.close();
 		} catch (Exception ex) {
-			ex.printStackTrace();
 			fail(ex.getMessage());
 		}
 	}
@@ -582,7 +579,7 @@ public class TestJaqlQuery extends TestCase{
 			}
 			q.close();
 		}catch(Exception ex){
-			ex.printStackTrace();
+			fail(ex.getMessage());
 		}
 	}
 	
