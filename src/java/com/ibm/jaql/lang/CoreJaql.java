@@ -17,6 +17,7 @@
 package com.ibm.jaql.lang;
 
 import java.io.Closeable;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
@@ -245,5 +246,13 @@ public interface CoreJaql extends Closeable {
 	 * 
 	 */
 	JsonIterator iterate() throws Exception;
+
+	/**
+	 * Execute batch script file
+	 * @param batchFile
+	 *             batch file path
+	 * @throws FileNotFoundException
+	 */
+	void executeBatch(String batchFile) throws FileNotFoundException;
 
 }
