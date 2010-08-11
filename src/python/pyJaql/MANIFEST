@@ -8,8 +8,12 @@ pyJaql/pyJaql.py
 pyJaql/docs/PyJaql-0.1 Tutorial.odt
 pyJaql/docs/PyJaql-0.1-API.odt
 pyJaql/docs/index.html
+pyJaql/docs/jaql.css
+pyJaql/docs/pyJaql-Overview.html
+pyJaql/examples/__init__.py
 pyJaql/examples/test.jql
 pyJaql/examples/usageSamples.py
 pyJaql/ut/__init__.py
 pyJaql/ut/pyJaqlTest.py
 pyJaql/ut/test.jql
+pyJaql/ut/usageSamples.py
