@@ -306,6 +306,7 @@ public class SpilledJsonArray extends JsonArray
     // copy spill file
     assert spillSerializer.equals(t.spillSerializer); // trivally true at the moment
     if (spillFile != null) {
+      freeze();
       t.ensureSpillFile();
       t.spillFile.copy(spillFile);
       t.count = this.count;
