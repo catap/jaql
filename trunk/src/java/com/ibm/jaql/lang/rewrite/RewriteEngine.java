@@ -81,6 +81,23 @@ public class RewriteEngine
     new SimplifyRecord(phase);
     new CheapConstEval(phase);
     new ConstIfElimination(phase);
+    new DaisyChainInline(phase);
+    new ForToLet(phase);
+    new DoInlinePragma(phase);
+    new ConstArrayAccess(phase); // FIXME: merge with RewriteFirstPathStep, remove fn
+    new ConstFieldAccess(phase); // FIXME: merge with RewriteFirstPathStep, remove fn
+    new ForInSimpleIf(phase);
+    new SimplifyFirstNonNull(phase);
+    new TrivialCombineElimination(phase);
+    new CombineInputSimplification(phase);
+    new ToArrayElimination(phase);
+    new EmptyOnNullElimination(phase);
+    new InjectAggregate(phase);
+    new SimplifyUnion(phase);
+    new VarProjection(phase);
+    new WriteAssignment(phase);
+    new TypeCheckSimplification(phase);
+    new UnrollForLoop(phase);
     new FilterPredicateSimplification(phase);
     new FilterPushDown(phase);
     new FilterMerge(phase);
