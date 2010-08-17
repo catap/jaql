@@ -39,6 +39,17 @@ import com.ibm.jaql.lang.expr.path.UnrollField;
 
 /**
  * The main class for pushing Filter down in the query tree. 
+ * 
+ * Interaction with other rules:
+ * -----------------------------
+ * 	  FilterPushDown rule (FPD) depends on pathExpr comparisons for detecting identical expressions. 
+ * 	  Therefore, other rules that modify pathExprs to other forms may conflict with FPD.
+ * 	  Such rules should be in a phase after FPD: Examples of these rules are:
+ *    		--RewriteFirstPathStep
+ *    		--PathArrayToFor
+ *    		--PathIndexToFn
+ *    The following rules also conflict with FPD:
+ *    		--UnnestFor (This rule may form a cycle with FPD in the case of  "expand -> filter"). This rule should be in a phase after FPD 
  */
 public class FilterPushDown extends Rewrite
 {
