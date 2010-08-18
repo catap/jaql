@@ -15,6 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.nil;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -51,6 +55,35 @@ public class FirstNonNullFn extends Expr
   public FirstNonNullFn(Expr expr0, Expr expr1)
   {
     super(new Expr[]{expr0, expr1});
+  }
+  
+  @Override
+  public Schema getSchema()
+  {
+    if( exprs.length == 0 )
+    {
+      return SchemaFactory.nullSchema();
+    }
+    Schema result = exprs[0].getSchema();
+    if( result.is(JsonType.NULL).never() )
+    {
+      return result;
+    }
+    result = SchemaTransformation.removeNullability(result);
+    for( int i = 1; i < exprs.length; i++ )
+    {
+      Schema s = exprs[i].getSchema();
+      Schema t = SchemaTransformation.removeNullability(s);
+      // TODO: use exact schema?
+      // result = OrSchema.make(result, t);
+      result = SchemaTransformation.merge(result, t);
+      if( s.is(JsonType.NULL).never() )
+      {
+        return result;
+      }
+    }
+    result = SchemaTransformation.addNullability(result);
+    return result;
   }
 
   /*

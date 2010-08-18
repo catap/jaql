@@ -1,0 +1,270 @@
+//---------------------------------------------------------------------------
+// Tests:
+//   composite input/output adapaters
+//   parallelization of union (coming soon)
+//   parallelization of tee
+//---------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------
+// Composite input/output adapaters
+//---------------------------------------------------------------------------
+
+r = hdfs('R');
+s = hdfs('S');
+t = hdfs('T');
+
+R = read(r);
+S = read(s);
+T = read(t);
+
+// Defines a composite descriptor:
+//   Read produces the union of descriptors.
+//   Write partitions the values written.  It expects the values to be [i,x] pairs where
+//      i is an index to a output descriptor and
+//      x is value that will be written to only to descriptor[i]
+//      if a key is written, it is passed to descriptor[i] as well.
+compositeDescriptor = fn( descriptors )
+   { inoptions:  { adapter: 'com.ibm.jaql.io.hadoop.CompositeInputAdapter' },
+     outoptions: { adapter: 'com.ibm.jaql.io.hadoop.CompositeOutputAdapter' },
+     descriptors
+   };
+
+// write even values to R and odd values to S
+range(10) 
+ -> transform [ mod($,2), $ ]
+ -> write( compositeDescriptor( [r, s] ) )
+;
+
+// Just evens
+R;
+
+// Just odds
+S;
+
+// Read the union of R and S in one read.
+read( compositeDescriptor([r,s]) );
+
+// Try a map/reduce job
+read( compositeDescriptor([r,s]) )
+ -> transform $ + 10
+ -> write(t)
+;
+
+// everything with 10 added
+T;
+
+// Write via map/reduce
+T -> transform [ ($ - 10) / 5, $ ]
+  -> write( compositeDescriptor([r,s]) )
+;
+
+// 10..14 in R
+R;
+
+// 15..19 in S
+S;
+
+// Write via from reducer of map/reduce
+T -> group by x=mod($,2) into [ x, sum($) ]
+  -> write( compositeDescriptor([r,s]) )
+;
+
+// [sum([10,12,14,16,18]) = 70] in R
+R;
+
+// [sum([11,13,15,17,19]) = 75] in S
+S;
+
+//---------------------------------------------------------------------------
+// TODO: Union
+//---------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------
+// Tee 
+//---------------------------------------------------------------------------
+
+range(10) -> write(r);
+range(0) -> write(s);
+range(0) -> write(t);
+
+R;
+S;
+T;
+
+
+// Very simple tee that writes two copies of a file
+R -> tee( -> write(s) )
+  -> write(t)
+;
+S;
+T;
+
+// Forms a single map job writing to two files
+//   note: tee(a, -> e) == tee(a, f(i) i -> e)
+R -> transform $ + 200
+  -> tee( 
+       -> transform $ + 10 
+       -> write(s) 
+     )
+  -> transform $ + 20
+  -> write(t)
+;
+
+// 210..219
+S;
+
+// 220..229
+T;
+
+
+// Without a leading transform
+R -> tee( 
+      -> transform $+10 
+      -> write(s) 
+     )
+  -> transform $+20
+  -> write(t)
+;
+
+// 10..19
+S;
+
+// 20..29
+T;
+
+
+// With a stream returned instead of writing
+R -> transform $+100
+  -> tee( -> transform $+10 -> write(s) )
+  -> transform $+20
+;
+
+// 110..119
+S;
+
+
+// This should eliminates the tee as dead code, but it doesn't yet...
+R -> transform $+200
+  -> tee( -> transform $+10 )
+  -> transform $+20
+  -> write(t)
+;
+
+// 220..229
+T;
+
+// Make sure filter and expand work too.
+R -> transform $+100
+  -> tee( -> filter $ < 107 -> expand [$+200, $+300] -> write(s) )
+  -> filter $ > 103 
+  -> transform $+400 
+  -> write(t)
+;
+
+// 300..306 + 400..406
+S;
+
+// 504..509
+T;
+
+
+c = hdfs('C');
+d = hdfs('D');
+f = hdfs('F');
+g = hdfs('G');
+
+// This should produce one map-only job
+R -> transform { a: $ }
+  -> tee( -> transform { b: $.a }
+          -> tee( -> transform { c: $.b } 
+                  -> write(c) )
+          -> transform { d: $.b } 
+          -> write(d) )
+  -> transform { e: $.a }
+  -> tee( -> transform { f: $.e } 
+          -> write(f) )
+  -> transform { g: $.e } 
+  -> write(g)
+;
+
+// c recs
+read(c);
+
+// d recs
+read(d);
+
+// f recs
+read(f);
+
+// g recs
+read(g);
+
+
+// Share a reducer after aggregation
+R -> transform { x: mod($,3), y: $ }                 // 0,0; 1,1; 2,2; 0,3; 1,4; 2,5; 0,6; 1,7; 2,8; 0,9;
+  -> group by x = $.x into { x, s: sum($[*].y) }     // 0,18; 1,12; 2,15;
+  -> tee( -> filter $.x <= 1                         // 0,18; 1,12;
+          -> write(s) )
+  -> filter $.x >= 1                                 // 1,12; 2,15;
+  -> write(t)
+;
+
+// 0,18; 1,12;
+S -> sort by [$.x];
+
+// 1,12; 2,15;
+T -> sort by [$.x];
+
+// Share a reducer with aggregation in the tee
+// TODO: This could use combiners but it doesn't yet...
+R -> transform { x: mod($,3), y: $ }                 // 0,0; 1,1; 2,2; 0,3; 1,4; 2,5; 0,6; 1,7; 2,8; 0,9;
+  -> group by x = $.x into { x, ys: $[*].y }         // 0,[0,3,6,9]; 1,[1,4,7]; 2,[2,5,8];
+  -> tee( -> transform { $.x, s: sum($.ys) }         // 0,18; 1,12; 2,15;
+          -> write(s) )
+  -> transform { $.x, t: count($.ys) }               // 0,4; 1,3; 2,3;
+  -> write(t)
+;
+
+// 0,18; 1,12; 2,15;
+S -> sort by [$.x];
+
+// 0,4; 1,3; 2,3;
+T -> sort by [$.x];
+
+// Tee where one is not shareable
+R -> transform { x: mod($,3), y: $ }
+  -> tee( -> group by x=$.x 
+                into { x, n: min($[*].y) }
+          -> write(s) )
+  -> filter $.x < 2
+  -> write(t)
+;
+
+S -> sort by [$.x];
+T;
+
+// Tee where the other is not sharable
+R -> transform { x: mod($,3), y: $ }
+  -> tee( -> filter $.x > 1
+          -> write(s) )
+  -> group by a=$.x 
+      into { a, m: max($[*].y) }
+  -> write(t)
+;
+S;
+T -> sort by [$.a];
+
+// Tee that is not sharable at all
+// TODO: this example currently does a dumb thing: 
+// It writes two temps with the exactly the same stuff.
+R -> transform { x: mod($,3), y: $ }
+  -> tee( -> group by x=$.x 
+                into { x, n: min($[*].y) }
+          -> write(s) )
+  -> group by a=$.x 
+      into { a, m: max($[*].y) }
+  -> write(t)
+;
+S -> sort by [$.x];
+T -> sort by [$.a];

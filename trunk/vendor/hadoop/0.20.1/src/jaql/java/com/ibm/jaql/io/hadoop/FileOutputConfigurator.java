@@ -59,6 +59,7 @@ public class FileOutputConfigurator implements InitializableConfSetter
     // For an expression, the location is the final file name
     Path outPath = new Path(location);
     FileSystem fs = outPath.getFileSystem(conf);
+    outPath = outPath.makeQualified(fs);
     if( fs.exists(outPath))
     {
       // TODO: Jaql currently has overwrite semantics; add flag to control this

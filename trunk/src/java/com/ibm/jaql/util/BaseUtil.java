@@ -631,4 +631,14 @@ public static void writeVUInt(DataOutput out, int v) throws IOException
     return (char) ((parseHex(h1) << 12) | (parseHex(h2) << 8) | 
         (parseHex(h3) << 4) | (parseHex(h4)));
   }
+
+  /* Find the initial cause of this exception */
+  public static Throwable getRootCause(Throwable e)
+  {
+    while( e.getCause() != null )
+    {
+      e = e.getCause();
+    }
+    return e;
+  }
 }

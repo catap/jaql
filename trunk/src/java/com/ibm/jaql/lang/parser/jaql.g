@@ -25,6 +25,7 @@ import com.ibm.jaql.lang.expr.function.*;
 import com.ibm.jaql.lang.expr.top.*;
 import com.ibm.jaql.lang.expr.path.*;
 import com.ibm.jaql.lang.expr.schema.*;
+import com.ibm.jaql.lang.expr.sql.*;
 
 import com.ibm.jaql.lang.expr.io.*;
 import com.ibm.jaql.lang.expr.udf.*;
@@ -89,7 +90,7 @@ options {
     // checks whether the next token matches the specified weak keyword
     private boolean nextIsWeakKw(String kw) throws TokenStreamException
     {
-    	return !env.isDefinedLocal(kw) && kw.equals(LT(1).getText());
+        return !env.isDefinedLocal(kw) && kw.equals(LT(1).getText());
     } 
 }
 
@@ -108,6 +109,7 @@ stmt returns [Expr r=null]
     : (kwImport id)       => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
     | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(r); }
+    | (kwQuit)            => kwQuit { r = null; done = true; }
     | r=topAssign
     ;
 
@@ -116,25 +118,35 @@ importExpr returns [Expr r=null]
     { boolean loadAll = false; String v; String var; 
         ArrayList<String> names = new ArrayList<String>();}
     : kwImport v=id (
-    	  { env.importNamespace(Namespace.get(v)); } 
-    	| "(" (
-    		"*" ")" {
-    			env.importNamespace(Namespace.get(v));
-    			env.importAllFrom(Namespace.get(v));
-    		}
-    		| var=id {names.add(var);} ("," var=id {names.add(var);})* ")" {
-    			env.importNamespace(Namespace.get(v));
-    			env.importFrom(Namespace.get(v), names);
-    		}
-    	)
+          { env.importNamespace(Namespace.get(v)); } 
+        | "(" (
+            "*" ")" {
+                env.importNamespace(Namespace.get(v));
+                env.importAllFrom(Namespace.get(v));
+            }
+            | var=id {names.add(var);} ("," var=id {names.add(var);})* ")" {
+                env.importNamespace(Namespace.get(v));
+                env.importFrom(Namespace.get(v), names);
+            }
+        )
     )
-	;
+    ;
+    
     
 // top level assignment, creates global variables and inlines referenced globals
 topAssign returns [Expr r=null]
-    { String n; Var v; }
-    : (id "=") => n=id "=" r=rvalue  
-                  { r = new AssignExpr(env, env.scopeGlobal(n), r); } // TODO: expr name should reflect global var
+    { String n; Var v; Schema s = SchemaFactory.anySchema(); }
+//    : (kwMutable) => kwMutable n=id (":" s=schema)? ("=" r=rvalue)? 
+//                  { v = env.scopeGlobal(n, s, Var.State.MUTABLE);
+//                    // We can just declare a mutable variable without assigning it.
+//                    if( r != null ) r = new AssignExpr(env, v, r); }
+    : (kwExtern) => kwExtern n=id (":" s=schema)? ("=" r=rvalue)? 
+                  { v = env.scopeGlobal(n, s, Var.State.MUTABLE);
+                    // We can just declare a mutable variable without assigning it.
+                    if( r != null ) r = new AssignExpr(env, v, r); }
+    | (id "=") => n=id "=" r=rvalue  
+                  { v = env.scopeGlobal(n, r.getSchema(), Var.State.FINAL);
+                    r = new AssignExpr(env, v, r); } // TODO: expr name should reflect global var
     | (kwRegisterFunction) => r=registerFunction
     | (kwMaterialize) => kwMaterialize v=var  
                                   ( "=" r=expr { r = new MaterializeExpr(v, r); }
@@ -154,7 +166,7 @@ assign returns [Expr r=null]
 // expression that can appear on the right-hand side of an assignment    
 rvalue returns [Expr r = null]
     : ( kwExtern id ) => r=extern
-                       | r=pipe
+    | r=pipe
     ;
 
 // external function NYI
@@ -170,6 +182,7 @@ pipe returns [Expr r=null]
     : r=expr r=subpipe[r]
     | r=fn
     | r=pipeFn
+    // | r=sqlTableExpr
     ;
     
 // a subpipe
@@ -177,7 +190,6 @@ subpipe[Expr e] returns [Expr r=e]
     : ( "->" ) => "->" r=op[r] r=subpipe[r]
                 | ()
     ;
-
 
 // -- expressions ---------------------------------------------------------------------------------
 
@@ -551,7 +563,8 @@ strLit returns [ JsonString v=null]
     ;
     
 str returns [String r=null]
-    : s:STR             { r = s.getText(); }
+    : s:SQSTR           { r = s.getText(); }
+    | d:DQSTR           { r = d.getText(); }
     | h:HERE_STRING     { r = h.getText(); }
     ;
 
@@ -1105,7 +1118,8 @@ registerFunction returns [Expr e = null]
             throw new IllegalArgumentException("variable name has to be a constant");
           }
           String name = env.eval(varName).toString();
-          e = new AssignExpr(env, env.scopeGlobal(name), new JavaUdfExpr(className).expand(env));
+          Var var = env.scopeGlobal(name, SchemaFactory.functionSchema(), Var.State.FINAL);
+          e = new AssignExpr(env, var, new JavaUdfExpr(className).expand(env));
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
         }
@@ -1174,8 +1188,8 @@ callPipe[Expr in] returns [Expr r=null]
       Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
     }
     : r=basic args[positionalArgs, namedArgs]  {
-    	r = inlineGlobalFinalValueVar(r);
-    	r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
+        r = inlineGlobalFinalValueVar(r);
+        r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
       }
       r=callRepeat[r, positionalArgs, namedArgs]
     ;
@@ -1185,8 +1199,8 @@ callRepeat[Expr f, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] r
     : ( "(" ) => { positionalArgs.clear(); namedArgs.clear(); } 
                  args[positionalArgs, namedArgs]
                  {      
-                 	r = inlineGlobalFinalValueVar(r); 
-                 	r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
+                    r = inlineGlobalFinalValueVar(r); 
+                    r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
                  }
                  r = callRepeat[r, positionalArgs, namedArgs]
                | () 
@@ -1235,7 +1249,7 @@ schema returns [Schema s = null]
           s2 = schemaTerm     { alternatives.add(s2); } 
         )*
       ) {
-      	  s = OrSchema.make(alternatives);
+          s = OrSchema.make(alternatives);
         }
     ;
     
@@ -1285,11 +1299,11 @@ arraySchema returns [ArraySchema s = null]
         arraySchemaList[schemata]
         repeat=arraySchemaRepeat
       "]" { 
-      	    Schema rest = null;
-      	    if (repeat)
-      	    {
-      	    	rest = schemata.remove(schemata.size()-1);
-      	    }
+            Schema rest = null;
+            if (repeat)
+            {
+                rest = schemata.remove(schemata.size()-1);
+            }
             Schema[] schemaArray = schemata.toArray(new Schema[schemata.size()]);
             s = new ArraySchema(schemaArray, rest);
           }
@@ -1297,7 +1311,7 @@ arraySchema returns [ArraySchema s = null]
 
 arraySchemaList[ArrayList<Schema> schemata]
     {
-    	Schema p;
+        Schema p;
     }
     : ( "*" ) => ( /* leave * on input */ ) { schemata.add(SchemaFactory.anySchema()); }
     | p = schema { schemata.add(p); } ("," arraySchemaList[schemata])?
@@ -1311,10 +1325,10 @@ arraySchemaRepeat returns [Boolean repeat = false; ]
     // remaining options are for backwards compatibility
     | DOT_DOT_DOT   { repeat = true; }
     | "<" ( i=longLit { if (i.get() != 0) 
-    	                  throw new IllegalArgumentException(
-    	                    "<n,n> syntax is deprecated; use * instead"); 
-    	              } 
-    	    "," "*"
+                          throw new IllegalArgumentException(
+                            "<n,n> syntax is deprecated; use * instead"); 
+                      } 
+            "," "*"
           | "*" ("," "*") ?
           ) ">"   { repeat = true; }
     ;
@@ -1479,6 +1493,7 @@ kwEach             : "each" | "#each" ;
 kwElse             : "else" | "#else" ;
 kwExtern           : "extern" | "#extern" ;
 kwFinal            : "final" | "#final" ;
+kwMutable          : "mutable" | "#mutable" ;
 kwFull             : "full" | "#full" ;
 kwImport           : "import" | "#import" ;
 kwIn               : "in" | "#in" ;
@@ -1547,15 +1562,15 @@ var returns [Var v = null]
     { String s; }
     : s=id              { v = env.inscope(s); }
     | m:NAMESPACE_ID    { s = m.getText(); 
-    	                  String[] parts = s.split("::"); // known to occur precisely once
-    	                  if (parts[0].isEmpty())
-    	                  {
-    	                  	v = env.globals().inscopeLocal(parts[1]);
-    	                  }
-    	                  else
-    	                  {
+                          String[] parts = s.split("::"); // known to occur precisely once
+                          if (parts[0].isEmpty())
+                          {
+                            v = env.globals().inscopeLocal(parts[1]);
+                          }
+                          else
+                          {
                             v = env.inscopeImport(parts[0], parts[1]);
-    	                  } 
+                          } 
                         }
     ;
 
@@ -1564,6 +1579,161 @@ varExpr returns [Expr e = null]
     { Var v; }
     : v=var { e = new VarExpr(v); }
     ;
+
+//// -- select statement ----------------------------------------------------------------------------------- 
+//
+//// TODO: sqlUnion etc...
+//sqlTableExpr returns [Expr r=null]
+//    { SqlTableExpr t; }
+//    : t=sqlSelectStmt   { r = t.wrapToJaql(env); }
+//    ;
+//
+//sqlSelectStmt returns [SqlSelect r=null]
+//    { 
+//        List<SqlColumnExpr> cols;
+//        List<SqlTableImport> from;
+//        SqlExpr where=null;
+//    }
+//    : /*(sqlWith)?*/ 
+//      cols=sqlSelectClause 
+//      from=sqlFromClause
+//      (where=sqlWhereClause)? 
+//      /*(groupClause[r])? (orderClause[r])?*/
+//    {
+//        r = new SqlSelect(from,where,cols);
+//    }
+//    ;
+//
+///*
+//sqlWith
+//    : "with" withTable ("," withTable)*
+//    ;
+//
+//withTable
+//    : tableAlias "(" selectStmt ")"
+//    ;
+//*/
+//
+//sqlSelectClause returns[List<SqlColumnExpr> cols=new ArrayList<SqlColumnExpr>()]
+//    : kwSelect sqlSelectColumn[cols]
+//          ("," sqlSelectColumn[cols] )*
+//    ;
+//
+//// FIXME: make soft, support any casing
+//kwSelect: "SELECT" | "select";
+//kwFrom: "FROM" | "from";
+//kwWhere2: "WHERE" | kwWhere;
+//kwAs2: "AS" | kwAs;
+//    
+//sqlSelectColumn[List<SqlColumnExpr> cols]
+//    { SqlExpr e; String i=null; }
+//    : e=sqlExpr (kwAs2 i=sqlId)? { SqlColumnExpr col = new SqlColumnExpr(e,i,cols.size()); cols.add(col); }
+//    ;
+//
+//sqlFromClause returns[List<SqlTableImport> from=new ArrayList<SqlTableImport>()]
+//    { SqlTableImport t; }
+//    : kwFrom t=sqlFromTable {from.add(t);} 
+//        ( options {greedy=true;} :             // TODO: fix nondeterminism between from list and fn param -- move sql above pipe + into () 
+//          "," t=sqlFromTable {from.add(t);} )*
+//    ;
+//    
+//sqlFromTable returns [SqlTableImport table=null]
+//    { SqlTableExpr t; String i; String a=null; }
+//    : i=sqlId ( /*empty*/ {a=i;} ((kwAs2)? a=sqlTableAlias)?   { table = new SqlTableImport(new JaqlToSqlTable(env,i),a); }
+//           /* | "(" tableFnArgs ")" kwAs2 a=tableAlias   { table = new SqlTableImport(new SqlTableFn(i,args),a); } */
+//           )
+//    | "table" "(" t=sqlNestedFromTable ")" (kwAs2)? a=sqlTableAlias { table = new SqlTableImport(t,a); }
+//    /* | "jaql" "(" t=selectStmt ")" kwAs2 a=tableAlias { table = new SqlTableImport(new JaqlToSqlTable(...),a); }
+//    /* | or table function */ 
+//    ;
+//    
+//    
+//sqlNestedFromTable returns [SqlTableExpr t=null]
+//    { SqlExpr e; }
+//    : t=sqlSelectStmt
+//    | e=sqlExpr     { t=new SqlExprToTable(e); }
+//    ;
+//    
+//sqlTableAlias returns [String t]
+//    /*    : id ( "(" id ("," id)* ")" )? */
+//    : t=sqlId
+//    ; 
+//
+//sqlWhereClause returns [SqlExpr r]
+//    : kwWhere2 r=sqlExpr
+//    ;
+//
+///*
+//sqlGroupClause
+//    : "group" "by" sqlExpr ("," sqlExpr)*
+//    ;
+//    
+//sqlOrderClause
+//    : "order" "by" sqlExpr ("," sqlExpr)*
+//    ;
+//*/
+//
+//
+//// -- sql expressions ---------------------------------------------------------------------------- 
+//
+//sqlExpr returns [SqlExpr r]
+//    : r=sqlOrExpr
+//    ;
+//
+//sqlOrExpr returns [SqlExpr r]
+//    { SqlExpr s; }
+//    : r=sqlAndExpr ( "or" s=sqlAndExpr { r=new JaqlFnSqlExpr(OrExpr.class,r,s); } )*
+//    ;
+//
+//sqlAndExpr returns [SqlExpr r]
+//    { SqlExpr s; }
+//    : r=sqlNotExpr ( "and" s=sqlNotExpr { r=new JaqlFnSqlExpr(AndExpr.class,r,s); } )*
+//    ;
+//
+//sqlNotExpr returns [SqlExpr r]
+//    : "not" r=sqlNotExpr  { r=new JaqlFnSqlExpr(NotExpr.class,r); }
+//    | r=sqlCompareExpr
+//    ;
+//
+//sqlCompareExpr returns [SqlExpr r]
+//    { int o; SqlExpr s; }
+//    : r=sqlBasicExpr ( o=sqlCompareOp  s=sqlBasicExpr { r=new SqlCompareExpr(o,r,s); })?
+//    ;
+//
+//sqlCompareOp returns [int r = -1]
+//    : "="  { r = CompareExpr.EQ; }
+//    | "==" { r = CompareExpr.EQ; }
+//    | "<"  { r = CompareExpr.LT; }
+//    | ">"  { r = CompareExpr.GT; }
+//    | "!=" { r = CompareExpr.NE; }
+//    | "<>" { r = CompareExpr.NE; }
+//    | "<=" { r = CompareExpr.LE; }
+//    | ">=" { r = CompareExpr.GE; }
+//    ;
+//
+//sqlBasicExpr returns [SqlExpr r=null]
+//    { Expr e; }
+//    : (sqlId) => r=sqlColumnRef
+//    | e=constant         { r=new JaqlToSqlExpr(e); }
+//    | "(" r=sqlExpr ")"
+//    ;
+//
+//sqlColumnRef returns [SqlColumnRef r=null]
+//    { String c; String t=null; }
+//    : c=sqlId (i:DOT_ID { t=c; c=i.getText(); })? { r=new SqlColumnRef(t,c); }
+//    ;    
+//
+//// -- sql common elements ---------------------------------------------------------------------------- 
+//    
+//sqlId returns [String s=null]
+//    : i:ID    { s=i.getText(); }
+//    | q:DQSTR { s=q.getText(); }
+//    ;
+//
+//sqlStr returns [String r=null]
+//    : s:SQSTR       { r=s.getText(); }
+//    | h:HERE_STRING { r=h.getText(); }
+//    ;
 
 
 // -- trashcan ------------------------------------------------------------------------------------
@@ -1698,7 +1868,7 @@ options {
     
     public boolean isLiteral(String s)
     {
-    	return literals.containsKey(new ANTLRHashString(s, this));
+        return literals.containsKey(new ANTLRHashString(s, this));
     }
 }
 
@@ -1868,8 +2038,12 @@ SYM
     : '(' | ')' | '[' | ']' | ','
     | '|' | '&'
     | '}' 
-    | '=' ('=' | '>')? | ('<' | '>' ) ('=')? | "!" ("=")?
-    | '/' | '*' | '+' | '-' ('>' | '|')?
+    | '=' ('=' | '>')? 
+    | '<' ('>' | '=')? 
+    | '>' ('=')? 
+    | '!' ('=')?
+    | '/' | '*' | '+' 
+    | '-' ('>')?
     | '?'
     | ':' ( '=' )?
     ;
@@ -1917,9 +2091,12 @@ protected STRCHAR
             )
      ;
 
-STR
+SQSTR
+    : '\''! ( STRCHAR | '\"' )* '\''!
+    ;
+
+DQSTR
     : '\"'! ( STRCHAR | '\'' )* '\"'!
-    | '\''! ( STRCHAR | '\"' )* '\''!
     ;
 
 // TODO: this is going away! use hex('str') instead

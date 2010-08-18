@@ -45,7 +45,7 @@ public class AssignExpr extends EnvExpr
     super(env, valueExpr);
     this.var = var;
   }
-  
+
   public Map<ExprProperty, Boolean> getProperties()
   {
     Map<ExprProperty, Boolean> result = super.getProperties();

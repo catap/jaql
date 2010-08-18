@@ -22,6 +22,7 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.core.Var.Scope;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -127,18 +128,26 @@ public class Env extends Namespace
     variables.clear();
   }
 
-  /** 
-   * Creates a new variable with the specified name and puts it into the global scope. 
-   * The most recent definition of the global variable of the specified name is overwritten.
+  /**
+   * If the varName is bound to a mutable global, return it.
+   * Otherwise create a new variable with the specified name and puts it into the global scope. 
+   * The most recent definition of the global variable of the specified name is overwritten
+   * if it is not mutable.
    */
-  public Var scopeGlobal(String varName, Schema schema)
+  public Var scopeGlobal(String varName, Schema schema, Var.State varState)
   {
     ensureNotFinal();
+    Var var;
     if (globals.variables.containsKey(varName))
     {
-      globals.unscope(globals.inscope(varName));
+      var = globals.inscope(varName);
+      if( var.isMutable() )
+      {
+        return var;
+      }
+      globals.unscope(var);
     }
-    Var var = new Var(varName, schema, true);
+    var = new Var(globals, varName, schema, Scope.GLOBAL, varState);
     globals.scope(var);
     return var;
   }
@@ -146,28 +155,13 @@ public class Env extends Namespace
   /** 
    * Creates a new variable with the specified name and puts it into the global scope. 
    * The most recent definition of the global variable of the specified name is overwritten.
-   */
-  public Var scopeGlobal(String varName) 
-  {
-    return scopeGlobal(varName, SchemaFactory.anySchema());
-  }
-  
-  /** 
-   * Creates a new variable with the specified name and puts it into the global scope. 
-   * The most recent definition of the global variable of the specified name is overwritten.
    * If varName contains a tag, this method will fail.
    */
-  public Var scopeGlobal(String varName, JsonValue value)
+  public Var setOrScopeMutableGlobal(String varName, JsonValue value)
   {
-    ensureNotFinal();
-    if (globals.variables.containsKey(varName))
-    {
-      globals.unscope(globals.inscope(varName));
-    }
-    Var var = new Var(varName, SchemaFactory.schemaOf(value), true);
+    // Var var = scopeGlobal(varName, SchemaFactory.schemaOf(value), Var.State.MUTABLE);
+    Var var = scopeGlobal(varName, SchemaFactory.anySchema(), Var.State.MUTABLE);
     var.setValue(value);
-    globals.scope(var);
-    var.makeFinal();
     return var;
   }
   
@@ -274,6 +268,9 @@ public class Env extends Namespace
               }
               ve.replaceInParent(new ConstExpr(val));
               break;
+            }
+            case UNDEFINED: {
+              throw new IllegalStateException("use of undefined global variable: "+var.name());
             }
             default:
               throw new IllegalStateException("global variables have to have be of type value or expr");
