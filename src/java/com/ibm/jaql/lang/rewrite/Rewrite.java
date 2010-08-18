@@ -16,12 +16,15 @@
 package com.ibm.jaql.lang.rewrite;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
+import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
@@ -290,5 +293,42 @@ public abstract class Rewrite
       }
     }
     return expr;
+  }
+  
+  /**
+   * Find a mappable pipeline over the result of expr.
+   * The pipeline can reference any of the safeVars.
+   * The pipeline cannot have any side-effects.
+   * @param expr
+   * @param safeVars if null, all variables are safe
+   * @return the root of the pipeline or null if none exists
+   */
+  public static Expr findPipeline(Expr expr, HashSet<Var> safeVars) // TODO: move to Rewrite 
+  {
+    Expr pipe = null;
+    int slot = expr.getChildSlot();
+    expr = expr.parent();
+    if( expr instanceof BindingExpr && slot == 0 )
+    {
+      slot = expr.getChildSlot();
+      expr = expr.parent();
+    }
+    // We combine merge mappable expressions that don't:
+    //     o have side-effects: we don't want to pull up a side-effect before it's time 
+    //     o reference undefined variables 
+    while( expr.isMappable( slot ) && 
+           expr.getProperty(ExprProperty.HAS_SIDE_EFFECTS, true).never() && // TODO: should just check children != slot or place into isMappable
+           (safeVars == null || ! expr.hasCaptures(safeVars)) )
+    {
+      pipe = expr;
+      expr = expr.parent();
+      if( expr instanceof BindingExpr &&
+          expr.getChildSlot() == 0 )
+      {
+        expr = expr.parent();
+      }
+    }
+
+    return pipe;
   }
 }

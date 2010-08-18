@@ -32,7 +32,7 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 public class RewriteEngine
 {
   protected int            phaseId     = 0;
-  protected RewritePhase[] phases      = new RewritePhase[6];
+  protected RewritePhase[] phases      = new RewritePhase[7];
   protected boolean        traceFire   = false;
   protected boolean        explainFire = false;                    // traceFire must true for this to matter
   protected long           counter     = 0;
@@ -67,8 +67,8 @@ public class RewriteEngine
     ExprWalker postOrderWalker = new PostOrderExprWalker();
     // ExprWalker rootWalker = new OneExprWalker();
 
-    RewritePhase basicPhase = new RewritePhase(this, postOrderWalker, 10000);
-    RewritePhase phase = phases[phaseId] = basicPhase;
+    //------------------------------------------------------------------------------------
+    RewritePhase phase = phases[phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     new LetInline(phase);
     new DoMerge(phase);
     new DoPullup(phase);
@@ -102,8 +102,48 @@ public class RewriteEngine
     new FilterPushDown(phase);
     new FilterMerge(phase);
     new OuterJoinToInner(phase);
+    //---tee part 1 ---
+    new TeeToDiamondSplit(phase);
+    new MapSplitPushdown(phase);
+    new SplitMapToRetag(phase);
+    new RetagMerge(phase);
+    new SplitSplitPushdown(phase);
+    new FlattenTagSplit(phase);
+    //    new TeeToBlock(phase);
+    //---end:tee---
     
+    //------------------------------------------------------------------------------
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
+    new LetInline(phase);
+    new DoMerge(phase);
+    new DoPullup(phase);
+    new FunctionInline(phase);
+    new TrivialForElimination(phase);
+    new TrivialTransformElimination(phase);
+    new AsArrayElimination(phase);
+    new DoConstPragma(phase);
+    new UnrollTransformLoop(phase);
+    new SimplifyRecord(phase);
+    new CheapConstEval(phase);
+    new ConstIfElimination(phase);
+    new FilterPredicateSimplification(phase);
+    new FilterPushDown(phase);
+    new FilterMerge(phase);
+    new OuterJoinToInner(phase);
+    new UnrollForLoop(phase);
+    new UnrollTransformLoop(phase);
+    new SimplifyUnion(phase);
+    new SimplifyRecord(phase);
+    //----tee part 2 ------
+    new DiamondTagExpand(phase); // TODO: should have this in filter pushdown phase
+    new RetagExpand(phase); // TODO: should have this in filter pushdown phase
+    new SplitToWrite(phase); // TODO: should have this in filter pushdown phase
+    new TagFlattenPushdown(phase);
+    //----end;tee------
+
+    //------------------------------------------------------------------------------
+    RewritePhase basicPhase = new RewritePhase(this, postOrderWalker, 10000);
+    phase = phases[++phaseId] = basicPhase;
     new LetInline(phase);
     new DoMerge(phase);
     new DoPullup(phase);
@@ -141,13 +181,21 @@ public class RewriteEngine
     // new ConstEval(phase); // TODO: do we need full ConstEval? Should it be in this or another phase?  Can it be made quicker?
     new CheapConstEval(phase);
     new ConstIfElimination(phase);
+    new ConstJumpElimination(phase);
     //    new StrengthReduction(phase);
     //    new ConstArray(phase);
     //    new ConstRecord(phase);
+    //----tee part 3 ------
+    new TagToTransform(phase); // TODO: need TagFlattenToTransform?
+    //----end;tee------
 
+    
+    //------------------------------------------------------------------------------
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     // new GroupToMapReduce(phase);
     new JoinToCogroup(phase);
+    // new TempSharedVariable(phase);
+    new WriteAssignment(phase);
     // new CogroupToMapReduce(phase);
     // new ForToMapReduce(phase);
 
@@ -158,6 +206,7 @@ public class RewriteEngine
 //    new LetInline(phase); // ConstEval opens more LetInline chances, which opens more ConstEval   
 //    //new ConstFunction(phase);
 
+    //------------------------------------------------------------------------------
     // phase = phases[++phaseId] = new RewritePhase(this, rootWalker, 1);
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 1000);
     new ToMapReduce(phase);
@@ -166,6 +215,7 @@ public class RewriteEngine
     new DoMerge(phase);
     new DoPullup(phase);
 
+    //------------------------------------------------------------------------------
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);
     new GroupElimination(phase);
     new PerPartitionElimination(phase);
@@ -181,7 +231,7 @@ public class RewriteEngine
    */
   public Expr run(Expr query) throws Exception
   {
-//    if (1==1) return query;
+//    if (true) return query;
     
     // We don't rewrite def expressions until they are actually evaluated.
     // FIXME: rewrites of MaterializeExpr inlines functions; disable those inlines

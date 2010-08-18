@@ -15,6 +15,9 @@
  */
 package com.ibm.jaql.lang.core;
 
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
+
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
@@ -22,7 +25,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.expr.core.Expr;
-import static com.ibm.jaql.json.type.JsonType.*;
 
 /** A variable. 
  * 
@@ -50,6 +52,19 @@ public final class Var extends Object
     EXPR
   }
 
+  public enum Scope
+  {
+    LOCAL,
+    GLOBAL
+  }
+
+  public enum State
+  {
+    FINAL,       // value will never be changed once set. It can be GLOBAL or LOCAL.
+    FUNCTIONAL,  // value is modified in a functional way by an expression (like transform). It should be LOCAL (true?)
+    MUTABLE,     // value can be redefined in a non-function way. It must be GLOBAL.
+  }
+
   public static final Var[] NO_VARS = new Var[0];
   public static final Var UNUSED = new Var("$__unused__");
 
@@ -70,38 +85,94 @@ public final class Var extends Object
                        // JsonIterator(null disallowed)
   private Schema schema; // schema of the variable; not to be changed at runtime
 
-  private boolean isGlobal = false;   // the variable is global, i.e., it
-  private boolean isFinal = false;
-  private Namespace namespace = null;
-  
-  public Var(String taggedName, Schema schema)
+  private final Scope scope;
+  private final State state;  
+  private final Namespace namespace; 
+
+  /**
+   * Construct a new variable with the given value.
+   * (Calling constructors might erase the value)
+   */
+  private Var(Namespace namespace, String taggedName, Schema schema, Scope scope, State state, Type type, JsonValue value)
   {
     assert schema != null;
+    if( scope == Scope.LOCAL )
+    {
+      if( state == State.MUTABLE )
+      {
+        throw new IllegalArgumentException("local variables cannot be mutable: "+taggedName);
+      }
+    }
+    else
+    {
+      assert scope == Scope.GLOBAL;
+      if( tag != null )
+      {
+        throw new IllegalArgumentException("global variables cannot have tags: " + taggedName);
+      }
+      if( namespace == null )
+      {
+        throw new IllegalArgumentException("global variables must have a namespace: " + taggedName);
+      }
+    }
+    assert value == null || type == Type.VALUE;
     setTaggedName(taggedName);
+    this.namespace = namespace;
     this.schema = schema;
+    this.type = type;
+    this.value = value;
+    this.scope = scope;
+    this.state = state;
   }
 
+  /**
+   * Create a variable in a namespace.
+   */
+  public Var(Namespace namespace, String taggedName, Schema schema, Scope scope, State state)
+  {
+    this( namespace, taggedName, schema, scope, state, Type.UNDEFINED, null );
+  }
+
+  /**
+   * Create a immutable global variable in a namespace.
+   */
+  public Var(Namespace namespace, String taggedName, Schema schema, JsonValue value)
+  {
+    this(namespace, taggedName, schema, Scope.GLOBAL, State.FINAL, Type.VALUE, value);
+  }
+
+  /**
+   * Construct a new variable with the given value.
+   * (Calling constructors might erase the value)
+   */
+  public Var(String taggedName, Schema schema, Scope scope, State state, JsonValue value)
+  {
+    this(null, taggedName, schema, scope, state, Type.VALUE, value);
+  }
+  
+  /**
+   * Construct a variable without definition.
+   */
+  public Var(String taggedName, Schema schema, Scope scope, State state)
+  {
+    this(null, taggedName, schema, scope, state, Type.UNDEFINED, null);
+  }
+ 
   public Var(String taggedName)
   {
     this(taggedName, SchemaFactory.anySchema());
   }
 
-  public Var(String taggedName, Schema schema, boolean isGlobal)
+  public Var(String taggedName, Schema schema)
   {
-    this(taggedName, schema);
-    this.type = Type.UNDEFINED;
-    this.isGlobal = isGlobal;
-    if (tag != null)
-    {
-      throw new IllegalStateException("global variables cannot have tags: " + taggedName);
-    }
+    this(taggedName, schema, Scope.LOCAL, State.FUNCTIONAL);
   }
 
-  public Var(String taggedName, boolean isGlobal)
+  public Var(String taggedName, Scope scope, State state)
   {
-    this(taggedName, SchemaFactory.anySchema(), isGlobal);
+    this(taggedName, SchemaFactory.anySchema(), scope, state);
   }
-
+  
   /**
    * @return
    */
@@ -182,22 +253,31 @@ public final class Var extends Object
    */
   public boolean isGlobal()
   {
-    return isGlobal;
+    return scope == Scope.GLOBAL;
+  }
+
+  public boolean isMutable()
+  {
+    return state == State.MUTABLE;
   }
 
   public boolean isFinal()
   {
-    return isFinal;
+    return state == State.FINAL;
   }
 
-  public void makeFinal()
-  {
-    if (type != Type.VALUE && type != Type.EXPR)
-    {
-      throw new IllegalStateException("final variables must be of type VALUE or EXPR");
-    }
-    isFinal = true;
-  }
+//  public void makeFinal()
+//  {
+//    if (type != Type.VALUE && type != Type.EXPR)
+//    {
+//      throw new IllegalStateException("final variables must be of type VALUE or EXPR");
+//    }
+//    if( state == State.MUTABLE )
+//    {
+//      throw new IllegalStateException("why is a mutable variable marked final?");
+//    }
+//    state = State.FINAL;
+//  }
   
   /**
    * @param varMap
@@ -224,6 +304,14 @@ public final class Var extends Object
   {
     return name + ( tag != null ? TAG_MARKER+tag : "") + " @" + System.identityHashCode(this);
   }
+  
+  /**
+   * Has the value been set (to a real value or to deferred value)?
+   */
+  public boolean isDefined()
+  {
+    return type != Type.UNDEFINED;
+  }
 
   /**
    * Unset the runtime value
@@ -233,6 +321,16 @@ public final class Var extends Object
     this.value = null;
     this.type = Type.UNDEFINED;
   }
+  
+  protected void ensureSettable()
+  {
+    // TODO: we should distinguish between global set and local set.
+    // Global variables should never be set during execution of a statement, except at the top.
+    if( isFinal() && isDefined() )
+    {
+      throw new IllegalStateException("final variables cannot be modified");
+    }
+  }
 
   /**
    * Set the runtime value.
@@ -241,16 +339,17 @@ public final class Var extends Object
    */
   public void setValue(JsonValue value)
   {
-    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
-    assert schema.matchesUnsafe(value) : name + " has invalid schema: "
-        + "found " + value + ", expected " + schema;
+    ensureSettable();
+    assert schema.matchesUnsafe(value);
     this.value = value;
     this.type = Type.VALUE;
   }
 
   public void setExpr(Expr expr)
   {
-    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
+    ensureSettable();
+    // FIXME: expr.schema.conformsTo(var.schema).always()
+    assert expr != null;
     this.expr = expr;
     this.type = Type.EXPR;
   }
@@ -263,7 +362,8 @@ public final class Var extends Object
    */
   public void setIter(JsonIterator iter)
   {
-    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
+    ensureSettable();
+    // FIXME: iter.schema.conformsTo(var.schema).always()  but iter has no schema today...
     assert iter != null;
     assert schema.is(ARRAY).maybe();
     value = iter;
@@ -282,7 +382,6 @@ public final class Var extends Object
    */
   public void setEval(Expr expr, Context context) throws Exception
   {
-    if (isFinal()) throw new IllegalStateException("final variables cannot be modified");
     if (usage == Usage.STREAM && expr.getSchema().is(ARRAY, NULL).always())
     {
       setIter(expr.iter(context));
@@ -303,13 +402,16 @@ public final class Var extends Object
     if (value instanceof JsonValue)
     {
       setValue((JsonValue) value);
-    } else if (value instanceof JsonIterator)
+    }
+    else if (value instanceof JsonIterator)
     {
       setIter((JsonIterator) value);
-    } else if (value instanceof Expr)
+    }
+    else if (value instanceof Expr)
     {
       setEval((Expr) value, context);
-    } else
+    }
+    else
     {
       throw new InternalError("invalid variable value: " + value);
     }
@@ -440,12 +542,13 @@ public final class Var extends Object
     return namespace;
   }
   
-  public void setNamespace(Namespace namespace)
-  {
-    if (this.namespace != null && this.namespace != namespace)
-    {
-      throw new IllegalStateException("variable already has a namespace");
-    }
-    this.namespace = namespace;
-  }
+//  public void setNamespace(Namespace namespace)
+//  {
+//    if (this.namespace != null && this.namespace != namespace)
+//    {
+//      throw new IllegalStateException("variable already has a namespace");
+//    }
+//    this.namespace = namespace;
+//  }
+
 }

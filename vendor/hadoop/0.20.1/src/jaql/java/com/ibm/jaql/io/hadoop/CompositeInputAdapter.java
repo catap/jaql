@@ -55,13 +55,24 @@ public class CompositeInputAdapter implements HadoopInputAdapter
   @Override
   public void init(JsonValue val) throws Exception
   {
-    if(val instanceof JsonArray)
-      initializeFrom((JsonArray) val);
-    else if(val instanceof JsonRecord) {
+    if(val instanceof JsonArray) // TODO: eliminate
+    {
+      initializeFrom((JsonArray) val); 
+    }
+    else if(val instanceof JsonRecord)
+    {
       // dig the location out
       JsonRecord rval = (JsonRecord)val;
-      JsonArray loc = (JsonArray)rval.get(Adapter.LOCATION_NAME);
+      JsonArray loc = (JsonArray)rval.get(CompositeOutputAdapter.DESCRIPTORS);
+      if( loc == null )
+      {
+        loc = (JsonArray)rval.get(Adapter.LOCATION_NAME); // TODO: eliminate
+      }
       initializeFrom(loc);
+    }
+    else
+    {
+      throw new IllegalArgumentException("invalid composite descriptor");
     }
   }
 
@@ -187,7 +198,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
           value);
 
       // 4. create a new JobConf j'
-      JobConf jTmp = new JobConf();
+      JobConf jTmp = new JobConf(job);
 
       // 5. call adapter's setupConf(j')
       // ConfiguratorUtil.writeToConf(adapter, jTmp, item/**baseArgs*/);
@@ -243,7 +254,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     ArrayList<CompositeSplit> allSplits = new ArrayList<CompositeSplit>();
     for (int i = 0; i < numAdapters; i++)
     {
-      JobConf jTmp = new JobConf();
+      JobConf jTmp = new JobConf(job);
       try
       {
         // ConfiguratorUtil.writeToConf((Configurator)adapters[i], jTmp,
@@ -293,7 +304,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
       for (int i = 0; i < numAdapters; i++)
       {
         // make a new JobConf j'
-        JobConf jTmp = new JobConf();
+        JobConf jTmp = new JobConf(job);
 
         // call adapter's setupConf(j')
         // ConfiguratorUtil.writeToConf((ConfSetter)adapters[i], jTmp,

@@ -21,11 +21,13 @@ import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.schema.Schema;
@@ -104,13 +106,13 @@ public class Namespace {
   public void scope(Var var)
   {
     ensureNotFinal();
-    var.setNamespace(this);
+    // var.setNamespace(this);
     unscope(var);
     var.varStack = variables.get(var.name());
     variables.put(var.name(), var);
   }
 
-  /** Creates a new variable with the specified name and puts it into the local scope.
+  /** Creates a new local variable with the specified name and puts it into the local scope.
    * Previous definitions of variables of the specified name are hidden but not overwritten.
    * 
    * @param taggedName
@@ -124,7 +126,7 @@ public class Namespace {
     return var;
   }
 
-  /** Creates a new variable with the specified name and schema and puts it into the local scope.
+  /** Creates a new local variable with the specified name and schema and puts it into the local scope.
    * Previous definitions of variables of the specified name are hidden but not overwritten.
    * 
    * @param taggedName
@@ -254,7 +256,7 @@ public class Namespace {
     }
     return null;
   }
-  
+
   // -- getters -----------------------------------------------------------------------------------
   
 	public Module getModule() {
@@ -271,7 +273,8 @@ public class Namespace {
     if (isFinal()) return;
     for (Var v : variables.values())
     {
-      v.makeFinal();
+      // v.makeFinal();
+      assert v.isFinal();
     }
     isFinal = true;
   }
@@ -299,7 +302,18 @@ public class Namespace {
     return exportedVariables.contains(varName);
   }
 
-
+  /* Return a list of all inscope variables */
+  public Collection<Var> listVariables(boolean local)
+  {
+    TreeMap<String, Var> map = new TreeMap<String, Var>();
+    if( ! local )
+    {
+      map.putAll(importedVariables);
+    }
+    map.putAll(variables);
+    return map.values();
+  }
+  
   // -- Namespace loading -------------------------------------------------------------------------
 	
 	public static Namespace get(String name) {

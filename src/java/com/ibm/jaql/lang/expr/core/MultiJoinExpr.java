@@ -310,7 +310,7 @@ public class MultiJoinExpr extends MacroExpr
       // mappedBinding ::= <input> -> map each $inVar { $inVar } 
       Expr[] fields = new Expr[1];
       fields[0] = new NameValueBinding(binding.var, false);
-      this.mappedBinding = new TransformExpr(binding.var, binding.inExpr(), new RecordExpr(fields));
+      this.mappedBinding = new TransformExpr(binding, new RecordExpr(fields));
     }
 
     public JoinInfo findJoin(JoinInput y)
@@ -476,6 +476,7 @@ public class MultiJoinExpr extends MacroExpr
   
   private class JoinGraph
   {
+    Env env;
     int clock = 1; // visit clock
 
     int numPreserved = 0; // number of preserved inputs
@@ -493,6 +494,7 @@ public class MultiJoinExpr extends MacroExpr
     
     JoinGraph(Env env)
     {
+      this.env = env;
       externalVars = MultiJoinExpr.this.getCapturedVars();
       makeInputs(env);
       makeEdges(whereExpr());
@@ -757,7 +759,7 @@ public class MultiJoinExpr extends MacroExpr
         }
         else
         {
-          throw new RuntimeException("Only predicates on two join inputs are supported by join at this time");
+          doLocalPushdown(pred);
         }
       }
       else if( pred instanceof AndExpr )
@@ -767,10 +769,36 @@ public class MultiJoinExpr extends MacroExpr
       }
       else
       {
-        throw new RuntimeException("Join condition limited to only 'and' and '==' at this time");
+        doLocalPushdown(pred);
       }
     }
     
+    private void doLocalPushdown(Expr pred)
+    {
+      HashSet<Var> varSet = pred.getCapturedVars();
+      varSet.removeAll(externalVars);
+      if( varSet.size() != 1 )
+      {
+        throw new RuntimeException("Only local predicates on one join input, or '==' join predicates on two join inputs are supported by join at this time: "+pred);
+      }
+      Var joinVar = varSet.iterator().next();
+      JoinInput joinIn = findInput(joinVar);
+      if( joinIn == null ) // (ksb) How could this happen?   
+      {
+        throw new RuntimeException("Only predicates on join inputs are supported by join at this time: "+pred);
+      }
+      if( numPreserved > 1 || (numPreserved == 1 && ! joinIn.isPreserved()) )
+      {
+        throw new RuntimeException("Predicates on one join input are not permitted when other inputs are preserved: "+pred);
+      }
+      Var filterVar = env.makeVar(joinVar.name());
+      Expr e = joinIn.binding.inExpr();
+      pred.replaceVar(joinVar, filterVar);
+      BindingExpr bind = new BindingExpr(BindingExpr.Type.IN, filterVar, null, e);
+      FilterExpr filter = new FilterExpr(bind, pred);
+      joinIn.binding.setChild(0, filter);
+    }
+
 //    private void makeJoins()
 //    {
 //      for( Map.Entry<Var,ArrayList<JoinInput>> entry: varToInputs.entrySet() )

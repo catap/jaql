@@ -434,7 +434,7 @@ public abstract class Expr
   }
 
   /**
-   * @param e
+   * Append a child to the end of the list of children
    */
   public void addChild(Expr e)
   {
@@ -451,6 +451,7 @@ public abstract class Expr
     subtreeModified();
   }
   
+  /** Add a new child before child(slot) */ 
   public void addChildBefore(int slot, Expr e)
   {
     if( e instanceof InjectAboveExpr ) // TODO: this really looks like hacking
@@ -466,6 +467,23 @@ public abstract class Expr
     exprs = es;
     subtreeModified();
   }
+
+  /** Add more children before child(slot) */ 
+  public void addChildrenBefore(int slot, Expr[] children)
+  {
+    for( Expr e: children )
+    {
+      assert !(e instanceof InjectAboveExpr);
+      e.parent = this;
+    }
+    Expr[] es = new Expr[exprs.length + children.length];
+    System.arraycopy(exprs, 0, es, 0, slot);
+    System.arraycopy(children, 0, es, slot, children.length);
+    System.arraycopy(exprs, slot, es, slot + children.length, exprs.length - slot);
+    exprs = es;
+    subtreeModified();
+  }
+
   
   /**
    * @param e
@@ -767,6 +785,22 @@ public abstract class Expr
     }
     return capturedVars;
   }
+
+  /** True iff this Expr tree contains a reference to any variable defined
+   * outside this Expr tree, except for any of the ignored variables.
+   * If ignoredVars is null, it is treated as empty.
+   */
+  public boolean hasCaptures(HashSet<Var> ignoredVars)
+  {
+    // FIXME: this needs to be more efficient... we don't even need the full capture set...
+    HashSet<Var> captures = getCapturedVars();
+    if( ignoredVars != null )
+    {
+      captures.removeAll(ignoredVars);
+    }
+    return ! captures.isEmpty();
+  }
+
 
   public InjectAboveExpr injectAbove()
   {

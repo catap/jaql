@@ -31,6 +31,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
@@ -62,6 +63,16 @@ public class HadoopTempExpr extends Expr
   public HadoopTempExpr(Expr ... exprs)
   {
     super(exprs);
+  }
+  
+  public HadoopTempExpr(JsonSchema schema)
+  {
+    this(new ConstExpr(schema));
+  }
+
+  public HadoopTempExpr(Schema schema)
+  {
+    this(new JsonSchema(schema));
   }
 
   public Map<ExprProperty, Boolean> getProperties()

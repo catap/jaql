@@ -78,17 +78,24 @@ import com.ibm.jaql.lang.expr.catalog.UpdateCommentFn;
 import com.ibm.jaql.lang.expr.core.CatchExpr;
 import com.ibm.jaql.lang.expr.core.CompareFn;
 import com.ibm.jaql.lang.expr.core.DaisyChainFn;
+import com.ibm.jaql.lang.expr.core.DiamondTagFn;
 import com.ibm.jaql.lang.expr.core.ExpectExceptionFn;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.GetOptionsFn;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
+import com.ibm.jaql.lang.expr.core.JumpFn;
+import com.ibm.jaql.lang.expr.core.ListVariablesFn;
 import com.ibm.jaql.lang.expr.core.MergeContainersFn;
 import com.ibm.jaql.lang.expr.core.PerPartitionFn;
 import com.ibm.jaql.lang.expr.core.PerfFn;
 import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.RegisterExceptionHandler;
+import com.ibm.jaql.lang.expr.core.RetagFn;
 import com.ibm.jaql.lang.expr.core.SetOptionsFn;
+import com.ibm.jaql.lang.expr.core.TagFlattenFn;
+import com.ibm.jaql.lang.expr.core.TagFn;
+import com.ibm.jaql.lang.expr.core.TagSplitFn;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
 import com.ibm.jaql.lang.expr.core.TimeoutExpr;
 import com.ibm.jaql.lang.expr.date.DateFn;
@@ -189,7 +196,11 @@ import com.ibm.jaql.lang.expr.regex.RegexTestFn;
 import com.ibm.jaql.lang.expr.schema.AssertFn;
 import com.ibm.jaql.lang.expr.schema.CheckFn;
 import com.ibm.jaql.lang.expr.schema.DataGuideFn;
+import com.ibm.jaql.lang.expr.schema.ElementsOfFn;
+import com.ibm.jaql.lang.expr.schema.FieldsOfFn;
+import com.ibm.jaql.lang.expr.schema.IsNullableFn;
 import com.ibm.jaql.lang.expr.schema.SchemaOfExpr;
+import com.ibm.jaql.lang.expr.schema.SqlTypeCodeFn;
 import com.ibm.jaql.lang.expr.schema.TypeOfExpr;
 import com.ibm.jaql.lang.expr.span.SpanBeginFn;
 import com.ibm.jaql.lang.expr.span.SpanContainsFn;
@@ -287,10 +298,7 @@ public final class SystemNamespace extends Namespace {
     
     // register
     BuiltInFunction f = new BuiltInFunction(descriptor);
-    Var var = new Var(descriptor.getName(), SchemaFactory.schemaOf(f), true);
-    var.setNamespace(this);
-    var.setValue(f);
-    var.makeFinal();
+    Var var = new Var(this, descriptor.getName(), SchemaFactory.schemaOf(f), f);
     variables.put(var.name(), var);
     exportedVariables.add(var.name());
     implementationMap.put(descriptor.getImplementingClass(), descriptor);
@@ -302,10 +310,15 @@ public final class SystemNamespace extends Namespace {
     // schema
     register(new TypeOfExpr.Descriptor());
     register(new SchemaOfExpr.Descriptor());
+    register(new IsNullableFn.Descriptor());
+    register(new ElementsOfFn.Descriptor());
+    register(new FieldsOfFn.Descriptor());
+    register(new SqlTypeCodeFn.Descriptor());
     register(new CheckFn.Descriptor());
     register(new AssertFn.Descriptor());
     //    
     register(new CompareFn.Descriptor());
+    register(new ListVariablesFn.Descriptor());
     register(new ExistsFn.Descriptor());
     register(new Lag1Fn.Descriptor());
     register(new PowersetFn.Descriptor());
@@ -336,6 +349,12 @@ public final class SystemNamespace extends Namespace {
     register(new ExpSmoothAgg.Descriptor());
     register(new GroupCombineFn.Descriptor()); // experimental
     register(new IcebergCubeInMemory.Descriptor()); // experimental
+    register(new JumpFn.Descriptor());
+    register(new DiamondTagFn.Descriptor()); // internal use
+    register(new RetagFn.Descriptor()); // internal use
+    register(new TagFlattenFn.Descriptor()); // internal use
+    register(new TagFn.Descriptor()); // internal use
+    register(new TagSplitFn.Descriptor()); // internal use
     register(new TeeExpr.Descriptor());
     register(new PerPartitionFn.Descriptor());
     register(new PerfFn.Descriptor());

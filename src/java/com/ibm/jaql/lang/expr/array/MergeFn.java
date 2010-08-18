@@ -16,6 +16,9 @@
 package com.ibm.jaql.lang.expr.array;
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -25,8 +28,6 @@ import com.ibm.jaql.util.Bool3;
 
 /**
  * Merge multiple pipes into one pipe in arbitrary order (like SQL's UNION ALL) 
- * 
- * @author kbeyer
  */
 public class MergeFn extends IterExpr // TODO: add intersect, union, difference, concat
 {
@@ -38,7 +39,7 @@ public class MergeFn extends IterExpr // TODO: add intersect, union, difference,
     }
   }
   
-  public MergeFn(Expr[] inputs)
+  public MergeFn(Expr... inputs)
   {
     super(inputs);
   }
@@ -48,9 +49,30 @@ public class MergeFn extends IterExpr // TODO: add intersect, union, difference,
     super(inputs);
   }
 
-  public MergeFn(Expr expr0, Expr expr1)
+  @Override
+  public Schema getSchema()
   {
-    super(expr0, expr1);
+    Schema elems = null;
+    for( int i = 0 ; i < exprs.length ; i++ )
+    {
+      Schema s = SchemaTransformation.restrictToArrayOrNull(exprs[i].getSchema());
+      if( s == null )
+      {
+        throw new IllegalArgumentException("array expected for merge argument "+i);
+      }
+      Schema e = s.elements();
+      if( elems == null )
+      {
+        elems = e;
+      }
+      else
+      {
+        // TODO: use exact schema?
+        // elems = OrSchema.make(elems, e);
+        elems = SchemaTransformation.merge(elems, e);
+      }
+    }
+    return new ArraySchema(null, elems);
   }
 
   @Override
