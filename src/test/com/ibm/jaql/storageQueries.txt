@@ -259,4 +259,24 @@ read(hdfs('jaqlTest/test1.dat'))
               {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
                configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
                
-read(hdfs('jaqlTest/test15out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' })); 
+read(hdfs('jaqlTest/test15out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' }));
+
+// test out sequence file with Text value, using non-test classes (MRAggregate)
+read(hdfs('jaqlTest/test1.dat')) 
+-> transform $ + 1 
+-> group by g = $ into { grp: g, num: count($) }
+-> write(hdfs('jaqlTest/test16out.dat', 
+              {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+               configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
+               
+read(hdfs('jaqlTest/test16out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' })) -> sort by [ $.grp asc ]; 
+
+// test out sequence file with Text value, using non-test classes (MapReduce)
+read(hdfs('jaqlTest/test1.dat')) 
+-> transform $ + 1 
+-> group by g = $ into { grp: g, num: $ }
+-> write(hdfs('jaqlTest/test17out.dat', 
+              {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+               configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
+               
+read(hdfs('jaqlTest/test17out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' })) -> sort by [ $.grp asc ];

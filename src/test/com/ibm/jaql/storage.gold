@@ -945,5 +945,99 @@ read(hdfs('jaqlTest/test15out.dat', { converter: 'com.ibm.jaql.io.hadoop.convert
 ]
 
 ;//------------------- TEST-CASE -----------------
+
+
+// test out sequence file with Text value, using non-test classes (MRAggregate)
+read(hdfs('jaqlTest/test1.dat')) 
+-> transform $ + 1 
+-> group by g = $ into { grp: g, num: count($) }
+-> write(hdfs('jaqlTest/test16out.dat', 
+              {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+               configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "jaqlTest/test16out.dat",
+  "options": {
+    "configurator": "com.ibm.jaql.io.hadoop.TextFileOutputConfigurator",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"
+  },
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+               
+read(hdfs('jaqlTest/test16out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' })) -> sort by [ $.grp asc ];
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "grp": 2,
+    "num": 1
+  },
+  {
+    "grp": 3,
+    "num": 1
+  },
+  {
+    "grp": 4,
+    "num": 1
+  }
+]
+
+;//------------------- TEST-CASE -----------------
  
+
+// test out sequence file with Text value, using non-test classes (MapReduce)
+read(hdfs('jaqlTest/test1.dat')) 
+-> transform $ + 1 
+-> group by g = $ into { grp: g, num: $ }
+-> write(hdfs('jaqlTest/test17out.dat', 
+              {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+               configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'}));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "jaqlTest/test17out.dat",
+  "options": {
+    "configurator": "com.ibm.jaql.io.hadoop.TextFileOutputConfigurator",
+    "converter": "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"
+  },
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+               
+read(hdfs('jaqlTest/test17out.dat', { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' })) -> sort by [ $.grp asc ];
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "grp": 2,
+    "num": [
+      2
+    ]
+  },
+  {
+    "grp": 3,
+    "num": [
+      3
+    ]
+  },
+  {
+    "grp": 4,
+    "num": [
+      4
+    ]
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
 ;//------------------- TEST-DONE -----------------
