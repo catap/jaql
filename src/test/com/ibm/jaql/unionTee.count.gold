@@ -1,0 +1,786 @@
+
+;//------------------- TEST-CASE -----------------
+//---------------------------------------------------------------------------
+// Tests:
+//   composite input/output adapaters
+//   parallelization of union (coming soon)
+//   parallelization of tee
+//---------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------
+// Composite input/output adapaters
+//---------------------------------------------------------------------------
+
+r = hdfs('R');
+;//------------------- TEST-CASE -----------------
+
+s = hdfs('S');
+;//------------------- TEST-CASE -----------------
+
+t = hdfs('T');
+;//------------------- TEST-CASE -----------------
+
+
+R = read(r);
+;//------------------- TEST-CASE -----------------
+
+S = read(s);
+;//------------------- TEST-CASE -----------------
+
+T = read(t);
+;//------------------- TEST-CASE -----------------
+
+
+// Defines a composite descriptor:
+//   Read produces the union of descriptors.
+//   Write partitions the values written.  It expects the values to be [i,x] pairs where
+//      i is an index to a output descriptor and
+//      x is value that will be written to only to descriptor[i]
+//      if a key is written, it is passed to descriptor[i] as well.
+compositeDescriptor = fn( descriptors )
+   { inoptions:  { adapter: 'com.ibm.jaql.io.hadoop.CompositeInputAdapter' },
+     outoptions: { adapter: 'com.ibm.jaql.io.hadoop.CompositeOutputAdapter' },
+     descriptors
+   };
+;//------------------- TEST-CASE -----------------
+
+
+// write even values to R and odd values to S
+range(10) 
+ -> transform [ mod($,2), $ ]
+ -> write( compositeDescriptor( [r, s] ) )
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Just evens
+R;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Just odds
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Read the union of R and S in one read.
+read( compositeDescriptor([r,s]) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Try a map/reduce job
+read( compositeDescriptor([r,s]) )
+ -> transform $ + 10
+ -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// everything with 10 added
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Write via map/reduce
+T -> transform [ ($ - 10) / 5, $ ]
+  -> write( compositeDescriptor([r,s]) )
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 10..14 in R
+R;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 15..19 in S
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Write via from reducer of map/reduce
+T -> group by x=mod($,2) into [ x, sum($) ]
+  -> write( compositeDescriptor([r,s]) )
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// [sum([10,12,14,16,18]) = 70] in R
+R;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// [sum([11,13,15,17,19]) = 75] in S
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//---------------------------------------------------------------------------
+// TODO: Union
+//---------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------
+// Tee 
+//---------------------------------------------------------------------------
+
+range(10) -> write(r);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+range(0) -> write(s);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+range(0) -> write(t);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+R;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// Very simple tee that writes two copies of a file
+R -> tee( -> write(s) )
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Forms a single map job writing to two files
+//   note: tee(a, -> e) == tee(a, f(i) i -> e)
+R -> transform $ + 200
+  -> tee( 
+       -> transform $ + 10 
+       -> write(s) 
+     )
+  -> transform $ + 20
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 210..219
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 220..229
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// Without a leading transform
+R -> tee( 
+      -> transform $+10 
+      -> write(s) 
+     )
+  -> transform $+20
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 10..19
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 20..29
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// With a stream returned instead of writing
+R -> transform $+100
+  -> tee( -> transform $+10 -> write(s) )
+  -> transform $+20
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 110..119
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// This should eliminates the tee as dead code, but it doesn't yet...
+R -> transform $+200
+  -> tee( -> transform $+10 )
+  -> transform $+20
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 220..229
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Make sure filter and expand work too.
+R -> transform $+100
+  -> tee( -> filter $ < 107 -> expand [$+200, $+300] -> write(s) )
+  -> filter $ > 103 
+  -> transform $+400 
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 300..306 + 400..406
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 504..509
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+c = hdfs('C');
+;//------------------- TEST-CASE -----------------
+
+d = hdfs('D');
+;//------------------- TEST-CASE -----------------
+
+f = hdfs('F');
+;//------------------- TEST-CASE -----------------
+
+g = hdfs('G');
+;//------------------- TEST-CASE -----------------
+
+
+// This should produce one map-only job
+R -> transform { a: $ }
+  -> tee( -> transform { b: $.a }
+          -> tee( -> transform { c: $.b } 
+                  -> write(c) )
+          -> transform { d: $.b } 
+          -> write(d) )
+  -> transform { e: $.a }
+  -> tee( -> transform { f: $.e } 
+          -> write(f) )
+  -> transform { g: $.e } 
+  -> write(g)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// c recs
+read(c);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// d recs
+read(d);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// f recs
+read(f);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// g recs
+read(g);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// Share a reducer after aggregation
+R -> transform { x: mod($,3), y: $ }                 // 0,0; 1,1; 2,2; 0,3; 1,4; 2,5; 0,6; 1,7; 2,8; 0,9;
+  -> group by x = $.x into { x, s: sum($[*].y) }     // 0,18; 1,12; 2,15;
+  -> tee( -> filter $.x <= 1                         // 0,18; 1,12;
+          -> write(s) )
+  -> filter $.x >= 1                                 // 1,12; 2,15;
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 0,18; 1,12;
+S -> sort by [$.x];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 1,12; 2,15;
+T -> sort by [$.x];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Share a reducer with aggregation in the tee
+// TODO: This could use combiners but it doesn't yet...
+R -> transform { x: mod($,3), y: $ }                 // 0,0; 1,1; 2,2; 0,3; 1,4; 2,5; 0,6; 1,7; 2,8; 0,9;
+  -> group by x = $.x into { x, ys: $[*].y }         // 0,[0,3,6,9]; 1,[1,4,7]; 2,[2,5,8];
+  -> tee( -> transform { $.x, s: sum($.ys) }         // 0,18; 1,12; 2,15;
+          -> write(s) )
+  -> transform { $.x, t: count($.ys) }               // 0,4; 1,3; 2,3;
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 0,18; 1,12; 2,15;
+S -> sort by [$.x];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 0,4; 1,3; 2,3;
+T -> sort by [$.x];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Tee where one is not shareable
+R -> transform { x: mod($,3), y: $ }
+  -> tee( -> group by x=$.x 
+                into { x, n: min($[*].y) }
+          -> write(s) )
+  -> filter $.x < 2
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+S -> sort by [$.x];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Tee where the other is not sharable
+R -> transform { x: mod($,3), y: $ }
+  -> tee( -> filter $.x > 1
+          -> write(s) )
+  -> group by a=$.x 
+      into { a, m: max($[*].y) }
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+T -> sort by [$.a];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Tee that is not sharable at all
+// TODO: this example currently does a dumb thing: 
+// It writes two temps with the exactly the same stuff.
+R -> transform { x: mod($,3), y: $ }
+  -> tee( -> group by x=$.x 
+                into { x, n: min($[*].y) }
+          -> write(s) )
+  -> group by a=$.x 
+      into { a, m: max($[*].y) }
+  -> write(t)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 2,
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+S -> sort by [$.x];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+T -> sort by [$.a];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

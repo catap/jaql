@@ -17,6 +17,8 @@ package com.ibm.jaql.lang.expr.date;
 
 import java.util.Map;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -60,6 +62,12 @@ public class NowFn extends Expr
     return result;
   }
   
+  @Override
+  public Schema getSchema()
+  {
+    return SchemaFactory.dateSchema();
+  }
+
   /**
    * @param context
    * @return

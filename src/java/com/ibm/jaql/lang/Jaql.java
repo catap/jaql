@@ -35,6 +35,9 @@ import antlr.TokenStreamException;
 import antlr.collections.impl.BitSet;
 
 import com.ibm.jaql.io.OutputAdapter;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -42,11 +45,10 @@ import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
 import com.ibm.jaql.lang.expr.function.JaqlFunction;
-import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
+import com.ibm.jaql.lang.expr.function.JavaUdfFunction;
 import com.ibm.jaql.lang.expr.function.VarParameter;
 import com.ibm.jaql.lang.expr.function.VarParameters;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
@@ -129,7 +131,9 @@ public class Jaql implements CoreJaql
   protected JaqlPrinter printer = NullPrinter.get();
   protected ExceptionHandler exceptionHandler = new DefaultExceptionHandler();
   protected ExplainHandler explainHandler = new DefaultExplainHandler(System.out);
-  protected JsonIterator currentValue = null ;
+  protected JsonIterator currentValue = null;
+  protected Schema currentSchema;
+
   
   static
   {
@@ -269,7 +273,7 @@ public class Jaql implements CoreJaql
    */
   public void setVar(String varName, JsonValue value) 
   {
-    parser.env.scopeGlobal(varName, value);    
+    parser.env.setOrScopeMutableGlobal(varName, value);    
   }
   
   public void setVar(String varName, JsonIterator iter) {
@@ -468,6 +472,7 @@ public class Jaql implements CoreJaql
         }
         else if( expr != null )
         {
+          currentSchema = expr.getSchema();
           return expr;
         }
 
@@ -501,6 +506,15 @@ public class Jaql implements CoreJaql
   }
   
   /**
+   * Return the schema of the last expression prepared.
+   * The schema is still valid after calling iter() or eval().
+   */
+  public Schema currentSchema()
+  {
+    return currentSchema;
+  }
+    
+  /**
    * Evaluate the next query in the script and return an iterator over the result.
    * If the result is not an array or null, it is coerced into an array.
    * If there is no such query, return null.
@@ -517,14 +531,21 @@ public class Jaql implements CoreJaql
     }
     context.reset();
     JsonIterator iter;
-    if( expr.getSchema().is(ARRAY, NULL).always() )
+    if( currentSchema.is(ARRAY, NULL).always() )
     {
       iter = expr.iter(context);
     }
     else
     {
       JsonValue value = expr.eval(context);
-      iter = new SingleJsonValueIterator(value);
+      if( value instanceof JsonArray ) 
+      {
+        iter = ((JsonArray)value).iter();
+      }
+      else
+      {
+        iter = new SingleJsonValueIterator(value);
+      }
     }
     return iter;
   }
@@ -668,6 +689,9 @@ public class Jaql implements CoreJaql
      */
     protected void registerFunction(String fnName, JaqlFunction fn, FunctionArgs args) throws Exception 
     {
+      // FIXME: What is going on here? Why isn't this just setVar(fnName, fn)?
+      // What is going on with args?  Are you trying to define a new function:
+      //    fn2 = fn(a0=args[0], a1=args[1], ...) fn1(a0, a1, ...) ?
         if (args != null) {
             List<Var> paras = args.getParams();
             if (paras.size() != 0) {
@@ -691,7 +715,7 @@ public class Jaql implements CoreJaql
             }
         }
         Expr f = fn.body().parent();
-        Expr e = new AssignExpr(env, env.scopeGlobal(fnName), f);
+        Expr e = new AssignExpr(env, env.scopeGlobal(fnName, SchemaFactory.functionSchema(), Var.State.MUTABLE), f);
         e.eval(context);
     }
 
@@ -709,18 +733,8 @@ public class Jaql implements CoreJaql
     @Override
     public void registerJavaUDF(String udfName, String udfPath) throws Exception
     {
-        ConstExpr ce = new ConstExpr(new JsonString(udfPath));
-        Expr e;
-        if (!ce.isCompileTimeComputable().always()) {
-            throw new IllegalArgumentException();
-        }
-        try {
-            e = new AssignExpr(env, env.scopeGlobal(udfName), new JavaUdfExpr(
-                    ce).expand(env));
-        } catch (Exception ex) {
-            throw new RuntimeException(ex);
-        }
-        e.eval(context);
+      JavaUdfFunction fn = new JavaUdfFunction(udfPath);
+      setVar( udfName, fn );
     }
 
     /**

@@ -54,17 +54,16 @@ public abstract class UnrollLoop extends Rewrite
     // will have one R interpreter started, but the inline version will start three interpreters.
     // TODO: add another property that blocks unrolling?  Something like SENSITIVE_TO_NUMBER_OF_CALL_SITES?
     // TODO: For now we will only fire this rule when we have a pragma to force it.  We could get more agressive.
-    if( !(binding.parent().parent() instanceof UnrollLoopPragma) 
-        /* && returnExpr.getProperty(ExprProperty.IS_NONDETERMINISTIC, true).maybe() */ )
-    {
-      return null;
-    }
-    
+    Expr[] inList = null;
+    boolean hasPragma = binding.parent().parent() instanceof UnrollLoopPragma;    
     Expr inExpr = binding.inExpr();    
-    Expr[] inList;
+    
     if( inExpr instanceof ArrayExpr )
     {
-      inList = inExpr.children();
+      if( hasPragma || inExpr.numChildren() <= 1 )
+      {
+        inList = inExpr.children();
+      }
     }
     else if( inExpr instanceof ConstExpr )
     {
@@ -77,11 +76,14 @@ public abstract class UnrollLoop extends Rewrite
       else
       {
         int n =(int)arr.count();
-        inList = new Expr[n];
-        n = 0;
-        for(JsonValue v: arr)
+        if( hasPragma || n <= 1 )
         {
-          inList[n++] = new ConstExpr(v);
+          inList = new Expr[n];
+          n = 0;
+          for(JsonValue v: arr)
+          {
+            inList[n++] = new ConstExpr(v);
+          }
         }
       }
     }
@@ -98,7 +100,8 @@ public abstract class UnrollLoop extends Rewrite
 //        inList[n++] = new ConstExpr(v);
 //      }
 //    }
-    else
+    
+    if( inList == null )
     {
       return null;
     }

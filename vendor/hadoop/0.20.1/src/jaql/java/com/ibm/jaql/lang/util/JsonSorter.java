@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.util;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.io.DataInputBuffer;
@@ -38,9 +39,11 @@ import com.ibm.jaql.lang.core.JsonComparator;
  */
 public class JsonSorter
 {
-  OutputBuffer           obuf         = new OutputBuffer();
+  OutputBuffer  keyValBuffer = new OutputBuffer();
 
-  DataOutputBuffer       keyValBuffer = new DataOutputBuffer();
+  DataOutputStream keyValStream = new DataOutputStream(keyValBuffer);
+
+  // DataOutputBuffer       keyValBuffer = new DataOutputBuffer();
 
   PublicMergeSorter          sorter       = new PublicMergeSorter();
 
@@ -70,7 +73,7 @@ public class JsonSorter
       conf.setOutputKeyComparatorClass(DefaultJsonComparator.class);
     }
 //    sorter.configure(conf); // done below using setComparator    
-    sorter.setInputBuffer(obuf);
+    sorter.setInputBuffer(keyValBuffer);
     sorter.setProgressable(Reporter.NULL);
     if (comparator != null)
     {
@@ -98,16 +101,23 @@ public class JsonSorter
   public void add(JsonValue key, JsonValue value) throws IOException
   {
     int keyOffset = keyValBuffer.getLength();
-    serializer.write(keyValBuffer, key);
+    serializer.write(keyValStream, key);
     int keyLength = keyValBuffer.getLength() - keyOffset;
-    serializer.write(keyValBuffer, value);
+    serializer.write(keyValStream, value);
     int valLength = keyValBuffer.getLength() - (keyOffset + keyLength);
-    obuf.write(keyValBuffer.getData(), keyOffset, keyLength + valLength);
     sorter.addKeyValue(keyOffset, keyLength, valLength);
-    // keyValBuffer.reset();
-    // FIXME: we are double buffering here. the appropriate manner is to use
-    // Item's serializer.
-    // TODO: spill to disk
+    
+//    int keyOffset = keyValBuffer.getLength();
+//    serializer.write(keyValBuffer, key);
+//    int keyLength = keyValBuffer.getLength() - keyOffset;
+//    serializer.write(keyValBuffer, value);
+//    int valLength = keyValBuffer.getLength() - (keyOffset + keyLength);
+//    obuf.write(keyValBuffer.getData(), keyOffset, keyLength + valLength);
+//    sorter.addKeyValue(keyOffset, keyLength, valLength);
+//    // keyValBuffer.reset();
+//    // FIXME: we are double buffering here. the appropriate manner is to use
+//    // Item's serializer.
+//    // TODO: spill to disk
   }
 
   /**

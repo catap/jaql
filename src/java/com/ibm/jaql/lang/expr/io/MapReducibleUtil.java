@@ -20,10 +20,13 @@ import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopInputAdapter;
 import com.ibm.jaql.io.hadoop.HadoopOutputAdapter;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -51,6 +54,10 @@ public class MapReducibleUtil
     {
       VarExpr ve = (VarExpr)e;
       BindingExpr def = ve.findVarDef();
+      if( !(def.parent() instanceof DoExpr) )
+      {
+        return false;
+      }
       e = def.eqExpr();
     }
     if (e instanceof HadoopTempExpr || e instanceof MapReduceBaseExpr)
@@ -103,7 +110,7 @@ public class MapReducibleUtil
     // TODO: write map-reducible input
     try
     {
-      Expr adapterField = null;
+      JsonString adapterName = null;
       // expect the RecordExpression to have one of the following or both
       // 1. a field name that is a ConstExpr with the String 'type'
       Expr typeField = recExpr.findStaticFieldValue(Adapter.TYPE_NAME);
@@ -115,12 +122,23 @@ public class MapReducibleUtil
       else
         optField = recExpr.findStaticFieldValue(Adapter.OUTOPTIONS_NAME);
 
+      // get the class string
       if (optField instanceof RecordExpr)
       {
-        adapterField = ((RecordExpr) optField)
+        Expr adapterField = ((RecordExpr) optField)
             .findStaticFieldValue(Adapter.ADAPTER_NAME);
+        if (adapterField instanceof ConstExpr)
+        {
+          adapterName = (JsonString)((ConstExpr) adapterField).value;
+        }
       }
-      if (adapterField == null)
+      else if( optField instanceof ConstExpr )
+      {
+        JsonRecord optRec = (JsonRecord)((ConstExpr)optField).value;
+        adapterName = (JsonString)optRec.get(Adapter.ADAPTER_NAME);
+      }
+      
+      if (adapterName == null)
       {
         // test it from the registry
         if (typeField instanceof ConstExpr)
@@ -143,22 +161,17 @@ public class MapReducibleUtil
       }
       else
       {
-        // get the class string
-        if (adapterField instanceof ConstExpr)
+        Class<?> adapterClass = ClassLoaderMgr.resolveClass(adapterName.toString());
+        //Class<?> adapterClass = Class.forName(adapterName);
+        if (input)
         {
-          String adapterName = ((ConstExpr) adapterField).value.toString();
-          Class<?> adapterClass = ClassLoaderMgr.resolveClass(adapterName);
-          //Class<?> adapterClass = Class.forName(adapterName);
-          if (input)
-          {
-            if (HadoopInputAdapter.class.isAssignableFrom(adapterClass))
-              return true;
-          }
-          else
-          {
-            if (HadoopOutputAdapter.class.isAssignableFrom(adapterClass))
-              return true;
-          }
+          if (HadoopInputAdapter.class.isAssignableFrom(adapterClass))
+            return true;
+        }
+        else
+        {
+          if (HadoopOutputAdapter.class.isAssignableFrom(adapterClass))
+            return true;
         }
       }
     }

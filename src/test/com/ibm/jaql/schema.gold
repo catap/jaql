@@ -3453,7 +3453,7 @@ schemaof ([{ a: "yes", b: 0 }] -> transform $.a) ;
 ;//--------------------- RESULT ------------------
 
 schema [
-         string(value="yes") * 
+         string(value="yes")
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3475,7 +3475,7 @@ schemaof ([{ a: "yes", b: 0}] -> transform { $.a });
 schema [
          {
            "a": string(value="yes")
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3499,7 +3499,7 @@ schemaof ([{ a: "yes", b: 0 }] -> transform { b: $.a }) ;
 schema [
          {
            "b": string(value="yes")
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3523,7 +3523,7 @@ schemaof ([{ a: "yes", b: 0}] -> transform ${.a});
 schema [
          {
            "a": string(value="yes")
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3550,7 +3550,7 @@ schema [
          {
            "a": string(value="yes"),
            "b": long(value=0)
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3577,7 +3577,7 @@ schema [
            "c": long(value=1),
            "a": string(value="yes"),
            "b": long(value=0)
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3590,7 +3590,7 @@ schema [
          {
            "a": string(value="yes"),
            "b": long(value=0)
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3602,7 +3602,7 @@ schemaof ([{ a: "yes", b: 0 }] -> transform ${*-.a});
 schema [
          {
            "b": long(value=0)
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3614,7 +3614,7 @@ schemaof ([{ a: "yes", b: 0, c:2 }] -> transform ${*-.a,.c});
 schema [
          {
            "b": long(value=0)
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3626,7 +3626,7 @@ schemaof ([ [ 0, "yes" ] ] -> transform $[1]);
 ;//--------------------- RESULT ------------------
 
 schema [
-         string(value="yes") * 
+         string(value="yes")
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3648,7 +3648,7 @@ schemaof ([ [ true, "a", 1 ] ] -> transform $[0:1]);
 schema [
          [
            boolean(value=true) | long(value=1) | string(value="a") * 
-         ] * 
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3660,7 +3660,7 @@ schemaof ([ [ true, "a", 1 ] ] -> transform $[1:*]);
 schema [
          [
            boolean(value=true) | long(value=1) | string(value="a") * 
-         ] * 
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3672,7 +3672,7 @@ schemaof ([ [ true, "a", 1 ] ] -> transform $[*:1]);
 schema [
          [
            boolean(value=true) | long(value=1) | string(value="a") * 
-         ] * 
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3686,7 +3686,7 @@ schema [
            boolean(value=true),
            string(value="a"),
            long(value=1)
-         ] * 
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3700,7 +3700,7 @@ schemaof ([ { a: { a: "no", b: [ {c: "yes"}, 2], c: "no"}, c: "no"}  ] -> transf
 schema [
          {
            "c": string(value="yes")
-         } * 
+         }
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3715,7 +3715,7 @@ schema [
            {
              "a": long(value=1)
            }
-         ] * 
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3726,8 +3726,8 @@ schemaof([ [ {a: 1 } ] ] -> transform $[*].a);
 
 schema [
          [
-           long(value=1) * 
-         ] * 
+           long(value=1)
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3738,8 +3738,8 @@ schemaof([ [ {a: 1 } ] ] -> transform $[*].b);
 
 schema [
          [
-           null * 
-         ] * 
+           null
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------
@@ -3751,7 +3751,7 @@ schemaof([ [ {a: 1 }, {b: 2} ] ] -> transform $[*].a);
 schema [
          [
            long(value=1)? * 
-         ] * 
+         ]
        ]
 
 ;//------------------- TEST-CASE -----------------

@@ -104,6 +104,12 @@ public class CopyField extends FieldExpr
   {
     return exprs[1];
   }
+  
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
 
   /**
    * 
