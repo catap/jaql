@@ -23,8 +23,8 @@ public class TextFileOutputConfigurator extends FileOutputConfigurator {
 
 	@Override
 	protected void registerSerializers(JobConf conf) {
-		conf.setMapOutputKeyClass(JsonHolder.class);
-		conf.setMapOutputValueClass(JsonHolder.class);
+		conf.setMapOutputKeyClass(JsonHolderDefault.class);
+		conf.setMapOutputValueClass(JsonHolderDefault.class);
 		conf.setOutputKeyClass(NullWritable.class);
 	    conf.setOutputValueClass(Text.class);
 	}

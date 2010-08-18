@@ -424,8 +424,17 @@ public class MapReduceFn extends MapReduceBaseExpr
         fnArgs[i + 1] = valArrays[i];
       }
       
-      keyHolder = (JsonHolder)ReflectionUtils.newInstance(job.getOutputKeyClass(), job);
-      valueHolder = (JsonHolder)ReflectionUtils.newInstance(job.getOutputValueClass(), job);
+      Object kTmp = ReflectionUtils.newInstance(job.getOutputKeyClass(), job);
+      if( kTmp instanceof JsonHolder )
+	keyHolder = (JsonHolder)kTmp;
+      else
+	keyHolder = new JsonHolder(); // a converter must be in the loop
+      
+      Object vTmp = ReflectionUtils.newInstance(job.getOutputValueClass(), job);
+      if( vTmp instanceof JsonHolder )
+	valueHolder = (JsonHolder)vTmp;
+      else
+	valueHolder = new JsonHolder(); // a converter must be in the loop
     }
 
     /*
