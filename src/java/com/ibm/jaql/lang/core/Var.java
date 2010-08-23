@@ -328,7 +328,7 @@ public final class Var extends Object
     // Global variables should never be set during execution of a statement, except at the top.
     if( isFinal() && isDefined() )
     {
-      throw new IllegalStateException("final variables cannot be modified");
+      throw new IllegalStateException("final variables cannot be modified: " + name());
     }
   }
 
