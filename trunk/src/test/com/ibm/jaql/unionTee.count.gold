@@ -99,13 +99,16 @@ read( compositeDescriptor([r,s]) );
 // Try a map/reduce job
 read( compositeDescriptor([r,s]) )
  -> transform $ + 10
+ -> sort by [ $ asc ]
  -> write(t)
 ;
 
 ;//------------------- EXPR-COUNTS -----------------
 
 {
-  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1,
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
 }
 
 ;//------------------- TEST-CASE -----------------
@@ -295,6 +298,52 @@ S;
 ;//------------------- TEST-CASE -----------------
 
 T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// Very simple tee for more than one expression
+R -> tee( -> transform $ + 1 -> write(s),
+          -> transform $ + 2 -> write(t) )
+  -> transform $ + 3
+  -> write(hdfs('U'))
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+S;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+T;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs('U'));
 
 ;//------------------- EXPR-COUNTS -----------------
 
