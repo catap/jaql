@@ -47,6 +47,7 @@ read( compositeDescriptor([r,s]) );
 // Try a map/reduce job
 read( compositeDescriptor([r,s]) )
  -> transform $ + 10
+ -> sort by [ $ asc ]
  -> write(t)
 ;
 
@@ -99,6 +100,16 @@ R -> tee( -> write(s) )
 ;
 S;
 T;
+
+// Very simple tee for more than one expression
+R -> tee( -> transform $ + 1 -> write(s),
+          -> transform $ + 2 -> write(t) )
+  -> transform $ + 3
+  -> write(hdfs('U'))
+;
+S;
+T;
+read(hdfs('U'));
 
 // Forms a single map job writing to two files
 //   note: tee(a, -> e) == tee(a, f(i) i -> e)
