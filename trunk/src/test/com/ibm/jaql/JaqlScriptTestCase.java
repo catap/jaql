@@ -465,8 +465,7 @@ public class JaqlScriptTestCase
     {
       // Return exprs for evaluation that modify the state.
       // Don't bother counting them.
-      if( root instanceof AssignExpr ||
-          root instanceof QueryExpr && root.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
+      if( root instanceof QueryExpr && root.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
       {
         return root;
       }

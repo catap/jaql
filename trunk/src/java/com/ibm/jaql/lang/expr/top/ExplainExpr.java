@@ -29,6 +29,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
@@ -50,7 +51,7 @@ import com.ibm.jaql.lang.expr.io.HadoopTempExpr;
 /**
  * 
  */
-public class ExplainExpr extends TopExpr
+public class ExplainExpr extends EnvExpr
 {
   public static final JsonString ID_KEY = new JsonString("id");;
   public static final JsonString LABEL_KEY = new JsonString("label");
@@ -69,9 +70,9 @@ public class ExplainExpr extends TopExpr
    * 
    * @param exprs
    */
-  public ExplainExpr(Expr expr)
+  public ExplainExpr(Env env, Expr expr)
   {
-    super(expr);
+    super(env, expr);
   }
 
   /*
@@ -500,10 +501,5 @@ public class ExplainExpr extends TopExpr
   protected static JsonString getNodeId(JsonRecord node)
   {
     return (JsonString)node.getRequired(ID_KEY);
-  }
-
-  public EnvExpr getEnvExpr()
-  {
-    return exprs[0].getEnvExpr();
   }
 }

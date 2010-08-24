@@ -306,22 +306,27 @@ final class JarCreator extends Thread {
 		ZipEntry entry;
 		byte[] chunk = new byte[32768];
 		int bytesRead;
+		int bytesWritten = 0;
 		
 		while ((entry = jin.getNextEntry()) != null) {
 			if (!jarfiles.contains(entry.getName())) {
 				try {
 					jarfiles.add(entry.getName());
 					// Add file entry to output stream (meta data)
-					jout.putNextEntry(entry);
+					ZipEntry newZe = new ZipEntry(entry); // fix for ZipEntry exception?
+					newZe.setCompressedSize(-1);
+					jout.putNextEntry(newZe);
 					// Copy data to output stream (actual data)
+					bytesWritten = 0;
 					if (!entry.isDirectory()) {
 						while ((bytesRead = jin.read(chunk)) != -1) {
 							jout.write(chunk, 0, bytesRead);
+							bytesWritten += bytesRead;
 						}
 					}
 					jout.closeEntry();
 				} catch (ZipException ex) {
-					System.out.println(entry.getName());
+					System.out.println(entry.getName() + " wrote:"+bytesWritten);
 					ex.printStackTrace();
 				}
 			} else {

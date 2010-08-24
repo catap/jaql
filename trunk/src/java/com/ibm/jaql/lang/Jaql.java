@@ -27,6 +27,8 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.commons.lang.BooleanUtils;
@@ -36,7 +38,6 @@ import antlr.collections.impl.BitSet;
 
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -45,16 +46,15 @@ import com.ibm.jaql.json.util.SingleJsonValueIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
-import com.ibm.jaql.lang.expr.function.JaqlFunction;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.function.Function;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.function.JavaUdfFunction;
-import com.ibm.jaql.lang.expr.function.VarParameter;
-import com.ibm.jaql.lang.expr.function.VarParameters;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
-import com.ibm.jaql.lang.expr.top.MaterializeExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
@@ -297,9 +297,8 @@ public class Jaql implements CoreJaql
     {
       try
       {
-        Expr e = new MaterializeExpr(var);
-        e = new QueryExpr(parser.env, e);
-        e = env.importGlobals(e);
+        Expr e = new AssignExpr(env, var, var.expr());
+        e = env.postParse(e);
         if( doRewrite )
         {
           e = rewriter.run(e);
@@ -637,86 +636,61 @@ public class Jaql implements CoreJaql
      * not equal with the function name declared in query sentence, abord with
      * an exception.
      */
-    protected JaqlFunction parseFunction(String fnName) throws Exception 
+    protected Function parseFunction(String fnName) throws Exception 
     {
-        DefineJaqlFunctionExpr jqlFn = null;
-        String name = "";
-        Expr expr = parser.parse();
-        assert expr.children().length == 1;
-        if (expr instanceof QueryExpr) {
-            // if input is query expr
-            // do nothing, the function name will be given by user
-        } else if (expr instanceof AssignExpr) {
-            // if input is assign expr, get the registered function name and
-            // pass to JaqlQueryFunction
-            AssignExpr ae = (AssignExpr) expr; // cast should be safe
-            name = ae.var.name();
-        }
-        if (!fnName.equals(name)) {
-            throw new IllegalAccessException("No such function called "
-                    + fnName);
-        }
-        try {
-            jqlFn = (DefineJaqlFunctionExpr) expr.children()[0];
-        } catch (Exception exp) {
-            throw new IllegalAccessException("Not a valid function call: "
-                    + fnName);
-        }
-
-        // get jaqlfunction from expr
-        int n = jqlFn.numParams();
-        VarParameter[] pars = new VarParameter[n];
-        for (int i = 0; i < n; i++) {
-            Var var = jqlFn.varOf(i);
-            Expr defaultValue = jqlFn.defaultOf(i);
-            if (defaultValue == null) {
-                pars[i] = new VarParameter(var);
-            } else {
-                pars[i] = new VarParameter(var, defaultValue);
-            }
-        }
-        JaqlFunction function = new JaqlFunction(new VarParameters(pars),
-                jqlFn.body());
-        return function;
+      Var var = env.inscopeGlobal(fnName);
+      JsonValue val = var.getValue(context);
+      if( val instanceof Function )
+      {
+        return (Function)val;
+      }
+      throw new RuntimeException("Variable is not bound to a function: "+ fnName);
     }
 
     /**
-     * Register a function to Jaql's context
-     * 
-     * @param String
-     *            udfName
-     * 
+     * Prepare a call a function. 
      */
-    protected void registerFunction(String fnName, JaqlFunction fn, FunctionArgs args) throws Exception 
+    protected Expr prepareFunctionCall(String fnName, FunctionArgs args) throws Exception 
     {
-      // FIXME: What is going on here? Why isn't this just setVar(fnName, fn)?
-      // What is going on with args?  Are you trying to define a new function:
-      //    fn2 = fn(a0=args[0], a1=args[1], ...) fn1(a0, a1, ...) ?
-        if (args != null) {
-            List<Var> paras = args.getParams();
-            if (paras.size() != 0) {
-                if (paras.get(0).name() != "") {
-                    // named parameters
-                    for (int i = 0; i < paras.size(); i++) {
-                        VarParameters vars = fn.getParameters();
-                        String varName = paras.get(i).name();
-                        VarParameter p = (VarParameter) vars
-                                .get(new JsonString(varName));
-                        p.getVar().setValue(paras.get(i).getValue(context));
-                    }
-                } else {
-                    // positional
-                    for (int i = 0; i < paras.size(); i++) {
-                        VarParameters vars = fn.getParameters();
-                        VarParameter p = vars.get(i);
-                        p.getVar().setValue(paras.get(i).getValue(context));
-                    }
-                }
-            }
+      // TODO: This function is a kind of scary because it creates Exprs and evaluates them.
+      // There has to be a better way...
+      
+      // Evaluate any declarations.
+      // If there are any result sets, raise an error.
+      Expr e = prepareNext();
+      if( e != null )
+      {
+        throw new IllegalStateException("Cannot prepare call to "+fnName+" when there are results to be processed: "+e);
+      }
+      
+      // Resolve the function
+      Var fnVar = env.inscopeGlobal(fnName);
+      ArrayList<Expr> posArgs = new ArrayList<Expr>(); 
+      HashMap<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
+      if (args != null) {
+        List<Var> paras = args.getParams();
+        for( Var p: paras )
+        {
+          Expr valExpr = new ConstExpr(p.getValue(context));
+          if( p.name().length() != 0 ) // TODO: unheathy to have variables with no name...
+          {
+            namedArgs.put(new JsonString(p.name()), valExpr);
+          }
+          else
+          {
+            posArgs.add(valExpr);
+          }
         }
-        Expr f = fn.body().parent();
-        Expr e = new AssignExpr(env, env.scopeGlobal(fnName, SchemaFactory.functionSchema(), Var.State.MUTABLE), f);
-        e.eval(context);
+      }
+      
+      // Build a call to the function and rewrite it.
+      e = new FunctionCallExpr(new VarExpr(fnVar), posArgs, namedArgs);
+      e = env.postParse(e);
+      if( doRewrite )
+      {
+        e = rewriter.run(e);
+      }
+      return e;
     }
 
     // ///////////////////////////////////////////////////////////////
@@ -750,9 +724,7 @@ public class Jaql implements CoreJaql
     @Override
     public JsonIterator iterate(String fnName, FunctionArgs args) throws Exception 
     {
-        JaqlFunction fn = parseFunction(fnName);
-        registerFunction(fnName, fn, args);
-        return fn.iter(context);
+      return prepareFunctionCall(fnName, args).iter(context);
     }
 
     /**
@@ -768,9 +740,7 @@ public class Jaql implements CoreJaql
     @Override
     public JsonValue evaluate(String fnName, FunctionArgs args) throws Exception
     {
-        JaqlFunction fn = parseFunction(fnName);
-        registerFunction(fnName, fn, args);
-        return fn.eval(context);
+      return prepareFunctionCall(fnName, args).eval(context);
     }
 
     /**
@@ -856,6 +826,12 @@ public class Jaql implements CoreJaql
             throw new IllegalArgumentException(
                     "Illegal statements, multiple statements not allowed.");
         }
+    }
+    
+    /** Parses the entire input script and prepares it for execution. */
+    public ParsedJaql parseScript() throws Exception // TODO: this is just prototyped. It is intended for the java API, JDBC, eg.
+    {
+      return new ParsedJaql(this, env, context);
     }
 
     /**

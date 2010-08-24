@@ -176,6 +176,7 @@ public class MultiJoinExpr extends MacroExpr
       throws Exception
   {
     // TODO: fix this
+    printAnnotations(exprText);
     exprText.print(kw("join") + " ");
     int n = numBindings();
     String sep = "";
@@ -615,6 +616,7 @@ public class MultiJoinExpr extends MacroExpr
           new ArrayExpr(project)
       };
       pipe = new JoinExpr(joinArgs);
+      pipe.setAnnotations(MultiJoinExpr.this.getAnnotations());
       
       // --------------------------
       // If we are done with the full-outer core and the core has non-preserved inputs 
