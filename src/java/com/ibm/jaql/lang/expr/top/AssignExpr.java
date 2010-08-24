@@ -49,7 +49,8 @@ public class AssignExpr extends EnvExpr
   public Map<ExprProperty, Boolean> getProperties()
   {
     Map<ExprProperty, Boolean> result = super.getProperties();
-//    result.put(ExprProperty.HAS_CAPTURES, true);
+    result.put(ExprProperty.HAS_SIDE_EFFECTS, true);
+    result.put(ExprProperty.HAS_CAPTURES, true); // Not really a capture, but a global var to be set.
     return result;
   }
 
@@ -63,7 +64,7 @@ public class AssignExpr extends EnvExpr
       throws Exception
   {
     exprText.print(var.taggedName()); // TODO: expr -> $var when var is pipe var
-    exprText.print(" = ");
+    exprText.print(" := ");
     if (numChildren() > 0)
     {
       exprs[0].decompile(exprText, capturedVars);
@@ -87,7 +88,15 @@ public class AssignExpr extends EnvExpr
    */
   public JsonValue eval(Context context) throws Exception
   {
-    var.setExpr(exprs[0]);
+    // FIXME: this check should be in setValue, 
+    // and we should add another setValueUnchecked when the schema is known safe.
+    JsonValue value = exprs[0].eval(context);
+    if( !var.getSchema().matches(value) )
+    {
+      throw new ClassCastException("cannot assign "+value+" to variable "+var.name()
+          +" with "+var.getSchema());
+    }
+    var.setValue(value);
     return new JsonString(var.taggedName());
   }
 }

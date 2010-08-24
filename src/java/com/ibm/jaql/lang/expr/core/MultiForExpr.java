@@ -15,19 +15,14 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
-import com.ibm.jaql.lang.core.Var;
 
 /**
  * 
  */
-public class MultiForExpr extends IterExpr // extends MacroExpr
+public class MultiForExpr extends MacroExpr
 {
   private static Expr[] makeArgs(ArrayList<BindingExpr> bindings, Expr ifExpr,
       Expr doExpr)
@@ -63,12 +58,6 @@ public class MultiForExpr extends IterExpr // extends MacroExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
-      throws Exception
-  {
-    throw new RuntimeException("this should never be called");
-  }
-
   //  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception
   //  {
   //    final Expr ifExpr = exprs[0];
@@ -176,8 +165,8 @@ public class MultiForExpr extends IterExpr // extends MacroExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
-  {
-    throw new RuntimeException("this should have been expanded!"); // expand it...
-  }
+//  public JsonIterator iter(final Context context) throws Exception
+//  {
+//    throw new RuntimeException("this should have been expanded!"); // expand it...
+//  }
 }

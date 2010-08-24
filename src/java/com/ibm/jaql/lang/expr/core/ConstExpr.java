@@ -33,6 +33,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
+import com.ibm.jaql.lang.expr.top.AnnotationExpr;
 
 /**
  * 
@@ -78,6 +79,7 @@ public final class ConstExpr extends Expr
       value instanceof Function || // TODO: JValue.getType().isExtendedJson()
       value instanceof JsonDate     || // TODO: parser should recognize constructors and eval during parse
       value instanceof JsonRegex;
+    annotate = annotate && !(parent instanceof AnnotationExpr);
     if (annotate) exprText.print("system::const("); // FIXME: remove
     JsonUtil.getDefaultSerializer(getSchema()).write(exprText, value, 2);
     if (annotate) exprText.print(")");// FIXME: remove

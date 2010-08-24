@@ -41,8 +41,7 @@ public class DefaultExplainHandler extends ExplainHandler
   {
     String stmt = decompile(expr);
     out.println(stmt);
-    if( expr instanceof AssignExpr ||
-        expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
+    if( expr instanceof QueryExpr && expr.child(0) instanceof RegisterAdapterExpr ) // HACK: if we don't register, explain will change or bomb. This will go away with the registry.
     {
       return expr;
     }

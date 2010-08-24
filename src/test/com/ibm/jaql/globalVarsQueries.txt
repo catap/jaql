@@ -1,0 +1,185 @@
+//===========================================================================
+// Global variable flavors
+//===========================================================================
+//
+// We have three types of 
+//
+//   EXPR: (default)
+//     * Variable is bound to an expression, not a value.
+//     * Created using expression assignment operator ("=").
+//     * The value is computed if and when it is required (lazy).
+//       The value is typically recomputed once in every statement in 
+//       which the variable appears.  
+//     * The expr will never change (immutable), 
+//       but the variable can be shadowed by a new variable with the
+//       same name; any existing references references still refer
+//       to the old variable.
+//     * An expr variable can be converted to a value variable
+//       with the "materialize" statement.  Existing references now
+//       refer to the value instead of the expression.
+//
+//   VALUE:
+//     * Variable is bound to a value (i.e., the result of evaluating
+//       an expression). 
+//     * Created using value assignment operator ":=",
+//       or by converting a expr var using the "materialize" statement,
+//       or by automatic conversion from an expr var by the system.
+//     * The value will never change (immutable), 
+//       but the variable can be shadowed by a new variable with the
+//       same name; any existing references references still refer
+//       to the old variable.
+//
+//   EXTERN:
+//     * Variable is bound to a value, or undefined.
+//     * Created using the "extern" keyword.
+//     * It is an error to request the value of an undefined extern.
+//     * The variable may not be shadowed by another variable.
+//     * The value may be changed using value assignment (":="), and
+//       any existing references within any expression variables now
+//       to the variable now refer to the new value.
+//
+//===========================================================================
+
+//-------------- EXPR ------------------------------------------------------
+
+// immutable
+b = 1;
+c = b;  // refers to old b
+b = 2;  // define a new b, but c still refers to the old one
+b;      // refer to new b = 2
+c;      // refers indirectly to old b = 1
+
+// lazy
+[1] -> write(hdfs('A'));
+// a is bound to an expr not a value yet!
+a = read(hdfs('A'));
+a; // [1]
+
+[2] -> write(hdfs('A'));
+// 'a' is not redefined, but its value changed!
+a; // [2]
+
+// b is an expression that refers to a, a is an expression that reads
+b = a;
+[3] -> write(hdfs('A'));
+a; // [3]
+b; // [3]
+
+// b is an expression that refers to a, a is now a value
+materialize a;
+[4] -> write(hdfs('A'));
+a; // 3
+b; // 3 too
+
+//-------------- VALUE ----------------------------------------------------
+
+// immutable
+e := 1; // create a new value variable e with value 1
+f := e; // defines f to the value of e = 1
+e := 2; // define a new e, but f still refers to the old one
+e;      // refer to new e = 2
+f;      // unchanged, still 1
+
+// same goes for expression variables
+[1] -> write(hdfs('A'));
+d = [e] -> write(hdfs('A'));
+e := 3;
+read(hdfs('A')); // still [1] at this point becuase d not evaluated
+d; // writes [2] at this point
+read(hdfs('A'));
+
+
+// not lazy
+[1] -> write(hdfs('A'));
+// a is bound to an expr not a value yet!
+g := read(hdfs('A'));
+g; // [1]
+[2] -> write(hdfs('A'));
+g; // still [1]
+
+// forces evaluation of expr vars
+d = read(hdfs('A'));
+g := d; // new g created with value of [2]
+[3] -> write(hdfs('A'));
+g; // still [2]
+
+// value variables can have a type constraint
+// error: type mismatch
+h: string := 3;
+// strangly, h remains in scope, but is UNDEFINED, so this succeeds
+// TODO: this should be detected an h removed from scope...
+j = h;
+// but the error shows up here
+j;
+// ok
+h: string := "hi"; // creates a new h
+h;
+// this is still an error because j refers to the old h
+j;
+// see h is defined
+h;
+// ok - this is a new h, with no constraint
+h := 3;
+
+
+//-------------- EXTERN ---------------------------------------------------
+
+// error: must use :=
+extern i = 1;
+
+// expr variables change as externs change
+extern i := 1;
+j = i;   // expr that refers to i
+{i,j};   // i:1,j:1
+i := 2;  // redefines i, and indirectly j
+{i,j};   // i:2,j:2
+
+// error: cannot redeclare an extern
+extern i := 1;
+
+// error: must use := with externs
+i = 1;
+
+k := i;   // takes the current value of i
+{i,k};    // i:2,k:2
+i := 3;   // redefine i (and j), but not k
+{i,j,k};  // i:3, j:3, k:2
+
+// externs are value variables, so not lazy:
+[3] -> write(hdfs('A'));
+// file is read at this point
+i := read(hdfs('A'))[0];
+// i has 
+i;
+
+[4] -> write(hdfs('A'));
+// i is unchanged
+i;
+// but we can redefine it
+i := read(hdfs('A'))[0];
+i;
+
+// and j is affected
+j;
+
+// like regular value variables, externs can have a type constraint
+extern l: string;
+// error: undefined value
+l;
+// ok because j is an expr variable
+j = l;
+// error: undefined value when j is evaluated
+j;
+// error: undefined value when evaluating value
+k := l;
+
+
+// error: type mismatch
+l := 3;
+// success
+l := "hi";
+l;
+// ok now because l is defined
+j;
+
+

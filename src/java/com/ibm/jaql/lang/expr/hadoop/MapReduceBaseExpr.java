@@ -324,7 +324,7 @@ public abstract class MapReduceBaseExpr extends Expr
         // System.err.println("compiling: "+exprText);
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
         JaqlParser parser = new JaqlParser(lexer);
-        Expr expr = parser.stmt();
+        Expr expr = parser.parse();
         Function fn = JaqlUtil.enforceNonNull((Function) expr.eval(context));
         return fn;
       }

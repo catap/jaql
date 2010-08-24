@@ -25,23 +25,16 @@ import com.ibm.jaql.lang.expr.function.*;
 import com.ibm.jaql.lang.expr.top.*;
 import com.ibm.jaql.lang.expr.path.*;
 import com.ibm.jaql.lang.expr.schema.*;
-import com.ibm.jaql.lang.expr.sql.*;
 
-import com.ibm.jaql.lang.expr.io.*;
-import com.ibm.jaql.lang.expr.udf.*;
 import com.ibm.jaql.lang.expr.record.IsdefinedExpr;
-import com.ibm.jaql.lang.expr.array.ExistsFn;
 import com.ibm.jaql.lang.expr.nil.IsnullExpr;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 import com.ibm.jaql.json.type.*;
 import com.ibm.jaql.json.schema.*;
-import com.ibm.jaql.json.util.*;
-import com.ibm.jaql.lang.registry.*;
 
-import com.ibm.jaql.util.*;
-
+import com.ibm.jaql.util.BaseUtil;
 }
 
 options {
@@ -91,32 +84,139 @@ options {
     private boolean nextIsWeakKw(String kw) throws TokenStreamException
     {
         return !env.isDefinedLocal(kw) && kw.equals(LT(1).getText());
+    }
+    
+    private Expr assignGlobal(String name, Schema schema, boolean isValue, Expr expr)
+       throws RecognitionException, TokenStreamException
+    {
+      Var var = env.findGlobal(name);
+      if( var != null && var.isMutable() ) 
+      {
+      	// replace value of extern variable
+        if( schema != null )
+        {
+          oops("cannot change schema of extern variable: "+name);
+        }
+        if( ! isValue )
+        {
+          oops("must use value assignment for extern variable: "+name+" := ...");
+        }
+        expr = new AssignExpr(env, var, expr);
+      }
+      else 
+      {
+        // replace value of extern variable
+        if( schema == null ) schema = SchemaFactory.anySchema();
+        if( isValue )
+        {
+          var = env.scopeGlobalVal(name, schema);
+          expr = new AssignExpr(env, var, expr);
+        }
+        else
+        {
+          var = env.scopeGlobalExpr(name, schema, expr);
+          expr = null;
+        }
+      }
+      return expr;
     } 
+
+    private Expr materializeGlobal(String name, Schema schema, Expr expr)
+       throws RecognitionException, TokenStreamException
+    {
+      Var var = env.findGlobal(name);
+      if( var != null && var.isMutable() ) 
+      {
+        oops("cannot materialize an extern variable: "+name);
+      }
+      if( expr == null )
+      {
+        var = env.inscopeGlobal(name);
+        if( var.type() == Var.Type.EXPR ) 
+        {
+          expr = new AssignExpr(env, var, var.undefineExpr());
+        }
+        else  // just ignore materialize request - a warning might be nice...
+        {
+          expr = null;
+        }
+      }
+      else
+      {
+      	if( schema == null ) schema = SchemaFactory.anySchema();
+        var = env.scopeGlobalExpr(name, schema, expr);
+        expr = new AssignExpr(env, var, expr);
+      }
+      return expr;
+    } 
+     
+    private Expr makeExternVar(String name, Schema schema, Expr expr)
+       throws RecognitionException, TokenStreamException
+    {
+      Var var = env.findGlobal(name);
+      if( var != null && var.isMutable() ) 
+      {
+      	oops("cannot redeclare an extern variable: "+name);
+      }
+      else 
+      {
+        if( schema == null ) schema = SchemaFactory.anySchema();
+        var = env.scopeGlobalMutable(name, schema);
+        if( expr != null )
+        {
+          expr = new AssignExpr(env, var, expr);
+        }
+      }
+      return expr;
+    } 
+    
+    private Expr addAnnotations(Expr annotations, Expr expr)
+      throws RecognitionException, TokenStreamException
+    {
+      return new AnnotationExpr(annotations,expr);
+      /*
+      if( !annotations.isCompileTimeComputable().always() )
+      {
+        oops("annotations must be compile-time computable: "+annotations);
+      }
+      try
+      {
+        JsonValue val = env.eval(annotations);
+        expr.addAnnotations((JsonRecord)val);
+      }
+      catch( Exception e )
+      {
+      	oops( e.getMessage() );
+      }
+      return expr;
+      */
+    }
+
 }
 
 // -- main productions ----------------------------------------------------------------------------
 
 // top-level rule
 parse returns [Expr r=null]
-    : r=stmt ( SEMI | EOF ) 
+    { Expr s; }
+    : s=stmt { r = env.postParse(s); } ( SEMI | EOF )  
     | SEMI
     | EOF { done = true; }
     ;
 
 // a statement without statement delimiter
-stmt returns [Expr r=null]
-    { Var v; }
+protected stmt returns [Expr r=null]
     : (kwImport id)       => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
-    | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(r); }
+    | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(env,r); }
     | (kwQuit)            => kwQuit { r = null; done = true; }
     | r=topAssign
     ;
 
 // namespace import
 importExpr returns [Expr r=null]
-    { boolean loadAll = false; String v; String var; 
-        ArrayList<String> names = new ArrayList<String>();}
+    { String v; String var; 
+      ArrayList<String> names = new ArrayList<String>();}
     : kwImport v=id (
           { env.importNamespace(Namespace.get(v)); } 
         | "(" (
@@ -135,25 +235,18 @@ importExpr returns [Expr r=null]
     
 // top level assignment, creates global variables and inlines referenced globals
 topAssign returns [Expr r=null]
-    { String n; Var v; Schema s = SchemaFactory.anySchema(); }
-//    : (kwMutable) => kwMutable n=id (":" s=schema)? ("=" r=rvalue)? 
-//                  { v = env.scopeGlobal(n, s, Var.State.MUTABLE);
-//                    // We can just declare a mutable variable without assigning it.
-//                    if( r != null ) r = new AssignExpr(env, v, r); }
-    : (kwExtern) => kwExtern n=id (":" s=schema)? ("=" r=rvalue)? 
-                  { v = env.scopeGlobal(n, s, Var.State.MUTABLE);
-                    // We can just declare a mutable variable without assigning it.
-                    if( r != null ) r = new AssignExpr(env, v, r); }
-    | (id "=") => n=id "=" r=rvalue  
-                  { v = env.scopeGlobal(n, r.getSchema(), Var.State.FINAL);
-                    r = new AssignExpr(env, v, r); } // TODO: expr name should reflect global var
-    | (kwRegisterFunction) => r=registerFunction
-    | (kwMaterialize) => kwMaterialize v=var  
-                                  ( "=" r=expr { r = new MaterializeExpr(v, r); }
-                                  | /*empty*/  { r = new MaterializeExpr(v); }
-                                  ) { r = env.importGlobals(new QueryExpr(env, r)); }
-    | r=pipe { r = env.importGlobals(new QueryExpr(env, r)); } 
+    { String n; Schema s = null; boolean isVal = false; }
+    : (id ("=" | ":=" | ":")) => 
+          n=id (":" s=schema)? ( "=" | ":=" {isVal=true;} ) r=rvalue 
+            { r = assignGlobal(n,s,isVal,r); }
+    | (kwMaterialize) => kwMaterialize n=id ((":" s=schema)? ("=" | ":=") r=rvalue)?
+            { r=materializeGlobal(n,s,r); }
+    | (kwExtern) => kwExtern n=id (":" s=schema)? (":=" r=rvalue)?
+            { r=makeExternVar(n,s,r); }
+    | (kwRegisterFunction) => r=registerFunction  // TODO: deprecated: remove; use javaudf instead
+    | r=pipe
     ;
+
 
 // local assignment, creates local variables
 assign returns [Expr r=null]
@@ -165,20 +258,19 @@ assign returns [Expr r=null]
 
 // expression that can appear on the right-hand side of an assignment    
 rvalue returns [Expr r = null]
-    : ( kwExtern id ) => r=extern
-    | r=pipe
+    // : ( kwExtern id ) => r=extern
+    : r=pipe
     ;
 
 // external function NYI
-extern returns [Expr r = null]
-    { String lang; }
-    : kwExtern lang=id kwFn r=expr
-      { r = new ExternFunctionExpr(lang, r); }
-    ;
+//extern returns [Expr r = null]
+//    { String lang; }
+//    : kwExtern lang=id kwFn r=expr
+//      { r = new ExternFunctionExpr(lang, r); }
+//    ;
 
 // a pipe
 pipe returns [Expr r=null]
-    { String n = "$"; } // TODO: should var source define name? eg, x -> filter x.y > 3
     : r=expr r=subpipe[r]
     | r=fn
     | r=pipeFn
@@ -195,6 +287,7 @@ subpipe[Expr e] returns [Expr r=e]
 
 // an expression that can occur at the beginning of a pipe   
 expr returns [Expr r]
+    { Expr a; }
     : (kwGroup)    => r=group
     | (kwJoin)     => r=join
     | (kwEquijoin) => r=equijoin
@@ -202,9 +295,10 @@ expr returns [Expr r]
     | (kwFor)      => r=forExpr
     | (kwUnroll)   => r=unroll
     | r=orExpr
+    | "@" a=record r=expr { r=addAnnotations(a,r); }
 //  | r=combineExpr
     ;
-
+    
 orExpr returns [Expr r]
     { Expr s; }
     : r=andExpr ( kwOr s=andExpr { r = new OrExpr(r,s); } )*
@@ -322,7 +416,7 @@ forExpr returns [Expr r = null]
 
 
 forDef[ArrayList<BindingExpr> bindings]
-    { String v; Expr e; String v2 = null; BindingExpr.Type t = null; BindingExpr b; }
+    { String v; Expr e; BindingExpr.Type t = null; }
 //    : b=vpipe
 //    {
 //      bindings.add(b);
@@ -434,6 +528,7 @@ projName returns [Expr r=null]
 dotName returns [Expr r = null]
     : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
     ;
+
     
 basic returns [Expr r=null]
     : r=constant
@@ -444,7 +539,6 @@ basic returns [Expr r=null]
     | r=cmpExpr
     | r=parenExpr
     ;
-
 
 // -- blocks -------------------------------------------------------------------------------------- 
     
@@ -485,7 +579,7 @@ block returns [Expr r=null]
 
 // expression that can occur after a ->
 op[Expr in] returns [Expr r=null]
-    { BindingExpr b=null; } 
+    { BindingExpr b=null; Expr a; } 
     : (kwFilter)       => kwFilter b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
     | (kwTransform)    => kwTransform b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
     | (kwExpand)       => kwExpand b=each[in] 
@@ -496,6 +590,7 @@ op[Expr in] returns [Expr r=null]
     | (kwTop)          => r=top[in]
     | (kwAggregate kw) => r=aggregate[in]
     | (kwSplit)        => r=split[in]
+    | "@" a=record r=op[in] { r=addAnnotations(a,r); } 
     | r=callPipe[in]
     // | r=partition[in]
     // TODO: add rename path
@@ -679,8 +774,7 @@ exprListOrEmpty returns [ArrayList<Expr> r = new ArrayList<Expr>()]
 split[Expr in] returns [Expr r=null]
     { 
       ArrayList<Expr> es = new ArrayList<Expr>();
-      Var tmpVar = env.makeVar("$split");
-      Expr p; Expr e;
+      Expr e;
       BindingExpr b;
     }
 //    : "split" b=each[in] "("  { es.add( b ); } 
@@ -713,7 +807,6 @@ splitIf[BindingExpr b, ArrayList<Expr> es]
 // -- comparators ---------------------------------------------------------------------------------
 
 comparator returns [Expr r=null]
-    { String s; Expr e; }
     : r=cmpArrayFn["$"]
 //  | "default"      { r = new DefaultComparatorExpr(); }
 //  | (s=name|s=str)     { oops("named comparators NYI: "+s); } // r=new InvokeBuiltinCmp(ctx, e);
@@ -743,7 +836,7 @@ cmpArrayFn[String vn] returns [Expr r=null]
     ;
 
 cmpArray returns [CmpArray r=null]
-    { Var var; ArrayList<CmpSpec> keys = new ArrayList<CmpSpec>(); }
+    { ArrayList<CmpSpec> keys = new ArrayList<CmpSpec>(); }
     : "[" ( cmpSpec[keys] ("," (cmpSpec[keys])? )* )? "]"
     {
       r = new CmpArray(keys);
@@ -886,7 +979,7 @@ groupReturn returns [Expr r=null]
 
 groupPipe[Expr in] returns [Expr r=null]
     { 
-      BindingExpr b; BindingExpr by=null; Expr key=null;  Expr ret;
+      BindingExpr b; BindingExpr by=null; Expr ret;
       Expr cmp = null;  
       Expr opt = null; 
       String v="$"; Var asVar = null; 
@@ -990,7 +1083,6 @@ algAggFn returns [AlgebraicAggregate agg=null]
 join returns [Expr r=null]
     { 
       ArrayList<BindingExpr> in = new ArrayList<BindingExpr>();
-      HashMap<String,Var> keys = new HashMap<String,Var>();
       Expr p; 
       BindingExpr b;
       Expr opt=null;
@@ -1012,7 +1104,8 @@ join returns [Expr r=null]
         {
           env.unscope(b2.var);
         }
-        r = new MultiJoinExpr(in, p, opt, r).expand(env);  
+        // r = new MultiJoinExpr(in, p, opt, r).expand(env);  
+        r = new MultiJoinExpr(in, p, opt, r);  
       }
     ;
 
@@ -1075,12 +1168,14 @@ ejoinIn[ArrayList<BindingExpr> in, ArrayList<Expr> on]
 fn returns [Expr r = null]
     { List<Var> vs = new ArrayList<Var>();
       List<Expr> es = new ArrayList<Expr>();
+      Schema s = SchemaFactory.anySchema();
     }
     : kwFn 
       params[vs,es] { for (Var v: vs) v.setHidden(false); }
+      // (":" s=schema)?
       r=pipe
       { 
-        r = new DefineJaqlFunctionExpr(vs, es, r);
+        r = new DefineJaqlFunctionExpr(vs, es, s, r);
         for( Var v: vs )
         {
           env.unscope(v);
@@ -1118,17 +1213,16 @@ registerFunction returns [Expr e = null]
             throw new IllegalArgumentException("variable name has to be a constant");
           }
           String name = env.eval(varName).toString();
-          Var var = env.scopeGlobal(name, SchemaFactory.functionSchema(), Var.State.FINAL);
+          Var var = env.scopeGlobalVal(name, SchemaFactory.functionSchema());
           e = new AssignExpr(env, var, new JavaUdfExpr(className).expand(env));
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
-        }
+      }
     };    
     
 // list of parameters with parentheses    
 params[List<Var> vs, List<Expr> es]
-    { Expr e = null; }
-    : "(" allParams[vs,es] 
+    : "(" allParams[vs,es] ")" 
       {
         Set<String> names = new HashSet<String>();
         for (Var v : vs) {
@@ -1137,7 +1231,6 @@ params[List<Var> vs, List<Expr> es]
             names.add(v.name());            
         }; 
       } 
-      ")"
     ;
 
 // list of parameters w/o parentheses    
@@ -1158,8 +1251,8 @@ optionalParams[List<Var> vs, List<Expr> es]
 
 // parameter schema and name
 paramVar[List<Var> vs]
-    { String n; Schema s=SchemaFactory.anySchema(); Expr e=null; }
-    : ( ( id ( "," | "=" | ")" ) ) => n=id 
+    { String n; Schema s=SchemaFactory.anySchema(); }
+    : ( ( id ( "," | "=" | ")" | ":" ) ) => n=id (":" s=schema)? 
       | ( kwSchema )               => kwSchema s=schema n=id 
       | s=schema n=id
       )
@@ -1467,7 +1560,6 @@ softkw : kwAggregate
        | kwDesc 
        | kwEach
        | kwElse
-       | kwExtern
        | kwFinal
        | kwFull
        | kwImport
@@ -1493,7 +1585,6 @@ kwEach             : "each" | "#each" ;
 kwElse             : "else" | "#else" ;
 kwExtern           : "extern" | "#extern" ;
 kwFinal            : "final" | "#final" ;
-kwMutable          : "mutable" | "#mutable" ;
 kwFull             : "full" | "#full" ;
 kwImport           : "import" | "#import" ;
 kwIn               : "in" | "#in" ;
@@ -2011,7 +2102,7 @@ HERE_STRING
 
 
 protected IDWORD
-    : ('$'|LETTER|'_'|'@') (LETTER|'_'|DIGIT)*
+    : ('$'|LETTER|'_') (LETTER|'_'|DIGIT)*
     ;
 
 protected TAG
@@ -2036,7 +2127,7 @@ NAMESPACE_ID
 SYM
     options { testLiterals=true; }
     : '(' | ')' | '[' | ']' | ','
-    | '|' | '&'
+    | '|' | '&' | '@'
     | '}' 
     | '=' ('=' | '>')? 
     | '<' ('>' | '=')? 

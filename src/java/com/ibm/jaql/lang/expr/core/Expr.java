@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import static com.ibm.jaql.json.type.JsonType.ARRAY;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -28,7 +29,9 @@ import java.util.Map;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -43,6 +46,7 @@ import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.top.EnvExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
 /** Superclass for all JAQL expressions.
@@ -60,7 +64,14 @@ public abstract class Expr
   protected Expr[]           exprs           = NO_EXPRS;
   protected Module module;
 
+  /**
+   * Every Expr can have annotations in the form of a JsonRecord.
+   * They represent operation-specific options / hints. 
+   */
+  protected BufferedJsonRecord annotations;
+  
   public final static MappingTable  EMPTY_MAPPING = new MappingTable();
+
   
   /**
    * @param exprs
@@ -123,6 +134,8 @@ public abstract class Expr
       i++;
       end = " )";
     }
+    
+    printAnnotations(exprText);
     
     if (SystemNamespace.getInstance().isSystemExpr(this.getClass()))
     {
@@ -188,6 +201,79 @@ public abstract class Expr
       return '#' + keyword;
     }
     return keyword;
+  }
+  
+  public final JsonRecord getAnnotations()
+  {
+    return (annotations != null) ? annotations : JsonRecord.EMPTY;
+  }
+  
+  /** 
+   * Set the annotations.  The annotations now belong to
+   * this Expr and should not be modified externally.
+   * @throws Exception 
+   */
+  public final void setAnnotations(JsonRecord annotations)
+  {
+    if( annotations == null || annotations.size() == 0 )
+    {
+      this.annotations = null;
+    }
+    else
+    {
+      if( this.annotations == null )
+      {
+        this.annotations = new BufferedJsonRecord();
+      }
+      try
+      {
+        this.annotations.setCopy(annotations);
+      }
+      catch( Exception e )
+      {
+        JaqlUtil.rethrow(e);
+      }
+    }
+  }
+  
+  /**
+   * Merge {@code moreAnnos} into our annotations.
+   * @throws Exception 
+   */
+  public final void addAnnotations(JsonRecord moreAnnos)
+  {
+    if( moreAnnos != null && moreAnnos.size() > 0 )
+    {
+      if( this.annotations == null )
+      {
+        setAnnotations(moreAnnos);
+      }
+      else
+      {
+        try
+        {
+          JsonUtil.mergeRecordDeep(annotations, moreAnnos);
+        }
+        catch( Exception e )
+        {
+          JaqlUtil.rethrow(e);
+        }
+      }
+    }
+  }
+  
+  /**
+   * Conditionally print the annotations record with leading '@' to 
+   * the output stream, if we actually have annotations.
+   */
+  protected void printAnnotations(PrintStream out) throws IOException
+  {
+    if( annotations != null && annotations.size() != 0 )
+    {
+      out.print('@');
+      JsonUtil.print(out, annotations);
+      out.print(' ');
+    }
   }
   
   /*

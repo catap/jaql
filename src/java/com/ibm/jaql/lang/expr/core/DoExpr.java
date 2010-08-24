@@ -117,10 +117,11 @@ public class DoExpr extends Expr
       {
         capturedVars.remove(((BindingExpr)e).var);
       }
-      if( e instanceof AssignExpr )
-      {
-        capturedVars.remove(((AssignExpr)e).var);
-      }
+      assert !(e instanceof AssignExpr); // Only globals use AssignExpr
+//      if( e instanceof AssignExpr )
+//      {
+//        capturedVars.remove(((AssignExpr)e).var);
+//      }
     }
   }
 

@@ -27,8 +27,13 @@ import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.top.EnvExpr;
+import com.ibm.jaql.lang.expr.top.ExplainExpr;
+import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.rewrite.VarTagger;
+import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
 /** An environment is namespace with a separate namespace for global variables. It is used
@@ -127,18 +132,59 @@ public class Env extends Namespace
     ensureNotFinal();
     variables.clear();
   }
+  
+  /** Return the global variable called taggedName, or null if not found */
+  public Var findGlobal(String taggedName)
+  {
+    return findVar(globals.variables, taggedName);
+  }
 
   /**
-   * If the varName is bound to a mutable global, return it.
-   * Otherwise create a new variable with the specified name and puts it into the global scope. 
-   * The most recent definition of the global variable of the specified name is overwritten
-   * if it is not mutable.
+   * Create a new immutable val variable with the specified name and put it into the global scope. 
+   * The most recent definition of the global variable of the specified name is overwritten.
    */
-  public Var scopeGlobal(String varName, Schema schema, Var.State varState)
+  public Var scopeGlobalVal(String varName, Schema schema)
   {
     ensureNotFinal();
-    Var var;
-    if (globals.variables.containsKey(varName))
+    Var var = findGlobal(varName);
+    if ( var != null )
+    {
+      globals.unscope(var);
+    }
+    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
+    globals.scope(var);
+    return var;
+  }
+  
+  /**
+   * Create a new immutable expr variable with the specified name and put it into the global scope. 
+   * The most recent definition of the global variable of the specified name is shadowed.
+   */
+  public Var scopeGlobalExpr(String varName, Schema schema, Expr expr)
+  {
+    ensureNotFinal();
+    Var var = findGlobal(varName);
+    if ( var != null )
+    {
+      globals.unscope(var);
+    }
+    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
+    // expr = new QueryExpr(this,expr); // add a pseudo-root to the expr tree.
+    var.setExpr(expr);
+    globals.scope(var);
+    return var;
+  }
+  
+  /**
+   * If the varName is bound to a mutable global, return it.
+   * Otherwise create a new mutable var variable with the specified name and puts it into the global scope, 
+   * and the most recent definition of the immutable global variable of the specified name is shadowed.
+   */
+  public Var scopeGlobalMutable(String varName, Schema schema)
+  {
+    ensureNotFinal();
+    Var var = findGlobal(varName);
+    if ( var != null )
     {
       var = globals.inscope(varName);
       if( var.isMutable() )
@@ -147,7 +193,7 @@ public class Env extends Namespace
       }
       globals.unscope(var);
     }
-    var = new Var(globals, varName, schema, Scope.GLOBAL, varState);
+    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.MUTABLE);
     globals.scope(var);
     return var;
   }
@@ -159,8 +205,7 @@ public class Env extends Namespace
    */
   public Var setOrScopeMutableGlobal(String varName, JsonValue value)
   {
-    // Var var = scopeGlobal(varName, SchemaFactory.schemaOf(value), Var.State.MUTABLE);
-    Var var = scopeGlobal(varName, SchemaFactory.anySchema(), Var.State.MUTABLE);
+    Var var = scopeGlobalMutable(varName, SchemaFactory.anySchema());
     var.setValue(value);
     return var;
   }
@@ -202,26 +247,97 @@ public class Env extends Namespace
   }
 
 
+  public Expr postParse(Expr root)
+  {
+    if( root == null )
+    {
+      return null;
+    }
+
+    if( !(root instanceof EnvExpr) )
+    {
+      root = new QueryExpr(this, root);
+    }
+    else if( root instanceof ExplainExpr )
+    {
+      if( !(root.child(0) instanceof EnvExpr) )
+      {
+        root.setChild(0, new QueryExpr(this,root.child(0)));
+      }
+    }
+    
+    try
+    {
+      PostOrderExprWalker walker = new PostOrderExprWalker();
+      Expr expr;
+      
+      /***********
+         // TODO: Should annotations be on Exprs or remain in the tree?
+      // Pushdown annotations
+      walker.reset(root);
+      while( (expr = walker.next()) != null )
+      {
+        if( expr instanceof AnnotationExpr )
+        {
+          Expr anno = expr.child(0);
+          if( !anno.isCompileTimeComputable().always() )
+          {
+            throw new IllegalArgumentException("annotations must be compile-time computable: "+expr);
+          }
+          JsonValue val = eval(anno);
+          expr.child(1).addAnnotations((JsonRecord)val);
+          expr.replaceInParent(expr.child(1));
+        }
+      }
+      **********/
+
+      // Import globals - note globals might still have macros in them.
+      importGlobals(root);
+
+      // Expand macros
+      walker.reset(root);
+      while( (expr = walker.next()) != null )
+      {
+        if( expr instanceof MacroExpr )
+        {
+          Expr expr2 = ((MacroExpr)expr).expand(this);
+          expr.replaceInParent( expr2 );
+        }
+      }
+      
+      return root;
+    }
+    catch( Exception e )
+    {
+      throw JaqlUtil.rethrow(e);
+    }
+  }
   
   /**
-   * @param root
+   * @param query
    * @return
    */
-  public Expr importGlobals(Expr top)
+  public void importGlobals(Expr root)
   {
-    Expr root = top.child(0);
+    assert root instanceof EnvExpr && root.numChildren() == 1;
+    Expr top = root.child(0);
+    if( root instanceof ExplainExpr )
+    {
+      assert top instanceof EnvExpr && top.numChildren() == 1;
+      root = top;
+      top = root.child(0);
+    }
     HashMap<Var, Var> globalToLocal = new HashMap<Var, Var>();
     HashMap<Var, JsonValue> globalConst = new HashMap<Var, JsonValue>();
     ArrayList<Expr> bindings = new ArrayList<Expr>();
     VarMap varMap = new VarMap();
-    importGlobalsAux(root, globalToLocal, globalConst, bindings, varMap);
+    importGlobalsAux(top, globalToLocal, globalConst, bindings, varMap);
     if (bindings.size() > 0)
     {
-      bindings.add(root);
-      root = new DoExpr(bindings);
-      top.setChild(0, root);
+      bindings.add(top);
+      top = new DoExpr(bindings);
+      root.setChild(0, top);
     }
-    return top;
   }
 
   private void importGlobalsAux(
@@ -251,9 +367,11 @@ public class Env extends Namespace
                 globalToLocal.put(var, localVar);
                 varMap.clear();
                 Expr localDef = var.expr().clone(varMap);
+                Expr localRoot = new QueryExpr(this, localDef);
                 importGlobalsAux(localDef, globalToLocal, globalConst, bindings, varMap);
                 // Be sure to add the binding after recursion so that all dependent bindings
                 // are bound before this one.
+                localDef = localRoot.child(0);
                 bindings.add(new BindingExpr(BindingExpr.Type.EQ, localVar, null, localDef));
               }
               ve.setVar(localVar);

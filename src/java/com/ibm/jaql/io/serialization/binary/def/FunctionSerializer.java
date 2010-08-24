@@ -37,7 +37,7 @@ class FunctionSerializer extends BinaryBasicSerializer<Function>
     JaqlParser parser = new JaqlParser(lexer);
     try
     {
-      Expr fe = parser.stmt();
+      Expr fe = parser.parse();
       if (!fe.isCompileTimeComputable().always())
       {
         throw new IOException("input value is not a function literal");
