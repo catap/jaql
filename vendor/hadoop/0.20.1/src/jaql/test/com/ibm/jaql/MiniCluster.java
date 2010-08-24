@@ -23,8 +23,6 @@ import java.io.OutputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.mapred.MiniMRCluster;
 
@@ -60,6 +58,7 @@ public class MiniCluster
       clusterHome = "./minicluster";
       System.setProperty("hadoop.minicluster.dir", clusterHome); 
     }
+    LOG.info("hadoop.minicluster.dir="+clusterHome);
     File clusterFile = new File(clusterHome);
     if( ! clusterFile.exists() )
     {
@@ -180,10 +179,27 @@ public class MiniCluster
     final int numNodes = 4;
     
     conf = new Configuration();
+    
+    if( System.getProperty("os.name").startsWith("Windows") )
+    {
+      // There is a bug in hadoop 0.20.1 on windows
+      // ... INFO mapred.JobClient: Task Id : attempt_..., Status : FAILED
+      // java.io.FileNotFoundException: 
+      //    File C:/tmp/hadoop-xxx/mapred/local/1_0/taskTracker/jobcache/job_xxx/attempt_xxx/0_2/work/tmp 
+      //    does not exist.
+      // at org.apache.hadoop.fs.RawLocalFileSystem.getFileStatus(RawLocalFileSystem.java:361)
+      // at org.apache.hadoop.fs.FilterFileSystem.getFileStatus(FilterFileSystem.java:245)
+      // at org.apache.hadoop.mapred.TaskRunner.setupWorkDir(TaskRunner.java:519)
+      // at org.apache.hadoop.mapred.Child.main(Child.java:155)
+      //
+      // The following is reported to work around the problem
+      String tmp = conf.get("hadoop.tmp.dir", "c:/temp");
+      conf.set("mapred.child.tmp", tmp + "/mapred/child.tmp");
+    }
+    
     dfsCluster = new MiniDFSCluster(conf, numNodes, true, null);
     mrCluster = new MiniMRCluster(numNodes, dfsCluster.getFileSystem().getUri().getAuthority(), 1);
     setupOverride(mrCluster.createJobConf(), conf);
-    
     
     // this.conf = conf = new Configuration();
 //    FileSystem fs = FileSystem.get(conf);
@@ -246,17 +262,18 @@ public class MiniCluster
     
 //    this.dfsCluster.getNameNode().get.getHttpAddress()
 
-    OutputStream outCore = new FileOutputStream(
-        overrideDir.getCanonicalPath() + File.separator + "core-default.xml");
-    OutputStream outMapred = new FileOutputStream(
-        overrideDir.getCanonicalPath() + File.separator + "mapred-default.xml");
-    OutputStream outHdfs = new FileOutputStream(
-        overrideDir.getCanonicalPath() + File.separator + "hdfs-default.xml");
+    String path = overrideDir.getCanonicalPath() + File.separator;
+    System.out.println("writing conf to: "+path);
+    OutputStream outCore   = new FileOutputStream(path + "core-default.xml");
+    OutputStream outMapred = new FileOutputStream(path + "mapred-default.xml");
+    OutputStream outHdfs   = new FileOutputStream(path + "hdfs-default.xml");
     conf.writeXml(outCore);
     conf.writeXml(outMapred);
     conf.writeXml(outHdfs);
     outCore.close();
     outMapred.close();
     outHdfs.close();
+    System.out.println("setup complete");
+    System.out.flush();
   }
 }
