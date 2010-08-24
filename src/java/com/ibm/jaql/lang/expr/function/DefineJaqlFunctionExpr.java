@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
@@ -41,6 +43,7 @@ import com.ibm.jaql.util.Bool3;
  */
 public final class DefineJaqlFunctionExpr extends Expr
 {
+  protected Schema schema;
 
   // -- construction ------------------------------------------------------------------------------
   
@@ -56,24 +59,43 @@ public final class DefineJaqlFunctionExpr extends Expr
     this(params, emptyList(params.size()), body);
   }
 
+  public DefineJaqlFunctionExpr(Var[] params, Expr[] defaults, Schema schema, Expr body)
+  {
+    super(makeParameters(params, defaults, body));
+    this.schema = schema;
+    getFunction(); // checks that arguments are valid
+  }
+  
   /** Construct function definition with given default values */
   public DefineJaqlFunctionExpr(Var[] params, Expr[] defaults, Expr body)
   {
-    super(makeParameters(params, defaults, body));
-    getFunction(); // checks that arguments are valid
+    this(params, defaults, SchemaFactory.anySchema(), body);
   }
 
   /** Construct function definition with given default values */
   public DefineJaqlFunctionExpr(List<Var> params, List<Expr> defaults, Expr body)
   {
-    super(makeParameters(params, defaults, body));
-    getFunction(); // checks that arguments are valid
+    this(params, defaults, SchemaFactory.anySchema(), body);
   }
   
-  /** Construct function definition from given parameters */
+  /** Construct function definition with given default values */
+  public DefineJaqlFunctionExpr(List<Var> params, List<Expr> defaults, Schema schema, Expr body)
+  {
+    super(makeParameters(params, defaults, body));
+    this.schema = schema;
+    getFunction(); // checks that arguments are valid
+  }
+
   public DefineJaqlFunctionExpr(VarParameters parameters, Expr body)
   {
+    this(parameters, SchemaFactory.anySchema(), body);
+  }
+
+  /** Construct function definition from given parameters */
+  public DefineJaqlFunctionExpr(VarParameters parameters, Schema schema, Expr body)
+  {
     super(makeParameters(parameters, body));
+    this.schema = schema;
     getFunction(); // checks that arguments are valid
   }
   
@@ -215,6 +237,12 @@ public final class DefineJaqlFunctionExpr extends Expr
   }
   
   @Override
+  public Schema getSchema()
+  {
+    return schema;
+  }
+  
+  @Override
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
@@ -235,7 +263,7 @@ public final class DefineJaqlFunctionExpr extends Expr
     // clone parameters and body, using fresh variables for the parameters 
     VarParameter[] newPars = cloneParameters(varMap);
     Expr newBody = body().clone(varMap);
-    return new DefineJaqlFunctionExpr(new VarParameters(newPars), newBody);
+    return new DefineJaqlFunctionExpr(new VarParameters(newPars), schema, newBody);
   }
   
   /** Clone the parameters and their default values. */

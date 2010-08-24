@@ -21,7 +21,6 @@ import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
@@ -135,9 +134,9 @@ public class RewriteEngine
     new SimplifyUnion(phase);
     new SimplifyRecord(phase);
     //----tee part 2 ------
-    new DiamondTagExpand(phase); // TODO: should have this in filter pushdown phase
-    new RetagExpand(phase); // TODO: should have this in filter pushdown phase
-    new SplitToWrite(phase); // TODO: should have this in filter pushdown phase
+    new DiamondTagExpand(phase);
+    new RetagExpand(phase);
+    new SplitToWrite(phase);
     new TagFlattenPushdown(phase);
     //----end;tee------
 
@@ -226,25 +225,25 @@ public class RewriteEngine
 
   /**
    * @param env
-   * @param query
+   * @param stmt
    * @throws Exception
    */
-  public Expr run(Expr query) throws Exception
+  public Expr run(Expr stmt) throws Exception
   {
-//    if (true) return query;
+    // if (true) return query;
     
     // We don't rewrite def expressions until they are actually evaluated.
     // FIXME: rewrites of MaterializeExpr inlines functions; disable those inlines
 //    if (query instanceof AssignExpr || query instanceof MaterializeExpr)
-    if (query instanceof AssignExpr )
-    {
-      return query;
-    }
-    if (query.getEnvExpr() == null)
+//    if (query instanceof AssignExpr )
+//    {
+//      return query;
+//    }
+    if (stmt.getEnvExpr() == null)
     {
       throw new IllegalArgumentException("expression tree does not have an EnvExpr");
     }
-    this.env = query.getEnvExpr().getEnv();
+    this.env = stmt.getEnvExpr().getEnv();
     if (env == null)
     {
       throw new IllegalArgumentException("expression tree does not have an environment");
@@ -252,9 +251,9 @@ public class RewriteEngine
     counter = 0;
     for (RewritePhase phase : phases)
     {
-      phase.run(query);
+      phase.run(stmt);
     }
-    return query;
+    return stmt;
   }
 
   /**

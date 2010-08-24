@@ -334,7 +334,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				JaqlLexer lexer = new JaqlLexer(new ByteArrayInputStream(buf
 						.toByteArray()));
 				JaqlParser parser = new JaqlParser(lexer);
-				dexpr = parser.stmt();
+				dexpr = parser.parse();
 			}
 			formatResult(-1, dexpr, context, str);
 		} catch (Exception e) {

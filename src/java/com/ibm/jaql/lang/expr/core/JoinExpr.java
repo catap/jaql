@@ -146,7 +146,9 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
   public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    exprText.print("\n" + kw("equijoin") + " ");
+    exprText.print("\n");
+    printAnnotations(exprText);
+    exprText.print(kw("equijoin") + " ");
     int n = numBindings();
     String sep = "";
     for (int i = 0; i < n; i++)

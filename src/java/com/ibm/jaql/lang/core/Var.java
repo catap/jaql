@@ -354,6 +354,16 @@ public final class Var extends Object
     this.type = Type.EXPR;
   }
   
+  /** Undefine an EXPR variable - probably to be materialized as a VALUE */
+  public Expr undefineExpr()
+  {
+    assert type == Type.EXPR && expr != null;
+    Expr e = expr;
+    type = Type.UNDEFINED;
+    expr = null;
+    return e;
+  }
+  
   /**
    * Set the runtime value.
    * 
@@ -541,7 +551,7 @@ public final class Var extends Object
   {
     return namespace;
   }
-  
+
 //  public void setNamespace(Namespace namespace)
 //  {
 //    if (this.namespace != null && this.namespace != namespace)
