@@ -37,6 +37,7 @@ import org.apache.hadoop.util.ReflectionUtils;
 
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
+import com.ibm.jaql.io.registry.RegistryUtil;
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -103,9 +104,12 @@ public class CompositeOutputAdapter implements HadoopOutputAdapter
     //      throw new RuntimeException(e);
     //    }
     
-    // read in the adapter array from conf and initialize it
     try
     {
+      // load the registry
+      RegistryUtil.readConf(conf, HadoopAdapter.storeRegistryVarName, AdapterStore.getStore());
+
+      // read in the adapter array from conf and initialize it
       descriptors = ConfUtil.readConfArray(conf, ConfSetter.CONFOUTOPTIONS_NAME);
       int numOutputs = (int) descriptors.count();
       outputs = new HadoopOutputAdapter[numOutputs];
