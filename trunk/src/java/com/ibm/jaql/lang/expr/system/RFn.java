@@ -48,6 +48,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
+import com.ibm.jaql.util.Bool3;
 
 /**
  * A function allowing invocation of R from within Jaql.
@@ -254,6 +255,14 @@ public class RFn extends Expr {
     super(exprs);
     schema = SchemaFactory.anySchema();
   }
+
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
+  }
+
 
   @Override
   public JsonValue eval(Context context) throws Exception {
