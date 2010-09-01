@@ -19,8 +19,10 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.log4j.Logger;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -29,6 +31,7 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -38,7 +41,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 // TODO: add an async option and return a handle. add an additional expression to manage an MR handle.
 //       it will be able to do things like kill the job, report on its status, etc.
 /**
- * Usage: { status: boolean } nativeMR( { job conf settings } );
+ * Usage: { status: boolean } nativeMR( { job conf settings } conf , { apiVersion: "0.0" | "1.0" } options );
  * 
  * Launch a stand-alone map-reduce job that is exclusively described by job conf settings.
  * 
@@ -48,7 +51,7 @@ public class NativeMapReduceExpr extends Expr
 {
   protected static final Logger LOG = Logger.getLogger(NativeMapReduceExpr.class.getName());
   
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
   {
     public Descriptor()
     {
@@ -65,6 +68,10 @@ public class NativeMapReduceExpr extends Expr
     properties.put(ExprProperty.IS_NONDETERMINISTIC, true);
     properties.put(ExprProperty.READS_EXTERNAL_DATA, true);
   };
+  private static final String VERSION_0_0 = "0.0";
+  private static final String VERSION_1_0 = "1.0";
+  private static final JsonString VERSION_NAME = new JsonString("apiVersion");
+  private String apiVersion = VERSION_0_0;
   
   /**
    * @param exprs
@@ -103,8 +110,20 @@ public class NativeMapReduceExpr extends Expr
     // get the conf values from the parameter
     JsonRecord confRec = (JsonRecord)exprs[0].eval(context);
     
+    // get the options (if they exist) and process them
+    JsonRecord optsRec = (JsonRecord)exprs[1].eval(context);
+    if( optsRec != null ) {
+      JsonValue v = optsRec.get(VERSION_NAME);
+      if( v != null && v.getType() == JsonType.STRING ) {
+        String vs = ((JsonString)v).toString();
+        if( vs.equals(VERSION_1_0)) {
+          apiVersion = vs;
+        }
+      }
+    }
+    
     // set up the conf
-    JobConf conf = new JobConf();
+    Configuration conf = new Configuration();
     for(Map.Entry<JsonString, JsonValue> e : confRec) {
       String k = e.getKey().toString();
       JsonValue val = e.getValue();
@@ -115,11 +134,40 @@ public class NativeMapReduceExpr extends Expr
       conf.set(k, v);
     }
     
+    if( apiVersion.equals(VERSION_0_0)) {
+      return eval_0_0(conf);
+    } else {
+      return eval_1_0(conf);
+    }
+  }
+  
+  private JsonRecord eval_0_0(Configuration conf) throws Exception {
+    
+    JobConf job = new JobConf(conf);
+    
     // submit the job
     boolean status = true;
     try {
-      JobClient.runJob(conf);
+      JobClient.runJob(job);
     } catch(IOException e) {
+      status = false;
+      LOG.warn("native map-reduce job failed", e);
+    }
+    // setup the return value
+    BufferedJsonRecord ret = new BufferedJsonRecord();
+    ret.add(STATUS, (status) ? JsonBool.TRUE : JsonBool.FALSE );
+    
+    return ret;
+  }
+  
+  private JsonRecord eval_1_0(Configuration conf) throws Exception {
+    
+    boolean status = true;
+    
+    Job job = new Job(conf);
+    try {
+      job.waitForCompletion(true);
+    } catch(Exception e) {
       status = false;
       LOG.warn("native map-reduce job failed", e);
     }
