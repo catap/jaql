@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.hadoop;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
@@ -106,7 +107,7 @@ public class LoadJobConfExpr extends Expr
       String path = ((JsonString)v).toString();
       conf = new JobConf(path);
     }
-    
+       
     BufferedJsonRecord rec = new BufferedJsonRecord();
     
     for(Map.Entry<String, String> e : conf) {
