@@ -56,7 +56,7 @@ Note that both the map and reduce functions need to output an array
 because each input is allowed to produce multiple outputs.
 
 The mapReduce() function touches on a interesting feature of Jaql,
-namely that Jaql is a second-order language.
+namely that Jaql is a higher-order language.
 This allows function definitions to be assigned to variables
 and later evaluated. In mapReduce(), the map and reduce phases are specified
 using Jaql functions. Each mapper and reducer that is spawned for a Jaql job
