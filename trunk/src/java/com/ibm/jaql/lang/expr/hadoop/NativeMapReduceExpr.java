@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.Logger;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -45,6 +46,8 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  */
 public class NativeMapReduceExpr extends Expr
 {
+  protected static final Logger LOG = Logger.getLogger(NativeMapReduceExpr.class.getName());
+  
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
   {
     public Descriptor()
@@ -118,6 +121,7 @@ public class NativeMapReduceExpr extends Expr
       JobClient.runJob(conf);
     } catch(IOException e) {
       status = false;
+      LOG.warn("native map-reduce job failed", e);
     }
     // setup the return value
     BufferedJsonRecord ret = new BufferedJsonRecord();

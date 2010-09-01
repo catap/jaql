@@ -1,0 +1,101 @@
+
+;//------------------- TEST-CASE -----------------
+//
+// call a native MR job using a conf that is specified using a literal
+//
+hdfsShell("-copyFromLocal "+DATADIR+"jaql-overview.html jaql-overview.html") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+hdfsShell("-copyFromLocal "+DATADIR+"wordCount.conf wordCount.conf") * 0;
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+conf = {
+  "mapred.jar": "../../extension.jar",
+  "mapred.mapper.class": "com.acme.extensions.mr.WordCount$TokenizerMapper",
+  "mapred.combiner.class": "com.acme.extensions.mr.WordCount$IntSumReducer",
+  "mapred.reducer.class": "com.acme.extensions.mr.WordCount$IntSumReducer",
+  "mapred.mapoutput.key.class": "org.apache.hadoop.io.Text",
+  "mapred.mapoutput.value.class": "org.apache.hadoop.io.IntWritable",
+  "mapred.input.dir": "jaql-overview.html",
+  "mapred.output.dir": "wordCount-result.txt"
+};
+;//------------------- TEST-CASE -----------------
+
+
+nativeMR( conf );
+
+;//--------------------- RESULT ------------------
+
+{
+  "status": true
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// test out reading from a conf file
+//
+fields(loadJobConf("src/test/com/ibm/jaql/data/wordCount.conf")) -> count();
+
+;//--------------------- RESULT ------------------
+
+139
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// call a native MR job using a conf that is specified using a conf file
+//
+nativeMR( loadJobConf("src/test/com/ibm/jaql/data/wordCount.conf") );
+
+;//--------------------- RESULT ------------------
+
+{
+  "status": true
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// call a native MR job by calling the MR jobs main entry point
+//
+// nativeMR( "org.apache.hadoop.examples.WordCount", ["data/jaqlOverview.html", "wordCount-result.txt"] )
+
+//
+// call a native MR job incorrectly
+//
+badConf = {
+  "mapred.jar": "",
+  "mapreduce.map.class": "org.apache.hadoop.examples.WordCount$TokenizerMapper"
+};
+;//------------------- TEST-CASE -----------------
+
+
+nativeMR( badConf );
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+;//------------------- TEST-DONE -----------------
