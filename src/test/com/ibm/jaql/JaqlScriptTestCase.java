@@ -140,7 +140,12 @@ public class JaqlScriptTestCase
     runScript(Mode.COUNT);
   }
 
-
+  protected String getScriptDir() { return "src/test/com/ibm/jaql/" ; }
+  
+  protected String getModuleDir() { return getScriptDir() + "modules/"; }
+  
+  protected String getExtensionJar() { return "build/extension.jar"; }
+  
   protected void runScript( Mode mode ) throws Exception
   {
     String testLabel = script + "." + mode; 
@@ -155,8 +160,8 @@ public class JaqlScriptTestCase
       String jaqlHome = System.getProperty("jaql.home", ".");
       jaqlHome = new File(jaqlHome).getAbsolutePath().toString().replace('\\', '/') + "/";
       
-      String scriptDir   = jaqlHome + "src/test/com/ibm/jaql/";
-      String moduleDir   = scriptDir + "modules/";
+      String scriptDir   = jaqlHome + getScriptDir();
+      String moduleDir   = getModuleDir();
       String queriesName = scriptDir + script + "Queries.txt";
       String goldName    = scriptDir + testLabel + ".gold";
       
@@ -171,7 +176,7 @@ public class JaqlScriptTestCase
         goldName = scriptDir + script + ".gold";
         if( ! new File(goldName).exists() )
         {
-          Assert.fail("\nNo gold file for jaql test " + testLabel);
+          Assert.fail("\nNo gold file for jaql test " + testLabel + "at path: " + goldName);
           return;
         }
       }
@@ -239,7 +244,9 @@ public class JaqlScriptTestCase
       boolean schemaPrinting = "schemaPrinting".equals(script);
       jaql.setJaqlPrinter(new TestPrinter(resultStream, schemaPrinting));
 
-      jaql.addJar( jaqlHome + "build/extension.jar" );
+      String extJar = getExtensionJar();
+      if( extJar != null )
+        jaql.addJar( jaqlHome + extJar );
       jaql.setVar(DATADIR_NAME, DATADIR_VALUE);
       
       // run the script

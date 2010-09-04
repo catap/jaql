@@ -1,0 +1,20 @@
+import sampling;
+
+registerRNG('r1', fn() 17);
+registerRNG('r2', fn() 23);
+registerRNG('r3', fn() 19);
+
+range(1,100) -> sampling::uniformSampler(0.1, 'r1') -> count();
+
+raw = [ { key: 1, values: range(1,200) }, { key: 2, values: range(1,10) }, { key: 3, values: range(1,2) } ];
+
+data = raw -> expand unroll $.values;
+
+data -> sampling::groupSampler( (fn(r) r.key), 0.20, 2, 'r2' ) 
+     -> group by g = $.key into { key: g, num: count($) };
+     
+data -> write(hdfs("data"));
+
+read(hdfs("data")) -> sampling::groupSampler( (fn(r) r.key), 0.20, 2, 'r3' ) 
+     -> group by g = $.key into { key: g, num: count($) }
+     -> sort by [$.key];

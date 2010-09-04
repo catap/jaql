@@ -177,6 +177,7 @@ import com.ibm.jaql.lang.expr.pragma.UnrollLoopPragma;
 import com.ibm.jaql.lang.expr.random.RandomDoubleFn;
 import com.ibm.jaql.lang.expr.random.RandomLongFn;
 import com.ibm.jaql.lang.expr.random.RegisterRNGExpr;
+import com.ibm.jaql.lang.expr.random.Sample01RNGExpr;
 import com.ibm.jaql.lang.expr.random.SampleRNGExpr;
 import com.ibm.jaql.lang.expr.random.UuidFn;
 import com.ibm.jaql.lang.expr.record.ArityFn;
@@ -504,6 +505,7 @@ public final class SystemNamespace extends Namespace {
     // rand expressions
     register(new RegisterRNGExpr.Descriptor());
     register(new SampleRNGExpr.Descriptor());
+    register(new Sample01RNGExpr.Descriptor());
     register(new ReadConfExpr.Descriptor());
     register(new LoadJobConfExpr.Descriptor());
     // lower level shell access
