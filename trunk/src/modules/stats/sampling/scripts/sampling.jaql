@@ -1,0 +1,57 @@
+//
+// Sampling Module
+//
+
+//
+// Java UDF that samples uniformly in the range [x,y]
+//
+uniformSample = builtin("com.ibm.jaql.sampling.UniformSampler$Descriptor");
+
+//
+// Uniform Sampler
+//
+// Input:
+//   arr:  the array of elements from which to sample
+//   p:    the probability of picking each element
+//   rng:  the handle to the random number generator
+//
+// Output:
+//   array
+//
+uniformSampler = fn(arr, p, rng) (
+  
+  arr -> filter sample01RNG(rng) <= p
+  
+);
+
+//
+// Group Sampler
+//
+groupSampler = fn(arr, gFn, p, min, rng) (
+
+  // compute group, count (g_n)
+  x = arr -> group by g = gFn($) into [g, count($)]
+  
+  // compute group, p'. if p*g_n >= min, p' = p else p' = min/g_n
+  -> transform [ $[0], ( if(p*$[1] >= min) p else min/$[1] ) ] 
+  -> write(HadoopTemp()),
+  
+  // compute count of groups (n)
+  num = read(x) -> group into count($), 
+  
+  // if n < MAX, use key-lookup otherwise, do a conventional join
+  if( num[0] < 10000 ) (
+    arr 
+    -> transform [ gFn($), $ ]
+    -> keyLookup(read(x)) 
+    -> filter sample01RNG( rng ) <= $[2]
+    -> transform $[1] 
+  ) else (
+    join a in arr, 
+         p in x
+    where gFn(a) == p[0]
+    into [a, p[1]]
+    -> filter sample01RNG( rng ) <= $[1]
+    -> transform $[0]
+  ) 
+);

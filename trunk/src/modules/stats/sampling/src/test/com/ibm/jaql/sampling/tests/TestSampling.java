@@ -13,9 +13,28 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql;
+package com.ibm.jaql.sampling.tests;
 
+import com.ibm.jaql.JaqlScriptTestCase;
 
-public class TestNativeMR extends JaqlScriptTestCase
+public class TestSampling extends JaqlScriptTestCase
 {
+
+  @Override
+  protected String getModuleDir() {
+    //String jaqlHome = System.getProperty("jaql.home", ".");
+    return "dist";//jaqlHome + "src/modules/stats";
+  }
+
+  @Override
+  protected String getScriptDir() {
+    return "src/test/com/ibm/jaql/sampling/tests/";
+  }
+
+  @Override
+  protected String getExtensionJar() {
+    return null;
+  }
+  
+  
 }

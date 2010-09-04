@@ -18,6 +18,8 @@ package com.ibm.jaql.lang.expr.random;
 import java.util.Map;
 import java.util.Random;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
@@ -103,5 +105,10 @@ public class SampleRNGExpr extends Expr
       entry.setRng(rng);
     }
     return new JsonLong(rng.nextLong());
+  }
+  
+  @Override
+  public Schema getSchema() {
+    return SchemaFactory.longOrNullSchema();
   }
 }
