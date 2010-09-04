@@ -1,0 +1,96 @@
+
+;//------------------- TEST-CASE -----------------
+import sampling;
+;//------------------- TEST-CASE -----------------
+
+
+registerRNG('r1', fn() 17);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+registerRNG('r2', fn() 23);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+registerRNG('r3', fn() 19);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> sampling::uniformSampler(0.1, 'r1') -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+raw = [ { key: 1, values: range(1,200) }, { key: 2, values: range(1,10) }, { key: 3, values: range(1,2) } ];
+;//------------------- TEST-CASE -----------------
+
+
+data = raw -> expand unroll $.values;
+;//------------------- TEST-CASE -----------------
+
+
+data -> sampling::groupSampler( (fn(r) r.key), 0.20, 2, 'r2' ) 
+     -> group by g = $.key into { key: g, num: count($) };
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 2,
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+     
+data -> write(hdfs("data"));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read(hdfs("data")) -> sampling::groupSampler( (fn(r) r.key), 0.20, 2, 'r3' ) 
+     -> group by g = $.key into { key: g, num: count($) }
+     -> sort by [$.key];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MRAggregate': 2,
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 4
+}
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------
