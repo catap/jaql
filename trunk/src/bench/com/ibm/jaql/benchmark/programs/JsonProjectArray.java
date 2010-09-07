@@ -1,11 +1,11 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JsonSingleDataBenchmarkProgram;
+import com.ibm.jaql.benchmark.JsonBenchmarkProgramSingleInput;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonProjectArray extends JsonSingleDataBenchmarkProgram {
+public class JsonProjectArray extends JsonBenchmarkProgramSingleInput {
 	BufferedJsonArray arr;
 	JsonValue[] values;
 	JsonValue[] buffer;

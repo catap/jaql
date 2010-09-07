@@ -1,8 +1,8 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JavaBenchmarkProgram;
+import com.ibm.jaql.benchmark.JavaBenchmarkProgramSingleInput;
 
-public class JavaProjectArray extends JavaBenchmarkProgram {
+public class JavaProjectArray extends JavaBenchmarkProgramSingleInput {
 	Object[] arr;
 
 	public JavaProjectArray() {

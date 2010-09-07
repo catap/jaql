@@ -5,7 +5,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.jaql.benchmark.AbstractBenchmarkFactory;
+import com.ibm.jaql.benchmark.AbstractBenchmark;
+import com.ibm.jaql.benchmark.BenchmarkFactory;
 import com.ibm.jaql.benchmark.util.BenchmarkConfig;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
@@ -25,12 +26,17 @@ public class WrapperOutputAdapter implements OutputAdapter {
 	
 	@Override
 	public void init(JsonValue ignored) throws Exception {
+		/*
+		 * Pausing the timer is required for the Jaql benchmark as there the
+		 * init function is executed inside the timed block.
+		 */
+		AbstractBenchmark.TIMER.pause();
 		/* Get settings */
 		AdapterRegistry reg = AdapterStore.getStore().get(new JsonString("test"));
 		JsonRecord input = reg.getOutput();
-		JsonRecord conf = (JsonRecord) input.get(AbstractBenchmarkFactory.BENCH_CONF);
-		JsonString serializerString = (JsonString) input.get(AbstractBenchmarkFactory.SERIALIZER);
-		JsonString filesystemString = (JsonString) input.get(AbstractBenchmarkFactory.FILESYSTEM);
+		JsonRecord conf = (JsonRecord) input.get(BenchmarkFactory.BENCH_CONF);
+		JsonString serializerString = (JsonString) input.get(BenchmarkFactory.SERIALIZER);
+		JsonString filesystemString = (JsonString) input.get(BenchmarkFactory.FILESYSTEM);
 		
 		/* Initialize the correct adapter based on the serialzer setting */
 		String serializer = serializerString.toString();
@@ -68,7 +74,7 @@ public class WrapperOutputAdapter implements OutputAdapter {
 		else {
 			throw new RuntimeException("Invalid serializer");
 		}
-		
+		AbstractBenchmark.TIMER.resume();
 	}
 	
 	@Override
@@ -88,19 +94,17 @@ public class WrapperOutputAdapter implements OutputAdapter {
 	
 	private Path outputLocation(String filesystem) {
 		if("memory".equals(filesystem)) {
-			return new Path("memory://" +  "test/null-"+System.nanoTime());
+			return new Path("memory://" +  "test/null-write/null-"+System.nanoTime()+"/");
+			//return new Path("memory://" +  "test/out-"+System.nanoTime());
 		}
 		else if("local".equals(filesystem)) {
 			try {
-				return new Path((new File(".")).getCanonicalPath()+ "/temp/out-" + System.nanoTime());
+				return new Path((new File(".")).getCanonicalPath()+ "/temp/write/out-" + System.nanoTime());
 			} catch (IOException e) {
 				throw new RuntimeException("lol");
 			}
 		}
 		throw new RuntimeException("Invalid option");
-		//return new Path("memory://" +  "/test/gen/in-"+System.nanoTime());
-		//TODO: Bug in fs implementation
-		
 	}
 	
 	/*

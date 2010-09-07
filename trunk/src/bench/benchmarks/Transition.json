@@ -1,10 +1,10 @@
 {	
 	iterations: 7,
-	numberOfRecords: 8000000,
 	resultSchema: "com.ibm.jaql.benchmark.programs.data.Transition",
 	data: {
 			jsonConverter: "com.ibm.jaql.benchmark.programs.data.Transition",
 			schema: "com.ibm.jaql.benchmark.programs.data.Transition",
-			generator: "com.ibm.jaql.benchmark.programs.data.generator.TransitionGenerator"
+			generator: "com.ibm.jaql.benchmark.programs.data.generator.TransitionGenerator",
+			numberOfRecords: 8000000
 		   }
 }

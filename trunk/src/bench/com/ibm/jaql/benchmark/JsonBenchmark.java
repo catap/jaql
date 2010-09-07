@@ -6,7 +6,9 @@ import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.OutputAdapter;
+import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 
 public class JsonBenchmark extends AbstractBenchmark {
 	InputAdapter[] inAdapters;
@@ -33,12 +35,15 @@ public class JsonBenchmark extends AbstractBenchmark {
 		cls = (Class<JsonBenchmarkProgram>) ClassLoader.getSystemClassLoader().loadClass(className);
 		bench = cls.newInstance();
 		
-		JsonRecord[] inArgs = bench.getInputArguments();
-		inAdapters = new InputAdapter[inArgs.length];
-		inIterators = new ClosableJsonIterator[inArgs.length];
-		for (int i = 0; i < inArgs.length; i++) {
+		JsonString[] dataFieldNames = bench.getInputDataFieldNames();
+		inAdapters = new InputAdapter[dataFieldNames.length];
+		inIterators = new ClosableJsonIterator[dataFieldNames.length];
+		for (int i = 0; i < dataFieldNames.length; i++) {
 			inAdapters[i] = new WrapperInputAdapter();
-			inAdapters[i].init(inArgs[i]);
+			//Create init config record and use it for initialization
+			BufferedJsonRecord adapterConf = new BufferedJsonRecord(1);
+			adapterConf.add(WrapperInputAdapter.DATA, dataFieldNames[i]);
+			inAdapters[i].init(adapterConf);
 		}
 		
 		outAdapter = new WrapperOutputAdapter();

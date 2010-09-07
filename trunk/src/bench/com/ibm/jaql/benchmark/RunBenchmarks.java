@@ -1,5 +1,6 @@
 package com.ibm.jaql.benchmark;
 
+import com.ibm.jaql.benchmark.io.WrapperInputAdapter;
 import com.ibm.jaql.benchmark.util.BenchmarkConfig;
 import com.ibm.jaql.benchmark.util.BenchmarkShellArguments;
 import com.ibm.jaql.io.AdapterStore;
@@ -8,13 +9,7 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 
-public class RunBenchmarks {
-	static AbstractBenchmarkFactory jaqlFactory = new JaqlBenchmarkFactory();
-	static AbstractBenchmarkFactory jsonFactory = new JsonBenchmarkFactory();
-	static AbstractBenchmarkFactory javaFactory = new JavaBenchmarkFactory();
-	static AbstractBenchmarkFactory fsFactory = new HadoopSerializerBenchmarkFactory();
-	static AbstractBenchmarkFactory rawFactory = new RawSerializerBenchmarkFactory();
-	
+public class RunBenchmarks {	
 	/**
 	 * @param args
 	 * @throws Exception 
@@ -41,25 +36,10 @@ public class RunBenchmarks {
 		
 		BenchmarkConfig config = BenchmarkConfig.parse(BenchmarkConfig.getBenchmarkRecord(benchmark));
 		//Add test driver to adapter store
-		addTestDriver(config.getRecord(), 
+		addTestModules(config.getRecord(), 
 				new JsonString(serializer), new JsonString(filesystem));
 		
-		AbstractBenchmark bench = null;
-		if(mode.equalsIgnoreCase("jaql")) {
-			bench = jaqlFactory.getBenchmark(benchmark);
-		} else if (mode.equalsIgnoreCase("json")) {
-			bench = jsonFactory.getBenchmark(benchmark);
-		} else if (mode.equalsIgnoreCase("java")) {
-			bench = javaFactory.getBenchmark(benchmark);
-		} else if (mode.equalsIgnoreCase("hadoop-read")) {
-			bench = fsFactory.getBenchmark(benchmark);
-		} else if (mode.equalsIgnoreCase("hadoop-write")) {
-			bench = fsFactory.getBenchmark(benchmark);
-		} else if (mode.equalsIgnoreCase("raw-write")) {
-			bench = rawFactory.getBenchmark(benchmark);
-		} else if (mode.equalsIgnoreCase("raw-read")) {
-			bench = rawFactory.getBenchmark(benchmark);
-		}
+		AbstractBenchmark bench = BenchmarkFactory.getBenchmark(mode, benchmark);
 		
 		//TODO: When serializer is set but benchmark does not support it throw warning
 		
@@ -83,7 +63,8 @@ public class RunBenchmarks {
 			System.out.println("Average: " + avg/1000000 + "ms" + "   - Settings: " + mode + " " + benchmark);
 			
 			//Calculate time per records
-			long timeperRecord = avg / config.getNumberOfRecords();
+			//TODO: Don't use default field but let the field be report by the benchmark (program)
+			long timeperRecord = avg / config.getNumberOfRecords(WrapperInputAdapter.DEFAULT_FIELD);
 			System.out.println("Time per record: " + timeperRecord + " ns");
 		} else {
 			System.out.print(benchmark+",");
@@ -92,7 +73,7 @@ public class RunBenchmarks {
 			} else {
 				System.out.print(mode + " " + BenchmarkShellArguments.modePostfix + ",");
 			}
-			System.out.print(config.getNumberOfRecords());
+			System.out.print(config.getNumberOfRecords(WrapperInputAdapter.DEFAULT_FIELD));
 			for (int i = 0; i < bench.getTimings().length; i++) {
 				System.out.print(",");
 				System.out.print(bench.getTimings()[i]);
@@ -117,17 +98,17 @@ public class RunBenchmarks {
 			System.out.println();
 		}
 	}
-	private static void addTestDriver(JsonRecord conf, JsonString serializer, JsonString filesystem) {
+	private static void addTestModules(JsonRecord conf, JsonString serializer, JsonString filesystem) {
 		BufferedJsonRecord input = new BufferedJsonRecord();
 		input.set(new JsonString("adapter"), new JsonString("com.ibm.jaql.benchmark.io.WrapperInputAdapter"));
-		input.set(AbstractBenchmarkFactory.BENCH_CONF, conf);
-		input.set(AbstractBenchmarkFactory.SERIALIZER, serializer);
-		input.set(AbstractBenchmarkFactory.FILESYSTEM, filesystem);
+		input.set(BenchmarkFactory.BENCH_CONF, conf);
+		input.set(BenchmarkFactory.SERIALIZER, serializer);
+		input.set(BenchmarkFactory.FILESYSTEM, filesystem);
 		BufferedJsonRecord output = new BufferedJsonRecord();
 		output.set(new JsonString("adapter"), new JsonString("com.ibm.jaql.benchmark.io.WrapperOutputAdapter"));
-		output.set(AbstractBenchmarkFactory.BENCH_CONF, conf);
-		output.set(AbstractBenchmarkFactory.SERIALIZER, serializer);
-		output.set(AbstractBenchmarkFactory.FILESYSTEM, filesystem);
+		output.set(BenchmarkFactory.BENCH_CONF, conf);
+		output.set(BenchmarkFactory.SERIALIZER, serializer);
+		output.set(BenchmarkFactory.FILESYSTEM, filesystem);
 		AdapterRegistry reg = new AdapterRegistry(input, output);
 		AdapterStore.getStore().register(new JsonString("test"), reg);
 		

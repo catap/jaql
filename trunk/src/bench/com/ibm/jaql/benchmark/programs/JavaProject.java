@@ -1,10 +1,10 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JavaBenchmarkProgram;
-import com.ibm.jaql.benchmark.programs.data.Person;
+import com.ibm.jaql.benchmark.JavaBenchmarkProgramSingleInput;
 import com.ibm.jaql.benchmark.programs.data.Name;
+import com.ibm.jaql.benchmark.programs.data.Person;
 
-public class JavaProject extends JavaBenchmarkProgram {
+public class JavaProject extends JavaBenchmarkProgramSingleInput {
 	
 	private Name p;
 

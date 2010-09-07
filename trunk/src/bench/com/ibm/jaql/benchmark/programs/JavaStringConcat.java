@@ -1,8 +1,8 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JavaBenchmarkProgram;
+import com.ibm.jaql.benchmark.JavaBenchmarkProgramSingleInput;
 
-public class JavaStringConcat extends JavaBenchmarkProgram {
+public class JavaStringConcat extends JavaBenchmarkProgramSingleInput {
 
 	@Override
 	public Object nextResult(Object val) {

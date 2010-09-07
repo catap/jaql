@@ -322,4 +322,30 @@ public class JsonString extends AbstractBinaryJsonAtom implements CharSequence
     return toString().subSequence(start, end);
   }
 
+  @Override
+  public boolean equals(Object o) {
+		if (!(o instanceof JsonString)) {
+			return false;
+		}
+		if(this == o) {
+			return true;
+		}
+		
+		ensureBytes();
+		JsonString other = (JsonString) o;
+		other.ensureBytes();
+
+		if (this.bytesLength != other.bytesLength) {
+			return false;
+		}
+
+		for (int i = 0; i < this.bytesLength; i++) {
+			if (this.bytes[i] != other.bytes[i]) {
+				return false;
+			}
+		}
+
+		return true;
+  }
+
 }

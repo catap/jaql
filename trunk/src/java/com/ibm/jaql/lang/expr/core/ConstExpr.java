@@ -26,8 +26,10 @@ import com.ibm.jaql.json.type.JsonDate;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonRegex;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.FieldNameCache;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -48,7 +50,11 @@ public final class ConstExpr extends Expr
   public ConstExpr(JsonValue value)
   {
     super(NO_EXPRS);
-    this.value = value;
+    if(value instanceof JsonString) {
+    	this.value = FieldNameCache.get((JsonString)value);
+    } else {
+    	this.value = value;
+    }
   }
 
 

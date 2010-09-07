@@ -26,7 +26,7 @@ public class MemoryOutputStream extends OutputStream {
 		try {
 			System.arraycopy(b, off, buffer, (int) length, len);
 		} catch (ArrayIndexOutOfBoundsException ex) {
-			throw new RuntimeException("Internal Error", ex);
+			throw new RuntimeException("Buffer size too small", ex);
 		}
 		
 		length = length + len;

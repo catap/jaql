@@ -1,0 +1,12 @@
+{	
+	jaqlscript: "JoinPersonReduce.jql",
+	javaBench: "com.ibm.jaql.benchmark.programs.JavaJoinPersonReduce",
+	jsonBench: "com.ibm.jaql.benchmark.programs.JsonJoinPersonReduce",
+	resultSchema: "com.ibm.jaql.benchmark.programs.data.JoinPersonReduceResult",
+	iterations: 7,
+	data: {	numberOfRecords: 1111111,
+			generator: "com.ibm.jaql.benchmark.programs.data.generator.JoinPersonReduceGenerator",
+			schema: "com.ibm.jaql.benchmark.programs.data.generator.JoinPersonReduceGenerator",
+			jsonConverter: "com.ibm.jaql.benchmark.programs.data.JoinPersonReduce"
+	}
+}

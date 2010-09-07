@@ -30,6 +30,7 @@ public class StringArray implements JsonConverter, SchemaDescription {
 
 	@Override
 	public Schema getSchema() {
+		//TODO: Use head information exactly two strings
 		return new ArraySchema(null, SchemaFactory.stringSchema());
 	}
 

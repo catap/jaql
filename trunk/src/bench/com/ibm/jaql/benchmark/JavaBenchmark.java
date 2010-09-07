@@ -2,14 +2,13 @@ package com.ibm.jaql.benchmark;
 
 import com.ibm.jaql.benchmark.io.JavaInputDriver;
 import com.ibm.jaql.benchmark.io.NullObjectOutput;
-import com.ibm.jaql.benchmark.io.WrapperInputAdapter;
 import com.ibm.jaql.benchmark.util.BenchmarkConfig;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
 public class JavaBenchmark extends AbstractBenchmark {
-	private JavaInputDriver in;
+	private JavaInputDriver[] inDrivers;
 	private Class<JavaBenchmarkProgram> cls;
 	private String className;
 	private JavaBenchmarkProgram bench;
@@ -29,14 +28,21 @@ public class JavaBenchmark extends AbstractBenchmark {
 		cls = (Class<JavaBenchmarkProgram>) ClassLoader.getSystemClassLoader().loadClass(className);
 		bench = cls.newInstance();
 		
-		in = JavaBenchmark.getJavaInput(WrapperInputAdapter.DEFAULT_FIELD, conf);
+		JsonString[] inputDataFieldNames = bench.getInputDataFieldNames();
+		inDrivers = new JavaInputDriver[inputDataFieldNames.length];
+		
+		for (int i = 0; i < inputDataFieldNames.length; i++) {
+			inDrivers[i] = JavaBenchmark.getJavaInput(inputDataFieldNames[i], conf);
+		}
 	}
 	
 	@Override
 	protected void prepareIteration() throws Exception {
-		in.reset();
+		for (int i = 0; i < inDrivers.length; i++) {
+			inDrivers[i].reset();
+		}
 		bench = cls.newInstance();
-		bench.setInput(in);
+		bench.setInput(inDrivers);
 		bench.setWriter(new NullObjectOutput());
 	}
 
@@ -55,7 +61,7 @@ public class JavaBenchmark extends AbstractBenchmark {
 		}
 		
 		JsonConverter converter = c.getDataConverter(dataField);
-		long numberOfRecords = BenchmarkConfig.parse(conf).getNumberOfRecords();
+		long numberOfRecords = c.getNumberOfRecords(dataField);
 		
 		/* Convert json values to java objects using native types */
 		Object[] objects = new Object[values.length];

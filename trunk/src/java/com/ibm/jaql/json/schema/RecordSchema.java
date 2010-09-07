@@ -33,6 +33,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.FieldNameCache;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 
@@ -58,7 +59,7 @@ public final class RecordSchema extends Schema
       JaqlUtil.enforceNonNull(name);
       JaqlUtil.enforceNonNull(schema);
       
-      this.name = name.getImmutableCopy();
+      this.name = FieldNameCache.get(name);
       this.isOptional = isOptional;
       this.schema = schema;
     }
@@ -696,4 +697,23 @@ public final class RecordSchema extends Schema
     
     return 0;
   } 
+  
+  /*
+  @Override
+  public boolean equals(Object o)
+  {
+	  if(!(o instanceof RecordSchema)) {
+		  return false;
+	  }
+	  RecordSchema other = (RecordSchema) o;
+	  
+	  SchemaUtil
+	  if(!this.getSchemaType().equals(other)
+    if (x instanceof Schema)
+    {
+      return this.compareTo((Schema)x) == 0;
+    }
+    return false;
+  }
+  */
 }

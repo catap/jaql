@@ -22,8 +22,7 @@ public class HadoopSerializerWriteBenchmark extends AbstractBenchmark {
 	String type = "hdfs";
 	long bytesWritten;
 	
-	public HadoopSerializerWriteBenchmark(String location) {
-		this.location = new Path(location);
+	public HadoopSerializerWriteBenchmark() {
 	}
 
 	@Override
@@ -49,7 +48,7 @@ public class HadoopSerializerWriteBenchmark extends AbstractBenchmark {
 		
 		/* Create Output Adapter */
 		outAdapter = new WrapperOutputAdapter();
-		outAdapter.init(null);
+		outAdapter.init(conf);
 	}
 
 	@Override
