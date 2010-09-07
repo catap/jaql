@@ -4,6 +4,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 
+import javax.management.RuntimeErrorException;
+
 import com.ibm.jaql.benchmark.DataGenerator;
 import com.ibm.jaql.benchmark.JsonConverter;
 import com.ibm.jaql.benchmark.SchemaDescription;
@@ -16,6 +18,7 @@ import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.FieldNameCache;
 import com.ibm.jaql.json.util.JsonIterator;
 
 public class BenchmarkConfig {
@@ -43,7 +46,6 @@ public class BenchmarkConfig {
 		
 		config = conf;
 		iterations = ((JsonNumber)conf.get(ITERATIONS)).intValueExact();
-		numberOfRecords = ((JsonNumber)conf.get(NUMBER_OF_RECORDS)).longValueExact();
 		
 		JsonString resultSchemaClass = (JsonString) conf.get(RESULT_SCHEMA);
 		if(resultSchemaClass != null) {
@@ -63,6 +65,7 @@ public class BenchmarkConfig {
 	}
 	
 	public Schema getResultSchema() {
+		if(resultSchema == null) throw new RuntimeException("Does not exist");
 		return resultSchema;
 	}
 	
@@ -70,8 +73,9 @@ public class BenchmarkConfig {
 		return iterations;
 	}
 	
-	public long getNumberOfRecords() {
-		return numberOfRecords;
+	public long getNumberOfRecords(JsonString dataField) {
+		JsonNumber n = (JsonNumber) getDataRecord(dataField).get(NUMBER_OF_RECORDS);
+		return n.longValueExact();
 	}
 	
 	public String getJaqlScriptLocation() {
@@ -130,10 +134,12 @@ public class BenchmarkConfig {
 					values[i] = d.getImmutableCopy();
 					if(values[i] instanceof BufferedJsonRecord) {
 						//Convert names for optimized field access
-						//JsonValue[] names = ((BufferedJsonRecord)values[i]).getInternalNamesArray();
-						//for (int j = 0; j < names.length; j++) {
-						//	names[j] = JsonStringCache.get((JsonString) names[j]);
-						//}
+						JsonString[] names = ((BufferedJsonRecord)values[i]).getInternalNamesArray();
+						for (int j = 0; j < names.length; j++) {
+							names[j] = FieldNameCache.get((JsonString) names[j]);
+						}
+						//TODO: Recalculate hash index
+						((BufferedJsonRecord)values[i]).set(names, ((BufferedJsonRecord)values[i]).getInternalValuesArray(), ((BufferedJsonRecord)values[i]).size());
 					}
 					i++;
 				} else {
@@ -154,6 +160,14 @@ public class BenchmarkConfig {
 			
 			for (int i = 0; i < values.length; i++) {
 				values[i] = generator.generate();
+				if(values[i] instanceof BufferedJsonRecord) {
+					//Convert names for optimized field access
+					JsonString[] names = ((BufferedJsonRecord)values[i]).getInternalNamesArray();
+					for (int j = 0; j < names.length; j++) {
+						names[j] = FieldNameCache.get((JsonString) names[j]);
+					}
+					((BufferedJsonRecord)values[i]).set(names, ((BufferedJsonRecord)values[i]).getInternalValuesArray(), ((BufferedJsonRecord)values[i]).size());
+				}
 			}
 		}
 		

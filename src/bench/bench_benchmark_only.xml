@@ -2,7 +2,7 @@
 <project default="create_run_jar" name="Create Runnable Jar for Project JaqlBenchmark with libraries in sub-folder">
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
-	<property name="proj.dir" value="${basedir}/../../" />
+	<property name="proj.dir" value="${basedir}/../.." />
 	<property name="bench.targetdir" value="${proj.dir}/bench" />
 	
     <target name="create_run_jar">

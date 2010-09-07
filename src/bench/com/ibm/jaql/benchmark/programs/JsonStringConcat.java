@@ -1,12 +1,12 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JsonSingleDataBenchmarkProgram;
+import com.ibm.jaql.benchmark.JsonBenchmarkProgramSingleInput;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonString;
 
-public class JsonStringConcat extends JsonSingleDataBenchmarkProgram {
+public class JsonStringConcat extends JsonBenchmarkProgramSingleInput {
 	final JsonString whitespace = new JsonString(" "); 
 	JsonValue[] values;
 	

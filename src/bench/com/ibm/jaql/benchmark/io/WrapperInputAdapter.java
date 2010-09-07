@@ -5,7 +5,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
 
-import com.ibm.jaql.benchmark.AbstractBenchmarkFactory;
+import com.ibm.jaql.benchmark.AbstractBenchmark;
+import com.ibm.jaql.benchmark.BenchmarkFactory;
 import com.ibm.jaql.benchmark.fs.FsUtil;
 import com.ibm.jaql.benchmark.util.BenchmarkConfig;
 import com.ibm.jaql.io.AdapterStore;
@@ -26,7 +27,7 @@ public class WrapperInputAdapter implements InputAdapter {
 	protected static String SER_BINARY = "hdfs";
 	protected static String SER_TEMP ="jaqltemp";
 	protected static String SER_PERF ="perf";
-	protected static JsonString DATA = new JsonString("data");
+	public static JsonString DATA = new JsonString("data");
 	public static JsonString DATA_FIELD = new JsonString("dataField");
 	public static JsonString DEFAULT_FIELD = new JsonString("data");
 	
@@ -35,10 +36,15 @@ public class WrapperInputAdapter implements InputAdapter {
 	
 	@Override
 	public void init(JsonValue args) throws Exception {
+		/*
+		 * Pausing the timer is required for the Jaql benchmark as there the
+		 * init function is executed inside the timed block.
+		 */
+		AbstractBenchmark.TIMER.pause();
 		/* Get settings */
 		AdapterRegistry reg = AdapterStore.getStore().get(new JsonString("test"));
 		JsonRecord input = reg.getInput();
-		JsonRecord conf = (JsonRecord) input.get(AbstractBenchmarkFactory.BENCH_CONF);
+		JsonRecord conf = (JsonRecord) input.get(BenchmarkFactory.BENCH_CONF);
 		
 		/* Get data for this specific input adapter based on the args or use the
 		 * default value
@@ -56,8 +62,8 @@ public class WrapperInputAdapter implements InputAdapter {
 			throw new RuntimeException("Data does not exist in configuration: " + dataField);
 		}
 		
-		JsonString serializerString = (JsonString) input.get(AbstractBenchmarkFactory.SERIALIZER);
-		JsonString filesystemString = (JsonString) input.get(AbstractBenchmarkFactory.FILESYSTEM);
+		JsonString serializerString = (JsonString) input.get(BenchmarkFactory.SERIALIZER);
+		JsonString filesystemString = (JsonString) input.get(BenchmarkFactory.FILESYSTEM);
 		
 		/* Initialize the correct adapter based on the serialzer setting */
 		String serializer = serializerString.toString();
@@ -101,6 +107,7 @@ public class WrapperInputAdapter implements InputAdapter {
 		else {
 			throw new RuntimeException("Invalid serializer");
 		}
+		AbstractBenchmark.TIMER.resume();
 	}
 
 	@Override
@@ -131,11 +138,11 @@ public class WrapperInputAdapter implements InputAdapter {
 		if("memory".equals(filesystem)) {
 			//return new Path("memory://" +  "/test/gen/in-"+System.nanoTime());
 			//TODO: Bug in fs implementation
-			return new Path("memory://" +  "test/in-"+System.nanoTime());
+			return new Path("memory://" +  "test/input/in-"+System.nanoTime());
 		}
 		else if("local".equals(filesystem)) {
 			try {
-				return new Path((new File(".")).getCanonicalPath()+ "/temp/in-" + System.nanoTime());
+				return new Path((new File(".")).getCanonicalPath()+ "/temp/input/in-" + System.nanoTime());
 			} catch (IOException e) {
 				throw new RuntimeException("lol");
 			}

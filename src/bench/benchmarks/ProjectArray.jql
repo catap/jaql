@@ -1,0 +1,2 @@
+read({ type: "test"  })
+->transform [ $[0], $[2] ];

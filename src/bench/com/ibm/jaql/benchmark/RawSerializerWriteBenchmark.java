@@ -50,13 +50,13 @@ public class RawSerializerWriteBenchmark extends AbstractBenchmark {
 		defaultFsConf = new org.apache.hadoop.conf.Configuration(true);
 		AdapterRegistry reg = AdapterStore.getStore().get(new JsonString("test"));
 		JsonRecord input = reg.getOutput();
-		JsonString serializerString = (JsonString) input.get(AbstractBenchmarkFactory.SERIALIZER);
-		JsonString filesystemString = (JsonString) input.get(AbstractBenchmarkFactory.FILESYSTEM);
+		JsonString serializerString = (JsonString) input.get(BenchmarkFactory.SERIALIZER);
+		JsonString filesystemString = (JsonString) input.get(BenchmarkFactory.FILESYSTEM);
 		location = RawSerializerUtil.outputLocation(filesystemString.toString());
 		
 		/* Create Output Stream*/
 		serializer = RawSerializerUtil.getSerializer(serializerString.toString(),
-				BenchmarkConfig.parse(conf).getResultSchema());
+				BenchmarkConfig.parse(conf).getDataSchema(WrapperInputAdapter.DEFAULT_FIELD));
 	}
 
 	@Override

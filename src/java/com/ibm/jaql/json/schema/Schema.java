@@ -221,4 +221,14 @@ public abstract class Schema implements Comparable<Schema>
       throw new UndeclaredThrowableException(e);
     }
   }
+  
+  @Override
+  public boolean equals(Object x)
+  {
+    if (x instanceof Schema)
+    {
+      return this.compareTo((Schema)x) == 0;
+    }
+    return false;
+  }
 }

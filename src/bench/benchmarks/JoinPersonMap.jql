@@ -1,0 +1,7 @@
+(
+$joinFn = fn (schema [ * ] $mapIn0) (
+			$mapIn0 -> transform each $f ({ ("f")?:($f) })
+			 	    -> transform each $i0 ([(($i0).("f")).("lastname"), $i0])
+		  ),
+read({type: "test"})->$joinFn()
+);

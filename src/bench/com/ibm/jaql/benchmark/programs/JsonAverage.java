@@ -1,9 +1,9 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JsonSingleDataBenchmarkProgram;
+import com.ibm.jaql.benchmark.JsonBenchmarkProgramSingleInput;
 import com.ibm.jaql.json.type.JsonValue;
 
-public class JsonAverage extends JsonSingleDataBenchmarkProgram {
+public class JsonAverage extends JsonBenchmarkProgramSingleInput {
 	long sum = 0;
 	int count = 0;
 	@Override

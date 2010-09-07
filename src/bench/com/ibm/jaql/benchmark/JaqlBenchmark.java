@@ -6,7 +6,6 @@ import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import com.ibm.jaql.benchmark.fs.MemoryFileSystem;
 import com.ibm.jaql.benchmark.io.WrapperOutputAdapter;
 import com.ibm.jaql.benchmark.lang.JaqlPrecompile;
 import com.ibm.jaql.io.ClosableJsonWriter;
@@ -35,7 +34,8 @@ public class JaqlBenchmark extends AbstractBenchmark {
 		
 		// Read source file
 		StringBuffer source = new StringBuffer();
-		BufferedReader in = new BufferedReader(new FileReader(scriptLocation));
+		String scriptPath = ClassLoader.getSystemResource(scriptLocation).getPath();
+		BufferedReader in = new BufferedReader(new FileReader(scriptPath));
 		String str;
 		while ((str = in.readLine()) != null) {
 			source.append(str+System.getProperty("line.separator"));
@@ -52,8 +52,6 @@ public class JaqlBenchmark extends AbstractBenchmark {
 	@Override
 	protected void prepareIteration() throws Exception {
 		InputStream in = new ByteArrayInputStream(sourceBytes);
-		MemoryFileSystem.delete();
-		
 		outAdapter.open();
 		outWriter = outAdapter.getWriter();
 		

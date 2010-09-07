@@ -18,8 +18,7 @@ public class BenchmarkShellArguments {
 	public static String[] typeArgs = { "jaql", "json", "java", "hadoop-read", "hadoop-write", "raw-write", "raw-read" };
 	public static String benchmark;
 	public static String serializer;
-	public static String[] serializerArgs = { "generated", "hdfs", "jaqltemp", "line",
-			"csv", "perf" };
+	public static String[] serializerArgs = { "generated", "hdfs", "jaqltemp", "perf" };
 	public static String filesystem;
 	public static String[] filesystemArgs = { "memory", "local" };
 	public static String modePostfix;

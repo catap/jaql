@@ -1,0 +1,56 @@
+{	
+	jaqlscript: "KeyExtract.jql",
+	jsonBench: "com.ibm.jaql.benchmark.programs.JsonKeyExtract",
+	javaBench: "com.ibm.jaql.benchmark.programs.JavaKeyExtract",
+	iterations: 7,
+	data: { jsonConverter: "com.ibm.jaql.benchmark.programs.data.Person",
+			schema: "com.ibm.jaql.benchmark.programs.data.Person",
+			numberOfRecords: 37000000,
+			values: [
+		{ 	forename: "Hans",
+			lastname: "Richter",
+			id: 100
+		},
+		{	forename: "Michael",
+			lastname: "McKeever",
+			id: 101
+		},
+		{	forename: "Simon",
+			lastname: "Zaiser",
+			id: 102
+		},
+		{	forename: "Adam",
+			lastname: "Apfel",
+			id: 103
+		},
+		{	forename: "Julia",
+			lastname: "Langer",
+			id: 104
+		},
+		{	forename: "André",
+			lastname: "Zucha",
+			id: 105
+		},
+		{	forename: "Herbert",
+			lastname: "Hillwig",
+			id: 106
+		},
+		{	forename: "Jürgen",
+			lastname: "Wolf",
+			id: 107
+		},
+		{	forename: "Rudolf",
+			lastname: "Renntier",
+			id: 108
+		},
+		{	forename: "Yu",
+			lastname: "Yabiku",
+			id: 109
+		},
+		{	forename: "Peter",
+			lastname: "Bishop",
+			id: 110
+		}
+		]
+	}
+}

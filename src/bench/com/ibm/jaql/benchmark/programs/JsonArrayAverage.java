@@ -1,13 +1,13 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JsonSingleDataBenchmarkProgram;
+import com.ibm.jaql.benchmark.JsonBenchmarkProgramSingleInput;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonLong;
 
-public class JsonArrayAverage extends JsonSingleDataBenchmarkProgram {
+public class JsonArrayAverage extends JsonBenchmarkProgramSingleInput {
 	MutableJsonLong result = new MutableJsonLong();
 	final JsonLong EMPTY = new JsonLong(0);
 
