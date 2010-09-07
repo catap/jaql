@@ -1,10 +1,10 @@
 {	
 	resultSchema: "com.ibm.jaql.benchmark.programs.data.Strings",
 	iterations: 7,
-	numberOfRecords: 8000000,
 	data: {
 			jsonConverter: "com.ibm.jaql.benchmark.programs.data.Strings",
 			schema: "com.ibm.jaql.benchmark.programs.data.Strings",
+			numberOfRecords: 8000000,
 			generator: "com.ibm.jaql.benchmark.programs.data.generator.ShortStringGenerator"
 		   }
 }

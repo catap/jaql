@@ -1,6 +1,6 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JsonSingleDataBenchmarkProgram;
+import com.ibm.jaql.benchmark.JsonBenchmarkProgramSingleInput;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonDecimal;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -8,7 +8,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonString;
 
-public class JsonTransform extends JsonSingleDataBenchmarkProgram {
+public class JsonTransform extends JsonBenchmarkProgramSingleInput {
 	BufferedJsonRecord rec;
 	public static final JsonString NAME_FIELD = new JsonString("name");
 	public static final JsonString ID_FIELD = new JsonString("id");

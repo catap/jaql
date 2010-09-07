@@ -23,10 +23,10 @@ public class MemoryFileSystem extends FileSystem {
 	Path workingDir;
 	URI uri;
 	
-	public static void delete() {
-		if(root != null)
-			root.delete();
-	}
+	//private static void delete() {
+	//	if(root != null)
+	//		root.delete();
+	//}
 
 	@Override
 	public FSDataOutputStream append(Path arg0, int arg1, Progressable arg2)

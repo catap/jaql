@@ -15,6 +15,7 @@ public class JaqlPrecompile extends Jaql {
 	
 	public void precompile() throws Exception {
 		e = super.prepareNext();
+		//TODO: Check that there are no WriteFn in the Expr tree
 	}
 	
 	@Override

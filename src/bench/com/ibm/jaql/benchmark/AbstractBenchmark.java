@@ -5,24 +5,26 @@ import com.ibm.jaql.benchmark.util.Timer;
 import com.ibm.jaql.json.type.JsonRecord;
 
 public abstract class AbstractBenchmark {
-	private static Timer TIMER;
+	public final static Timer TIMER = new Timer();
 	private long[] duration;
 	private int iterations;
 	private boolean initRun = false;
 	protected JsonRecord conf;
 
+	//TODO: Should accept BenchmarkConfig not a JsonRecord
 	protected void init(JsonRecord conf) throws Exception {
-		TIMER = new Timer();
 		iterations = BenchmarkConfig.parse(conf).getIterations();
 		duration = new long[iterations];
 		initRun = true;
 		this.conf = conf.getCopy(null);
 	}
+	
+	//TODO: Change visibility to public
 	protected abstract void prepareIteration() throws Exception;
 	protected abstract void runIteration() throws Exception;
 	protected abstract void close();
 	
-	public void run() throws Exception {		
+	public final void run() throws Exception {		
 		if(!initRun) {
 			throw new RuntimeException("Error init Benchmark implementation, super.init() is not called");
 		}

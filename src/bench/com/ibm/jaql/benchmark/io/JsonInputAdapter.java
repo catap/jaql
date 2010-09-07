@@ -16,7 +16,7 @@ import com.ibm.jaql.json.type.JsonValue;
 public class JsonInputAdapter implements InputAdapter {
 	long numberOfRecords = -1;
 	JsonValue[] testData = null;
-	boolean copyRecords = true;
+	boolean copyRecords = false;
 	
 	@Override
 	/**
@@ -30,7 +30,7 @@ public class JsonInputAdapter implements InputAdapter {
 	
 	public void init(JsonString dataField, JsonRecord conf) throws Exception {
 		//Read number of records to simulate
-		numberOfRecords = BenchmarkConfig.parse(conf).getNumberOfRecords();
+		numberOfRecords = BenchmarkConfig.parse(conf).getNumberOfRecords(dataField);
 		
 		/* 
 		 * Read data that should be used to generate the records and copy it

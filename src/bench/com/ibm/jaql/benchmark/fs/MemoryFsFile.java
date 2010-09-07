@@ -40,7 +40,8 @@ public class MemoryFsFile extends MemoryFsNode {
 	public FSDataInputStream getInputStream(int bufferSize) {
 		try {
 			//return new FSDataInputStream(new MemoryInputStream(buffer, repeat, FsUtil.getSequenceHeaderSize(FsUtil.getType(constructPath()))));
-			return new FSDataInputStream(new MemoryInputStream(buffer, FsUtil.getSequenceHeaderSize(FsUtil.getType(constructPath()))));
+			//return new FSDataInputStream(new MemoryInputStream(buffer, FsUtil.getSequenceHeaderSize(FsUtil.getType(constructPath()))));
+			return new FSDataInputStream(new MemoryInputStream(buffer, 0));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

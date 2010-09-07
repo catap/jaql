@@ -2,7 +2,7 @@ package com.ibm.jaql.benchmark;
 
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.ClosableJsonWriter;
-import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 
 /**
  * TODO: Merge with JsonBenchmark and delete this class
@@ -21,9 +21,11 @@ public abstract class JsonBenchmarkProgram {
 		this.writer = writer;
 	}
 
-	public JsonRecord[] getInputArguments() {
-		return new JsonRecord[1];
-	}
+	/*
+	 * The input adapters are initialized with the data from the fields
+	 * in the config with the names returned by this function.
+	 */
+	public abstract JsonString[] getInputDataFieldNames();
 
 	public abstract void run();
 }

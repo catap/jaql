@@ -14,7 +14,7 @@ public class LargeStringGenerator implements DataGenerator {
 	
 	@Override
 	public JsonString generate() {
-		int size = 100 + rnd.nextInt(400);
+		int size = 100 + rnd.nextInt(401);
 		char[] strCharacters = new char[size];
 		for (int i = 0; i < strCharacters.length; i++) {
 			strCharacters[i] = characters[rnd.nextInt(characters.length)];

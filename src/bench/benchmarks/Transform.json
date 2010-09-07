@@ -1,0 +1,57 @@
+{	
+	jaqlscript: "Transform.jql",
+	jsonBench: "com.ibm.jaql.benchmark.programs.JsonTransform",
+	javaBench: "com.ibm.jaql.benchmark.programs.JavaTransform",
+	iterations: 7,
+	data: {
+		jsonConverter: "com.ibm.jaql.benchmark.programs.data.Person",
+		schema: "com.ibm.jaql.benchmark.programs.data.Person",
+		numberOfRecords: 9250000,
+		values: [
+		{ 	forename: "Matthias",
+			lastname: "Ringwald",
+			id: 100
+		},
+		{	forename: "Thomas",
+			lastname: "Bodner",
+			id: 101
+		},
+		{	forename: "Simon",
+			lastname: "Zaiser",
+			id: 102
+		},
+		{	forename: "Adam",
+			lastname: "Apfel",
+			id: 103
+		},
+		{	forename: "Julia",
+			lastname: "Langer",
+			id: 104
+		},
+		{	forename: "André",
+			lastname: "Zucha",
+			id: 105
+		},
+		{	forename: "Herbert",
+			lastname: "Hillwig",
+			id: 106
+		},
+		{	forename: "Jürgen",
+			lastname: "Wolf",
+			id: 107
+		},
+		{	forename: "Rudolf",
+			lastname: "Renntier",
+			id: 108
+		},
+		{	forename: "Yu",
+			lastname: "Yabiku",
+			id: 109
+		},
+		{	forename: "Peter",
+			lastname: "Bishop",
+			id: 110
+		}
+		]
+	}	
+}

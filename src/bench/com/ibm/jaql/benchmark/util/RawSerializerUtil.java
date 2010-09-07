@@ -53,6 +53,19 @@ public class RawSerializerUtil {
 		throw new RuntimeException("Invalid option");
 		//return new Path("memory://" +  "/test/gen/in-"+System.nanoTime());
 		//TODO: Bug in fs implementation
-		
+	}
+	
+	public static Path outputNonNullLocation(String filesystem) {
+		if("memory".equals(filesystem)) {
+			return new Path("memory://" +  "test/out-"+System.nanoTime());
+		}
+		else if("local".equals(filesystem)) {
+			try {
+				return new Path((new File(".")).getCanonicalPath()+ "/temp/out-" + System.nanoTime());
+			} catch (IOException e) {
+				throw new RuntimeException("lol");
+			}
+		}
+		throw new RuntimeException("Invalid option");
 	}
 }

@@ -1,9 +1,9 @@
 package com.ibm.jaql.benchmark.programs;
 
-import com.ibm.jaql.benchmark.JavaBenchmarkProgram;
+import com.ibm.jaql.benchmark.JavaBenchmarkProgramSingleInput;
 import com.ibm.jaql.benchmark.programs.data.Person;
 
-public class JavaFieldAccess extends JavaBenchmarkProgram {
+public class JavaFieldAccess extends JavaBenchmarkProgramSingleInput {
 
 	public JavaFieldAccess() {
 	}

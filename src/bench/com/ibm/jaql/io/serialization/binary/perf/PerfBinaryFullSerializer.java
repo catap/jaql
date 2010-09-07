@@ -23,6 +23,13 @@ import com.ibm.jaql.io.serialization.SerializerMap;
 import com.ibm.jaql.io.serialization.binary.BinaryBasicSerializer;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
 import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.perf.lazy.LazyArraySerializer;
+import com.ibm.jaql.io.serialization.binary.perf.lazy.LazyJsonInputBuffer;
+import com.ibm.jaql.io.serialization.binary.perf.lazy.LazyJsonOutputBuffer;
+import com.ibm.jaql.io.serialization.binary.perf.lazy.LazyLongSerializer;
+import com.ibm.jaql.io.serialization.binary.perf.lazy.LazyRecordSerializer;
+import com.ibm.jaql.io.serialization.binary.perf.lazy.LazyStringSerializer;
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.GenericSchema;
 import com.ibm.jaql.json.schema.LongSchema;
 import com.ibm.jaql.json.schema.RecordSchema;
@@ -88,6 +95,10 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
   private final boolean basicNonNullSchema;
   private BinaryBasicSerializer<JsonValue> basicTypeSerializer = null;
   
+  private final LazyJsonInputBuffer lazyInputBuffer;
+  private byte[] rawBuffer;
+  private final LazyJsonOutputBuffer lazyOutputBuffer;
+  
   // -- construction ------------------------------------------------------------------------------
   
 	public PerfBinaryFullSerializer(Schema schema) {
@@ -102,7 +113,13 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
 		basicNonNullSchema = basicTypeSchema && serializers.matchesNonNull();
 		if (basicTypeSchema && !basicNullSchema && !basicNonNullSchema) {
 			basicTypeSerializer = (BinaryBasicSerializer<JsonValue>) makeBasicSerializer(schema);
+		} else {
+			throw new RuntimeException("Not supported");
 		}
+		
+		lazyInputBuffer = new LazyJsonInputBuffer();
+		rawBuffer = new byte[64*1024];
+		lazyOutputBuffer = new LazyJsonOutputBuffer();
 	}
   
 
@@ -110,14 +127,23 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
 
 	@Override
 	public JsonValue read(DataInput in, JsonValue target) throws IOException {
+		//Read length
+		int length = BaseUtil.readVSInt(in);
+		//Read buffer
+		//TODO: Check buffer size
+		in.readFully(rawBuffer, 0, length);
+		lazyInputBuffer.setBuffer(rawBuffer, 0, length);
+
+		//Let LazyBuffer be wrapped by serializer into a json datatype
 		if (basicTypeSchema) {
 			if (basicNullSchema) {
 				return null;
 			} else if (basicNonNullSchema) {
 				// matches nonnull only
-				return defaultSerializer.read(in, null);
+				throw new RuntimeException("Not supported");
+				//return defaultSerializer.read(in, null);
 			} else {
-				return basicTypeSerializer.read(in, null);
+				return basicTypeSerializer.read(lazyInputBuffer, null);
 			}
 		} else {
 			// there are multiple serializers --> get the encoding
@@ -145,7 +171,10 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
     }
     
     if(basicTypeSchema) {
-    	basicTypeSerializer.write(out, value);
+    	lazyOutputBuffer.reset();
+    	basicTypeSerializer.write(lazyOutputBuffer, value);
+    	BaseUtil.writeVSInt(out, lazyOutputBuffer.pos);
+    	out.write(lazyOutputBuffer.buffer, 0, lazyOutputBuffer.pos);
     } else {
         // find a serializer
         SerializerInfo k = serializers.get(value);
@@ -189,7 +218,7 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
       //return new BooleanSerializer((BooleanSchema)schema);
     	return null;
     case LONG:
-      return new LongSerializer((LongSchema)schema);
+      return new LazyLongSerializer((LongSchema)schema);
     case DECFLOAT:
       //return new DecfloatSerializer((DecfloatSchema)schema);
     	return null;
@@ -197,7 +226,7 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
       //return new DoubleSerializer((DoubleSchema)schema);
     	return null;
     case STRING:
-      return new StringSerializer((StringSchema)schema);
+      return new LazyStringSerializer((StringSchema)schema);
     case BINARY:
       //return new BinarySerializer((BinarySchema)schema);
     	return null;
@@ -205,8 +234,7 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
       //return new DateSerializer((DateSchema)schema);
     	return null;
     case ARRAY:
-      //return new ArraySerializer((ArraySchema)schema);
-    	return null;
+    	return new LazyArraySerializer((ArraySchema)schema);
     case RECORD:
     	//if(((RecordSchema) schema).hasAdditional()) {
     	//	return new RecordSerializer((RecordSchema) schema);
@@ -394,7 +422,7 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
 			// return new BooleanSerializer((BooleanSchema)schema);
 			return null;
 		case LONG:
-			return new LongSerializer((LongSchema) schema);
+			return new LazyLongSerializer((LongSchema) schema);
 		case DECFLOAT:
 			// return new DecfloatSerializer((DecfloatSchema)schema);
 			return null;
@@ -402,7 +430,7 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
 			// return new DoubleSerializer((DoubleSchema)schema);
 			return null;
 		case STRING:
-			return new StringSerializer((StringSchema) schema);
+			return new LazyStringSerializer((StringSchema) schema);
 		case BINARY:
 			// return new BinarySerializer((BinarySchema)schema);
 			return null;
@@ -410,8 +438,7 @@ public final class PerfBinaryFullSerializer extends BinaryFullSerializer impleme
 			// return new DateSerializer((DateSchema)schema);
 			return null;
 		case ARRAY:
-			// return new ArraySerializer((ArraySchema)schema);
-			return null;
+			return new LazyArraySerializer((ArraySchema)schema);
 		case RECORD:
 			//return new RequiredOptionalRecordSerializer((RecordSchema) schema);
 			return new LazyRecordSerializer((RecordSchema) schema);
