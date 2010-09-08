@@ -24,7 +24,13 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
+import com.ibm.jaql.lang.walk.ExprWalker;
+import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -50,6 +56,42 @@ public class PathAllFields extends PathFields
     super(new PathReturn());
   }
 
+  
+  /**
+   * Return the mapping table.
+   * Since all fields are mapped, then we add a simple mapping record that should match (partially) with any thing: ($ --mapsTo--> $)
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  
+	  //Find the iteration variable used outside the PathALLFields
+	  Var bindVar = null;
+	  Expr parent = this.parent(); 
+	  if ((!(parent instanceof PathRecord)) || (!(parent.parent() instanceof PathExpr)))
+		  return mt;
+	  PathExpr peParent = (PathExpr)parent.parent();
+	  VarExpr veParent = MappingTable.findVarInExpr(peParent.input());
+	  if (veParent == null)
+		  return mt;
+	  else
+		  bindVar = veParent.var();
+		  
+	  //Construct the L.H.S of the mapping	
+	  VarExpr veL = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  PathExpr peL = new PathExpr(veL, new PathReturn());
+
+	  //Construct the R.H.S of the mapping (pathExpr)
+	  VarExpr veR = new VarExpr(bindVar);
+	  PathExpr peR = new PathExpr(veR, new PathReturn());
+	  
+	  //Add the mapping record
+	  mt.add(peL, peR, true);
+	  return mt;
+  }
+  
+  
   /**
    * 
    */

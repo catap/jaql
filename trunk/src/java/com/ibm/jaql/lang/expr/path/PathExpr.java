@@ -105,8 +105,12 @@ public final class PathExpr extends Expr
 	  if ((input() instanceof VarExpr) || (input() instanceof PathExpr) || (input() instanceof IndexExpr) )
 	  {
 		  boolean safeToMap = input().getMappingTable().isSafeToMapAll();
-		  safeToMap = safeToMap && firstStep().getMappingTable().isSafeToMapAll();
-		  mt.add(ve, this, safeToMap);
+		  MappingTable childTable = firstStep().getMappingTable();
+		  safeToMap = safeToMap && childTable.isSafeToMapAll();
+		  if (firstStep() instanceof PathRecord)
+			  mt.addAll(childTable);
+		  else
+			  mt.add(ve, this, safeToMap);
 	  }
 	  else
 		  mt.add(ve, this, false);

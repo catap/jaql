@@ -556,6 +556,296 @@ $data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> 
 ;//------------------- TEST-CASE -----------------
 
 
+//=====================Testing PathOneFiled, PathAllFields, PathNotFields=============================
+//Returns 1 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format.cover, .price[0]} -> filter $.price > 100;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "author": "J. K. Rowling",
+    "format": "soft",
+    "price": 120.5
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 4 Record  (Filter is pushed down)
+$data_books -> transform ${.author, .format.cover, .price[0]} -> filter $.format == 'hard';
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "author": "J. K. Rowling",
+    "format": "hard",
+    "price": 3
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": "hard"
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": "hard",
+    "price": 11.0
+  },
+  {
+    "author": "Carolyn Keene",
+    "format": "hard"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 4 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format{.cover, .pages}} -> filter $.format.cover == 'hard';
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    }
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    }
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 742
+    }
+  },
+  {
+    "author": "Carolyn Keene",
+    "format": {
+      "cover": "hard",
+      "pages": 66
+    }
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 0 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format.discussions{.user, .text}} -> filter $.format.user == 'jill';
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 3 Record (Filter is pushed down)
+$data_books -> transform ${*} -> filter $.price[0] > 10;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "soft",
+      "pages": 1200
+    },
+    "price": [
+      120.5,
+      110.0
+    ],
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 742
+    },
+    "price": [
+      11.0,
+      17.5
+    ],
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1996
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+ 
+//Returns 4 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format{*}} -> filter $.format.cover == 'hard';
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    }
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    }
+  },
+  {
+    "author": "J. K. Rowling",
+    "format": {
+      "cover": "hard",
+      "pages": 742
+    }
+  },
+  {
+    "author": "Carolyn Keene",
+    "format": {
+      "cover": "hard",
+      "pages": 66
+    }
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${.author, .format{* -.cover}} -> filter $.format.cover == 'hard';
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 3 Record (Filter is pushed down)
+$data_books -> transform ${* -.author, .format} -> filter $.price[0] > 10;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "price": [
+      120.5,
+      110.0
+    ],
+    "publisher": "XYZ",
+    "title": "Deathly Hallows",
+    "year": 1998
+  },
+  {
+    "price": [
+      11.0,
+      17.5
+    ],
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1996
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${* -.author, .format} -> filter $.author == "abc";
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${* -.author, .format} -> filter $.format.cover == "hard";
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 4 Record (Filter is pushed down)
+$data_books -> transform ${* -.author, .price} -> filter $.format.cover == "hard";
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    },
+    "publisher": "Scholastic",
+    "title": "Deathly Hallows",
+    "year": 2007
+  },
+  {
+    "format": {
+      "cover": "hard",
+      "pages": 1302
+    },
+    "publisher": "Scholastic",
+    "title": "Chamber of Secrets",
+    "year": 1999
+  },
+  {
+    "format": {
+      "cover": "hard",
+      "pages": 742
+    },
+    "publisher": "Scholastic",
+    "title": "Sorcerers Stone",
+    "year": 1996
+  },
+  {
+    "format": {
+      "cover": "hard",
+      "pages": 66
+    },
+    "publisher": "Grosset",
+    "title": "The Secret of Kane",
+    "year": 1920
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${* -.author, .price} -> filter $.price[0] > 10;
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+
 //====================Testing Filter-Transform-Join===================================================
 //Returns 0 records. --(Filter should be pushed down all the way in BOTH directions)
 $r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};
@@ -2151,7 +2441,7 @@ join $r1, $r2 where $r1.author == $r2.bs[0] into {$r1.author, $r1.year, grp_key:
 ]
 
 ;//------------------- TEST-CASE -----------------
-
+   
 //==========================Testing Filter-FunctionCalls===================================================
 
 registerFunction("split1", "com.acme.extensions.fn.Split1");
