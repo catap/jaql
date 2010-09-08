@@ -231,12 +231,12 @@ public class MappingTable
 	/**
 	 * Find the var used inside this expression. It has to have one, otherwise it returns null.
 	 */
-	protected VarExpr findVarInExpr(Expr expr)
+	public static VarExpr findVarInExpr(Expr expr)
 	{
 		ExprWalker walker = new PostOrderExprWalker();;
 		walker.reset(expr);
 		int count = 0;
-		VarExpr ve = new VarExpr(new Var(""));
+		VarExpr ve = null;
 		
 		while ((expr = walker.next()) != null)
 	    {

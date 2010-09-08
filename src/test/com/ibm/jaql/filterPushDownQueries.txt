@@ -239,6 +239,44 @@ $data_books -> transform each $d {x: $d.author, $d.format.cover, y:$d.price} -> 
 //Returns 1 record --(Filter should be pushed below Transform)
 [true,false] -> transform {a:1 ,b:$} -> filter $.b;
 
+//=====================Testing PathOneFiled, PathAllFields, PathNotFields=============================
+//Returns 1 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format.cover, .price[0]} -> filter $.price > 100;
+
+//Returns 4 Record  (Filter is pushed down)
+$data_books -> transform ${.author, .format.cover, .price[0]} -> filter $.format == 'hard';
+
+//Returns 4 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format{.cover, .pages}} -> filter $.format.cover == 'hard';
+
+//Returns 0 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format.discussions{.user, .text}} -> filter $.format.user == 'jill';
+
+//Returns 3 Record (Filter is pushed down)
+$data_books -> transform ${*} -> filter $.price[0] > 10;
+ 
+//Returns 4 Record (Filter is pushed down)
+$data_books -> transform ${.author, .format{*}} -> filter $.format.cover == 'hard';
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${.author, .format{* -.cover}} -> filter $.format.cover == 'hard';
+
+//Returns 3 Record (Filter is pushed down)
+$data_books -> transform ${* -.author, .format} -> filter $.price[0] > 10;
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${* -.author, .format} -> filter $.author == "abc";
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${* -.author, .format} -> filter $.format.cover == "hard";
+
+//Returns 4 Record (Filter is pushed down)
+$data_books -> transform ${* -.author, .price} -> filter $.format.cover == "hard";
+
+//Returns 0 Record (Filter is NOT pushed down)
+$data_books -> transform ${* -.author, .price} -> filter $.price[0] > 10;
+
+
 //====================Testing Filter-Transform-Join===================================================
 //Returns 0 records. --(Filter should be pushed down all the way in BOTH directions)
 $r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cover};
