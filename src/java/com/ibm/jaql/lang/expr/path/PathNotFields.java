@@ -28,7 +28,10 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
 
 
@@ -95,6 +98,62 @@ public class PathNotFields extends PathFields
     }
     return true;
   }
+  
+  /**
+   * Return the mapping table.
+   * Since a subset of the fields are excluded, we do the mapping as following:
+   * 	1) add a generic mapping record that matches any field, i.e., ($ --mapsTo--> $). This record has SafeMapping flag set to True.
+   *    2) add one mapping record for each of the excluded fields that overrides the generic mapping record. These records have SafeMapping flag set to False.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  
+	  //Find the iteration variable used outside the PathALLFields
+	  Var bindVar = null;
+	  Expr parent = this.parent(); 
+	  if ((!(parent instanceof PathRecord)) || (!(parent.parent() instanceof PathExpr)))
+		  return mt;
+	  PathExpr peParent = (PathExpr)parent.parent();
+	  VarExpr veParent = MappingTable.findVarInExpr(peParent.input());
+	  if (veParent == null)
+		  return mt;
+	  else
+		  bindVar = veParent.var();
+		  
+	  //Construct the L.H.S of the mapping	
+	  VarExpr veL = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+	  PathExpr peL = new PathExpr(veL, new PathReturn());
+
+	  //Construct the R.H.S of the mapping (pathExpr)
+	  VarExpr veR = new VarExpr(bindVar);
+	  PathExpr peR = new PathExpr(veR, new PathReturn());
+	  
+	  //Add the generic mapping record
+	  mt.add(peL, peR, true);
+	  
+	  //Loop over the excluded fields and add one record with SafeMapping flag set to False.
+	  for(int i = 0 ; i < exprs.length - 1 ; i++)
+	  {
+		  PathOneField f = (PathOneField)exprs[i];
+		  ConstExpr fName = (ConstExpr)f.child(0);
+		  
+		  //Construct the L.H.S of the mapping	
+		  veL = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
+		  peL = new PathExpr(veL, new PathFieldValue(fName.clone(null)));
+
+		  //Construct the R.H.S of the mapping (pathExpr)
+		  veR = new VarExpr(bindVar);
+		  peR = new PathExpr(veR, new PathFieldValue(fName.clone(null)));
+		  
+		  //Add unSafe mapping record
+		  mt.add(peL, peR, false);
+	  }
+	    
+	  return mt;
+  }
+  
   
   // -- schema ------------------------------------------------------------------------------------
   

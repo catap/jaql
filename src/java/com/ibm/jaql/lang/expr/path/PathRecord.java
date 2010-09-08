@@ -33,6 +33,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.metadata.MappingTable;
 
 
 /** e.g. ${.a,.b} */;
@@ -81,6 +82,23 @@ public class PathRecord extends PathStep
     exprs[m].decompile(exprText, capturedVars);
   }
 
+  /**
+   * Return the mapping table.
+   */
+  @Override
+  public MappingTable getMappingTable()
+  {
+	  MappingTable mt = new MappingTable();
+	  for (Expr e : exprs)
+	  {
+	  	//Return the mapping from all child exprs
+		  if (!(e instanceof PathReturn))
+			  mt.addAll(e.getMappingTable());
+	  }
+	  return mt;
+  }
+  
+  
   /* (non-Javadoc)
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
