@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
@@ -78,7 +78,7 @@ public class TagFlattenPushdown extends Rewrite
       fe.setChild(1, flat);
       return true;
     }
-    else if( input instanceof MergeFn )
+    else if( input instanceof UnionFn )
     {
       // merge(e1,..., eN) -> tagFlatten(i,k) -> e3
       // ==>

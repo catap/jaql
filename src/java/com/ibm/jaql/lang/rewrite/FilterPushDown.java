@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -537,9 +537,9 @@ public class FilterPushDown extends Rewrite
 		  child_ids.add(0);
 		  return filterDirectpushRewrite(fe, child_ids);
 	  }
-	  else if (filter_input.inExpr() instanceof MergeFn)
+	  else if (filter_input.inExpr() instanceof UnionFn)
 	  {
-		  MergeFn expr_below = (MergeFn) filter_input.inExpr();
+	      UnionFn expr_below = (UnionFn) filter_input.inExpr();
 		  ArrayList<Integer> child_ids = new ArrayList<Integer>();
 		  for (int i = 0; i < expr_below.numChildren(); i++)
 			  child_ids.add(i);		  

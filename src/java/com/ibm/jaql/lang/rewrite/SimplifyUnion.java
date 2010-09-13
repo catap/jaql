@@ -18,7 +18,7 @@ package com.ibm.jaql.lang.rewrite;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
@@ -46,7 +46,7 @@ public class SimplifyUnion extends Rewrite
 {
   public SimplifyUnion(RewritePhase phase)
   {
-    super(phase, MergeFn.class);
+    super(phase, UnionFn.class);
   }
 
   /*
@@ -57,9 +57,9 @@ public class SimplifyUnion extends Rewrite
   @Override
   public boolean rewrite(Expr expr) throws Exception
   {
-    MergeFn merge = (MergeFn)expr;
+    UnionFn merge = (UnionFn)expr;
     
-    if( merge.parent() instanceof MergeFn )
+    if( merge.parent() instanceof UnionFn )
     {
       merge.replaceInParent(merge.children(), 0, merge.numChildren());
       return true;

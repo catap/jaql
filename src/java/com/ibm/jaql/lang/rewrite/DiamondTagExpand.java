@@ -16,7 +16,7 @@
 package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DiamondTagFn;
@@ -63,7 +63,7 @@ public class DiamondTagExpand extends Rewrite
 //      Expr pair = new ArrayExpr(new ConstExpr(i), new VarExpr(trVar));
 //      args[i] = new TransformExpr(trVar, call, pair);;
     }
-    Expr union = new MergeFn(args);
+    Expr union = new UnionFn(args);
     
     // make: e1 -> expand each i (union)
     Expr expr = new ForExpr(forVar, input, union);

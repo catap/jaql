@@ -17,7 +17,7 @@ package com.ibm.jaql.lang.rewrite;
 
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -135,7 +135,7 @@ public class JoinToCogroup extends Rewrite
       }
       else
       {
-        onNullKey = new MergeFn(toMerge);
+        onNullKey = new UnionFn(toMerge);
       }
     }
     
