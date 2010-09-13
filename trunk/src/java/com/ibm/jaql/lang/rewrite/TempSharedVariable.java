@@ -21,7 +21,7 @@ import java.util.HashSet;
 import com.ibm.jaql.io.hadoop.CompositeOutputAdapter;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
@@ -311,7 +311,7 @@ public class TempSharedVariable extends Rewrite
     //   ... -> expand each $forVar merge( unionLegs ) -> write( composite([...]) ) 
     //
     // Make the expanded union
-    Expr e = new MergeFn(unionLegs);
+    Expr e = new UnionFn(unionLegs);
     // Add the mapping expressions to the shared variable binding expression
     e = new ForExpr(forVar, bind.eqExpr(), e);
     // Write to a composite output

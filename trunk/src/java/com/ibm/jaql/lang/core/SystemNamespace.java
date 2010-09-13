@@ -69,6 +69,7 @@ import com.ibm.jaql.lang.expr.array.SlidingWindowFn;
 import com.ibm.jaql.lang.expr.array.ToArrayFn;
 import com.ibm.jaql.lang.expr.array.TumblingWindowBySizeFn;
 import com.ibm.jaql.lang.expr.array.TumblingWindowFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.binary.Base64Fn;
 import com.ibm.jaql.lang.expr.binary.HexFn;
 import com.ibm.jaql.lang.expr.catalog.CatalogInsertFn;
@@ -461,6 +462,7 @@ public final class SystemNamespace extends Namespace {
     register(new RangeExpr.Descriptor());
     // register(new CombinerExpr.Descriptor());
     register(new MergeFn.Descriptor());
+    register(new UnionFn.Descriptor());
     register(new MergeContainersFn.Descriptor());
     register(new ReverseFn.Descriptor());
     register(new OnEmptyFn.Descriptor());

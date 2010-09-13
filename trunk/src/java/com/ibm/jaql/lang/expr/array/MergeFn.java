@@ -14,22 +14,17 @@
  * the License.
  */
 package com.ibm.jaql.lang.expr.array;
-import java.util.ArrayList;
-
-import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.schema.SchemaTransformation;
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.core.IterExpr;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
-import com.ibm.jaql.util.Bool3;
 
 /**
- * Merge multiple pipes into one pipe in arbitrary order (like SQL's UNION ALL) 
+ * DEPRECATED: use union instead.
+ * Union multiple arrays into one array in arbitrary order without
+ * removing duplicates (like SQL's UNION ALL) 
  */
-public class MergeFn extends IterExpr // TODO: add intersect, union, difference, concat
+public class MergeFn extends MacroExpr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par1u
   {
@@ -44,68 +39,9 @@ public class MergeFn extends IterExpr // TODO: add intersect, union, difference,
     super(inputs);
   }
   
-  public MergeFn(ArrayList<Expr> inputs)
-  {
-    super(inputs);
-  }
-
   @Override
-  public Schema getSchema()
+  public Expr expand(Env env) throws Exception
   {
-    Schema elems = null;
-    for( int i = 0 ; i < exprs.length ; i++ )
-    {
-      Schema s = SchemaTransformation.restrictToArrayOrNull(exprs[i].getSchema());
-      if( s == null )
-      {
-        throw new IllegalArgumentException("array expected for merge argument "+i);
-      }
-      Schema e = s.elements();
-      if( elems == null )
-      {
-        elems = e;
-      }
-      else
-      {
-        // TODO: use exact schema?
-        // elems = OrSchema.make(elems, e);
-        elems = SchemaTransformation.merge(elems, e);
-      }
-    }
-    return new ArraySchema(null, elems);
+    return new UnionFn(exprs);
   }
-
-  @Override
-  public Bool3 evaluatesChildOnce(int i)
-  {
-    return Bool3.TRUE;
-  }
-
-  @Override
-  public JsonIterator iter(final Context context) throws Exception
-  {
-    return new JsonIterator()
-    {
-      int input = 0;
-      JsonIterator iter = JsonIterator.EMPTY;
-      
-      @Override
-      public boolean moveNext() throws Exception
-      {
-        while( true )
-        {
-          if (iter.moveNext()) {
-            currentValue = iter.current();
-            return true;
-          }
-          if( input >= exprs.length )
-          {
-            return false;
-          }
-          iter = exprs[input++].iter(context);
-        }
-      }
-    };
-  }
-
 }

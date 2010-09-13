@@ -148,7 +148,7 @@ parallelRange = fn(long numValues, long parallelism=100)
   nPerTask = numValues / parallelism,
   nPerTask1 = nPerTask + 1,
   nExtra = mod(numValues, parallelism),
-  ranges = merge( range(parallelism - nExtra) -> transform nPerTask,
+  ranges = union( range(parallelism - nExtra) -> transform nPerTask,
                   range(nExtra) -> transform nPerTask1 )
             -> runningSum( fn(i) i, fn(sum,i) { start: sum - i, end: sum - 1 } ),
   read( worklist(ranges) )
