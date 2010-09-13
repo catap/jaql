@@ -1,0 +1,305 @@
+
+;//------------------- TEST-CASE -----------------
+x = fn(v) jsonToXml(v);
+;//------------------- TEST-CASE -----------------
+
+
+// basic types
+"str\nwith\nnl" -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"string\">str\nwith\nnl</value>"
+
+;//------------------- TEST-CASE -----------------
+
+true -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"boolean\">true</value>"
+
+;//------------------- TEST-CASE -----------------
+
+null -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"null\"></value>"
+
+;//------------------- TEST-CASE -----------------
+
+
+// numbers
+17 -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"long\">17</value>"
+
+;//------------------- TEST-CASE -----------------
+
+17.5d -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"double\">17.5</value>"
+
+;//------------------- TEST-CASE -----------------
+
+17.5m -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"decfloat\">17.5m</value>"
+
+;//------------------- TEST-CASE -----------------
+
+0.0/0.0 -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"double\">NaN</value>"
+
+;//------------------- TEST-CASE -----------------
+
+1.0/0.0 -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"double\">Infinity</value>"
+
+;//------------------- TEST-CASE -----------------
+
+-1.0/0.0 -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"double\">-Infinity</value>"
+
+;//------------------- TEST-CASE -----------------
+
+
+// extension types
+hex('deadbeaf') -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"binary\">hex(\'DEADBEAF\')</value>"
+
+;//------------------- TEST-CASE -----------------
+
+date('2010-09-11T01:18:38Z') -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"date\">2010-09-11T01:18:38Z</value>"
+
+;//------------------- TEST-CASE -----------------
+
+schema { x: long, y: string } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"schematype\">schema {\n         \"x\": long,\n         \"y\": string\n       }</value>"
+
+;//------------------- TEST-CASE -----------------
+
+x -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><value type=\"function\">fn(v) (system::jsonToXml(v))</value>"
+
+;//------------------- TEST-CASE -----------------
+
+
+// Records
+{} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: 1 } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"long\">1</name></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ f1: 1, f2: "two" } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><f1 type=\"long\">1</f1><f2 type=\"string\">two</f2></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: { nested: 1 }} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"record\"><nested type=\"long\">1</nested></name></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: { f1: 'str1', f2: 2 }} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"record\"><f1 type=\"string\">str1</f1><f2 type=\"long\">2</f2></name></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: { f1: 'str1', f2: [10, 11, 12] }} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"record\"><f1 type=\"string\">str1</f1><f2 type=\"array\"><value type=\"long\">10</value><value type=\"long\">11</value><value type=\"long\">12</value></f2></name></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: ['a', 'b'] } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"array\"><value type=\"string\">a</value><value type=\"string\">b</value></name></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ t: { p: [[1, 2, 3], ['a', 'b', 'c']] }} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><t type=\"record\"><p type=\"array\"><array><value type=\"long\">1</value><value type=\"long\">2</value><value type=\"long\">3</value></array><array><value type=\"string\">a</value><value type=\"string\">b</value><value type=\"string\">c</value></array></p></t></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: 'beijing'} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"string\">beijing</name></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ name: 'beijing', no: 1} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><name type=\"string\">beijing</name><no type=\"long\">1</no></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ desc: [1, 2] } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ desc: [1, 2], type: 'io' } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc><type type=\"string\">io</type></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ desc: [1, 2], type: 'io', meta: {type: 'map', value: 10 }} -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc><type type=\"string\">io</type><meta type=\"record\"><type type=\"string\">map</type><value type=\"long\">10</value></meta></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{ content: [[[{name: 'jaql', age: 2}, {city: 'beijing'}]], 2] } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><record><content type=\"array\"><array><array><record><name type=\"string\">jaql</name><age type=\"long\">2</age></record><record><city type=\"string\">beijing</city></record></array></array><value type=\"long\">2</value></content></record>"
+
+;//------------------- TEST-CASE -----------------
+
+
+// arrays
+[] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array></array>"
+
+;//------------------- TEST-CASE -----------------
+
+[1] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><value type=\"long\">1</value></array>"
+
+;//------------------- TEST-CASE -----------------
+
+[1,2] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><value type=\"long\">1</value><value type=\"long\">2</value></array>"
+
+;//------------------- TEST-CASE -----------------
+
+[1, null] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><value type=\"long\">1</value><value type=\"null\"></value></array>"
+
+;//------------------- TEST-CASE -----------------
+
+['lisp', 'haskell'] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><value type=\"string\">lisp</value><value type=\"string\">haskell</value></array>"
+
+;//------------------- TEST-CASE -----------------
+
+[{name: 'beijing', no: 1}] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><record><name type=\"string\">beijing</name><no type=\"long\">1</no></record></array>"
+
+;//------------------- TEST-CASE -----------------
+
+[[]] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><array></array></array>"
+
+;//------------------- TEST-CASE -----------------
+
+[[1, 2], [10, 20], 100] -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><array><value type=\"long\">1</value><value type=\"long\">2</value></array><array><value type=\"long\">10</value><value type=\"long\">20</value></array><value type=\"long\">100</value></array>"
+
+;//------------------- TEST-CASE -----------------
+
+range(5) -> transform { a: $, b: strcat('s',$) } -> x();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" ?><array><record><a type=\"long\">0</a><b type=\"string\">s0</b></record><record><a type=\"long\">1</a><b type=\"string\">s1</b></record><record><a type=\"long\">2</a><b type=\"string\">s2</b></record><record><a type=\"long\">3</a><b type=\"string\">s3</b></record><record><a type=\"long\">4</a><b type=\"string\">s4</b></record></array>"
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------

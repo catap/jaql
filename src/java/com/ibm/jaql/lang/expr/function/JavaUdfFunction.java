@@ -126,25 +126,29 @@ public class JavaUdfFunction extends Function
     throw new UnsupportedOperationException();
   }
   
+  /**
+   * @throws Exception of various sorts when we cannot instantiate the class or find the method.
+   */
   @Override
-  public Expr inline(boolean forEval) {
-    if (forEval)
-    {
-      // cloning necessary because object construction changes parent field in expr's
-      Expr[] clonedArgs = new Expr[args.length];
-      VarMap varMap = new VarMap();
-      for (int i=0; i<args.length; i++)
+  public Expr inline(boolean forEval) throws Exception 
+  {
+      if (forEval)
       {
-        HashSet<Var> vars = args[i].getCapturedVars();
-        for (Var v : vars) 
+        // cloning necessary because object construction changes parent field in expr's
+        Expr[] clonedArgs = new Expr[args.length];
+        VarMap varMap = new VarMap();
+        for (int i=0; i<args.length; i++)
         {
-          varMap.put(v, v);
+          HashSet<Var> vars = args[i].getCapturedVars();
+          for (Var v : vars) 
+          {
+            varMap.put(v, v);
+          }
+          clonedArgs[i] = args[i].clone(varMap);
         }
-        clonedArgs[i] = args[i].clone(varMap);
+        return new JavaFunctionCallExpr(c, Arrays.asList(clonedArgs));
       }
-      return new JavaFunctionCallExpr(c, Arrays.asList(clonedArgs));
-    }
-    return new JavaFunctionCallExpr(c, Arrays.asList(args));
+      return new JavaFunctionCallExpr(c, Arrays.asList(args));
   }
 	
 	// -- copying -----------------------------------------------------------------------------------

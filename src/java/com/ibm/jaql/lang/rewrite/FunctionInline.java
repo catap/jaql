@@ -42,7 +42,7 @@ public class FunctionInline extends Rewrite
    * @see com.ibm.jaql.lang.rewrite.Rewrite#rewrite(com.ibm.jaql.lang.expr.core.Expr)
    */
   @Override
-  public boolean rewrite(Expr expr)
+  public boolean rewrite(Expr expr) throws Exception
   {
     // try inlining
     FunctionCallExpr call = (FunctionCallExpr) expr;

@@ -139,7 +139,15 @@ public class MRAggregate extends MapReduceBaseExpr
     AlgebraicAggregate[] aggs = new AlgebraicAggregate[numAggs];
     for(int i = 0 ; i < numAggs ; i++)
     {
-      Expr c = FunctionCallExpr.inlineIfPossible(e.child(i));
+      Expr c;
+      try
+      {
+        c = FunctionCallExpr.inlineIfPossible(e.child(i));
+      }
+      catch (Exception ex)
+      {
+        throw JaqlUtil.rethrow(ex);
+      }
       if( !(c instanceof AlgebraicAggregate) )
       {
         throw new RuntimeException("aggregate function must be an array of AlgebraicAggregate functions");

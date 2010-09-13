@@ -37,6 +37,18 @@
 //     * The value may be changed using value assignment (":="), and
 //       any existing references within any expression variables now
 //       to the variable now refer to the new value.
+//     * If extern is specified and a variable is already in scope 
+//       with this name:
+//       * If the old variable is not extern, a new extern variable
+//         is created with a value of the evaluation of the old variable.
+//       * If the old variable was extern, a new variable is not created.
+//       * If a value is specified with the extern declaration, it is
+//         ignored if the old variable already has a value (ie, the
+//         extern value is only the default value, if not already defined).
+//       * If the old variable is extern, the type can only change in very 
+//         limited ways (basically from any to a paricular type).
+//       * If the old variable was non-extern, only extern type is used
+//         to constrain the variable.
 //
 //===========================================================================
 
@@ -134,11 +146,13 @@ j = i;   // expr that refers to i
 i := 2;  // redefines i, and indirectly j
 {i,j};   // i:2,j:2
 
-// error: cannot redeclare an extern
-extern i := 1;
-
 // error: must use := with externs
 i = 1;
+
+// redeclaring an extern will not change its value.
+extern i := 3;
+// still 2
+i;
 
 k := i;   // takes the current value of i
 {i,k};    // i:2,k:2
@@ -149,7 +163,7 @@ i := 3;   // redefine i (and j), but not k
 [3] -> write(hdfs('A'));
 // file is read at this point
 i := read(hdfs('A'))[0];
-// i has 
+// i has 3
 i;
 
 [4] -> write(hdfs('A'));
@@ -173,7 +187,6 @@ j;
 // error: undefined value when evaluating value
 k := l;
 
-
 // error: type mismatch
 l := 3;
 // success
@@ -182,4 +195,63 @@ l;
 // ok now because l is defined
 j;
 
+// Non-externs can be shadowed by an extern, even expr variables
+// The old value is retained, even if the extern specifies a value.
+[7] -> write(hdfs('A'));
+ne = read(hdfs('A'))[0];
+[8] -> write(hdfs('A'));
+// 3 is ignored because ne is already defined
+// However ne := ne, ie 8
+extern ne := 3;
+[9] -> write(hdfs('A'));
+// 8
+ne;
 
+// Check type constraints - same type
+extern ev: long := 4;
+// ev already defined, so 5 is ignored
+// type is the same, so basically this is a no-op
+extern ev: long := 5;
+// 4
+ev;
+
+// Check type constraints - any to specific - matching
+extern et := 4;
+// ev already defined, so 5 is ignored
+// type can changed from none to a partciular type
+extern et: long := 5;
+// 4
+et;
+
+// Check type constraints - any to specific - matching
+extern es := 4;
+// es already defined, so value is ignored
+// type can changed from none to a partciular type
+// error: 4 does not match new type 
+extern es: string := "s";
+// still 4
+es;
+
+// Check type constraints - specific to unspecified
+extern eu: long := 4;
+// eu already defined, so 5 is ignored
+// type is not specified, so it is kept from before
+extern eu := 5;
+// 4
+eu;
+
+// Check type constraints - specific to any
+// error - cannot change type
+extern eu: any := 6;
+// 4
+eu;
+
+// Check type constraints - value type ignored
+nv: long := 2;
+// no error becuase nv was not an extern before
+extern nv: any := "x";
+// still 2
+nv;
+// now change to "y"
+nv := "y";
+nv;

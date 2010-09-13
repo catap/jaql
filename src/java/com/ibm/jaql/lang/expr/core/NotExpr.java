@@ -49,7 +49,7 @@ public class NotExpr extends Expr
   @Override
   public Schema getSchema()
   {
-    if (exprs[0].getSchema().is(NULL).maybe() || exprs[1].getSchema().is(NULL).maybe())
+    if (exprs[0].getSchema().is(NULL).maybe())
     {
       return SchemaFactory.booleanOrNullSchema();
     }

@@ -91,11 +91,13 @@ public class Jaql implements CoreJaql
                          boolean batchMode) throws Exception
   {
     Jaql engine = new Jaql(filename, reader);
+    JaqlPrinter printerToClose = null;
     if (outputAdapter == null) {
       PrintStream out = new PrintStream(System.out, true, "UTF-8"); // TODO: use system encoding? have jaql encoding parameter?
       engine.setJaqlPrinter(new StreamPrinter(out, batchMode));
     } else {
-      engine.setJaqlPrinter(new IODescriptorPrinter(outputAdapter.getWriter()));
+      printerToClose = new IODescriptorPrinter(outputAdapter.getWriter());
+      engine.setJaqlPrinter(printerToClose);
     }
     
     engine.setProperty("stopOnException", Boolean.toString(batchMode));
@@ -105,6 +107,8 @@ public class Jaql implements CoreJaql
     }
     
     engine.run();
+    
+    if( printerToClose != null ) printerToClose.close();
   }
 
   public static void addExtensionJars(String[] jars) throws Exception
@@ -131,6 +135,7 @@ public class Jaql implements CoreJaql
   protected JaqlPrinter printer = NullPrinter.get();
   protected ExceptionHandler exceptionHandler = new DefaultExceptionHandler();
   protected ExplainHandler explainHandler = new DefaultExplainHandler(System.out);
+  // protected ExplainHandler explainHandler = new GraphExplainHandler();
   protected JsonIterator currentValue = null;
   protected Schema currentSchema;
 

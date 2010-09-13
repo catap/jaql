@@ -93,6 +93,7 @@ public class ExplainExpr extends EnvExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
+  // FIXME: Now done by ExplainHandler
   public JsonValue eval(Context context) throws Exception
   {
     ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -140,8 +141,8 @@ public class ExplainExpr extends EnvExpr
   HashMap<Expr,JsonRecord> exprNodeMap;
   HashMap<JsonValue,JsonRecord> constNodeMap;
    
-
-  protected void buildGraph() throws Exception
+  // FIXME: Move to the GraphExplainHandler
+  public JsonArray buildGraph() throws Exception
   {
     outStream = new ByteArrayOutputStream();
     exprText = new PrintStream(outStream);
@@ -152,6 +153,7 @@ public class ExplainExpr extends EnvExpr
     Expr dup = exprs[0].clone(new VarMap());
     JsonRecord queryNode = makeNode("stmt", dup);
     buildGraphAux(getNodeId(queryNode), dup);
+    return graph;
   }
 
   protected String decompile(Expr expr) throws Exception
