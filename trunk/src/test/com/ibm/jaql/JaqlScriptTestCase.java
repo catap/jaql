@@ -51,6 +51,7 @@ import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.StreamPrinter;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Module;
+import com.ibm.jaql.lang.core.Namespace;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.expr.io.AbstractReadExpr;
@@ -220,6 +221,7 @@ public class JaqlScriptTestCase
       // TODO: These should be on Jaql, not static.
       Module.setSearchPath(new String[]{moduleDir});
       ClassLoaderMgr.reset();
+      Namespace.clearNamespaces();
       
       Jaql jaql = new Jaql(queriesName, queryReader);
       
