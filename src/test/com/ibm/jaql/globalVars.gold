@@ -39,6 +39,18 @@
 //     * The value may be changed using value assignment (":="), and
 //       any existing references within any expression variables now
 //       to the variable now refer to the new value.
+//     * If extern is specified and a variable is already in scope 
+//       with this name:
+//       * If the old variable is not extern, a new extern variable
+//         is created with a value of the evaluation of the old variable.
+//       * If the old variable was extern, a new variable is not created.
+//       * If a value is specified with the extern declaration, it is
+//         ignored if the old variable already has a value (ie, the
+//         extern value is only the default value, if not already defined).
+//       * If the old variable is extern, the type can only change in very 
+//         limited ways (basically from any to a paricular type).
+//       * If the old variable was non-extern, only extern type is used
+//         to constrain the variable.
 //
 //===========================================================================
 
@@ -469,20 +481,6 @@ i := 2;
 ;//------------------- TEST-CASE -----------------
    // i:2,j:2
 
-// error: cannot redeclare an extern
-extern i := 1;
-
-;//----- EXCEPTION -----
-
-// antlr.RecognitionException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-
 // error: must use := with externs
 i = 1;
 
@@ -493,6 +491,20 @@ i = 1;
 ;//------------------- TEST-CASE -----------------
 
 ;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// redeclaring an extern will not change its value.
+extern i := 3;
+;//------------------- TEST-CASE -----------------
+
+// still 2
+i;
+
+;//--------------------- RESULT ------------------
+
+2
 
 ;//------------------- TEST-CASE -----------------
 
@@ -543,7 +555,7 @@ i := 3;
 i := read(hdfs('A'))[0];
 ;//------------------- TEST-CASE -----------------
 
-// i has 
+// i has 3
 i;
 
 ;//--------------------- RESULT ------------------
@@ -644,7 +656,6 @@ k := l;
 ;//------------------- TEST-CASE -----------------
 
 
-
 // error: type mismatch
 l := 3;
 
@@ -678,6 +689,197 @@ j;
 ;//------------------- TEST-CASE -----------------
 
 
+// Non-externs can be shadowed by an extern, even expr variables
+// The old value is retained, even if the extern specifies a value.
+[7] -> write(hdfs('A'));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "A",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+ne = read(hdfs('A'))[0];
+;//------------------- TEST-CASE -----------------
+
+[8] -> write(hdfs('A'));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "A",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+// 3 is ignored because ne is already defined
+// However ne := ne, ie 8
+extern ne := 3;
+;//------------------- TEST-CASE -----------------
+
+[9] -> write(hdfs('A'));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "A",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+// 8
+ne;
+
+;//--------------------- RESULT ------------------
+
+8
+
+;//------------------- TEST-CASE -----------------
+
+
+// Check type constraints - same type
+extern ev: long := 4;
+;//------------------- TEST-CASE -----------------
+
+// ev already defined, so 5 is ignored
+// type is the same, so basically this is a no-op
+extern ev: long := 5;
+;//------------------- TEST-CASE -----------------
+
+// 4
+ev;
+
+;//--------------------- RESULT ------------------
+
+4
+
+;//------------------- TEST-CASE -----------------
+
+
+// Check type constraints - any to specific - matching
+extern et := 4;
+;//------------------- TEST-CASE -----------------
+
+// ev already defined, so 5 is ignored
+// type can changed from none to a partciular type
+extern et: long := 5;
+;//------------------- TEST-CASE -----------------
+
+// 4
+et;
+
+;//--------------------- RESULT ------------------
+
+4
+
+;//------------------- TEST-CASE -----------------
+
+
+// Check type constraints - any to specific - matching
+extern es := 4;
+;//------------------- TEST-CASE -----------------
+
+// es already defined, so value is ignored
+// type can changed from none to a partciular type
+// error: 4 does not match new type 
+extern es: string := "s";
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+// still 4
+es;
+
+;//--------------------- RESULT ------------------
+
+4
+
+;//------------------- TEST-CASE -----------------
+
+
+// Check type constraints - specific to unspecified
+extern eu: long := 4;
+;//------------------- TEST-CASE -----------------
+
+// eu already defined, so 5 is ignored
+// type is not specified, so it is kept from before
+extern eu := 5;
+;//------------------- TEST-CASE -----------------
+
+// 4
+eu;
+
+;//--------------------- RESULT ------------------
+
+4
+
+;//------------------- TEST-CASE -----------------
+
+
+// Check type constraints - specific to any
+// error - cannot change type
+extern eu: any := 6;
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+// 4
+eu;
+
+;//--------------------- RESULT ------------------
+
+4
+
+;//------------------- TEST-CASE -----------------
+
+
+// Check type constraints - value type ignored
+nv: long := 2;
+;//------------------- TEST-CASE -----------------
+
+// no error becuase nv was not an extern before
+extern nv: any := "x";
+;//------------------- TEST-CASE -----------------
+
+// still 2
+nv;
+
+;//--------------------- RESULT ------------------
+
+2
+
+;//------------------- TEST-CASE -----------------
+
+// now change to "y"
+nv := "y";
+;//------------------- TEST-CASE -----------------
+
+nv;
+
+;//--------------------- RESULT ------------------
+
+"y"
+
+;//------------------- TEST-CASE -----------------
 
 
 ;//------------------- TEST-DONE -----------------

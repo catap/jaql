@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
-import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.walk.ExprFlow;
 import com.ibm.jaql.lang.walk.ExprWalker;
@@ -42,7 +41,7 @@ public class RewriteEngine
   public ExprFlow          flow        = new ExprFlow();
   public VarMap            varMap      = new VarMap();
   public ArrayList<Expr>   exprList    = new ArrayList<Expr>();
-  public ArrayList<Aggregate> aggList  = new ArrayList<Aggregate>();
+  public ArrayList<Expr>   aggList     = new ArrayList<Expr>();
 
   /**
    * 

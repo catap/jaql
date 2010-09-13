@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 
 public class AggregatePartialExpr extends AggregateAlgebraicExpr
@@ -31,7 +30,11 @@ public class AggregatePartialExpr extends AggregateAlgebraicExpr
     onlyTrivialInput();
   }
   
-  public AggregatePartialExpr(BindingExpr input, ArrayList<AlgebraicAggregate> aggs)
+  /**
+   * @param input
+   * @param aggs A list of AlgebraicAggregate
+   */
+  public AggregatePartialExpr(BindingExpr input, ArrayList<Expr> aggs)
   {
     super(input, aggs);
     onlyTrivialInput();

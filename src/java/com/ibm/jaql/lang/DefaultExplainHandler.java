@@ -23,7 +23,6 @@ import java.util.Iterator;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
-import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
 

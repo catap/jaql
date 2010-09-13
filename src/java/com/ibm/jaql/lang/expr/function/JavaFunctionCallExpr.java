@@ -55,12 +55,12 @@ public class JavaFunctionCallExpr extends Expr
    * @throws InstantiationException
    * @throws IllegalAccessException
    */
-  public JavaFunctionCallExpr(Class<?> cls, Method method, Expr[] exprs)
+  public JavaFunctionCallExpr(Method method, Expr[] exprs)
     throws InstantiationException,
       IllegalAccessException
   {
     super(exprs);
-    setup(cls, method);
+    setup(method);
   }
 	
   
@@ -71,42 +71,46 @@ public class JavaFunctionCallExpr extends Expr
    * @param cls
    * @param exprList
    */
-  public JavaFunctionCallExpr(Class<?> cls, List<Expr> exprList)
+  public JavaFunctionCallExpr(Class<?> cls, List<Expr> exprList) throws Exception
   {
-    super(exprList);
-    try
-    {
-      Method[] methods = cls.getMethods();
-      for (Method m : methods)
-      {
-        String n = m.getName();
-        if ("eval".equals(n))
-        {
-          Class<?>[] p = m.getParameterTypes();
-          if (p.length == exprs.length)
-          {
-            if (method != null)
-            {
-              throw new RuntimeException("ambiguous eval methods on class "
-                  + cls.getName());
-            }
+    // It's important that we don't take the exprs if we cannot find the method.
+    // Otherwise we can create an invalid Expr tree because inlineIfPossible will
+    // ignore our exception.
+    // FIXME: shouldn't this failure be reported by inlineIfPossible, rather than waiting
+    // until later? (ksb)
+    this(findMethod(cls, exprList.size()), exprList.toArray(new Expr[exprList.size()]));
+  }
 
-            method = m;
+  private static Method findMethod(Class<?> cls, int numArgs)
+  {
+    Method[] methods = cls.getMethods();
+    Method method = null;
+    for (Method m : methods)
+    {
+      String n = m.getName();
+      if ("eval".equals(n))
+      {
+        Class<?>[] p = m.getParameterTypes();
+        if (p.length == numArgs)
+        {
+          if (method != null)
+          {
+            throw new RuntimeException("ambiguous eval methods on class "
+                + cls.getName());
           }
+
+          method = m;
         }
       }
-      if (method == null)
-      {
-        throw new RuntimeException("no eval method on class " + cls.getName()
-            + " with " + exprs.length + " arguments");
-      }
-      setup(cls, method);
     }
-    catch (Exception ex)
+    if (method == null)
     {
-      throw new UndeclaredThrowableException(ex);
+      throw new RuntimeException("no eval method on class " + cls.getName()
+          + " with " + numArgs + " arguments");
     }
+    return method;
   }
+
 
   /**
    * @param fnName
@@ -115,9 +119,10 @@ public class JavaFunctionCallExpr extends Expr
    * @throws InstantiationException
    * @throws IllegalAccessException
    */
-  private void setup(Class<?> cls, Method method)
+  private void setup(Method method)
       throws InstantiationException, IllegalAccessException
   {
+    Class<?> cls = method.getDeclaringClass();
     this.instance = cls.newInstance();
     this.method = method;
     this.paramTypes = method.getParameterTypes();
@@ -219,8 +224,7 @@ public class JavaFunctionCallExpr extends Expr
   {
     try
     {
-      return new JavaFunctionCallExpr(instance.getClass(), method,
-          cloneChildren(varMap));
+      return new JavaFunctionCallExpr(method, cloneChildren(varMap));
     }
     catch (Exception ex)
     {

@@ -29,6 +29,7 @@ import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
 import com.ibm.jaql.lang.expr.top.EnvExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
@@ -169,7 +170,14 @@ public class Env extends Namespace
       globals.unscope(var);
     }
     var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
-    // expr = new QueryExpr(this,expr); // add a pseudo-root to the expr tree.
+    try
+    {
+      expr = expandMacros(expr);
+    }
+    catch(Exception ex)
+    {
+      JaqlUtil.rethrow(ex);
+    }
     var.setExpr(expr);
     globals.scope(var);
     return var;
@@ -294,14 +302,20 @@ public class Env extends Namespace
       // Import globals - note globals might still have macros in them.
       importGlobals(root);
 
-      // Expand macros
+      root = expandMacros(root);
+      
+      // Inline functions
       walker.reset(root);
       while( (expr = walker.next()) != null )
       {
-        if( expr instanceof MacroExpr )
+        if( expr instanceof FunctionCallExpr )
         {
-          Expr expr2 = ((MacroExpr)expr).expand(this);
-          expr.replaceInParent( expr2 );
+          FunctionCallExpr fc = (FunctionCallExpr)expr;
+          Expr expr2 = fc.inlineIfPossible();
+          if( expr2 != fc )
+          {
+            fc.replaceInParent(expr2);
+          }
         }
       }
       
@@ -311,6 +325,31 @@ public class Env extends Namespace
     {
       throw JaqlUtil.rethrow(e);
     }
+  }
+  
+  /**
+   * Expand any macros in the parse tree.
+   * 
+   * Assumes that macros do not have macro in their definition.
+   */
+  public Expr expandMacros(Expr root) throws Exception
+  {
+    if( root instanceof MacroExpr )
+    {
+      return ((MacroExpr) root).expand(this);
+    }
+    // Expand macros
+    PostOrderExprWalker walker = new PostOrderExprWalker(root);
+    Expr expr;
+    while( (expr = walker.next()) != null )
+    {
+      if( expr instanceof MacroExpr )
+      {
+        Expr expr2 = ((MacroExpr)expr).expand(this);
+        expr.replaceInParent( expr2 );
+      }
+    }
+    return root;
   }
   
   /**

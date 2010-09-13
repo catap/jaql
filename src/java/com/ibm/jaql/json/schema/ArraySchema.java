@@ -20,6 +20,7 @@ import java.util.List;
 import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -286,10 +287,14 @@ public final class ArraySchema extends Schema
   @Override
   public Schema element(JsonValue which)
   {
-    if (which instanceof JsonLong)
+    if (which instanceof JsonNumber)
     {
-      long index = ((JsonLong)which).get();
-      if (index < head.length)
+      long index = ((JsonNumber)which).longValueExact();
+      if( index < 0 )
+      {
+        return SchemaFactory.nullSchema();
+      }
+      else if (index < head.length)
       {
         return head[(int)index];
       }

@@ -16,45 +16,119 @@
 package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonString;
+import javax.xml.stream.XMLStreamException;
+
+import com.ibm.jaql.io.converter.JsonToStream;
+import com.ibm.jaql.io.xml.JsonToXml;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
-import com.ibm.jaql.util.SystemUtil;
-import com.ibm.jaql.util.RandomAccessBuffer;
+import com.ibm.jaql.json.type.MutableJsonString;
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
  * A converter to convert a JSON value to a XML file.
- * 
- * @see JsonToXmlFn
  */
-public class XmlTextOutputStream extends LinesJsonTextOutputStream {
-  private JsonToXmlFn toXml = new JsonToXmlFn();
-  private RandomAccessBuffer buf = new RandomAccessBuffer();
-  private PrintStream out = new PrintStream(buf);
+public class XmlTextOutputStream implements JsonToStream<JsonValue> // extends AbstractJsonTextOutputStream
+{
+  protected JsonToXml converter = new JsonToXml();
+  protected Writer writer;
+  protected long line = 0;
+  protected boolean isArray = true;
+  protected MutableJsonString result = new MutableJsonString();
+
+  
+  public XmlTextOutputStream() throws Exception
+  {
+    converter = new JsonToXml();
+  }
+  
+  @Override
+  public void init(JsonValue options) throws Exception
+  {
+  }
+  
+  @Override
+  public boolean isArrayAccessor()
+  {
+    return isArray;
+  }
 
   @Override
-  public void init(JsonValue options) throws Exception {}
+  public void setArrayAccessor(boolean isArray)
+  {
+    this.isArray = isArray;
+  }
 
-  /**
-   * Converts the JSON value into a JSON string for a XML file.
-   */
   @Override
-  protected JsonString convert(JsonValue v) throws IOException {
-    try {
-      buf.reset();
-      JsonArray arr = toXml.toJsonArray(v);
-      String beginNewLine = "";
-      for (int i = 0; i < arr.count(); i++) {
-        out.print(beginNewLine);
-        strSer.write(out, (JsonString) arr.get(i));
-        beginNewLine = SystemUtil.LINE_SEPARATOR;
+  public void setOutputStream(OutputStream out)
+  {
+    try
+    {
+      writer = new OutputStreamWriter(out, "UTF-8");
+      converter.setWriter(writer);
+      line = 0;
+    }
+    catch (Exception e)
+    {
+      throw JaqlUtil.rethrow(e);
+    }
+  }
+  
+  
+  @Override
+  public void write(JsonValue value) throws IOException
+  {
+    try 
+    {
+      if( line == 0 )
+      {
+        converter.startDocument();
+        if( isArrayAccessor() )
+        {
+          converter.newline();
+          converter.startArrayElement();
+        }
       }
-      return new JsonString(buf.getBuffer(), buf.size());
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+      else if( ! isArrayAccessor() )
+      {
+        throw new IOException("Expected only one value when not in array mode");
+      }
+      line++;
+      converter.newline();
+      converter.toXml(value);
+    }
+    catch (IOException e) 
+    {
+      throw e;
+    }
+    catch (Exception e) 
+    {
+      throw JaqlUtil.rethrow(e);
+    }
+  }
+  
+  
+  @Override
+  public void close() throws IOException
+  {
+    try
+    {
+      if( isArrayAccessor() )
+      {
+        converter.newline();
+        converter.endArrayElement();
+      }
+      converter.newline();
+      converter.endDocument();
+      converter.close();
+      writer.close();
+    }
+    catch (XMLStreamException e)
+    {
+      throw JaqlUtil.rethrow(e);
     }
   }
 }

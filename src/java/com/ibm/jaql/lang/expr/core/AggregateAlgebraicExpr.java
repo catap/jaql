@@ -27,7 +27,12 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
 {
   protected AlgebraicAggregate[] aggs;
 
-  protected static Expr[] makeArgs(BindingExpr input, ArrayList<AlgebraicAggregate> aggs)
+  /**
+   * @param input
+   * @param aggs a list of AlgebraicAggregate
+   * @return
+   */
+  protected static Expr[] makeArgs(BindingExpr input, ArrayList<Expr> aggs)
   {
     int n = aggs.size();
     Expr[] args = new Expr[n+1];
@@ -44,7 +49,12 @@ public abstract class AggregateAlgebraicExpr extends AggregateExpr
     super(inputs);
   }
 
-  public AggregateAlgebraicExpr(BindingExpr input, ArrayList<AlgebraicAggregate> aggs)
+  /**
+   * 
+   * @param input
+   * @param aggs A list of AlgebraicAggregate
+   */
+  public AggregateAlgebraicExpr(BindingExpr input, ArrayList<Expr> aggs)
   {
     super(makeArgs(input, aggs));
   }

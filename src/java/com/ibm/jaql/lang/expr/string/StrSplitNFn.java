@@ -79,10 +79,10 @@ public class StrSplitNFn extends Expr
     }
     
     // TODO: would be nice to not convert utf8 and string so much...
+    tuple.resize(n);
     String s = str.toString();
     if( n > resultStrings.length )
     {
-      tuple.resize(n);
       MutableJsonString[] rs = new MutableJsonString[n];
       System.arraycopy(resultStrings, 0, rs, 0, resultStrings.length);
       for(int i = resultStrings.length ; i < n ; i++ )
@@ -92,26 +92,24 @@ public class StrSplitNFn extends Expr
       }
       resultStrings = rs;
     }
-    tuple.resize(n);
     
+    int i;
     int p = 0;
     String ss;
-    for(int i = 0 ; i < n - 1 ; i++)
+    for(i = 0 ; i < n - 1 ; i++)
     {
-      ss = "";
-      if( p >= 0 )
+      int q = s.indexOf(c,p);
+      if( q < 0 )
       {
-        int q = s.indexOf(c,p);
-        if( q >= 0 )
-        {
-          ss = s.substring(p,q);
-        }
-        p = q + 1;
+        tuple.resize(i);
+        break;
       }
+      ss = s.substring(p,q);
+      p = q + 1;
       resultStrings[i].setCopy(ss);
     }
-    ss = (p >= 0) ? s.substring(p) : ""; 
-    resultStrings[n-1].setCopy(ss);
+    ss = s.substring(p); 
+    resultStrings[i].setCopy(ss);
     return tuple;
   }
 }
