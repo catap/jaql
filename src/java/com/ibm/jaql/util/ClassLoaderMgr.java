@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.log4j.Logger;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.util.JaqlUtil;
@@ -42,6 +43,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  */
 public class ClassLoaderMgr
 {
+	
   private static ClassLoader classLoader     = null;
   private static JarCreator creator;
   
@@ -219,6 +221,7 @@ public class ClassLoaderMgr
  *
  */
 final class JarCreator extends Thread {
+	
   private HashSet<String> jarfiles = new HashSet<String>();
   private JarOutputStream extendedJarStream = null;
   private File extendedJarPath = null;
@@ -284,11 +287,13 @@ final class JarCreator extends Thread {
   }
   
   private void copyExtensionJar(File jar) {
+	  
 		JarOutputStream jout = getJarOutputStream();
 		try {
 			JarInputStream jin = new JarInputStream(new FileInputStream(jar));
 			copyJarFile(jin, jout);
 		} catch (IOException ex) {
+			BaseUtil.LOG.error("Error copying jar", ex);
 			throw new RuntimeException(ex);
 		}
   }
@@ -326,12 +331,12 @@ final class JarCreator extends Thread {
 					}
 					jout.closeEntry();
 				} catch (ZipException ex) {
-					System.out.println(entry.getName() + " wrote:"+bytesWritten);
+					BaseUtil.LOG.info(entry.getName() + " wrote:"+bytesWritten);
 					ex.printStackTrace();
 				}
 			} else {
 				//TODO: Debug log print which files were blocked
-				//System.out.println("blocked " + entry.getName());
+				//BaseUtil.LOG.info("blocked " + entry.getName());
 			}
 		}
 	}
@@ -360,9 +365,11 @@ final class JarCreator extends Thread {
 		File tmpDir = new File(System.getProperty("java.io.tmpdir")
 				+ File.separator + "jaql_" + System.nanoTime());
 		tmpDir.mkdir();
+		tmpDir.deleteOnExit();
+		
 		extendedJarPath = new File(tmpDir.getAbsoluteFile() + File.separator +
 		 "jaql.jar");
-		
+		BaseUtil.LOG.info("creating new jaql.jar: " + extendedJarPath +", starting from: " + baseJar);
 		//Copy files over into new file
 		try {
 			JarOutputStream jout = null;
@@ -375,6 +382,7 @@ final class JarCreator extends Thread {
 			}
 			extendedJarStream = jout;
 		} catch (IOException e) {
+			BaseUtil.LOG.error("Error creating jar: " + e);
 			throw new RuntimeException(e);
 		}
 		
