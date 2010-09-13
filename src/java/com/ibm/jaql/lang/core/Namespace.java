@@ -320,6 +320,10 @@ public class Namespace {
 		return NamespaceLoader.get(name);
 	}
 	
+	public static void clearNamespaces() {
+		NamespaceLoader.clear();
+	}
+	
 	/**
 	 * This inner class handles all operations related to reading modules from the
 	 * filesystem.
@@ -340,6 +344,10 @@ public class Namespace {
 	  	namespaces.put(e.getName(), e);
 	  }
 
+	 	public static void clear() {
+	 		namespaces.clear();
+	 	}
+	 	
 		public static Namespace get(String name) {
 		  Namespace namespace = namespaces.get(name);
 	  	if (namespace == null) {

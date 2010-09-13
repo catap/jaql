@@ -1,0 +1,101 @@
+//
+// Fence in stream mode
+//
+
+//
+// 1. simple data
+
+// a. simple function
+range(1,100) -> fence( fn(i) i + 1 );
+
+range(1,100) -> write(hdfs("foo"));
+
+// b. map-reduce
+read(hdfs("foo")) -> fence( fn(i) i + 1 );
+
+// c. captures
+x = 3;
+read(hdfs("foo")) -> fence( fn(i) i + x );
+
+// d. use function from jar
+test = javaudf("com.acme.extensions.fn.Split1");
+data = ["hi,there", "bye,now"];
+data -> fence( fn(i) ( test(i, ",") ) );
+
+data -> write(hdfs("bar"));
+read(hdfs("bar")) -> fence( fn(i) ( test(i, ",") ) );
+
+// e. use function from module
+import scripts_and_udf;
+data -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+read(hdfs("bar")) -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+
+//
+// 2. complex data
+
+// a. simple function
+data = [ { a: 1, b: "hi,there" }, { a: 2, b: "bye,now", c: 23.5 } ];
+data -> fence( fn(i) i.c );
+
+// b. map-reduce
+data -> write(hdfs("complex"));
+read(hdfs("complex")) -> fence( fn(i) i.c );
+
+// c. captures
+read(hdfs("complex")) -> fence( fn(i) i.c + x );
+
+// d. use function from jar
+data -> fence( fn(i) ( test(i.b, ",") ) );
+read(hdfs("complex")) -> fence( fn(i) ( test(i.b, ",") ) );
+
+// e. use function from module
+data -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+read(hdfs("complex")) -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+
+//
+// Fence in push mode
+//
+
+//
+// 1. simple data
+
+// a. simple function
+range(1,100) -> transform fencePush( $, fn(i) i + 1 );
+
+// b. map-reduce
+read(hdfs("foo")) -> transform fencePush( $, fn(i) i + 1 );
+
+// c. captures
+x = 3;
+read(hdfs("foo")) -> transform fencePush( $, fn(i) i + x );
+
+// d. use function from jar
+data = ["hi,there", "bye,now"];
+data -> transform fencePush( $, fn(i) ( test(i, ",") ) );
+
+read(hdfs("bar")) -> transform fencePush( $, fn(i) ( test(i, ",") ) );
+
+// e. use function from module
+data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+read(hdfs("bar")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+
+//
+// 2. complex data
+
+// a. simple function
+data = [ { a: 1, b: "hi,there" }, { a: 2, b: "bye,now", c: 23.5 } ];
+data -> transform fencePush( $, fn(i) i.c );
+
+// b. map-reduce
+read(hdfs("complex")) -> transform fencePush( $, fn(i) i.c );
+
+// c. captures
+read(hdfs("complex")) -> transform fencePush( $, fn(i) i.c + x );
+
+// d. use function from jar
+data -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
+read(hdfs("complex")) -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
+
+// e. use function from module
+data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+read(hdfs("complex")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();

@@ -106,6 +106,8 @@ import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.del.JsonToDelFn;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.FenceFunction;
+import com.ibm.jaql.lang.expr.function.FencePushFunction;
 import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
 import com.ibm.jaql.lang.expr.hadoop.BuildModelFn;
 import com.ibm.jaql.lang.expr.hadoop.ChainedMapFn;
@@ -536,6 +538,8 @@ public final class SystemNamespace extends Namespace {
     register(new CatchExpr.Descriptor());
     register(new TimeoutExpr.Descriptor());
     register(new RegisterExceptionHandler.Descriptor());
+    register(new FenceFunction.Descriptor());
+    register(new FencePushFunction.Descriptor());
   } 
 
 }
