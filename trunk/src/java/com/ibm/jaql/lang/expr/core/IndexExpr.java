@@ -30,7 +30,6 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
-import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.util.Bool3;
 
 /**

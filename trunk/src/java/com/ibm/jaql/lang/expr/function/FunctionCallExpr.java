@@ -165,7 +165,15 @@ public class FunctionCallExpr extends Expr
     {
       f = f.getCopy(null);
       f.setArguments(exprs, 1, exprs.length - 1, true);
-      Expr e = f.inline(true);
+      Expr e;
+      try
+      {
+        e = f.inline(true);
+      }
+      catch (Exception ex)
+      {
+        throw JaqlUtil.rethrow(ex);
+      }
       return e.getProperties();
     }
     return ExprProperty.createSafeDefaults();
@@ -179,7 +187,15 @@ public class FunctionCallExpr extends Expr
     {
       f = f.getCopy(null);
       f.setArguments(exprs, 1, exprs.length - 1, true);
-      Expr e = f.inline(true);
+      Expr e;
+      try
+      {
+        e = f.inline(true);
+      }
+      catch (Exception ex)
+      {
+        throw JaqlUtil.rethrow(ex);
+      }
       return e.getSchema();
     }
     return SchemaFactory.anySchema();
@@ -214,8 +230,11 @@ public class FunctionCallExpr extends Expr
   // -- inlining ----------------------------------------------------------------------------------
 
   /** Inline this function. Throws an exception when the function expression is not compile-time
-   * computable; see {@link #inlineIfPossible()} */
-  public Expr inline() 
+   * computable; see {@link #inlineIfPossible()}
+   * 
+   * @throws Exception of various sorts when we cannot resolve the function properly
+   */
+  public Expr inline() throws Exception
   {
     // inline Jaql function definitions
     if (exprs[0] instanceof DefineJaqlFunctionExpr)
@@ -248,25 +267,33 @@ public class FunctionCallExpr extends Expr
     }
   }
   
-  /** Inline this function, if possible. Otherwise, return this function call expression */
+  /** Inline this function, if possible. Otherwise, return this function call expression
+   * 
+   *  @throws Exception various exceptions if we cannot resolve the function.
+   */
   public Expr inlineIfPossible()
   {
     return inlineIfPossible(this);
   }
   
-  /** If e is a function call, inline it if possible at compile time. Otherwise, return e */
+  /** If e is a function call, inline it if possible at compile time. Otherwise, return e
+   * 
+   *  @throws Exception various exceptions if we cannot resolve the function.
+   */
   public static Expr inlineIfPossible(Expr e)
   {
-    if (e instanceof FunctionCallExpr)
+    if (e instanceof FunctionCallExpr && 
+        ( e.child(0) instanceof DefineJaqlFunctionExpr ||
+          e.child(0).isCompileTimeComputable().always() ) )
     {
       FunctionCallExpr fe = (FunctionCallExpr)e;
       try
       {
         return fe.inline();
       }
-      catch (Exception ex)
+      catch( Exception ex )
       {
-        return e;
+        throw JaqlUtil.rethrow(ex);
       }
     }
     return e;

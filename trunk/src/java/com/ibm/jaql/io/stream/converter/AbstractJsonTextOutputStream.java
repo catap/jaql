@@ -28,13 +28,13 @@ import com.ibm.jaql.json.type.JsonValue;
 public abstract class AbstractJsonTextOutputStream implements
     JsonToStream<JsonValue> {
 
-  private PrintStream output;
-  private boolean arrAcc = true;
-  private boolean seenFirst = false;
-  private boolean close = true;
-  private String start;
-  private String end;
-  private String sep;
+  protected PrintStream output;
+  protected boolean arrAcc = true;
+  protected boolean seenFirst = false;
+  protected boolean close = true;
+  protected String start;
+  protected String end;
+  protected String sep;
 
   /**
    * Constructs a JSON text output stream.

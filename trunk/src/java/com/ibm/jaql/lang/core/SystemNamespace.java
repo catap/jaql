@@ -98,6 +98,7 @@ import com.ibm.jaql.lang.expr.core.TagFn;
 import com.ibm.jaql.lang.expr.core.TagSplitFn;
 import com.ibm.jaql.lang.expr.core.TeeExpr;
 import com.ibm.jaql.lang.expr.core.TimeoutExpr;
+import com.ibm.jaql.lang.expr.core.UntilFn;
 import com.ibm.jaql.lang.expr.date.DateFn;
 import com.ibm.jaql.lang.expr.date.DateMillisFn;
 import com.ibm.jaql.lang.expr.date.DatePartsFn;
@@ -353,6 +354,7 @@ public final class SystemNamespace extends Namespace {
     register(new GroupCombineFn.Descriptor()); // experimental
     register(new IcebergCubeInMemory.Descriptor()); // experimental
     register(new JumpFn.Descriptor());
+    register(new UntilFn.Descriptor()); // experimental
     register(new DiamondTagFn.Descriptor()); // internal use
     register(new RetagFn.Descriptor()); // internal use
     register(new TagFlattenFn.Descriptor()); // internal use

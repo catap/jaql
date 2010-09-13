@@ -28,7 +28,7 @@ public abstract class MacroExpr extends Expr
   /**
    * @param exprs
    */
-  public MacroExpr(Expr[] exprs)
+  public MacroExpr(Expr... exprs)
   {
     super(exprs);
   }

@@ -33,7 +33,7 @@ public class AggregateFullExpr extends AggregateExpr
 {
   protected Aggregate[] aggs;
   
-  protected static Expr[] makeArgs(BindingExpr input, ArrayList<Aggregate> aggs)
+  protected static Expr[] makeArgs(BindingExpr input, ArrayList<Expr> aggs)
   {
     int n = aggs.size();
     Expr[] args = new Expr[n+1];
@@ -62,7 +62,7 @@ public class AggregateFullExpr extends AggregateExpr
       Var aggVar,
       Expr into, 
       ArrayList<Expr> varUses,
-      ArrayList<Aggregate> aggs,
+      ArrayList<Expr> aggs,
       boolean raiseException)
   {
     varUses.clear();
@@ -180,7 +180,7 @@ public class AggregateFullExpr extends AggregateExpr
       Expr input, 
       Expr into,
       ArrayList<Expr> varUses,
-      ArrayList<Aggregate> aggs,
+      ArrayList<Expr> aggs,
       boolean raiseExceptionIfNotPossible)
   {
     if( ! findAggregates(aggVar, into, varUses, aggs, raiseExceptionIfNotPossible) ) 
@@ -235,7 +235,7 @@ public class AggregateFullExpr extends AggregateExpr
     // Replace all aggs in into by $aggs[i] 
     Var tempVar = env.makeVar("$aggs", SchemaFactory.arraySchema());
     int i = 0;
-    for( Aggregate agg: aggs )
+    for( Expr agg: aggs )
     {
       Expr e = new IndexExpr(new VarExpr(tempVar), i++);
       if( agg == into )
@@ -259,7 +259,7 @@ public class AggregateFullExpr extends AggregateExpr
   public static Expr make(Env env, BindingExpr input, Expr into)
   {
     ArrayList<Expr> varUses = new ArrayList<Expr>();
-    ArrayList<Aggregate> aggs = new ArrayList<Aggregate>();
+    ArrayList<Expr> aggs = new ArrayList<Expr>();
     Expr expr = makeIfAggregating(env, input.var, input.eqExpr(), into, varUses, aggs, true);
     assert expr != null;
     return expr;
@@ -382,7 +382,11 @@ public class AggregateFullExpr extends AggregateExpr
     super(inputs);
   }
   
-  public AggregateFullExpr(BindingExpr binding, ArrayList<Aggregate> aggs)
+  /**
+   * @param binding
+   * @param aggs A list of Aggregates
+   */
+  public AggregateFullExpr(BindingExpr binding, ArrayList<Expr> aggs)
   {
     super(makeArgs(binding, aggs));
   }

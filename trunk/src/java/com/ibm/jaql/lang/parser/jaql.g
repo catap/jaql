@@ -58,27 +58,27 @@ options {
       throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
     }
     
-    private Expr inlineGlobalFinalValueVar(Expr e)
-    {
-      // automatically inline global variables that are final and have a value
-      // true for all builtin functions
-      if (e instanceof VarExpr && e.isCompileTimeComputable().always())
-      {
-        Var v = ((VarExpr)e).var();
-        if (v.isGlobal() && v.isFinal() && v.type() == Var.Type.VALUE)
-        {
-          try
-          {
-            e = new ConstExpr(env.eval(e));
-          } 
-          catch (Exception ex)
-          {
-            throw com.ibm.jaql.lang.util.JaqlUtil.rethrow(ex);
-          } 
-        }
-      }
-      return e;
-    }
+//    private Expr inlineGlobalFinalValueVar(Expr e)
+//    {
+//      // automatically inline global variables that are final and have a value
+//      // true for all builtin functions
+//      if (e instanceof VarExpr && e.isCompileTimeComputable().always())
+//      {
+//        Var v = ((VarExpr)e).var();
+//        if (v.isGlobal() && v.isFinal() && v.type() == Var.Type.VALUE)
+//        {
+//          try
+//          {
+//            e = new ConstExpr(env.eval(e));
+//          } 
+//          catch (Exception ex)
+//          {
+//            throw com.ibm.jaql.lang.util.JaqlUtil.rethrow(ex);
+//          } 
+//        }
+//      }
+//      return e;
+//    }
     
     // checks whether the next token matches the specified weak keyword
     private boolean nextIsWeakKw(String kw) throws TokenStreamException
@@ -105,7 +105,7 @@ options {
       }
       else 
       {
-        // replace value of extern variable
+        // make new non-extern variable
         if( schema == null ) schema = SchemaFactory.anySchema();
         if( isValue )
         {
@@ -154,11 +154,69 @@ options {
        throws RecognitionException, TokenStreamException
     {
       Var var = env.findGlobal(name);
-      if( var != null && var.isMutable() ) 
+      if( var != null )  // variable already in scope
       {
-      	oops("cannot redeclare an extern variable: "+name);
+        if( schema == null  ) 
+        {
+          if( var.isMutable() )
+          {
+            // preserve existing schema of previous extern declaration
+            schema = var.getSchema();
+          }
+          else
+          {
+            // allow any value
+            schema = SchemaFactory.anySchema();
+          }
+        }
+        
+        if( ! var.isMutable() ) 
+        {
+          // shadow an exising non-extern
+          // preserved existing value
+          // if( expr != null ) warn extern default ignored ?
+          Var var2 = env.scopeGlobalMutable(name, schema);
+          expr = new AssignExpr(env, var2, new VarExpr(var) );
+        }
+        else
+        {
+          // redeclare an existing extern
+          Schema oldSchema = var.getSchema();
+          if( oldSchema == schema ||
+              oldSchema.equals(schema) ||
+              oldSchema.equals(SchemaFactory.anySchema()) )
+          {
+          	// TODO: allow schema that is a restriction over the old declaration
+            if( var.isDefined() )
+            {
+              JsonValue val;
+              try { 
+              	val = var.getValue(null); // null ok because this is a extern value variable
+              } catch( Exception e ) {
+              	throw new RuntimeException(e);
+              }
+              if( ! schema.matchesUnsafe(val) )
+              {
+                oops( "cannot change schema of extern variable "+name+" to "+schema+" because value is "+val);
+              }
+              // preserved existing value
+              // if( expr != null ) warn extern default ignored ?
+              // set expr null - no further action
+              expr = null;
+            }
+            var.setSchema( schema );
+            if( expr != null )
+            {
+              expr = new AssignExpr(env, var, expr);
+            }
+          }
+          else
+          {
+            oops( "cannot change schema of extern variable "+name+" from "+oldSchema+" to "+schema);
+          }
+        }
       }
-      else 
+      else // new name
       {
         if( schema == null ) schema = SchemaFactory.anySchema();
         var = env.scopeGlobalMutable(name, schema);
@@ -166,7 +224,9 @@ options {
         {
           expr = new AssignExpr(env, var, expr);
         }
+        // else expr stays null - no further action
       }
+      
       return expr;
     } 
     
@@ -293,6 +353,7 @@ expr returns [Expr r]
     | (kwEquijoin) => r=equijoin
     | (kwIf)       => r=ifExpr
     | (kwFor)      => r=forExpr
+    | (kwWhile)    => r=whileExpr
     | (kwUnroll)   => r=unroll
     | r=orExpr
     | "@" a=record r=expr { r=addAnnotations(a,r); }
@@ -437,7 +498,18 @@ forDef[ArrayList<BindingExpr> bindings]
     }
     ;
 
-// TODO: make a function
+whileExpr returns [Expr r = null]
+    { String v; Expr i; Expr c; Var var=null; }
+    : kwWhile "(" 
+           v=id "=" i=pipe ","   { var = env.scope(v); }
+           c=pipe ")" 
+           r=expr
+        {  
+        	env.unscope(var);
+        	r = new WhileExpr(new BindingExpr(BindingExpr.Type.EQ, var, null, i), c, r); 
+        }
+    ;
+
 ifExpr returns [Expr r=null]
     { Expr p=null; Expr s=null; }
     : kwIf "(" p=expr ")" r=expr 
@@ -1001,7 +1073,7 @@ groupPipe[Expr in] returns [Expr r=null]
 // -- aggregation ---------------------------------------------------------------------------------
 
 aggregate[Expr in] returns [Expr r=null]
-    { String v="$"; BindingExpr b=null; ArrayList<Aggregate> a; ArrayList<AlgebraicAggregate> aa; }
+    { String v="$"; BindingExpr b=null; ArrayList<Expr> a; }
 //    : ("aggregate" | "agg") b=each[in] r=expr
 //       { r = AggregateExpr.make(env, b.var, b.inExpr(), r, false); } // TODO: take binding!
     : kwAggregate (kwAs v=id)?
@@ -1009,72 +1081,74 @@ aggregate[Expr in] returns [Expr r=null]
            //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
            b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
          }
-      ( kwInto    r=expr        { r = AggregateFullExpr.make(env, b, r); }
+      ( kwInto    r=expr        { r = new AggregateGeneralExpr(b, r); }
       | kwFull    a=aggList     { r = new AggregateFullExpr(b, a); }
-      | kwInitial aa=algAggList { r = new AggregateInitialExpr(b, aa); }
-      | kwPartial aa=algAggList { r = new AggregatePartialExpr(b, aa); }
-      | kwFinal   aa=algAggList { r = new AggregateFinalExpr(b, aa); }
+      | kwInitial a=algAggList { r = new AggregateInitialExpr(b, a); }
+      | kwPartial a=algAggList { r = new AggregatePartialExpr(b, a); }
+      | kwFinal   a=algAggList { r = new AggregateFinalExpr(b, a); }
       )
       { env.unscope(b.var); }
     ;
 
-aggList returns [ArrayList<Aggregate> r = new ArrayList<Aggregate>()]
-    { Aggregate a; }
+// TODO: We used to detected Aggregate and AlgebraicAggregate in the parser, now
+// it is left to a later pass.  These productions can be simplified.
+aggList returns [ArrayList<Expr> r = new ArrayList<Expr>()]
+    { Expr a; }
     : "[" ( a=aggFn { r.add(a); } ("," a=aggFn { r.add(a); } )* )? "]"
     ;
 
-aggFn returns [Aggregate agg=null]
-    { Expr expr; }
-    : expr = expr
-      {
-        if ( expr instanceof FunctionCallExpr )
-        {
-            // force inline of calls to aggregate functions
-            FunctionCallExpr call = (FunctionCallExpr)expr;
-            if (call.fnExpr().isCompileTimeComputable().always())
-            {
-                try
-                {
-                    Function ff = (Function)env.eval(call.fnExpr());
-                    if (ff instanceof BuiltInFunction)
-                    {
-                        BuiltInFunction f = (BuiltInFunction)ff;
-                        if (Aggregate.class.isAssignableFrom(f.getDescriptor().getImplementingClass()))
-                        {
-                            expr = call.inline();
-                        }
-                    }
-                } 
-                catch (Exception e1)
-                {
-                    // ignore
-                }
-            }
-        }
-      
-        if( !( expr instanceof Aggregate ) )
-        {
-          oops("Aggregate required");
-        }
-        agg = (Aggregate)expr;
-      }
+aggFn returns [Expr agg=null]
+   // { Expr expr; }
+    : agg = expr
+//      {
+//        if ( expr instanceof FunctionCallExpr )
+//        {
+//            // force inline of calls to aggregate functions
+////            FunctionCallExpr call = (FunctionCallExpr)expr;
+////            if (call.fnExpr().isCompileTimeComputable().always())
+////            {
+////                try
+////                {
+////                    Function ff = (Function)env.eval(call.fnExpr());
+////                    if (ff instanceof BuiltInFunction)
+////                    {
+////                        BuiltInFunction f = (BuiltInFunction)ff;
+////                        if (Aggregate.class.isAssignableFrom(f.getDescriptor().getImplementingClass()))
+////                        {
+////                            expr = call.inline();
+////                        }
+////                    }
+////                } 
+////                catch (Exception e1)
+////                {
+////                    // ignore
+////                }
+////            }
+//        }
+//      
+//        if( !( expr instanceof Aggregate ) )
+//        {
+//          oops("Aggregate required");
+//        }
+//        agg = (Aggregate)expr;
+//      }
     ;
 
-algAggList returns [ArrayList<AlgebraicAggregate> r = new ArrayList<AlgebraicAggregate>()]
-    { AlgebraicAggregate a; }
+algAggList returns [ArrayList<Expr> r = new ArrayList<Expr>()]
+    { Expr a; }
     : "[" ( a=algAggFn { r.add(a); } ("," a=algAggFn { r.add(a); } )* )? "]"
     ;
 
-algAggFn returns [AlgebraicAggregate agg=null]
-    { Expr e; }
-    : e = expr
-      {
-        if( !( e instanceof AlgebraicAggregate ) )
-        {
-          oops("Aggregate required");
-        }
-        agg = (AlgebraicAggregate)e;
-      }
+algAggFn returns [Expr agg=null]
+//    { Expr e; }
+    : agg = expr
+//      {
+//        if( !( e instanceof AlgebraicAggregate ) )
+//        {
+//          oops("Aggregate required");
+//        }
+//        agg = (AlgebraicAggregate)e;
+//      }
     ;
 
 
@@ -1280,10 +1354,15 @@ callPipe[Expr in] returns [Expr r=null]
       positionalArgs.add(0, in);
       Map<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
     }
-    : r=basic args[positionalArgs, namedArgs]  {
-        r = inlineGlobalFinalValueVar(r);
-        r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
-      }
+    : r=basic args[positionalArgs, namedArgs]  
+        {
+          FunctionCallExpr fc = new FunctionCallExpr(r, positionalArgs, namedArgs);
+          // This is a hack to allow inlining during parsing.
+          // We need to inline during parsing right now for things like schemas to parse correctly.
+          // TODO: eliminate need for parse-time inlining...
+          new QueryExpr(env, fc);
+          r = fc.inlineIfPossible();
+        }
       r=callRepeat[r, positionalArgs, namedArgs]
     ;
     
@@ -1292,8 +1371,12 @@ callRepeat[Expr f, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] r
     : ( "(" ) => { positionalArgs.clear(); namedArgs.clear(); } 
                  args[positionalArgs, namedArgs]
                  {      
-                    r = inlineGlobalFinalValueVar(r); 
-                    r = new FunctionCallExpr(r, positionalArgs, namedArgs).inlineIfPossible(); 
+                    FunctionCallExpr fc = new FunctionCallExpr(r, positionalArgs, namedArgs);
+                    // This is a hack to allow inlining during parsing.
+                    // We need to inline during parsing right now for things like schemas to parse correctly.
+                    // TODO: eliminate need for parse-time inlining...
+                    new QueryExpr(env, fc);
+                    r = fc.inlineIfPossible();
                  }
                  r = callRepeat[r, positionalArgs, namedArgs]
                | () 
@@ -1516,6 +1599,7 @@ weakkw   : (kwBuiltin) => kwBuiltin
          | (kwFilter) => kwFilter 
          | (kwFlatten) => kwFlatten 
          | (kwFor) => kwFor 
+         | (kwWhile) => kwWhile 
          | (kwGroup) => kwGroup
          | (kwIf) => kwIf 
          | (kwIsdefined) => kwIsdefined 
@@ -1537,6 +1621,7 @@ kwExplain          : { nextIsWeakKw("explain") }? ID          | "#explain" ;
 kwFilter           : { nextIsWeakKw("filter") }? ID           | "#filter" ;
 kwFlatten          : { nextIsWeakKw("flatten") }? ID          | "#flatten" ;    
 kwFor              : { nextIsWeakKw("for") }? ID              | "#for" ;
+kwWhile            : { nextIsWeakKw("while") }? ID            | "#while" ;
 kwGroup            : { nextIsWeakKw("group") }? ID            | "#group" ;
 kwIf               : { nextIsWeakKw("if") }? ID               | "#if" ;
 kwIsdefined        : { nextIsWeakKw("isdefined") }? ID        | "#isdefined" ;
@@ -1585,6 +1670,7 @@ kwEach             : "each" | "#each" ;
 kwElse             : "else" | "#else" ;
 kwExtern           : "extern" | "#extern" ;
 kwFinal            : "final" | "#final" ;
+// kwDefault          : "default" | "#default" ;
 kwFull             : "full" | "#full" ;
 kwImport           : "import" | "#import" ;
 kwIn               : "in" | "#in" ;

@@ -66,6 +66,10 @@ public class DateFn extends Expr
       long millis = ((JsonNumber)val).longValue();
       date.set(millis);
     }
+    else if( val == null )
+    {
+      return null;
+    }
     else
     {
       // TODO: else if( val instanceof JsonRecord ) accept dateParts output

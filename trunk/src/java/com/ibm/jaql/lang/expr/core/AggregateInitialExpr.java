@@ -19,7 +19,6 @@ import java.util.ArrayList;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 
 public class AggregateInitialExpr extends AggregateAlgebraicExpr
@@ -30,7 +29,11 @@ public class AggregateInitialExpr extends AggregateAlgebraicExpr
     super(inputs);
   }
   
-  public AggregateInitialExpr(BindingExpr input, ArrayList<AlgebraicAggregate> aggs)
+  /**
+   * @param input
+   * @param aggs A list of AlgebraicAggregate
+   */
+  public AggregateInitialExpr(BindingExpr input, ArrayList<Expr> aggs)
   {
     super(makeArgs(input, aggs));
   }

@@ -19,9 +19,7 @@ package com.ibm.jaql.lang.expr.core;
 import java.util.ArrayList;
 
 import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 
 
 public class AggregateFinalExpr extends AggregateAlgebraicExpr
@@ -33,7 +31,11 @@ public class AggregateFinalExpr extends AggregateAlgebraicExpr
     onlyTrivialInput();
   }
   
-  public AggregateFinalExpr(BindingExpr input, ArrayList<AlgebraicAggregate> aggs)
+  /**
+   * @param input
+   * @param aggs A list of AlgebraicAggregate
+   */
+  public AggregateFinalExpr(BindingExpr input, ArrayList<Expr> aggs)
   {
     super(input, aggs);
     onlyTrivialInput();

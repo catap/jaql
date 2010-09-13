@@ -99,11 +99,14 @@ public abstract class Function extends JsonAtom
    * intact. The <code>forEval</code> argument distinguishes between those cases. The general
    * contract is that the call sequence is <code>inline(true)* inline(false)</code> for each
    * set of arguments.
+   * 
+   * @throws Exception of various sorts when we cannot instantiate the class or find the method.
    */
-  public abstract Expr inline(boolean forEval);
+  public abstract Expr inline(boolean forEval) throws Exception;
   
   /** Evaluate this function. The arguments have to be set using one of the 
-   * <code>setArguments</code> functions. */
+   * <code>setArguments</code> functions.
+   */
   public JsonValue eval(Context context) throws Exception
   {
     Expr f = inline(true); 
