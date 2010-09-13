@@ -183,8 +183,13 @@ public class FenceFunction extends IterExpr {
 			
 			JsonRecord args = createArgs(fn);
 			String argsStr = JsonUtil.printToString(args);
-			argsStr = argsStr.replaceAll("\"", "\\\\\""); // want " -> \" to quote on command-line
-			
+					
+			// handle window's specific quotation for command-line args
+			String osType = System.getProperty("os.name");
+			if( osType != null && osType.toLowerCase().contains("win") ) { 	
+				argsStr = argsStr.replaceAll("\"", "\\\\\""); // want " -> \" to quote on command-line
+			}
+				
 			//BaseUtil.LOG.info(jvmCmd +" | " + llevName+llevVal + " | " + cpName + " | " + cpVal + " | " + evaluator + " | " + argsStr);
 			
 			ProcessBuilder pb = new ProcessBuilder(jvmCmd, /**ldirName+ldirVal,*/ llevName+llevVal, cpName, cpVal, evaluator, argsStr);
