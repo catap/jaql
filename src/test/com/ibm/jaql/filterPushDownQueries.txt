@@ -568,7 +568,7 @@ $data_books -> transform each $d {n: $d.author, m: $d.year, c: $d.price}  -> fil
 $r1 = $data_books -> transform {author: $.author, m: $.year, $.year , c: $.format.cover};
 $r2 = $data_books2;
 $r3 = [{author:4}, {z:5}];
-merge ($r1, $r2, $r3) -> filter $.author == 'J. K. Rowling' -> count();
+union ($r1, $r2, $r3) -> filter $.author == 'J. K. Rowling' -> count();
 
 
 //+++++Partial Failure (Filter followed by Filter)
@@ -579,7 +579,7 @@ $r1 = $data_books -> transform {n: $.author, m: $.year, $.year , c: $.format.cov
 $r2 = $data_books2 -> transform {x: $.author, w:$.year} -> sort by [$.w * 4];
 $r3 = join $r1, $r2 where $r1.n == $r2.x and $r1.m == $r2.w into {d1: $r1.c, d2: $r2.w, d3: $r1.year} -> filter $.d1 ==  'soft' and $.d2 == $.d3 -> sort by [$.d2] ;
 $r4 = $data_books -> transform each $v {d1: $v.format.cover, d3: $v.year};
-merge ($r3, $r4) -> filter each $k $k.d3 >1990;
+union ($r3, $r4) -> filter each $k $k.d3 >1990;
 
 //====================================================Side Effect and non-deterministic=========================================
 //Delete the 'true' predicate

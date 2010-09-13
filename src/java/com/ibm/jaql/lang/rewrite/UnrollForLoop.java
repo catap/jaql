@@ -15,7 +15,7 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ForExpr;
 import com.ibm.jaql.lang.expr.pragma.UnrollLoopPragma;
@@ -61,7 +61,7 @@ public class UnrollForLoop extends UnrollLoop
       return false;
     }
     
-    MergeFn merge = new MergeFn(exprs);
+    UnionFn merge = new UnionFn(exprs);
 //    pragma.replaceInParent(merge);
     if( forExpr.parent() instanceof UnrollLoopPragma )
     {

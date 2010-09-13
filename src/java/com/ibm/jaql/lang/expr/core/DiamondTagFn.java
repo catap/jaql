@@ -22,7 +22,7 @@ import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.array.MergeFn;
+import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.expr.function.FunctionCallExpr;
@@ -138,7 +138,7 @@ public class DiamondTagFn extends IterExpr
       Var tvar = env.makeVar("$");
       legs[i] = new TransformExpr(tvar, fncall, new ArrayExpr(new ConstExpr(i), new VarExpr(tvar)));
     }
-    Expr expr = new MergeFn(legs);
+    Expr expr = new UnionFn(legs);
     expr = new ForExpr(forVar, exprs[0], expr);
     if( parent != null )
     {
