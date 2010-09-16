@@ -1,0 +1,481 @@
+//0. Prepare test data
+$atoms = [1,2,3];
+$atoms2 = [1,"love",null,
+           3,,
+           'Great Wall'];
+$jsons = [
+  { key: 0, g:"0", text: 'zero' },
+  { key: 1, g:"1", text: 'one' },
+  { key: 2, g:"0", text: 'two' },
+  { key: 3, g:"1", text: 'three' },
+  { key: 4, g:"0", text: 'four' },
+  { key: 5, g:"1", text: 'five' },
+  { key: 6, g:"0", text: 'six' },
+  { key: 7, g:"1", text: 'seven' },
+  { key: 8, g:"0", text: 'eight' }
+];
+$jsons2 = [
+  { key: 0, 
+    g:"0", 
+    text: 'zero' },
+  { key: 1, 
+    g:"1", text: 'one' },
+  { key: 2, g:"0", 
+                   text: 'two' },
+  { key: 3, g:"1"}
+];
+
+//1. HDFS Write & Read Syntax testing
+//1.1 exercise hdfs write syntax
+$atoms-> write({type: 'hdfs'});
+$atoms-> write({location: 'jaqlTest/test1.dat'});
+//defect 9271
+//$atoms-> write({type: 'hdfs', location: 'jaqlTest\ test2.dat'});
+$atoms-> write({type: 'hdfs', location: 'jaqlTest\test3.dat'});
+$atoms-> write({type: 'hdfs', location: 'jaqlTest\\test3.dat'});
+$atoms-> write({type: 'hdfs', location: 'jaqlTest:test4.dat'});
+$atoms-> write({type: 'hdfs', location: 'jaqlTest&test5.dat'});
+$atoms-> write({type: 'hdfs2', location: 'jaqlTest/test6.dat'});
+$atoms-> write({type: 'hdfs ', location: 'jaqlTest/test7.dat'});
+$atoms-> write({type: 'HDFS', location: 'jaqlTest/test8.dat'});  
+$atoms-> write({type: 'hdfs',location: 'jaqlTest/test1.dat'}); 
+//1.2 exercise hdfs read syntax
+read({type: 'hdfs',location: 'jaqlTest/test1.dat'});
+read({type: 'hdfs',location: 'jaqlTest/nonexistentFile'}); 
+read({type: 'hdfs',location: 'nonexistent/test1.dat'}); 
+read({type: 'hdfs',location: ''}); 
+read({type: 'hdfs'}); 
+read({type: 'hdfs', location: 'jaqlTest\NonexistentFile'}); 
+//1.3 exercise specified adapter option  
+read({type: 'hdfs',location: 'jaqlTest/test1.dat'});     
+//specify an input adapter for output option, an output adapter for input option                                           
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopOutputAdapter'}
+       });  
+//specify an invalidate adapter
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter_NotExisting'}
+               });
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter_NotExisting'}
+       });
+//specify an invalidate adapter keyword
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {NonSense_adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {NonSense_adapter: 'com.ibm.jaql.io.hadoop.DefaultHadoopInputAdapter'}
+       });  
+//specify a local file adapt file for hdfs                                              
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter'}
+       });                                                                                                     
+//1.4 exercise specified format option
+//specify a null format out option
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {format: ''}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {format: ''}
+       });   
+//specify right sequencefile output format
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.SequenceFileOutputFormat'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.SequenceFileInputFormat'}
+       }); 
+//only specify text output format, no converter specified, defect 9273
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat'}});  
+//1.5 exercise specified converter option
+//specify a ToDelConverter converter
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {converter: 'com.ibm.jaql.io.hadoop.converter.ToDelConverter'}
+               });
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}});   
+//specify a ToJsonTextConverter
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}});                  
+//1.6 exercise specified configurator option
+//specify an input configurator instead of output configurator
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {configurator: 'com.ibm.jaql.io.hadoop.FileInputConfigurator'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {configurator: 'com.ibm.jaql.io.hadoop.FileOutputConfigurator'}});               
+       
+//2 HDFS Sequence file Write & Read
+$atoms-> write({type: 'hdfs', location: 'jaqlTest/test1.dat'});
+read({type: 'hdfs', location: 'jaqlTest/test1.dat'}); 
+$atoms2-> write({type: 'hdfs', location: 'jaqlTest/test2.dat'});
+read({type: 'hdfs', location: 'jaqlTest/test2.dat'}); 
+$jsons-> write({type: 'hdfs', location: 'jaqlTest/test3.dat'});
+read({type: 'hdfs', location: 'jaqlTest/test3.dat'}); 
+$jsons2-> write({type: 'hdfs', location: 'jaqlTest/test4.dat'});
+read({type: 'hdfs', location: 'jaqlTest/test4.dat'}); 
+
+//3 HDFS Text file Write & Read
+//3.1 only sepcify text output format, no any converter specified
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat'}
+     }); 
+$jsons-> write({type: 'hdfs', 
+                location: 'jaqlTest/test2.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test2.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat'}
+     }); 
+//3.2 specify text output format and ToDel converter
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToDelConverter'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test1.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     }); 
+     
+$atoms2-> write({type: 'hdfs', 
+                location: 'jaqlTest/test2.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToDelConverter'}
+               }); 
+//Failure
+read({type: 'hdfs', 
+      location: 'jaqlTest/test2.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test2.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     });  
+//Failure     
+$jsons-> write({type: 'hdfs', 
+                location: 'jaqlTest/test3.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToDelConverter'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test3.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test3.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     }); 
+
+$jsons2-> write({type: 'hdfs', 
+                location: 'jaqlTest/test4.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToDelConverter'}
+               }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test4.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test4.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     });      
+//3.3 specify text output format and ToJson converter            
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test4.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test4.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test4.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     });       
+$atoms2-> write({type: 'hdfs', 
+                location: 'jaqlTest/test5.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test5.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     });
+read({type: 'hdfs', 
+      location: 'jaqlTest/test5.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     });       
+$jsons-> write({type: 'hdfs', 
+                location: 'jaqlTest/test6.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test6.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     }); 
+read({type: 'hdfs', 
+      location: 'jaqlTest/test6.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     });   
+$jsons2-> write({type: 'hdfs', 
+                location: 'jaqlTest/test7.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter'}
+               });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test7.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter'}
+     });  
+read({type: 'hdfs', 
+      location: 'jaqlTest/test7.dat',
+      inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+                   converter: 'com.ibm.jaql.io.hadoop.converter.FromDelConverter'}
+     });                  
+//3.4 specify text output format and incompatible stream converter           
+$atoms-> write({type: 'hdfs', 
+                location: 'jaqlTest/test1.dat',
+                outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                             converter: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });
+    
+//4 Local file read & write
+//4.1 specify Json text output format for write, and Json text input format for read
+$atoms-> write({location: 'test1.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}
+     });   
+$atoms2-> write({location: 'test2.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test2.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}
+     });  
+$jsons-> write({location: 'test3.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test3.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}
+     });  
+$jsons2-> write({location: 'test4.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test4.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}
+     });       
+//4.2 specify Json text output format for write, and Json binary input format for read    
+$atoms-> write({location: 'test1.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonInputStream'}
+     });  
+$jsons-> write({location: 'test2.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonTextOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test2.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonInputStream'}
+     });   
+//4.3 specify Json binary output format for write, and Json binary input format for read
+$atoms-> write({location: 'test1.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonInputStream'}
+     });
+$atoms2-> write({location: 'test2.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test2.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonInputStream'}
+     });
+$jsons-> write({location: 'test3.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test3.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonInputStream'}
+     });  
+$jsons2-> write({location: 'test4.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test4.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonInputStream'}
+     });   
+//4.4 specify Json binary output format for write, and Json text input format for read      
+$atoms-> write({location: 'test1.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test1.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}
+     });     
+$jsons-> write({location: 'test2.dat',
+                 outoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamOutputAdapter',
+                              format: 'com.ibm.jaql.io.stream.converter.JsonOutputStream'}
+               });  
+read({type: 'hdfs', 
+      location: 'test2.dat',
+      inoptions: {adapter: 'com.ibm.jaql.io.stream.FileStreamInputAdapter',
+                  format: 'com.ibm.jaql.io.stream.converter.JsonTextInputStream'}
+     });  
+
+//5. Map-Reduce
+//5.1 input is a file with JSON text (one record per line), output is a SequenceFile of items
+$jsons-> write({type: 'hdfs', location: 'jaqlTest/test1.txt', 
+         outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                      converter: 'com.foobar.store.ToJSONTxtConverter',
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});	    
+mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test1.txt', 
+               inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		   converter: 'com.foobar.store.FromJSONTxtConverter'}},
+    'map'   : fn($) ( $ -> transform [ $.g, 1 ]),
+    'reduce': fn(key, values) [{ g: key, n: count(values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test1.dat'}
+    })
+-> read();
+$jsons2-> write({type: 'hdfs', location: 'jaqlTest/test2.txt', 
+         outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                      converter: 'com.foobar.store.ToJSONTxtConverter',
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});	    
+mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test2.txt', 
+               inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		    converter: 'com.foobar.store.FromJSONTxtConverter'}},
+    'map'   : fn($) ( $ -> transform [ $.g, 1 ]),
+    'reduce': fn(key, values) [{ g: key, n: count(values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test2.dat'}
+    })
+-> read();
+$atoms-> write({type: 'hdfs', location: 'jaqlTest/test3.txt', 
+         outoptions: {format: 'org.apache.hadoop.mapred.TextOutputFormat',
+                      converter: 'com.foobar.store.ToJSONTxtConverter',
+                      configurator: 'com.foobar.store.TextFileOutputConfigurator'}});	    
+mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test3.txt', 
+               inoptions: {format: 'org.apache.hadoop.mapred.TextInputFormat',
+			  		    converter: 'com.foobar.store.FromJSONTxtConverter'}},
+    'map'   : fn($) ( $ -> transform [ $, $*2 ]),
+    'reduce': fn(key, values) [{ g: key, n: key+sum(values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test3.dat'}
+    })
+-> read();
+//5.2 input is a SequenceFile , output is also a SequenceFile of items
+$jsons-> write({type: 'hdfs', location: 'jaqlTest/test3.dat'});
+mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test3.dat'},
+    'map'   : fn($) ( $ -> transform [ $.g, 1 ]),
+    'reduce': fn(key, values) [{ g: key, n: count(values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test33.dat'}
+    })
+-> read();
+$jsons2-> write({type: 'hdfs', location: 'jaqlTest/test4.dat'});
+mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test4.dat'},
+    'map'   : fn($) ( $ -> transform [ $.g, 1 ]),
+    'reduce': fn(key, values) [{ g: key, n: count(values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test44.dat'}
+    })
+-> read();
+$atoms-> write({type: 'hdfs', location: 'jaqlTest/test5.txt'});	    
+mapReduce( {
+    'input' : {type: 'hdfs', location: 'jaqlTest/test5.txt'},
+    'map'   : fn($) ( $ -> transform [ $, $*2 ]),
+    'reduce': fn(key, values) [{ g: key, n: key+sum(values) }],
+    'output': {type: 'hdfs', location: 'jaqlTest/test5.dat'}
+    })
+-> read();

@@ -1,0 +1,522 @@
+
+;//------------------- TEST-CASE -----------------
+//1. exercise JsonToXML error condition
+//1.1 standard usage
+{content: {city: "Beijing", no: [1.23,2.34,30.784]}} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"record\"><city type=\"string\">Beijing</city><no type=\"array\"><value type=\"double\">1.23</value><value type=\"double\">2.34</value><value type=\"double\">30.784</value></no></content></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{content: {city: "BeiJing", city2: "Shanghai"}} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"record\"><city type=\"string\">BeiJing</city><city2 type=\"string\">Shanghai</city2></content></record>"
+
+;//------------------- TEST-CASE -----------------
+ 
+//1.2 Input is not a json type
+["Beijing"] -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><value type=\"string\">Beijing</value></array>"
+
+;//------------------- TEST-CASE -----------------
+ 
+["Beijing", "Shanghai"] -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><value type=\"string\">Beijing</value><value type=\"string\">Shanghai</value></array>"
+
+;//------------------- TEST-CASE -----------------
+ 
+[{content: "Customer Information"}] -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><record><content type=\"string\">Customer Information</content></record></array>"
+
+;//------------------- TEST-CASE -----------------
+ 
+{content: "Customer Information" -> jsonToXml();
+
+;//----- EXCEPTION -----
+
+// antlr.MismatchedTokenException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+{"content", "Customer Information"} -> jsonToXml();
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+{content: "Customer Information"} -> jsonToXml(123);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+//1.3 Json value is an array, but not a json record
+{content: ["BeiJing", "Shanghai"]} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"array\"><value type=\"string\">BeiJing</value><value type=\"string\">Shanghai</value></content></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{content: [{city: "BeiJing", city2: "Shanghai"}]} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"array\"><record><city type=\"string\">BeiJing</city><city2 type=\"string\">Shanghai</city2></record></content></record>"
+
+;//------------------- TEST-CASE -----------------
+  
+{content: [{city: "BeiJing"}, {city2: "Shanghai"}]} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"array\"><record><city type=\"string\">BeiJing</city></record><record><city2 type=\"string\">Shanghai</city2></record></content></record>"
+
+;//------------------- TEST-CASE -----------------
+ 
+//json record size is greater than 1
+{content: "Customer Information", content2: "Product Information"} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"string\">Customer Information</content><content2 type=\"string\">Product Information</content2></record>"
+
+;//------------------- TEST-CASE -----------------
+ 
+//1.4 nested jason
+{content: {city: "BeiJing", city2: "Shanghai", content2:{name:"IBM Computer", price: 40}}} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"record\"><city type=\"string\">BeiJing</city><city2 type=\"string\">Shanghai</city2><content2 type=\"record\"><name type=\"string\">IBM Computer</name><price type=\"long\">40</price></content2></content></record>"
+
+;//------------------- TEST-CASE -----------------
+ 
+{content: {city: "BeiJing", city2: "Shanghai", price:[10.0,1220,0.307]}} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"record\"><city type=\"string\">BeiJing</city><city2 type=\"string\">Shanghai</city2><price type=\"array\"><value type=\"double\">10.0</value><value type=\"long\">1220</value><value type=\"double\">0.307</value></price></content></record>"
+
+;//------------------- TEST-CASE -----------------
+
+{content: {city: "BeiJing", city2: "Shanghai", content2:[{name:"IBM Computer"}, {price: 40}]}} -> jsonToXml();
+
+;//--------------------- RESULT ------------------
+
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"record\"><city type=\"string\">BeiJing</city><city2 type=\"string\">Shanghai</city2><content2 type=\"array\"><record><name type=\"string\">IBM Computer</name></record><record><price type=\"long\">40</price></record></content2></content></record>"
+
+;//------------------- TEST-CASE -----------------
+ 
+
+2. exercise JsonToDel error condition
+//2.1 standard usage
+["Computer"] -> jsonToDel();
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+[[1.23, 'one','two'],[100, 'three','four']] -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+[
+  "1.23,\"one\",\"two\"",
+  "100,\"three\",\"four\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[[1.23, 'one','two'],[100, 'three','four']] -> jsonToDel({quoted: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "1.23,one,two",
+  "100,three,four"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[[1.23, 'one','two'],[100, 'three','four']] -> jsonToDel({quoted: true});
+
+;//--------------------- RESULT ------------------
+
+[
+  "1.23,\"one\",\"two\"",
+  "100,\"three\",\"four\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[[1.23, 'one','two'],[100, 'three','four']] -> jsonToDel({escape: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "1.23,\"one\",\"two\"",
+  "100,\"three\",\"four\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[[1.23, 'one','two'],[100, 'three','four']] -> jsonToDel({escape: true});
+
+;//--------------------- RESULT ------------------
+
+[
+  "1.23,\"one\",\"two\"",
+  "100,\"three\",\"four\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+//2.2 Input is not an array
+"Computer" -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+{name: "Computer"} -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+{content: {city: "BeiJing", city2: "Shanghai"}} -> jsonToDel();
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+//2.3 input is composition of json, array and atoms
+[{name: 'mike', age: 10}, [100, 200], "China", 12] -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\",10",
+  "100,200",
+  "\"China\"",
+  "12"
+]
+
+;//------------------- TEST-CASE -----------------
+
+//2.4 exercise schema
+[{sn: "one"}, {sn: "two"}] -> jsonToDel({schema: schema {sn}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"one\"",
+  "\"two\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{sn: "one"}, {sn2: "two"}] -> jsonToDel({schema: schema {sn}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"one\"",
+  ""
+]
+
+;//------------------- TEST-CASE -----------------
+
+//it hang, refer to defect 9339
+//[{sn: "one"}, {sn2: "two",sn: "thress}] -> jsonToDel({schema: schema {sn}});
+[{sn: "one"}, {sn2: "two",sn: "thress"}] -> jsonToDel({schema: schema {sn}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"one\"",
+  "\"thress\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{sn: "one"}, {sn2: "two",sn: "thress"}] -> jsonToDel({schema: schema {sn2}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "",
+  "\"two\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{name: 'mike', age: 10}, {sn2: "two",sn: "thress"}, [100, 200], "China", 12] -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\",10",
+  ",",
+  "100,200",
+  "\"China\"",
+  "12"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{name: 'mike', age: 10}, ['Jack', 200]] -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\",10",
+  "\"Jack\",200"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{name: 'mike', age: 10}, ['Jack', 200, "IBM"]] -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\",10",
+  "\"Jack\",200,\"IBM\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{name: 'mike', age: 10, address: "Beijing"}, ['Jack', 200, "IBM"]] -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"mike\",10",
+  "\"Jack\",200,\"IBM\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//3. Exercise Internationalization
+//3.1 exercise conversion for Chinese characters
+convert(["a�й�","b����","1"], schema [ string, string,long ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "a�й�",
+  "b����",
+  1
+]
+
+;//------------------- TEST-CASE -----------------
+
+//3.2 exercise lines() and del() interface for Chinese characters
+$out = "tmpout/chinese-file.txt";
+;//------------------- TEST-CASE -----------------
+
+[1,2,3.4,4,true,6,'2012��a��b��c��d��e��f��g��h��i��j��k',8,'Rose',0.78] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/chinese-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+[1,2,3.4,4,true,6,'2012�����籭�ھ����Ǹ����',8,'Rose',0.78] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/chinese-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out));
+
+;//--------------------- RESULT ------------------
+
+[
+  "1",
+  "2",
+  "3.4",
+  "4",
+  "true",
+  "6",
+  "2012�����籭�ھ����Ǹ����",
+  "8",
+  "Rose",
+  "0.78"
+]
+
+;//------------------- TEST-CASE -----------------
+
+["����,�й��,1", "�ܳ�, �¹���,2"] -> write(lines($out));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "tmpout/chinese-file.txt",
+  "type": "lines"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(lines($out));
+
+;//--------------------- RESULT ------------------
+
+[
+  "����,�й��,1",
+  "�ܳ�, �¹���,2"
+]
+
+;//------------------- TEST-CASE -----------------
+
+read(del($out, { schema: schema [ string, string, long], quoted: false}));
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "����",
+    "�й��",
+    1
+  ],
+  [
+    "�ܳ�",
+    " �¹���",
+    2
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+//3.3 exercise jsonToDel for Chinese characters
+[['����','����', 12.8],['��ˮ', '��Ӿ', 34.9]] -> jsonToDel({quoted: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "����,����,12.8",
+  "��ˮ,��Ӿ,34.9"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[['����','����', 12.8],['��ˮ', '��Ӿ', 34.9]] -> jsonToDel({quoted: true});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"����\",\"����\",12.8",
+  "\"��,\"��,34.9"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[['����','����', 12.8],['��ˮ', '��Ӿ', 34.9]] -> jsonToDel({quoted: false, schema: schema {sn}});
+
+;//--------------------- RESULT ------------------
+
+[
+  "����,����,12.8",
+  "��ˮ,��Ӿ,34.9"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{name: '�����', age: 50}, {name: '����', age: 40}] -> jsonToDel({schema: schema { name, age }});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"�����\",50",
+  "\"����\",40"
+]
+
+;//------------------- TEST-CASE -----------------
+
+[{name: '�����', age: 50}, {name: '����', age: 40}, 100, '��ɮ', ['���μ�', '��¥��', '�������']] -> jsonToDel({schema: schema { name, age }, delimiter: ':'});
+
+;//--------------------- RESULT ------------------
+
+[
+  "\"�����\":50",
+  "\"����\":40",
+  "100",
+  "\"��",
+  "\"���\":\"���\":\"�������\""
+]
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------
