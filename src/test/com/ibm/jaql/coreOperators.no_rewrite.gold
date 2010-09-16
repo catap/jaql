@@ -1,0 +1,3150 @@
+
+;//------------------- TEST-CASE -----------------
+//----------------------------    1. Transform testing   -------------------------------------------
+//1.1 Projection on ATOM data type
+//1.1.1 Prepare testing atom data
+$atoms1 = [1, 1.3, 163, 60,- 20.5, 0];
+;//------------------- TEST-CASE -----------------
+
+$atoms2 = ["Movie", "TV", "", "$%^&*"];
+;//------------------- TEST-CASE -----------------
+
+$atoms3 = [true, FALSE, "true", "false", null];
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//1.1.2 exercise syntax 
+$atoms1 -> transform $;
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  1.3,
+  163,
+  60,
+  -20.5,
+  0
+]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms2 -> transform $;
+
+;//--------------------- RESULT ------------------
+
+[
+  "Movie",
+  "TV",
+  "",
+  "$%^&*"
+]
+
+;//------------------- TEST-CASE -----------------
+
+//1.1.3 exercise options
+$atoms1 -> transform $+2;
+
+;//--------------------- RESULT ------------------
+
+[
+  3,
+  3.3,
+  165,
+  62,
+  -18.5,
+  2
+]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> transform each i (i+2);
+
+;//--------------------- RESULT ------------------
+
+[
+  3,
+  3.3,
+  165,
+  62,
+  -18.5,
+  2
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//1.2 Projection on Array 
+//1.2.1 Prepare testing array data
+//elements are all number
+$array1 =[ 
+          [1,1.3], 
+          [163, 60, -12], 
+          [-20.5, 0], 
+          [24.9,-23.1,56], 
+          [12,23,34,45] 
+         ];
+;//------------------- TEST-CASE -----------------
+
+//elements are all string
+$array2 =[
+           ["Tom", "Jack", "Anderson"],
+           ["Lady Gaga", "Kate", "2345", "#$%^)(", "Present"],
+           ["Love", "Sunny", "Weather"]
+         ];
+;//------------------- TEST-CASE -----------------
+  
+//elements are different data type     
+$array3 =[
+           ["Tom", "Jack", "Anderson"],
+           [23, -12, 34.57, 0],
+           [null, "Kate", "2345", 9023, null],
+           [true, false, "true", "false", "12.34", 34.89],
+           [],
+           [null]
+         ];
+;//------------------- TEST-CASE -----------------
+     
+//1.2.2 exercise syntax
+$array1 -> transform $[-1];
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null,
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform $[2.3];
+
+;//----- EXCEPTION -----
+
+// java.lang.ArithmeticException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform $[2];
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  -12,
+  null,
+  56,
+  34
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform $[20];
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null,
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform $[0];
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  163,
+  -20.5,
+  24.9,
+  12
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform [$[0]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1
+  ],
+  [
+    163
+  ],
+  [
+    -20.5
+  ],
+  [
+    24.9
+  ],
+  [
+    12
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform {$[0]};
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//1.2.3 exercise options
+$array1 -> transform $[0]+$[1];
+
+;//--------------------- RESULT ------------------
+
+[
+  2.3,
+  223,
+  -20.5,
+  1.7999999999999972,
+  35
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform $[0]+$[1] + 3;
+
+;//--------------------- RESULT ------------------
+
+[
+  5.3,
+  226,
+  -17.5,
+  4.799999999999997,
+  38
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform each i (i[0]+2);
+
+;//--------------------- RESULT ------------------
+
+[
+  3,
+  165,
+  -18.5,
+  26.9,
+  14
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform each i (i[0]*i[1]/2);
+
+;//--------------------- RESULT ------------------
+
+[
+  0.65,
+  4890,
+  -0.0,
+  -287.595,
+  138
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform {first:$[0]};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "first": 1
+  },
+  {
+    "first": 163
+  },
+  {
+    "first": -20.5
+  },
+  {
+    "first": 24.9
+  },
+  {
+    "first": 12
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform {first:$[0], fourth:$[3]};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "first": 1,
+    "fourth": null
+  },
+  {
+    "first": 163,
+    "fourth": null
+  },
+  {
+    "first": -20.5,
+    "fourth": null
+  },
+  {
+    "first": 24.9,
+    "fourth": null
+  },
+  {
+    "first": 12,
+    "fourth": 45
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform [$[0]+$[1]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    2.3
+  ],
+  [
+    223
+  ],
+  [
+    -20.5
+  ],
+  [
+    1.7999999999999972
+  ],
+  [
+    35
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array1 -> transform {sum:$[0]+$[1]};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "sum": 2.3
+  },
+  {
+    "sum": 223
+  },
+  {
+    "sum": -20.5
+  },
+  {
+    "sum": 1.7999999999999972
+  },
+  {
+    "sum": 35
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array2 -> transform $[0];
+
+;//--------------------- RESULT ------------------
+
+[
+  "Tom",
+  "Lady Gaga",
+  "Love"
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array2 -> transform $[2];
+
+;//--------------------- RESULT ------------------
+
+[
+  "Anderson",
+  "2345",
+  "Weather"
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array2 -> transform $[4];
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  "Present",
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array3 -> transform each i (i[0]+i[1]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "TomJack",
+  11,
+  null
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//1.3 Projection on Record
+//1.3.1 Prepare testing record data
+$record1 =[ 
+           {a:12},
+           {a:2.3, b:45},
+           {a:36, b:-32},
+           {a:-23.67, b:90, c:34.782},
+           {b:34.45, a:89, c:54.98, d:34.56}
+         ];
+;//------------------- TEST-CASE -----------------
+
+$record2 = [
+            {a:43,b:, c:-23.34}
+           ];
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$record3 = [
+            {a:true, b:TRUE}
+           ];
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+         
+$record4 = [
+            {a:null, b:NULL}
+           ];
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$record5 = [
+            {x:45.34},
+            {x:true, y:"USA"},
+            {x:"TRUE", Y:-32},
+            {x:"China", z:90, y:false}
+           ];
+;//------------------- TEST-CASE -----------------
+          
+//1.3.2 exercise syntax       
+$record1 -> transform $.a;
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  2.3,
+  36,
+  -23.67,
+  89
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform $.c;
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null,
+  34.782,
+  54.98
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform $.f;
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  null,
+  null,
+  null,
+  null
+]
+
+;//------------------- TEST-CASE -----------------
+
+//1.3.3 exercise options
+$record1 -> transform $.a + $.b;
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  47.3,
+  4,
+  66.33,
+  123.45
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform [$.a + $.b, $.a*$.b];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    null,
+    null
+  ],
+  [
+    47.3,
+    103.49999999999999
+  ],
+  [
+    4,
+    -1152
+  ],
+  [
+    66.33,
+    -2130.3
+  ],
+  [
+    123.45,
+    3066.05
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform {sum: $.a + $.b, product: $.a*$.b};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "product": null,
+    "sum": null
+  },
+  {
+    "product": 103.49999999999999,
+    "sum": 47.3
+  },
+  {
+    "product": -1152,
+    "sum": 4
+  },
+  {
+    "product": -2130.3,
+    "sum": 66.33
+  },
+  {
+    "product": 3066.05,
+    "sum": 123.45
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform each k (k.a + k.b);
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  47.3,
+  4,
+  66.33,
+  123.45
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform each k ([k.a + k.b, k.a * k.b]);
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    null,
+    null
+  ],
+  [
+    47.3,
+    103.49999999999999
+  ],
+  [
+    4,
+    -1152
+  ],
+  [
+    66.33,
+    -2130.3
+  ],
+  [
+    123.45,
+    3066.05
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform each k ({sum:k.a + k.b, product:k.a * k.b});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "product": null,
+    "sum": null
+  },
+  {
+    "product": 103.49999999999999,
+    "sum": 47.3
+  },
+  {
+    "product": -1152,
+    "sum": 4
+  },
+  {
+    "product": -2130.3,
+    "sum": 66.33
+  },
+  {
+    "product": 3066.05,
+    "sum": 123.45
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform abs($.a) + abs($.b);
+
+;//--------------------- RESULT ------------------
+
+[
+  null,
+  47.3,
+  68,
+  113.67,
+  123.45
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform [abs($.a + $.b), $.a*$.b];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    null,
+    null
+  ],
+  [
+    47.3,
+    103.49999999999999
+  ],
+  [
+    4,
+    -1152
+  ],
+  [
+    66.33,
+    -2130.3
+  ],
+  [
+    123.45,
+    3066.05
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$record1 -> transform {sum: $.a + $.b, product: $.a*$.b};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "product": null,
+    "sum": null
+  },
+  {
+    "product": 103.49999999999999,
+    "sum": 47.3
+  },
+  {
+    "product": -1152,
+    "sum": 4
+  },
+  {
+    "product": -2130.3,
+    "sum": 66.33
+  },
+  {
+    "product": 3066.05,
+    "sum": 123.45
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//1.4 Projection on nesting data
+//1.4.1 Prepare testing nesting data
+$composition1 =[ 
+               {a: [1,2], b:[4,-5]},
+               {a: [-1,3,-6], b:[2,-1,0]},
+               {a: [1,1,-3,23], b:[6,-2,6,12]},
+               {a: [2,2], b:[1,4,6,12,10]},
+              ];
+;//------------------- TEST-CASE -----------------
+
+
+$composition2 =[ 
+               [{a: [1,2]}, {b:[4,-5]}],
+               [{a: [-1,3,-6]}, {b:[2,-1,0]}],
+               [{a: [1,1,-3,23]}, {b:[4,-5,6,12]}],
+               [{a: [2,2]}, {b:[1,4,6,12,10]}]
+              ];
+;//------------------- TEST-CASE -----------------
+
+//1.4.2 exercise options
+$composition1 -> transform $.a[0]+$.a[1];
+
+;//--------------------- RESULT ------------------
+
+[
+  3,
+  2,
+  2,
+  4
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition1 -> transform $.a[0]+$.b[1];
+
+;//--------------------- RESULT ------------------
+
+[
+  -4,
+  -2,
+  -1,
+  6
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition1 -> transform each k ({sum: k.a[1] + k.b[0], product: k.a[1] * k.b[0]});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "product": 8,
+    "sum": 6
+  },
+  {
+    "product": 6,
+    "sum": 5
+  },
+  {
+    "product": 6,
+    "sum": 7
+  },
+  {
+    "product": 2,
+    "sum": 3
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition2 -> transform $[0].a[0] + $[1].b[0];
+
+;//--------------------- RESULT ------------------
+
+[
+  5,
+  1,
+  5,
+  3
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition2 -> transform each k ({sum: k[0].a[1] + k[1].b[0] ,product:k[0].a[1] * k[1].b[0]});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "product": 8,
+    "sum": 6
+  },
+  {
+    "product": 6,
+    "sum": 5
+  },
+  {
+    "product": 4,
+    "sum": 5
+  },
+  {
+    "product": 2,
+    "sum": 3
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//-------------------------   2. Filter testing   --------------------------------------------------
+//Will reuse some sample data in transform testing
+//2.1 exercise filter syntax
+$atoms1 -> filter 1;
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter 0;
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter TRUE;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter true;
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  1.3,
+  163,
+  60,
+  -20.5,
+  0
+]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter FALSE;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter true == false;
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter false == false;
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  1.3,
+  163,
+  60,
+  -20.5,
+  0
+]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter 3 == 2;
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter $ = 60;
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter $ == 60;
+
+;//--------------------- RESULT ------------------
+
+[
+  60
+]
+
+;//------------------- TEST-CASE -----------------
+
+$filter_string = [
+                  [{a: "a"}, {b: "b"}],
+                  [{a: "a"}, {b: "b"}, {c:"c"}]
+                 ];
+;//------------------- TEST-CASE -----------------
+
+$filter_string -> transform [$[0].a, $[1].b]
+               -> filter $[1].b == "b";
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//2.2 exercise filter options
+$atoms1 -> filter $ > 1 and $ < 10;
+
+;//--------------------- RESULT ------------------
+
+[
+  1.3
+]
+
+;//------------------- TEST-CASE -----------------
+
+$atoms1 -> filter $ > 1 or $ < 10;
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  1.3,
+  163,
+  60,
+  -20.5,
+  0
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition1 -> filter $.a[0] == 1 and $.b[1]>-3;
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": [
+      1,
+      1,
+      -3,
+      23
+    ],
+    "b": [
+      6,
+      -2,
+      6,
+      12
+    ]
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition2 -> filter each k k[0].a[0]==-1 or k[1].b[1]>2;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": [
+        -1,
+        3,
+        -6
+      ]
+    },
+    {
+      "b": [
+        2,
+        -1,
+        0
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        2,
+        2
+      ]
+    },
+    {
+      "b": [
+        1,
+        4,
+        6,
+        12,
+        10
+      ]
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition2 -> filter each k k[0].a[1]+k[1].b[0]>5 or k[1].b[0]==2;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": [
+        4,
+        -5
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        -1,
+        3,
+        -6
+      ]
+    },
+    {
+      "b": [
+        2,
+        -1,
+        0
+      ]
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//----------------------------    3. Expand testing  -----------------------------------------------
+//3.1 exercise expand syntax  
+$atoms1 -> expand $;
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$array2 -> expand $;
+
+;//--------------------- RESULT ------------------
+
+[
+  "Tom",
+  "Jack",
+  "Anderson",
+  "Lady Gaga",
+  "Kate",
+  "2345",
+  "#$%^)(",
+  "Present",
+  "Love",
+  "Sunny",
+  "Weather"
+]
+
+;//------------------- TEST-CASE -----------------
+
+$array2 -> expand unroll $;
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//3.2 exercise expand options 
+$composition2 -> expand $[1].b;
+
+;//--------------------- RESULT ------------------
+
+[
+  4,
+  -5,
+  2,
+  -1,
+  0,
+  4,
+  -5,
+  6,
+  12,
+  1,
+  4,
+  6,
+  12,
+  10
+]
+
+;//------------------- TEST-CASE -----------------
+
+$composition2 -> expand unroll $[1].b;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": 4
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": -5
+    }
+  ],
+  [
+    {
+      "a": [
+        -1,
+        3,
+        -6
+      ]
+    },
+    {
+      "b": 2
+    }
+  ],
+  [
+    {
+      "a": [
+        -1,
+        3,
+        -6
+      ]
+    },
+    {
+      "b": -1
+    }
+  ],
+  [
+    {
+      "a": [
+        -1,
+        3,
+        -6
+      ]
+    },
+    {
+      "b": 0
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        1,
+        -3,
+        23
+      ]
+    },
+    {
+      "b": 4
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        1,
+        -3,
+        23
+      ]
+    },
+    {
+      "b": -5
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        1,
+        -3,
+        23
+      ]
+    },
+    {
+      "b": 6
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        1,
+        -3,
+        23
+      ]
+    },
+    {
+      "b": 12
+    }
+  ],
+  [
+    {
+      "a": [
+        2,
+        2
+      ]
+    },
+    {
+      "b": 1
+    }
+  ],
+  [
+    {
+      "a": [
+        2,
+        2
+      ]
+    },
+    {
+      "b": 4
+    }
+  ],
+  [
+    {
+      "a": [
+        2,
+        2
+      ]
+    },
+    {
+      "b": 6
+    }
+  ],
+  [
+    {
+      "a": [
+        2,
+        2
+      ]
+    },
+    {
+      "b": 12
+    }
+  ],
+  [
+    {
+      "a": [
+        2,
+        2
+      ]
+    },
+    {
+      "b": 10
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$expand1 = [ 
+             [{a: [1,2]}, {b:[{d:[4,-5]},{e:[12,34]}]}],
+             [{a: [3,6]}, {b:[{d:[2,-8]},{f:[23,18]}]}]
+           ];
+;//------------------- TEST-CASE -----------------
+
+$expand1 -> expand  $[0].a;
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  3,
+  6
+]
+
+;//------------------- TEST-CASE -----------------
+
+$expand1 -> expand  $[1].b[1].e;
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  34
+]
+
+;//------------------- TEST-CASE -----------------
+
+$expand1 -> expand unroll $[0].a;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": 1
+    },
+    {
+      "b": [
+        {
+          "d": [
+            4,
+            -5
+          ]
+        },
+        {
+          "e": [
+            12,
+            34
+          ]
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": 2
+    },
+    {
+      "b": [
+        {
+          "d": [
+            4,
+            -5
+          ]
+        },
+        {
+          "e": [
+            12,
+            34
+          ]
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": 3
+    },
+    {
+      "b": [
+        {
+          "d": [
+            2,
+            -8
+          ]
+        },
+        {
+          "f": [
+            23,
+            18
+          ]
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": 6
+    },
+    {
+      "b": [
+        {
+          "d": [
+            2,
+            -8
+          ]
+        },
+        {
+          "f": [
+            23,
+            18
+          ]
+        }
+      ]
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$expand1 -> expand unroll $[1].b[1].e;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": [
+        {
+          "d": [
+            4,
+            -5
+          ]
+        },
+        {
+          "e": 12
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": [
+        {
+          "d": [
+            4,
+            -5
+          ]
+        },
+        {
+          "e": 34
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        3,
+        6
+      ]
+    },
+    {
+      "b": [
+        {
+          "d": [
+            2,
+            -8
+          ]
+        },
+        {
+          "f": [
+            23,
+            18
+          ]
+        }
+      ]
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//------------------------------   4. Group testing  -----------------------------------------------
+//4.1 Prepare testing nesting data
+$group1 = [
+            {id:1, dept: 1, income:12000},
+            {id:2, dept: 1, income:13000},
+            {      dept: 2, income:15000},
+            {id:4, dept: 1, income:10000},
+            {id:5, dept: 3},
+            {id:6,           income:5000},
+            {id:7                       }
+          ];
+;//------------------- TEST-CASE -----------------
+
+$group2 = [
+            {id:1, dept: 1, income:12000},
+            {id:2, dept: 1, income:13000},
+            {id:3, dept: 2, income:15000},
+            {id:4, dept: 1, income:10000},
+            {id:5, dept: 3, income:8000},
+            {id:6, dept: 2, income:5000},
+            {id:7, dept: 1, income:24000}
+          ];
+;//------------------- TEST-CASE -----------------
+
+//4.2 exercise group by syntax 
+$group1 -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "dept_group": null,
+    "total": 5000
+  },
+  {
+    "dept_group": 2,
+    "total": 15000
+  },
+  {
+    "dept_group": 1,
+    "total": 35000
+  },
+  {
+    "dept_group": 3,
+    "total": null
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$group1 -> group by $dept_group = $.dept ;
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$group1 -> group by $dept_group =  into {$dept_group} ;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$group1 -> group into {sum($[*].income} ;
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$group1 -> group into {$.dept} ;
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$group1 -> group by $dept_group = $.dept expand $.income;
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+//4.3 exercise group options 
+$group1 -> group by $dept_group = $.dept into {$dept_group, total:sum($[*].income)};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "dept_group": null,
+    "total": 5000
+  },
+  {
+    "dept_group": 2,
+    "total": 15000
+  },
+  {
+    "dept_group": 1,
+    "total": 35000
+  },
+  {
+    "dept_group": 3,
+    "total": null
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+//4.4 exercie co-group 
+ //missing $ for into variable     
+group $group1 by $dept_group1 = $.dept as co_group1, 
+      $group2 by $dept_group1 = $.dept as co_group2 
+      into  {dept_id: dept_group1};
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//group by variables don't have the same name.
+group $group1 by $dept_group1 = $.dept as co_group1, 
+      $group2 by $dept_group2 = $.dept as co_group2 
+      into  {dept_id: $dept_group1};
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//as variables have the same name.  
+group $group1 by $dept_group = $.dept as co_group, 
+      $group2 by $dept_group = $.dept as co_group 
+      into  {$dept_group, group1_total_income:sum(co_group[*].income), group2_total_income:sum(co_group[*].income)};
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+    
+group $group1 by $dept_group = $.dept as co_group1, 
+      $group2 by $dept_group = $.dept as co_group2 
+      into  {$dept_group, group1_total_income:sum(co_group1[*].income), group2_total_income:sum(co_group2[*].income)};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "dept_group": null,
+    "group1_total_income": 5000,
+    "group2_total_income": null
+  },
+  {
+    "dept_group": 2,
+    "group1_total_income": 15000,
+    "group2_total_income": 20000
+  },
+  {
+    "dept_group": 1,
+    "group1_total_income": 35000,
+    "group2_total_income": 59000
+  },
+  {
+    "dept_group": 3,
+    "group1_total_income": null,
+    "group2_total_income": 8000
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+ 
+//4.5 exercise complex group key
+$group3 = [
+            {id:1, dept: 1, income:12000},
+            {id:2, dept: 1, income:12000},
+            {      dept: 2, income:15000},
+            {id:4, dept: 1, income:10000},
+            {id:5, dept: 3},
+            {id:6,           income:5000},
+            {id:7                       }
+          ];
+;//------------------- TEST-CASE -----------------
+
+group each i in $group3 by dept_id = {i.dept, i.income} into {dept_id};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "dept_id": {
+      "income": 5000
+    }
+  },
+  {
+    "dept_id": {
+      "dept": 1,
+      "income": 10000
+    }
+  },
+  {
+    "dept_id": {
+      "dept": 3
+    }
+  },
+  {
+    "dept_id": {}
+  },
+  {
+    "dept_id": {
+      "dept": 1,
+      "income": 12000
+    }
+  },
+  {
+    "dept_id": {
+      "dept": 2,
+      "income": 15000
+    }
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+group each i in $group3 by dept_id = {i.dept, i.income} into {dept_id, group3_sum_id: sum(i[*].id)};
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$group3 -> group by dept_id = {$.dept, $.income} into {dept_id.dept, dept_id.income,group3_sum_id: sum($[*].id)};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "group3_sum_id": 6,
+    "income": 5000
+  },
+  {
+    "dept": 1,
+    "group3_sum_id": 4,
+    "income": 10000
+  },
+  {
+    "dept": 3,
+    "group3_sum_id": 5
+  },
+  {
+    "group3_sum_id": 7
+  },
+  {
+    "dept": 1,
+    "group3_sum_id": 3,
+    "income": 12000
+  },
+  {
+    "dept": 2,
+    "group3_sum_id": null,
+    "income": 15000
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+$group3 -> group by dept_id = {$.dept, $.income} into [dept_id.dept, dept_id.income, sum($[*].id)];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    null,
+    5000,
+    6
+  ],
+  [
+    1,
+    10000,
+    4
+  ],
+  [
+    3,
+    null,
+    5
+  ],
+  [
+    null,
+    null,
+    7
+  ],
+  [
+    1,
+    12000,
+    3
+  ],
+  [
+    2,
+    15000,
+    null
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//------------------------       5. Sort testing  --------------------------------------------------
+//5.1 Prepare testing nesting data 
+$sort1 = [1,3,6,2,8,9,5,,7,2];
+;//------------------- TEST-CASE -----------------
+
+$sort2 = [
+           [1,2,3],
+           [3,2,5],
+           [7,4,2]  
+         ];
+;//------------------- TEST-CASE -----------------
+
+//nesting data
+$sort3 = [
+           [1,2,[1,2,3]],
+           [3,2,[7,5,1]],
+           [7,4,[2,3,8]]  
+         ];
+;//------------------- TEST-CASE -----------------
+
+$sort4 = [
+           ["Nokia", "Sumsung", "Motor"],
+           ["Desk","Chair"],
+           ["Apple","iPhone","HiPhone","Cyble"]  
+         ];
+;//------------------- TEST-CASE -----------------
+
+         
+//5.2 exercise sort syntax 
+//missing [ ] for sort fieldlist
+$sort1 -> sort by $;
+
+;//----- EXCEPTION -----
+
+// antlr.MismatchedTokenException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$sort1 -> sort by [$];
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  2,
+  3,
+  5,
+  6,
+  7,
+  8,
+  9
+]
+
+;//------------------- TEST-CASE -----------------
+
+//missing by
+$sort1 -> sort [$];
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//exercise index
+$sort2 -> sort by [$[2]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    7,
+    4,
+    2
+  ],
+  [
+    1,
+    2,
+    3
+  ],
+  [
+    3,
+    2,
+    5
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$sort2 -> sort by [$[9]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    2,
+    3
+  ],
+  [
+    3,
+    2,
+    5
+  ],
+  [
+    7,
+    4,
+    2
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$sort2 -> sort by [$[-1]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    2,
+    3
+  ],
+  [
+    3,
+    2,
+    5
+  ],
+  [
+    7,
+    4,
+    2
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+//exercise sort order
+$sort1 -> sort by [$ desc];
+
+;//--------------------- RESULT ------------------
+
+[
+  9,
+  8,
+  7,
+  6,
+  5,
+  3,
+  2,
+  2,
+  1
+]
+
+;//------------------- TEST-CASE -----------------
+
+$sort1 -> sort by [$ asc];
+
+;//--------------------- RESULT ------------------
+
+[
+  1,
+  2,
+  2,
+  3,
+  5,
+  6,
+  7,
+  8,
+  9
+]
+
+;//------------------- TEST-CASE -----------------
+
+$sort1 -> sort by [$ asc desc];
+
+;//----- EXCEPTION -----
+
+// antlr.MismatchedTokenException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$sort1 -> sort [$ descending];
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$sort1 -> sort [$ ascending];
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//5.3 exercise sort options
+$sort3 -> sort by [$[0], $[1] desc];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    2,
+    [
+      1,
+      2,
+      3
+    ]
+  ],
+  [
+    3,
+    2,
+    [
+      7,
+      5,
+      1
+    ]
+  ],
+  [
+    7,
+    4,
+    [
+      2,
+      3,
+      8
+    ]
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$sort3 -> sort by [$[2].[0]];
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$sort3 -> sort by [$[0], $[2].[0] desc];
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$sort4 -> sort by [$[0]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "Apple",
+    "iPhone",
+    "HiPhone",
+    "Cyble"
+  ],
+  [
+    "Desk",
+    "Chair"
+  ],
+  [
+    "Nokia",
+    "Sumsung",
+    "Motor"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$sort4 -> sort by [$[2]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "Desk",
+    "Chair"
+  ],
+  [
+    "Apple",
+    "iPhone",
+    "HiPhone",
+    "Cyble"
+  ],
+  [
+    "Nokia",
+    "Sumsung",
+    "Motor"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+//index beyond the boundary
+$sort4 -> sort by [$[9]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "Nokia",
+    "Sumsung",
+    "Motor"
+  ],
+  [
+    "Desk",
+    "Chair"
+  ],
+  [
+    "Apple",
+    "iPhone",
+    "HiPhone",
+    "Cyble"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//---------------------------     6. Join testing   ------------------------------------------------
+//6.1 Prepare testing nesting data  
+$join1 = [
+           {name: "Jon Doe",        password: "asdf1234", id: 1},
+           {name: "Jane Doe",       password: "qwertyui", id: 2},
+           {name: "Max Mustermann", password: "q1w2e3r4", id: 3}
+         ];
+;//------------------- TEST-CASE -----------------
+
+$join2 = [
+           {userid: 1, url:"code.google.com/p/jaql/"},
+           {userid: 2, url:"www.cnn.com"},
+           {userid: 1, url:"java.sun.com/javase/6/docs/api/"}
+         ];
+;//------------------- TEST-CASE -----------------
+
+//id and userid are different data type
+$join3 = [
+           {name: "Jon Doe",                              id: 1},
+           {name: "Jane Doe",                             id: "acbc"},
+           {name: "Max Mustermann", password: "q1w2e3r4", id: 3},
+           {name: "Washington",     password: "q1w2e3r4", id: 9}
+         ];
+;//------------------- TEST-CASE -----------------
+
+$join4 = [
+           {userid: 3,      url:"code.google.com/p/jaql/"},
+           {userid: "acbc", url:"www.cnn.com"},
+           {userid: 1,      url:"www.sun.com"},
+           {userid: 2,      url:"www.ibm.com"}
+         ];
+;//------------------- TEST-CASE -----------------
+    
+         
+//6.2 exercise join syntax  
+//not support predicate
+join $join1, $join2 where $join1.id > $join2.userid into {$join1.name, $join2.*};
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+join $join1, $join2 where $join1.id <= $join2.userid into {$join1.name, $join2.*};
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+join $join1, $join2 where $join1.id == $join2.userid into {$join1.name, $join2.*};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "name": "Jane Doe",
+    "url": "www.cnn.com",
+    "userid": 2
+  },
+  {
+    "name": "Jon Doe",
+    "url": "code.google.com/p/jaql/",
+    "userid": 1
+  },
+  {
+    "name": "Jon Doe",
+    "url": "java.sun.com/javase/6/docs/api/",
+    "userid": 1
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//6.3 exercise join options  
+join $join3, $join4 where $join3.id == $join4.userid into {$join3.name, $join4.url};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "name": "Jon Doe",
+    "url": "www.sun.com"
+  },
+  {
+    "name": "Jane Doe",
+    "url": "www.cnn.com"
+  },
+  {
+    "name": "Max Mustermann",
+    "url": "code.google.com/p/jaql/"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+join $join3, $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "join3_id": 1,
+    "join4_id": null,
+    "name": "Jon Doe",
+    "url": "www.sun.com"
+  },
+  {
+    "join3_id": "acbc",
+    "join4_id": null,
+    "name": "Jane Doe",
+    "url": "www.cnn.com"
+  },
+  {
+    "join3_id": 3,
+    "join4_id": null,
+    "name": "Max Mustermann",
+    "url": "code.google.com/p/jaql/"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+join $join3, preserve $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "join3_id": null,
+    "join4_id": null,
+    "url": "www.ibm.com"
+  },
+  {
+    "join3_id": 1,
+    "join4_id": null,
+    "name": "Jon Doe",
+    "url": "www.sun.com"
+  },
+  {
+    "join3_id": "acbc",
+    "join4_id": null,
+    "name": "Jane Doe",
+    "url": "www.cnn.com"
+  },
+  {
+    "join3_id": 3,
+    "join4_id": null,
+    "name": "Max Mustermann",
+    "url": "code.google.com/p/jaql/"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+join preserve $join3, $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "join3_id": 1,
+    "join4_id": null,
+    "name": "Jon Doe",
+    "url": "www.sun.com"
+  },
+  {
+    "join3_id": "acbc",
+    "join4_id": null,
+    "name": "Jane Doe",
+    "url": "www.cnn.com"
+  },
+  {
+    "join3_id": 3,
+    "join4_id": null,
+    "name": "Max Mustermann",
+    "url": "code.google.com/p/jaql/"
+  },
+  {
+    "join3_id": 9,
+    "join4_id": null,
+    "name": "Washington"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+join preserve $join3, preserve $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "join3_id": null,
+    "join4_id": null,
+    "url": "www.ibm.com"
+  },
+  {
+    "join3_id": 1,
+    "join4_id": null,
+    "name": "Jon Doe",
+    "url": "www.sun.com"
+  },
+  {
+    "join3_id": "acbc",
+    "join4_id": null,
+    "name": "Jane Doe",
+    "url": "www.cnn.com"
+  },
+  {
+    "join3_id": 3,
+    "join4_id": null,
+    "name": "Max Mustermann",
+    "url": "code.google.com/p/jaql/"
+  },
+  {
+    "join3_id": 9,
+    "join4_id": null,
+    "name": "Washington"
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//----------------------------     7. if testing  --------------------------------------------------
+if(false) 
+  ("it is false");
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+$string0 = if(false) 
+             ("it is true");
+;//------------------- TEST-CASE -----------------
+
+$string0;
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+ 
+$string1 = if (false)
+             "it is true"
+          else
+              "it is false";
+;//------------------- TEST-CASE -----------------
+
+$string1;
+
+;//--------------------- RESULT ------------------
+
+"it is false"
+
+;//------------------- TEST-CASE -----------------
+
+$string2 = if (false)
+             "it is true"
+          else
+              "it is false";
+;//------------------- TEST-CASE -----------------
+
+$string2;
+
+;//--------------------- RESULT ------------------
+
+"it is false"
+
+;//------------------- TEST-CASE -----------------
+
+$string3 = if (false==false)
+             "it is true"
+          else
+              "it is false";
+;//------------------- TEST-CASE -----------------
+
+$string3;
+
+;//--------------------- RESULT ------------------
+
+"it is true"
+
+;//------------------- TEST-CASE -----------------
+
+$string4 = if (true==false)
+             "it is true"
+          else
+              "it is false";
+;//------------------- TEST-CASE -----------------
+
+$string4;
+
+;//--------------------- RESULT ------------------
+
+"it is false"
+
+;//------------------- TEST-CASE -----------------
+
+$a=true;
+;//------------------- TEST-CASE -----------------
+
+$string5 = if ($a=true)
+             "it is true"
+          else
+              "it is false";
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+$string5;
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//----------------------------     8. let testing  -------------------------------------------------
+x=(10,20,30);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+30
+
+;//------------------- TEST-CASE -----------------
+
+x=[10,20,30];
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+[
+  10,
+  20,
+  30
+]
+
+;//------------------- TEST-CASE -----------------
+
+x=10;
+;//------------------- TEST-CASE -----------------
+
+y=(x=x+20);
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//--------------------- RESULT ------------------
+
+10
+
+;//------------------- TEST-CASE -----------------
+
+y;
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+y=(x=10,
+   x=(x=x+20, x+50)+x,
+   x);
+;//------------------- TEST-CASE -----------------
+
+y;
+
+;//--------------------- RESULT ------------------
+
+90
+
+;//------------------- TEST-CASE -----------------
+
+
+//----------------------------     9. Composition operators testing  -------------------------------
+//9.1 Prepare testing nesting data 
+$composition3 =[ 
+               {a: [1,2], b:[4,-5]},
+               {a: [-1,3,-6], b:[2,-1,0]},
+               {a: [1,1,-3,23], b:[6,-2,6,12]},
+               {a: [2,2], b:[1,4,6,12,10]},
+              ];
+;//------------------- TEST-CASE -----------------
+
+
+$composition4 =[ 
+               [{a: [1,2]}, {b:[4,-5]}],
+               [{a: [-1,3,-6]}, {b:[2,-1,0]}],
+               [{a: [1,1,-3,23]}, {b:[4,-5,6,12]}],
+               [{a: [2,2]}, {b:[1,4,6,12,10]}]
+              ];
+;//------------------- TEST-CASE -----------------
+          
+//9.2 exercise composition operators  
+//composition operators of transform, filter, sort and top 
+$composition3 -> transform [$.a[0],$.b[0]]
+              -> filter $[0] > -2
+              -> sort by [$[0],$[1] asc]
+              -> top 2 by [$[1]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    2,
+    1
+  ],
+  [
+    -1,
+    2
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+//composition operators of if, let and transform         
+if(false) 
+  ("it is false") 
+else 
+  ( r = 1,
+    r = ( r = r + 10, r + 100 ) + r,
+    r);
+
+;//--------------------- RESULT ------------------
+
+112
+
+;//------------------- TEST-CASE -----------------
+
+    
+if(true) 
+  ($composition3 -> transform [$.a[0],$.b[0]]) 
+else 
+  ( r = 1,
+    r = ( r = r + 10, r + 100 ) + r,
+    r);
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1,
+    4
+  ],
+  [
+    -1,
+    2
+  ],
+  [
+    1,
+    6
+  ],
+  [
+    2,
+    1
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//--------------------------    10. Map-reduce testing  --------------------------------------------
+//10.1 exercise transform operators  
+[
+  [{a: [1,2]}, {b:[4,-5]}],
+  [{a: [-1,3,-6]}, {b:[2,-1,0]}],
+  [{a: [1,1,-3,23]}, {b:[4,-5,6,12]}],
+  [{a: [2,2]}, {b:[1,4,6,12,10]}]
+  ] -> write(hdfs("foo"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> transform each k ({sum: k[0].a[1] + k[1].b[0] ,product:k[0].a[1] * k[1].b[0]});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "product": 8,
+    "sum": 6
+  },
+  {
+    "product": 6,
+    "sum": 5
+  },
+  {
+    "product": 4,
+    "sum": 5
+  },
+  {
+    "product": 2,
+    "sum": 3
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//10.2 exercise filter operators 
+read(hdfs("foo")) -> filter each k k[0].a[1]+k[1].b[0]>5 or k[1].b[0]==2;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": [
+        4,
+        -5
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        -1,
+        3,
+        -6
+      ]
+    },
+    {
+      "b": [
+        2,
+        -1,
+        0
+      ]
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//10.3 exercise group by operators
+[
+  {id:1, dept: 1, income:12000},
+  {id:2, dept: 1, income:13000},
+  {      dept: 2, income:15000},
+  {id:4, dept: 1, income:10000},
+  {id:5, dept: 3},
+  {id:6,           income:5000},
+  {id:7                       }
+  ]-> write(hdfs("foo"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "dept_group": null,
+    "total": 5000
+  },
+  {
+    "dept_group": 2,
+    "total": 15000
+  },
+  {
+    "dept_group": 1,
+    "total": 35000
+  },
+  {
+    "dept_group": 3,
+    "total": null
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//10.4 exercise expand  operators 
+[ 
+  [{a: [1,2]}, {b:[{d:[4,-5]},{e:[12,34]}]}],
+  [{a: [3,6]}, {b:[{d:[2,-8]},{f:[23,18]}]}]
+  ] -> write(hdfs("foo"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> expand unroll $[1].b[1].e;
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": [
+        {
+          "d": [
+            4,
+            -5
+          ]
+        },
+        {
+          "e": 12
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        1,
+        2
+      ]
+    },
+    {
+      "b": [
+        {
+          "d": [
+            4,
+            -5
+          ]
+        },
+        {
+          "e": 34
+        }
+      ]
+    }
+  ],
+  [
+    {
+      "a": [
+        3,
+        6
+      ]
+    },
+    {
+      "b": [
+        {
+          "d": [
+            2,
+            -8
+          ]
+        },
+        {
+          "f": [
+            23,
+            18
+          ]
+        }
+      ]
+    }
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//10.5 exercise composition  operators
+[
+  {a: [1,2], b:[4,-5]},
+  {a: [-1,3,-6], b:[2,-1,0]},
+  {a: [1,1,-3,23], b:[6,-2,6,12]},
+  {a: [2,2], b:[1,4,6,12,10]},
+] -> write(hdfs("foo"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> transform [$.a[0],$.b[0]]
+              -> filter $[0] > -2
+              -> sort by [$[0],$[1] asc]
+              -> top 2 by [$[1]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    2,
+    1
+  ],
+  [
+    -1,
+    2
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+              
+//--------------------------    11. non-western characters testing  --------------------------------
+$string_array =[
+           ["1ŦԼ", "1����", "1����"],
+           ["Paris", "2�Ϻ�", "2�����", "2#$%^)(", "2�人"],
+           ["1ŦԼ", "3����", "3����", "3#$%^)(", "3����"],
+           ["4֥�Ӹ�", "4���ն�", "4�׶�"]
+         ];
+;//------------------- TEST-CASE -----------------
+  
+$string_array -> transform [$[0],$[1],$[2]]
+              -> filter $[0] == "1ŦԼ"
+              -> sort by [$[1],$[2] asc]
+              -> top 2 by [$[1]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "1ŦԼ",
+    "1����",
+    "1����"
+  ],
+  [
+    "1ŦԼ",
+    "3����",
+    "3����"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+$string_array -> write(hdfs("foo"));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> transform [$[0],$[1],$[2]]
+              -> filter $[0] == "1ŦԼ"
+              -> sort by [$[1],$[2] asc]
+              -> top 2 by [$[1]];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    "1ŦԼ",
+    "1����",
+    "1����"
+  ],
+  [
+    "1ŦԼ",
+    "3����",
+    "3����"
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+                       
+$string_record = [
+                  [{a: "a�Ϻ�"}, {b: "b�ձ�"}],
+                  [{a: "a�人"}, {b: "b̨��"}, {c:"c����"}]
+                 ];
+;//------------------- TEST-CASE -----------------
+
+$string_record -> transform [$[0].a, $[1].b]
+               -> filter $[1].b == "b̨��";
+
+;//--------------------- RESULT ------------------
+
+[
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+             
+$string_record -> transform [$[0].a, $[1].b]
+               -> sort by  [$[1].b];
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------
