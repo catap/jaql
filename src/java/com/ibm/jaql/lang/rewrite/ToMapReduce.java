@@ -665,10 +665,14 @@ public class ToMapReduce extends Rewrite
           break;
         case MAP :
         case GROUP :
-          if (mightContainMapReduce(expr.child(1))) // FIXME: this needs to look for other functions that cannot be relocated (eg, local read/write)
-          {
-            seg = new Segment(Segment.Type.SEQUENTIAL, seg);
-          }
+            for(int i = 1 ; i < expr.numChildren() ; i++)  
+            {
+                if (mightContainMapReduce(expr.child(i))) // FIXME: this needs to look for other functions that cannot be relocated (eg, local read/write)
+                {
+                    seg = new Segment(Segment.Type.SEQUENTIAL, seg);
+                    break;
+                }
+            }
           break;
         default :
           seg = new Segment(Segment.Type.SEQUENTIAL, seg);
