@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
+import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
@@ -34,6 +35,7 @@ import com.ibm.jaql.lang.expr.function.JaqlFunction;
 import com.ibm.jaql.lang.expr.function.JavaUdfFunction;
 import com.ibm.jaql.lang.expr.function.VarParameter;
 import com.ibm.jaql.lang.expr.function.VarParameters;
+import com.ibm.jaql.lang.expr.system.ExternalFnFunction;
 
 public class FunctionSerializer extends TextBasicSerializer<Function>
 {
@@ -121,6 +123,12 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
       JavaUdfFunction f = (JavaUdfFunction)value;
       out.print("system::javaudf('" + f.getImplementingClass().getName() + "')");
     }
+    else if (value instanceof ExternalFnFunction) {
+        ExternalFnFunction f = (ExternalFnFunction)value;
+        out.print("system::externalfn(");
+        TextFullSerializer.getDefault().write(out, f.getExternalOpts());
+        out.print(")");
+      }
     else
     {
       throw new IllegalStateException("Unknown function class: " + value.getClass());
