@@ -232,6 +232,7 @@ import com.ibm.jaql.lang.expr.string.StrcatFn;
 import com.ibm.jaql.lang.expr.string.SubstringFn;
 import com.ibm.jaql.lang.expr.system.BatchFn;
 import com.ibm.jaql.lang.expr.system.ExecFn;
+import com.ibm.jaql.lang.expr.system.ExternalFnExpr;
 import com.ibm.jaql.lang.expr.system.LsFn;
 import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
@@ -544,6 +545,7 @@ public final class SystemNamespace extends Namespace {
     register(new RegisterExceptionHandler.Descriptor());
     register(new FenceFunction.Descriptor());
     register(new FencePushFunction.Descriptor());
+    register(new ExternalFnExpr.Descriptor());
   } 
 
 }
