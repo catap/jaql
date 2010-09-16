@@ -1,0 +1,184 @@
+
+;//------------------- TEST-CASE -----------------
+
+// ========== streaming mode =========
+// data
+['I love java', 'you love java ma'] -> write(hdfs('foo'));
+
+;//--------------------- RESULT ------------------
+
+{
+  "location": "foo",
+  "type": "hdfs"
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// define an external call
+external = externalfn({ cmd:'grep ma', perPartition:true, mode:'streaming' });
+;//------------------- TEST-CASE -----------------
+
+
+// verified
+read(hdfs('foo'));
+
+;//--------------------- RESULT ------------------
+
+[
+  "I love java",
+  "you love java ma"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoke the call and run in parallel
+read(hdfs('foo')) -> external();
+
+;//--------------------- RESULT ------------------
+
+[
+  "you love java ma"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// should be run in parallel
+read(hdfs('foo')) -> perPartition(->external());
+
+;//--------------------- RESULT ------------------
+
+[
+  "you love java ma"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// =========== push mode ===========
+// data
+data = ['I love java', 'you love java ma'];
+;//------------------- TEST-CASE -----------------
+
+
+// re-define an external call
+external = externalfn({cmd:'grep ma', perPartition:false, mode:'push' });
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+external(data);
+
+;//--------------------- RESULT ------------------
+
+[
+  "I love java you love java ma"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+data -> transform { result: external($)};
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "result": []
+  },
+  {
+    "result": [
+      "you love java ma"
+    ]
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// ========== distributed cache =========
+
+// copy the local file to HDFS
+hdfsShell("-copyFromLocal " + DATADIR + "Echo.class Echo.class");
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+
+// set hadoop properties
+setOptions({conf:{"mapred.cache.files": HDFS_URL + WORK_DIR + "/Echo.class#Echo.class"}});
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// run a local java class
+
+// data
+$args = ['hello', 'world'];
+;//------------------- TEST-CASE -----------------
+
+
+// in streaming mode
+// should be failed in no_rewrite
+echo = externalfn ( { cmd: 'java -classpath ./taskTracker/archive/' + HDFS_NAMENODE + WORK_DIR  + '/Echo.class Echo', perPartition: false, mode: 'streaming'} );
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+read(hdfs('foo')) -> transform({k:$, pamameters: echo($args)});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "k": "I love java",
+    "pamameters": []
+  },
+  {
+    "k": "you love java ma",
+    "pamameters": []
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// in push mode
+// should be failed in no_rewrite
+echo = externalfn ( { cmd: 'java -classpath ./taskTracker/archive/' + HDFS_NAMENODE + WORK_DIR  + '/Echo.class Echo', perPartition: true, mode:'push'} );
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+echo($args) -> transform {parameters:$};
+
+;//--------------------- RESULT ------------------
+
+[]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+
+
+
+;//------------------- TEST-DONE -----------------
