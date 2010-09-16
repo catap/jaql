@@ -141,7 +141,7 @@
     <delete dir="${test.conf.override.dir}" />
     <mkdir dir="${test.conf.override.dir}" />
     <copy todir="${test.cache.data}">
-      <fileset dir="${test.src.dir}" includes="*.txt" />
+      <fileset dir="${test.src.dir}" includes="*.txt,*.class" />
       <fileset dir="${hadoop.dir}/src/jaql/test/com/ibm/jaql" includes="*.sh,*.txt"/>
     </copy>
     <chmod dir="${test.cache.data}" perm="ugo+x" includes="*.sh"/>
@@ -462,7 +462,7 @@
 
   <target name="extension.jar" depends="compile-test">
     <jar jarfile="${build.dir}/extension.jar" basedir="${build.dir}/test/classes">
-      <fileset dir="${build.dir}" includes="com/foobar/**/*.class" />
+      <fileset dir="${build.dir}" includes="com/foobar/**/*.class, com/acme/extensions/fn/Echo.class" />
     </jar>
   </target>
 
