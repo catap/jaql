@@ -43,6 +43,12 @@
  val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
                     format: 'com.ibm.jaql.io.stream.converter.DelTextOutputStream'}}
 },
+// for external call
+{key: 'lineInputStream',
+ val: {inoptions: {adapter: 'com.ibm.jaql.io.stream.ExternalCallStreamInputAdapter',
+                    format: 'com.ibm.jaql.io.stream.converter.LineTextInputStream'}}
+},
+
 // XML format for streaming out
 {key: 'xmlStream',
  val: {outoptions: {adapter: 'com.ibm.jaql.io.stream.StreamOutputAdapter',
