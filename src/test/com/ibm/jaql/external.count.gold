@@ -1,0 +1,177 @@
+
+;//------------------- TEST-CASE -----------------
+
+// ========== streaming mode =========
+// data
+['I love java', 'you love java ma'] -> write(hdfs('foo'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// define an external call
+external = externalfn({ cmd:'grep ma', perPartition:true, mode:'streaming' });
+;//------------------- TEST-CASE -----------------
+
+
+// verified
+read(hdfs('foo'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoke the call and run in parallel
+read(hdfs('foo')) -> external();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// should be run in parallel
+read(hdfs('foo')) -> perPartition(->external());
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// =========== push mode ===========
+// data
+data = ['I love java', 'you love java ma'];
+;//------------------- TEST-CASE -----------------
+
+
+// re-define an external call
+external = externalfn({cmd:'grep ma', perPartition:false, mode:'push' });
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+external(data);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+data -> transform { result: external($)};
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// ========== distributed cache =========
+
+// copy the local file to HDFS
+hdfsShell("-copyFromLocal " + DATADIR + "Echo.class Echo.class");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// set hadoop properties
+setOptions({conf:{"mapred.cache.files": HDFS_URL + WORK_DIR + "/Echo.class#Echo.class"}});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// run a local java class
+
+// data
+$args = ['hello', 'world'];
+;//------------------- TEST-CASE -----------------
+
+
+// in streaming mode
+// should be failed in no_rewrite
+echo = externalfn ( { cmd: 'java -classpath ./taskTracker/archive/' + HDFS_NAMENODE + WORK_DIR  + '/Echo.class Echo', perPartition: false, mode: 'streaming'} );
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+read(hdfs('foo')) -> transform({k:$, pamameters: echo($args)});
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+// in push mode
+// should be failed in no_rewrite
+echo = externalfn ( { cmd: 'java -classpath ./taskTracker/archive/' + HDFS_NAMENODE + WORK_DIR  + '/Echo.class Echo', perPartition: true, mode:'push'} );
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+echo($args) -> transform {parameters:$};
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+
+
+
+;//------------------- TEST-DONE -----------------
