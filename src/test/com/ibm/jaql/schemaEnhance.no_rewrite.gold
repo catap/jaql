@@ -1,0 +1,1430 @@
+
+;//------------------- TEST-CASE -----------------
+//1. test function TypeOf 
+//1.1 exercise schema type
+typeof(schema null);
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema null | long | double | string |date);
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema{});
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema { a?: long, *: long});
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema []);
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema [long,string]);
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema [ long(value=1), string(value="a"), boolean ]);
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(schema schematype);
+
+;//--------------------- RESULT ------------------
+
+"schematype"
+
+;//------------------- TEST-CASE -----------------
+
+//1.2 exercise atomic type
+typeof(12.34);
+
+;//--------------------- RESULT ------------------
+
+"double"
+
+;//------------------- TEST-CASE -----------------
+
+typeof("Apple iPhone");
+
+;//--------------------- RESULT ------------------
+
+"string"
+
+;//------------------- TEST-CASE -----------------
+
+typeof("21342.32432");
+
+;//--------------------- RESULT ------------------
+
+"string"
+
+;//------------------- TEST-CASE -----------------
+
+typeof(false);
+
+;//--------------------- RESULT ------------------
+
+"boolean"
+
+;//------------------- TEST-CASE -----------------
+
+//1.3 exercise record and arrays
+typeof({});
+
+;//--------------------- RESULT ------------------
+
+"record"
+
+;//------------------- TEST-CASE -----------------
+
+typeof({a:12,b:"sfds"});
+
+;//--------------------- RESULT ------------------
+
+"record"
+
+;//------------------- TEST-CASE -----------------
+
+typeof([]);
+
+;//--------------------- RESULT ------------------
+
+"array"
+
+;//------------------- TEST-CASE -----------------
+
+typeof([false, 12.34, "IBM", {a:"Apple", b:12.34}]);
+
+;//--------------------- RESULT ------------------
+
+"array"
+
+;//------------------- TEST-CASE -----------------
+
+//1.4 exercise null
+typeof(null);
+
+;//--------------------- RESULT ------------------
+
+"null"
+
+;//------------------- TEST-CASE -----------------
+
+typeof();
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//2. test function IsNullable
+//2.1 exercise syntax
+isNullable(schema true);
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema false?);
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema *);
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema ?);
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema "IBM");
+
+;//----- EXCEPTION -----
+
+// java.lang.IndexOutOfBoundsException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable("IBM");
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassCastException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable();
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(null);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+//2.2 exercise  atomics data 
+isNullable(schema long);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema long?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema boolean);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema boolean?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema null?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+//2.3 exercise arrays and records
+isNullable(schema []);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema []?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema [ long(value=1), string(value="a"), boolean ]);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema [ long(value=1), string(value="a"), boolean ]?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema [ long(value=1), string(value="a"), boolean? ]);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema [ long(value=1), string(value="a")?, boolean? ]);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema {});
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema {}?);
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema { b: null, a: long } );
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+isNullable(schema { b: null, a: long }? );
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+
+
+//3. test Check
+// Checks whether the first argument matches the schema given in the second argument. If so, returns the first argument. Otherwise, throws an expection.
+//3.1 exercise syntax 
+"IBM" -> check ();
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+"" -> check (schema null );
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+null -> check (schema null);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema long(value=12));
+
+;//--------------------- RESULT ------------------
+
+12
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema long(value="IBM"));
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema string(value="IBM"));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+"IBM Computer" -> check (schema string(value="IBM"));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+"IBM" -> check (schema string(value="IBM"));
+
+;//--------------------- RESULT ------------------
+
+"IBM"
+
+;//------------------- TEST-CASE -----------------
+
+"IBM" -> check (schema string(value=null));
+
+;//--------------------- RESULT ------------------
+
+"IBM"
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema long(value=14));
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema long);
+
+;//--------------------- RESULT ------------------
+
+12
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema long(value=null));
+
+;//--------------------- RESULT ------------------
+
+12
+
+;//------------------- TEST-CASE -----------------
+
+//3.2 exercise atomics data 
+12 -> check (schema long);
+
+;//--------------------- RESULT ------------------
+
+12
+
+;//------------------- TEST-CASE -----------------
+
+12 -> check (schema boolean);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+ 
+12.3 -> check (schema long);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+null -> check (schema long?);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+false -> check (schema boolean);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+
+//3.3 exercise arrays and records
+[12,23,34] -> check (schema [long]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+[12,23,34] -> check (schema [long, long, long]);
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  23,
+  34
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2}�� { a: true, d:4, b: 2, c:3 }] -> check (schema [ { a,d,b }]);
+
+;//----- EXCEPTION -----
+
+// antlr.TokenStreamRecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b:string}]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b:string | long}]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d:long(value=4),c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d:long(value=5),c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,e}]);
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> check (schema {a:string, b:long});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "b": 123
+}
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> check (schema {a:string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "b": 123
+}
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> check (schema {a:string, *, *});
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", c: null} -> check (schema {a:string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "c": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+{"a": "IBM Computer", c: null} -> check (schema {a:string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "c": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+{"a": "IBM Computer", c: null} -> check (schema {"a":string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "c": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//4. Assert 
+//Returns its first argument and adds the schema information given in the second argument without validation.
+[12,23,34] -> assert (schema [long]);
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  23,
+  34
+]
+
+;//------------------- TEST-CASE -----------------
+
+[12,23,34] -> assert (schema [long, long, long]);
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  23,
+  34
+]
+
+;//------------------- TEST-CASE -----------------
+
+[12, "IBM", false, 12.56] -> assert(schema [long, string, boolean,double]);
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  "IBM",
+  false,
+  12.56
+]
+
+;//------------------- TEST-CASE -----------------
+
+[12, "IBM", false, 12.56] -> assert(schema [long, string, boolean,double]);
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  "IBM",
+  false,
+  12.56
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2}�� { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { a,d,b }]);
+
+;//----- EXCEPTION -----
+
+// antlr.TokenStreamRecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b:string}]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b:string | long}]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d:long(value=4),c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d:long(value=5),c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b }]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,e}]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> assert (schema {a:string, b:long});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "b": 123
+}
+
+;//------------------- TEST-CASE -----------------
+
+[12, "IBM", false, 12.56] -> assert(schema [long, string, boolean]);
+
+;//--------------------- RESULT ------------------
+
+[
+  12,
+  "IBM",
+  false,
+  12.56
+]
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> assert (schema {a:string});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "b": 123
+}
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> assert (schema {a:string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "b": 123
+}
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", b: 123} -> assert (schema {a:string, *, *});
+
+;//----- EXCEPTION -----
+
+// antlr.RecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+{a: "IBM Computer", c: null} -> assert (schema {a:string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "c": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+{"a": "IBM Computer", c: null} -> assert (schema {a:string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "c": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+{"a": "IBM Computer", c: null} -> assert (schema {"a":string, *});
+
+;//--------------------- RESULT ------------------
+
+{
+  "a": "IBM Computer",
+  "c": null
+}
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }, { a: true, d:4, c: 3, b:2 } ] -> assert(schema [ { d,c,a,b }, { a, b, d, c} ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  },
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+[ { a: true, d:4, b: 2, c:3 }, { a: true, d:4, c: 3, b:2 } ] -> assert(schema [ { "d",c,a,b }, { a, b, d, c} ]);
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  },
+  {
+    "a": true,
+    "b": 2,
+    "c": 3,
+    "d": 4
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//5. ElementsOf
+//elementsOf(schema): if schema is (potentially) an array schema, return the schema of its elements (if any)
+//5.1 schema is atomic
+elementsOf(schema long);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+elementsOf(schema [long, long]);
+
+;//--------------------- RESULT ------------------
+
+schema long
+
+;//------------------- TEST-CASE -----------------
+
+elementsOf(schema[string,long]);
+
+;//--------------------- RESULT ------------------
+
+schema long | string
+
+;//------------------- TEST-CASE -----------------
+
+//5.2 schema is a record, but not an array
+elementsOf(schema{a:long,*:string});
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+elementsOf(schema{"a":long, *:string});
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+//5.3 schema is an array
+elementsOf(schema [ long(value=1), string(value="a"), boolean ]);
+
+;//--------------------- RESULT ------------------
+
+schema boolean | long(value=1) | string(length=1, value="a")
+
+;//------------------- TEST-CASE -----------------
+
+elementsOf(schema [ long(value=1), string(value="a"), boolean, {a:string, price:double} ]);
+
+;//--------------------- RESULT ------------------
+
+schema boolean | long(value=1) | string(length=1, value="a") | {
+         "a": string,
+         "price": double
+       }
+
+;//------------------- TEST-CASE -----------------
+
+
+//6. FieldsOf
+//if schema is (potentially) an record schema, return a table describing its known fields:
+//     [{ name: string, schema: schema, index: long }...]
+fieldsOf(null);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+fieldsOf(schema null);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+fieldsOf(schema [long, string, boolean]);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+fieldsOf(schema { a: long, b: string, c: boolean });
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "index": 0,
+    "isOptional": false,
+    "name": "a",
+    "schema": schema long
+  },
+  {
+    "index": 1,
+    "isOptional": false,
+    "name": "b",
+    "schema": schema string
+  },
+  {
+    "index": 2,
+    "isOptional": false,
+    "name": "c",
+    "schema": schema boolean
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+fieldsOf(schema { a: long?, b: string, c?: boolean, d?: date});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "index": 0,
+    "isOptional": false,
+    "name": "a",
+    "schema": schema long?
+  },
+  {
+    "index": 1,
+    "isOptional": false,
+    "name": "b",
+    "schema": schema string
+  },
+  {
+    "index": 2,
+    "isOptional": true,
+    "name": "c",
+    "schema": schema boolean
+  },
+  {
+    "index": 3,
+    "isOptional": true,
+    "name": "d",
+    "schema": schema date
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+fieldsOf(schema { a: long?, b: string, c?: boolean, d?: date, *});
+
+;//--------------------- RESULT ------------------
+
+[
+  {
+    "index": 0,
+    "isOptional": false,
+    "name": "a",
+    "schema": schema long?
+  },
+  {
+    "index": 1,
+    "isOptional": false,
+    "name": "b",
+    "schema": schema string
+  },
+  {
+    "index": 2,
+    "isOptional": true,
+    "name": "c",
+    "schema": schema boolean
+  },
+  {
+    "index": 3,
+    "isOptional": true,
+    "name": "d",
+    "schema": schema date
+  }
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//7. DataGuiden
+dataGuide(12);
+
+;//--------------------- RESULT ------------------
+
+[
+  "$:long"
+]
+
+;//------------------- TEST-CASE -----------------
+
+dataGuide("IBM Computer");
+
+;//--------------------- RESULT ------------------
+
+[
+  "$:string"
+]
+
+;//------------------- TEST-CASE -----------------
+
+dataGuide("fdsf",true,12.34);
+
+;//----- EXCEPTION -----
+
+// java.lang.IllegalArgumentException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+dataGuide([12,34,34,56]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "$[]",
+  "$[]:long",
+  "$[]:long",
+  "$[]:long",
+  "$[]:long"
+]
+
+;//------------------- TEST-CASE -----------------
+
+dataGuide(["sdfdsf",false, 123, {a:12,b:"dfs"}]);
+
+;//--------------------- RESULT ------------------
+
+[
+  "$[]",
+  "$[]:string",
+  "$[]:boolean",
+  "$[]:long",
+  "$[]",
+  "$[].a:long",
+  "$[].b:string"
+]
+
+;//------------------- TEST-CASE -----------------
+
+dataGuide({name: "computer", price: "13500", new: false});
+
+;//--------------------- RESULT ------------------
+
+[
+  "$",
+  "$.name:string",
+  "$.price:string",
+  "$.new:boolean"
+]
+
+;//------------------- TEST-CASE -----------------
+
+dataGuide({name: "computer", price: "13500", new: false, address:["Beijing", "Shanghai", "Wuhan"]});
+
+;//--------------------- RESULT ------------------
+
+[
+  "$",
+  "$.name:string",
+  "$.price:string",
+  "$.new:boolean",
+  "$.address[]",
+  "$.address[]:string",
+  "$.address[]:string",
+  "$.address[]:string"
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+//8. SqlTypeCode
+//return the sql type code for schema
+sqlTypeCode(schema null);
+
+;//--------------------- RESULT ------------------
+
+0
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(null);
+
+;//--------------------- RESULT ------------------
+
+null
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema {});
+
+;//--------------------- RESULT ------------------
+
+1111
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema { a: long, *: long });
+
+;//--------------------- RESULT ------------------
+
+1111
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema long);
+
+;//--------------------- RESULT ------------------
+
+-5
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema boolean);
+
+;//--------------------- RESULT ------------------
+
+16
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema []);
+
+;//--------------------- RESULT ------------------
+
+2003
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema [long, boolean, string]);
+
+;//--------------------- RESULT ------------------
+
+2003
+
+;//------------------- TEST-CASE -----------------
+
+sqlTypeCode(schema [12,23,"dfsdf"]);
+
+;//----- EXCEPTION -----
+
+// antlr.NoViableAltException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------

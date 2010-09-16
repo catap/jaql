@@ -1,0 +1,459 @@
+//----------------------------    1. Transform testing   -------------------------------------------
+//1.1 Projection on ATOM data type
+//1.1.1 Prepare testing atom data
+$atoms1 = [1, 1.3, 163, 60,- 20.5, 0];
+$atoms2 = ["Movie", "TV", "", "$%^&*"];
+$atoms3 = [true, FALSE, "true", "false", null];
+//1.1.2 exercise syntax 
+$atoms1 -> transform $;
+$atoms2 -> transform $;
+//1.1.3 exercise options
+$atoms1 -> transform $+2;
+$atoms1 -> transform each i (i+2);
+
+//1.2 Projection on Array 
+//1.2.1 Prepare testing array data
+//elements are all number
+$array1 =[ 
+          [1,1.3], 
+          [163, 60, -12], 
+          [-20.5, 0], 
+          [24.9,-23.1,56], 
+          [12,23,34,45] 
+         ];
+//elements are all string
+$array2 =[
+           ["Tom", "Jack", "Anderson"],
+           ["Lady Gaga", "Kate", "2345", "#$%^)(", "Present"],
+           ["Love", "Sunny", "Weather"]
+         ];  
+//elements are different data type     
+$array3 =[
+           ["Tom", "Jack", "Anderson"],
+           [23, -12, 34.57, 0],
+           [null, "Kate", "2345", 9023, null],
+           [true, false, "true", "false", "12.34", 34.89],
+           [],
+           [null]
+         ];     
+//1.2.2 exercise syntax
+$array1 -> transform $[-1];
+$array1 -> transform $[2.3];
+$array1 -> transform $[2];
+$array1 -> transform $[20];
+$array1 -> transform $[0];
+$array1 -> transform [$[0]];
+$array1 -> transform {$[0]};
+//1.2.3 exercise options
+$array1 -> transform $[0]+$[1];
+$array1 -> transform $[0]+$[1] + 3;
+$array1 -> transform each i (i[0]+2);
+$array1 -> transform each i (i[0]*i[1]/2);
+$array1 -> transform {first:$[0]};
+$array1 -> transform {first:$[0], fourth:$[3]};
+$array1 -> transform [$[0]+$[1]];
+$array1 -> transform {sum:$[0]+$[1]};
+$array2 -> transform $[0];
+$array2 -> transform $[2];
+$array2 -> transform $[4];
+$array3 -> transform each i (i[0]+i[1]);
+
+//1.3 Projection on Record
+//1.3.1 Prepare testing record data
+$record1 =[ 
+           {a:12},
+           {a:2.3, b:45},
+           {a:36, b:-32},
+           {a:-23.67, b:90, c:34.782},
+           {b:34.45, a:89, c:54.98, d:34.56}
+         ];
+$record2 = [
+            {a:43,b:, c:-23.34}
+           ];
+$record3 = [
+            {a:true, b:TRUE}
+           ];         
+$record4 = [
+            {a:null, b:NULL}
+           ];
+$record5 = [
+            {x:45.34},
+            {x:true, y:"USA"},
+            {x:"TRUE", Y:-32},
+            {x:"China", z:90, y:false}
+           ];          
+//1.3.2 exercise syntax       
+$record1 -> transform $.a;
+$record1 -> transform $.c;
+$record1 -> transform $.f;
+//1.3.3 exercise options
+$record1 -> transform $.a + $.b;
+$record1 -> transform [$.a + $.b, $.a*$.b];
+$record1 -> transform {sum: $.a + $.b, product: $.a*$.b};
+$record1 -> transform each k (k.a + k.b);
+$record1 -> transform each k ([k.a + k.b, k.a * k.b]);
+$record1 -> transform each k ({sum:k.a + k.b, product:k.a * k.b});
+$record1 -> transform abs($.a) + abs($.b);
+$record1 -> transform [abs($.a + $.b), $.a*$.b];
+$record1 -> transform {sum: $.a + $.b, product: $.a*$.b};
+
+//1.4 Projection on nesting data
+//1.4.1 Prepare testing nesting data
+$composition1 =[ 
+               {a: [1,2], b:[4,-5]},
+               {a: [-1,3,-6], b:[2,-1,0]},
+               {a: [1,1,-3,23], b:[6,-2,6,12]},
+               {a: [2,2], b:[1,4,6,12,10]},
+              ];
+
+$composition2 =[ 
+               [{a: [1,2]}, {b:[4,-5]}],
+               [{a: [-1,3,-6]}, {b:[2,-1,0]}],
+               [{a: [1,1,-3,23]}, {b:[4,-5,6,12]}],
+               [{a: [2,2]}, {b:[1,4,6,12,10]}]
+              ];
+//1.4.2 exercise options
+$composition1 -> transform $.a[0]+$.a[1];
+$composition1 -> transform $.a[0]+$.b[1];
+$composition1 -> transform each k ({sum: k.a[1] + k.b[0], product: k.a[1] * k.b[0]});
+$composition2 -> transform $[0].a[0] + $[1].b[0];
+$composition2 -> transform each k ({sum: k[0].a[1] + k[1].b[0] ,product:k[0].a[1] * k[1].b[0]});
+
+//-------------------------   2. Filter testing   --------------------------------------------------
+//Will reuse some sample data in transform testing
+//2.1 exercise filter syntax
+$atoms1 -> filter 1;
+$atoms1 -> filter 0;
+$atoms1 -> filter TRUE;
+$atoms1 -> filter true;
+$atoms1 -> filter FALSE;
+$atoms1 -> filter true == false;
+$atoms1 -> filter false == false;
+$atoms1 -> filter 3 == 2;
+$atoms1 -> filter $ = 60;
+$atoms1 -> filter $ == 60;
+$filter_string = [
+                  [{a: "a"}, {b: "b"}],
+                  [{a: "a"}, {b: "b"}, {c:"c"}]
+                 ];
+$filter_string -> transform [$[0].a, $[1].b]
+               -> filter $[1].b == "b";
+//2.2 exercise filter options
+$atoms1 -> filter $ > 1 and $ < 10;
+$atoms1 -> filter $ > 1 or $ < 10;
+$composition1 -> filter $.a[0] == 1 and $.b[1]>-3;
+$composition2 -> filter each k k[0].a[0]==-1 or k[1].b[1]>2;
+$composition2 -> filter each k k[0].a[1]+k[1].b[0]>5 or k[1].b[0]==2;
+
+//----------------------------    3. Expand testing  -----------------------------------------------
+//3.1 exercise expand syntax  
+$atoms1 -> expand $;
+$array2 -> expand $;
+$array2 -> expand unroll $;
+//3.2 exercise expand options 
+$composition2 -> expand $[1].b;
+$composition2 -> expand unroll $[1].b;
+$expand1 = [ 
+             [{a: [1,2]}, {b:[{d:[4,-5]},{e:[12,34]}]}],
+             [{a: [3,6]}, {b:[{d:[2,-8]},{f:[23,18]}]}]
+           ];
+$expand1 -> expand  $[0].a;
+$expand1 -> expand  $[1].b[1].e;
+$expand1 -> expand unroll $[0].a;
+$expand1 -> expand unroll $[1].b[1].e;
+
+//------------------------------   4. Group testing  -----------------------------------------------
+//4.1 Prepare testing nesting data
+$group1 = [
+            {id:1, dept: 1, income:12000},
+            {id:2, dept: 1, income:13000},
+            {      dept: 2, income:15000},
+            {id:4, dept: 1, income:10000},
+            {id:5, dept: 3},
+            {id:6,           income:5000},
+            {id:7                       }
+          ];
+$group2 = [
+            {id:1, dept: 1, income:12000},
+            {id:2, dept: 1, income:13000},
+            {id:3, dept: 2, income:15000},
+            {id:4, dept: 1, income:10000},
+            {id:5, dept: 3, income:8000},
+            {id:6, dept: 2, income:5000},
+            {id:7, dept: 1, income:24000}
+          ];
+//4.2 exercise group by syntax 
+$group1 -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};
+$group1 -> group by $dept_group = $.dept ;
+$group1 -> group by $dept_group =  into {$dept_group} ;
+$group1 -> group into {sum($[*].income} ;
+$group1 -> group into {$.dept} ;
+$group1 -> group by $dept_group = $.dept expand $.income; 
+//4.3 exercise group options 
+$group1 -> group by $dept_group = $.dept into {$dept_group, total:sum($[*].income)};
+//4.4 exercie co-group 
+ //missing $ for into variable     
+group $group1 by $dept_group1 = $.dept as co_group1, 
+      $group2 by $dept_group1 = $.dept as co_group2 
+      into  {dept_id: dept_group1};
+//group by variables don't have the same name.
+group $group1 by $dept_group1 = $.dept as co_group1, 
+      $group2 by $dept_group2 = $.dept as co_group2 
+      into  {dept_id: $dept_group1};
+//as variables have the same name.  
+group $group1 by $dept_group = $.dept as co_group, 
+      $group2 by $dept_group = $.dept as co_group 
+      into  {$dept_group, group1_total_income:sum(co_group[*].income), group2_total_income:sum(co_group[*].income)};    
+group $group1 by $dept_group = $.dept as co_group1, 
+      $group2 by $dept_group = $.dept as co_group2 
+      into  {$dept_group, group1_total_income:sum(co_group1[*].income), group2_total_income:sum(co_group2[*].income)}; 
+//4.5 exercise complex group key
+$group3 = [
+            {id:1, dept: 1, income:12000},
+            {id:2, dept: 1, income:12000},
+            {      dept: 2, income:15000},
+            {id:4, dept: 1, income:10000},
+            {id:5, dept: 3},
+            {id:6,           income:5000},
+            {id:7                       }
+          ];
+group each i in $group3 by dept_id = {i.dept, i.income} into {dept_id};
+group each i in $group3 by dept_id = {i.dept, i.income} into {dept_id, group3_sum_id: sum(i[*].id)};
+$group3 -> group by dept_id = {$.dept, $.income} into {dept_id.dept, dept_id.income,group3_sum_id: sum($[*].id)};
+$group3 -> group by dept_id = {$.dept, $.income} into [dept_id.dept, dept_id.income, sum($[*].id)];
+
+//------------------------       5. Sort testing  --------------------------------------------------
+//5.1 Prepare testing nesting data 
+$sort1 = [1,3,6,2,8,9,5,,7,2];
+$sort2 = [
+           [1,2,3],
+           [3,2,5],
+           [7,4,2]  
+         ];
+//nesting data
+$sort3 = [
+           [1,2,[1,2,3]],
+           [3,2,[7,5,1]],
+           [7,4,[2,3,8]]  
+         ];
+$sort4 = [
+           ["Nokia", "Sumsung", "Motor"],
+           ["Desk","Chair"],
+           ["Apple","iPhone","HiPhone","Cyble"]  
+         ];
+         
+//5.2 exercise sort syntax 
+//missing [ ] for sort fieldlist
+$sort1 -> sort by $;
+$sort1 -> sort by [$];
+//missing by
+$sort1 -> sort [$];
+//exercise index
+$sort2 -> sort by [$[2]];
+$sort2 -> sort by [$[9]];
+$sort2 -> sort by [$[-1]];
+//exercise sort order
+$sort1 -> sort by [$ desc];
+$sort1 -> sort by [$ asc];
+$sort1 -> sort by [$ asc desc];
+$sort1 -> sort [$ descending];
+$sort1 -> sort [$ ascending];
+
+//5.3 exercise sort options
+$sort3 -> sort by [$[0], $[1] desc];
+$sort3 -> sort by [$[2].[0]];
+$sort3 -> sort by [$[0], $[2].[0] desc];
+$sort4 -> sort by [$[0]];
+$sort4 -> sort by [$[2]];
+//index beyond the boundary
+$sort4 -> sort by [$[9]];
+
+//---------------------------     6. Join testing   ------------------------------------------------
+//6.1 Prepare testing nesting data  
+$join1 = [
+           {name: "Jon Doe",        password: "asdf1234", id: 1},
+           {name: "Jane Doe",       password: "qwertyui", id: 2},
+           {name: "Max Mustermann", password: "q1w2e3r4", id: 3}
+         ];
+$join2 = [
+           {userid: 1, url:"code.google.com/p/jaql/"},
+           {userid: 2, url:"www.cnn.com"},
+           {userid: 1, url:"java.sun.com/javase/6/docs/api/"}
+         ];
+//id and userid are different data type
+$join3 = [
+           {name: "Jon Doe",                              id: 1},
+           {name: "Jane Doe",                             id: "acbc"},
+           {name: "Max Mustermann", password: "q1w2e3r4", id: 3},
+           {name: "Washington",     password: "q1w2e3r4", id: 9}
+         ];
+$join4 = [
+           {userid: 3,      url:"code.google.com/p/jaql/"},
+           {userid: "acbc", url:"www.cnn.com"},
+           {userid: 1,      url:"www.sun.com"},
+           {userid: 2,      url:"www.ibm.com"}
+         ];    
+         
+//6.2 exercise join syntax  
+//not support predicate
+join $join1, $join2 where $join1.id > $join2.userid into {$join1.name, $join2.*};
+join $join1, $join2 where $join1.id <= $join2.userid into {$join1.name, $join2.*};
+join $join1, $join2 where $join1.id == $join2.userid into {$join1.name, $join2.*};
+
+//6.3 exercise join options  
+join $join3, $join4 where $join3.id == $join4.userid into {$join3.name, $join4.url};
+join $join3, $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+join $join3, preserve $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+join preserve $join3, $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+join preserve $join3, preserve $join4 where $join3.id == $join4.userid into {join3_id: $join3.id, join4_id:$join4.id, $join3.name, $join4.url};
+
+//----------------------------     7. if testing  --------------------------------------------------
+if(false) 
+  ("it is false");
+$string0 = if(false) 
+             ("it is true");
+$string0; 
+$string1 = if (false)
+             "it is true"
+          else
+              "it is false";
+$string1;
+$string2 = if (false)
+             "it is true"
+          else
+              "it is false";
+$string2;
+$string3 = if (false==false)
+             "it is true"
+          else
+              "it is false";
+$string3;
+$string4 = if (true==false)
+             "it is true"
+          else
+              "it is false";
+$string4;
+$a=true;
+$string5 = if ($a=true)
+             "it is true"
+          else
+              "it is false";
+$string5;
+//----------------------------     8. let testing  -------------------------------------------------
+x=(10,20,30);
+x;
+x=[10,20,30];
+x;
+x=10;
+y=(x=x+20);
+x;
+y;
+y=(x=10,
+   x=(x=x+20, x+50)+x,
+   x);
+y;
+
+//----------------------------     9. Composition operators testing  -------------------------------
+//9.1 Prepare testing nesting data 
+$composition3 =[ 
+               {a: [1,2], b:[4,-5]},
+               {a: [-1,3,-6], b:[2,-1,0]},
+               {a: [1,1,-3,23], b:[6,-2,6,12]},
+               {a: [2,2], b:[1,4,6,12,10]},
+              ];
+
+$composition4 =[ 
+               [{a: [1,2]}, {b:[4,-5]}],
+               [{a: [-1,3,-6]}, {b:[2,-1,0]}],
+               [{a: [1,1,-3,23]}, {b:[4,-5,6,12]}],
+               [{a: [2,2]}, {b:[1,4,6,12,10]}]
+              ];          
+//9.2 exercise composition operators  
+//composition operators of transform, filter, sort and top 
+$composition3 -> transform [$.a[0],$.b[0]]
+              -> filter $[0] > -2
+              -> sort by [$[0],$[1] asc]
+              -> top 2 by [$[1]];
+//composition operators of if, let and transform         
+if(false) 
+  ("it is false") 
+else 
+  ( r = 1,
+    r = ( r = r + 10, r + 100 ) + r,
+    r);
+    
+if(true) 
+  ($composition3 -> transform [$.a[0],$.b[0]]) 
+else 
+  ( r = 1,
+    r = ( r = r + 10, r + 100 ) + r,
+    r);
+
+//--------------------------    10. Map-reduce testing  --------------------------------------------
+//10.1 exercise transform operators  
+[
+  [{a: [1,2]}, {b:[4,-5]}],
+  [{a: [-1,3,-6]}, {b:[2,-1,0]}],
+  [{a: [1,1,-3,23]}, {b:[4,-5,6,12]}],
+  [{a: [2,2]}, {b:[1,4,6,12,10]}]
+  ] -> write(hdfs("foo"));
+read(hdfs("foo")) -> transform each k ({sum: k[0].a[1] + k[1].b[0] ,product:k[0].a[1] * k[1].b[0]});
+
+//10.2 exercise filter operators 
+read(hdfs("foo")) -> filter each k k[0].a[1]+k[1].b[0]>5 or k[1].b[0]==2;
+
+//10.3 exercise group by operators
+[
+  {id:1, dept: 1, income:12000},
+  {id:2, dept: 1, income:13000},
+  {      dept: 2, income:15000},
+  {id:4, dept: 1, income:10000},
+  {id:5, dept: 3},
+  {id:6,           income:5000},
+  {id:7                       }
+  ]-> write(hdfs("foo"));
+read(hdfs("foo")) -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};
+
+//10.4 exercise expand  operators 
+[ 
+  [{a: [1,2]}, {b:[{d:[4,-5]},{e:[12,34]}]}],
+  [{a: [3,6]}, {b:[{d:[2,-8]},{f:[23,18]}]}]
+  ] -> write(hdfs("foo"));
+read(hdfs("foo")) -> expand unroll $[1].b[1].e;
+
+//10.5 exercise composition  operators
+[
+  {a: [1,2], b:[4,-5]},
+  {a: [-1,3,-6], b:[2,-1,0]},
+  {a: [1,1,-3,23], b:[6,-2,6,12]},
+  {a: [2,2], b:[1,4,6,12,10]},
+] -> write(hdfs("foo"));
+read(hdfs("foo")) -> transform [$.a[0],$.b[0]]
+              -> filter $[0] > -2
+              -> sort by [$[0],$[1] asc]
+              -> top 2 by [$[1]];
+              
+//--------------------------    11. non-western characters testing  --------------------------------
+$string_array =[
+           ["1纽约", "1北京", "1东京"],
+           ["Paris", "2上海", "2曼哈顿", "2#$%^)(", "2武汉"],
+           ["1纽约", "3沈阳", "3大连", "3#$%^)(", "3西安"],
+           ["4芝加哥", "4开普敦", "4伦敦"]
+         ];  
+$string_array -> transform [$[0],$[1],$[2]]
+              -> filter $[0] == "1纽约"
+              -> sort by [$[1],$[2] asc]
+              -> top 2 by [$[1]];
+$string_array -> write(hdfs("foo"));
+read(hdfs("foo")) -> transform [$[0],$[1],$[2]]
+              -> filter $[0] == "1纽约"
+              -> sort by [$[1],$[2] asc]
+              -> top 2 by [$[1]];                       
+$string_record = [
+                  [{a: "a上海"}, {b: "b日本"}],
+                  [{a: "a武汉"}, {b: "b台北"}, {c:"c德州"}]
+                 ];
+$string_record -> transform [$[0].a, $[1].b]
+               -> filter $[1].b == "b台北";             
+$string_record -> transform [$[0].a, $[1].b]
+               -> sort by  [$[1].b];

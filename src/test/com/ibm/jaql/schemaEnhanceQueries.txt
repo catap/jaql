@@ -1,0 +1,159 @@
+//1. test function TypeOf 
+//1.1 exercise schema type
+typeof(schema null);
+typeof(schema null | long | double | string |date);
+typeof(schema{});
+typeof(schema { a?: long, *: long});
+typeof(schema []);
+typeof(schema [long,string]);
+typeof(schema [ long(value=1), string(value="a"), boolean ]);
+typeof(schema schematype);
+//1.2 exercise atomic type
+typeof(12.34);
+typeof("Apple iPhone");
+typeof("21342.32432");
+typeof(false);
+//1.3 exercise record and arrays
+typeof({});
+typeof({a:12,b:"sfds"});
+typeof([]);
+typeof([false, 12.34, "IBM", {a:"Apple", b:12.34}]);
+//1.4 exercise null
+typeof(null);
+typeof();
+
+//2. test function IsNullable
+//2.1 exercise syntax
+isNullable(schema true);
+isNullable(schema false?);
+isNullable(schema *);
+isNullable(schema ?);
+isNullable(schema "IBM");
+isNullable("IBM");
+isNullable();
+isNullable(null);
+//2.2 exercise  atomics data 
+isNullable(schema long);
+isNullable(schema long?);
+isNullable(schema boolean);
+isNullable(schema boolean?);
+isNullable(schema null?);
+//2.3 exercise arrays and records
+isNullable(schema []);
+isNullable(schema []?);
+isNullable(schema [ long(value=1), string(value="a"), boolean ]);
+isNullable(schema [ long(value=1), string(value="a"), boolean ]?);
+isNullable(schema [ long(value=1), string(value="a"), boolean? ]);
+isNullable(schema [ long(value=1), string(value="a")?, boolean? ]);
+isNullable(schema {});
+isNullable(schema {}?);
+isNullable(schema { b: null, a: long } );
+isNullable(schema { b: null, a: long }? );
+
+//3. test Check
+// Checks whether the first argument matches the schema given in the second argument. If so, returns the first argument. Otherwise, throws an expection.
+//3.1 exercise syntax 
+"IBM" -> check ();
+"" -> check (schema null );
+null -> check (schema null);
+12 -> check (schema long(value=12));
+12 -> check (schema long(value="IBM"));
+12 -> check (schema string(value="IBM"));
+"IBM Computer" -> check (schema string(value="IBM"));
+"IBM" -> check (schema string(value="IBM"));
+"IBM" -> check (schema string(value=null));
+12 -> check (schema long(value=14));
+12 -> check (schema long);
+12 -> check (schema long(value=null));
+//3.2 exercise atomics data 
+12 -> check (schema long);
+12 -> check (schema boolean); 
+12.3 -> check (schema long);
+null -> check (schema long?);
+false -> check (schema boolean);
+//3.3 exercise arrays and records
+[12,23,34] -> check (schema [long]);
+[12,23,34] -> check (schema [long, long, long]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b }]);
+[ { a: true, d:4, b: 2}£¬ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { a,d,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b:string}]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b:string | long}]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d:long(value=4),c,a,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d:long(value=5),c,a,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> check (schema [ { d,c,a,e}]);
+{a: "IBM Computer", b: 123} -> check (schema {a:string, b:long});
+{a: "IBM Computer", b: 123} -> check (schema {a:string, *});
+{a: "IBM Computer", b: 123} -> check (schema {a:string, *, *});
+{a: "IBM Computer", c: null} -> check (schema {a:string, *});
+{"a": "IBM Computer", c: null} -> check (schema {a:string, *});
+{"a": "IBM Computer", c: null} -> check (schema {"a":string, *});
+
+//4. Assert 
+//Returns its first argument and adds the schema information given in the second argument without validation.
+[12,23,34] -> assert (schema [long]);
+[12,23,34] -> assert (schema [long, long, long]);
+[12, "IBM", false, 12.56] -> assert(schema [long, string, boolean,double]);
+[12, "IBM", false, 12.56] -> assert(schema [long, string, boolean,double]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b }]);
+[ { a: true, d:4, b: 2}£¬ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { a,d,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b:string}]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b:string | long}]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d:long(value=4),c,a,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d:long(value=5),c,a,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,b }]);
+[ { a: true, d:4, b: 2, c:3 }] -> assert (schema [ { d,c,a,e}]);
+{a: "IBM Computer", b: 123} -> assert (schema {a:string, b:long});
+[12, "IBM", false, 12.56] -> assert(schema [long, string, boolean]);
+{a: "IBM Computer", b: 123} -> assert (schema {a:string});
+{a: "IBM Computer", b: 123} -> assert (schema {a:string, *});
+{a: "IBM Computer", b: 123} -> assert (schema {a:string, *, *});
+{a: "IBM Computer", c: null} -> assert (schema {a:string, *});
+{"a": "IBM Computer", c: null} -> assert (schema {a:string, *});
+{"a": "IBM Computer", c: null} -> assert (schema {"a":string, *});
+[ { a: true, d:4, b: 2, c:3 }, { a: true, d:4, c: 3, b:2 } ] -> assert(schema [ { d,c,a,b }, { a, b, d, c} ]);
+[ { a: true, d:4, b: 2, c:3 }, { a: true, d:4, c: 3, b:2 } ] -> assert(schema [ { "d",c,a,b }, { a, b, d, c} ]);
+
+//5. ElementsOf
+//elementsOf(schema): if schema is (potentially) an array schema, return the schema of its elements (if any)
+//5.1 schema is atomic
+elementsOf(schema long);
+elementsOf(schema [long, long]);
+elementsOf(schema[string,long]);
+//5.2 schema is a record, but not an array
+elementsOf(schema{a:long,*:string});
+elementsOf(schema{"a":long, *:string});
+//5.3 schema is an array
+elementsOf(schema [ long(value=1), string(value="a"), boolean ]);
+elementsOf(schema [ long(value=1), string(value="a"), boolean, {a:string, price:double} ]);
+
+//6. FieldsOf
+//if schema is (potentially) an record schema, return a table describing its known fields:
+//     [{ name: string, schema: schema, index: long }...]
+fieldsOf(null);
+fieldsOf(schema null);
+fieldsOf(schema [long, string, boolean]);
+fieldsOf(schema { a: long, b: string, c: boolean });
+fieldsOf(schema { a: long?, b: string, c?: boolean, d?: date});
+fieldsOf(schema { a: long?, b: string, c?: boolean, d?: date, *});
+
+//7. DataGuiden
+dataGuide(12);
+dataGuide("IBM Computer");
+dataGuide("fdsf",true,12.34);
+dataGuide([12,34,34,56]);
+dataGuide(["sdfdsf",false, 123, {a:12,b:"dfs"}]);
+dataGuide({name: "computer", price: "13500", new: false});
+dataGuide({name: "computer", price: "13500", new: false, address:["Beijing", "Shanghai", "Wuhan"]});
+
+//8. SqlTypeCode
+//return the sql type code for schema
+sqlTypeCode(schema null);
+sqlTypeCode(null);
+sqlTypeCode(schema {});
+sqlTypeCode(schema { a: long, *: long });
+sqlTypeCode(schema long);
+sqlTypeCode(schema boolean);
+sqlTypeCode(schema []);
+sqlTypeCode(schema [long, boolean, string]);
+sqlTypeCode(schema [12,23,"dfsdf"]);
