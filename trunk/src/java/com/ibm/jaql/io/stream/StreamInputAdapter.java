@@ -46,6 +46,8 @@ public class StreamInputAdapter extends AbstractInputAdapter
   public static final JsonString   ARR_NAME  = new JsonString("asArray"); // @see com.ibm.jaql.io.converter.StreamToItem
 
   protected StreamToJson<JsonValue> formatter;
+  
+  protected InputStream istr = null;
 
   protected JsonRecord      strArgs;
 
