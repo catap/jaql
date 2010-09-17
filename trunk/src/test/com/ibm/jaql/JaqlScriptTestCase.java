@@ -70,9 +70,6 @@ public class JaqlScriptTestCase
   public static final String DATADIR_NAME = "DATADIR";
   public static final String DATADIR_DIR = "../../../src/test/com/ibm/jaql/data/";
   public static final JsonString DATADIR_VALUE = new JsonString(DATADIR_DIR);
-  public static String WORK_DIR = "";
-  public static String HDFS_URL = "";
-  public static String HDFS_NAMENODE= "";
   
   public enum Mode
   {
@@ -203,7 +200,6 @@ public class JaqlScriptTestCase
       {
         String user = UnixUserGroupInformation.login(conf).getUserName();
         fs.setWorkingDirectory(new Path("/temp/"+user+"/com.ibm.jaql/test/"+script));
-        WORK_DIR = "/temp/"+user+"/com.ibm.jaql/test/"+script;
       }
       // mapred.working.dir is automatically set from the fs, but only once. 
       // When running multiple tests in the same JVM, it only picks up the first setting.
@@ -211,8 +207,7 @@ public class JaqlScriptTestCase
       {
         Globals.getJobConf().setWorkingDirectory(fs.getWorkingDirectory());
       }
-
-      HDFS_URL = conf.get("fs.default.name");
+      
 
       // make tests work the same on windows as unix.
       System.setProperty("line.separator", "\n");      
@@ -256,11 +251,6 @@ public class JaqlScriptTestCase
       if( extJar != null )
         jaql.addJar( jaqlHome + extJar );
       jaql.setVar(DATADIR_NAME, DATADIR_VALUE);
-      
-      HDFS_NAMENODE = HDFS_URL.substring(HDFS_URL.indexOf("://")+3, HDFS_URL.lastIndexOf(":"));
-      jaql.setVar("WORK_DIR", new JsonString(WORK_DIR));
-      jaql.setVar("HDFS_URL", new JsonString(HDFS_URL));
-      jaql.setVar("HDFS_NAMENODE", new JsonString(HDFS_NAMENODE));
       
       // run the script
       jaql.run();
