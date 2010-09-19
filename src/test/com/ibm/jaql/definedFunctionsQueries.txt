@@ -93,6 +93,11 @@ arrayToRecord(["SUN", "IBM", ""], [1,2,3]);
 arrayToRecord(["SUN", "IBM"], [1, 2, 3]);
 arrayToRecord(["SUN", "IBM"], [1]);
 arrayToRecord(["SUN", "IBM"], [1, null]);
+arrayToRecord(range(1,5)->transform(strcat("s",$)), range(1,5));
+arrayToRecord(range(1,255)->transform(strcat("s",$)), range(1,255));
+arrayToRecord(range(1,255)->transform(strcat("s",$)), range(1,255)->transform($/16.00));
+//defect 9567
+arrayToRecord(range(1,1000)->transform(strcat("s",$)), range(1,1000));
 //defect 9379
 arrayToRecord([null,"ibm"],[1,2]);
 arrayToRecord(["SUN", "IBM"], [{price:123},{address:"Beijing"}]);
@@ -164,6 +169,25 @@ toNumber(false and true);
 remap({a:12, b:22}, {a:1, b:2});
 remap({a:1, b:2}, {a:3, d:4, e:5});
 remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5});
+//names of remap
+names(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}));
+fields(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}));
+values(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}));
+//remap of remap
+remap(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}), {d:4, e:9, f:"SUN"});
+[remap(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}), {c: "Google", d:4, e:9, f:"SUN"})]-> transform (strcat($.a, " ", $.b, " ", $.c, " ", $.d, " ", $.e));
+//exercise transform, group by of remap
+[{Company:"Microsoft", StockPrice:12.54}, {Company: "IBM", StockPrice: 123.21}, {Company:"Apple", StockPrice: 432.98},
+  remap({Company: "IBM", StockPrice: 123.21}, {Company: "IBM", StockPrice: 1221.32}),
+  remap({Company: "Apple", StockPrice: 34.56}, {Company: "Apple", StockPrice: 891.43})
+  ]
+ -> group by $Name=$.Company into {$Name, MaxValue:max($[*].StockPrice)};
+//exercise combination remap, hdfs, max and group by
+[{Company:"Microsoft", StockPrice:12.54}, {Company: "IBM", StockPrice: 123.21}, {Company:"Apple", StockPrice: 432.98},
+  remap({Company: "IBM", StockPrice: 123.21}, {Company: "IBM", StockPrice: 1221.32}),
+  remap({Company: "Apple", StockPrice: 34.56}, {Company: "Apple", StockPrice: 891.43})
+  ] -> write(hdfs("remap_test1"));
+read(hdfs("remap_test1"))-> group by $Name=$.Company into {$Name, MaxValue:max($[*].StockPrice)};
 remap({a:null, b:2, c:3}, {});
 remap({}, {a:null, b:2, c:3});
 remap({}, {a:null, b:2, c:3}, {d:4, e:5});
@@ -172,6 +196,7 @@ remap([], {a:null, b:2, c:3});
 remap(null, {a:null, b:2, c:3});
 remap({a:null, b:2, c:3}, null);
 remap({}, {a:null, b:2, c:3}, {d:4, e:5});
+
 //5.2 values
 values({a:1, b:2, c:3});
 values ({d:1, e:2, f:3});
@@ -190,6 +215,11 @@ fields({a:"IBM", b:["SUN","GOOGLE", "MICROSOFT"], c:{c:12, d:"LOGO", e:"ADDRESS"
 
 //6. regex
 //6.1 regexExtract
+regex_extract( regex("hi"), "bye, hi, bye, hi" );
+regex_extract( regex(" "), "bye hi bye hi" );
+regex_extract( regex("good"), "good morning everybody, goode afternoon everybody" );
+regex_extract( regex("byebye"), "good morning everybody, goode afternoon everybody" );
+regex_extract( regex(","), "good morning everybody, goode afternoon everybody" );
 
 //7. span
 //7.1 spanExtract
@@ -202,7 +232,7 @@ span_extract("some big string", span(2, "IBM"));
 span_extract("some big string", span(2));
 span_extract("some big string", span(0,10));
 span_extract("some big string", span(-2,10));
-//defect ???????????????
+//defect
 span_extract("some big string", span(null,10));
 span_extract("some big string", span(2,10,20));
 span_extract("some big string", span(null));
@@ -213,13 +243,20 @@ span_extract(12445, span(2,4));
 strSplit("I love the game", " ");
 strSplit("I love, the game", ",");
 strSplit("I love basketball and football", "e");
+strSplit("Iaa loveaa basketballaa andaa footballaa", "aa");
 strSplit("I love 'basketball' and football", "'");
 strSplit("I love the game", null);
+strSplit("自由,民主,文明,", ",");
+strSplit("自由吗民主吗文明吗", "吗");
+
 //8.2 strJoin
 strJoin(["I","love", "the","game","!"], " ");
 strJoin(["I","love", "the","game","!"], " ", 123);
 strJoin(["I","love", "the","game","!"]);
 strJoin(["I","love", "the","game","!"], {a:12});
+strJoin(["自由","民主", "文明"], " ");
+strJoin(["自a由","民b主", "文c明"], "吗");
+strJoin(["自a由","民b主", "文c明"], "吧!");
 //defect 9395
 strJoin(["I","love", "the","game","!"], {a:1});
 strJoin(["I","love", "the","game","!"], [" "]);
@@ -233,6 +270,13 @@ substring("I love the game", 2, 100);
 substring("I love the game", "I", 2);
 substring("I love the game", 2, "M");
 substring("I love the game", 0, 7);
+substring("自2由4民6主8文10明12的14现16代18化20国22家24", 0, 1);
+substring("自2由4民6主8文10明12的14现16代18化20国22家24", 0, 2);
+substring("自2由4民6主8文10明12的14现16代18化20国22家24", 0, 3);
+substring("自2由4民6主8文10明12的14现16代18化20国22家24", 0, 4);
+substring("自2由4民6主8文10明12的14现16代18化20国22家24", 16, 22);
+substring("自2由4民6主8文10明12的14现16代18化20国22家24", 15, 22);
+substring("自由民主文明的现代化国家", 7, 11);
 
 //9. system
 //9.1 ls
