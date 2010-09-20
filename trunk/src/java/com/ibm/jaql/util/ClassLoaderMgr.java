@@ -365,7 +365,8 @@ final class JarCreator extends Thread {
 		File tmpDir = new File(System.getProperty("java.io.tmpdir")
 				+ File.separator + "jaql_" + System.nanoTime());
 		tmpDir.mkdir();
-		tmpDir.deleteOnExit();
+		// TODO: figure out why this causes occasional thread dumps on linux
+		//tmpDir.deleteOnExit(); 
 		
 		extendedJarPath = new File(tmpDir.getAbsoluteFile() + File.separator +
 		 "jaql.jar");
