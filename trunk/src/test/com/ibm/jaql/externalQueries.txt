@@ -32,37 +32,3 @@ data -> transform { result: external($)};
 
 
 
-// ========== distributed cache =========
-
-// copy the local file to HDFS
-hdfsShell("-copyFromLocal " + DATADIR + "Echo.class Echo.class");
-
-// set hadoop properties
-setOptions({conf:{"mapred.cache.files": HDFS_URL + WORK_DIR + "/Echo.class#Echo.class"}});
-
-
-
-// run a local java class
-
-// data
-$args = ['hello', 'world'];
-
-// in streaming mode
-// should be failed in no_rewrite
-echo = externalfn ( { cmd: 'java -classpath ./taskTracker/archive/' + HDFS_NAMENODE + WORK_DIR  + '/Echo.class Echo', perPartition: false, mode: 'streaming'} );
-
-// invoke
-read(hdfs('foo')) -> transform({k:$, pamameters: echo($args)});
-
-
-// in push mode
-// should be failed in no_rewrite
-echo = externalfn ( { cmd: 'java -classpath ./taskTracker/archive/' + HDFS_NAMENODE + WORK_DIR  + '/Echo.class Echo', perPartition: true, mode:'push'} );
-
-// invoke
-echo($args) -> transform {parameters:$};
-
-
-
-
-
