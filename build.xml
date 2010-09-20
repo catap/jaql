@@ -187,6 +187,8 @@
         <exclude name="**/com/ibm/jaql/TestPyJaql.class" unless="test.python"/>
         <exclude name="**/com/ibm/jaql/TestJaqlShell.class" if="use.cluster"/>
         <exclude name="**/com/ibm/jaql/TestJaqlShellCluster.class" unless="use.cluster"/>
+        <!--conditionally test the distributed cache stuff in external call-->
+        <exclude name="**/com/ibm/jaql/TestDistribute.class" unless="use.cluster"/>
         </fileset>
       </batchtest>
     </junit>
