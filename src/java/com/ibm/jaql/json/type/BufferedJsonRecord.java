@@ -348,7 +348,7 @@ public class BufferedJsonRecord extends JsonRecord {
       // fast reindex():
       for( int j = i ; j < size ; j++ )
       {
-        hashIndex.put(names[i], j);
+        hashIndex.put(names[j], j);
       }
     }
   }
