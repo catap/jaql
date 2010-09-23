@@ -147,9 +147,9 @@ Hadoop supports file name [http://hadoop.apache.org/common/docs/current/api/org/
 
 Consider a directory structure that starts at {{{data}}}, includes sub-directories named by their creation date, that in turn include sub-directories, one per source of data (e.g., database, logger, etc.). Example paths to consider are as follows:
 
-* data/04_27_2010/logs/machine1.log
-* data/04_27_2010/db/t1.dat
-* data/0.4_28_2010/logs/machine1.log
+  * data/04_27_2010/logs/machine1.log
+  * data/04_27_2010/db/t1.dat
+  * data/0.4_28_2010/logs/machine1.log
 
 To read machine1's data for 04/27/2010, simply issue:
 {{{
