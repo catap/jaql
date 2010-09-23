@@ -141,7 +141,7 @@ argument to {{{read}}} is the path of a file stored in HDFS.
 For the hdfs data store type, the registry entry specifies default Input(Output)Formats.
 The defaults for Jaql are {{{SequenceFileInputFormat}}} and {{{SequenceFileOutputFormat}}}.
 
-=== Using Globbing Patterns to your advantage ===
+=== Using Globbing Patterns to your Advantage ===
 
 Hadoop supports file name [http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/fs/FileSystem.html#globStatus%28org.apache.hadoop.fs.Path%29 globbing] so Jaql users can take advantage of this feature directly. The value of the {{{location}}} field is passed verbatim to Hadoop's FileSystem API's so all globbing patterns that Hadoop supports are also available to jaql users. 
 
