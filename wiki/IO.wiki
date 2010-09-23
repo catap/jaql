@@ -141,6 +141,65 @@ argument to {{{read}}} is the path of a file stored in HDFS.
 For the hdfs data store type, the registry entry specifies default Input(Output)Formats.
 The defaults for Jaql are {{{SequenceFileInputFormat}}} and {{{SequenceFileOutputFormat}}}.
 
+=== Using Globbing Patterns to your advantage ===
+
+Hadoop supports file name [http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/fs/FileSystem.html#globStatus%28org.apache.hadoop.fs.Path%29 globbing] so Jaql users can take advantage of this feature directly. The value of the {{{location}}} field is passed verbatim to Hadoop's FileSystem API's so all globbing patterns that Hadoop supports are also available to jaql users. 
+
+Consider a directory structure that starts at {{{data}}}, includes sub-directories named by their creation date, that in turn include sub-directories, one per source of data (e.g., database, logger, etc.). Example paths to consider are as follows:
+
+* data/04_27_2010/logs/machine1.log
+* data/04_27_2010/db/t1.dat
+* data/0.4_28_2010/logs/machine1.log
+
+To read machine1's data for 04/27/2010, simply issue:
+{{{
+  read(hdfs("data/04_27_2010/logs/machine1.log"));
+}}}
+
+To read all data collected on 04/27/2010:
+{{{
+  read(hdfs("data/04_27_2010/*/*"));
+}}}
+
+When piped to further jaql expressions, the above examples allow you to operate on subsets of the data, effectively eliminating data that is not of current interest.
+If needed, all data can be processed by using:
+{{{
+  read(hdfs("data/*/*/*"));
+}}}
+
+In some cases, certain paths may be of interest that cannot be easily expressed
+using globbing patterns. For example, consider the simple case of needing to
+read {{{data/04_27_2010/db/t1.dat}}} and {{{data/0.4_28_2010/logs/machine1.log}}}.
+More generally, one can have an arbitrary collection of paths, modeled as an array
+(e.g., ["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"]). To convert
+this to a globbing pattern appropriate for hadoop, use:
+
+{{{
+  makeGlob = fn(ps) (
+
+    strcat("/{", ps 
+                 -> transform strcat(".",$) 
+                 -> strJoin(","), 
+           "}")
+
+  );
+}}}
+
+For example:
+{{{
+  makeGlob(["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"]);
+  // returns
+  "/{.data/04_27_2010/db/t1.dat,.data/0.4_28_2010/logs/machine1.log}"
+}}}
+
+And can be used in conjunction with {{{read}}} as follows:
+
+{{{
+  paths = ["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"];
+  read(hdfs(makeGlob(paths)));
+}}}
+
+
 == Text-based Input/Output Format ==
 
 Suppose that the HDFS file is a text file (i.e, new-line delimitted records). The [http://hadoop.apache.org/core/docs/r0.18.3/api/org/apache/hadoop/mapred/InputFormat.html InputFormat] to use in this case is {{{TextInputFormat}}}. For this case, Jaql's default can be overriden as follows:
