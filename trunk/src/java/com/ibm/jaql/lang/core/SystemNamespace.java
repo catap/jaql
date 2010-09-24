@@ -82,6 +82,7 @@ import com.ibm.jaql.lang.expr.core.DaisyChainFn;
 import com.ibm.jaql.lang.expr.core.DiamondTagFn;
 import com.ibm.jaql.lang.expr.core.ExpectExceptionFn;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.GetHdfsPathFn;
 import com.ibm.jaql.lang.expr.core.GetOptionsFn;
 import com.ibm.jaql.lang.expr.core.GroupCombineFn;
 import com.ibm.jaql.lang.expr.core.IndexExpr;
@@ -546,6 +547,7 @@ public final class SystemNamespace extends Namespace {
     register(new FenceFunction.Descriptor());
     register(new FencePushFunction.Descriptor());
     register(new ExternalFnExpr.Descriptor());
+    register(new GetHdfsPathFn.Descriptor());
   } 
 
 }
