@@ -38,6 +38,7 @@ import com.ibm.jaql.io.InputAdapter;
 import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.io.stream.ExternalCallStreamInputAdapter;
+import com.ibm.jaql.io.stream.StreamInputAdapter;
 import com.ibm.jaql.io.stream.StreamOutputAdapter;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -85,22 +86,25 @@ public class ExternalFunctionCallExpr extends IterExpr {
         this.mode = (JsonString) rec.get(new JsonString("mode"));
 
         if (mode == null) {
-            throw new IllegalArgumentException("mode should be specified: push or streaming");
+            throw new IllegalArgumentException(
+                    "mode should be specified: push or streaming");
         }
-        
+
         initParams(rec);
     }
-    
-    public ExternalFunctionCallExpr(JsonRecord rec, Expr[] exprs) throws InstantiationException, IllegalAccessException {
+
+    public ExternalFunctionCallExpr(JsonRecord rec, Expr[] exprs)
+            throws InstantiationException, IllegalAccessException {
         super(exprs);
         this.rec = rec;
-        this.mode = (JsonString) rec.get(new JsonString("mode"));       
+        this.mode = (JsonString) rec.get(new JsonString("mode"));
 
         if (mode == null) {
-            throw new IllegalArgumentException("mode should be specified: push or streaming");
+            throw new IllegalArgumentException(
+                    "mode should be specified: push or streaming");
         }
-        
-        initParams(rec);       
+
+        initParams(rec);
     }
 
     private void initParams(JsonRecord rec) {
@@ -127,7 +131,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
                 writeOpts = new JsonParser().parse(in);
             }
             if (readOpts == null) {
-                String out = "{inoptions: {adapter: 'com.ibm.jaql.io.stream.ExternalCallStreamInputAdapter',"
+                String out = "{inoptions: {adapter: 'com.ibm.jaql.io.stream.StreamInputAdapter',"
                         + "format: 'com.ibm.jaql.io.stream.converter.LineTextInputStream'}}";
                 readOpts = new JsonParser().parse(out);
             }
@@ -181,7 +185,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
     public Schema getSchema() {
         return SchemaFactory.anySchema();
     }
-    
+
     @Override
     public Expr clone(VarMap varMap) {
         try {
@@ -193,78 +197,98 @@ public class ExternalFunctionCallExpr extends IterExpr {
 
     @Override
     public JsonIterator iter(Context context) throws Exception {
-        initProcess(context);
+        try {
+            initProcess(context);
 
-        if (mode.equals(new JsonString("push"))) {
-            args = exprs[0].eval(context);
-            writer.write(args);
-            stdout.flush();
-//            int rc = process.waitFor();
-//            if ( rc != 0) {
-//                System.err.println("non-zero exit code from process ["+cmd+"]: " + rc);
-//            }
-            
-            return reader;
-        } else if (mode.equals(new JsonString("streaming"))) {
-            data = exprs[0].iter(context);
+            if (mode.equals(new JsonString("push"))) {
+                args = exprs[0].eval(context);
+                writer.write(args);
+                stdout.flush();
+                return reader;
+            } else if (mode.equals(new JsonString("streaming"))) {
+                data = exprs[0].iter(context);
 
-            return new ClosableJsonIterator() {
-                boolean firsttime = true;
-                InputHelper helper = new InputHelper();
+                return new ClosableJsonIterator() {
+                    boolean firsttime = true;
+                    InputHelper helper = new InputHelper();
 
-                @Override
-                public boolean moveNext() throws Exception {
-                    if (firsttime) {
-                        helper.start();
-                        firsttime = false;
-                    } else {
-                        helper.stop = false;
+                    @Override
+                    public boolean moveNext() throws Exception {
+                        if (firsttime) {
+                            helper.start();
+                            firsttime = false;
+                        } else {
+                            helper.stop = false;
+                        }
+                        if (reader.moveNext()) {
+                            helper.stop = true;
+                            currentValue = reader.current();
+                            return true;
+                        }
+                        return false;
                     }
-                    if (reader.moveNext()) {
-                        helper.stop = true;
-                        currentValue = reader.current();
-                        return true;
-                    }
-//                   process.destroy();
-//                    int exit = process.waitFor();
-//                    if ( exit != 0) {
-//                        System.err.println("non-zero exit code from process ["+cmd+"]: " + exit);
-//                    }
-                    
-                    return false;
-                }
 
-                class InputHelper extends Thread {
-                    public boolean stop = false;
+                    class InputHelper extends Thread {
+                        public boolean stop = false;
 
-                    public void run() {
+                        public void run() {
 
-                        try {
-                            while (!stop) {
-                                if (data.moveNext()) {
-                                    writer.write(data.current());
-                                    try{
-                                    stdout.flush();
-                                    } catch(Exception exp){};
-                                } else {
-                                    stop = false;
-                                    stdout.close();
-                                    break;
+                            try {
+                                while (!stop) {
+                                    if (data.moveNext()) {
+                                        writer.write(data.current());
+                                        try {
+                                            stdout.flush();
+                                        } catch (Exception exp) {
+                                        }
+                                        ;
+                                    } else {
+                                        stop = false;
+                                        stdout.close();
+                                        break;
+                                    }
                                 }
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        } 
+                        }
                     }
+                };
+            } else {
+                return JsonIterator.EMPTY;
+            }
+        } catch (Throwable e) {
+            if (error == null) {
+                error = e;
+            }
+            if (stdin != null) {
+                try {
+                    stdin.close();
+                } catch (Throwable t) {
                 }
-            };
-        } else {
-//            process.destroy();
-            return JsonIterator.EMPTY;
-        }          
-            
+                stdin = null;
+            }
+            if (stdout != null) {
+                try {
+                    stdout.close();
+                } catch (Throwable t) {
+                }
+                stdout = null;
+            }
+            if (process != null) {
+                try {
+                    process.destroy();
+                } catch (Throwable t) {
+                }
+                process = null;
+            }
+            if (error instanceof Exception) {
+                throw (Exception) error;
+            }
+            throw new UndeclaredThrowableException(error);
+        }
 
     }
 
@@ -281,17 +305,14 @@ public class ExternalFunctionCallExpr extends IterExpr {
             }
             pb.command(array);
         }
-      
-        Configuration cfg = new Configuration();    
-//        File directory = new File(cfg.get("mapred.local.dir") + "/taskTracker");
-//        pb.directory(directory);
-        
-        File directory = new File(cfg.get("mapred.local.dir"));
-          pb.directory(directory);
 
-        
+        Configuration cfg = new Configuration();
+
+        File directory = new File(cfg.get("mapred.local.dir"));
+        pb.directory(directory);
+
         process = pb.start();
-        
+
         ErrorThread errorThread = new ErrorThread();
         errorThread.start();
         stdin = process.getInputStream();
@@ -308,15 +329,15 @@ public class ExternalFunctionCallExpr extends IterExpr {
 
         InputAdapter inAdapter = (InputAdapter) JaqlUtil.getAdapterStore().input
                 .getAdapter(readOpts);
-        if (!(inAdapter instanceof ExternalCallStreamInputAdapter))
+        if (!(inAdapter instanceof StreamInputAdapter))
             throw new IllegalArgumentException(
                     "The adapter of readOpts must be an instance of com.ibm.jaql.io.stream.ExternalCallStreamInputAdapter");
-        ((ExternalCallStreamInputAdapter) inAdapter).setInputStream(stdin);
+        ((StreamInputAdapter) inAdapter).setInputStream(stdin);
         inAdapter.open();
         reader = inAdapter.iter();
 
     }
-    
+
     private class ErrorThread extends Thread {
         @Override
         public void run() {
@@ -336,7 +357,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
                 process.destroy();
             }
         }
-        
+
     }
 
 }

@@ -119,6 +119,11 @@ public class StreamInputAdapter extends AbstractInputAdapter
     return new ArraySchema(null, formatter.getSchema());
   }
   
+  // for external call
+  public void setInputStream(InputStream str) {
+      this.istr = str;
+  }
+  
   /**
    * @param location
    * @param args
@@ -128,6 +133,10 @@ public class StreamInputAdapter extends AbstractInputAdapter
   protected InputStream openStream(String location, JsonRecord args)
       throws Exception
   {
+    // for external call
+    if (location == null) {
+        return istr;
+    }
     // make a URI from location. args are converted to the query component
     String uriStr = location;
     // TODO: memory!!
