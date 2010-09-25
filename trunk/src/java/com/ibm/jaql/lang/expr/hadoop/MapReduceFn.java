@@ -24,7 +24,9 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.log4j.Logger;
 
 import com.ibm.jaql.io.hadoop.JsonHolder;
 import com.ibm.jaql.io.hadoop.JsonHolderMapOutputKey;
@@ -58,6 +60,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
  */
 public class MapReduceFn extends MapReduceBaseExpr
 {
+	protected final static Logger STATUS_LOG = Logger.getLogger("com.ibm.jaql.status.MapReduce");
   public final static JsonString COMBINE_KEY = new JsonString("combine");
   public final static JsonString REDUCE_KEY = new JsonString("reduce");
   
@@ -238,7 +241,20 @@ public class MapReduceFn extends MapReduceBaseExpr
     // Uncomment to run locally in a single process
     // conf.set("mapred.job.tracker", (Object)"local");
 
-    JobClient.runJob(conf);
+    STATUS_LOG.info("MAP-REDUCE START");
+    //JobClient.runJob(conf);
+    // taken from hadoop's runJob method so that we can peak into RunningJob
+    JobClient jc = new JobClient(conf);
+    RunningJob rj = jc.submitJob(conf);
+    STATUS_LOG.info("MAP-REDUCE INFO: " + rj.getID() + "," + rj.getJobName() + "," + rj.getTrackingURL());
+    try {
+        if (!jc.monitorAndPrintJob(conf, rj)) {
+          throw new IOException("Job failed!");
+        }
+      } catch (InterruptedException ie) {
+        Thread.currentThread().interrupt();
+      }
+    STATUS_LOG.info("MAP-REDUCE STOP");
 
     return outArgs;
   }
