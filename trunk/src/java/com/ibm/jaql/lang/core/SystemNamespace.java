@@ -130,6 +130,7 @@ import com.ibm.jaql.lang.expr.internal.HashExpr;
 import com.ibm.jaql.lang.expr.internal.LongHashExpr;
 import com.ibm.jaql.lang.expr.io.ArrayReadExpr;
 import com.ibm.jaql.lang.expr.io.DelFn;
+import com.ibm.jaql.lang.expr.io.ExpandFDExpr;
 import com.ibm.jaql.lang.expr.io.FileFn;
 import com.ibm.jaql.lang.expr.io.FileSplitToRecordFn;
 import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
@@ -548,6 +549,7 @@ public final class SystemNamespace extends Namespace {
     register(new FencePushFunction.Descriptor());
     register(new ExternalFnExpr.Descriptor());
     register(new GetHdfsPathFn.Descriptor());
+    register(new ExpandFDExpr.Descriptor());
   } 
 
 }

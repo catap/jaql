@@ -120,5 +120,10 @@ public class WrapperOutputAdapter implements OutputAdapter {
 	public Path getLocation() {
 		return location;
 	}
+	
+	@Override
+	public JsonValue expand() throws Exception{
+		return adapter.expand();
+	}
 }
 

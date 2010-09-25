@@ -18,6 +18,8 @@ package com.ibm.jaql.io.hadoop;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.ExposeJobContext;
@@ -36,11 +38,15 @@ import org.apache.hadoop.mapred.JobID;
 import org.apache.hadoop.util.Progressable;
 import org.apache.log4j.Logger;
 
+import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.hadoop.converter.KeyValueExport;
+import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.BufferedJsonRecord;
+import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -106,7 +112,7 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     if (configuratorClass != null)
     {
       this.configurator = (InitializableConfSetter) configuratorClass.newInstance();
-      this.configurator.init(args);
+      this.configurator.init(args);            
     }
 
     // set the converter
@@ -368,5 +374,42 @@ public class DefaultHadoopOutputAdapter<K,V> implements HadoopOutputAdapter
     // write out args and options to the conf
     ConfUtil.writeConf(conf, ConfSetter.CONFOUTOPTIONS_NAME, args);
     Globals.setJobConf(conf);
+  }
+  
+  @Override
+  public JsonValue expand() throws Exception{
+	  BufferedJsonRecord jr = (BufferedJsonRecord)this.options.getCopy(null);
+	  BufferedJsonArray ja = new BufferedJsonArray();
+	  String namenode = null;
+	  String dfsport = null;
+	  if (this.location != null) {			
+			Configuration conf = new Configuration();
+			namenode = conf.get("fs.default.name");			
+			dfsport = conf.get("dfs.namenode.http-address");								
+			FileSystem fs = FileSystem.get(conf);								
+			FileStatus files = fs.getFileStatus(new Path(this.location));
+			
+			if (files.isDir()) {
+				StringBuilder sb = new StringBuilder();
+				FileStatus[] dirContent = fs.listStatus(new Path(this.location));
+				for (FileStatus file : dirContent) {
+					if (!file.isDir()) {
+						ja.add(new JsonString(file.getPath().toString()));
+					}
+				}				
+			} else {
+				ja.add(new JsonString(files.getPath().toString()));
+			}
+		}
+	  jr.add(Adapter.LOCATION_NAME, ja);
+	  jr.add(Adapter.TYPE_NAME, args.get(Adapter.TYPE_NAME));
+	  jr.add(new JsonString("expanded"), JsonBool.make(true));
+	  
+	  if(namenode != null)
+		  jr.add(new JsonString("fs.default.name"), new JsonString(namenode));
+	  if(dfsport != null)
+		  jr.add(new JsonString("dfs.namenode.http-address"), new JsonString(dfsport));
+	  
+	  return jr;
   }
 }
