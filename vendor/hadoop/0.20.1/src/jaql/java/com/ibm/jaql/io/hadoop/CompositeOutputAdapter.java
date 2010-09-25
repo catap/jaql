@@ -620,4 +620,9 @@ public class CompositeOutputAdapter implements HadoopOutputAdapter
     });
     return desc;
   }
+  
+  @Override
+  public JsonValue expand() throws Exception{
+	  return args;
+  }
 }

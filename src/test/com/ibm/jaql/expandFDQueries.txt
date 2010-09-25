@@ -1,0 +1,12 @@
+$a = [1,2]->write(hdfs('foo'));
+$a;
+read($a);
+read(expandFD($a));
+read(expandFD([3,4]->write(hdfs('foo1'))));
+read([{location:"{foo,foo1}",type:"hdfs"}]);
+
+$b = [1,2]->write(file('foo'));
+$b;
+read($b);
+read(expandFD($b));
+read(expandFD([3,4]->write(file('foo1'))));

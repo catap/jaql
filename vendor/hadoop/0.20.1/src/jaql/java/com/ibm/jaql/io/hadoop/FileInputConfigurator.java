@@ -15,12 +15,18 @@
  */
 package com.ibm.jaql.io.hadoop;
 
+import java.util.Iterator;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileInputFormat;
 import org.apache.hadoop.mapred.JobConf;
 
+import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
+import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 
 /**
@@ -32,8 +38,21 @@ public class FileInputConfigurator implements InitializableConfSetter
   protected String location;
 
   public void init(JsonValue options) throws Exception
-  {
-    location = AdapterStore.getStore().getLocation((JsonRecord) options);
+  { 
+	location = AdapterStore.getStore().getLocation((JsonRecord) options);  
+    JsonValue lValue = ((JsonRecord)options).get(Adapter.LOCATION_NAME);
+    if(lValue instanceof JsonArray){
+    	BufferedJsonArray bja = (BufferedJsonArray)lValue;
+    	Iterator<JsonValue> i = bja.iterator();
+    	StringBuilder sb = new StringBuilder();    	
+    	while(i.hasNext()){
+    		sb.append(((JsonString)i.next()).toString());
+    		sb.append(",");
+    	}
+    	if(sb.length() > 2)
+    		sb.deleteCharAt(sb.length()-1);
+    	location = sb.toString();
+    }    
   }
 
   protected void registerSerializers(JobConf conf)
@@ -56,8 +75,9 @@ public class FileInputConfigurator implements InitializableConfSetter
    * @throws Exception
    */
   protected void set(JobConf conf) throws Exception
-  {
-    FileInputFormat.setInputPaths(conf, new Path(location));
+  {    
+    //FileInputFormat.setInputPaths(conf, new Path(location));	
+	FileInputFormat.setInputPaths(conf, location);
     registerSerializers(conf);
   }
 }

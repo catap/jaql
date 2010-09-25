@@ -13,21 +13,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ibm.jaql.io;
+package com.ibm.jaql;
 
-import com.ibm.jaql.json.type.JsonValue;
-
-/**
- * An adapter that produces Items
- */
-public interface OutputAdapter extends Adapter
-{
-
-  /**
-   * @return ItemWriter
-   * @throws Exception
-   */
-  ClosableJsonWriter getWriter() throws Exception;
-  
-  JsonValue expand() throws Exception;
+public class TestExpandFD extends JaqlScriptTestCase
+{	 
 }
