@@ -1,0 +1,211 @@
+<?xml version="1.0"?>
+
+<project name="lucene module" default="distro">
+
+    <property name="build.dir" value="${basedir}/build" />
+    <property name="build.classes" value="${build.dir}/classes" />
+    <property name="build.src" value="${build.dir}/src" />
+    <property name="jaql.dir" value="../../../" />
+    <property name="dest.dir" value="${basedir}/dist/lucene" />
+    <property name="script.dir" value="${basedir}/scripts" />
+	  <property name="jars.dir" value="${basedir}/jars"/>
+
+    <property name="src.dir" value="${basedir}/src/java" />
+	  <property name="build.encoding" value="UTF-8"/>
+    <property name="javac.debug" value="on" />
+    <property name="javac.optimize" value="on" />
+    <property name="javac.deprecation" value="off" />
+    <property name="javac.version" value="1.5" />
+    <property name="javac.args" value="" />
+    <property name="major.version" value="0" />
+    <property name="minor.version" value="0" />
+    <property name="point.version" value="0" />
+    <property name="module.jar" value="lucene-jaql.jar" />
+
+    <!-- Properties for JUnit testing. -->
+    <property name="test.src.dir" value="${basedir}/src/test" />
+    <property name="test.build.dir" value="${build.dir}/test" />
+    <property name="test.cache.dir" value="${test.build.dir}/cache"/>
+
+    <!-- Set up a timestamp and date for the manifest of the jars we produce -->
+    <tstamp>
+        <format property="release.timestamp"
+                pattern="MMMM dd, yyyy, HH:mm:ss"
+                locale="en,US" />
+    </tstamp>
+
+    <path id="classpath">
+        <pathelement location="${jaql.dir}/build/jaql.jar"/>
+    	  <pathelement location="${jars.dir}/lucene-core-2.2.0.jar"/>
+        <pathelement location="${build.dir}/classes" />
+    </path>
+    <property name="classpath.id" value="classpath" />
+
+    <!--                                                              -->
+    <!-- init: create temporary build directory 		                   -->
+    <!--                                                              -->
+    <target name="init">
+        <mkdir dir="${build.dir}" />
+        <mkdir dir="${build.classes}" />
+        <mkdir dir="${build.src}" />
+        <copy todir="${build.src}/java">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java" />
+            </fileset>
+        </copy>
+    </target>
+
+    <!--                                                              -->
+    <!-- compile: compile all java source files                       -->
+    <!--                                                              -->
+    <target name="compile" depends="init">
+        <javac encoding="${build.encoding}" 
+               srcdir="${build.src}/java" 
+               includes="com/ibm/**/*.java" 
+               destdir="${build.classes}" 
+               debug="${javac.debug}" 
+               optimize="${javac.optimize}" 
+               target="${javac.version}" 
+               source="${javac.version}" 
+               deprecation="${javac.deprecation}">
+            <compilerarg line="${javac.args}" />
+            <classpath refid="${classpath.id}" />
+        </javac>
+    </target>
+
+    <!--                                                              -->
+    <!-- jar: create jars and source jars for project                 -->
+    <!--      and systemt-hadoop                                      -->
+    <!--                                                              -->
+    <target name="jar" depends="compile">
+        <jar jarfile="${build.dir}/${module.jar}_${major.version}.${minor.version}.${point.version}.jar" 
+             basedir="${build.classes}" includes="com/ibm/jaql/**">
+            <manifest>
+                <section name="versioninfo">
+                    <attribute name="Version" value="${major.version}.${minor.version}.${point.version}" />
+                    <attribute name="BuildTime" value="${release.timestamp}" />
+                </section>
+            </manifest>
+        </jar>
+
+        <jar jarfile="${build.dir}/${module.jar}_src_${major.version}.${minor.version}.${point.version}.jar"
+             basedir="${build.src}/java"
+             includes="com/ibm/jaql/**">
+            <manifest>
+                <section name="versioninfo">
+                    <attribute name="Version"
+                               value="${major.version}.${minor.version}.${point.version}" />
+                    <attribute name="BuildTime" value="${release.timestamp}" />
+                </section>
+            </manifest>
+        </jar>
+    </target>
+
+    <!--                                                              -->
+    <!-- distro: copy all files to a distribution directory           -->
+    <!--                                                              -->
+    <target name="distro" depends="init, compile, jar">
+
+        <delete dir="${dest.dir}" />
+        <mkdir dir="${dest.dir}"/>
+
+        <!-- local jar -->
+        <copy tofile="${dest.dir}/jars/${module.jar}_${major.version}.${minor.version}.${point.version}.jar" 
+            file="${build.dir}/${module.jar}_${major.version}.${minor.version}.${point.version}.jar" />
+        
+        <copy tofile="${dest.dir}/jars/${module.jar}_src_${major.version}.${minor.version}.${point.version}.jar" 
+            file="${build.dir}/${module.jar}_src_${major.version}.${minor.version}.${point.version}.jar" />
+
+        <!-- scripts dir -->
+        <copy todir="${dest.dir}/scripts">
+           <fileset dir="${basedir}/scripts" />
+        </copy>
+        
+        <!-- namespace.json -->
+        <!-- <copy todir="${dest.dir}" file="namespace.json"/> -->
+
+        <!-- Remove temporary files. -->
+        <delete dir="${build.dir}" />
+
+    </target>
+
+    <!--                                                              -->
+    <!-- test: run JUnit tests.																				-->
+    <!--                                                              -->
+    <target name="test" description="Runs JUnit test cases." depends="distro">
+
+        <!-- Clean out temporary dirs. -->
+        <delete dir="${test.build.dir}" />
+        <mkdir dir="${test.build.dir}" />
+        <delete dir="${test.cache.dir}" />
+        <mkdir dir="${test.cache.dir}" />
+        <copy todir="${test.cache.dir}">
+           <fileset dir="${test.src.dir}/com/ibm/jaql/lucene/tests" includes="*.txt" />
+        </copy>
+
+        <!-- Compile test cases. -->
+        <javac srcdir="${test.src.dir}" 
+               destdir="${test.build.dir}" 
+               debug="Yes" 
+               encoding="UTF-8">
+            <!-- Pull classpath entries from dist dir. -->
+            <classpath>
+                <fileset dir="${jaql.dir}/vendor/hadoop/0.20.1" includes="**/*.jar" />
+                <pathelement location="${jaql.dir}/build/jaql.jar"/>
+                <fileset dir="${jaql.dir}/lib/" includes="*.jar"/>
+                <!-- <fileset dir="${dest.dir}/jars" includes="**/*.jar" /> -->
+            </classpath>
+        </javac>
+
+
+        <!-- Run JUnit test cases. -->
+        <junit showoutput="no" 
+               printsummary="yes" 
+               haltonfailure="no" 
+               fork="yes" 
+               maxmemory="256m" 
+               errorProperty="tests.failed" 
+               failureProperty="tests.failed">
+          <assertions> <enable /> </assertions>
+            <sysproperty key="test.build.data" value="${test.build.data}" />
+            <sysproperty key="test.cache.data" value="${test.cache.dir}" />
+            <sysproperty key="hadoop.log.dir" value="${test.build.dir}/log" />
+            <sysproperty key="hadoop.log.file" value="hadoop.log" />
+            <sysproperty key="hadoop.root.logger" value="INFO,DRFA" />
+            <sysproperty key="build" value="${build.dir}" />
+            <sysproperty key="test.no_rewrite" value="true" />
+            <sysproperty key="test.plain" value="true" />
+            <sysproperty key="test.decompile" value="true" />
+            <sysproperty key="test.explain" value="true" /> 
+            <sysproperty key="test.rewrite" value="true" />
+            <sysproperty key="test.count" value="true" />
+            
+            <classpath>
+            	   <pathelement location="${jaql.dir}/conf"/>
+                <fileset dir="${jaql.dir}/vendor/hadoop/0.20.1" includes="**/*.jar" />
+                <pathelement location="${jaql.dir}/build/jaql.jar"/>
+                <pathelement location="${test.build.dir}" />
+                <pathelement location="${jaql.dir}/lib/junit-4.1.jar"/>
+                <fileset dir="${dest.dir}/jars" includes="**/*.jar" />
+            </classpath>
+        	   <sysproperty key="file.encoding" value="UTF8" />
+            <formatter type="xml" />
+        	<batchtest todir="${test.build.dir}" unless="testcase">
+        	    <fileset dir="${test.build.dir}" includes="**/*.class" >
+        	    </fileset>
+        	</batchtest>
+        </junit>
+
+        <fail if="tests.failed">JUnit tests failed.</fail>
+
+    </target> 
+
+    <!--                                                              -->
+    <!-- clean: remove the built and distribution directories         -->
+    <!--                                                              -->
+    <target name="clean">
+        <delete dir="${build.dir}" />
+        <delete dir="${dest.dir}"/>
+    </target>
+
+</project>
