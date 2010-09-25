@@ -54,4 +54,9 @@ public abstract class AbstractOutputAdapter implements OutputAdapter {
   public void close() throws Exception {
   // nothing
   }
+  
+  @Override
+  public JsonValue expand() throws Exception{
+	  return args;
+  }
 }
