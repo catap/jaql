@@ -1,0 +1,12 @@
+$x = "Initial Value";
+$x = {"x": $x, "MultiScriptsNoNS_X": MultiScriptsNoNS::$x};
+$x = "Final Value";
+$y = {"y": $y, "MultiScriptsNoNS_Y": MultiScriptsNoNS::$y};
+$z = {"z": $z, "MultiScriptsNoNS_Z": MultiScriptsNoNS::$z};
+
+$a = {"a": $a, "MultiScriptsWithNS_A": MultiScriptsWithNS::$a, "MultiScriptsWithNS2_A": MultiScriptsWithNS2::$a};
+$b = {"NestedModule_B": "B"};
+$c = {"c": $c, "MultiScriptsWithNS_C": MultiScriptsWithNS::$c, "MultiScriptsWithNS2_C": MultiScriptsWithNS2::$c};
+$a1 = {"a1": $a1, "MultiScriptsWithNS_A1": MultiScriptsWithNS::$a1, "MultiScriptsWithNS2_A1": MultiScriptsWithNS2::$a1};
+$a2 = {"a2": $a2, "MultiScriptsWithNS_A2": MultiScriptsWithNS::$a2, "MultiScriptsWithNS2_A2": MultiScriptsWithNS2::$a2};
+$a3 = {"NestedModule_A3": "A3"};

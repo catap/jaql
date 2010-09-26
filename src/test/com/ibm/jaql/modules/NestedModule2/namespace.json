@@ -1,0 +1,10 @@
+{
+	version: 	1,
+	scripts:	["script.jaql"],
+	import:   [
+             { module: "MultiScriptsNoNS",	vars: ["*"] },
+             { module: "MultiScriptsWithNS2",	vars: ["*"] },
+             { module: "MultiScriptsWithNS",	vars: ["*"] }
+	          ],
+	export:		["$x", "$y", "$z", "$a", "$b", "$c", "$a1", "$a2", "$a3"]
+}
