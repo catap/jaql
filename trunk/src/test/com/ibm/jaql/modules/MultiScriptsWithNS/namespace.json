@@ -1,0 +1,5 @@
+{
+	version: 	1,
+	scripts:	["script3.jaql","script1.jaql","script2.jaql"],
+	export:		["$a", "$c", "$a1", "$a2"]
+}

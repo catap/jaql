@@ -1,0 +1,6 @@
+FunctionA = javaudf("com.ibm.jaql.udf.abjar.FunctionA");
+FunctionB = javaudf("com.ibm.jaql.udf.abjar.FunctionB");
+FunctionC = javaudf("com.ibm.jaql.udf.cjar.FunctionC");
+FunctionD = javaudf("com.ibm.jaql.udf.djar.FunctionD");
+FunctionE = javaudf("com.ibm.jaql.udf.ejar.FunctionE");
+$parameter =  2;

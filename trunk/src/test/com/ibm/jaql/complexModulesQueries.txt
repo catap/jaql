@@ -1,0 +1,97 @@
+//1. Import single module which contains multi scripts and no namespace
+//1.1 exercise import specified functions statement
+import MultiScriptsNoNS($x,$z,$x2);
+listExports("MultiScriptsNoNS") -> sort by [$];
+MultiScriptsNoNS::$x;
+MultiScriptsNoNS::$y;
+MultiScriptsNoNS::$z;
+MultiScriptsNoNS::$x1;
+MultiScriptsNoNS::$x2;
+MultiScriptsNoNS::$x3;
+$x;
+$y;
+$z;
+$x1;
+$x2;
+$x3;
+
+//2. Import single module which contains multi scripts and namespace
+//2.1 exercise import variables which are not exported in namespace, will fail
+import MultiScriptsWithNS($a,$b,$c,$a2);
+//2.2 exercise import specified functions statement
+import MultiScriptsWithNS($a,$c,$a2);
+listExports("MultiScriptsWithNS") -> sort by [$];
+MultiScriptsWithNS::$a;
+MultiScriptsWithNS::$b;
+MultiScriptsWithNS::$c;
+MultiScriptsWithNS::$a1;
+MultiScriptsWithNS::$a2;
+MultiScriptsWithNS::$a3;
+$a;
+$b;
+$c;
+$a1;
+$a2;
+$a3;
+//2.3 exercise import *
+import MultiScriptsWithNS2(*);
+MultiScriptsWithNS::$a;
+MultiScriptsWithNS::$b;
+MultiScriptsWithNS::$c;
+MultiScriptsWithNS::$a1;
+MultiScriptsWithNS::$a2;
+MultiScriptsWithNS::$a3;
+
+//3 variable clash in multiple modules (MultiScriptsWithNS vs MultiScriptsWithNS2)
+$a;
+$b;
+$c;
+$a1;
+$a2;
+$a3;
+
+//4 module imports other modules
+import NestedModule(*);
+listExports("NestedModule") -> sort by [$];
+$x;
+$y;
+$z;
+$a;
+$b;
+$c;
+$a1;
+$a2;
+$a3;
+
+//5 modules imports other modules (change the order of modules being imported)
+//vaiable value depends on the order of module being imported
+import NestedModule2(*);
+listExports("NestedModule2") -> sort by [$];
+//check if x value is written or not
+$x;
+$y;
+$z;
+$a;
+$b;
+$c;
+$a1;
+$a2;
+$a3;
+
+//6 modules with multiple jars which have interdependencies between them 
+//abjar.jar contains FunctionA.class and FunctionB.class
+//cjar.jar contains FunctionC.class
+//djar.jar contains FunctionD.class
+//ejar.jar contains FunctionE.class
+//FunctionA depends on C, C depends on B, B depends on E.
+//Function D depends on A, B and E.
+import UDFModules(*);
+$parameter;
+FunctionA($parameter);
+FunctionB($parameter);
+FunctionC($parameter);
+FunctionD($parameter);
+FunctionE($parameter);
+
+
+
