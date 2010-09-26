@@ -216,7 +216,7 @@ read({type: 'hdfs',location: ''});
 
 ;//----- EXCEPTION -----
 
-// java.lang.IllegalArgumentException
+// java.lang.NullPointerException
 
 ;//------------------- TEST-CASE -----------------
 
@@ -230,7 +230,7 @@ read({type: 'hdfs'});
 
 ;//----- EXCEPTION -----
 
-// java.lang.IllegalArgumentException
+// java.lang.NullPointerException
 
 ;//------------------- TEST-CASE -----------------
 
