@@ -2366,7 +2366,7 @@ $ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: false});
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><content type=\"long\">12</content></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"long\">12</content></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -2374,7 +2374,7 @@ $ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: false});
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><content type=\"record\"><city type=\"string\">Beijing</city><no type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value><value type=\"long\">3</value></no></content></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"record\"><city type=\"string\">Beijing</city><no type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value><value type=\"long\">3</value></no></content></record>"
 
 ;//------------------- TEST-CASE -----------------
 
