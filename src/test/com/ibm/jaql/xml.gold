@@ -9,7 +9,7 @@ x = fn(v) jsonToXml(v);
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"string\">str\nwith\nnl</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"string\">str\nwith\nnl</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -17,7 +17,7 @@ true -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"boolean\">true</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"boolean\">true</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -25,7 +25,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"null\"></value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"null\"></value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -35,7 +35,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"long\">17</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"long\">17</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -43,7 +43,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"double\">17.5</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"double\">17.5</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -51,7 +51,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"decfloat\">17.5m</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"decfloat\">17.5m</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -59,7 +59,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"double\">NaN</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"double\">NaN</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -67,7 +67,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"double\">Infinity</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"double\">Infinity</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -75,7 +75,7 @@ null -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"double\">-Infinity</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"double\">-Infinity</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -85,7 +85,7 @@ hex('deadbeaf') -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"binary\">hex(\'DEADBEAF\')</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"binary\">hex(\'DEADBEAF\')</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -93,7 +93,7 @@ date('2010-09-11T01:18:38Z') -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"date\">2010-09-11T01:18:38Z</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"date\">2010-09-11T01:18:38Z</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -101,7 +101,7 @@ schema { x: long, y: string } -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"schematype\">schema {\n         \"x\": long,\n         \"y\": string\n       }</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"schematype\">schema {\n         \"x\": long,\n         \"y\": string\n       }</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -109,7 +109,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><value type=\"function\">fn(v) (system::jsonToXml(v))</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"function\">fn(v) (system::jsonToXml(v))</value>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -119,7 +119,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -127,7 +127,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"long\">1</name></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"long\">1</name></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -135,7 +135,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><f1 type=\"long\">1</f1><f2 type=\"string\">two</f2></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><f1 type=\"long\">1</f1><f2 type=\"string\">two</f2></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -143,7 +143,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"record\"><nested type=\"long\">1</nested></name></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"record\"><nested type=\"long\">1</nested></name></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -151,7 +151,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"record\"><f1 type=\"string\">str1</f1><f2 type=\"long\">2</f2></name></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"record\"><f1 type=\"string\">str1</f1><f2 type=\"long\">2</f2></name></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -159,7 +159,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"record\"><f1 type=\"string\">str1</f1><f2 type=\"array\"><value type=\"long\">10</value><value type=\"long\">11</value><value type=\"long\">12</value></f2></name></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"record\"><f1 type=\"string\">str1</f1><f2 type=\"array\"><value type=\"long\">10</value><value type=\"long\">11</value><value type=\"long\">12</value></f2></name></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -167,7 +167,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"array\"><value type=\"string\">a</value><value type=\"string\">b</value></name></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"array\"><value type=\"string\">a</value><value type=\"string\">b</value></name></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -175,7 +175,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><t type=\"record\"><p type=\"array\"><array><value type=\"long\">1</value><value type=\"long\">2</value><value type=\"long\">3</value></array><array><value type=\"string\">a</value><value type=\"string\">b</value><value type=\"string\">c</value></array></p></t></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><t type=\"record\"><p type=\"array\"><array><value type=\"long\">1</value><value type=\"long\">2</value><value type=\"long\">3</value></array><array><value type=\"string\">a</value><value type=\"string\">b</value><value type=\"string\">c</value></array></p></t></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -183,7 +183,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"string\">beijing</name></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"string\">beijing</name></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -191,7 +191,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><name type=\"string\">beijing</name><no type=\"long\">1</no></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><name type=\"string\">beijing</name><no type=\"long\">1</no></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -199,7 +199,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -207,7 +207,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc><type type=\"string\">io</type></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc><type type=\"string\">io</type></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -215,7 +215,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc><type type=\"string\">io</type><meta type=\"record\"><type type=\"string\">map</type><value type=\"long\">10</value></meta></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><desc type=\"array\"><value type=\"long\">1</value><value type=\"long\">2</value></desc><type type=\"string\">io</type><meta type=\"record\"><type type=\"string\">map</type><value type=\"long\">10</value></meta></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -223,7 +223,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><record><content type=\"array\"><array><array><record><name type=\"string\">jaql</name><age type=\"long\">2</age></record><record><city type=\"string\">beijing</city></record></array></array><value type=\"long\">2</value></content></record>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><record><content type=\"array\"><array><array><record><name type=\"string\">jaql</name><age type=\"long\">2</age></record><record><city type=\"string\">beijing</city></record></array></array><value type=\"long\">2</value></content></record>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -233,7 +233,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -241,7 +241,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><value type=\"long\">1</value></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><value type=\"long\">1</value></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -249,7 +249,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><value type=\"long\">1</value><value type=\"long\">2</value></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><value type=\"long\">1</value><value type=\"long\">2</value></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -257,7 +257,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><value type=\"long\">1</value><value type=\"null\"></value></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><value type=\"long\">1</value><value type=\"null\"></value></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -265,7 +265,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><value type=\"string\">lisp</value><value type=\"string\">haskell</value></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><value type=\"string\">lisp</value><value type=\"string\">haskell</value></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -273,7 +273,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><record><name type=\"string\">beijing</name><no type=\"long\">1</no></record></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><record><name type=\"string\">beijing</name><no type=\"long\">1</no></record></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -281,7 +281,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><array></array></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><array></array></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -289,7 +289,7 @@ x -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><array><value type=\"long\">1</value><value type=\"long\">2</value></array><array><value type=\"long\">10</value><value type=\"long\">20</value></array><value type=\"long\">100</value></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><array><value type=\"long\">1</value><value type=\"long\">2</value></array><array><value type=\"long\">10</value><value type=\"long\">20</value></array><value type=\"long\">100</value></array>"
 
 ;//------------------- TEST-CASE -----------------
 
@@ -297,7 +297,7 @@ range(5) -> transform { a: $, b: strcat('s',$) } -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" ?><array><record><a type=\"long\">0</a><b type=\"string\">s0</b></record><record><a type=\"long\">1</a><b type=\"string\">s1</b></record><record><a type=\"long\">2</a><b type=\"string\">s2</b></record><record><a type=\"long\">3</a><b type=\"string\">s3</b></record><record><a type=\"long\">4</a><b type=\"string\">s4</b></record></array>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><array><record><a type=\"long\">0</a><b type=\"string\">s0</b></record><record><a type=\"long\">1</a><b type=\"string\">s1</b></record><record><a type=\"long\">2</a><b type=\"string\">s2</b></record><record><a type=\"long\">3</a><b type=\"string\">s3</b></record><record><a type=\"long\">4</a><b type=\"string\">s4</b></record></array>"
 
 ;//------------------- TEST-CASE -----------------
 

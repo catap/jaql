@@ -87,7 +87,7 @@ public class JsonToXml
   public void toXml(JsonIterator iter) throws Exception
   {
     startArrayElement();
-    xwriter.writeStartElement( JsonType.ARRAY.toString() );
+    //xwriter.writeStartElement( JsonType.ARRAY.toString() );
     for( JsonValue elem: iter )
     {
       toXmlAux( null, elem );
