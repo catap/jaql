@@ -148,7 +148,8 @@ public class NativeMapReduceExpr extends Expr
     // submit the job
     boolean status = true;
     try {
-      JobClient.runJob(job);
+      //JobClient.runJob(job);
+    	Util.submitJob(new JsonString(NativeMapReduceExpr.class.getName()), job);
     } catch(IOException e) {
       status = false;
       LOG.warn("native map-reduce job failed", e);

@@ -49,7 +49,7 @@ public class JsonToXml
 
   public void startDocument() throws XMLStreamException
   {
-    xwriter.writeStartDocument();
+    xwriter.writeStartDocument("UTF-8","1.0");
   }
 
   public void startArrayElement() throws XMLStreamException

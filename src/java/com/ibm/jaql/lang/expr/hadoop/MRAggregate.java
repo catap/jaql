@@ -122,7 +122,8 @@ public class MRAggregate extends MapReduceBaseExpr
     JaqlFunction finalFn = JaqlUtil.enforceNonNull((JaqlFunction) finl);
     prepareFunction("final", 2, finalFn, 0);
 
-    JobClient.runJob(conf);
+    //JobClient.runJob(conf);
+    Util.submitJob(new JsonString(MRAggregate.class.getName()), conf);
 
     return outArgs;
   }

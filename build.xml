@@ -59,7 +59,7 @@
   <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
   <property name="tmp.dir" value="${build.dir}/tmp" />
   <property name="year" value="2010" />
-  <property name="version" value="0.4" />
+  <property name="version" value="0.5" />
 	
 	<!-- Release version information -->
 	<property name="major" value="0" />
@@ -582,11 +582,6 @@
     <mkdir dir="${build.dir}/jaql-${version}/conf" />
     <copy todir="${build.dir}/jaql-${version}/conf">
       <fileset dir="${conf.dir}" />
-    </copy>
-
-    <mkdir dir="${build.dir}/jaql-${version}/resources" />
-    <copy todir="${build.dir}/jaql-${version}/resources">
-      <fileset dir="${resources.dir}" />
     </copy>
 
     <mkdir dir="${build.dir}/jaql-${version}/src" />
