@@ -241,21 +241,23 @@ public class MapReduceFn extends MapReduceBaseExpr
     // Uncomment to run locally in a single process
     // conf.set("mapred.job.tracker", (Object)"local");
 
-    STATUS_LOG.info("MAP-REDUCE START");
+    //STATUS_LOG.info("MAP-REDUCE START");
     //JobClient.runJob(conf);
     // taken from hadoop's runJob method so that we can peak into RunningJob
-    JobClient jc = new JobClient(conf);
-    RunningJob rj = jc.submitJob(conf);
-    STATUS_LOG.info("MAP-REDUCE INFO: " + rj.getID() + "," + rj.getJobName() + "," + rj.getTrackingURL());
-    try {
-        if (!jc.monitorAndPrintJob(conf, rj)) {
-          throw new IOException("Job failed!");
-        }
-      } catch (InterruptedException ie) {
-        Thread.currentThread().interrupt();
-      }
-    STATUS_LOG.info("MAP-REDUCE STOP");
+//    JobClient jc = new JobClient(conf);
+//    RunningJob rj = jc.submitJob(conf);
+//    STATUS_LOG.info("MAP-REDUCE INFO: " + rj.getID() + "," + rj.getJobName() + "," + rj.getTrackingURL());
+//    try {
+//        if (!jc.monitorAndPrintJob(conf, rj)) {
+//          throw new IOException("Job failed!");
+//        }
+//      } catch (InterruptedException ie) {
+//        Thread.currentThread().interrupt();
+//      }
+//    STATUS_LOG.info("MAP-REDUCE STOP");
 
+    Util.submitJob(new JsonString(MapReduceFn.class.getName()), conf);
+    
     return outArgs;
   }
 
