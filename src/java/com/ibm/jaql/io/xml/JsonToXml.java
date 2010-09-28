@@ -36,6 +36,8 @@ public class JsonToXml
   protected XMLOutputFactory xfactory;
   protected XMLStreamWriter xwriter;
   
+  protected String encoding;
+  protected String version;
 
   public JsonToXml() throws Exception
   {
@@ -46,10 +48,22 @@ public class JsonToXml
   {
     xwriter = xfactory.createXMLStreamWriter(writer);
   }
+  
+  public void setWriter(Writer writer, String encoding, String version) throws XMLStreamException
+  {
+    xwriter = xfactory.createXMLStreamWriter(writer);    
+    this.encoding = encoding;
+    this.version = version;
+
+  }
 
   public void startDocument() throws XMLStreamException
   {
-    xwriter.writeStartDocument("UTF-8","1.0");
+	if(this.encoding == null)
+		this.encoding = "UTF-8";
+	if(this.version == null)
+		this.version = "1.0";  
+    xwriter.writeStartDocument(this.encoding,this.version);
   }
 
   public void startArrayElement() throws XMLStreamException

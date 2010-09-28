@@ -84,7 +84,7 @@ public class JsonToXmlFn extends Expr
     }
     JsonValue value = exprs[0].eval(context);
     writer.getBuffer().setLength(0);
-    converter.setWriter(writer);
+    converter.setWriter(writer, "UTF-8", "1.0");
     converter.startDocument();
     converter.toXml(value);
     converter.endDocument();
