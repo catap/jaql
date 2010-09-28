@@ -18,6 +18,7 @@ package com.ibm.jaql.lang;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 
 import com.ibm.jaql.json.parser.JsonParser;
@@ -61,6 +62,11 @@ public class JaqlQuery implements Closeable {
         jq.setExceptionHandler(new NullExceptionHandler());
         jq.stopOnException(true);
         setQueryString(query);
+    }
+    
+    
+    public void setJaqlPrinter(JaqlPrinter printer){
+        jq.setJaqlPrinter(printer);
     }
 
     /**
@@ -368,8 +374,12 @@ public class JaqlQuery implements Closeable {
      *            batch file path
      * @throws FileNotFoundException
      */
-    public void exectueBatch(String batchFile) throws FileNotFoundException {
+    public void executeBatch(String batchFile) throws FileNotFoundException {
         jq.executeBatch(batchFile);
+    }
+    
+    public void executeBatch(String filename, Reader in) throws FileNotFoundException{
+       jq.executeBatch(filename, in);
     }
 
 }
