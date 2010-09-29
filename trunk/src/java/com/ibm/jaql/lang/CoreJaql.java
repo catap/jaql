@@ -19,6 +19,7 @@ package com.ibm.jaql.lang;
 import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.List;
 
 import antlr.RecognitionException;
@@ -254,5 +255,9 @@ public interface CoreJaql extends Closeable {
 	 * @throws FileNotFoundException
 	 */
 	void executeBatch(String batchFile) throws FileNotFoundException;
+
+    void executeBatch(String filename, Reader in) throws FileNotFoundException;
+
+    void setJaqlPrinter(JaqlPrinter printer);
 
 }

@@ -848,4 +848,11 @@ public class Jaql implements CoreJaql
         setInput(batchFile, new FileReader(batchFile));
     }
 
+    @Override
+    public void executeBatch(String filename, Reader in)
+            throws FileNotFoundException {
+       setInput(filename, in);
+        
+    }
+
 }
