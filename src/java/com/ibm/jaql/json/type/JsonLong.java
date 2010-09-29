@@ -82,6 +82,7 @@ public class JsonLong extends JsonNumber
 
   public static long parseLong(String s)
   {
+    s = s.trim();
     if (s.startsWith("0x") || s.startsWith("0X"))
     {
       // parseLong can't handle negative hex values - do we want it to?
