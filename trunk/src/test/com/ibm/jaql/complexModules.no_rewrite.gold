@@ -704,7 +704,7 @@ FunctionD($parameter);
 
 ;//----- EXCEPTION -----
 
-// java.lang.NoClassDefFoundError
+// java.lang.ClassNotFoundException
 
 ;//------------------- TEST-CASE -----------------
 
