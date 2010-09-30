@@ -1137,6 +1137,21 @@ $composition2 -> filter each k k[0].a[1]+k[1].b[0]>5 or k[1].b[0]==2;
 ;//------------------- TEST-CASE -----------------
 
 
+//found bug in schema merge
+[ [1], null, [] ] -> filter not isnull($);
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    1
+  ],
+  []
+]
+
+;//------------------- TEST-CASE -----------------
+
+
 //----------------------------    3. Expand testing  -----------------------------------------------
 //3.1 exercise expand syntax  
 $atoms1 -> expand $;
