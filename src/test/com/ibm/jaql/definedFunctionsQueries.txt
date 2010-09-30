@@ -103,6 +103,89 @@ arrayToRecord([null,"ibm"],[1,2]);
 arrayToRecord(["SUN", "IBM"], [{price:123},{address:"Beijing"}]);
 arrayToRecord(["SUN", "IBM"], {a:1, b:2});
 arrayToRecord({a:1, b:2}, ["SUN", "IBM"]);
+//2.4 asArray
+//this function only alow array or null as the parameter
+words=asArray([{w:'a'},{w:'b'},{w:'c'}]->transform {$.w});
+//first word
+words[0].w;
+asArray([]);
+asArray(null);
+//2.5 columnwise
+pinfo=[{name:'john',age:23, hobbies: {A:'basketball',b:'football',c:'swimming'}},{name:'mike',age:24,hobbies:{A:'jogging',B:'combat'}}];
+result=columnwise(pinfo);
+result;
+typeof(columnwise([]))=="record";
+//2.6 rowwise
+rowwise(result)==pinfo;
+typeof(rowwise({}))=="array";
+//2.7 deempty
+null->deempty();
+[]->deempty();
+[{type:'array',value:[1,23,4]},{type:'record',value:{a:'a record'}}] -> deempty();
+//2.8 lag1
+range(1,5) -> lag1();
+//2.9 pair
+pair('a','b')==['a','b'];
+pair(1,-1)==[1,-1];
+pair(3.14,-3.14)==[3.14,-3.14];
+pair(true,false)==[true,false];
+pair(null,1)==[null,1];
+pair(null,null)==[null,null];
+//2.10 nextElement
+//normal use
+range(1,3)->nextElement();
+//only one element
+[1]->nextElement();
+//array with record elements 
+[{n:1,v:'n1'},{n:2,v:'n2'},{n:3,v:'n3'}]->nextElement();
+//2.11 prevAndNextElement
+range(1,3)->prevAndNextElement();
+[1]->prevAndNextElement();
+[1,2]->prevAndNextElement();
+//2.12 prevElement
+range(1,3)->prevElement();
+[1]->prevElement();
+//2.13 removeElement
+removeElement([1,2,3],0)==[2,3];
+//out of index
+removeElement([1,2,3],3)==[1,2,3];
+removeElement([1,2,null],2)==[1,2];
+//2.14 replaceElement
+replaceElement([1,2,3],2,100)==[1,2,100];
+replaceElement(['a','b','c'],2,'d')==['a','b','d'];
+//out of index
+replaceElement(['a','b','c'],3,'d')==['a','b','c','d'];
+replaceElement(['a','b','c'],4,'d')==['a','b','c',null,'d']; 
+replaceElement(['a','b','c'],-1,'d')==['a','b','c']; 
+//2.15 reverse
+[1,2,3]->reverse();
+null->reverse();
+[[1],[2,3],[3,4,5],[6,7,8,9]] -> transform reverse($);
+[[1],[2,3],[3,4,5],[6,7,8,9]] -> transform reverse($)->reverse();
+//2.16 shift
+//input, number before, number after
+//no before(after) number is specified.
+shift(range(1,5),0,0);
+//specify before number
+shift(range(1,5),1,0);
+//specify after number
+shift(range(1,5),0,1);
+//if null
+shift([],0,0);
+//2.17 toArray
+[]->toArray();
+{}->toArray();
+null->toArray();
+[1,2,3]->toArray();
+{rcd:1}->toArray();
+1->toArray();
+"letter"->toArray();
+3.14->toArray();
+true->toArray();
+//2.18 union
+union(null)==[];
+union([1,2],[3,4],[5,6])==[1,2,3,4,5,6];
+union([1,2],null,[5,6])==[1,2,5,6];
 
 //3. core
 //3.1 MathExpr
@@ -325,26 +408,7 @@ hdfsShell("-rm ls_test*") * 0;
 //composition of number, string, boolean, record and array
 ["IBM","Google","Microsoft","", null, 12, 34.3, -12, 0, ["a","bb","bc"], [12,34,-23],{a:23, b:"IPHONE", c:"New York"}, false, true] -> top 14 by [$ asc];
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//10.2 explain
+explain [{a:'a'},{a:'b'}]->transform $.a;
+explain val:=1;
+explain extern ext:=1;
