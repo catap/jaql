@@ -86,12 +86,22 @@ public class SchemaTransformation
       else
       {
         Schema merged = current.merge(next);
-        if (merged.getSchemaType() != current.getSchemaType())
+        
+        // merge can return null
+        if( merged == null ) 
+        {
+        	// merge failed so keep current and next separate
+        	out.add(current);
+        	current = next;
+        } 
+        else if (merged.getSchemaType() != current.getSchemaType())
         {
           // should not happen if all Schema implementations obey the merge() contract
           throw new IllegalStateException("merge of schema type " + current.getSchemaType() + " failed");
+        } else {
+        	// merge succeeded so keep the merged result
+        	current = merged;
         }
-        current = merged;
       }
     }
     out.add(current);
