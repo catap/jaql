@@ -2394,6 +2394,135 @@ null
 ;//------------------- TEST-CASE -----------------
 
 
+// ============== invalid define =========
+wrongDef=javaudf("com.acme.extensions.fn.MultiEval");
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassNotFoundException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//=============== valid define ===========
+multiEvalFn=javaudf("com.acme.extensions.fn.MultiEvals");
+;//------------------- TEST-CASE -----------------
+
+noEval=javaudf("com.acme.extensions.fn.NoEval");
+;//------------------- TEST-CASE -----------------
+
+
+//============== valid invocation =======
+//one arg - get arg's type
+multiEvalFn("IBM");
+
+;//--------------------- RESULT ------------------
+
+"string"
+
+;//------------------- TEST-CASE -----------------
+ //string
+multiEvalFn(1);
+
+;//--------------------- RESULT ------------------
+
+"long"
+
+;//------------------- TEST-CASE -----------------
+ //long
+multiEvalFn(3.14);
+
+;//--------------------- RESULT ------------------
+
+"double"
+
+;//------------------- TEST-CASE -----------------
+ //double
+multiEvalFn(true);
+
+;//--------------------- RESULT ------------------
+
+"boolean"
+
+;//------------------- TEST-CASE -----------------
+ //boolean
+anotherFn=fn()"just a test";
+;//------------------- TEST-CASE -----------------
+
+multiEvalFn(anotherFn);
+
+;//--------------------- RESULT ------------------
+
+"function"
+
+;//------------------- TEST-CASE -----------------
+ //function
+
+//============== two args (check two arg's type is equal or not)====
+multiEvalFn("IBM","CHINA");
+
+;//--------------------- RESULT ------------------
+
+true
+
+;//------------------- TEST-CASE -----------------
+ //true
+multiEvalFn("IBM", 1000);
+
+;//--------------------- RESULT ------------------
+
+false
+
+;//------------------- TEST-CASE -----------------
+ //false
+
+//============= invalid invocation ===============
+//wrong arg number
+multiEvalFn();
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//wrong arg type
+multiEvalFn(1,2,'v');
+
+;//--------------------- RESULT ------------------
+
+
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//no eval found
+noEval();
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
 // =============================================================================
 
 // DIFF: not in docs

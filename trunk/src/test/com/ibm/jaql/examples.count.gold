@@ -976,6 +976,145 @@ read(hdfs('nums'))
 ;//------------------- TEST-CASE -----------------
 
 
+// ============== invalid define =========
+wrongDef=javaudf("com.acme.extensions.fn.MultiEval");
+
+;//----- EXCEPTION -----
+
+// java.lang.ClassNotFoundException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+//=============== valid define ===========
+multiEvalFn=javaudf("com.acme.extensions.fn.MultiEvals");
+;//------------------- TEST-CASE -----------------
+
+noEval=javaudf("com.acme.extensions.fn.NoEval");
+;//------------------- TEST-CASE -----------------
+
+
+//============== valid invocation =======
+//one arg - get arg's type
+multiEvalFn("IBM");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //string
+multiEvalFn(1);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //long
+multiEvalFn(3.14);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //double
+multiEvalFn(true);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //boolean
+anotherFn=fn()"just a test";
+;//------------------- TEST-CASE -----------------
+
+multiEvalFn(anotherFn);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //function
+
+//============== two args (check two arg's type is equal or not)====
+multiEvalFn("IBM","CHINA");
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //true
+multiEvalFn("IBM", 1000);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ //false
+
+//============= invalid invocation ===============
+//wrong arg number
+multiEvalFn();
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+//wrong arg type
+multiEvalFn(1,2,'v');
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+//no eval found
+noEval();
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
 // =============================================================================
 
 // DIFF: not in docs

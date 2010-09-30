@@ -401,6 +401,34 @@ read(hdfs('nums'))
 
     pairwise(everyType( data ), data);
 
+// ============== invalid define =========
+wrongDef=javaudf("com.acme.extensions.fn.MultiEval");
+
+//=============== valid define ===========
+multiEvalFn=javaudf("com.acme.extensions.fn.MultiEvals");
+noEval=javaudf("com.acme.extensions.fn.NoEval");
+
+//============== valid invocation =======
+//one arg - get arg's type
+multiEvalFn("IBM"); //string
+multiEvalFn(1); //long
+multiEvalFn(3.14); //double
+multiEvalFn(true); //boolean
+anotherFn=fn()"just a test";
+multiEvalFn(anotherFn); //function
+
+//============== two args (check two arg's type is equal or not)====
+multiEvalFn("IBM","CHINA"); //true
+multiEvalFn("IBM", 1000); //false
+
+//============= invalid invocation ===============
+//wrong arg number
+multiEvalFn();
+//wrong arg type
+multiEvalFn(1,2,'v');
+//no eval found
+noEval();
+
 // =============================================================================
 
 // DIFF: not in docs
