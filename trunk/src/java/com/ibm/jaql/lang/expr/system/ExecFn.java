@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.json.type.JsonString;
@@ -152,14 +151,17 @@ public class ExecFn extends IterExpr
       try
       {
         OutputStream os = proc.getOutputStream();
-        PrintStream out = new PrintStream(new BufferedOutputStream(os));
+        // PrintStream out = new PrintStream(new BufferedOutputStream(os));
+        OutputStream out = new BufferedOutputStream(os);
         for (JsonValue sv : iter)
         {
           // TODO:  force jstrings here? add i/o layer here? add serialize function that has i/o layer?
           JsonString s = (JsonString)sv;
           if( s != null )
           {
-            out.println(s.toString());
+            // out.println(s.toString()); // TODO: PrintStream swallows IOExceptions...
+            out.write(s.getInternalBytes(), s.bytesOffset(), s.bytesLength());
+            out.write('\n');
           }
         }
         out.close();

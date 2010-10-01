@@ -15,14 +15,18 @@
  */
 package com.ibm.jaql.lang.expr.regex;
 
+import java.util.Map;
+
 import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.Bool3;
 
 /**
- * 
+ * Create a regular expression (regex) value.
  */
 public class RegexFn extends Expr
 {
@@ -40,6 +44,20 @@ public class RegexFn extends Expr
   public RegexFn(Expr[] exprs)
   {
     super(exprs);
+  }
+
+  @Override
+  public Map<ExprProperty, Boolean> getProperties() 
+  {
+    Map<ExprProperty, Boolean> result = super.getProperties();
+    result.put(ExprProperty.ALLOW_COMPILE_TIME_COMPUTATION, true);
+    return result;
+  }
+
+  @Override
+  public Bool3 evaluatesChildOnce(int i)
+  {
+    return Bool3.TRUE;
   }
 
   /*

@@ -899,7 +899,7 @@ cmpFnExpr returns [Expr r=null]
     ;
 
 cmpArrayFn[String vn] returns [Expr r=null]
-    { Var var=env.scope(vn); }
+    { Var var = vn==null ? null : env.scope(vn); } // vn is null when parser is guessing, so var not used.
     : r=cmpArray
     {
       env.unscope(var);
@@ -2101,6 +2101,7 @@ protected BLOCK_LINE1
     {
         for( indent = 1; indent < blockIndent && LA(1) == ' ' ; indent++)
         {
+        	// TODO: this is not doing \ escaping.  should it?
             _saveIndex=text.length();
             match(' ');
             text.setLength(_saveIndex);
@@ -2244,7 +2245,8 @@ protected STRCHAR
        | '\r'
        | '\n'
        ) { newline(); $setText("\n"); }
-     | '\\' ( '\''  { $setText("\'"); }
+     | '\\' ( options { generateAmbigWarnings=false; }
+            : '\''  { $setText("\'"); }
             | '\"'  { $setText("\""); }
             | '\\'  { $setText("\\"); }
             | '/'   { $setText("/"); }
@@ -2265,6 +2267,24 @@ protected STRCHAR
                                                  u4.getText().charAt(0));
                   String s = Character.toString(c);
                   $setText( s ); }
+            | /* invalid escape sequence */
+               {
+               	  // attempt to recover by searching for the end of the string.
+               	  // TODO: The recovery is insensitive to what kind of string we started. should it be?
+               	  char bad = (char)LA(1);
+                  int c;
+               	  do
+               	  {
+                    c = LA(1);
+               	  	if( c == EOF_CHAR ) 
+               	  	{
+               	  	  break;
+               	  	}
+               	  	match((char)c);
+               	  }
+               	  while( c != '\'' && c != '"' );
+               	  throw new NoViableAltForCharException(bad, getFilename(), getLine(), getColumn());
+               }
             )
      ;
 

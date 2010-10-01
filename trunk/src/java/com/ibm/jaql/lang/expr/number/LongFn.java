@@ -19,6 +19,7 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
@@ -83,6 +84,10 @@ public class LongFn extends Expr
     else if (val instanceof JsonString)
     {
       val = new JsonLong((JsonString)val);
+    }
+    else if (val instanceof JsonBool)
+    {
+      val = ((JsonBool)val).get() ? JsonLong.ONE : JsonLong.ZERO;
     }
     else
     {

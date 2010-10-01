@@ -33,7 +33,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.log4j.Logger;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.util.JaqlUtil;

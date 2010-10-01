@@ -22,24 +22,22 @@ import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
-// TODO: rename merge to union (ie, list union, add list concat)
-
 /**
- * Eliminate nested merges:
- *    merge(e1,...,merge(e2,...),e3,...)
+ * Eliminate nested unions:
+ *    union(e1,...,union(e2,...),e3,...)
  *    ==>
- *    merge(e1,...,e2,...,e3,...)
+ *    union(e1,...,e2,...,e3,...)
  *     
- * If a merge only has one leg, eliminate the merge: 
- *    merge(e1)
+ * If a union only has one leg, eliminate the union: 
+ *    union(e1)
  *    ==>
  *    e1
  *    
  * When multiple legs of a union (merge) are ArrayExpr's put them into
  * a single ArrayExpr leg:   
- *    merge(e1..., [e2,...], e3, [e4,...]) 
+ *    union(e1..., [e2,...], e3, [e4,...]) 
  *    ==>
- *    merge(e1..., e3..., [e2,...,e4,...])
+ *    union(e1..., e3..., [e2,...,e4,...])
  * 
  */
 public class SimplifyUnion extends Rewrite
@@ -57,22 +55,22 @@ public class SimplifyUnion extends Rewrite
   @Override
   public boolean rewrite(Expr expr) throws Exception
   {
-    UnionFn merge = (UnionFn)expr;
+    UnionFn union = (UnionFn)expr;
     
-    if( merge.parent() instanceof UnionFn )
+    if( union.parent() instanceof UnionFn )
     {
-      merge.replaceInParent(merge.children(), 0, merge.numChildren());
+      union.replaceInParent(union.children(), 0, union.numChildren());
       return true;
     }
     
-    if( merge.numChildren() == 1 )
+    if( union.numChildren() == 1 )
     {
-      merge.replaceInParent(asArray(merge.child(0)));
+      union.replaceInParent(asArray(union.child(0)));
       return true;
     }
     
     
-    Expr[] legs = merge.children();
+    Expr[] legs = union.children();
     for(int i = 0 ; i < legs.length ; i++)
     {
       if( legs[i] instanceof ArrayExpr )
@@ -111,12 +109,12 @@ public class SimplifyUnion extends Rewrite
             ArrayExpr newArray = new ArrayExpr(arrayArgs);
             if( newLegs.size() == 0 )
             {
-              merge.replaceInParent(newArray);
+              union.replaceInParent(newArray);
             }
             else
             {
               newLegs.add(newArray);
-              merge.setChildren(newLegs.toArray(new Expr[newLegs.size()]));
+              union.setChildren(newLegs.toArray(new Expr[newLegs.size()]));
             }
             return true;
           }

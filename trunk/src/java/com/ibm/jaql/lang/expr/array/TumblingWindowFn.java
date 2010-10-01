@@ -44,9 +44,10 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 public class TumblingWindowFn extends IterExpr
 {
   private final static int ARG_INPUT = 0;
-  private final static int ARG_PREDICATE = 1;
-  private final static int ARG_FIRST_GROUP = 2;
-  private final static int ARG_LAST_GROUP = 3;
+  private final static int ARG_STOP_PRED = 1;
+  private final static int ARG_START_PRED = 2;
+  private final static int ARG_FIRST_GROUP = 3;
+  private final static int ARG_LAST_GROUP = 4;
 
   // stop arguments
   static enum StopArg implements JsonEnum
@@ -70,7 +71,28 @@ public class TumblingWindowFn extends IterExpr
       return argName; 
     }
   }
-  
+
+  // start arguments
+  static enum StartArg implements JsonEnum
+  {
+    PREV("prev"),
+    FIRST("first"),
+    SIZE("size");
+    
+    final JsonString argName;
+    
+    private StartArg(String name) 
+    {
+      this.argName = new JsonString(name);
+    }
+
+    @Override
+    public JsonString jsonString() 
+    {
+      return argName; 
+    }
+  }
+
   public static class Descriptor implements BuiltInFunctionDescriptor 
   {
     private Schema schema = new ArraySchema(null, SchemaFactory.arraySchema());
@@ -80,6 +102,7 @@ public class TumblingWindowFn extends IterExpr
       parameters = new JsonValueParameters(new JsonValueParameter[] {
           new JsonValueParameter("input", SchemaFactory.arrayOrNullSchema()),
           new JsonValueParameter("stop", SchemaFactory.functionSchema()),
+          new JsonValueParameter("start", SchemaFactory.functionOrNullSchema(), null),
           new JsonValueParameter("firstGroup", SchemaFactory.booleanOrNullSchema(), JsonBool.TRUE),
           new JsonValueParameter("lastGroup", SchemaFactory.booleanOrNullSchema(), JsonBool.TRUE)
       });
@@ -144,11 +167,14 @@ public class TumblingWindowFn extends IterExpr
   public JsonIterator iter(final Context context) throws Exception
   {
     final JsonIterator iter = exprs[ARG_INPUT].iter(context);
-    final Function predfn = (Function)exprs[ARG_PREDICATE].eval(context);
+    final Function stopfn = (Function)exprs[ARG_STOP_PRED].eval(context);
+    final Function startfn = (Function)exprs[ARG_START_PRED].eval(context);
     final boolean firstGroup = JaqlUtil.ebv(exprs[ARG_FIRST_GROUP].eval(context));
     final boolean lastGroup = JaqlUtil.ebv(exprs[ARG_LAST_GROUP].eval(context));
 
-    final CallNamedArgs pred = new CallNamedArgs(predfn, StopArg.values(), false, context);
+    final CallNamedArgs stopPred = new CallNamedArgs(stopfn, StopArg.values(), false, context);
+    final CallNamedArgs startPred =
+      startfn == null ? null : new CallNamedArgs(startfn, StopArg.values(), false, context);
 
     if( ! iter.moveNext() )
     {
@@ -156,28 +182,33 @@ public class TumblingWindowFn extends IterExpr
     }
     
     final MutableJsonLong windowSize = new MutableJsonLong();
-    pred.setArg(StopArg.SIZE, windowSize);
+    stopPred.setArg(StopArg.SIZE, windowSize);
+    if( startPred != null )
+    {
+      startPred.setArg(StartArg.SIZE, windowSize);
+    }
+
     // final JsonValue[] args = new JsonValue[] { null, null, null, null, windowSize };
     // Skip to the first break, if requested.
     if( !firstGroup )
     {
-      pred.setArg(StopArg.NEXT, iter.current());
+      stopPred.setArg(StopArg.NEXT, iter.current());
       windowSize.set(0);
-      if( !JaqlUtil.ebv(pred.eval(context)) )
+      if( !JaqlUtil.ebv(stopPred.eval(context)) )
       {
-        pred.setArgCopy(StopArg.FIRST, iter.current());
+        stopPred.setArgCopy(StopArg.FIRST, iter.current());
         long n = 0;
         do
         {
-          pred.setArgCopy(StopArg.LAST, iter.current());
+          stopPred.setArgCopy(StopArg.LAST, iter.current());
           if( ! iter.moveNext() )
           {
             return JsonIterator.EMPTY;
           }
           n++;
-          pred.setArg(StopArg.NEXT, iter.current());
+          stopPred.setArg(StopArg.NEXT, iter.current());
           windowSize.set(n);
-        } while( !JaqlUtil.ebv(pred.eval(context)) );
+        } while( !JaqlUtil.ebv(stopPred.eval(context)) );
       }
     }
     
@@ -186,7 +217,7 @@ public class TumblingWindowFn extends IterExpr
     return new JsonIterator(window) 
     {
       boolean hasNext = true;
-      JsonValue last;
+      JsonValue last = null;
 
       public boolean moveNext() throws Exception
       {
@@ -194,25 +225,50 @@ public class TumblingWindowFn extends IterExpr
         {
           return false;
         }
+        
+        if( startPred != null )
+        {
+          // find the start of the window
+          long size = 0;
+          startPred.setArg(StartArg.SIZE, windowSize);
+          // prev = last
+          startPred.setArg(StartArg.PREV, last);
+          while( true )
+          {
+            startPred.setArg(StartArg.FIRST, iter.current());
+            windowSize.set(size++);
+            if( JaqlUtil.ebv(startPred.eval(context)) )
+            {
+              break;
+            }
+            last = JsonUtil.getCopy(iter.current(), last);
+            startPred.setArg(StartArg.PREV, last);
+            if( ! iter.moveNext() )
+            {
+              last = null;
+              hasNext = false;
+              return false;
+            }
+          }
+        }
 
         // prev = last
-        pred.setArgCopy(StopArg.PREV, last);
+        stopPred.setArgCopy(StopArg.PREV, last);
 
         // first = last = next
         // window = [last]
-        // Note: first is
         last = JsonUtil.getCopy(iter.current(), last);
         window.clear();
         window.addCopy(last);
-        pred.setArg(StopArg.FIRST, window.get(0));        
+        stopPred.setArg(StopArg.FIRST, window.get(0));        
         
         // find the end of the window
         while( iter.moveNext() )
         {
-          pred.setArg(StopArg.LAST, last);
-          pred.setArg(StopArg.NEXT, iter.current());
+          stopPred.setArg(StopArg.LAST, last);
+          stopPred.setArg(StopArg.NEXT, iter.current());
           windowSize.set(window.count());
-          if( JaqlUtil.ebv(pred.eval(context)) )
+          if( JaqlUtil.ebv(stopPred.eval(context)) )
           {
             return true;
           }
