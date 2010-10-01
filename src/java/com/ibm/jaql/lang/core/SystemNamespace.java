@@ -238,6 +238,7 @@ import com.ibm.jaql.lang.expr.system.ExternalFnExpr;
 import com.ibm.jaql.lang.expr.system.LsFn;
 import com.ibm.jaql.lang.expr.system.RFn;
 import com.ibm.jaql.lang.expr.xml.JsonToXmlFn;
+import com.ibm.jaql.lang.expr.xml.TypedXmlToJsonFn;
 import com.ibm.jaql.lang.expr.xml.XPathFn;
 import com.ibm.jaql.lang.expr.xml.XmlToJsonFn;
 import com.ibm.jaql.lang.expr.xml.XsltFn;
@@ -413,6 +414,7 @@ public final class SystemNamespace extends Namespace {
     register(new RegexExtractFn.Descriptor());
     register(new TokenizeFn.Descriptor());
     register(new XmlToJsonFn.Descriptor());
+    register(new TypedXmlToJsonFn.Descriptor());
     register(new XPathFn.Descriptor());
     register(new XsltFn.Descriptor());
     register(new JsonToXmlFn.Descriptor());
