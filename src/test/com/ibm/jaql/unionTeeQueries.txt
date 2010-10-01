@@ -46,7 +46,7 @@ read( compositeDescriptor([r,s]) );
 
 // Try a map/reduce job
 read( compositeDescriptor([r,s]) )
- -> transform $ + 10
+ -> transform $[1] + 10
  -> sort by [ $ asc ]
  -> write(t)
 ;
@@ -79,6 +79,79 @@ S;
 //---------------------------------------------------------------------------
 // TODO: Union
 //---------------------------------------------------------------------------
+
+range(10) 
+ -> transform [ mod($,2), $ ]
+ -> write( compositeDescriptor( [r, s] ) )
+;
+
+read( compositeDescriptor([r,s]) );
+
+union( read(r), read(s) );
+
+union( read(r), read(s) ) -> transform $ + 100;
+
+union( read(r) -> transform $ + 10,
+       read(s) -> transform $ + 20) 
+ -> transform $ + 100
+;
+
+read(r) -> transform $ + 10;
+
+union( read(r) -> transform $ + 10,
+       read(s) -> transform $ + 20 )
+ -> transform $ + 100
+ -> group by x = $ into { x, n: count($) }
+ -> sort by [$]
+;
+
+union(
+  union( read(r) -> transform $ + 10,
+         read(s) -> transform $ + 20 )
+   -> transform $ + 100,
+  union( read(r) -> transform $ + 30,
+         read(s) -> transform $ + 40 )
+   -> transform $ + 200 )
+ -> transform $ + 1000
+;
+
+union(
+   union( read(r) -> transform $ + 10,
+          read(s) -> transform $ + 20 )
+     -> transform $ + 100
+     -> group by x = $ into { x, n: count($) }
+     -> transform $.x + 1000,
+   read(s) -> transform $ + 30
+  )
+ -> transform $ + 40
+ -> sort by [$]
+;
+
+join r in read(r), 
+     s in read(s) 
+    where r+1 == s
+    into {r,s}
+ -> sort by [$]
+;
+
+join a in merge( read(r) -> transform $+10, read(s) -> transform $+20 ),
+     b in merge( read(r) -> transform $+30, read(s) -> transform $+40 )
+     where a + 20 == b
+     into { a, b }
+ -> transform { d: $ }
+ -> sort by [$]
+;
+
+
+join a in merge( join r in read(r), s in read(s) where r+1 == s into {r,s},
+                 join r in read(r), s in read(s) where r+3 == s into {r,s} ),
+     b in merge( join r in read(r), s in read(s) where r+5 == s into {r,s},
+                 join r in read(r), s in read(s) where r+7 == s into {r,s} )
+     where a.r == b.r
+     into { a, b }
+ -> transform { d: $ }
+ -> sort by [$]
+;
 
 
 //---------------------------------------------------------------------------

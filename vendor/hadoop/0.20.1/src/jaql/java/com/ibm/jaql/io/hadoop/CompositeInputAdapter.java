@@ -31,19 +31,32 @@ import com.ibm.jaql.io.Adapter;
 import com.ibm.jaql.io.AdapterStore;
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.registry.RegistryUtil;
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.OrSchema;
 import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.type.BufferedJsonArray;
 import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.MutableJsonLong;
 
 // TODO: look into factoring some of this code with DefaultHadoopInputAdapter
 /** Takes an array of HadoopInputAdapters and operates on the union of their inputs. */
 public class CompositeInputAdapter implements HadoopInputAdapter
 {
   public static String         CURRENT_IDX_NAME = "com.ibm.jaql.lang.CompositeinputAdapter.currentIdx";
+  public static String         ADD_INDEX_NAME = "com.ibm.jaql.lang.CompositeinputAdapter.addIndex";
+
 
   private JsonArray               args;
+  
+  // true => return [inputIndex,value] pairs, else just value.
+  // This is triggered by using a record for a descriptor; an array will not add the index.
+  // TODO: This is a bit of an ugly way to do this, but it keeps mapReduce working until
+  // we decide if we should eliminate direct co-group support from mapReduce()
+  private boolean                 addIndex;
 
   private HadoopInputAdapter[] adapters;
   
@@ -55,12 +68,15 @@ public class CompositeInputAdapter implements HadoopInputAdapter
   @Override
   public void init(JsonValue val) throws Exception
   {
-    if(val instanceof JsonArray) // TODO: eliminate
+    // TODO: eliminate
+    if(val instanceof JsonArray)
     {
+      addIndex = false;
       initializeFrom((JsonArray) val); 
     }
     else if(val instanceof JsonRecord)
     {
+      addIndex = true;
       // dig the location out
       JsonRecord rval = (JsonRecord)val;
       JsonArray loc = (JsonArray)rval.get(CompositeOutputAdapter.DESCRIPTORS);
@@ -121,39 +137,79 @@ public class CompositeInputAdapter implements HadoopInputAdapter
    */
   public ClosableJsonIterator iter() throws Exception
   {
-    // Return a RecordReader that gets a RecordReader from all adapters.
-    return new ClosableJsonIterator() { // TODO: temprory hack until input get updated
-      ClosableJsonIterator baseReader = null;
+    if( addIndex )
+    {
+      final MutableJsonLong index = new MutableJsonLong(0);
+      final BufferedJsonArray pair = new BufferedJsonArray(2);
+      pair.set(0, index);
 
-      int        idx        = 0;
+      return new ClosableJsonIterator(pair) { // TODO: temprory hack until input get updated
+        ClosableJsonIterator baseReader = null;
 
-      @Override
-      public boolean moveNext() throws Exception
-      {
-        while (true)
+        int        idx        = 0;
+
+        @Override
+        public boolean moveNext() throws Exception
         {
-          if (baseReader == null)
+          while (true)
           {
-            if (idx >= adapters.length)
+            if (baseReader == null)
             {
-              return false;
+              if (idx >= adapters.length)
+              {
+                return false;
+              }
+              index.set(idx);
+              baseReader = adapters[idx++].iter();
             }
-            baseReader = adapters[idx++].iter();
-          }
-          if (baseReader.moveNext())
-          {
-            currentValue = baseReader.current();
-            return true;
-          }
-          else
-          {
-            baseReader.close();
-            baseReader = null;
+            if (baseReader.moveNext())
+            {
+              pair.set(1, baseReader.current());
+              return true;
+            }
+            else
+            {
+              baseReader.close();
+              baseReader = null;
+            }
           }
         }
-      }
+      };
+    }
+    else
+    {
+      return new ClosableJsonIterator() { // TODO: temprory hack until input get updated
+        ClosableJsonIterator baseReader = null;
 
-    };
+        int        idx        = 0;
+
+        @Override
+        public boolean moveNext() throws Exception
+        {
+          while (true)
+          {
+            if (baseReader == null)
+            {
+              if (idx >= adapters.length)
+              {
+                return false;
+              }
+              baseReader = adapters[idx++].iter();
+            }
+            if (baseReader.moveNext())
+            {
+              currentValue = baseReader.current();
+              return true;
+            }
+            else
+            {
+              baseReader.close();
+              baseReader = null;
+            }
+          }
+        }
+      };
+    }
   }
   
   public Schema getSchema()
@@ -163,7 +219,14 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     {
       inSchemata[i] = adapters[i].getSchema();
     }
-    return OrSchema.make(inSchemata);
+    Schema schema = OrSchema.make(inSchemata);
+    if( addIndex )
+    {
+      schema = schema.elements();
+      schema = new ArraySchema( new Schema[]{ SchemaFactory.longSchema(), schema } ); 
+      schema = new ArraySchema( null, schema );
+    }
+    return schema;
   }
 
   /*
@@ -179,7 +242,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     CompositeSplit cSplit = (CompositeSplit) split;
 
     // 1. get the InputAdapter's array index (i) from the split
-    int idx = cSplit.getAdapterIdx();
+    final int idx = cSplit.getAdapterIdx();
     InputSplit baseSplit = cSplit.getSplit();
 
     try
@@ -190,7 +253,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
       // record the current index to the job conf
       // ASSUMES: in map/reduce, the format's record reader is called *before*
       // the map class is configured
-      writeCurrentIndex(job, idx);
+      writeCurrentIndex(job, idx); // FIXME: no longer needed
 
       // 3. insantiate and initialize the adapter
       HadoopInputAdapter adapter = (HadoopInputAdapter) AdapterStore.getStore().input
@@ -208,7 +271,72 @@ public class CompositeInputAdapter implements HadoopInputAdapter
       adapter.configure(jTmp);
 
       // 7. call adapter's getRecordReader with j'
-      return (RecordReader<JsonHolder, JsonHolder>)adapter.getRecordReader(baseSplit, jTmp, reporter);
+      final RecordReader<JsonHolder, JsonHolder> reader = (RecordReader<JsonHolder, JsonHolder>)
+         adapter.getRecordReader(baseSplit, jTmp, reporter);
+      
+      if( !addIndex )
+      {
+        return reader;
+      }
+      
+      return new RecordReader<JsonHolder,JsonHolder>()
+      {
+
+        @Override
+        public void close() throws IOException
+        {
+          reader.close();
+        }
+
+        @Override
+        public JsonHolder createKey()
+        {
+          return reader.createKey();
+        }
+
+        @Override
+        public JsonHolder createValue()
+        {
+          return reader.createValue();
+        }
+
+        @Override
+        public long getPos() throws IOException
+        {
+          return reader.getPos();
+        }
+
+        @Override
+        public float getProgress() throws IOException
+        {
+          return reader.getProgress();
+        }
+
+        @Override
+        public boolean next(JsonHolder key, JsonHolder value) throws IOException
+        {
+          BufferedJsonArray pair = (BufferedJsonArray)value.value;
+          if( pair != null )
+          {
+            value.value = pair.get(1);
+          }
+          else
+          {
+            pair = new BufferedJsonArray(2);
+            pair.set(0, JsonLong.make(idx));
+          }
+          
+          if( reader.next(key, value) )
+          {
+            pair.set(1, value.value);
+            value.value = pair;
+            return true;
+          }
+          
+          return false;
+        }
+      };
+      
     }
     catch (Exception e)
     {
@@ -354,6 +482,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
 
     // write out the input adapter args array
     ConfUtil.writeConfArray(conf, ConfSetter.CONFINOPTIONS_NAME, this.args);
+    conf.set(ADD_INDEX_NAME, Boolean.toString(addIndex));
   }
 
   /*
@@ -377,6 +506,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
     try
     {
       this.args = ConfUtil.readConfArray(conf, ConfSetter.CONFINOPTIONS_NAME);
+      this.addIndex = Boolean.parseBoolean( conf.get(ADD_INDEX_NAME) );
     }
     catch (Exception e)
     {

@@ -64,6 +64,8 @@ public class RegexTestFn extends Expr
     }
     final Matcher matcher = regex.takeMatcher();
     matcher.reset(text.toString());
-    return JsonBool.make(matcher.find());
+    boolean match = matcher.find();
+    regex.returnMatcher(matcher);
+    return JsonBool.make(match);
   }
 }

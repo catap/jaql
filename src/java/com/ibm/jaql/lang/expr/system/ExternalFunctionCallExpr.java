@@ -305,7 +305,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
 
         Configuration cfg = new Configuration();
 
-        File directory = new File(cfg.get("mapred.local.dir"));
+        File directory = new File(cfg.get("mapred.local.dir", "."));
         pb.directory(directory);
 
         process = pb.start();

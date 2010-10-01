@@ -81,6 +81,10 @@ public class XmlToJsonFn extends Expr
     }
 
     JsonString s = (JsonString)exprs[0].eval(context);
+    if( s == null )
+    {
+      return null;
+    }
     parser.parse( new InputSource(new StringReader(s.toString())) );    
     return handler.result;
   }
@@ -259,7 +263,14 @@ class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faste
     assert stack.size() == 0;
     lengths.pop();
     assert lengths.empty();
-    result = r;
+    if( r.size() == 0 )
+    {
+      result = null;
+    }
+    else
+    {
+      result = r;
+    }
   }
   
   /**
