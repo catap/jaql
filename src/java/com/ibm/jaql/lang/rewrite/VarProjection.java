@@ -122,7 +122,8 @@ public class VarProjection extends Rewrite
     }
     else
     {
-      pathExpr.setChild(0, nextStep);
+      pathExpr.setChild(0, new VarExpr(var));
+      pathExpr.setChild(1, nextStep);
     }
     return true;
   }

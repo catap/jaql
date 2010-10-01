@@ -32,6 +32,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * DEPRECATED: is this used anywhere?
  * Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
  * 
  * @author kbeyer

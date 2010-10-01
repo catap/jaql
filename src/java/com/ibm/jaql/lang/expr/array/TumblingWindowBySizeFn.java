@@ -136,7 +136,7 @@ public class TumblingWindowBySizeFn extends IterExpr
           if( ! iter.moveNext() )
           {
             hasNext = false;
-            if( lastGroup )
+            if( i > 0 && lastGroup )
             {
               return true;
             }

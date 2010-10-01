@@ -171,6 +171,7 @@ public class RewriteEngine
     new UnrollForLoop(phase);
     new UnrollTransformLoop(phase);
     new SimplifyUnion(phase);
+    new UnionToComposite(phase);
     new VarProjection(phase);
     new SimplifyRecord(phase);
     new UnnestFor(phase);
@@ -194,6 +195,7 @@ public class RewriteEngine
     new JoinToCogroup(phase);
     // new TempSharedVariable(phase);
     new WriteAssignment(phase);
+    new UnionToComposite(phase);
     // new CogroupToMapReduce(phase);
     // new ForToMapReduce(phase);
 
@@ -212,6 +214,7 @@ public class RewriteEngine
     new LetInline(phase);
     new DoMerge(phase);
     new DoPullup(phase);
+    new UnionToComposite(phase);
 
     //------------------------------------------------------------------------------
     phase = phases[++phaseId] = new RewritePhase(this, postOrderWalker, 10000);

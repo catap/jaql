@@ -331,4 +331,26 @@ public abstract class Rewrite
 
     return pipe;
   }
+  
+  /**
+   * Find the first non-mappable expression that feeds 
+   * the pipeline (expr[0]) to this expr. 
+   * 
+   *     x -> m1 -> m2 -> expr
+   * 
+   * Return x where expr, m1 and m2 are mappable expressions over expr[0] 
+   * 
+   */
+  public static Expr getMappableSource(Expr expr)
+  {
+    while( expr.isMappable( 0 ) ) 
+    {
+      expr = expr.child(0);
+      if( expr instanceof BindingExpr )
+      {
+        expr = expr.child(0);
+      }
+    }
+    return expr;
+  }
 }
