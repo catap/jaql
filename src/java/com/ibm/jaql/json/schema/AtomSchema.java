@@ -26,13 +26,29 @@ public abstract class AtomSchema<T extends JsonValue> extends AnnotatedSchema
   
   public AtomSchema(T value, JsonRecord annotation)
   {    
-    super(annotation);
-    this.value = value;
+	  super(annotation);
+	  if( value == null ) {
+		  this.value = null;
+	  } else {
+		  try {
+			  this.value = (T) value.getImmutableCopy();
+		  } catch(Exception e) {
+			  throw new UnsupportedOperationException(e);
+		  }
+	  }
   }
 
   public AtomSchema(T value)
   {    
-    this.value = value;
+	  if( value == null) {
+		  this.value = value;
+	  } else {
+		  try {
+			  this.value = (T) value.getImmutableCopy();
+		  } catch(Exception e) {
+			  throw new UnsupportedOperationException(e);
+		  }
+	  }
   }
 
   public AtomSchema()
