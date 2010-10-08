@@ -110,6 +110,7 @@ public class CatalogImpl implements Catalog {
 				Clob v = rs.getClob(1);
 				JsonParser jparser = new JsonParser(v.getCharacterStream());
 				JsonRecord jv = (JsonRecord) jparser.TopVal();
+				conn.commit();
 				return jv;
 			}
 			conn.commit();
@@ -259,9 +260,12 @@ public class CatalogImpl implements Catalog {
 			String ddl = "create table catalog ( c_key varchar(1000) primary key, c_entry clob)";
 			Statement st = conn.createStatement();
 			st.executeUpdate(ddl);
+			closeStatement(st);
+			conn.commit();								
 		} catch (SQLException ex) {
 			// Let's ignore errors for now
 			// ex.printStackTrace();
+			rollback();
 		}
 	}
 
