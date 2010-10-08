@@ -18,19 +18,22 @@ public class CatalogTest extends AbstractTest {
 
 	@Before
 	public void cleanup() throws Exception {
-		try {
-			cat = new CatalogImpl();
-			cat.open();
-			((CatalogImpl) cat).cleanup();
-		} catch (Exception ex) {
-			cat.close();
-			throw ex;
-		}
-	}
+		cat = new CatalogImpl();
+	}	
+	
+	@Test
+	public void closeWithoutUpdate() throws Exception{		
+		cat.open();
+		cat.close();
+	}	
 
 	@Test
 	public void access() throws Exception {
 		try {
+			//open database
+			cat.open();
+			((CatalogImpl) cat).cleanup();
+			
 			// insert
 			JsonString key1 = new JsonString("/a/b/c");
 			JsonRecord val1 = (JsonRecord) parse("{'title': 'Hello', 'comment': 'World'}");
@@ -43,7 +46,7 @@ public class CatalogTest extends AbstractTest {
 			BufferedJsonArray expectedkeys = new BufferedJsonArray(2);
 			expectedkeys.set(0, key1);
 			expectedkeys.set(1, key2);
-			assertEquals(expectedkeys, cat.list(new JsonString("")));
+			assertEquals(expectedkeys, cat.list(new JsonString("")));		
 
 			// getters
 			assertEquals(val1, cat.get(key1));
@@ -75,5 +78,5 @@ public class CatalogTest extends AbstractTest {
 		} finally {
 			cat.close();
 		}
-	}
+	}	
 }
