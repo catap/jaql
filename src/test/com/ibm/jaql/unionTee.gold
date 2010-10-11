@@ -435,7 +435,7 @@ union( read(r), read(s) ) -> transform $ + 100 -> sort by [$ asc];
 
 union( read(r) -> transform $ + 10,
        read(s) -> transform $ + 20) 
- -> transform $ + 100
+ -> transform $ + 100 -> sort by [$ asc]
 ;
 
 ;//--------------------- RESULT ------------------
