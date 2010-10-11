@@ -372,13 +372,11 @@ public class Namespace {
 	  	namespace.module = module;
 	  	
 	  	try {
-				// load imports
-				module.loadImports(namespace);
+	  		// load imports
+	  		module.loadImports(namespace);
 		  	
 		  	// load jar files
-		  	for (File jar : module.getJarFiles()) {
-		  		ClassLoaderMgr.addExtensionJar(jar);
-				}
+	  		ClassLoaderMgr.addExtensionJars(module.getJarFiles());
 		  	
 		  	// load jaql files
 		  	ChainedReader jaqlIn = new ChainedReader();

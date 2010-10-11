@@ -664,13 +664,7 @@ FunctionA($parameter);
 
 ;//--------------------- RESULT ------------------
 
-
-
-;//----- EXCEPTION -----
-
-// java.lang.NoClassDefFoundError
-
-;//------------------- TEST-CASE -----------------
+69
 
 ;//------------------- TEST-CASE -----------------
 
@@ -686,13 +680,7 @@ FunctionC($parameter);
 
 ;//--------------------- RESULT ------------------
 
-
-
-;//----- EXCEPTION -----
-
-// java.lang.NoClassDefFoundError
-
-;//------------------- TEST-CASE -----------------
+23
 
 ;//------------------- TEST-CASE -----------------
 
@@ -700,13 +688,7 @@ FunctionD($parameter);
 
 ;//--------------------- RESULT ------------------
 
-
-
-;//----- EXCEPTION -----
-
-// java.lang.NoClassDefFoundError
-
-;//------------------- TEST-CASE -----------------
+105
 
 ;//------------------- TEST-CASE -----------------
 
