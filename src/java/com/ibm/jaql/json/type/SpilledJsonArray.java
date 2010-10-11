@@ -268,7 +268,10 @@ public class SpilledJsonArray extends JsonArray
       assert i<count();
       
       // set value
-      values[i] = value;
+      if( value == null )
+    	  values[i] = value;
+      else
+    	  values[i] = value.getImmutableCopy();
       
       // next
       i++;
