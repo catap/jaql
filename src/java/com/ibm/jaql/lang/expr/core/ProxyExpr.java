@@ -31,8 +31,6 @@ import com.ibm.jaql.lang.core.Var;
  * e.replaceInParent(p);
  * Expr e2 = makeTreeSomeTree(e) // put e somewhere else
  * proxy.replaceInParent(e2);
- * 
- * @author kbeyer
  *
  */
 public class ProxyExpr extends PseudoExpr

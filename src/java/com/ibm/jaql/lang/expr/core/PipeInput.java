@@ -26,8 +26,6 @@ import com.ibm.jaql.lang.core.Var;
 /**
  * The purpose of this class is to hide the printing of the pipeline variable inside of subpipes
  * like Partition and Tee.
- * 
- * @author kbeyer
  *
  */
 public class PipeInput extends IterExpr

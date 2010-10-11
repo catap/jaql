@@ -101,7 +101,6 @@ class XmlToJsonHandler extends DefaultHandler  // TODO: move, make much faster
  * included in a node's record as a field called xmlns.  Text nodes have
  * the field name "text()", an attribute called "name" has a field name "@name". 
  * 
- * @author kbeyer
  */
 class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faster, add schema support
 {
@@ -231,7 +230,6 @@ class XmlToJsonHandler1 extends XmlToJsonHandler  // TODO: move, make much faste
  *    { 'http://namespace': { a:'1', b:'2' }}
  * All nodes in that namespace are below the namespace field.
  * 
- * @author kbeyer
  */
 class XmlToJsonHandler2 extends XmlToJsonHandler  // TODO: move, make much faster, add schema support
 {

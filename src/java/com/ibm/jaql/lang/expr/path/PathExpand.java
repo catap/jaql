@@ -37,7 +37,6 @@ import static com.ibm.jaql.json.type.JsonType.*;
  *  if ctx always produces an array, and path produces an array for all elements of ctx,
  *  this can be rewritten
  * 
- * @author kbeyer
  */
 public class PathExpand extends PathArray
 {
