@@ -67,33 +67,46 @@ public class ClassLoaderMgr
   {
 		if (names == null || names.length == 0)
 			return;
-	
-		// create a collection of jar files with valid paths
-		ArrayList<File> jars = new ArrayList<File>();
-		for(int i = 0; i < names.length; i++) {
-			File jar = new File(names[i]);
-			if(!jar.exists()) {
-				BaseUtil.LOG.info("specified jar path invalid: " + jar);
-			} else {
-				jars.add(jar);
-			}
+
+		int len = names.length;
+		File[] files = new File[len];
+		for(int i = 0; i < len; i++) {
+			files[i] = new File(names[i]);
 		}
-		
-		// add all jars to same classloader
-		classLoader = createClassLoader(jars);
-		
-		// set the current thread's classloader
-		Thread.currentThread().setContextClassLoader(classLoader);
-		
-		// add each jar to the todo list
-		for (File jar : jars) {
-			//Lazy complete jar creation
-			creator.addExtensionJar(jar);
-			
-			BaseUtil.LOG.info("jars added to classloader: " + jar);
-		}
+		addExtensionJars(files);		
   }
   
+  
+  public static void addExtensionJars(File[] files) throws Exception
+  {
+	  if (files == null || files.length == 0)
+			return;
+	  
+	  // create a collection of jar files with valid paths
+	  ArrayList<File> jars = new ArrayList<File>();
+	  for(int i = 0; i < files.length; i++) {
+		  File jar = files[i];
+		  if(!jar.exists()) {
+			  BaseUtil.LOG.info("specified jar path invalid: " + jar);
+		  } else {
+			  jars.add(jar);
+		  }
+	  }
+		
+	  // add all jars to same classloader
+	  classLoader = createClassLoader(jars);
+
+	  // set the current thread's classloader
+	  Thread.currentThread().setContextClassLoader(classLoader);
+
+	  // add each jar to the todo list
+	  for (File jar : jars) {
+		  //Lazy complete jar creation
+		  creator.addExtensionJar(jar);
+
+		  BaseUtil.LOG.info("jars added to classloader: " + jar);
+	  }
+  }
   /**
    * Combines the extension jars and the original jar into one jar. When several
    * jars contain the same file/class the first version is used. The order in
@@ -102,20 +115,20 @@ public class ClassLoaderMgr
    * 
    * @param extensions paths of the extension jars
    */
-  public static void addExtensionJar(File jar) throws Exception {
-	  if(!jar.exists())
-		  return;
-
-	  // add the new jar to the classloader
-	  classLoader = createClassLoader(jar);
-	  // set the current thread's classloader
-	  Thread.currentThread().setContextClassLoader(classLoader);
-
-	  //Lazy complete jar creation
-	  creator.addExtensionJar(jar);
-
-	  return;
-  }
+//  public static void addExtensionJar(File jar) throws Exception {
+//	  if(!jar.exists())
+//		  return;
+//
+//	  // add the new jar to the classloader
+//	  classLoader = createClassLoader(jar);
+//	  // set the current thread's classloader
+//	  Thread.currentThread().setContextClassLoader(classLoader);
+//
+//	  //Lazy complete jar creation
+//	  creator.addExtensionJar(jar);
+//
+//	  return;
+//  }
 
   /**
    * @return
