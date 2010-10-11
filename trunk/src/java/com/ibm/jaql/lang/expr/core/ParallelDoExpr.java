@@ -32,8 +32,6 @@ import com.ibm.jaql.lang.core.Var;
 
 /**
  * Run a list of pipes, perserving order as required.  Return the last pipe.
- * 
- * @author kbeyer
  *
  */
 public class ParallelDoExpr extends DoExpr

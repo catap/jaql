@@ -28,7 +28,6 @@
 // * merge ($x -> map each $x { x: $x, k: e<$x> }),
 // *       ($y -> map each $y { y: $y, k: e<$y> })
 // * 
-// * @author kbeyer
 // */
 //public class TaggedMergeExpr extends IterExpr
 //{

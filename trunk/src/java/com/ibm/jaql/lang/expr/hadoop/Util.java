@@ -79,9 +79,12 @@ public class Util {
 				         JsonUtil.printToString(new JsonString(rj.getTrackingURL())));
 		//STATUS_LOG.info("MAP-REDUCE INFO: " + rj.getID() + "," + rj.getJobName() + "," + rj.getTrackingURL());
 		
+		boolean failed = false;
 		try {
 			if (!jc.monitorAndPrintJob(conf, rj)) {
-				throw new IOException("Job failed!");
+				LOG.error(new IOException("Job failed!"));
+				failed = true;
+				//throw new IOException("Job failed!");
 			}
 		} catch (InterruptedException ie) {
 			Thread.currentThread().interrupt();
@@ -100,13 +103,21 @@ public class Util {
 		
 		// log to status that a MR job is stopping
 		mrStatusStop(sc);
+		
+		// if the job failed, then throw an exception
+		if(failed) {
+			throw new IOException("Job failed!");
+		}
 	}	
     
 	public static void logAllTaskSyslogs(RunningJob rj, boolean onlySuccessful) throws Exception {
 		TaskCompletionEvent[] events = rj.getTaskCompletionEvents(0);
 		for(TaskCompletionEvent event : events) {
-			if( event.getTaskStatus() == TaskCompletionEvent.Status.SUCCEEDED) {
+			if( onlySuccessful && (event.getTaskStatus() == TaskCompletionEvent.Status.SUCCEEDED) ) {
 				// print the syslog into the main log
+				STATUS_LOG.info(event.toString());
+				logTaskSyslogs(event.getTaskAttemptId(), event.getTaskTrackerHttp());
+			} else {
 				STATUS_LOG.info(event.toString());
 				logTaskSyslogs(event.getTaskAttemptId(), event.getTaskTrackerHttp());
 			}

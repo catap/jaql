@@ -26,7 +26,6 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  *   If the pipe is empty then null
  *   If the pipe has one item then that item
  *   If the pipe has more than one item then error
- * @author kbeyer
  *
  */
 public final class SingletonAgg extends AlgebraicAggregate // TODO: should this preserve nulls?

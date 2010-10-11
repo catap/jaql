@@ -87,9 +87,9 @@ range(10)
 
 read( compositeDescriptor([r,s]) );
 
-union( read(r), read(s) );
+union( read(r), read(s) ) -> sort by [$ asc];
 
-union( read(r), read(s) ) -> transform $ + 100;
+union( read(r), read(s) ) -> transform $ + 100 -> sort by [$ asc];
 
 union( read(r) -> transform $ + 10,
        read(s) -> transform $ + 20) 
@@ -112,7 +112,7 @@ union(
   union( read(r) -> transform $ + 30,
          read(s) -> transform $ + 40 )
    -> transform $ + 200 )
- -> transform $ + 1000
+ -> transform $ + 1000 -> sort by [$ asc]
 ;
 
 union(

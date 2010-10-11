@@ -231,7 +231,7 @@ read( compositeDescriptor([r,s]) );
 ;//------------------- TEST-CASE -----------------
 
 
-union( read(r), read(s) );
+union( read(r), read(s) ) -> sort by [$ asc];
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -243,7 +243,7 @@ union( read(r), read(s) );
 ;//------------------- TEST-CASE -----------------
 
 
-union( read(r), read(s) ) -> transform $ + 100;
+union( read(r), read(s) ) -> transform $ + 100 -> sort by [$ asc];
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -306,7 +306,7 @@ union(
   union( read(r) -> transform $ + 30,
          read(s) -> transform $ + 40 )
    -> transform $ + 200 )
- -> transform $ + 1000
+ -> transform $ + 1000 -> sort by [$ asc]
 ;
 
 ;//------------------- EXPR-COUNTS -----------------

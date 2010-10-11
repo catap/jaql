@@ -393,40 +393,40 @@ read( compositeDescriptor([r,s]) );
 ;//------------------- TEST-CASE -----------------
 
 
-union( read(r), read(s) );
+union( read(r), read(s) ) -> sort by [$ asc];
 
 ;//--------------------- RESULT ------------------
 
 [
   0,
-  2,
-  4,
-  6,
-  8,
   1,
+  2,
   3,
+  4,
   5,
+  6,
   7,
+  8,
   9
 ]
 
 ;//------------------- TEST-CASE -----------------
 
 
-union( read(r), read(s) ) -> transform $ + 100;
+union( read(r), read(s) ) -> transform $ + 100 -> sort by [$ asc];
 
 ;//--------------------- RESULT ------------------
 
 [
   100,
-  102,
-  104,
-  106,
-  108,
   101,
+  102,
   103,
+  104,
   105,
+  106,
   107,
+  108,
   109
 ]
 
@@ -533,7 +533,7 @@ union(
   union( read(r) -> transform $ + 30,
          read(s) -> transform $ + 40 )
    -> transform $ + 200 )
- -> transform $ + 1000
+ -> transform $ + 1000 -> sort by [$ asc]
 ;
 
 ;//--------------------- RESULT ------------------
