@@ -237,6 +237,17 @@ read({type: 'hdfs'});
 ;//------------------- TEST-CASE -----------------
  
 read({type: 'hdfs', location: 'jaqlTest\NonexistentFile'}); 
+
+;//----- EXCEPTION -----
+
+// antlr.TokenStreamRecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
 //1.3 exercise specified adapter option  
 read({type: 'hdfs',location: 'jaqlTest/test1.dat'});     
 //specify an input adapter for output option, an output adapter for input option                                           
