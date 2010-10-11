@@ -52,7 +52,6 @@ import com.ibm.jaql.util.Bool3;
  * 
  *   // TODO:support spilling large inners? 
  * 
- * @author kbeyer
  */
 public class KeyLookupFn extends IterExpr
 {

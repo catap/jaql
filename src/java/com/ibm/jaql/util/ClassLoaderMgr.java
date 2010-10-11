@@ -216,7 +216,6 @@ public class ClassLoaderMgr
 /**
  * Delayed jar loading is not possible because then metadata cannot be read in time. It IS possible
  * because metadata can be loaded with getResource("...") Statement
- * @author kaufmannm
  *
  */
 final class JarCreator extends Thread {

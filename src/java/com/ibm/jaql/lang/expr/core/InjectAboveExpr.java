@@ -29,8 +29,6 @@ import com.ibm.jaql.lang.core.Var;
  * newExpr = new FooExpr(new BarExpr(), inTreeExpr.injectAbove(), new BazExpr())
  * Now newExpr.parent() is what inTreeExpr.parent() used to be and that parent
  * points back to newExpr in the same slot that inTreeExpr was.  
- * 
- * @author kbeyer
  *
  */
 public class InjectAboveExpr extends PseudoExpr

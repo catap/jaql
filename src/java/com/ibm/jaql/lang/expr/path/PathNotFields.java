@@ -36,8 +36,7 @@ import com.ibm.jaql.util.Bool3;
 
 
 /**
- * @author kbeyer
- *
+ * 
  */
 public class PathNotFields extends PathFields
 {
