@@ -321,6 +321,8 @@ public class JaqlShell extends AbstractJaqlShell
     try {
       main(new JaqlShell(), args);
     } catch(Exception e) {
+      System.err.println("Jaql terminated with exception\n"+e);
+      e.printStackTrace();
       System.exit(1);
     }
     System.exit(0);
