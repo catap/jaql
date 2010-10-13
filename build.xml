@@ -186,7 +186,8 @@
         <!--conditionally test pyJaql-->
         <exclude name="**/com/ibm/jaql/TestPyJaql.class" unless="test.python"/>
         <!--BUG: remove when TestJaqlShell is fixed if="use.cluster"-->
-        <exclude name="**/com/ibm/jaql/TestJaqlShell.class" />
+        <!--run TestJaqlShell in the local mode-->
+        <exclude name="**/com/ibm/jaql/TestJaqlShell.class" if="use.cluster"/>
         <exclude name="**/com/ibm/jaql/TestJaqlShellCluster.class" unless="use.cluster"/>
         <!--conditionally test the distributed cache stuff in external call-->
         <exclude name="**/com/ibm/jaql/TestDistribute.class" unless="use.cluster"/>
