@@ -36,4 +36,4 @@ unset HBASE_CONF_DIR
 export DFLT_HADOOP_VERSION=0.20.1
 export DFLT_HBASE_VERSION=0.20.0
 
-"${JAQL_HOME}/bin/jaqlshell" "-c" "$@"
+"${JAQL_HOME}/bin/jaqlshell" "$@"
