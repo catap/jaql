@@ -93,7 +93,7 @@ date('2010-09-11T01:18:38Z') -> x();
 
 ;//--------------------- RESULT ------------------
 
-"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"date\">2010-09-11T01:18:38Z</value>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?><value type=\"date\">2010-09-11T01:18:38.000Z</value>"
 
 ;//------------------- TEST-CASE -----------------
 

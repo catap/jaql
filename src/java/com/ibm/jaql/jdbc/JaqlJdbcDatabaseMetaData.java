@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) IBM Corp. 2010.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.ibm.jaql.jdbc;
 
 import java.sql.Connection;
@@ -58,14 +73,14 @@ public class JaqlJdbcDatabaseMetaData implements DatabaseMetaData
     return false;
   }
 
-  protected ResultSet emptyResult() throws SQLException
+  protected JaqlJdbcResultSet emptyResult() throws SQLException
   {
     // TODO: statement isn't closed...
     return conn.createStatement().executeQuery("[]");
   }
   
   @Override
-  public ResultSet getAttributes(
+  public JaqlJdbcResultSet getAttributes(
       String catalog, 
       String schemaPattern,
       String typeNamePattern,
@@ -75,7 +90,7 @@ public class JaqlJdbcDatabaseMetaData implements DatabaseMetaData
   }
 
   @Override
-  public ResultSet getBestRowIdentifier(String catalog, String schema,
+  public JaqlJdbcResultSet getBestRowIdentifier(String catalog, String schema,
       String table, int scope, boolean nullable) throws SQLException
   {
     return null;
@@ -94,19 +109,19 @@ public class JaqlJdbcDatabaseMetaData implements DatabaseMetaData
   }
 
   @Override
-  public ResultSet getCatalogs() throws SQLException
+  public JaqlJdbcResultSet getCatalogs() throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getClientInfoProperties() throws SQLException
+  public JaqlJdbcResultSet getClientInfoProperties() throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getColumnPrivileges(String catalog, String schema,
+  public JaqlJdbcResultSet getColumnPrivileges(String catalog, String schema,
       String table, String columnNamePattern) throws SQLException
   {
     return emptyResult();
@@ -156,7 +171,7 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
 
    */
   @Override
-  public ResultSet getColumns(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getColumns(String catalog, String schemaPattern,
       String tableNamePattern, String columnNamePattern) throws SQLException
   {
     // if(true) return emptyResult();
@@ -212,7 +227,7 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getCrossReference(String parentCatalog, String parentSchema,
+  public JaqlJdbcResultSet getCrossReference(String parentCatalog, String parentSchema,
       String parentTable, String foreignCatalog, String foreignSchema,
       String foreignTable) throws SQLException
   {
@@ -274,7 +289,7 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getExportedKeys(String catalog, String schema, String table)
+  public JaqlJdbcResultSet getExportedKeys(String catalog, String schema, String table)
       throws SQLException
   {
     return emptyResult();
@@ -287,14 +302,14 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getFunctionColumns(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getFunctionColumns(String catalog, String schemaPattern,
       String functionNamePattern, String columnNamePattern) throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getFunctions(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getFunctions(String catalog, String schemaPattern,
       String functionNamePattern) throws SQLException
   {
     return emptyResult();
@@ -307,14 +322,14 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getImportedKeys(String catalog, String schema, String table)
+  public JaqlJdbcResultSet getImportedKeys(String catalog, String schema, String table)
       throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getIndexInfo(String catalog, String schema, String table,
+  public JaqlJdbcResultSet getIndexInfo(String catalog, String schema, String table,
       boolean unique, boolean approximate) throws SQLException
   {
     return emptyResult();
@@ -459,14 +474,14 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getPrimaryKeys(String catalog, String schema, String table)
+  public JaqlJdbcResultSet getPrimaryKeys(String catalog, String schema, String table)
       throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getProcedureColumns(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getProcedureColumns(String catalog, String schemaPattern,
       String procedureNamePattern, String columnNamePattern)
       throws SQLException
   {
@@ -480,7 +495,7 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getProcedures(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getProcedures(String catalog, String schemaPattern,
       String procedureNamePattern) throws SQLException
   {
     return emptyResult();
@@ -517,13 +532,13 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getSchemas() throws SQLException
+  public JaqlJdbcResultSet getSchemas() throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getSchemas(String catalog, String schemaPattern)
+  public JaqlJdbcResultSet getSchemas(String catalog, String schemaPattern)
       throws SQLException
   {
     return emptyResult();
@@ -542,14 +557,14 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getSuperTables(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getSuperTables(String catalog, String schemaPattern,
       String tableNamePattern) throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getSuperTypes(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getSuperTypes(String catalog, String schemaPattern,
       String typeNamePattern) throws SQLException
   {
     return emptyResult();
@@ -562,20 +577,20 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getTablePrivileges(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getTablePrivileges(String catalog, String schemaPattern,
       String tableNamePattern) throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getTableTypes() throws SQLException
+  public JaqlJdbcResultSet getTableTypes() throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getTables(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getTables(String catalog, String schemaPattern,
       String tableNamePattern, String[] types) throws SQLException
   {
     if( catalog != null &&
@@ -600,6 +615,11 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
         throw new SQLFeatureNotSupportedException("table name patterns not supported:"+tableNamePattern);
       }
       tableFilter = " -> filter $.var == '" + tableNamePattern + "'"; // TODO: eliminate sql injection attack using variable + value.
+    }
+    
+    if( types == null )
+    {
+      types = new String[]{ "TABLE" };
     }
 
     boolean tablesOrViews = false;
@@ -651,13 +671,13 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getTypeInfo() throws SQLException
+  public JaqlJdbcResultSet getTypeInfo() throws SQLException
   {
     return emptyResult();
   }
 
   @Override
-  public ResultSet getUDTs(String catalog, String schemaPattern,
+  public JaqlJdbcResultSet getUDTs(String catalog, String schemaPattern,
       String typeNamePattern, int[] types) throws SQLException
   {
     return emptyResult();
@@ -676,7 +696,7 @@ The COLUMN_SIZE column the specified column size for the given column. For numer
   }
 
   @Override
-  public ResultSet getVersionColumns(String catalog, String schema, String table)
+  public JaqlJdbcResultSet getVersionColumns(String catalog, String schema, String table)
       throws SQLException
   {
     return emptyResult();

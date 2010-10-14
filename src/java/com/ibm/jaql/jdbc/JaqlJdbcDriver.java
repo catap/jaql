@@ -16,6 +16,7 @@
 package com.ibm.jaql.jdbc;
 
 import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.util.Properties;
@@ -23,6 +24,11 @@ import java.util.Properties;
 public class JaqlJdbcDriver implements Driver
 {
 
+  public JaqlJdbcDriver() throws SQLException
+  {
+    DriverManager.registerDriver(this);
+  }
+  
   @Override
   public boolean acceptsURL(String url) throws SQLException
   {

@@ -37,6 +37,17 @@ public class SchemaTransformation
     Schema result = schemata[0];
     for (Schema next : schemata)
     {
+      if( result == null )
+      {
+        result = next;
+        continue;
+      }
+      
+      if( next == null )
+      {
+        continue;
+      }
+      
       // try a direct merge
       if (result instanceof OrSchema) // try OrSchema merge second
       {

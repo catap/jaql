@@ -106,7 +106,7 @@ options {
       else 
       {
         // make new non-extern variable
-        if( schema == null ) schema = SchemaFactory.anySchema();
+        if( schema == null ) schema = expr.getSchema();
         if( isValue )
         {
           var = env.scopeGlobalVal(name, schema);
@@ -268,7 +268,7 @@ parse returns [Expr r=null]
 protected stmt returns [Expr r=null]
     : (kwImport id)       => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
-    | (kwExplain)         => kwExplain r=topAssign  { r = new ExplainExpr(env,r); }
+    | (kwExplain)         => kwExplain r=topAssign  { r = r == null ? null : new ExplainExpr(env,r); }
     | (kwQuit)            => kwQuit { r = null; done = true; }
     | r=topAssign
     ;
@@ -971,7 +971,7 @@ group returns [Expr r=null]
           if( by.var != Var.UNUSED ) env.unscope(by.var);
           for( Var av: as )
           {
-            env.scope(av);
+            env.unscope(av);
           }
           r = new GroupByExpr(in, by, as, c, opt, ret);
         }

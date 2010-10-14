@@ -81,7 +81,10 @@ public final class SingletonAgg extends AlgebraicAggregate // TODO: should this 
     {
       throw new RuntimeException("multiple items passed to singleton");
     }
-    saved = value.getCopy(null);
+    if( value != null )
+    {
+      saved = value.getCopy(null);
+    }
   }
 
   @Override

@@ -954,6 +954,14 @@ public abstract class Expr
    */
   public BindingExpr findVarDef(Var var)
   {
+    if( var.isGlobal() )
+    {
+      // TODO: Global variables should have: Assign(Binding<var>(def)) associated with them
+      // This problem was introduced with extern variables because cannot always convert globals into locals.
+      assert var.isMutable();
+      JsonValue val = var.isDefined() ? var.value() : null;
+      return new BindingExpr(BindingExpr.Type.EQ, var, null, new ConstExpr(val));
+    }
     for (Expr e = this ; e != null ; e = e.parent())
     {
       for (Expr c : e.children())

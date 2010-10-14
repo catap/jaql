@@ -65,19 +65,20 @@ $atoms-> write({location: 'jaqlTest/test1.dat'});
 
 ;//------------------- TEST-CASE -----------------
 
-//defect 9271
-//$atoms-> write({type: 'hdfs', location: 'jaqlTest\ test2.dat'});
-$atoms-> write({type: 'hdfs', location: 'jaqlTest\test3.dat'});
+$atoms-> write({type: 'hdfs', location: 'jaqlTest\ test2.dat'});
 
-;//--------------------- RESULT ------------------
+;//----- EXCEPTION -----
 
-{
-  "location": "jaqlTest\test3.dat",
-  "type": "hdfs"
-}
+// antlr.TokenStreamRecognitionException
 
 ;//------------------- TEST-CASE -----------------
 
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+// The tab in the filename below  produces inconsistent results on linux (success) vs windows (error)
+//$atoms-> write({type: 'hdfs', location: 'jaqlTest\test3.dat'});
 $atoms-> write({type: 'hdfs', location: 'jaqlTest\\test3.dat'});
 
 ;//--------------------- RESULT ------------------
@@ -2170,5 +2171,6 @@ mapReduce( {
 ]
 
 ;//------------------- TEST-CASE -----------------
+
 
 ;//------------------- TEST-DONE -----------------
