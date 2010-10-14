@@ -12,11 +12,13 @@ public class FieldNameCache {
 	 * a immutable copy of the value is stored in the cache and returned.
 	 */
 	public static JsonString get(JsonString s) {
-		if(cache.containsKey(s)) {
-			return cache.get(s);
-		} else {
-			cache.put(s.getImmutableCopy(), s);
-			return s;
-		}
+	  JsonString c = cache.get(s);
+	  if( c != null )
+	  {
+	    return c;
+	  }
+	  c = s.getImmutableCopy();
+	  cache.put(c, c);
+	  return c;
 	}
 }

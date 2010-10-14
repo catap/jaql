@@ -38,7 +38,6 @@
 	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/junit-3.8.1.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/libthrift-r771587.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/log4j-1.2.15.jar"/>
-	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/lucene-core-2.2.0.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/servlet-api-2.5-6.1.14.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/xmlenc-0.52.jar"/>
 	<classpathentry kind="lib" path="vendor/hbase/0.20.0/lib/zookeeper-r785019-hbase-1329.jar"/>

@@ -15,11 +15,12 @@
  */
 package com.ibm.jaql.lang.rewrite;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
+import com.ibm.jaql.json.type.JsonArray;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.SpilledJsonArray;
 import com.ibm.jaql.lang.expr.array.UnionFn;
 import com.ibm.jaql.lang.expr.core.ArrayExpr;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 
 /**
@@ -38,6 +39,11 @@ import com.ibm.jaql.lang.expr.core.Expr;
  *    union(e1..., [e2,...], e3, [e4,...]) 
  *    ==>
  *    union(e1..., e3..., [e2,...,e4,...])
+ *    
+ * When a leg is empty, elminate it
+ *    union(..., [], ...)
+ *    ==>
+ *    union(..., ...)
  * 
  */
 public class SimplifyUnion extends Rewrite
@@ -71,59 +77,107 @@ public class SimplifyUnion extends Rewrite
     
     
     Expr[] legs = union.children();
+    int firstArray = -1;
     for(int i = 0 ; i < legs.length ; i++)
     {
-      if( legs[i] instanceof ArrayExpr )
+      if( legs[i] instanceof ConstExpr )
       {
-        // Found the first ArrayExpr. Look for another.
-        for(int j = i + 1 ; j < legs.length ; j++)
+        // If leg is empty, remove it
+        JsonValue val = ((ConstExpr)legs[i]).value;
+        if( val == null )
         {
-          if( legs[j] instanceof ArrayExpr )
+          // null is as good as empty
+          legs[i].detach();
+          return true;
+        }
+        else if( val instanceof JsonArray )
+        {
+          JsonArray arr = (JsonArray)val;
+          long n = arr.count();
+          if( n == 0 )
           {
-            // Found a second ArrayExpr.  We will rewrite.
-            // Split original legs into:
-            //     newLegs = list of non-ArrayExpr
-            //     arrayArgs = list of all ArrayExpr inputs
-            ArrayList<Expr> newLegs = new ArrayList<Expr>();
-            for(int k = 0 ; k < j ; k++)
-            {
-              if( k != i )
-              {
-                newLegs.add(legs[k]);
-              }
-            }
-            ArrayList<Expr> arrayArgs = new ArrayList<Expr>();
-            arrayArgs.addAll(Arrays.asList(legs[i].children()));
-            arrayArgs.addAll(Arrays.asList(legs[j].children()));
-            for(int k = j + 1 ; k < legs.length ; k++)
-            {
-              if( legs[k] instanceof ArrayExpr )
-              {
-                arrayArgs.addAll(Arrays.asList(legs[k].children()));
-              }
-              else
-              {
-                newLegs.add(legs[k]);
-              }
-            }
-            ArrayExpr newArray = new ArrayExpr(arrayArgs);
-            if( newLegs.size() == 0 )
-            {
-              union.replaceInParent(newArray);
-            }
-            else
-            {
-              newLegs.add(newArray);
-              union.setChildren(newLegs.toArray(new Expr[newLegs.size()]));
-            }
+            // empty constant array
+            legs[i].detach();
             return true;
           }
+          if( n < Integer.MAX_VALUE / 2 ) // don't merge huge arrays.
+          {
+            if( firstArray >= 0 )
+            {
+              mergeLegs(union, firstArray, i);
+              return true;
+            }
+            firstArray = i;
+          }
         }
-        // Only one ArrayExpr
-        return false;
+      }
+      else if( legs[i] instanceof ArrayExpr )
+      {
+        // If leg is empty, remove it
+        if( legs[i].numChildren() == 0 )
+        {
+          legs[i].detach();
+          return true;
+        }
+        if( firstArray >= 0 )
+        {
+          mergeLegs(union, firstArray, i);
+          return true;
+        }
+        firstArray = i;
       }
     }
-    // No ArrayExpr
+    
     return false;
+  }
+  
+  protected void mergeLegs(UnionFn union, int i, int j) throws Exception
+  {
+    // Found a second ArrayExpr.  We will rewrite.
+    // Split original legs into:
+    //     newLegs = list of non-ArrayExpr
+    //     arrayArgs = list of all ArrayExpr inputs
+    Expr array1 = union.child(i);
+    Expr array2 = union.child(j);
+    array2.detach();
+    if( array1 instanceof ConstExpr )
+    {
+      JsonArray arr1 = (JsonArray)((ConstExpr)array1).value;
+      if( array2 instanceof ConstExpr )
+      {
+        JsonArray arr2 = (JsonArray)((ConstExpr)array2).value;
+        SpilledJsonArray arr3 = new SpilledJsonArray();
+        arr3.addCopyAll(arr1.iter());
+        arr3.addCopyAll(arr2.iter());
+        ((ConstExpr)array1).value = arr3;
+      }
+      else
+      {
+        mergeComputed(array1, (ArrayExpr)array2, arr1);
+      }
+    }
+    else if( array2 instanceof ConstExpr )
+    {
+      JsonArray arr2 = (JsonArray)((ConstExpr)array2).value;
+      mergeComputed(array1, (ArrayExpr)array1, arr2);
+    }
+    else
+    {
+      assert array1 instanceof ArrayExpr && array2 instanceof ArrayExpr;
+      array1.addChildrenBefore(array1.numChildren(), array2.children());
+    }
+  }
+  
+  protected void mergeComputed(Expr old, ArrayExpr ae, JsonArray lit) throws Exception
+  {
+    assert lit.count() + ae.numChildren() < Integer.MAX_VALUE;
+    int n = (int)lit.count();
+    Expr[] exprs = new Expr[n + ae.numChildren()];
+    for(int k = 0 ; k < n ; k++)
+    {
+      exprs[k] = new ConstExpr(lit.get(k));
+    }
+    System.arraycopy(ae.children(), 0, exprs, n, ae.numChildren());        
+    old.replaceInParent(new ArrayExpr(exprs));
   }
 }

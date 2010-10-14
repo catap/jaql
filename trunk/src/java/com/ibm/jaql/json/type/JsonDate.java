@@ -18,8 +18,16 @@ package com.ibm.jaql.json.type;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import com.ibm.jaql.lang.util.JaqlUtil;
 
 /** An JSON date. 
  * 
@@ -28,13 +36,29 @@ import java.util.TimeZone;
  */
 public class JsonDate extends JsonAtom
 {
-  public static final String ISO8601UTC_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
-  protected static final SimpleDateFormat ISO8601UTC_FORMAT;
-  static {  
-    ISO8601UTC_FORMAT = new SimpleDateFormat(ISO8601UTC_FORMAT_STRING); 
-    ISO8601UTC_FORMAT.setTimeZone(new SimpleTimeZone(0, "UTC")); 
+  protected static final TimeZone UTC = TimeZone.getTimeZone(TimeZone.getAvailableIDs(0)[0]);
+  
+  protected final static DatatypeFactory CAL_FACTORY;
+  static
+  {
+    try
+    {
+      CAL_FACTORY = DatatypeFactory.newInstance();
+    }
+    catch( DatatypeConfigurationException e )
+    {
+      throw new UndeclaredThrowableException(e);
+    }
   }
+  
+//  public static final String ISO8601UTC_FORMAT_STRING = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
+//
+//  protected static final SimpleDateFormat ISO8601UTC_FORMAT1;
+//  static {  
+//    ISO8601UTC_FORMAT1 = new SimpleDateFormat(ISO8601UTC_FORMAT_STRING); 
+//    ISO8601UTC_FORMAT1.setTimeZone(new SimpleTimeZone(0, "UTC")); 
+//  }
+
 
   // TODO: should we store the original fields? Will we run into trouble storing the posix time?
   protected long millis; // Milliseconds since 1970-01-01T00:00:00Z
@@ -68,7 +92,8 @@ public class JsonDate extends JsonAtom
    */
   public JsonDate(String date)
   {
-    set(date, ISO8601UTC_FORMAT);
+    set(date);
+    // set(date, ISO8601UTC_FORMAT);
   }
   
   /** Constructs a new data using the specified value.
@@ -114,10 +139,22 @@ public class JsonDate extends JsonAtom
   @Override
   public String toString()
   {
-    synchronized (ISO8601UTC_FORMAT) // TODO: write our own thread-safe formatter
+    GregorianCalendar cal = new GregorianCalendar(UTC);
+    cal.setTimeInMillis(millis);
+    
+    try
     {
-      return ISO8601UTC_FORMAT.format(millis);
+      return javax.xml.datatype.DatatypeFactory.newInstance().newXMLGregorianCalendar(cal).toString();
     }
+    catch (DatatypeConfigurationException e)
+    {
+      throw JaqlUtil.rethrow(e);
+    }
+
+//    synchronized (ISO8601UTC_FORMAT) // TODO: write our own thread-safe formatter
+//    {
+//      return ISO8601UTC_FORMAT.format(millis);
+//    }
   }
 
   /* @see com.ibm.jaql.json.type.JsonValue#getCopy(com.ibm.jaql.json.type.JsonValue) */
@@ -173,7 +210,9 @@ public class JsonDate extends JsonAtom
    */
   protected void set(String date)
   {
-    set(date, ISO8601UTC_FORMAT);
+    XMLGregorianCalendar xcal = CAL_FACTORY.newXMLGregorianCalendar(date);
+    this.millis = xcal.toGregorianCalendar(UTC,Locale.getDefault(),null).getTime().getTime();
+    // set(date, ISO8601UTC_FORMAT);
   }
 
   
@@ -217,3 +256,4 @@ public class JsonDate extends JsonAtom
   }
 
 }
+
