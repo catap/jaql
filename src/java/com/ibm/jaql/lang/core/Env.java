@@ -417,13 +417,16 @@ public class Env extends Namespace
               break;
             }
             case VALUE: {
-              JsonValue val = globalConst.get(var);
-              if( val == null )
+              if( ! var.isMutable() )
               {
-                val = JsonUtil.getCopyUnchecked(var.value(), null);
-                globalConst.put(var, val);
+                JsonValue val = globalConst.get(var);
+                if( val == null )
+                {
+                  val = JsonUtil.getCopyUnchecked(var.value(), null);
+                  globalConst.put(var, val);
+                }
+                ve.replaceInParent(new ConstExpr(val));
               }
-              ve.replaceInParent(new ConstExpr(val));
               break;
             }
             case UNDEFINED: {

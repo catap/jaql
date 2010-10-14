@@ -29,9 +29,9 @@ $jsons2 = [
 //1.1 exercise hdfs write syntax
 $atoms-> write({type: 'hdfs'});
 $atoms-> write({location: 'jaqlTest/test1.dat'});
-//defect 9271
-//$atoms-> write({type: 'hdfs', location: 'jaqlTest\ test2.dat'});
-$atoms-> write({type: 'hdfs', location: 'jaqlTest\test3.dat'});
+$atoms-> write({type: 'hdfs', location: 'jaqlTest\ test2.dat'});
+// The tab in the filename below  produces inconsistent results on linux (success) vs windows (error)
+//$atoms-> write({type: 'hdfs', location: 'jaqlTest\test3.dat'});
 $atoms-> write({type: 'hdfs', location: 'jaqlTest\\test3.dat'});
 $atoms-> write({type: 'hdfs', location: 'jaqlTest:test4.dat'});
 $atoms-> write({type: 'hdfs', location: 'jaqlTest&test5.dat'});

@@ -18,6 +18,7 @@ package com.ibm.jaql.lang;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -38,13 +39,18 @@ public class ParsedJaql
   protected Env env;
   protected Context context;
   protected ArrayList<Expr> exprs = new ArrayList<Expr>();
-  protected int index = 0;
   protected int numResults = 0;
+  protected int index = 0;
+  protected int resultsLeft = 0;
+  protected Schema curSchema;
   
   
   /** Parse but don't evaluate all the statements in the current parser input */
   public ParsedJaql(Jaql jaql, Env env, Context context) throws Exception
   {
+    this.jaql = jaql;
+    this.env = env;
+    this.context = context;
     Expr expr;
     while( (expr = jaql.prepareNext()) != null )
     {
@@ -54,6 +60,7 @@ public class ParsedJaql
         numResults++;
       }
     }
+    resultsLeft = numResults;
   }
 
   /** Return a list of the external variables.
@@ -64,7 +71,7 @@ public class ParsedJaql
   public List<Var> getExternalVariables() // TODO: make a wrapper to hide the vars? just expose name, type, required to be set/isdefined
   {
     ArrayList<Var> vars = new ArrayList<Var>();
-    for( Var v: env.listVariables(false) )
+    for( Var v: env.globals().listVariables(false) )
     {
       if( v.isMutable() )
       {
@@ -97,13 +104,34 @@ public class ParsedJaql
   /** Is it safe to call eval() or iter() */
   public boolean hasMoreResults() throws Exception
   {
-    return numResults > 0;
+    processNonResults();
+    return resultsLeft > 0;
   }
 
-  /** Release any resources from the previous eval() or iter() call. */
+  /** Release any resources held by this script.  It may be reopended. */
   public void close() throws Exception
   {
+    // TODO: anything else to release?  Add method on context for this?
     context.reset();
+    for( Var v: env.listVariables(false) )
+    {
+      if( v.isMutable() )
+      {
+        assert v.isGlobal();
+        v.undefine();
+      }
+    }
+  }
+  
+  /** Restart this script from the beginning. 
+   * It does NOT reset variables, so defaults will not be reinstated.
+   * Closing a script before opening it will reset variables, however. 
+   */
+  public void open() throws Exception
+  {
+    index = 0;
+    resultsLeft = numResults;
+    processNonResults();
   }
   
   /** Close the previous result and evaluate the next. */
@@ -113,7 +141,8 @@ public class ParsedJaql
     if( index < exprs.size() )
     {
       Expr expr = exprs.get(index++);
-      numResults--;
+      resultsLeft--;
+      curSchema = expr.getSchema();
       return expr.eval(context);
     }
     else
@@ -129,7 +158,8 @@ public class ParsedJaql
     if( index < exprs.size() )
     {
       Expr expr = exprs.get(index++);
-      numResults--;
+      resultsLeft--;
+      curSchema = expr.getSchema();
       return expr.iter(context);
     }
     else
@@ -142,16 +172,18 @@ public class ParsedJaql
   public JsonValue eval(String fnName, FunctionArgs args) throws Exception 
   {
     processNonResults();
-    Expr e = jaql.prepareFunctionCall(fnName, args);
-    return e.eval(context);
+    Expr expr = jaql.prepareFunctionCall(fnName, args);
+    curSchema = expr.getSchema();
+    return expr.eval(context);
   }
 
   /** Invoke a function and iterate over its result. */
   public JsonIterator iter(String fnName, FunctionArgs args) throws Exception 
   {
     processNonResults();
-    Expr e = jaql.prepareFunctionCall(fnName, args);
-    return e.iter(context);
+    Expr expr = jaql.prepareFunctionCall(fnName, args);
+    curSchema = expr.getSchema();
+    return expr.iter(context);
   }
 
 
@@ -172,6 +204,32 @@ public class ParsedJaql
       {
         break;
       }
+    }
+  }
+
+  /**
+   * Returns the schema of the most recently returned value from eval or iter
+   */
+  public Schema currentSchema()
+  {
+    return curSchema;
+  }
+
+  /**
+   * Return the schema of the next result from eval or iter
+   * @throws Exception 
+   */
+  public Schema getNextSchema() throws Exception
+  {
+    processNonResults();
+    if( index < exprs.size() )
+    {
+      Expr expr = exprs.get(index);
+      return expr.getSchema();
+    }
+    else
+    {
+      throw new IndexOutOfBoundsException("Too many calls to getNextSchema: "+exprs.size());
     }
   }
 }

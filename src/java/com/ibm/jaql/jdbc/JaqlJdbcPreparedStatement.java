@@ -1,7 +1,19 @@
+/*
+ * Copyright (C) IBM Corp. 2010.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.ibm.jaql.jdbc;
-
-import static com.ibm.jaql.json.type.JsonType.ARRAY;
-import static com.ibm.jaql.json.type.JsonType.NULL;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -10,87 +22,88 @@ import java.net.URL;
 import java.sql.Array;
 import java.sql.Blob;
 import java.sql.Clob;
-import java.sql.Connection;
 import java.sql.Date;
 import java.sql.NClob;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
 import java.sql.Ref;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLWarning;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Calendar;
 
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.type.JsonBinary;
+import com.ibm.jaql.json.type.JsonBool;
+import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.json.type.JsonDecimal;
+import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.json.type.JsonLong;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.Jaql;
-import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.BaseUtil;
 
-public class JaqlJdbcPreparedStatement implements PreparedStatement
+
+public class JaqlJdbcPreparedStatement extends JaqlJdbcStatement implements PreparedStatement
 {
-
-  protected Jaql jaql;
-  protected String sql;
-  protected ArrayList<Expr> exprs = new ArrayList<Expr>();
-  protected ArrayList<?> results = new ArrayList<Object>();
-
-  public JaqlJdbcPreparedStatement(Jaql jaql, String sql) throws SQLException
+  public JaqlJdbcPreparedStatement(JaqlJdbcConnection conn, String script) throws SQLException
   {
-    try
-    {
-      this.jaql = jaql;
-      this.sql = sql;
-      jaql.setInput(sql);
-      Expr expr;
-      while( (expr = jaql.prepareNext()) != null )
-      {
-        exprs.add(expr);
-      }
-    }
-    catch( Exception e )
-    {
-      throw new SQLException("while preparing statements",e);
-    }
+    super(conn);
+    execute(script);
   }
 
   @Override
   public void addBatch() throws SQLException
   {
-    // TODO Auto-generated method stub
+    throw new SQLFeatureNotSupportedException("batch not yet supported");
   }
 
   @Override
   public void clearParameters() throws SQLException
   {
-    // TODO Auto-generated method stub
+    // cannot clear parameters
   }
 
   @Override
   public boolean execute() throws SQLException
   {
-    results.clear();
-    for( Expr expr: exprs )
+    try
     {
-      // results.add(jaql.execute(expr));
+      parsedJaql.open();
+      return parsedJaql.hasMoreResults();
     }
-    if( results.size() > 0 && results.get(0) instanceof JsonIterator )
+    catch( Exception e )
     {
-      return true;
+      // 58033  An unexpected error occurred while attempting to access a client driver.
+      Throwable c = BaseUtil.getRootCause(e);
+      throw new SQLException("while opening script: ["+c.getClass().getSimpleName()+"]"+c.getMessage(),"58033",e);
     }
-    return false;
   }
 
   @Override
   public ResultSet executeQuery() throws SQLException
   {
-    // TODO Auto-generated method stub
-    // return new JaqlResultSet();
-    return null;
+    try
+    {
+      JsonIterator iter = parsedJaql.iter();
+      RecordSchema recSchema = getRowSchema( parsedJaql.currentSchema() );
+      return new JaqlJdbcResultSet(this, recSchema, iter);
+    }
+    catch( SQLException e )
+    {
+      throw e;
+    }
+    catch( Exception e )
+    {
+      // 58033  An unexpected error occurred while attempting to access a client driver.
+      Throwable c = BaseUtil.getRootCause(e);
+      throw new SQLException("while preparing statements: ["+c.getClass().getSimpleName()+"]"+c.getMessage(),"58033",e);
+    }
   }
 
   @Override
@@ -100,672 +113,368 @@ public class JaqlJdbcPreparedStatement implements PreparedStatement
   }
 
   @Override
-  public ResultSetMetaData getMetaData() throws SQLException
+  public JaqlJdbcResultSetMetaData getMetaData() throws SQLException
   {
-    return null;
+    try
+    {
+      RecordSchema schema = getRowSchema( parsedJaql.getNextSchema() );
+      return new JaqlJdbcResultSetMetaData(schema);
+    }
+    catch( SQLException e )
+    {
+      throw e;
+    }
+    catch( Exception e )
+    {
+      // 58033  An unexpected error occurred while attempting to access a client driver.
+      Throwable c = BaseUtil.getRootCause(e);
+      throw new SQLException("while getting metadata: ["+c.getClass().getSimpleName()+"]"+c.getMessage(),"58033",e);
+    }
   }
 
   @Override
-  public ParameterMetaData getParameterMetaData() throws SQLException
+  public JaqlJdbcParameterMetaData getParameterMetaData() throws SQLException
   {
-    // TODO Auto-generated method stub
-    return null;
+    return new JaqlJdbcParameterMetaData(parsedJaql);
   }
 
+  protected final void setVar(int index, JsonValue value)
+  {
+    // TODO: why cant we call var.set directly?
+    Var var = parsedJaql.getExternalVariables().get(index-1);
+    parsedJaql.setExternalVariable(var.name(), value);
+  }
+  
   @Override
   public void setArray(int parameterIndex, Array x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setArray NYI");
+//    Var var = getVar(parameterIndex);
+//    SpilledJsonArray val = new SpilledJsonArray();
+//    ResultSet rs = x.getResultSet();
+//    while( rs.next() )
+//    {
+//      ???
+//    }
+//    JsonValue[] values = new JsonValue[]
+//    var.setValue(new SpilledJsonArray(values, false));
   }
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setAsciiStream NYI");
   }
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, int length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setAsciiStream NYI");
   }
 
   @Override
   public void setAsciiStream(int parameterIndex, InputStream x, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setAsciiStream NYI");
   }
 
   @Override
   public void setBigDecimal(int parameterIndex, BigDecimal x)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonDecimal(x) );
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setBinaryStream NYI");
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, int length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setBinaryStream NYI");
   }
 
   @Override
   public void setBinaryStream(int parameterIndex, InputStream x, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setBinaryStream NYI");
   }
 
   @Override
   public void setBlob(int parameterIndex, Blob x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setBlob NYI");
   }
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setBlob NYI");
   }
 
   @Override
   public void setBlob(int parameterIndex, InputStream inputStream, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setBlob NYI");
   }
 
   @Override
   public void setBoolean(int parameterIndex, boolean x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, JsonBool.make(x) );
   }
 
   @Override
   public void setByte(int parameterIndex, byte x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonLong(x) );
   }
 
   @Override
   public void setBytes(int parameterIndex, byte[] x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonBinary(x) );
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setCharacterStream NYI");
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, int length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setCharacterStream NYI");
   }
 
   @Override
   public void setCharacterStream(int parameterIndex, Reader reader, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setCharacterStream NYI");
   }
 
   @Override
   public void setClob(int parameterIndex, Clob x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setClob NYI");
   }
 
   @Override
   public void setClob(int parameterIndex, Reader reader) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setClob NYI");
   }
 
   @Override
   public void setClob(int parameterIndex, Reader reader, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setClob NYI");
   }
 
   @Override
   public void setDate(int parameterIndex, Date x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: add timezone
+    setVar( parameterIndex, new JsonDate(x.getTime()) );
   }
 
   @Override
   public void setDate(int parameterIndex, Date x, Calendar cal)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: add timezone
+    cal.setTime(x);
+    setVar( parameterIndex, new JsonDate(cal.getTimeInMillis()));
   }
 
   @Override
   public void setDouble(int parameterIndex, double x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonDouble(x));
   }
 
   @Override
   public void setFloat(int parameterIndex, float x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonDouble(x));
   }
 
   @Override
   public void setInt(int parameterIndex, int x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonLong(x));
   }
 
   @Override
   public void setLong(int parameterIndex, long x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonLong(x));
   }
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setNCharacterStream NYI");
   }
 
   @Override
   public void setNCharacterStream(int parameterIndex, Reader value, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setNCharacterStream NYI");
   }
 
   @Override
   public void setNClob(int parameterIndex, NClob value) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setNClob NYI");
   }
 
   @Override
   public void setNClob(int parameterIndex, Reader reader) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setNClob NYI");
   }
 
   @Override
   public void setNClob(int parameterIndex, Reader reader, long length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setNClob NYI");
   }
 
   @Override
   public void setNString(int parameterIndex, String value) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonString(value));
   }
 
   @Override
   public void setNull(int parameterIndex, int sqlType) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, null );
   }
 
   @Override
   public void setNull(int parameterIndex, int sqlType, String typeName)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, null );
   }
 
   @Override
   public void setObject(int parameterIndex, Object x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: provide conversions from standard types
+    setVar( parameterIndex, (JsonValue)x );
   }
 
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: provide conversions from standard types, check target
+    setVar( parameterIndex, (JsonValue)x );
   }
 
   @Override
   public void setObject(int parameterIndex, Object x, int targetSqlType,
       int scaleOrLength) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: provide conversions from standard types, check target
+    setVar( parameterIndex, (JsonValue)x );
   }
 
   @Override
   public void setRef(int parameterIndex, Ref x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setRef NYI");
   }
 
   @Override
   public void setRowId(int parameterIndex, RowId x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setRowId NYI");
   }
 
   @Override
   public void setSQLXML(int parameterIndex, SQLXML xmlObject)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setSQLXML NYI");
   }
 
   @Override
   public void setShort(int parameterIndex, short x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonLong(x) );
   }
 
   @Override
   public void setString(int parameterIndex, String x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonString(x) );
   }
 
   @Override
   public void setTime(int parameterIndex, Time x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: timezone
+    setVar( parameterIndex, new JsonDate(x.getTime()) );
   }
 
   @Override
   public void setTime(int parameterIndex, Time x, Calendar cal)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: timezone
+    cal.setTime(x);
+    setVar( parameterIndex, new JsonDate(cal.getTimeInMillis()) );
   }
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: timezone
+    setVar( parameterIndex, new JsonDate(x.getTime()) );
   }
 
   @Override
   public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    // TODO: timezone
+    cal.setTime(x);
+    setVar( parameterIndex, new JsonDate(cal.getTimeInMillis()) );
   }
 
   @Override
   public void setURL(int parameterIndex, URL x) throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    setVar( parameterIndex, new JsonString(x.toString()) );
   }
 
   @Override
   public void setUnicodeStream(int parameterIndex, InputStream x, int length)
       throws SQLException
   {
-    // TODO Auto-generated method stub
-
+    throw new SQLException("setUnicodeStream NYI");
   }
-
-  @Override
-  public void addBatch(String sql) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void cancel() throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void clearBatch() throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void clearWarnings() throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void close() throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public boolean execute(String sql) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public boolean execute(String sql, int autoGeneratedKeys) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public boolean execute(String sql, int[] columnIndexes) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public boolean execute(String sql, String[] columnNames) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public int[] executeBatch() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public ResultSet executeQuery(String sql) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public int executeUpdate(String sql) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int executeUpdate(String sql, int autoGeneratedKeys)
-      throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int executeUpdate(String sql, int[] columnIndexes) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int executeUpdate(String sql, String[] columnNames)
-      throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public Connection getConnection() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public int getFetchDirection() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getFetchSize() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public ResultSet getGeneratedKeys() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public int getMaxFieldSize() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getMaxRows() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public boolean getMoreResults() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public boolean getMoreResults(int current) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public int getQueryTimeout() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public ResultSet getResultSet() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public int getResultSetConcurrency() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getResultSetHoldability() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getResultSetType() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public int getUpdateCount() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return 0;
-  }
-
-  @Override
-  public SQLWarning getWarnings() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public boolean isClosed() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public boolean isPoolable() throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public void setCursorName(String name) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setEscapeProcessing(boolean enable) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setFetchDirection(int direction) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setFetchSize(int rows) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setMaxFieldSize(int max) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setMaxRows(int max) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setPoolable(boolean poolable) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public void setQueryTimeout(int seconds) throws SQLException
-  {
-    // TODO Auto-generated method stub
-
-  }
-
-  @Override
-  public boolean isWrapperFor(Class<?> iface) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public <T> T unwrap(Class<T> iface) throws SQLException
-  {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
 }

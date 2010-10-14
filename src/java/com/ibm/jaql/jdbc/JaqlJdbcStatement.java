@@ -1,3 +1,18 @@
+/*
+ * Copyright (C) IBM Corp. 2010.
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+ */
 package com.ibm.jaql.jdbc;
 
 import java.sql.Connection;
@@ -6,7 +21,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
-import java.util.ArrayList;
 
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
@@ -14,13 +28,16 @@ import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.ParsedJaql;
 import com.ibm.jaql.util.BaseUtil;
 
 public class JaqlJdbcStatement implements Statement
 {
   protected JaqlJdbcConnection conn;
-  protected String sql;
-  protected ArrayList<JaqlJdbcResultSet> results = new ArrayList<JaqlJdbcResultSet>();
+  protected ParsedJaql parsedJaql;
+
+  protected String script;
+  /// protected ArrayList<JaqlJdbcResultSet> results = new ArrayList<JaqlJdbcResultSet>();
 
   public JaqlJdbcStatement(JaqlJdbcConnection conn) throws SQLException
   {
@@ -28,7 +45,7 @@ public class JaqlJdbcStatement implements Statement
   }
 
   @Override
-  public void addBatch(String sql) throws SQLException
+  public void addBatch(String script) throws SQLException
   {
     throw new SQLFeatureNotSupportedException("batch not yet supported");
   }
@@ -42,7 +59,14 @@ public class JaqlJdbcStatement implements Statement
   @Override
   public void clearBatch() throws SQLException
   {
-    throw new SQLFeatureNotSupportedException("batch not yet supported");
+    try
+    {
+      parsedJaql.close();
+    }
+    catch (Exception e)
+    {
+      throw new SQLException("while clearing batch",e);
+    }
   }
 
   @Override
@@ -54,39 +78,59 @@ public class JaqlJdbcStatement implements Statement
   @Override
   public void close() throws SQLException
   {
-    // TODO: need statement close independent of session close
+    clearBatch();
   }
 
+  /**
+   * Convert a jaql schema into a row schema. 
+   */
+  protected static RecordSchema getRowSchema(Schema schema) throws SQLException
+  {
+    if( schema.is(JsonType.ARRAY, JsonType.NULL).always() )
+    {
+      schema = schema.elements();
+    }
+    if( schema == null ) // empty result
+    {
+      schema = new RecordSchema(new JsonString[0]); // make into an empty record
+    }
+    else if( ! schema.is(JsonType.RECORD).always() )
+    {
+      throw new SQLException("jaql statement must produce records");
+    }
+    return (RecordSchema)SchemaTransformation.restrictTo(schema, JsonType.RECORD);
+  }
+  
   @Override
-  public boolean execute(String sql) throws SQLException
+  public boolean execute(String script) throws SQLException
   {
     try
     {
-      results.clear();
-      this.sql = sql;
-      conn.jaql.setInput(sql);
-      JsonIterator iter;
-      while( (iter = conn.jaql.iter()) != null )
+      if( parsedJaql != null )
       {
-        
-        Schema schema = conn.jaql.currentSchema();
-        if( schema.is(JsonType.ARRAY, JsonType.NULL).always() )
-        {
-          schema = schema.elements();
-        }
-        if( schema == null ) // empty result
-        {
-          schema = new RecordSchema(new JsonString[0]); // make into an empty record
-        }
-        else if( ! schema.is(JsonType.RECORD).always() )
-        {
-          throw new SQLException("jaql statement must produce records");
-        }
-        RecordSchema recSchema = (RecordSchema)SchemaTransformation.restrictTo(schema, JsonType.RECORD);
-        
-        results.add(new JaqlJdbcResultSet(this, recSchema, iter));
+        parsedJaql.close();
+        parsedJaql = null;
       }
-      return results.size() > 0;
+      this.script = script;
+      conn.jaql.setInput(script);
+      parsedJaql = conn.jaql.parseScript();
+      parsedJaql.open();
+      return parsedJaql.hasMoreResults();
+//      
+//      results.clear();
+//      this.script = script;
+//      conn.jaql.setInput(script);
+//      JsonIterator iter;
+//      while( (iter = conn.jaql.iter()) != null )
+//      {
+//        RecordSchema recSchema = getRowSchema(conn.jaql.currentSchema());
+//        results.add(new JaqlJdbcResultSet(this, recSchema, iter));
+//      }
+//      return results.size() > 0;
+    }
+    catch( SQLException e )
+    {
+      throw e;
     }
     catch( Exception e )
     {
@@ -97,33 +141,33 @@ public class JaqlJdbcStatement implements Statement
   }
 
   @Override
-  public boolean execute(String sql, int autoGeneratedKeys) throws SQLException
+  public boolean execute(String script, int autoGeneratedKeys) throws SQLException
   {
     if( autoGeneratedKeys != Statement.NO_GENERATED_KEYS )
     {
       throw new SQLFeatureNotSupportedException("autogenerated keys not supported");
     }
-    return execute(sql);
+    return execute(script);
   }
 
   @Override
-  public boolean execute(String sql, int[] columnIndexes) throws SQLException
+  public boolean execute(String script, int[] columnIndexes) throws SQLException
   {
     if( columnIndexes != null && columnIndexes.length > 0 )
     {
-      throw new SQLFeatureNotSupportedException("autogenerated keys not supported");
+      throw new SQLFeatureNotSupportedException("column indexes are not supported");
     }
-    return execute(sql);
+    return execute(script);
   }
 
   @Override
-  public boolean execute(String sql, String[] columnNames) throws SQLException
+  public boolean execute(String script, String[] columnNames) throws SQLException
   {
     if( columnNames != null && columnNames.length > 0 )
     {
-      throw new SQLFeatureNotSupportedException("autogenerated keys not supported");
+      throw new SQLFeatureNotSupportedException("column names are not supported");
     }
-    return execute(sql);
+    return execute(script);
   }
 
   @Override
@@ -133,36 +177,36 @@ public class JaqlJdbcStatement implements Statement
   }
 
   @Override
-  public ResultSet executeQuery(String sql) throws SQLException
+  public JaqlJdbcResultSet executeQuery(String script) throws SQLException
   {
-    if( ! execute(sql) )
+    if( ! execute(script) )
     {
       throw new SQLException("no result set");
     }
-    return results.remove(0);
+    return getResultSet();
   }
 
   @Override
-  public int executeUpdate(String sql) throws SQLException
+  public int executeUpdate(String script) throws SQLException
   {
     throw new SQLFeatureNotSupportedException("update not supported");
   }
 
   @Override
-  public int executeUpdate(String sql, int autoGeneratedKeys)
+  public int executeUpdate(String script, int autoGeneratedKeys)
       throws SQLException
   {
     throw new SQLFeatureNotSupportedException("update not supported");
   }
 
   @Override
-  public int executeUpdate(String sql, int[] columnIndexes) throws SQLException
+  public int executeUpdate(String script, int[] columnIndexes) throws SQLException
   {
     throw new SQLFeatureNotSupportedException("update not supported");
   }
 
   @Override
-  public int executeUpdate(String sql, String[] columnNames)
+  public int executeUpdate(String script, String[] columnNames)
       throws SQLException
   {
     throw new SQLFeatureNotSupportedException("update not supported");
@@ -207,7 +251,16 @@ public class JaqlJdbcStatement implements Statement
   @Override
   public boolean getMoreResults() throws SQLException
   {
-    return results.size() > 0;
+    try
+    {
+      return parsedJaql != null && parsedJaql.hasMoreResults();
+    }
+    catch( Exception e )
+    {
+      // 58033  An unexpected error occurred while attempting to access a client driver.
+      Throwable c = BaseUtil.getRootCause(e);
+      throw new SQLException("while checking for more results: ["+c.getClass().getSimpleName()+"]"+c.getMessage(),"58033",e);
+    }
   }
 
   @Override
@@ -218,7 +271,7 @@ public class JaqlJdbcStatement implements Statement
 //    {
 //      throw new SQLFeatureNotSupportedException("results");
 //    }
-    return results.size() > 0;
+    return getMoreResults();
   }
 
   @Override
@@ -230,11 +283,22 @@ public class JaqlJdbcStatement implements Statement
   @Override
   public JaqlJdbcResultSet getResultSet() throws SQLException
   {
-    if( results.size() > 0 )
+    try
     {
-      return results.remove(0);
+      JsonIterator iter = parsedJaql.iter();
+      RecordSchema recSchema = getRowSchema( parsedJaql.currentSchema() );
+      return new JaqlJdbcResultSet(this, recSchema, iter);
     }
-    return null;
+    catch( SQLException e )
+    {
+      throw e;
+    }
+    catch( Exception e )
+    {
+      // 58033  An unexpected error occurred while attempting to access a client driver.
+      Throwable c = BaseUtil.getRootCause(e);
+      throw new SQLException("while running statement: ["+c.getClass().getSimpleName()+"]"+c.getMessage(),"58033",e);
+    }
   }
 
   @Override
@@ -339,5 +403,4 @@ public class JaqlJdbcStatement implements Statement
   {
     return null;
   }
-
 }
