@@ -28,6 +28,7 @@ import org.apache.hadoop.io.Text;
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.io.serialization.text.def.BoolSerializer;
+import com.ibm.jaql.io.serialization.text.def.DecimalNoSuffixSerializer;
 import com.ibm.jaql.io.serialization.text.def.DecimalSerializer;
 import com.ibm.jaql.io.serialization.text.def.DoubleSerializer;
 import com.ibm.jaql.io.serialization.text.def.LongSerializer;
@@ -132,7 +133,7 @@ public class JsonToDel {
     serializers = new EnumMap<JsonEncoding, TextBasicSerializer<?>>(JsonEncoding.class);
     serializers.put(JsonEncoding.BOOLEAN, new BoolSerializer());
     serializers.put(JsonEncoding.LONG, new LongSerializer());
-    serializers.put(JsonEncoding.DECFLOAT, new DecimalSerializer());
+    serializers.put(JsonEncoding.DECFLOAT, new DecimalNoSuffixSerializer());
     serializers.put(JsonEncoding.DOUBLE, new DoubleSerializer());
   }
   
