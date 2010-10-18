@@ -69,6 +69,8 @@ public class StrJoinFn extends Expr // TODO: make Aggregate?
       builder.setLength(0);
     }
     JsonValue value = exprs[1].eval(context);
+    if( !(value instanceof JsonString) )
+    	throw new Exception("Separator for strJoin must be of type JsonString, received: " + value.getType() );
     String theSep = ( value == null ) ? "" : value.toString();
     String sep = "";
     JsonIterator iter = exprs[0].iter(context);
