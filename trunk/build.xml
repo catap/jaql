@@ -59,12 +59,12 @@
   <!-- <property name="test.jaql.mapred.mode" value="local" /> -->
   <property name="tmp.dir" value="${build.dir}/tmp" />
   <property name="year" value="2010" />
-  <property name="version" value="0.5" />
+  <property name="version" value="0.5.1" />
 	
 	<!-- Release version information -->
 	<property name="major" value="0" />
 	<property name="minor" value="5" />
-	<property name="point" value="0" />
+	<property name="point" value="1" />
 	<tstamp>
 	    <format property="release.timestamp" pattern="MMMM dd, yyyy, HH:mm:ss" locale="en,US" />
 	</tstamp>
@@ -279,7 +279,7 @@
   </target>
 
   <target name="promote_check_msg" unless="python.found" >
-    <echo>[WARNING] pyhon not found! TestPyJaql will be skipped.</echo>
+    <echo>[WARNING] python not found! TestPyJaql will be skipped.</echo>
     <echo>		    Please check python installation</echo>
   </target>
 

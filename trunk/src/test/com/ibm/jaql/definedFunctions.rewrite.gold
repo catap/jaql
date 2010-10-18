@@ -4382,7 +4382,13 @@ strJoin(["I","love", "the","game","!"], {a:12});
 
 ;//--------------------- RESULT ------------------
 
-"I{\n  \"a\": 12\n}love{\n  \"a\": 12\n}the{\n  \"a\": 12\n}game{\n  \"a\": 12\n}!"
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+
+;//------------------- TEST-CASE -----------------
 
 ;//------------------- TEST-CASE -----------------
 
@@ -4410,12 +4416,18 @@ strJoin(["��a��","��b��", "��c��"], "��!");
 
 ;//------------------- TEST-CASE -----------------
 
-//defect 9395
+//test unsupported separator type
 strJoin(["I","love", "the","game","!"], {a:1});
 
 ;//--------------------- RESULT ------------------
 
-"I{\n  \"a\": 1\n}love{\n  \"a\": 1\n}the{\n  \"a\": 1\n}game{\n  \"a\": 1\n}!"
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+
+;//------------------- TEST-CASE -----------------
 
 ;//------------------- TEST-CASE -----------------
 
@@ -4423,7 +4435,13 @@ strJoin(["I","love", "the","game","!"], [" "]);
 
 ;//--------------------- RESULT ------------------
 
-"I[\n  \" \"\n]love[\n  \" \"\n]the[\n  \" \"\n]game[\n  \" \"\n]!"
+
+
+;//----- EXCEPTION -----
+
+// java.lang.Exception
+
+;//------------------- TEST-CASE -----------------
 
 ;//------------------- TEST-CASE -----------------
 
@@ -4488,13 +4506,7 @@ substring("I love the game", 2, 100);
 
 ;//--------------------- RESULT ------------------
 
-
-
-;//----- EXCEPTION -----
-
-// java.lang.StringIndexOutOfBoundsException
-
-;//------------------- TEST-CASE -----------------
+"love the game"
 
 ;//------------------- TEST-CASE -----------------
 
