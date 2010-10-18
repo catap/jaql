@@ -1,8 +1,5 @@
 
 Initializing Jaql.
-Starting DataNode 0 with dfs.data.dir: /tmp/jaql/dfs/dfs/data/data1,/tmp/jaql/dfs/dfs/data/data2
-Generating rack names for tasktrackers
-Generating host names for tasktrackers
 
 jaql> 10;10
 
@@ -30,5 +27,3 @@ jaql>
 jaql> 
 quit;
 Shutting down jaql.
-Shutting down the Mini HDFS Cluster
-Shutting down DataNode 0
