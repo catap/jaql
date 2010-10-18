@@ -66,7 +66,10 @@ public class SubstringFn extends Expr
     else
     {
       long end = n.longValueExact();
-      s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?
+      if( end < s.length() )
+    	  s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?
+      else
+    	  s = s.substring( (int) start );
     }
 
     JsonString js = new JsonString(s); // TODO: memory
