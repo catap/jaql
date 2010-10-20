@@ -133,10 +133,7 @@ import com.ibm.jaql.lang.expr.io.DelFn;
 import com.ibm.jaql.lang.expr.io.ExpandFDExpr;
 import com.ibm.jaql.lang.expr.io.FileFn;
 import com.ibm.jaql.lang.expr.io.FileSplitToRecordFn;
-import com.ibm.jaql.lang.expr.io.HBaseDeleteExpr;
-import com.ibm.jaql.lang.expr.io.HBaseFetchExpr;
 import com.ibm.jaql.lang.expr.io.HBaseReadExpr;
-import com.ibm.jaql.lang.expr.io.HBaseShellExpr;
 import com.ibm.jaql.lang.expr.io.HBaseWriteExpr;
 import com.ibm.jaql.lang.expr.io.HadoopTempExpr;
 import com.ibm.jaql.lang.expr.io.HdfsFn;
@@ -507,8 +504,6 @@ public final class SystemNamespace extends Namespace {
   // TODO: delete: register(new HdfsReadExpr.Descriptor());
     register(new HadoopTempExpr.Descriptor());
     register(new HBaseWriteExpr.Descriptor());
-    register(new HBaseFetchExpr.Descriptor());
-    register(new HBaseDeleteExpr.Descriptor());
     register(new HBaseReadExpr.Descriptor());
     register(new ArrayReadExpr.Descriptor());
     register(new HttpGetExpr.Descriptor());
@@ -526,7 +521,6 @@ public final class SystemNamespace extends Namespace {
     // lower level shell access
     register(new LsFn.Descriptor());
     register(new HdfsShellExpr.Descriptor());
-    register(new HBaseShellExpr.Descriptor());
     register(new SharedHashtableNFn.Descriptor()); // TODO: experimental
     register(new KeyLookupFn.Descriptor()); // TODO: experimental
     register(new KeyMergeFn.Descriptor()); // TODO: experimental
