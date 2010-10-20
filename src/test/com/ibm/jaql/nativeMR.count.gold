@@ -102,6 +102,32 @@ nativeMR( badConf );
  
 
 //
+// call a native MR job, but specify that the session jar should be used
+//
+conf = {
+  //"mapred.jar": "../../extension.jar",
+  "mapred.mapper.class": "com.acme.extensions.mr.WordCount$TokenizerMapperWithJson",
+  "mapred.combiner.class": "com.acme.extensions.mr.WordCount$IntSumReducer",
+  "mapred.reducer.class": "com.acme.extensions.mr.WordCount$IntSumReducer",
+  "mapred.mapoutput.key.class": "org.apache.hadoop.io.Text",
+  "mapred.mapoutput.value.class": "org.apache.hadoop.io.IntWritable",
+  "mapred.input.dir": "jaql-overview.html",
+  "mapred.output.dir": "wordCount-result2.txt"
+};
+;//------------------- TEST-CASE -----------------
+
+nativeMR( conf, {useSessionJar: true} );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+ 
+
+//
 // call a version 1.0 native MR job
 //
 confV1 = {

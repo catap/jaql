@@ -54,15 +54,14 @@ public class ReadConfExpr extends Expr
   public JsonValue eval(Context context) throws Exception
   {
     JobConf conf = Globals.getJobConf();
-    JsonValue dflt = null;
-    if (conf == null)
-    {
-      dflt = exprs[1].eval(context);
-      return dflt;
+    if( conf == null ) {
+    	conf = new JobConf();
+    	Globals.setJobConf(conf);
     }
 
     JsonString name = (JsonString) exprs[0].eval(context);
     String val = conf.get(name.toString());
+    JsonValue dflt = null;
     if (val == null)
     {
       dflt = exprs[1].eval(context);

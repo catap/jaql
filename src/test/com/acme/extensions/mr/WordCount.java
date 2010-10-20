@@ -36,6 +36,8 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.GenericOptionsParser;
 
+import com.ibm.jaql.json.type.JsonString;
+
 public class WordCount {
 
   public static class TokenizerMapper 
@@ -53,6 +55,25 @@ public class WordCount {
         collector.collect(word, one);
       }
     }
+  }
+  
+  public static class TokenizerMapperWithJson 
+  extends MapReduceBase implements Mapper<LongWritable, Text, Text, IntWritable>{
+
+	  private final static IntWritable one = new IntWritable(1);
+	  private Text word = new Text();
+
+	  public void map(LongWritable key, Text value, 
+			  OutputCollector<Text, IntWritable> collector, Reporter reporter
+	  ) throws IOException {
+		  StringTokenizer itr = new StringTokenizer(value.toString());
+		  while (itr.hasMoreTokens()) {
+			  // if jaql's jar is not present, then this will not work
+			  JsonString jsTest = new JsonString(itr.nextToken());
+			  word.set(jsTest.toString());
+			  collector.collect(word, one);
+		  }
+	  }
   }
   
   public static class IntSumReducer 
