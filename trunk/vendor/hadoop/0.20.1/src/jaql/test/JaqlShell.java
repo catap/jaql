@@ -24,16 +24,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HConstants;
-import org.apache.hadoop.hbase.HRegionInfo;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.MiniHBaseCluster;
-import org.apache.hadoop.hbase.MiniZooKeeperCluster;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.regionserver.HRegion;
-import org.apache.hadoop.hbase.util.FSUtils;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MiniMRCluster;
@@ -50,11 +40,8 @@ public class JaqlShell extends AbstractJaqlShell
   private static final Log LOG = LogFactory.getLog(JaqlShell.class.getName());
 
   private Configuration    m_conf;
-  private MiniHBaseCluster m_base;
   private MiniMRCluster    m_mr;
   private MiniDFSCluster   m_fs;
-  private MiniZooKeeperCluster zooKeeperCluster;
-  private HBaseAdmin       m_admin;
 
   private JaqlShell() { };
  
@@ -68,7 +55,7 @@ public class JaqlShell extends AbstractJaqlShell
   {
     String vInfo = VersionInfo.getVersion();
     System.setProperty("test.build.data", dir);
-    m_conf = new HBaseConfiguration();
+    m_conf = new Configuration();
 
     // setup conf according to the Hadoop version
     if (vInfo.indexOf("0.20") < 0)
@@ -83,57 +70,57 @@ public class JaqlShell extends AbstractJaqlShell
     m_conf.set("fs.default.name", filesystem.getUri().toString());
     Path parentdir = filesystem.getHomeDirectory();
     filesystem.mkdirs(parentdir);
-    FSUtils.setVersion(filesystem, parentdir);
+    //FSUtils.setVersion(filesystem, parentdir);
    
     // setup hbase cluster (only if OS is not windows)
-    if(!System.getProperty("os.name").toLowerCase().contains("win")) {
-      m_conf.set(HConstants.HBASE_DIR, parentdir.toString());      
-      Path hdfsTestDir = filesystem.makeQualified(new Path(m_conf.get(HConstants.HBASE_DIR)));
-
-      // prime the hdfs for hbase information...
-      HRegion root = HRegion.createHRegion(HRegionInfo.ROOT_REGIONINFO, hdfsTestDir, (HBaseConfiguration)m_conf);
-      HRegion meta = HRegion.createHRegion(HRegionInfo.FIRST_META_REGIONINFO, hdfsTestDir, (HBaseConfiguration)m_conf);
-      HRegion.addRegionToMETA(root, meta);
-
-      // ... and close the root and meta
-      if (meta != null) {
-        meta.close();
-        meta.getLog().closeAndDelete();
-      }
-      if (root != null) {
-        root.close();
-        root.getLog().closeAndDelete();
-      }
-
-      try
-      {
-        this.zooKeeperCluster = new MiniZooKeeperCluster();
-        File testDir = new File(dir);
-        int clientPort = this.zooKeeperCluster.startup(testDir);
-        m_conf.set("hbase.zookeeper.property.clientPort", Integer.toString(clientPort));
-      } catch(Exception e) {
-        LOG.error("Unable to startup zookeeper");
-        throw new IOException(e);
-      }
-      try {
-        // start the mini cluster
-        m_base = new MiniHBaseCluster((HBaseConfiguration)m_conf, numNodes);
-      } catch(Exception e) {
-        LOG.error("Unable to startup hbase");
-        throw new IOException(e);
-      }
-      try {
-        // opening the META table ensures that cluster is running
-        new HTable((HBaseConfiguration)m_conf, HConstants.META_TABLE_NAME);        
-
-        //setupOverride(conf);
-      }
-      catch (Exception e)
-      {
-        LOG.warn("Could not verify that hbase is up", e);
-      }
-      setupOverride();
-    }
+//    if(!System.getProperty("os.name").toLowerCase().contains("win")) {
+//      m_conf.set(HConstants.HBASE_DIR, parentdir.toString());      
+//      Path hdfsTestDir = filesystem.makeQualified(new Path(m_conf.get(HConstants.HBASE_DIR)));
+//
+//      // prime the hdfs for hbase information...
+//      HRegion root = HRegion.createHRegion(HRegionInfo.ROOT_REGIONINFO, hdfsTestDir, (HBaseConfiguration)m_conf);
+//      HRegion meta = HRegion.createHRegion(HRegionInfo.FIRST_META_REGIONINFO, hdfsTestDir, (HBaseConfiguration)m_conf);
+//      HRegion.addRegionToMETA(root, meta);
+//
+//      // ... and close the root and meta
+//      if (meta != null) {
+//        meta.close();
+//        meta.getLog().closeAndDelete();
+//      }
+//      if (root != null) {
+//        root.close();
+//        root.getLog().closeAndDelete();
+//      }
+//
+//      try
+//      {
+//        this.zooKeeperCluster = new MiniZooKeeperCluster();
+//        File testDir = new File(dir);
+//        int clientPort = this.zooKeeperCluster.startup(testDir);
+//        m_conf.set("hbase.zookeeper.property.clientPort", Integer.toString(clientPort));
+//      } catch(Exception e) {
+//        LOG.error("Unable to startup zookeeper");
+//        throw new IOException(e);
+//      }
+//      try {
+//        // start the mini cluster
+//        m_base = new MiniHBaseCluster((HBaseConfiguration)m_conf, numNodes);
+//      } catch(Exception e) {
+//        LOG.error("Unable to startup hbase");
+//        throw new IOException(e);
+//      }
+//      try {
+//        // opening the META table ensures that cluster is running
+//        new HTable((HBaseConfiguration)m_conf, HConstants.META_TABLE_NAME);        
+//
+//        //setupOverride(conf);
+//      }
+//      catch (Exception e)
+//      {
+//        LOG.warn("Could not verify that hbase is up", e);
+//      }
+//      setupOverride();
+//    }
 
     m_mr = startMRCluster(numNodes, m_fs.getFileSystem().getName(), m_conf);
 
@@ -148,22 +135,22 @@ public class JaqlShell extends AbstractJaqlShell
     Path tmpPath = new Path(hd, "_temporary");
     if (!fs.exists(tmpPath)) fs.mkdirs(tmpPath);
 
-    if (m_base != null)
-    {
-      try {
-        m_admin = new HBaseAdmin((HBaseConfiguration) m_conf);
-        HTableDescriptor[] tables = m_admin.listTables();
-        if (tables != null)
-        {
-          for (int i = 0; i < tables.length; i++)
-          {
-            m_admin.enableTable(tables[i].getName());
-          }
-        }
-      } catch(Exception e) {
-        LOG.warn("failed to enable hbase tables");
-      }
-    }
+//    if (m_base != null)
+//    {
+//      try {
+//        m_admin = new HBaseAdmin((HBaseConfiguration) m_conf);
+//        HTableDescriptor[] tables = m_admin.listTables();
+//        if (tables != null)
+//        {
+//          for (int i = 0; i < tables.length; i++)
+//          {
+//            m_admin.enableTable(tables[i].getName());
+//          }
+//        }
+//      } catch(Exception e) {
+//        LOG.warn("failed to enable hbase tables");
+//      }
+//    }
   }
 
   /**
@@ -294,14 +281,14 @@ public class JaqlShell extends AbstractJaqlShell
       m_mr.shutdown();
       m_mr = null;
     }
-    if (m_base != null)
-    {
-      m_base.shutdown();
-      m_base = null;
-    }
-    if (zooKeeperCluster != null) {
-      zooKeeperCluster.shutdown();
-    }
+//    if (m_base != null)
+//    {
+//      m_base.shutdown();
+//      m_base = null;
+//    }
+//    if (zooKeeperCluster != null) {
+//      zooKeeperCluster.shutdown();
+//    }
     if (m_fs != null)
     {
       m_fs.shutdown();

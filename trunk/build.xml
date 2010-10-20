@@ -36,7 +36,7 @@
 
   <property name="hadoop.dir" value="${basedir}/vendor/hadoop/${hadoop.version}" />
   <property file="${hadoop.dir}/build.properties" />
-  <property name="hbase.dir" value="${basedir}/vendor/hbase/${hbase.version}" />
+  <!-- <property name="hbase.dir" value="${basedir}/vendor/hbase/${hbase.version}" /> -->
 
   <property name="test.build.dir" value="${build.dir}/test" />
   <property name="test.src.dir" value="${basedir}/src/test/com/ibm/jaql" />
@@ -68,6 +68,9 @@
 	<tstamp>
 	    <format property="release.timestamp" pattern="MMMM dd, yyyy, HH:mm:ss" locale="en,US" />
 	</tstamp>
+	<tstamp>
+		<format property="distro.timestamp" pattern="MM_dd_yyyy" locale="en,US"/>
+  </tstamp>
 	
   <property name="Name" value="jaql" />
   <property name="name" value="jaql" />
@@ -79,10 +82,10 @@
       <include name="**/*.jar" />
       <exclude name="**/excluded" />
     </fileset>
-    <fileset dir="${hbase.dir}">
+    <!-- <fileset dir="${hbase.dir}">
       <include name="**/*.jar" />
       <exclude name="**/excluded" />
-    </fileset>
+    </fileset> -->
     <fileset dir="${basedir}/lib">
       <include name="**/*.jar" />
       <exclude name="**/excluded" />
@@ -92,9 +95,9 @@
 
   <path id="test.classpath.base">
     <pathelement location="${hadoop.dir}/conf" />
-    <pathelement location="${hbase.dir}/conf" />
+    <!-- <pathelement location="${hbase.dir}/conf" /> -->
     <pathelement location="${hadoop.dir}/src" />
-    <pathelement location="${hbase.dir}/src" />
+    <!-- <pathelement location="${hbase.dir}/src" /> -->
     <pathelement location="${conf.dir}" />
     <pathelement location="${test.cache.data}" />
     <pathelement location="${build.dir}/jaql.jar" />
@@ -106,10 +109,10 @@
       <include name="**/*.jar" />
       <exclude name="**/excluded" />
     </fileset>
-    <fileset dir="${hbase.dir}">
+    <!-- <fileset dir="${hbase.dir}">
       <include name="**/*.jar" />
       <exclude name="**/excluded" />
-    </fileset>
+    </fileset> -->
   </path>
 
   <path id="test.classpath.mini">
@@ -377,7 +380,7 @@
     <mkdir dir="${build.classes}" />
     <mkdir dir="${build.src}" />
     <available file="${hadoop.dir}/src/jaql" property="vendor.hadoop.hasoverrides" />
-    <available file="${hbase.dir}/src/jaql" property="vendor.hbase.hasoverrides" />
+    <!-- <available file="${hbase.dir}/src/jaql" property="vendor.hbase.hasoverrides" /> -->
   </target>
 
   <target name="init-copy">
@@ -434,7 +437,8 @@
     <javacc target="${src.dir}/com/ibm/jaql/json/parser/JsonParser.jj" outputDirectory="${src.dir}/com/ibm/jaql/json/parser" javacchome="${javacc.home}" />
   </target>
 
-  <target name="compile" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version, init-copy">
+	<!-- remove init-vendor-hbase-version -->
+  <target name="compile" depends="init, init-vendor-hadoop-version, init-copy">
     <!-- place antlr output into build directory? outputdirectory="${build.src}" -->
     <!-- use ant contrib <for> to find all .g files? -->
     <antlr target="${src.dir}/com/ibm/jaql/lang/parser/jaql.g">
@@ -556,7 +560,8 @@
       <fileset dir="${docs.dir}" />
     </copy>
   </target>
-  <target name="javadoc" depends="init, init-copy, init-vendor-hadoop-version, init-vendor-hbase-version, default-doc">
+	<!-- remove init-vendor-hbase-version -->
+  <target name="javadoc" depends="init, init-copy, init-vendor-hadoop-version, default-doc">
     <mkdir dir="${build.javadocs}" />
     <javadoc overview="${build.src}/java/overview.html" packagenames="com.ibm.jaql.*" destdir="${build.javadocs}" version="true" use="true" windowtitle="${Name} ${version} API" doctitle="${Name} ${version} API" bottom="Copyright &amp;copy; IBM Corp ${year}">
       <packageset dir="${build.src}/java" />
@@ -597,12 +602,12 @@
         <include name="**/*" />
       </fileset>
     </copy>
-    <mkdir dir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}" />
+    <!-- <mkdir dir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}" />
     <copy todir="${build.dir}/jaql-${version}/vendor/hbase/${hbase.version}">
       <fileset dir="${hbase.dir}">
         <include name="**/*" />
       </fileset>
-    </copy>
+    </copy> -->
 
     <mkdir dir="${build.dir}/jaql-${version}/bin" />
     <copy todir="${build.dir}/jaql-${version}/bin">
@@ -625,7 +630,7 @@
 
     <copy todir="${build.dir}/jaql-${version}" file="${basedir}/build.xml" />
 
-    <tar compression="gzip" longfile="gnu" destfile="${build.dir}/jaql-${version}_hadoop-${hadoop.version}.tgz">
+    <tar compression="gzip" longfile="gnu" destfile="${build.dir}/jaql-${version}_${distro.timestamp}.tgz">
       <tarfileset dir="${build.dir}/jaql-${version}" prefix="jaql-${version}" excludes="bin/*" />
       <tarfileset dir="${build.dir}/jaql-${version}/bin" prefix="jaql-${version}/bin" filemode="755" />
     </tar>
@@ -649,7 +654,8 @@
   <!-- ================================================================== -->
   <!-- Jaql Source Distribution                                           -->
   <!-- ================================================================== -->
-  <target name="srcdistro" depends="init, init-vendor-hadoop-version, init-vendor-hbase-version">
+	<!-- remove init-vendor-hbase-version -->
+  <target name="srcdistro" depends="init, init-vendor-hadoop-version">
     <mkdir dir="${build.dir}/jaql-${version}" />
 
     <mkdir dir="${build.dir}/jaql-${version}/conf" />

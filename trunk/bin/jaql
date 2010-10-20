@@ -26,9 +26,9 @@
 if [ "$DFLT_HADOOP_VERSION" = "" ]; then
 	DFLT_HADOOP_VERSION=0.20.1
 fi
-if [ "$DFLT_HBASE_VERSION" = "" ]; then
- DFLT_HBASE_VERSION=0.20.0
-fi
+#if [ "$DFLT_HBASE_VERSION" = "" ]; then
+# DFLT_HBASE_VERSION=0.20.0
+#fi
 
 if [ "$JAQL_HOME" = "" ]; then
 	echo "Error, JAQL_HOME must be set"
@@ -43,9 +43,9 @@ if [ "$HADOOP_CONF_DIR" = "" ]; then
 	HADOOP_CONF_DIR=${HADOOP_HOME}/conf
 fi
 
-if [ "$HBASE_HOME" = "" ]; then
-	HBASE_HOME=${JAQL_HOME}/vendor/hbase/${DFLT_HBASE_VERSION}
-fi
+#if [ "$HBASE_HOME" = "" ]; then
+#	HBASE_HOME=${JAQL_HOME}/vendor/hbase/${DFLT_HBASE_VERSION}
+#fi
 
 if [ "$HADOOP_CONF_OVERRIDE_DIR" = "" ]; then
 	HADOOP_OVERRIDE=$$_hadoop-override
@@ -69,7 +69,7 @@ fi
 
 JAQL_CONF_DIR=${JAQL_HOME}/conf
 
-HBASE_CONF_DIR=${HBASE_HOME}/conf
+#HBASE_CONF_DIR=${HBASE_HOME}/conf
 
 # some Java parameters
 if [ "$JAVA_HOME" != "" ]; then
@@ -96,7 +96,8 @@ if [ "$HADOOP_HEAPSIZE" != "" ]; then
 fi
 
 # CLASSPATH initially contains $HADOOP_CONF_DIR
-CLASSPATH="${HADOOP_CONF_OVERRIDE_DIR}:${JAQL_CONF_DIR}:${HADOOP_CONF_DIR}:${HBASE_CONF_DIR}"
+# remove :${HBASE_CONF_DIR}
+CLASSPATH="${HADOOP_CONF_OVERRIDE_DIR}:${JAQL_CONF_DIR}:${HADOOP_CONF_DIR}"
 CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 
 if [ -d "$HADOOP_HOME/webapps" ]; then
@@ -106,9 +107,9 @@ if [ -d "$HADOOP_HOME/src/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HADOOP_HOME/src
 fi
 
-if [ -d "$HBASE_HOME/src/webapps" ]; then
-	 CLASSPATH=${CLASSPATH}:$HBASE_HOME/src
-fi
+#if [ -d "$HBASE_HOME/src/webapps" ]; then
+#	 CLASSPATH=${CLASSPATH}:$HBASE_HOME/src
+#fi
 
 if [ -e "${JAQL_HOME}/jaql.jar" ]; then
   CLASSPATH=${CLASSPATH}:${JAQL_HOME}/jaql.jar
@@ -130,9 +131,9 @@ fi
 if [ -d "$HADOOP_HOME/build/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build
 fi
-if [ -d "$HBASE_HOME/webapps" ]; then
-  CLASSPATH=${CLASSPATH}:$HBASE_HOME
-fi
+#if [ -d "$HBASE_HOME/webapps" ]; then
+#  CLASSPATH=${CLASSPATH}:$HBASE_HOME
+#fi
 if [ -d "$HADOOP_HOME/build/test/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build/test/classes
 fi
@@ -153,26 +154,26 @@ done
 for f in $HADOOP_HOME/contrib/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
-for f in $HBASE_HOME/hbase-*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
+#for f in $HBASE_HOME/hbase-*.jar; do
+#  CLASSPATH=${CLASSPATH}:$f;
+#done
 
 # add hbase
-if [ -d "$HADOOP_HOME/build/contrib/hbase/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build/contrib/hbase/classes
-fi
+#if [ -d "$HADOOP_HOME/build/contrib/hbase/classes" ]; then
+#  CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build/contrib/hbase/classes
+#fi
 
-if [ -d "$HADOOP_HOME/build/contrib/hbase/test" ]; then
-  CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build/contrib/hbase/test
-fi
+#if [ -d "$HADOOP_HOME/build/contrib/hbase/test" ]; then
+#  CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build/contrib/hbase/test
+#fi
 
-if [ -d "$HBASE_HOME/build/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HBASE_HOME/build/classes
-fi
+#if [ -d "$HBASE_HOME/build/classes" ]; then
+#  CLASSPATH=${CLASSPATH}:$HBASE_HOME/build/classes
+#fi
 
-if [ -d "$HBASE_HOME/build/test/classes" ]; then
-  CLASSPATH=${CLASSPATH}:$HBASE_HOME/build/test/classes
-fi
+#if [ -d "$HBASE_HOME/build/test/classes" ]; then
+#  CLASSPATH=${CLASSPATH}:$HBASE_HOME/build/test/classes
+#fi
 
 # add libs to CLASSPATH
 for f in $HADOOP_HOME/lib/*.jar; do
@@ -187,17 +188,17 @@ for f in $HADOOP_HOME/lib/jsp-2.1/*.jar; do
   CLASSPATH=${CLASSPATH}:$f;
 done
 
-for f in $HBASE_HOME/lib/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
+#for f in $HBASE_HOME/lib/*.jar; do
+#  CLASSPATH=${CLASSPATH}:$f;
+#done
 
-for f in $HBASE_HOME/lib/jetty-ext/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
+#for f in $HBASE_HOME/lib/jetty-ext/*.jar; do
+#  CLASSPATH=${CLASSPATH}:$f;
+#done
 
-for f in $HBASE_HOME/lib/jsp-2.1/*.jar; do
-  CLASSPATH=${CLASSPATH}:$f;
-done
+#for f in $HBASE_HOME/lib/jsp-2.1/*.jar; do
+#  CLASSPATH=${CLASSPATH}:$f;
+#done
 
 # add hadoop user-specified CLASSPATH
 if [ "$HADOOP_CLASSPATH" != "" ]; then

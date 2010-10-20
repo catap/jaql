@@ -20,9 +20,6 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.HTableDescriptor;
 
 /**
  * 
@@ -43,31 +40,6 @@ public class UtilForTest
       if (fs.exists(p))
       {
         fs.delete(p, true);
-      }
-    }
-  }
-
-  /**
-   * @param prefix
-   * @throws IOException
-   */
-  public static void cleanUpHBase(String prefix) throws IOException
-  {
-    if ("true".equals(System.getProperty("test.cleanup")))
-    {
-      HBaseConfiguration conf = new HBaseConfiguration();
-      HBaseAdmin admin = new HBaseAdmin(conf);
-      HTableDescriptor[] tables = admin.listTables();
-      int numTables = tables.length;
-      for (int i = 0; i < numTables; i++)
-      {
-        HTableDescriptor td = tables[i];
-        String tName = td.getName().toString();
-        if (tName.startsWith(prefix))
-        {
-          admin.disableTable(td.getName());
-          admin.deleteTable(td.getName());
-        }
       }
     }
   }
