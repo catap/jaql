@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.lang.expr.hadoop;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
@@ -37,6 +38,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.ClassLoaderMgr;
 
 // TODO: add an async option and return a handle. add an additional expression to manage an MR handle.
 //       it will be able to do things like kill the job, report on its status, etc.
@@ -72,6 +74,9 @@ public class NativeMapReduceExpr extends Expr
   private static final String VERSION_1_0 = "1.0";
   private static final JsonString VERSION_NAME = new JsonString("apiVersion");
   private String apiVersion = VERSION_0_0;
+  
+  private static final JsonString USE_SESSION_JAR = new JsonString("useSessionJar");
+  private JsonBool useSessionJarDefault = JsonBool.FALSE;
   
   /**
    * @param exprs
@@ -113,12 +118,18 @@ public class NativeMapReduceExpr extends Expr
     // get the options (if they exist) and process them
     JsonRecord optsRec = (JsonRecord)exprs[1].eval(context);
     if( optsRec != null ) {
+      // option that specifies hadoop API version
       JsonValue v = optsRec.get(VERSION_NAME);
       if( v != null && v.getType() == JsonType.STRING ) {
         String vs = ((JsonString)v).toString();
         if( vs.equals(VERSION_1_0)) {
           apiVersion = vs;
         }
+      }
+      // option that specifies whether jaql's session jar is to be used
+      v = optsRec.get(USE_SESSION_JAR);
+      if( v != null && v.getType() == JsonType.BOOLEAN ) {
+    	  useSessionJarDefault = (JsonBool) v;
       }
     }
     
@@ -144,6 +155,15 @@ public class NativeMapReduceExpr extends Expr
   private JsonRecord eval_0_0(Configuration conf) throws Exception {
     
     JobConf job = new JobConf(conf);
+    // set the jar if needed
+    if( useSessionJarDefault.get() ) {
+    	File jFile = ClassLoaderMgr.getExtensionJar();
+    	if( jFile != null ) {
+    		job.setJar(jFile.getAbsolutePath());
+    	} else {
+    		job.setJarByClass(NativeMapReduceExpr.class);
+    	}
+    }
     
     // submit the job
     boolean status = true;
@@ -152,6 +172,7 @@ public class NativeMapReduceExpr extends Expr
     	Util.submitJob(new JsonString(NativeMapReduceExpr.class.getName()), job);
     } catch(IOException e) {
       status = false;
+      e.printStackTrace();
       LOG.warn("native map-reduce job failed", e);
     }
     // setup the return value
@@ -166,10 +187,19 @@ public class NativeMapReduceExpr extends Expr
     boolean status = true;
     
     Job job = new Job(conf);
+    // set the jar if needed
+    if( useSessionJarDefault.get() ) {
+    	File jFile = ClassLoaderMgr.getExtensionJar();
+    	conf.set("mapred.jar", jFile.getAbsolutePath());
+    } else {
+    	job.setJarByClass(NativeMapReduceExpr.class);
+    }
+    
     try {
       job.waitForCompletion(true);
     } catch(Exception e) {
       status = false;
+      e.printStackTrace();
       LOG.warn("native map-reduce job failed", e);
     }
     // setup the return value
