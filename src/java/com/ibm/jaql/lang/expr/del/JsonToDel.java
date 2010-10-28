@@ -246,82 +246,86 @@ public class JsonToDel {
     }
   }
 
-  private void printUtf8Quoted(OutputStream out,
-                               boolean escape,
-                               byte[] utf8,
-                               int offset, 
-                               int length) throws IOException {
-    out.write(DOUBLE_QUOTE);
-    int end = offset + length;
-    for (int i = offset; i < end; i++) {
-      byte b = utf8[i];
-      if (b == DOUBLE_QUOTE) {
-        out.write(doubleQuoteEscapePrefix);
-        out.write(DOUBLE_QUOTE);
-      } else if (escape) {
-        switch (b) {
-          case SINGLE_QUOTE :
-            out.write(BACK_SLASH);
-            out.write(SINGLE_QUOTE);
-            break;
-          case BACK_SLASH :
-            out.write(BACK_SLASH);
-            out.write(BACK_SLASH);
-            break;
-          case BACKSPACE :
-            out.write(BACK_SLASH);
-            out.write('b');
-            break;
-          case FORM_FEED :
-            out.write(BACK_SLASH);
-            out.write('f');
-            break;
-          case LINE_FEED :
-            out.write(BACK_SLASH);
-            out.write('n');
-            break;
-          case CARRIAGE_RETURN :
-            out.write(BACK_SLASH);
-            out.write('r');
-            break;
-          case TAB :
-            out.write(BACK_SLASH);
-            out.write('t');
-            break;
-          default :
-            int currentByte = 0x000000FF & b;
-            int cp = 0;
-            // single-byte encoding?
-            if ((currentByte & 0x00000080) == 0) {
-              cp = currentByte;
-              // start of 2-byte sequence?
-            } else if ((currentByte & 0x000000E0) == 0x000000C0) {
-              int nextByte = 0x000000FF & utf8[++i];
-              // compute the code point
-              cp = ((0x0000001F & currentByte) << 6) + (0x0000003F & nextByte);
-            } else {
-              out.write(b);
-              break;
-            }
+	private void printUtf8Quoted(OutputStream out, boolean escape, byte[] utf8,
+			int offset, int length) throws IOException {
+		out.write(DOUBLE_QUOTE);
+		int end = offset + length;
+		boolean singlebyte = true;
+		for (int i = offset; i < end; i++) {
+			singlebyte = true;
+			byte b = utf8[i];
+			if (b == DOUBLE_QUOTE) {
+				out.write(doubleQuoteEscapePrefix);
+				out.write(DOUBLE_QUOTE);
+			} else if (escape) {
+				switch (b) {
+				case SINGLE_QUOTE:
+					out.write(BACK_SLASH);
+					out.write(SINGLE_QUOTE);
+					break;
+				case BACK_SLASH:
+					out.write(BACK_SLASH);
+					out.write(BACK_SLASH);
+					break;
+				case BACKSPACE:
+					out.write(BACK_SLASH);
+					out.write('b');
+					break;
+				case FORM_FEED:
+					out.write(BACK_SLASH);
+					out.write('f');
+					break;
+				case LINE_FEED:
+					out.write(BACK_SLASH);
+					out.write('n');
+					break;
+				case CARRIAGE_RETURN:
+					out.write(BACK_SLASH);
+					out.write('r');
+					break;
+				case TAB:
+					out.write(BACK_SLASH);
+					out.write('t');
+					break;
+				default:
+					int currentByte = 0x000000FF & b;
+					int cp = 0;
+					// single-byte encoding?
+					if (currentByte < 0x00000080) {
+						cp = currentByte;
+						singlebyte = true;
+						// start of 2-byte sequence?
+					} else if ((currentByte & 0x000000E0) == 0x000000C0) {
+						singlebyte = false;
+						int nextByte = 0x000000FF & utf8[i + 1];
+						// compute the code point
+						cp = ((0x0000001F & currentByte) << 6)
+								+ (0x0000003F & nextByte);
+					} else {
+						out.write(b);
+						break;
+					}
 
-            if (Character.isISOControl(cp)) {
-              out.write(BACK_SLASH);
-              out.write('u');
-              out.write(JsonUtil.hex[((cp & 0xf000) >>> 12)]);
-              out.write(JsonUtil.hex[((cp & 0x0f00) >>> 8)]);
-              out.write(JsonUtil.hex[((cp & 0x00f0) >>> 4)]);
-              out.write(JsonUtil.hex[(cp & 0x000f)]);
-            } else {
-              out.write(b);
-            }
-        }
-      } else {
-        out.write(b);
-      }
-    }
-    out.write(DOUBLE_QUOTE);
-  }
-
+					if (Character.isISOControl(cp)) {
+						if (!singlebyte)
+							i++;
+						out.write(BACK_SLASH);
+						out.write('u');
+						out.write(JsonUtil.hex[((cp & 0xf000) >>> 12)]);
+						out.write(JsonUtil.hex[((cp & 0x0f00) >>> 8)]);
+						out.write(JsonUtil.hex[((cp & 0x00f0) >>> 4)]);
+						out.write(JsonUtil.hex[(cp & 0x000f)]);
+					} else {
+						out.write(b);
+					}
+				}
+			} else {
+				out.write(b);
+			}
+		}
+		out.write(DOUBLE_QUOTE);
+	}
+  
   private void printFieldUnquoted(PrintStream out, JsonValue value)
       throws IOException {
     if (value instanceof JsonString) {
