@@ -111,6 +111,9 @@ public class Util {
 	}	
     
 	public static void logAllTaskSyslogs(RunningJob rj, boolean onlySuccessful) throws Exception {
+		String fetch = System.getProperty("jaql.cluster.fetchlogs");
+		if( fetch != null && fetch.equals("false"))
+			return;
 		TaskCompletionEvent[] events = rj.getTaskCompletionEvents(0);
 		for(TaskCompletionEvent event : events) {
 			if( onlySuccessful && (event.getTaskStatus() == TaskCompletionEvent.Status.SUCCEEDED) ) {
