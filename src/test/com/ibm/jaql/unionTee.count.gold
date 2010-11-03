@@ -1024,4 +1024,218 @@ T -> sort by [$.a];
 ;//------------------- TEST-CASE -----------------
 
 
+//---------------------------------------------------------------------------
+// Composite input/output adapater for Tee, Union and Merge
+//---------------------------------------------------------------------------
+x = hdfs('X');
+;//------------------- TEST-CASE -----------------
+
+y = hdfs('Y');
+;//------------------- TEST-CASE -----------------
+
+z = hdfs('Z');
+;//------------------- TEST-CASE -----------------
+
+xyz = hdfs('XYZ');
+;//------------------- TEST-CASE -----------------
+
+X = read(x);
+;//------------------- TEST-CASE -----------------
+
+Y = read(y);
+;//------------------- TEST-CASE -----------------
+
+Z = read(z);
+;//------------------- TEST-CASE -----------------
+
+XYZ = read(xyz);
+;//------------------- TEST-CASE -----------------
+
+
+//=====Tee
+range(20) 
+ -> transform [ mod($,3), $ ]
+ -> tee (-> write( compositeDescriptor( [x,y,z] ) ))
+ -> write (xyz)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+X;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+Y;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+Z;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+XYZ;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+range(20) 
+ -> tee (-> transform [ mod($,3), $ ] -> write( compositeDescriptor( [x,y,z] ) ))
+ -> write (xyz)
+;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+x;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+Y;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+Z;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//=====Union
+union (read( compositeDescriptor([x,y,z]) )) -> sort by [$ asc];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+union (read( compositeDescriptor([x,y,z]) )) -> transform $;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+union (read( compositeDescriptor([x,y,z]) )) -> transform $[1] -> sort by [$ asc];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+union (read( compositeDescriptor([x,y,z]) )) -> transform $ -> sort by [$ asc];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//=====Merge
+merge(read( compositeDescriptor([x,y,z])));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+merge(read( compositeDescriptor([x,y,z]))) -> transform $;
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+merge(read( compositeDescriptor([x,y,z]))) -> transform $[0] -> sort by [$ asc];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+merge(read( compositeDescriptor([x,y,z]))) -> transform $[1] + 100 -> sort by [$ asc];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
 ;//------------------- TEST-DONE -----------------
