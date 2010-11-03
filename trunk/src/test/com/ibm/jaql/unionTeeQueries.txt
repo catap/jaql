@@ -352,3 +352,46 @@ R -> transform { x: mod($,3), y: $ }
 ;
 S -> sort by [$.x];
 T -> sort by [$.a];
+
+//---------------------------------------------------------------------------
+// Composite input/output adapater for Tee, Union and Merge
+//---------------------------------------------------------------------------
+x = hdfs('X');
+y = hdfs('Y');
+z = hdfs('Z');
+xyz = hdfs('XYZ');
+X = read(x);
+Y = read(y);
+Z = read(z);
+XYZ = read(xyz);
+
+//=====Tee
+range(20) 
+ -> transform [ mod($,3), $ ]
+ -> tee (-> write( compositeDescriptor( [x,y,z] ) ))
+ -> write (xyz)
+;
+X;
+Y;
+Z;
+XYZ;
+
+range(20) 
+ -> tee (-> transform [ mod($,3), $ ] -> write( compositeDescriptor( [x,y,z] ) ))
+ -> write (xyz)
+;
+x;
+Y;
+Z;
+
+//=====Union
+union (read( compositeDescriptor([x,y,z]) )) -> sort by [$ asc];
+union (read( compositeDescriptor([x,y,z]) )) -> transform $;
+union (read( compositeDescriptor([x,y,z]) )) -> transform $[1] -> sort by [$ asc];
+union (read( compositeDescriptor([x,y,z]) )) -> transform $ -> sort by [$ asc];
+
+//=====Merge
+merge(read( compositeDescriptor([x,y,z])));
+merge(read( compositeDescriptor([x,y,z]))) -> transform $;
+merge(read( compositeDescriptor([x,y,z]))) -> transform $[0] -> sort by [$ asc];
+merge(read( compositeDescriptor([x,y,z]))) -> transform $[1] + 100 -> sort by [$ asc];
