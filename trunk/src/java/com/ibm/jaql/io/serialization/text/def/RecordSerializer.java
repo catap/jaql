@@ -16,7 +16,6 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -25,6 +24,7 @@ import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 public class RecordSerializer extends TextBasicSerializer<JsonRecord>
 {
@@ -39,7 +39,7 @@ public class RecordSerializer extends TextBasicSerializer<JsonRecord>
   
   
   @Override
-  public void write(PrintStream out, JsonRecord value, int indent)
+  public void write(FastPrinter out, JsonRecord value, int indent)
       throws IOException
   {
     out.print("{");

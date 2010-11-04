@@ -15,6 +15,8 @@
  */
 package com.ibm.jaql.io.converter;
 
+import java.io.Closeable;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -26,7 +28,7 @@ import com.ibm.jaql.json.type.JsonValue;
  * two modes. Array access mode is for writing items in a JSON array. Non-array
  * access mode is for writing a single JSON value.
  */
-public interface JsonToStream<T extends JsonValue> extends Initializable {
+public interface JsonToStream<T extends JsonValue> extends Initializable, Closeable, Flushable {
   /**
    * Sets output stream.
    * 
@@ -59,6 +61,13 @@ public interface JsonToStream<T extends JsonValue> extends Initializable {
    */
   void write(T i) throws IOException;
 
+  /**
+   * Flush to the underlying output stream if needed.
+   * 
+   * @throws IOException
+   */
+  void flush() throws IOException;
+  
   /**
    * Closes the underlying output stream if needed.
    * 

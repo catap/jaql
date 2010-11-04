@@ -15,6 +15,11 @@ public class NullJsonOutput extends AbstractOutputAdapter {
 			public void close() throws IOException {
 			}
 			
+      @Override
+      public void flush() throws IOException {
+        // Do nothing
+      }
+      
 			@Override
 			public void write(JsonValue value) throws IOException {
 				// Do nothing

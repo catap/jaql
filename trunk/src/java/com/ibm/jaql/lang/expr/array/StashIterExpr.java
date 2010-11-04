@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -26,6 +25,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.IterExpr;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * This expression will stream out an Iterator<Item> values.
@@ -69,7 +69,7 @@ public class StashIterExpr extends IterExpr
   }
 
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     System.err.println("warning: StashedIterExpr was decompiled, but it cannot be recompiled!");

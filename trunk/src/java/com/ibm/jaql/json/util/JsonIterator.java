@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.json.util;
 
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 
@@ -27,6 +26,7 @@ import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 /** Iterator over a list of {@link JsonValue}s. This iterator is meant to be accessed either 
  * via the {@link #moveNext()} and {@link #current()} methods or via 
@@ -179,12 +179,12 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   
   //-- Utility methods --------------------------------------------------------------------------
   
-  public final void print(PrintStream out) throws Exception
+  public final void print(FastPrinter out) throws Exception
   {
     this.print(out, 0, SchemaFactory.anySchema());
   }
 
-  public final void print(PrintStream out, int indent) throws Exception
+  public final void print(FastPrinter out, int indent) throws Exception
   {
     this.print(out, indent, SchemaFactory.anySchema());
   }
@@ -201,7 +201,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
    * @param indent
    * @throws Exception
    */
-  public final void print(PrintStream out, int indent, Schema valueSchema) throws Exception
+  public final void print(FastPrinter out, int indent, Schema valueSchema) throws Exception
   {
     if (this.isNull())
     {
@@ -209,6 +209,9 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
     }
     else
     {
+      // KB: not sure how healthy this all is.  Without compact, restrictTo can return an OrSchema,
+      // which causes an exception.  This needs to be simplified...
+      valueSchema = SchemaTransformation.compact(valueSchema);
       ArraySchema arraySchema = (ArraySchema)SchemaTransformation.restrictTo(valueSchema, JsonType.ARRAY);
       if( arraySchema == null )
       {

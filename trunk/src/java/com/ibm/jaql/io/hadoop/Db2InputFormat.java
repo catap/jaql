@@ -22,6 +22,7 @@ import java.io.StringReader;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.sql.Connection;
 import java.sql.Driver;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -70,8 +71,11 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
   {
     String url        = conf.get(URL_KEY);
     String jsonRec    = conf.get(PROPERTIES_KEY);
-    Class<? extends Driver> driverClass = 
-      conf.getClass(DRIVER_KEY, Driver.class).asSubclass(Driver.class);
+    Class<? extends Driver> driverClass = conf.getClass(DRIVER_KEY, null, Driver.class);
+    if( driverClass ==  null )
+    {
+      throw new RuntimeException("jdbc driver class not found: "+conf.get(DRIVER_KEY));
+    }
 
     Driver driver;
     try 
@@ -95,7 +99,7 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
         {
           JsonString key = f.getKey();
           JsonValue value = f.getValue();
-          props.setProperty(key.toString(), JsonUtil.printToString(value));
+          props.setProperty(key.toString(), value == null ? null : value.toString());
         }
       }
       catch(ParseException pe)
@@ -104,6 +108,7 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
       }
     }
     
+    // conn = DriverManager.getConnection(url, props);
     conn = driver.connect(url, props);
   }
   
@@ -123,6 +128,14 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
 //      {
 //        sample = " tablesample system(100*decimal('"+rate+"'))";
 //      }
+
+      ArrayList<InputSplit> splits = new ArrayList<InputSplit>();
+      if( numSplits <= 1 )
+      {
+        // we only want one split
+        splits.add(new JdbcSplit(dataQuery, null, null));
+        return splits.toArray(new InputSplit[splits.size()]);
+      }
 
       // Make sure that the data query is executable and get the key column type.
       ResultSetMetaData meta = conn.prepareStatement(dataQuery).getMetaData();
@@ -144,16 +157,15 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
       dataQuery = query;
       
       query = 
-        "with S(c) as ("+splitQuery+") "+
-        "select distinct c "+
-        " from S "+
-        " where c is not null "+
-        " order by c";
+        "with S1(c) as ("+splitQuery+"), "+
+        "     S2(c) as (select distinct c from S1), "+
+        "     S3(c,r) as (select c, dense_rank() over (order by c) from S2), "+
+        "     S4(c,r,i) as (select c, r, mod(r,(select count(*) from S2) / "+numSplits+") from S3), "+
+        "     S5(c) as (select c from S4 where i = 0) "+
+        "select c from S5 order by c fetch first "+(numSplits-1)+" rows only";
 
       Statement stmt = conn.createStatement();
       final ResultSet rs = stmt.executeQuery(query);
-
-      ArrayList<InputSplit> splits = new ArrayList<InputSplit>();
 
       if( ! rs.next() )
       {
@@ -271,11 +283,16 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
     }
   }
   
-  protected static class JdbcSplit implements InputSplit
+  public static class JdbcSplit implements InputSplit
   {
     protected String query;
     protected String lowKey;
     protected String highKey;
+
+    /** Call readFields to initialize */
+    public JdbcSplit()
+    {
+    }
     
     public JdbcSplit(String query, String lowKey, String highKey)
     {
@@ -456,6 +473,11 @@ public class Db2InputFormat implements InputFormat<JsonHolder, JsonHolder>
           return false;
         }
 
+        if( value.value == null )
+        {
+          // someone didn't create out key properly!
+          value.value = createValue().value;
+        }
         BufferedJsonRecord jrec = (BufferedJsonRecord)value.value;
         jrec.clear();
 

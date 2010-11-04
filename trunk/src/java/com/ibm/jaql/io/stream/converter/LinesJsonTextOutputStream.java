@@ -16,12 +16,12 @@
 package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.basic.JsonStringUnquotedSerializer;
 import com.ibm.jaql.io.serialization.text.def.DefaultTextFullSerializer;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 import com.ibm.jaql.util.SystemUtil;
 
 /**
@@ -39,7 +39,7 @@ public abstract class LinesJsonTextOutputStream extends
   }
 
   @Override
-  protected void printValue(PrintStream print, JsonValue i) throws IOException {
+  protected void printValue(FastPrinter print, JsonValue i) throws IOException {
     JsonString line = convert(i);
     strSer.write(print, line);
   }

@@ -19,7 +19,6 @@ import static com.ibm.jaql.json.type.JsonType.ARRAY;
 import static com.ibm.jaql.json.type.JsonType.NULL;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonUtil;
@@ -27,6 +26,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * A printer using a print stream. It is used in the following situations:
@@ -37,13 +37,13 @@ import com.ibm.jaql.lang.expr.core.Expr;
  */
 public class StreamPrinter implements JaqlPrinter {
 
-  protected PrintStream output;
+  protected FastPrinter output;
   protected String prompt = "\njaql> ";
   protected boolean batchMode;
   protected boolean printTime = 
     System.getProperty("jaql.time.results", "false").toLowerCase().equals("true");
 
-  public StreamPrinter(PrintStream output, boolean batchMode) {
+  public StreamPrinter(FastPrinter output, boolean batchMode) {
     this.output = output;
     this.batchMode = batchMode;
   }
@@ -64,6 +64,7 @@ public class StreamPrinter implements JaqlPrinter {
       JsonUtil.getDefaultSerializer(schema).write(output, value);
     }
     output.println();
+    output.flush();
     if( printTime )
     {
       time = System.currentTimeMillis() - time;
@@ -81,13 +82,14 @@ public class StreamPrinter implements JaqlPrinter {
     this.prompt = prompt;
   }
 
-  public void setOutput(PrintStream output) {
+  public void setOutput(FastPrinter output) {
     this.output = output;
   }
 
   public void printPrompt() throws IOException {
     if (!batchMode)
       output.print(prompt);
+    output.flush();
   }
 
   @Override

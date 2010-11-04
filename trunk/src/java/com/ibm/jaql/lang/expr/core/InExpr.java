@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonBool;
@@ -23,6 +22,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * These are equivalent: 1. $x in $array 2. some $i in $array satisfies $i == $x
@@ -60,7 +60,7 @@ public class InExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print(" (");

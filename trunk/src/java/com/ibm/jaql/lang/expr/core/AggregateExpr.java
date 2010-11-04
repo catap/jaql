@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -29,6 +28,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.agg.Aggregate;
 import com.ibm.jaql.lang.expr.agg.AlgebraicAggregate;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 
 public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/final flags
@@ -127,7 +127,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars) // TODO: get rid of captured vars during decompile
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars) // TODO: get rid of captured vars during decompile
       throws Exception
   {
     // input -> aggregate (each var)? expr

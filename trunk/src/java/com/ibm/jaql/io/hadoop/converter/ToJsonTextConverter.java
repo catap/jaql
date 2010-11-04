@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.io.hadoop.converter;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
@@ -25,6 +22,7 @@ import org.apache.hadoop.io.WritableComparable;
 import com.ibm.jaql.io.converter.FromJson;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /**
  * 
@@ -54,21 +52,18 @@ public class ToJsonTextConverter extends JsonToHadoopRecord<WritableComparable<?
     {
       public Text convert(JsonValue src, Text tgt)
       {
-        ByteArrayOutputStream bstr = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(bstr);
+        FastPrintBuffer out = new FastPrintBuffer();
         try
         {
           //JsonUtil.printQuoted(out, src.toJSON());
           JsonUtil.print(out, src);
-          out.flush();
           out.close();
-          bstr.close();
         }
         catch (Exception e)
         {
           throw new RuntimeException(e);
         }
-        String s = new String(bstr.toByteArray());
+        String s = out.toString();
         s = s.replace("\r", "");
         s = s.replace("\n", "");
         tgt.set(s);

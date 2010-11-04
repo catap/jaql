@@ -15,12 +15,11 @@
  */
 package com.ibm.jaql.json.type;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /** A JSON value. */
 public abstract class JsonValue implements Comparable<Object>
@@ -44,10 +43,10 @@ public abstract class JsonValue implements Comparable<Object>
   {
     try
     {
-      ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      PrintStream out = new PrintStream(bout, false, "UTF-8");
+      // TODO: we should use Writers for serialization
+      FastPrintBuffer out = new FastPrintBuffer();
       TextFullSerializer.getDefault().write(out, this);    
-      return bout.toString("UTF-8");
+      return out.toString();
     } 
     catch (IOException e)
     {
@@ -86,7 +85,7 @@ public abstract class JsonValue implements Comparable<Object>
   public abstract JsonEncoding getEncoding();
   
   /** Returns the type of this object. */
-  public JsonType getType()
+  public final JsonType getType()
   {
     return getEncoding().getType();
   }

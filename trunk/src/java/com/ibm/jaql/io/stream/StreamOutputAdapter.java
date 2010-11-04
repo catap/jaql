@@ -28,6 +28,7 @@ import com.ibm.jaql.io.converter.JsonToStream;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.lang.expr.array.SlidingWindowFn.JsonQueue.Item;
 
 /**
  * Output adapter that writes {@link Item}s to a URL, using a
@@ -68,6 +69,11 @@ public class StreamOutputAdapter extends AbstractOutputAdapter {
       @Override
       public void close() throws IOException {
         formatter.close();
+      }
+
+      @Override
+      public void flush() throws IOException {
+        formatter.flush();
       }
 
       @Override

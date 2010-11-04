@@ -71,6 +71,15 @@ public class JsonOutputStream implements JsonToStream<JsonValue>
     serializer.write(output, i);
   }
 
+  @Override
+  public void flush() throws IOException
+  {
+    if (output != null)
+    {
+      output.flush();
+    }
+  }
+
   /*
    * (non-Javadoc)
    * 

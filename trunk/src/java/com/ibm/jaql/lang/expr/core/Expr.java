@@ -17,9 +17,7 @@ package com.ibm.jaql.lang.expr.core;
 
 import static com.ibm.jaql.json.type.JsonType.ARRAY;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
@@ -48,6 +46,8 @@ import com.ibm.jaql.lang.expr.top.EnvExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrintBuffer;
+import com.ibm.jaql.util.FastPrinter;
 
 /** Superclass for all JAQL expressions.
  * 
@@ -119,7 +119,7 @@ public abstract class Expr
    * @param capturedVars
    * @throws Exception
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
   	BuiltInFunctionDescriptor d = BuiltInFunction.getDescriptor(this.getClass());
@@ -266,7 +266,7 @@ public abstract class Expr
    * Conditionally print the annotations record with leading '@' to 
    * the output stream, if we actually have annotations.
    */
-  protected void printAnnotations(PrintStream out) throws IOException
+  protected void printAnnotations(FastPrinter out) throws IOException
   {
     if( annotations != null && annotations.size() != 0 )
     {
@@ -284,14 +284,12 @@ public abstract class Expr
   @Override
   public String toString()
   {
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream exprText = new PrintStream(outStream);
+    FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
     try
     {
       this.decompile(exprText, capturedVars); // TODO: capturedVars should be optional
-      exprText.flush();
-      return outStream.toString();
+      return exprText.toString();
     }
     catch (Exception e)
     {
@@ -858,12 +856,11 @@ public abstract class Expr
   public HashSet<Var> getCapturedVars()
   {
     // FIXME: this needs to be more efficient... Perhaps I should cache expr properties...
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(outStream);
+    FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
     try
     {
-      decompile(ps, capturedVars);
+      decompile(exprText, capturedVars);
     }
     catch (Exception e)
     {

@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.expr.core;
 
 import static com.ibm.jaql.json.type.JsonType.NULL;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -34,6 +33,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * A BindingExpr is not really an Expr at all. It is used to associate a
@@ -170,7 +170,7 @@ public class BindingExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print(var.taggedName());

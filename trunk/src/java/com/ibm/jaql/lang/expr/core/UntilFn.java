@@ -18,6 +18,7 @@ package com.ibm.jaql.lang.expr.core;
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
@@ -39,7 +40,6 @@ public class UntilFn extends IterExpr
 {
   public static class Descriptor implements BuiltInFunctionDescriptor 
   {
-    private Schema schema = new ArraySchema(null, SchemaFactory.arraySchema());
     private JsonValueParameters parameters;
 
     public Descriptor() {
@@ -77,7 +77,7 @@ public class UntilFn extends IterExpr
     @Override
     public Schema getSchema()
     {
-      return schema;
+      return SchemaFactory.arraySchema();
     }
   }
 
@@ -85,6 +85,18 @@ public class UntilFn extends IterExpr
   public UntilFn(Expr... args)
   {
     super(args);
+  }
+
+  @Override
+  public Schema getSchema()
+  {
+    Schema s = exprs[0].getSchema();
+    s = SchemaTransformation.restrictToArray(s);
+    if( s == null )
+    {
+      return SchemaFactory.arraySchema();
+    }
+    return new ArraySchema(null,s.elements());
   }
 
   @Override

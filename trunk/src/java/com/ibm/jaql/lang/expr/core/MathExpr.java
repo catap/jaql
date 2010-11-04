@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.expr.core;
 
 import static com.ibm.jaql.json.type.JsonType.NULL;
 
-import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.ArrayList;
@@ -45,6 +44,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -127,7 +127,7 @@ public class MathExpr extends Expr
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("(");

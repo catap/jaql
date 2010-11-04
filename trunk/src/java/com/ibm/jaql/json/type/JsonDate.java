@@ -18,7 +18,6 @@ package com.ibm.jaql.json.type;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -27,7 +26,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.ibm.jaql.lang.util.JaqlUtil;
+import org.apache.commons.lang.time.FastDateFormat;
 
 /** An JSON date. 
  * 
@@ -37,6 +36,8 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 public class JsonDate extends JsonAtom
 {
   protected static final TimeZone UTC = TimeZone.getTimeZone(TimeZone.getAvailableIDs(0)[0]);
+  public final static FastDateFormat isoFormat = FastDateFormat.getInstance("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", UTC);
+  
   
   protected final static DatatypeFactory CAL_FACTORY;
   static
@@ -139,17 +140,18 @@ public class JsonDate extends JsonAtom
   @Override
   public String toString()
   {
-    GregorianCalendar cal = new GregorianCalendar(UTC);
-    cal.setTimeInMillis(millis);
-    
-    try
-    {
-      return javax.xml.datatype.DatatypeFactory.newInstance().newXMLGregorianCalendar(cal).toString();
-    }
-    catch (DatatypeConfigurationException e)
-    {
-      throw JaqlUtil.rethrow(e);
-    }
+    return isoFormat.format(millis);
+//    GregorianCalendar cal = new GregorianCalendar(UTC);
+//    cal.setTimeInMillis(millis);
+//    
+//    try
+//    {
+//      return javax.xml.datatype.DatatypeFactory.newInstance().newXMLGregorianCalendar(cal).toString();
+//    }
+//    catch (DatatypeConfigurationException e)
+//    {
+//      throw JaqlUtil.rethrow(e);
+//    }
 
 //    synchronized (ISO8601UTC_FORMAT) // TODO: write our own thread-safe formatter
 //    {

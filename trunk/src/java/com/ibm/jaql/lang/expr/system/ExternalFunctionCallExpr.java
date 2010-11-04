@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,9 +28,6 @@ import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 
-import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.parser.ParseException;
-
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.InputAdapter;
@@ -39,6 +35,8 @@ import com.ibm.jaql.io.OutputAdapter;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.io.stream.StreamInputAdapter;
 import com.ibm.jaql.io.stream.StreamOutputAdapter;
+import com.ibm.jaql.json.parser.JsonParser;
+import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonBool;
@@ -54,6 +52,7 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 public class ExternalFunctionCallExpr extends IterExpr {
 
@@ -145,7 +144,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
      * java.util.HashSet)
      */
     @Override
-    public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+    public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
             throws Exception {
         exprText.print("system::externalfn(");
         TextFullSerializer.getDefault().write(exprText, rec);
@@ -200,7 +199,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
             if (mode.equals(new JsonString("push"))) {
                 args = exprs[0].eval(context);
                 writer.write(args);
-                stdout.flush();
+                writer.flush();
                 return reader;
             } else if (mode.equals(new JsonString("streaming"))) {
                 data = exprs[0].iter(context);
@@ -234,27 +233,26 @@ public class ExternalFunctionCallExpr extends IterExpr {
                                 while (!stop) {
                                     if (data.moveNext()) {
                                         writer.write(data.current());
-                                        try {
-                                            stdout.flush();
-                                        } catch (Exception exp) {
-                                        }
-                                        ;
                                     } else {
-                                        stop = false;
-                                        stdout.close();
-                                        break;
+                                        stop = true;
+                                        writer.close();
+                                        writer = null;
                                     }
                                 }
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                            } 
+                            catch (Throwable e)
+                            {
+                              e.printStackTrace(); // TODO: move to log
+                              if( error == null )
+                              {
+                                error = e;
+                              }
                             }
                         }
                     }
                 };
             } else {
-                return JsonIterator.EMPTY;
+              throw new RuntimeException("unsupported mode: "+mode);
             }
         } catch (Throwable e) {
             if (error == null) {
@@ -263,9 +261,16 @@ public class ExternalFunctionCallExpr extends IterExpr {
             if (stdin != null) {
                 try {
                     stdin.close();
-                } catch (Throwable t) {
+                } catch (Throwable t) { // FIXME: More lost exceptions!
                 }
                 stdin = null;
+            }
+            if (process != null) {
+              try {
+                  process.destroy();
+              } catch (Throwable t) {
+              }
+              process = null;
             }
             if (stdout != null) {
                 try {
@@ -273,13 +278,6 @@ public class ExternalFunctionCallExpr extends IterExpr {
                 } catch (Throwable t) {
                 }
                 stdout = null;
-            }
-            if (process != null) {
-                try {
-                    process.destroy();
-                } catch (Throwable t) {
-                }
-                process = null;
             }
             if (error instanceof Exception) {
                 throw (Exception) error;

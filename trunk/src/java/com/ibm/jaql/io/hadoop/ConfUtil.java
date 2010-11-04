@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapred.JobConf;
 
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonRecord;
@@ -31,11 +32,14 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /** Provides static methods that serializes and deserializes {@link JsonRecord}s and 
  * {@link JsonArray}s to and from the Hadoop configuration file */
 public class ConfUtil
 {
+  public final static JsonString CONF_FIELD = new JsonString("conf");
+  
   /**
    * Write a text serialized form of args to the conf under the given name.
    * 
@@ -49,12 +53,11 @@ public class ConfUtil
   {
     if (args == null) return;
 
-    ByteArrayOutputStream bstr = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(bstr);
+    FastPrintBuffer out = new FastPrintBuffer();
     JsonUtil.print(out, args);
     out.flush();
     out.close();
-    conf.set(name, bstr.toString()); // FIXME: memory and strings...
+    conf.set(name, out.toString()); // FIXME: memory and strings...
   }
 
   /**
@@ -116,13 +119,12 @@ public class ConfUtil
   {
     if (data == null) return;
 
-    ByteArrayOutputStream bstr = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(bstr);
+    FastPrintBuffer out = new FastPrintBuffer();
     JsonArray mdata = (JsonArray) data; // FIXME: don't depend on this...
     JsonUtil.print(out, mdata);
     out.flush();
     out.close();
-    conf.set(name, bstr.toString());
+    conf.set(name, out.toString());
   }
   
   /**
@@ -170,6 +172,21 @@ public class ConfUtil
       for( Map.Entry<JsonString, JsonValue> e: rec )
       {
         conf.set(e.getKey().toString(), e.getValue().toString());
+      }
+    }
+  }
+
+  public static void writeConfOptions(JobConf conf, JsonRecord args)
+  {
+    JsonRecord extraConf = (JsonRecord)args.get(CONF_FIELD);
+    if( extraConf != null )
+    {
+      for( Map.Entry<JsonString, JsonValue> f: extraConf )
+      {
+        String key = f.getKey().toString();
+        JsonValue jvalue = f.getValue();
+        String value = (jvalue == null) ? null : jvalue.toString();
+        conf.set(key, value);
       }
     }
   }

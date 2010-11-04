@@ -29,8 +29,9 @@ public class TestJaqlJdbc
 {
   @Test public void foo() throws SQLException
   {
-    //String url = "jdbc:jaql:";
-    String url = "jdbc:jaql:/fake_catalog;jaql.modules.dir=c:/temp/jaql-modules";
+    String url = "jdbc:jaql:";
+    // String url = "jdbc:jaql:/fake_catalog;jaql.modules.dir=c:/temp/jaql-modules";
+    // TODO: get a catalog in the test
     JaqlJdbcDriver driver = new JaqlJdbcDriver();
     JaqlJdbcConnection conn = driver.connect(url, null);
     

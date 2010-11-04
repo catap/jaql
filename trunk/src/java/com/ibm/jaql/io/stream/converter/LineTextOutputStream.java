@@ -3,23 +3,27 @@ package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.converter.JsonToStream;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.expr.del.JsonToDel;
-import com.ibm.jaql.util.SystemUtil;
+import com.ibm.jaql.util.FastPrintStream;
 
 public class LineTextOutputStream implements JsonToStream<JsonValue> {
 
-	private PrintStream output;
+	private FastPrintStream output;
 	
+  @Override
+  public void flush() throws IOException
+  {
+    if (output != null)
+    {
+      output.flush();
+    }
+  }
+
 	@Override
 	public void close() throws IOException {
 		if(output != null){
-			output.flush();
 			output.close();
 		}
 	}
@@ -36,13 +40,12 @@ public class LineTextOutputStream implements JsonToStream<JsonValue> {
 
 	@Override
 	public void setOutputStream(OutputStream out) {
-		output = new PrintStream(out);
+		output = new FastPrintStream(out);
 	}
 
 	@Override
 	public void write(JsonValue i) throws IOException {
-		output.write(i.toString().getBytes());
-		output.write(SystemUtil.LINE_SEPARATOR.getBytes());
+		output.println(i.toString());
 	}
 
 	@Override

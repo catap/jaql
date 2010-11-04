@@ -95,6 +95,8 @@ import com.ibm.jaql.lang.expr.core.RangeExpr;
 import com.ibm.jaql.lang.expr.core.RegisterExceptionHandler;
 import com.ibm.jaql.lang.expr.core.RetagFn;
 import com.ibm.jaql.lang.expr.core.SetOptionsFn;
+import com.ibm.jaql.lang.expr.core.SkipUntilFn;
+import com.ibm.jaql.lang.expr.core.StreamSwitchFn;
 import com.ibm.jaql.lang.expr.core.TagFlattenFn;
 import com.ibm.jaql.lang.expr.core.TagFn;
 import com.ibm.jaql.lang.expr.core.TagSplitFn;
@@ -109,6 +111,7 @@ import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.del.JsonToDelFn;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.AddClassPathFn;
 import com.ibm.jaql.lang.expr.function.FenceFunction;
 import com.ibm.jaql.lang.expr.function.FencePushFunction;
 import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
@@ -192,6 +195,7 @@ import com.ibm.jaql.lang.expr.record.RemoveFieldsFn;
 import com.ibm.jaql.lang.expr.record.RenameFieldsFn;
 import com.ibm.jaql.lang.expr.record.ReplaceFieldsFn;
 import com.ibm.jaql.lang.expr.record.ValuesFn;
+import com.ibm.jaql.lang.expr.regex.RegexExtractAllFn;
 import com.ibm.jaql.lang.expr.regex.RegexExtractFn;
 import com.ibm.jaql.lang.expr.regex.RegexFn;
 import com.ibm.jaql.lang.expr.regex.RegexMatchFn;
@@ -223,6 +227,7 @@ import com.ibm.jaql.lang.expr.string.StrJoinFn;
 import com.ibm.jaql.lang.expr.string.StrLenFn;
 import com.ibm.jaql.lang.expr.string.StrPosFn;
 import com.ibm.jaql.lang.expr.string.StrPosListFn;
+import com.ibm.jaql.lang.expr.string.StrReplaceFn;
 import com.ibm.jaql.lang.expr.string.StrSplitFn;
 import com.ibm.jaql.lang.expr.string.StrSplitNFn;
 import com.ibm.jaql.lang.expr.string.StrToLowerCaseFn;
@@ -358,7 +363,9 @@ public final class SystemNamespace extends Namespace {
     register(new GroupCombineFn.Descriptor()); // experimental
     register(new IcebergCubeInMemory.Descriptor()); // experimental
     register(new JumpFn.Descriptor());
+    register(new StreamSwitchFn.Descriptor()); // experimental / internal use
     register(new UntilFn.Descriptor()); // experimental
+    register(new SkipUntilFn.Descriptor()); // experimental
     register(new DiamondTagFn.Descriptor()); // internal use
     register(new RetagFn.Descriptor()); // internal use
     register(new TagFlattenFn.Descriptor()); // internal use
@@ -409,6 +416,7 @@ public final class SystemNamespace extends Namespace {
     register(new RegexMatchFn.Descriptor());
     register(new RegexSpansFn.Descriptor());
     register(new RegexExtractFn.Descriptor());
+    register(new RegexExtractAllFn.Descriptor());
     register(new TokenizeFn.Descriptor());
     register(new XmlToJsonFn.Descriptor());
     register(new TypedXmlToJsonFn.Descriptor());
@@ -425,6 +433,7 @@ public final class SystemNamespace extends Namespace {
     register(new StrLenFn.Descriptor());
     register(new StrPosFn.Descriptor());
     register(new StrPosListFn.Descriptor());
+    register(new StrReplaceFn.Descriptor());
     register(new BatchFn.Descriptor());
     register(new SerializeFn.Descriptor());
     register(new StrcatFn.Descriptor());
@@ -538,6 +547,7 @@ public final class SystemNamespace extends Namespace {
     register(new LongHashExpr.Descriptor());
     register(new DataGuideFn.Descriptor());
     register(new JavaUdfExpr.Descriptor());
+    register(new AddClassPathFn.Descriptor());
     register(new ExamplesFn.Descriptor());
     //register(new TestFn.Descriptor());
     register(new ListExportsFn.Descriptor());

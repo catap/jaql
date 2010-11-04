@@ -24,7 +24,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -61,6 +60,7 @@ import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.util.ClassLoaderMgr;
+import com.ibm.jaql.util.FastPrintStream;
 
 public class Jaql implements CoreJaql
 {
@@ -93,7 +93,7 @@ public class Jaql implements CoreJaql
     Jaql engine = new Jaql(filename, reader);
     JaqlPrinter printerToClose = null;
     if (outputAdapter == null) {
-      PrintStream out = new PrintStream(System.out, true, "UTF-8"); // TODO: use system encoding? have jaql encoding parameter?
+      FastPrintStream out = new FastPrintStream(System.out); // TODO: use system encoding? have jaql encoding parameter?
       engine.setJaqlPrinter(new StreamPrinter(out, batchMode));
     } else {
       printerToClose = new IODescriptorPrinter(outputAdapter.getWriter());

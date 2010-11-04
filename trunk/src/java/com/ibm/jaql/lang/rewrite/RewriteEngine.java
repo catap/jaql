@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.rewrite;
 
 import java.util.ArrayList;
 
+import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
@@ -76,6 +77,7 @@ public class RewriteEngine
     new AsArrayElimination(phase);
     new DoConstPragma(phase);
     new UnrollTransformLoop(phase);
+    new ImproveRecordConstruction(phase);
     new SimplifyRecord(phase);
     new CheapConstEval(phase);
     new ConstIfElimination(phase);
@@ -121,6 +123,7 @@ public class RewriteEngine
     new AsArrayElimination(phase);
     new DoConstPragma(phase);
     new UnrollTransformLoop(phase);
+    new ImproveRecordConstruction(phase);
     new SimplifyRecord(phase);
     new CheapConstEval(phase);
     new ConstIfElimination(phase);
@@ -131,7 +134,6 @@ public class RewriteEngine
     new UnrollForLoop(phase);
     new UnrollTransformLoop(phase);
     new SimplifyUnion(phase);
-    new SimplifyRecord(phase);
     //----tee part 2 ------
     new DiamondTagExpand(phase);
     new RetagExpand(phase);
@@ -173,6 +175,7 @@ public class RewriteEngine
     new SimplifyUnion(phase);
     new UnionToComposite(phase);
     new VarProjection(phase);
+    new ImproveRecordConstruction(phase);
     new SimplifyRecord(phase);
     new UnnestFor(phase);
     new WriteAssignment(phase);
@@ -250,10 +253,23 @@ public class RewriteEngine
     {
       throw new IllegalArgumentException("expression tree does not have an environment");
     }
+    // We always run getSchema at the top to get variable schemas set.  There should be a better way...
+    Schema schema = stmt.getSchema();
+    if( traceFire )
+    {
+      System.err.print("start ");
+      System.err.println(schema);
+    }
     counter = 0;
     for (RewritePhase phase : phases)
     {
       phase.run(stmt);
+    }
+    if( traceFire )
+    {
+      schema = stmt.getSchema();
+      System.err.print("end ");
+      System.err.println(schema);
     }
     return stmt;
   }

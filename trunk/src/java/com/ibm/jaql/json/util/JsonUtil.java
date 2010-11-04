@@ -15,11 +15,13 @@
  */
 package com.ibm.jaql.json.util;
 
+import java.io.IOException;
 import java.io.PrintStream;
 
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -99,8 +101,9 @@ public class JsonUtil
   /**
    * @param out
    * @param text
+   * @throws IOException 
    */
-  public static void printQuoted(PrintStream out, String text)
+  public static void printQuoted(FastPrinter out, String text) throws IOException
   {
     out.print("\"");
     for (int i = 0; i < text.length(); i++)
@@ -153,8 +156,9 @@ public class JsonUtil
   /**
    * @param out
    * @param str
+   * @throws IOException 
    */
-  public static void printQuoted(PrintStream out, JsonString str)
+  public static void printQuoted(FastPrinter out, JsonString str) throws IOException
   {
     String s = str.toString(); // TODO: memory; efficient JString to escaped string
     printQuoted(out, s);

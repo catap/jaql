@@ -16,15 +16,15 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonSpan;
+import com.ibm.jaql.util.FastPrinter;
 
 public class SpanSerializer extends TextBasicSerializer<JsonSpan>
 {
   @Override
-  public void write(PrintStream out, JsonSpan value, int indent)
+  public void write(FastPrinter out, JsonSpan value, int indent)
       throws IOException
   {
     out.print("span(");

@@ -15,21 +15,11 @@
  */
 package com.ibm.jaql.lang.expr.system;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
 
-import org.apache.commons.logging.Log;
-
-import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
@@ -40,12 +30,10 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.Function;
-import com.ibm.jaql.lang.expr.function.JavaFunctionCallExpr;
 import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 import com.ibm.jaql.lang.expr.function.Parameters;
 import com.ibm.jaql.lang.util.JaqlUtil;
-import com.sun.org.apache.commons.logging.LogFactory;
 
 /**
  * value that stores a function implemented as a External Call UDF.

@@ -16,7 +16,6 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.schema.ArraySchema;
@@ -44,11 +43,12 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
+import com.ibm.jaql.util.FastPrinter;
 
 public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
 {
   @Override
-  public void write(PrintStream out, JsonSchema value, int indent)
+  public void write(FastPrinter out, JsonSchema value, int indent)
       throws IOException
   {
     out.print("schema ");
@@ -58,7 +58,7 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
 
   // -- generic write method ----------------------------------------------------------------------
   
-  public static void write(PrintStream out, Schema schema, int indent) throws IOException
+  public static void write(FastPrinter out, Schema schema, int indent) throws IOException
   {
     switch (schema.getSchemaType())
     {
@@ -114,12 +114,12 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
   
   // -- write methods for each schema type --------------------------------------------------------
   
-  private static void writeNonNull(PrintStream out, NonNullSchema schema, int indent) throws IOException
+  private static void writeNonNull(FastPrinter out, NonNullSchema schema, int indent) throws IOException
   {
     out.print("nonnull");
   }
   
-  private static void writeArray(PrintStream out, ArraySchema schema, int indent) throws IOException
+  private static void writeArray(FastPrinter out, ArraySchema schema, int indent) throws IOException
   {
     // handle empty arrays
     if (schema.isEmpty(JsonType.ARRAY).always())
@@ -168,64 +168,64 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
     out.print("]");
   }
   
-  private static void writeSchema(PrintStream out, SchematypeSchema schema, int indent) throws IOException
+  private static void writeSchema(FastPrinter out, SchematypeSchema schema, int indent) throws IOException
   {
     out.print("schematype");
     writeAtomSchemaArgs(out, indent, schema);
   }
   
-  private static void writeBinary(PrintStream out, BinarySchema schema, int indent) throws IOException
+  private static void writeBinary(FastPrinter out, BinarySchema schema, int indent) throws IOException
   {
     out.print("binary");
     writeAtomSchemaWithLengthArgs(out, indent, schema);
   }
 
-  private static void writeBoolean(PrintStream out, BooleanSchema schema, int indent) throws IOException
+  private static void writeBoolean(FastPrinter out, BooleanSchema schema, int indent) throws IOException
   {
     out.print("boolean");
     writeAtomSchemaArgs(out, indent, schema);
   }
   
-  private static void writeDecimal(PrintStream out, DecfloatSchema schema, int indent) throws IOException
+  private static void writeDecimal(FastPrinter out, DecfloatSchema schema, int indent) throws IOException
   {
     out.print("decfloat");
     writeAtomSchemaArgs(out, indent, schema);
   }
 
-  private static void writeDate(PrintStream out, DateSchema schema, int indent) throws IOException
+  private static void writeDate(FastPrinter out, DateSchema schema, int indent) throws IOException
   {
     out.print("date");
     writeAtomSchemaArgs(out, indent, schema);
   }
 
-  private static void writeDouble(PrintStream out, DoubleSchema schema, int indent) throws IOException
+  private static void writeDouble(FastPrinter out, DoubleSchema schema, int indent) throws IOException
   {
     out.print("double");
     writeAtomSchemaArgs(out, indent, schema);
   }
   
-  private static void writeGeneric(PrintStream out, GenericSchema schema, int indent) throws IOException
+  private static void writeGeneric(FastPrinter out, GenericSchema schema, int indent) throws IOException
   {
     out.print(schema.getType().toString());
   }
   
-  private static void writeFunction(PrintStream out, FunctionSchema schema, int indent) throws IOException
+  private static void writeFunction(FastPrinter out, FunctionSchema schema, int indent) throws IOException
   {
     out.print("function");
   }
   
-  private static void writeLong(PrintStream out, LongSchema schema, int indent) throws IOException
+  private static void writeLong(FastPrinter out, LongSchema schema, int indent) throws IOException
   {
     out.print("long");
     writeAtomSchemaArgs(out, indent, schema);
   }
 
-  private static void writeNull(PrintStream out, NullSchema schema, int indent) throws IOException
+  private static void writeNull(FastPrinter out, NullSchema schema, int indent) throws IOException
   {
     out.print("null");
   }
 
-  private static void writeOr(PrintStream out, OrSchema schema, int indent) throws IOException
+  private static void writeOr(FastPrinter out, OrSchema schema, int indent) throws IOException
   {
     // handle nulls
     boolean matchesNull = false;
@@ -271,7 +271,7 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
     }
   }
   
-  private static void writeRecord(PrintStream out, RecordSchema schema, int indent) throws IOException
+  private static void writeRecord(FastPrinter out, RecordSchema schema, int indent) throws IOException
   {
     // handle empty fields
     if (schema.isEmpty(JsonType.RECORD).always())
@@ -334,7 +334,7 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
     out.print("}");
   }
   
-  private static void writeString(PrintStream out, StringSchema schema, int indent) throws IOException
+  private static void writeString(FastPrinter out, StringSchema schema, int indent) throws IOException
   {
     out.print("string");
     writeAtomSchemaWithLengthArgs(out, indent, schema);
@@ -342,7 +342,7 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
   
   // -- helpers -----------------------------------------------------------------------------------
   
-  private static void writeArgs(PrintStream out, int indent, 
+  private static void writeArgs(FastPrinter out, int indent, 
       JsonValueParameters parameters, JsonValue[] values ) throws IOException
   {
     assert values.length == parameters.numParameters();
@@ -374,14 +374,14 @@ public class SchemaSerializer extends TextBasicSerializer<JsonSchema>
     }
   }
   
-  private static void writeAtomSchemaArgs(PrintStream out, int indent, 
+  private static void writeAtomSchemaArgs(FastPrinter out, int indent, 
       AtomSchema<?> schema) throws IOException
   {
     writeArgs(out, indent, AtomSchema.DEFAULT_PARAMETERS, 
         new JsonValue[] { schema.getConstant(), schema.getAnnotation() });
   }
   
-  private static void writeAtomSchemaWithLengthArgs(PrintStream out, int indent, 
+  private static void writeAtomSchemaWithLengthArgs(FastPrinter out, int indent, 
       AtomSchemaWithLength<?> schema) throws IOException
   {
     writeArgs(out, indent, AtomSchemaWithLength.DEFAULT_PARAMETERS, 

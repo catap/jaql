@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.function;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -27,6 +26,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.util.ClassLoaderMgr;
+import com.ibm.jaql.util.FastPrinter;
 
 /** An expression that constructs a JSON value for a built-in function */
 public class BuiltInExpr extends Expr
@@ -49,7 +49,7 @@ public class BuiltInExpr extends Expr
     return result;
   }
   
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
   throws Exception
   {
     exprText.print(kw("builtin") + "(");

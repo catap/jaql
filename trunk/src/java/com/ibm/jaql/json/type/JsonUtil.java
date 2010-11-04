@@ -1,8 +1,6 @@
 package com.ibm.jaql.json.type;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Map.Entry;
 
@@ -10,6 +8,8 @@ import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.io.serialization.text.schema.SchemaTextFullSerializer;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.util.FastPrintBuffer;
+import com.ibm.jaql.util.FastPrinter;
 
 /** Utility methods for dealing with {@link JsonValue}s and <code>null</code>s. */
 public class JsonUtil
@@ -21,7 +21,7 @@ public class JsonUtil
    * @param out an output stream
    * @throws Exception
    */
-  public static void print(PrintStream out, JsonValue value) throws IOException {
+  public static void print(FastPrinter out, JsonValue value) throws IOException {
     TextFullSerializer serializer = getDefaultSerializer();
     serializer.write(out, value);
   }
@@ -34,7 +34,7 @@ public class JsonUtil
    * @param indent indentation value
    * @throws Exception
    */
-  public static void print(PrintStream out, JsonValue value, int indent) throws IOException {
+  public static void print(FastPrinter out, JsonValue value, int indent) throws IOException {
     TextFullSerializer serializer = getDefaultSerializer();
     serializer.write(out, value, indent);
   }
@@ -65,11 +65,11 @@ public class JsonUtil
    * @param indent indentation value
    * @throws Exception
    */
-  public static String printToString(JsonValue value) throws IOException {
-    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    PrintStream out = new PrintStream(bout, false, "UTF-8");
+  public static String printToString(JsonValue value) throws IOException
+  {
+    FastPrintBuffer out = new FastPrintBuffer();
     print(out, value);
-    return bout.toString("UTF-8");
+    return out.toString();
   }
 
   /** Handles null (nulls go first) */

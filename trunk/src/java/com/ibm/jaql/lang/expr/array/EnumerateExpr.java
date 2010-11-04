@@ -15,9 +15,12 @@
  */
 package com.ibm.jaql.lang.expr.array;
 
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
+import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.BufferedJsonArray;
+import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.MutableJsonLong;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
@@ -30,7 +33,7 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  */
 public final class EnumerateExpr extends IterExpr
 {
-  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
+  public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12
   {
     public Descriptor()
     {
@@ -59,7 +62,23 @@ public final class EnumerateExpr extends IterExpr
   @Override
   public Schema getSchema()
   {
-    return SchemaFactory.arraySchema();
+    Schema s = exprs[0].getSchema();
+    s = SchemaTransformation.restrictToArrayOrNull(s);
+    if( s == null )
+    {
+      throw new IllegalArgumentException("array expected"); 
+    }
+    s = s.elements();
+    if( s == null )   
+    {
+      s = SchemaFactory.emptyArraySchema();
+    }
+    else
+    {
+      s = new ArraySchema(new Schema[] { SchemaFactory.longSchema(), s });
+      s = new ArraySchema(null, s);
+    }
+    return s;
   }
 
   /*
@@ -69,9 +88,11 @@ public final class EnumerateExpr extends IterExpr
    */
   public JsonIterator iter(final Context context) throws Exception
   {
+    JsonNumber jstart = exprs.length <= 1 ? null : (JsonNumber)exprs[1].eval(context);
+    long start = jstart == null ? 0 : jstart.longValueExact();
     final JsonIterator iter = exprs[0].iter(context);
     final BufferedJsonArray pair = new BufferedJsonArray(2);
-    final MutableJsonLong counter = new MutableJsonLong(-1);
+    final MutableJsonLong counter = new MutableJsonLong(start - 1);
     pair.set(0, counter);
 
     return new JsonIterator(pair) {

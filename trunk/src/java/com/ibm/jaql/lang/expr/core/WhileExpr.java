@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonBool;
@@ -23,6 +22,7 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * Perform repeated computation.  In procedural code this would be:
@@ -62,7 +62,7 @@ public class WhileExpr extends Expr
   }
 
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print( "\n" );

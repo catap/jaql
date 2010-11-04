@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonValue;
@@ -25,6 +24,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.JsonComparator;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * An CmpExpr is not really an Expr at all. It is used to associate an
@@ -77,7 +77,7 @@ public class CmpSpec extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     boolean parens = !( exprs[0] instanceof FieldExpr );

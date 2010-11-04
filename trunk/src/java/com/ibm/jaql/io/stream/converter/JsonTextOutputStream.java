@@ -16,10 +16,11 @@
 package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
+import com.ibm.jaql.io.serialization.text.def.DefaultTextFullSerializer;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * A converter to print JSON value. In array access mode, items of an JSON array
@@ -41,7 +42,7 @@ public class JsonTextOutputStream extends AbstractJsonTextOutputStream {
 	public void init(JsonValue options) throws Exception {}
 
 	@Override
-	protected void printValue(PrintStream print, JsonValue i) throws IOException {
+	protected void printValue(FastPrinter print, JsonValue i) throws IOException {
 		JsonUtil.print(print, i);
 	}
 }
