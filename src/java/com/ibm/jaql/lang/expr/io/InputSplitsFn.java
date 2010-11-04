@@ -94,14 +94,18 @@ public class InputSplitsFn extends IterExpr
           return false;
         }
         InputSplit split = splits[i++];
-        className.setCopy(split.getClass().getCanonicalName());
+        className.setCopy(split.getClass().getName());
         out.reset();
         split.write(out);
         rawSplit.setCopy(out.getData(), out.getLength());
         locArr.clear();
-        for( String loc: split.getLocations() )
+        String[] locs = split.getLocations();
+        if( locs != null )
         {
-          locArr.add(new JsonString(loc));
+          for( String loc: locs )
+          {
+            locArr.add(new JsonString(loc));
+          }
         }
         return true;
       }

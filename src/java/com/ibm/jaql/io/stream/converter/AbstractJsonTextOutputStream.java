@@ -17,10 +17,11 @@ package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.converter.JsonToStream;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrintStream;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * A converter to write serialized {@link JsonValue}s to a text output stream.
@@ -28,7 +29,7 @@ import com.ibm.jaql.json.type.JsonValue;
 public abstract class AbstractJsonTextOutputStream implements
     JsonToStream<JsonValue> {
 
-  protected PrintStream output;
+  protected FastPrintStream output;
   protected boolean arrAcc = true;
   protected boolean seenFirst = false;
   protected boolean close = true;
@@ -53,10 +54,9 @@ public abstract class AbstractJsonTextOutputStream implements
   }
 
   @Override
-  public void setOutputStream(OutputStream out) {
-    if (out == System.out)
-      close = false;
-    output = new PrintStream(out);
+  public void setOutputStream(OutputStream out)
+  {
+    output = new FastPrintStream(out);
   }
 
   @Override
@@ -84,6 +84,15 @@ public abstract class AbstractJsonTextOutputStream implements
   }
 
   @Override
+  public void flush() throws IOException
+  {
+    if (output != null)
+    {
+      output.flush();
+    }
+  }
+
+  @Override
   public void close() throws IOException {
     if (output != null) {
       if (seenFirst && arrAcc)
@@ -103,5 +112,5 @@ public abstract class AbstractJsonTextOutputStream implements
    * @param i A JSON value
    * @throws IOException
    */
-  protected abstract void printValue(PrintStream print, JsonValue i) throws IOException;
+  protected abstract void printValue(FastPrinter print, JsonValue i) throws IOException;
 }

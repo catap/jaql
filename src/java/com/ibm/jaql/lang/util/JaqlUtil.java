@@ -30,7 +30,6 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.ExceptionHandler;
 import com.ibm.jaql.lang.ThresholdExceptionHandler;
 import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.registry.RNGStore;
 
@@ -44,7 +43,7 @@ public class JaqlUtil
    * @return
    * @throws Exception if the value is not a JBool
    */
-  public static boolean ebv(JsonValue value) throws Exception
+  public static boolean ebv(JsonValue value)
   {
     JsonBool b = (JsonBool) value;
     if (b != null)

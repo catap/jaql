@@ -2,10 +2,9 @@ package com.ibm.jaql;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 
@@ -26,6 +25,8 @@ import com.ibm.jaql.lang.expr.io.AbstractReadExpr;
 import com.ibm.jaql.lang.expr.io.AbstractWriteExpr;
 import com.ibm.jaql.util.ClassLoaderMgr;
 import com.ibm.jaql.util.EchoedReader;
+import com.ibm.jaql.util.FastPrintWriter;
+import com.ibm.jaql.util.FastPrinter;
 
 public class TestDistribute extends JaqlScriptTestCase {
 
@@ -105,14 +106,13 @@ public class TestDistribute extends JaqlScriptTestCase {
 
 
           // make tests work the same on windows as unix.
-          System.setProperty("line.separator", "\n");      
-          final PrintStream resultStream = new PrintStream(
-              new FileOutputStream(outName), false, "UTF-8");
+          System.setProperty("line.separator", "\n");   
+          
+          final FastPrinter resultStream = new FastPrintWriter(new FileWriter(outName));
           Reader queryReader = new InputStreamReader(new FileInputStream(queriesName), "UTF-8"); 
           queryReader = new EchoedReader( queryReader,
               new PrintWriter(new OutputStreamWriter(System.err, "UTF-8")) );
-          queryReader = new EchoedReader( queryReader,
-              new PrintWriter(new OutputStreamWriter(resultStream, "UTF-8")) );
+          queryReader = new EchoedReader( queryReader, resultStream );
 
           // TODO: These should be on Jaql, not static.
           Module.setSearchPath(new String[]{moduleDir});

@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.BufferedJsonRecord;
@@ -31,6 +30,7 @@ import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 // e.g., $.a
 public class CopyField extends FieldExpr
@@ -104,7 +104,19 @@ public class CopyField extends FieldExpr
   {
     return exprs[1];
   }
-  
+
+  /** When is the field constructed */
+  public When getWhen()
+  {
+    return when;
+  }
+
+  public void setWhen(When when)
+  {
+    this.when = when;
+  }
+
+
   @Override
   public Bool3 evaluatesChildOnce(int i)
   {
@@ -115,7 +127,7 @@ public class CopyField extends FieldExpr
    * 
    */
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("(");

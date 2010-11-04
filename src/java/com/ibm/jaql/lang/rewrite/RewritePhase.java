@@ -22,6 +22,7 @@ import java.util.HashSet;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.walk.ExprWalker;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /**
  * 
@@ -139,8 +140,9 @@ public class RewritePhase
                 {
                   System.err.println();
 //                  VarTagger.tag(start);
-                  start.decompile(System.err, new HashSet<Var>());
-                  System.err.println();
+                  FastPrintBuffer exprText = new FastPrintBuffer();
+                  start.decompile(exprText, new HashSet<Var>());
+                  System.err.println(exprText.toString());
                   System.err.println();
                 }
                 System.err.flush();

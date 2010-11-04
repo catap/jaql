@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.ArraySchema;
@@ -31,6 +30,8 @@ import com.ibm.jaql.lang.expr.function.JaqlFunction;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.util.JsonSorter;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
+
 import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
@@ -103,7 +104,7 @@ public class SortExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprs[0].decompile(exprText, capturedVars);

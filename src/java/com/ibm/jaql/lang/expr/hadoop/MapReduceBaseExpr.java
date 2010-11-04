@@ -63,6 +63,7 @@ import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 import com.ibm.jaql.util.ClassLoaderMgr;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /**
  * 
@@ -259,8 +260,7 @@ public abstract class MapReduceBaseExpr extends Expr
   protected final void prepareFunction(String fnName, int numArgs, Function fn, int inId)
   {
     // TODO: pass functions (and their captures!) as strings through the job conf or a temp file?
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream ps = new PrintStream(outStream);
+    FastPrintBuffer out = new FastPrintBuffer();
 
     if (fn.getParameters().numParameters() < numArgs || fn.getParameters().numRequiredParameters() > numArgs)
     {
@@ -269,13 +269,12 @@ public abstract class MapReduceBaseExpr extends Expr
     }
     try
     {
-      JsonUtil.print(ps, fn);
+      JsonUtil.print(out, fn);
     } catch (IOException e)
     {
       throw new UndeclaredThrowableException(e);
     }
-    ps.flush();
-    String s = outStream.toString();
+    String s = out.toString();
     conf.set(BASE_NAME + "." + fnName + "." + inId, s);
   }
 

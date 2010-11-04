@@ -23,6 +23,7 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
+import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
@@ -169,9 +170,23 @@ public abstract class Rewrite
       if (expr instanceof FunctionCallExpr)
       {
         // FIXME: look deeper into this case.
-        // Expr fnExpr = ((FunctionCallExpr)expr).fnExpr();
         // if( fnExpr instanceof ConstExpr ) ... for JaqlFunction look at its body and params, for Expr or Udf ask them
         // if( fnExpr instanceof DefineJaqlFunctionExpr ) ... look at body and params
+        FunctionCallExpr fnCall = (FunctionCallExpr)expr;
+        Expr fnExpr = fnCall.fnExpr();
+        if( fnExpr instanceof VarExpr )
+        {
+          // When functions are passed as parameters, we cannot always inline them, for fear that
+          // we will have recursive calls.  This check looks for map/reduce calls within a function defined
+          // as a variable.
+          // TODO: we should do a better job of flow analysis so we can inline the functions.
+          VarExpr ve = (VarExpr)fnExpr;
+          BindingExpr be = ve.findVarDef();
+          if( be != null && be.parent() instanceof DoExpr )
+          {
+            return mightContainMapReduce( be.eqExpr() );
+          }
+        }
         return true;
       }
     }

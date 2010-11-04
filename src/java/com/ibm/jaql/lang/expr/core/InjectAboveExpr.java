@@ -15,10 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.FastPrinter;
 
 
 /**
@@ -59,7 +59,7 @@ public class InjectAboveExpr extends PseudoExpr
   }
 
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("@injectAbove(");

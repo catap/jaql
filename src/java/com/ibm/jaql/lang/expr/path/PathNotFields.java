@@ -15,12 +15,10 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
@@ -33,6 +31,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 
 /**
@@ -65,7 +64,7 @@ public class PathNotFields extends PathFields
   /**
    * 
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
   throws Exception
   {
     exprText.print("* -");
@@ -108,6 +107,17 @@ public class PathNotFields extends PathFields
   public MappingTable getMappingTable()
   {
 	  MappingTable mt = new MappingTable();
+	  if( true )
+	  {
+	    return mt;
+	  }
+	  
+	  // (KSB) This code is buggy so I disabled it.
+	  // It raises an exception on a computed excluded name, eg ${*-(cf)}
+	  // It also looked like it was mapping the excluded names instead of the included names.
+	  //   X := range(1000) -> transform { x: $ };
+	  //   X -> transform ${*-.($)} -> filter $.x > 0;
+	  // TODO: restore field mappings on excluded fields. 
 	  
 	  //Find the iteration variable used outside the PathALLFields
 	  Var bindVar = null;
@@ -136,7 +146,7 @@ public class PathNotFields extends PathFields
 	  for(int i = 0 ; i < exprs.length - 1 ; i++)
 	  {
 		  PathOneField f = (PathOneField)exprs[i];
-		  ConstExpr fName = (ConstExpr)f.child(0);
+		  ConstExpr fName = (ConstExpr)f.nameExpr();
 		  
 		  //Construct the L.H.S of the mapping	
 		  veL = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
@@ -162,35 +172,45 @@ public class PathNotFields extends PathFields
   {
     if (inputSchema instanceof RecordSchema)
     {
-      // gather all names
-      Set<JsonString> removedFields = new HashSet<JsonString>();
-      boolean unresolved = false;
+      RecordSchema inRec = (RecordSchema)inputSchema;
+      
+      HashSet<JsonString> oldFields = new HashSet<JsonString>();
+      
+      for (RecordSchema.Field field : ((RecordSchema)inputSchema).getFieldsByPosition())
+      {
+        oldFields.add(field.getName());
+      }
+      
+      // Remove known names from the list of fields.
+      // If any removed field name is not statically known, then all fields
+      // become optional (we don't know if they will be present or not).
+      boolean allOptional = false;
       for(int i = 0 ; i < exprs.length-1; i++)
       {
         PathOneField f = (PathOneField)exprs[i];
-        PathStepSchema s = f.getSchema(inputSchema);
-        if (s.name != null)
+        Expr ne = f.nameExpr();
+        if( ne instanceof ConstExpr )
         {
-          removedFields.add(s.name);
+          JsonString fname = (JsonString)((ConstExpr)ne).value;
+          oldFields.remove(fname);
         }
         else
         {
-          unresolved = true;
+          allOptional = true;
         }
       }
       
       // and copy the input schema w/o those names
-      List<RecordSchema.Field> fields = new LinkedList<RecordSchema.Field>();
-      for (RecordSchema.Field field : ((RecordSchema)inputSchema).getFieldsByPosition())
+      List<RecordSchema.Field> newFields = new LinkedList<RecordSchema.Field>();
+      for( RecordSchema.Field field : inRec.getFieldsByPosition() )
       {
-        if (!removedFields.contains(field.getName()))
+        if( oldFields.contains(field.getName()) )
         {
-          fields.add(new RecordSchema.Field(field.getName(), field.getSchema(),
-              unresolved ? true : field.isOptional())); // unresolved fields might match this field
+          newFields.add(new RecordSchema.Field(field.getName(), field.getSchema(),
+              allOptional || field.isOptional())); // unresolved fields might match this field
         }
       }
-      Schema rest = ((RecordSchema)inputSchema).getAdditionalSchema();
-      return new PathStepSchema(new RecordSchema(fields, rest) , Bool3.TRUE);
+      return new PathStepSchema(new RecordSchema(newFields, inRec.getAdditionalSchema()) , Bool3.TRUE);
     }
     return new PathStepSchema(SchemaFactory.recordSchema(), Bool3.TRUE);
   }

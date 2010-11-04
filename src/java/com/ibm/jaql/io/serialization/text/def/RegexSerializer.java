@@ -16,11 +16,11 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonRegex;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.util.FastPrinter;
 
 public class RegexSerializer extends TextBasicSerializer<JsonRegex>
 {
@@ -32,7 +32,7 @@ public class RegexSerializer extends TextBasicSerializer<JsonRegex>
   }
   
   @Override
-  public void write(PrintStream out, JsonRegex value, int indent)
+  public void write(FastPrinter out, JsonRegex value, int indent)
       throws IOException
   {
     //    out.print('/');

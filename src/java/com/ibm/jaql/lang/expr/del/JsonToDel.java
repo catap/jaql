@@ -15,10 +15,16 @@
  */
 package com.ibm.jaql.lang.expr.del;
 
+import static com.ibm.jaql.lang.expr.string.DelParser.BACKSPACE;
+import static com.ibm.jaql.lang.expr.string.DelParser.BACK_SLASH;
+import static com.ibm.jaql.lang.expr.string.DelParser.CARRIAGE_RETURN;
+import static com.ibm.jaql.lang.expr.string.DelParser.DOUBLE_QUOTE;
+import static com.ibm.jaql.lang.expr.string.DelParser.FORM_FEED;
+import static com.ibm.jaql.lang.expr.string.DelParser.LINE_FEED;
+import static com.ibm.jaql.lang.expr.string.DelParser.SINGLE_QUOTE;
+import static com.ibm.jaql.lang.expr.string.DelParser.TAB;
+
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -29,7 +35,6 @@ import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.io.serialization.text.def.BoolSerializer;
 import com.ibm.jaql.io.serialization.text.def.DecimalNoSuffixSerializer;
-import com.ibm.jaql.io.serialization.text.def.DecimalSerializer;
 import com.ibm.jaql.io.serialization.text.def.DoubleSerializer;
 import com.ibm.jaql.io.serialization.text.def.LongSerializer;
 import com.ibm.jaql.json.schema.ArraySchema;
@@ -43,9 +48,8 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.json.util.JsonUtil;
-import com.ibm.jaql.util.RandomAccessBuffer;
-
-import static com.ibm.jaql.lang.expr.string.DelParser.*;
+import com.ibm.jaql.util.FastPrintBuffer;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * Converts a JSON value to a del(delimited) string.
@@ -72,13 +76,10 @@ public class JsonToDel {
 
   private JsonString[] fieldNames = new JsonString[0];
 
-  private final RandomAccessBuffer buf = new RandomAccessBuffer();
-  private final PrintStream out;
-  
   private final Text text = new Text();
 
-  private final RandomAccessBuffer fieldBuf = new RandomAccessBuffer();
-  private final PrintStream fieldOut;
+  private final FastPrintBuffer out = new FastPrintBuffer();
+  private final FastPrintBuffer fieldOut = new FastPrintBuffer();
 
   private final List<JsonValue> values = new ArrayList<JsonValue>();
 
@@ -121,13 +122,6 @@ public class JsonToDel {
       // silently accept
     } else if (schema != null) {
       throw new IllegalArgumentException("only array or record schemata are accepted");
-    }
-
-    try {
-      out = new PrintStream(buf, false, UTF_8);
-      fieldOut = new PrintStream(fieldBuf, false, UTF_8);
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException(e);
     }
 
     serializers = new EnumMap<JsonEncoding, TextBasicSerializer<?>>(JsonEncoding.class);
@@ -209,7 +203,7 @@ public class JsonToDel {
       values.add(src);
     } 
 
-    buf.reset();
+    out.reset();
     for (int i = 0; i < values.size(); i++) {
       JsonValue value = values.get(i);
       if (i != 0)
@@ -222,11 +216,11 @@ public class JsonToDel {
         printFieldUnquoted(out, value);
     }
     out.flush();
-    text.set(buf.getBuffer(), 0, buf.size());
+    text.set(out.toString());
   }
   
   @SuppressWarnings("unchecked")
-  private void printFieldQuoted(PrintStream out, JsonValue value, boolean escape)
+  private void printFieldQuoted(FastPrinter out, JsonValue value, boolean escape)
       throws IOException {
     JsonEncoding encoding = value.getEncoding();
     TextBasicSerializer serializer = serializers.get(encoding);
@@ -239,99 +233,185 @@ public class JsonToDel {
       JsonString js = (JsonString) value;
       printUtf8Quoted(out, escape, js.getInternalBytes(), js.bytesOffset(), js.bytesLength());
     } else {
-      fieldBuf.reset();
+      fieldOut.reset();
       fullSer.write(fieldOut, value);
       fieldOut.flush();
-      printUtf8Quoted(out, escape, fieldBuf.getBuffer(), 0, fieldBuf.size());
+      printQuoted(out, escape, fieldOut.getBuffer(), 0, fieldOut.size());
     }
   }
 
-	private void printUtf8Quoted(OutputStream out, boolean escape, byte[] utf8,
+  private void printQuoted(FastPrinter out, boolean escape, char[] text, int offset, int length)
+    throws IOException 
+  {
+    out.write(DOUBLE_QUOTE);
+    int end = offset + length;
+    for (int i = offset; i < end; i++) {
+      char b = text[i];
+      if (b == DOUBLE_QUOTE)
+      {
+        out.write(doubleQuoteEscapePrefix);
+        out.write(DOUBLE_QUOTE);
+      }
+      else if (escape)
+      {
+        switch (b) {
+        case SINGLE_QUOTE:
+          out.write(BACK_SLASH);
+          out.write(SINGLE_QUOTE);
+          break;
+        case BACK_SLASH:
+          out.write(BACK_SLASH);
+          out.write(BACK_SLASH);
+          break;
+        case BACKSPACE:
+          out.write(BACK_SLASH);
+          out.write('b');
+          break;
+        case FORM_FEED:
+          out.write(BACK_SLASH);
+          out.write('f');
+          break;
+        case LINE_FEED:
+          out.write(BACK_SLASH);
+          out.write('n');
+          break;
+        case CARRIAGE_RETURN:
+          out.write(BACK_SLASH);
+          out.write('r');
+          break;
+        case TAB:
+          out.write(BACK_SLASH);
+          out.write('t');
+          break;
+        default:
+          if( Character.isISOControl(b) )
+          {
+            out.write(BACK_SLASH);
+            out.write('u');
+            out.write(JsonUtil.hex[((b & 0xf000) >>> 12)]);
+            out.write(JsonUtil.hex[((b & 0x0f00) >>>  8)]);
+            out.write(JsonUtil.hex[((b & 0x00f0) >>>  4)]);
+            out.write(JsonUtil.hex[((b & 0x000f)       )]);
+          } else {
+            out.write(b);
+          }
+        }
+      } 
+      else 
+      {
+        out.write(b);
+      }
+    }
+    out.write(DOUBLE_QUOTE);
+  }
+
+	private void printUtf8Quoted(FastPrinter out, boolean escape, byte[] utf8,
 			int offset, int length) throws IOException {
 		out.write(DOUBLE_QUOTE);
 		int end = offset + length;
-		boolean singlebyte = true;
 		for (int i = offset; i < end; i++) {
-			singlebyte = true;
-			byte b = utf8[i];
-			if (b == DOUBLE_QUOTE) {
-				out.write(doubleQuoteEscapePrefix);
-				out.write(DOUBLE_QUOTE);
-			} else if (escape) {
-				switch (b) {
-				case SINGLE_QUOTE:
-					out.write(BACK_SLASH);
-					out.write(SINGLE_QUOTE);
-					break;
-				case BACK_SLASH:
-					out.write(BACK_SLASH);
-					out.write(BACK_SLASH);
-					break;
-				case BACKSPACE:
-					out.write(BACK_SLASH);
-					out.write('b');
-					break;
-				case FORM_FEED:
-					out.write(BACK_SLASH);
-					out.write('f');
-					break;
-				case LINE_FEED:
-					out.write(BACK_SLASH);
-					out.write('n');
-					break;
-				case CARRIAGE_RETURN:
-					out.write(BACK_SLASH);
-					out.write('r');
-					break;
-				case TAB:
-					out.write(BACK_SLASH);
-					out.write('t');
-					break;
-				default:
-					int currentByte = 0x000000FF & b;
-					int cp = 0;
-					// single-byte encoding?
-					if (currentByte < 0x00000080) {
-						cp = currentByte;
-						singlebyte = true;
-						// start of 2-byte sequence?
-					} else if ((currentByte & 0x000000E0) == 0x000000C0) {
-						singlebyte = false;
-						int nextByte = 0x000000FF & utf8[i + 1];
-						// compute the code point
-						cp = ((0x0000001F & currentByte) << 6)
-								+ (0x0000003F & nextByte);
-					} else {
-						out.write(b);
-						break;
-					}
+		  
+		  int c = utf8[i] & 0xff;
+		  if( (c & 0x80) != 0 )
+		  {
+        i++;
+        byte b = utf8[i];
+		    switch( Integer.numberOfLeadingZeros( (~c) & 0xff ) )
+		    {
+		      case 26: {
+		        c = ((c & 0x1f) << 6) | (b & 0x3f);
+		        break;
+		      }
+		      case 27: {
+		        i++;
+		        byte b2 = utf8[i];
+            c = ((c & 0x0f) << 12) | ((b & 0x3f) << 6) | (b2 & 0x3f);
+            break;
+		      }
+		      case 28: {
+            i++;
+            byte b2 = utf8[i];
+            i++;
+            byte b3 = utf8[i];
+            c = ((c & 0x07) << 18) | ((b & 0x3f) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3f);
+            if( c > 0xffff )
+            {
+              // see Character.toSurrogates()
+              throw new UnsupportedOperationException("UTF-16 Surrogates are not handled yet...");
+            }
+            break;
+		      }
+		      default:
+		        throw new IllegalArgumentException("invalid utf-8 character: "+c);
+		    }
+		  }
+		  
+      if (c == DOUBLE_QUOTE)
+      {
+        out.write(doubleQuoteEscapePrefix);
+        out.write(DOUBLE_QUOTE);
+      }
+      else if (escape) 
+      {
+        switch (c) 
+        {
+          case SINGLE_QUOTE:
+            out.write(BACK_SLASH);
+            out.write(SINGLE_QUOTE);
+            break;
+          case BACK_SLASH:
+            out.write(BACK_SLASH);
+            out.write(BACK_SLASH);
+            break;
+          case BACKSPACE:
+            out.write(BACK_SLASH);
+            out.write('b');
+            break;
+          case FORM_FEED:
+            out.write(BACK_SLASH);
+            out.write('f');
+            break;
+          case LINE_FEED:
+            out.write(BACK_SLASH);
+            out.write('n');
+            break;
+          case CARRIAGE_RETURN:
+            out.write(BACK_SLASH);
+            out.write('r');
+            break;
+          case TAB:
+            out.write(BACK_SLASH);
+            out.write('t');
+            break;
+          default:
+            if (Character.isISOControl(c))
+            {
+              out.write(BACK_SLASH);
+              out.write('u');
+              out.write(JsonUtil.hex[((c & 0xf000) >>> 12)]);
+              out.write(JsonUtil.hex[((c & 0x0f00) >>> 8)]);
+              out.write(JsonUtil.hex[((c & 0x00f0) >>> 4)]);
+              out.write(JsonUtil.hex[( c & 0x000f)]);
+            } 
+            else
+            {
+              out.write(c);
+            }
+        }
+      }
+      else
+      {
+        out.write(c);
+      }
 
-					if (Character.isISOControl(cp)) {
-						if (!singlebyte)
-							i++;
-						out.write(BACK_SLASH);
-						out.write('u');
-						out.write(JsonUtil.hex[((cp & 0xf000) >>> 12)]);
-						out.write(JsonUtil.hex[((cp & 0x0f00) >>> 8)]);
-						out.write(JsonUtil.hex[((cp & 0x00f0) >>> 4)]);
-						out.write(JsonUtil.hex[(cp & 0x000f)]);
-					} else {
-						out.write(b);
-					}
-				}
-			} else {
-				out.write(b);
-			}
 		}
 		out.write(DOUBLE_QUOTE);
 	}
   
-  private void printFieldUnquoted(PrintStream out, JsonValue value)
+  private void printFieldUnquoted(FastPrinter out, JsonValue value)
       throws IOException {
     if (value instanceof JsonString) {
-      JsonString js = (JsonString) value;
-      byte[] bytes = js.getInternalBytes();
-      out.write(bytes);
+      out.write(value.toString()); // TODO: special case based on form of string (utf8 vs chars)
     } else {
       fullSer.write(out, value);
     }

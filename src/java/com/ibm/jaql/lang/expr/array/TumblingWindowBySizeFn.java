@@ -119,6 +119,8 @@ public class TumblingWindowBySizeFn extends IterExpr
     final boolean lastGroup = JaqlUtil.ebv(exprs[ARG_LAST_GROUP].eval(context));
 
     final SpilledJsonArray window = new SpilledJsonArray();
+    // TODO: use faster simpler array when window is small?
+    //final BufferedJsonArray window = new BufferedJsonArray();
       
     return new JsonIterator(window) 
     {

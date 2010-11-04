@@ -17,7 +17,6 @@ package com.ibm.jaql.io.serialization.text.schema;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.SerializerMap;
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
@@ -30,6 +29,7 @@ import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * Jaql's default serializer for the shell. Uses schema information, e.g., to determine order of 
@@ -66,7 +66,7 @@ public final class SchemaTextFullSerializer extends TextFullSerializer {
 
   @SuppressWarnings("unchecked")
   @Override
-  public void write(PrintStream out, JsonValue value, int indent) throws IOException {
+  public void write(FastPrinter out, JsonValue value, int indent) throws IOException {
     // handle nulls
     if (value == null)
     {
@@ -161,13 +161,13 @@ public final class SchemaTextFullSerializer extends TextFullSerializer {
     }
     
     @Override
-    public void write(PrintStream out, JsonValue value) throws IOException
+    public void write(FastPrinter out, JsonValue value) throws IOException
     {
       write(out, value, 0);      
     }
 
     @Override
-    public void write(PrintStream out, JsonValue value, int indent)
+    public void write(FastPrinter out, JsonValue value, int indent)
         throws IOException
     {
       if (!schema.matchesUnsafe(value))

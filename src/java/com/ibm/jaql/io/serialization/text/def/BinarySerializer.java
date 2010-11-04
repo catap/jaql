@@ -15,16 +15,17 @@
  */
 package com.ibm.jaql.io.serialization.text.def;
 
-import java.io.PrintStream;
+import java.io.IOException;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonBinary;
 import com.ibm.jaql.util.BaseUtil;
+import com.ibm.jaql.util.FastPrinter;
 
 public class BinarySerializer extends TextBasicSerializer<JsonBinary>
 {
   @Override
-  public void write(PrintStream out, JsonBinary value, int indent)
+  public void write(FastPrinter out, JsonBinary value, int indent) throws IOException
   {
     out.print("hex('");
     for (int i = 0; i < value.bytesLength() ; i++)

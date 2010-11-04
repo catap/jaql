@@ -16,6 +16,7 @@
 package com.ibm.jaql.io;
 
 import java.io.Closeable;
+import java.io.Flushable;
 import java.io.IOException;
 
 import com.ibm.jaql.json.type.JsonValue;
@@ -23,7 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 /**
  * A Writer that writes values.
  */
-public abstract class ClosableJsonWriter implements Closeable {
+public abstract class ClosableJsonWriter implements Closeable, Flushable {
   /**
    * Writes the JSON value.
    * 

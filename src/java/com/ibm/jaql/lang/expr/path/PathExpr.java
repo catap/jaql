@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -31,6 +30,7 @@ import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.path.PathStep.PathStepSchema;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /** A path expression. Composed of individual {@link PathStep}s. */
 public final class PathExpr extends Expr
@@ -122,7 +122,7 @@ public final class PathExpr extends Expr
   /**
    * 
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
   throws Exception
   {
     exprText.print("(");

@@ -20,13 +20,11 @@ import static com.ibm.jaql.json.type.JsonType.NULL;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.Map;
 import java.util.TreeMap;
@@ -57,11 +55,13 @@ import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.expr.io.AbstractReadExpr;
 import com.ibm.jaql.lang.expr.io.AbstractWriteExpr;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
-import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 import com.ibm.jaql.util.ClassLoaderMgr;
 import com.ibm.jaql.util.EchoedReader;
+import com.ibm.jaql.util.FastPrintStream;
+import com.ibm.jaql.util.FastPrintWriter;
+import com.ibm.jaql.util.FastPrinter;
 
 
 // @RunWith(Parameterized.class)
@@ -211,13 +211,10 @@ public class JaqlScriptTestCase
 
       // make tests work the same on windows as unix.
       System.setProperty("line.separator", "\n");      
-      final PrintStream resultStream = new PrintStream(
-          new FileOutputStream(outName), false, "UTF-8");
+      final FastPrintWriter resultStream = new FastPrintWriter(new FileWriter(outName));
       Reader queryReader = new InputStreamReader(new FileInputStream(queriesName), "UTF-8"); 
-      queryReader = new EchoedReader( queryReader,
-          new PrintWriter(new OutputStreamWriter(System.err, "UTF-8")) );
-      queryReader = new EchoedReader( queryReader,
-          new PrintWriter(new OutputStreamWriter(resultStream, "UTF-8")) );
+      queryReader = new EchoedReader( queryReader, new FastPrintStream(System.err) );
+      queryReader = new EchoedReader( queryReader, resultStream );
 
       // TODO: These should be on Jaql, not static.
       Module.setSearchPath(new String[]{moduleDir});
@@ -321,7 +318,7 @@ public class JaqlScriptTestCase
   {
     protected boolean schemaPrinting;
     
-    public TestPrinter(PrintStream ps, boolean schemaPrinting)
+    public TestPrinter(FastPrinter ps, boolean schemaPrinting)
     {
       super(ps, true);
       this.schemaPrinting = schemaPrinting;
@@ -374,10 +371,10 @@ public class JaqlScriptTestCase
 
   public static class TestExceptionHandler extends ExceptionHandler
   {
-    protected PrintStream ps;
+    protected FastPrinter ps;
     protected String pathToRemove;
 
-    public TestExceptionHandler(PrintStream ps, String pathToRemove)
+    public TestExceptionHandler(FastPrinter ps, String pathToRemove)
     {
       this.ps = ps;
       this.pathToRemove = pathToRemove;
@@ -458,12 +455,12 @@ public class JaqlScriptTestCase
   
   public static class CountExplainHandler extends ExplainHandler
   {
-    protected PrintStream ps;
+    protected FastPrinter ps;
     protected Class<?>[] classes;
     protected TreeMap<String, Counter> counts;
     protected PostOrderExprWalker walker = new PostOrderExprWalker();
 
-    public CountExplainHandler(PrintStream ps, Class<?>[] classes)
+    public CountExplainHandler(FastPrinter ps, Class<?>[] classes)
     {
       this.ps = ps;
       this.classes = classes;

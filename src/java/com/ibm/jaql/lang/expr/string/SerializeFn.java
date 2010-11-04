@@ -15,9 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.string;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
@@ -25,6 +22,7 @@ import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /**
  * 
@@ -40,8 +38,7 @@ public class SerializeFn extends Expr
   }
   
   MutableJsonString text = new MutableJsonString();
-  ByteArrayOutputStream baos = new ByteArrayOutputStream();
-  PrintStream out = new PrintStream(baos);
+  FastPrintBuffer out = new FastPrintBuffer();
   
   /**
    * string serialize( value v )
@@ -62,10 +59,10 @@ public class SerializeFn extends Expr
   {
     // TODO: memory!!
     JsonValue value = exprs[0].eval(context);
-    baos.reset();
+    out.reset();
     JsonUtil.print(out, value, 0);
     out.flush();
-    text.set(baos.toByteArray());
+    text.setCopy(out.toString());
     return text;
   }
 }

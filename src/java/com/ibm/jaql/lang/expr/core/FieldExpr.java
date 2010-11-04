@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -25,6 +24,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * FieldExpr is not really an Expr. It is only used inside a RecordExpr.
@@ -72,7 +72,7 @@ public abstract class FieldExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public abstract void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public abstract void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception;
   
   /**

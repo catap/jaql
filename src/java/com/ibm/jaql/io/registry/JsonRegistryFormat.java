@@ -17,7 +17,6 @@ package com.ibm.jaql.io.registry;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -31,6 +30,7 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.SpilledJsonArray;
+import com.ibm.jaql.util.FastPrintStream;
 
 /** Super class for registry formats that serialize the (key, value)-pairs in the registry
  * to {@link JsonRecord}s. Subclasses provide methods that convert keys/values to {@link Items}s
@@ -162,7 +162,7 @@ public abstract class JsonRegistryFormat<K, V>
       throws Exception
   {
     // Array of records
-    PrintStream pout = new PrintStream(out);
+    FastPrintStream pout = new FastPrintStream(out, FastPrintStream.UTF8);
     SpilledJsonArray arr = new SpilledJsonArray();
     while (iter.hasNext())
     {

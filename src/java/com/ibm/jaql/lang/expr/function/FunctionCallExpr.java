@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.function;
 
-import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +35,7 @@ import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.FastPrinter;
 
 // TODO: optimize the case when the fn is known to have a IterExpr body
 /**
@@ -202,7 +202,7 @@ public class FunctionCallExpr extends Expr
   }
   
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("(");

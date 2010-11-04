@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.regex;
 
 import java.util.regex.Matcher;
 
+import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.BufferedJsonArray;
@@ -34,6 +35,9 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
  */
 public class RegexExtractFn extends Expr
 {
+  public final static Schema SCHEMA =   // [string?*]?
+    SchemaFactory.nullable( new ArraySchema(null, SchemaFactory.nullable(SchemaFactory.stringSchema())));
+
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
   {
     public Descriptor()
@@ -53,7 +57,7 @@ public class RegexExtractFn extends Expr
   @Override
   public Schema getSchema()
   {
-    return SchemaFactory.arrayOrNullSchema();
+    return SCHEMA;
   }
 
   /*
@@ -85,7 +89,7 @@ public class RegexExtractFn extends Expr
     for(int i = 0 ; i < n ; i++)
     {
       String s = matcher.group(i+1);
-      arr.set(i, new JsonString(s)); // TODO: memory
+      arr.set(i, s == null ? null : new JsonString(s)); // TODO: memory
     }
     regex.returnMatcher(matcher);
     return arr;

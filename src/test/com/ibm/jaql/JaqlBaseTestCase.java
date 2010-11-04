@@ -18,20 +18,17 @@ package com.ibm.jaql;
 import static com.ibm.jaql.json.type.JsonType.ARRAY;
 import static com.ibm.jaql.json.type.JsonType.NULL;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.Writer;
+import java.io.StringReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,6 +53,9 @@ import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.rewrite.RewriteEngine;
 import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.util.EchoedReader;
+import com.ibm.jaql.util.FastPrintBuffer;
+import com.ibm.jaql.util.FastPrintWriter;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -151,9 +151,8 @@ public abstract class JaqlBaseTestCase extends TestCase {
     {
 	  // Initialize input, output streams
       // TODO: switch jaql output to PrintWriter instead of PrintStream
-	  FileOutputStream fos = new FileOutputStream(outputFilename);
-      PrintStream oStr = new PrintStream(fos);
-	  Writer writer = new PrintWriter(new OutputStreamWriter(fos, "UTF-8"));
+	  FileWriter writer = new FileWriter(outputFilename);
+	  FastPrintWriter oStr = new FastPrintWriter(writer);
 	  Reader reader = new InputStreamReader(new FileInputStream(inputFileName), "UTF-8");
 	  reader = new EchoedReader(reader, writer);
 //		TeeInputStream teeInput = new TeeInputStream(input, oStr);
@@ -185,8 +184,10 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				VarTagger.tag(expr);
 				captures.clear();
 				System.err.println("\nDecompiled query:");
-				expr.decompile(System.err, captures);
-				System.err.println(";\nEnd decompiled query\n");
+				FastPrintBuffer exprText = new FastPrintBuffer();
+				expr.decompile(exprText, captures);
+				exprText.writeTo(System.err);
+				System.err.println("\n;\nEnd decompiled query\n");
 
 				if (type == PLAIN) {
 					System.err.println("\nrunning formatResult");
@@ -198,6 +199,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 					System.err.println("\nrunning formatRewriteResult");
 					formatRewriteResult(expr, context, oStr);
 				}
+		    oStr.flush();
 
 				context.reset();
 				qNum++;
@@ -205,6 +207,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				LOG.error(ex);
 				ex.printStackTrace(System.err);
 				formatFailure(qNum, oStr);
+		    oStr.flush();
 				if (parsing) {
 					BitSet bs = new BitSet();
 					bs.add(JaqlParser.EOF);
@@ -235,7 +238,6 @@ public abstract class JaqlBaseTestCase extends TestCase {
 
 		// Close all streams
 		context.reset();
-		oStr.flush();
 		oStr.close();
 		reader.close();
 
@@ -246,9 +248,10 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	 * @param expr
 	 * @param context
 	 * @param str
+	 * @throws IOException 
 	 */
-	private void formatResult(int qId, Expr expr, Context context,
-			PrintStream str) {
+	private void formatResult(int qId, Expr expr, Context context, FastPrinter str) throws IOException
+	{
 		printHeader(str);
 		try {
 			Schema schema = expr.getSchema();
@@ -278,7 +281,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		str.flush();
 	}
 	
-	 private void print(PrintStream out, Expr expr, JsonValue value) throws IOException
+	 private void print(FastPrinter out, Expr expr, JsonValue value) throws IOException
 	  {
 	    if (schemaAwarePrinting)
 	    {
@@ -317,13 +320,12 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	 * @param expr
 	 * @param context
 	 * @param str
+	 * @throws IOException 
 	 */
-	private void formatDecompileResult(Expr expr, Context context,
-			PrintStream str) {
-
+	private void formatDecompileResult(Expr expr, Context context, FastPrinter str) throws IOException
+	{
 		// decompile expr into a temp buffer
-		ByteArrayOutputStream buf = new ByteArrayOutputStream();
-		PrintStream tmpStr = new PrintStream(buf);
+		FastPrintBuffer tmpStr = new FastPrintBuffer();
 		try {
 			Expr dexpr = expr;
 			if (!(expr instanceof AssignExpr)) {
@@ -331,8 +333,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				tmpStr.close();
 				// System.err.println("REAL DECOMP:"+buf);
 				// parse it and eval
-				JaqlLexer lexer = new JaqlLexer(new ByteArrayInputStream(buf
-						.toByteArray()));
+				JaqlLexer lexer = new JaqlLexer(new StringReader(tmpStr.toString()));
 				JaqlParser parser = new JaqlParser(lexer);
 				dexpr = parser.parse();
 			}
@@ -351,7 +352,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	 * @param str
 	 * @throws Exception
 	 */
-	private void formatRewriteResult(Expr expr, Context context, PrintStream str)
+	private void formatRewriteResult(Expr expr, Context context, FastPrinter str)
 			throws Exception {
 		// rewrite expr
 		RewriteEngine rewriter = new RewriteEngine();
@@ -360,8 +361,10 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			VarTagger.tag(expr);
 			captures.clear();
 			System.err.println("\nRewritten query:");
-			expr.decompile(System.err, captures);
-			System.err.println(";\nEnd rewritten query");
+			FastPrintBuffer exprText = new FastPrintBuffer();
+			expr.decompile(exprText, captures);
+			exprText.writeTo(System.err);
+			System.err.println("\n;\nEnd rewritten query");
 			context.reset();
 		} catch (Exception e) {
 			printHeader(str);
@@ -383,8 +386,9 @@ public abstract class JaqlBaseTestCase extends TestCase {
 	/**
 	 * @param qId
 	 * @param str
+	 * @throws IOException 
 	 */
-	private void formatFailure(int qId, PrintStream str) {
+	private void formatFailure(int qId, FastPrinter str) throws IOException {
 		printHeader(str);
 		str.print(FAILURE);
 		printFooter(str);
@@ -392,15 +396,17 @@ public abstract class JaqlBaseTestCase extends TestCase {
 
 	/**
 	 * @param str
+	 * @throws IOException 
 	 */
-	private void printHeader(PrintStream str) {
+	private void printHeader(FastPrinter str) throws IOException {
 		str.println("##");
 	}
 
 	/**
 	 * @param str
+	 * @throws IOException 
 	 */
-	private void printFooter(PrintStream str) {
+	private void printFooter(FastPrinter str) throws IOException {
 		str.println();
 	}
 

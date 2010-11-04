@@ -16,12 +16,12 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 public class ArraySerializer extends TextBasicSerializer<JsonArray>
 {
@@ -32,7 +32,7 @@ public class ArraySerializer extends TextBasicSerializer<JsonArray>
   }
   
   @Override
-  public void write(PrintStream out, JsonArray value, int indent) throws IOException
+  public void write(FastPrinter out, JsonArray value, int indent) throws IOException
   {
     String sep = "";
     out.print("[");

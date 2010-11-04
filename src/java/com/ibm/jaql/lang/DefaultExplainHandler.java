@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang;
 
-import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,6 +24,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.top.ExplainExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 public class DefaultExplainHandler extends ExplainHandler
 {
@@ -54,8 +54,7 @@ public class DefaultExplainHandler extends ExplainHandler
     {
       expr = expr.child(0);
     }
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream exprText = new PrintStream(outStream);
+    FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
     expr.decompile(exprText, capturedVars);
     if( !capturedVars.isEmpty() )
@@ -76,12 +75,12 @@ public class DefaultExplainHandler extends ExplainHandler
         {
           System.err.println(key.taggedName());
         }
-        System.err.println(outStream.toString());
+        System.err.println(exprText.toString());
         throw new RuntimeException("undefined variables");
       }
     }
     exprText.print(";");
-    String stmt = outStream.toString();
+    String stmt = exprText.toString();
     return stmt;
   }
 }

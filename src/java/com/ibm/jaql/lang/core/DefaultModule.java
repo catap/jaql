@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import com.ibm.jaql.json.parser.JsonParser;
 import com.ibm.jaql.json.type.JsonArray;
@@ -57,7 +58,9 @@ public class DefaultModule extends Module {
 		ensureMetaData();
 		if(!meta.containsKey(SCRIPTS_FIELD)) {
 			// All *.jql and *.jaql files inside the jaql directory are assumed to be jaql
-			return jaqlDir.listFiles(jaqlFileFilter);
+		  File[] fs = jaqlDir.listFiles(jaqlFileFilter);
+		  Arrays.sort(fs);
+			return fs;
 		} else {
 			//Load files based on meta data
 			ArrayList<File> files = new ArrayList<File>();

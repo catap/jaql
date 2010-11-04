@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.function;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,6 +37,7 @@ import com.ibm.jaql.lang.rewrite.VarTagger;
 import com.ibm.jaql.lang.rewrite.VarTagger.TagGenerator;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /** 
  * Value that stores a function implemented in Jaql.
@@ -272,8 +271,7 @@ public class JaqlFunction extends Function
   {
     // TODO: make more efficient
     HashSet<Var> capturedVars = new HashSet<Var>();
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream exprText = new PrintStream(outStream);
+    FastPrintBuffer exprText = new FastPrintBuffer();
     try
     {
       body.decompile(exprText, capturedVars);

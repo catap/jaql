@@ -21,10 +21,12 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
+import com.ibm.jaql.lang.expr.core.CopyField;
 import com.ibm.jaql.lang.expr.core.CopyRecord;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.NameValueBinding;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.lang.expr.core.CopyField.When;
 
 /**
  * Simplify record construction
@@ -66,9 +68,61 @@ public class SimplifyRecord extends Rewrite
           return false;
         }
       }
+      else if( e instanceof CopyField )
+      {
+        CopyField f = (CopyField)e;
+        Expr ne = f.nameExpr();
+        if( !(ne instanceof ConstExpr) )
+        {
+          // If we have computed field names, we will not combine records.
+          // TODO: This is conservative, in case we make literal names override any copied fields.
+          return false;
+        }
+        JsonString name = (JsonString)((ConstExpr)ne).value;
+        if( name == null )
+        {
+          throw new RuntimeException("null field names are not allowed:\n"+expr);
+        }
+        e = f.recExpr();
+        if( e instanceof RecordExpr )
+        {
+          e = ((RecordExpr)e).findStaticFieldValue(name);
+          // TODO: handle the case when name definitely does NOT exist
+          if( e != null )
+          {
+            f.replaceInParent( new NameValueBinding(name, e, f.getWhen() != When.NONNULL) );
+            return true;
+          }
+        }
+        else if( e instanceof ConstExpr )
+        {
+          JsonValue val = ((ConstExpr)e).value;
+          if( val == null )
+          {
+            if( f.getWhen() != When.ALWAYS )
+            {
+              f.detach();
+              return true;
+            }
+          }
+          else if( val instanceof JsonRecord )
+          {
+            JsonRecord rec = (JsonRecord)val;
+            val = rec.get(name);
+          }
+          else
+          {
+            throw new ClassCastException("record is required in "+f+" found "+val);
+          }
+          
+          f.replaceInParent( new NameValueBinding(name, new ConstExpr(val), true) );
+          return true;
+        }
+      }
       else if( e instanceof CopyRecord )
       {
-        e = e.child(0);
+        CopyRecord f = (CopyRecord)e;
+        e = f.recExpr();
         if( e instanceof RecordExpr )
         {
           return copyRecordConstructor(target, (RecordExpr)e);

@@ -81,7 +81,7 @@ public class JsonRegex extends JsonAtom
   public JsonRegex(JsonString regex, JsonString flags)
   {
     this.regex = regex;
-    String sflags = flags.toString();
+    String sflags = flags == null ? "" : flags.toString();
     byte f = 0;
     for (int i = 0; i < sflags.length(); i++)
     {

@@ -16,16 +16,16 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonDouble;
+import com.ibm.jaql.util.FastPrinter;
 
 public class DoubleSerializer extends TextBasicSerializer<JsonDouble>
 {
 
   @Override
-  public void write(PrintStream out, JsonDouble value, int indent)
+  public void write(FastPrinter out, JsonDouble value, int indent)
       throws IOException
   {
     out.print(value.get());    
