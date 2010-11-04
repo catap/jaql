@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -28,6 +27,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.top.AssignExpr;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * Run a list of expressions, perserving order as required.  Return the result of the last expression.
@@ -99,7 +99,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("(");

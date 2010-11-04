@@ -15,22 +15,20 @@
  */
 package com.ibm.jaql.io.stream.converter;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.converter.JsonToStream;
-import com.ibm.jaql.io.serialization.binary.def.DefaultBinaryFullSerializer;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrintStream;
 
 /** Writes serialized {@link JsonValue}s to a binary output stream.
  * 
  */
 public class ArgumentsOutputStream implements JsonToStream<JsonValue>
 {
-  protected DataOutputStream output;
+  protected FastPrintStream output;
   private boolean          arrAcc = true;
   //private com.ibm.jaql.io.serialization.text.TextFullSerializer serializer = com.ibm.jaql.io.serialization.text.TextFullSerializer.getDefault();
   /*
@@ -40,7 +38,7 @@ public class ArgumentsOutputStream implements JsonToStream<JsonValue>
    */
   public void setOutputStream(OutputStream out)
   {
-    output = new DataOutputStream(out);
+    output = new FastPrintStream(out);
   }
   
   /* (non-Javadoc)
@@ -64,23 +62,37 @@ public class ArgumentsOutputStream implements JsonToStream<JsonValue>
    */
   public void write(JsonValue i) throws IOException
   {	
-	  output.write(processArguments(i));
+	  output.print(processArguments(i));
 	  output.close();
   }
   
-  protected byte[] processArguments(JsonValue value) throws IOException{
-	  StringBuffer sb = new StringBuffer();
-	    if(value instanceof JsonArray){	    	    
-	    	for(JsonValue m :(JsonArray)value){	    		
-	      		sb.append(m.toString());
-	      		sb.append(" ");
-	      	}
-	    	if(sb.length() > 0)
-	    		sb = sb.deleteCharAt(sb.length()-1);
-	    }else{
-	    	sb.append(value.toString());
-	    }	    
-	    return sb.toString().getBytes();
+  protected StringBuffer processArguments(JsonValue value) throws IOException
+  {
+    StringBuffer sb = new StringBuffer();
+    if(value instanceof JsonArray)
+    {	    	    
+      for(JsonValue m :(JsonArray)value)
+      {	    		
+        sb.append(m.toString());
+        sb.append(" ");
+      }
+      if(sb.length() > 0)
+        sb = sb.deleteCharAt(sb.length()-1);
+    }
+    else
+    {
+      sb.append(value.toString());
+    }
+    return sb;
+  }
+  
+  @Override
+  public void flush() throws IOException
+  {
+    if (output != null)
+    {
+      output.flush();
+    }
   }
   
   /*

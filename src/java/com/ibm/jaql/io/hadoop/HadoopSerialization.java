@@ -1,6 +1,5 @@
 package com.ibm.jaql.io.hadoop;
 
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -17,6 +16,7 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.parser.JaqlLexer;
 import com.ibm.jaql.lang.parser.JaqlParser;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.UnsynchronizedBufferedOutputStream;
 
 /** Superclass for wrappers that make our serializers available to Hadoop. */
 public abstract class HadoopSerialization
@@ -182,73 +182,4 @@ implements org.apache.hadoop.io.serializer.Serialization<JsonHolder>
   
   // -- helper classes ----------------------------------------------------------------------------
   
-  /** Like {@link BufferedOutputStream} but without synchronization. */
-  private static class UnsynchronizedBufferedOutputStream extends OutputStream
-  {
-    static final int BUF_SIZE = 65768;  
-    byte[] buf = new byte[BUF_SIZE];
-    int count = 0;
-    OutputStream out;
-
-    public UnsynchronizedBufferedOutputStream(OutputStream out) {
-      this.out = out;
-    }
-
-    @Override
-    public void write(int b) throws IOException
-    {
-      if (count == buf.length)
-      {
-        flushBuf();
-      }
-      buf[count++] = (byte) b;
-    }
-
-    @Override
-    public void write(byte b[], int off, int len) throws IOException
-    {
-      // does not fit
-      if (count + len > buf.length)
-      {
-        flushBuf(); // could be optimized but probably not worth it
-        if (len >= buf.length)
-        {
-          out.write(b, off, len);
-          return;
-        }
-      }
-
-      // fits
-      System.arraycopy(b, off, buf, count, len);
-      count += len;
-    }
-
-    /** Flushes the internal buffer but does not flush the underlying output stream */
-    public void flushBuf() throws IOException
-    {
-      if (count > 0)
-      {
-        try
-        {
-          out.write(buf, 0, count);
-        } catch (IOException e)
-        {
-          throw new RuntimeException(e);
-        }
-        count = 0;
-      }
-    }
-
-    @Override
-    public void flush() throws IOException {
-      flushBuf();
-      out.flush();
-    }
-    
-    @Override
-    public void close() throws IOException {
-      flushBuf();
-      out.close();      
-    }
-  }  
 }

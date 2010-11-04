@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -36,6 +35,7 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.top.AnnotationExpr;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -76,7 +76,7 @@ public final class ConstExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     boolean annotate = 

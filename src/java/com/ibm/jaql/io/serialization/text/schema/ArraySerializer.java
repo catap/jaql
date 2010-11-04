@@ -1,7 +1,6 @@
 package com.ibm.jaql.io.serialization.text.schema;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.List;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
@@ -10,6 +9,7 @@ import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.type.JsonArray;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.util.FastPrinter;
 
 final class ArraySerializer extends TextBasicSerializer<JsonArray>
 {
@@ -45,7 +45,7 @@ final class ArraySerializer extends TextBasicSerializer<JsonArray>
   // -- serialization -----------------------------------------------------------------------------
   
   @Override
-  public void write(PrintStream out, JsonArray value, int indent) throws IOException
+  public void write(FastPrinter out, JsonArray value, int indent) throws IOException
   {
     try
     {

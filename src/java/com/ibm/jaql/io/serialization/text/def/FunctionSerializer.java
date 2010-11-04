@@ -16,11 +16,10 @@
 package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.HashSet;
-
 import java.util.Map;
 import java.util.Map.Entry;
+
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.io.serialization.text.TextFullSerializer;
 import com.ibm.jaql.json.schema.SchemaFactory;
@@ -36,12 +35,13 @@ import com.ibm.jaql.lang.expr.function.JavaUdfFunction;
 import com.ibm.jaql.lang.expr.function.VarParameter;
 import com.ibm.jaql.lang.expr.function.VarParameters;
 import com.ibm.jaql.lang.expr.system.ExternalFnFunction;
+import com.ibm.jaql.util.FastPrinter;
 
 public class FunctionSerializer extends TextBasicSerializer<Function>
 {
 
   @Override
-  public void write(PrintStream out, Function value, int indent)
+  public void write(FastPrinter out, Function value, int indent)
       throws IOException
   {
     if (value instanceof BuiltInFunction)

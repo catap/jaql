@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.record;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -28,6 +27,8 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
+import com.ibm.jaql.util.FastPrinter;
+
 import static com.ibm.jaql.json.type.JsonType.*;
 
 /**
@@ -73,7 +74,7 @@ public final class IsdefinedExpr extends Expr
   }
   
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print(kw("isdefined") + " (");

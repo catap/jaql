@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.RecordSchema;
@@ -32,6 +31,7 @@ import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.walk.ExprWalker;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 
 /**
@@ -94,7 +94,7 @@ public class PathAllFields extends PathFields
   /**
    * 
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
   throws Exception
   {
     exprText.print("*");

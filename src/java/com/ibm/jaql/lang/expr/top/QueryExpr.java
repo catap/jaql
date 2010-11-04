@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -28,6 +27,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -55,7 +55,7 @@ public class QueryExpr extends EnvExpr
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprs[0].decompile(exprText, capturedVars);

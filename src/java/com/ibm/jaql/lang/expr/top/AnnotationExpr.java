@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -27,6 +26,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.RecordExpr;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * An annotation that will be placed on an expression.  
@@ -50,7 +50,7 @@ public class AnnotationExpr extends Expr
     return exprs[1].getSchema();
   }
   
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     assert exprs[0] instanceof RecordExpr || 

@@ -15,15 +15,16 @@
  */
 package com.ibm.jaql.io.serialization.text.def;
 
-import java.io.PrintStream;
+import java.io.IOException;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
 import com.ibm.jaql.json.type.JsonDate;
+import com.ibm.jaql.util.FastPrinter;
 
 public class DateSerializer extends TextBasicSerializer<JsonDate>
 {
   @Override
-  public void write(PrintStream out, JsonDate value, int indent)
+  public void write(FastPrinter out, JsonDate value, int indent) throws IOException
   {
     out.print("date('");
     out.print(value.toString());

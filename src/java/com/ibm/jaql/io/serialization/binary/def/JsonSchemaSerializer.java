@@ -27,6 +27,7 @@ import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonSchema;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonSchema;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /** Binary serializer a Json schema. */ 
 // TODO: The current implementation simply makes use of the text representation of the schema.
@@ -50,11 +51,9 @@ class JsonSchemaSerializer extends BinaryBasicSerializer<JsonSchema>
   @Override
   public void write(DataOutput out, JsonSchema value) throws IOException
   {
-    ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    PrintStream pout = new PrintStream(bout);
+    FastPrintBuffer pout = new FastPrintBuffer();
     com.ibm.jaql.io.serialization.text.def.SchemaSerializer.write(pout, value.get(), 0);
-    pout.flush();
-    String s = bout.toString();
+    String s = pout.toString();
     out.writeUTF(s);
   }
 }

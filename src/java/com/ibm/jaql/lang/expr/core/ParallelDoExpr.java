@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +27,7 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.FastPrintBuffer;
 
 /**
  * Run a list of pipes, perserving order as required.  Return the last pipe.
@@ -67,14 +66,13 @@ public class ParallelDoExpr extends DoExpr
     // TODO: most of this should be in a compile stage before eval
     JobGraph g = new JobGraph();    
     HashMap<Var,JaqlStage> outMap = new HashMap<Var, JaqlStage>();
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream exprText = new PrintStream(outStream);
+    FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)
     {
       JaqlStage s = new JaqlStage(g, context, exprs[i]);
-      outStream.reset();
+      exprText.reset();
       capturedVars.clear();
       exprs[i].decompile(exprText, capturedVars); // TODO: separate captures from decompile
       for( Var v: capturedVars )

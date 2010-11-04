@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.function;
 
-import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.HashSet;
@@ -34,6 +33,7 @@ import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /** Wrapper for functions implemented in Java. */
 // TODO: there is significant room for improvement (e.g., automatic conversion of types)
@@ -165,7 +165,7 @@ public class JavaFunctionCallExpr extends Expr
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     /// exprText.print(kw("builtin") + "('com.ibm.jaql.lang.expr.function.JavaUdfExpr$Descriptor')('" + instance.getClass().getName() + "')");

@@ -18,7 +18,6 @@ package com.ibm.jaql.lang.expr.path;
 import static com.ibm.jaql.json.type.JsonType.ARRAY;
 import static com.ibm.jaql.json.type.JsonType.NULL;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.schema.ArraySchema;
@@ -31,6 +30,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 public class PathArrayAll extends PathArray
 {
@@ -60,7 +60,7 @@ public class PathArrayAll extends PathArray
   /**
    * 
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
   throws Exception
   {
     exprText.print("[*]");

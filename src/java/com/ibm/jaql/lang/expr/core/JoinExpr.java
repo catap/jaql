@@ -17,7 +17,6 @@ package com.ibm.jaql.lang.expr.core;
 
 import static com.ibm.jaql.json.type.JsonType.NULL;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -31,6 +30,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.util.JsonHashTable;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -143,7 +143,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("\n");

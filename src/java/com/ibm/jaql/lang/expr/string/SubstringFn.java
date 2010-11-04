@@ -17,6 +17,7 @@ package com.ibm.jaql.lang.expr.string;
 
 import com.ibm.jaql.json.type.JsonNumber;
 import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
@@ -34,6 +35,8 @@ public class SubstringFn extends Expr
     }
   }
   
+  protected MutableJsonString result = new MutableJsonString();
+
   /**
    * @param exprs
    */
@@ -55,24 +58,36 @@ public class SubstringFn extends Expr
       return null;
     }
     JsonNumber n = (JsonNumber) exprs[1].eval(context);
-    long start = n!=null ? n.longValueExact() : 0;
+    if( n == null )
+    {
+      throw new RuntimeException("substring start index required");
+    }
+    int start = n.intValueExact();
     String s = text.toString(); // TODO: add JString.substring() methods with target buffer
 
     n = (JsonNumber) exprs[2].eval(context);
     if (n == null)
     {
-      s = s.substring((int) start); // TODO: switch to python/js semantics?
+      if( start == 0 )
+      {
+        return text;
+      }
+      s = s.substring(start); // TODO: switch to python/js semantics?
     }
     else
     {
-      long end = n.longValueExact();
-      if( end < s.length() )
-    	  s = s.substring((int) start, (int) end); // TODO: switch to python/js semantics?
-      else
-    	  s = s.substring( (int) start );
+      int end = n.intValueExact();
+      if( end >= s.length() )
+      {
+        if( start == 0 )
+        {
+          return text;
+        }
+        end =  s.length();
+      }
+      s = s.substring(start, end); // TODO: switch to python/js semantics?
     }
-
-    JsonString js = new JsonString(s); // TODO: memory
-    return js;
+    result.setCopy(s);
+    return result;
   }
 }

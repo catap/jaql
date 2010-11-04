@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.Enumeration;
 import java.util.HashSet;
 
@@ -30,6 +29,7 @@ import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathFieldValue;
 import com.ibm.jaql.lang.expr.path.PathStep;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -189,6 +189,18 @@ public class NameValueBinding extends FieldExpr
     return exprs[1];
   }
 
+  /** true if the field is always constructed; false if constructed only when nonnull */
+  public boolean isRequired()
+  {
+    return required;
+  }
+
+  /** true if the field is always constructed; false if constructed only when nonnull */
+  public void setRequired(boolean required)
+  {
+    this.required = required;
+  }
+
   /**
    * 
    */
@@ -250,7 +262,7 @@ public class NameValueBinding extends FieldExpr
    * @see com.ibm.jaql.lang.expr.core.FieldExpr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("(");
@@ -285,4 +297,5 @@ public class NameValueBinding extends FieldExpr
       rec.add(name, value);
     }
   }
+
 }

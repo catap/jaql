@@ -15,13 +15,13 @@
  */
 package com.ibm.jaql.lang.expr.path;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.util.FastPrinter;
 
 public abstract class UnrollStep extends Expr // TODO: make PseudoExpr
 {
@@ -43,7 +43,7 @@ public abstract class UnrollStep extends Expr // TODO: make PseudoExpr
     super(expr0);
   }
 
-  public abstract void decompile(PrintStream exprText, HashSet<Var> capturedVars) throws Exception;
+  public abstract void decompile(FastPrinter exprText, HashSet<Var> capturedVars) throws Exception;
 
   /**
    * 

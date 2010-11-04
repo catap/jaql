@@ -15,8 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.top;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -47,6 +45,8 @@ import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.lang.expr.io.AbstractReadExpr;
 import com.ibm.jaql.lang.expr.io.AbstractWriteExpr;
 import com.ibm.jaql.lang.expr.io.HadoopTempExpr;
+import com.ibm.jaql.util.FastPrintBuffer;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * 
@@ -81,7 +81,7 @@ public class ExplainExpr extends EnvExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print(kw("explain") + " ");
@@ -96,8 +96,7 @@ public class ExplainExpr extends EnvExpr
   // FIXME: Now done by ExplainHandler
   public JsonValue eval(Context context) throws Exception
   {
-    ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-    PrintStream exprText = new PrintStream(outStream);
+    FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
     exprs[0].decompile(exprText, capturedVars);
     if (!capturedVars.isEmpty()) // FIXME: change root expr from NoopExpr to QueryStmt
@@ -118,13 +117,13 @@ public class ExplainExpr extends EnvExpr
         {
           System.err.println(key.taggedName());
         }
-        System.err.println(outStream.toString());
+        System.err.println(exprText.toString());
         throw new RuntimeException("undefined variables");
       }
     }
     if( true )     // NOW: temporary hacking:
     {
-      String query = outStream.toString();
+      String query = exprText.toString();
       return new JsonString(query);
     }
     else
@@ -134,8 +133,7 @@ public class ExplainExpr extends EnvExpr
     }
   }
 
-  ByteArrayOutputStream outStream;
-  PrintStream exprText;
+  FastPrintBuffer exprText;
   HashSet<Var> capturedVars;
   BufferedJsonArray graph;
   HashMap<Expr,JsonRecord> exprNodeMap;
@@ -144,8 +142,7 @@ public class ExplainExpr extends EnvExpr
   // FIXME: Move to the GraphExplainHandler
   public JsonArray buildGraph() throws Exception
   {
-    outStream = new ByteArrayOutputStream();
-    exprText = new PrintStream(outStream);
+    exprText = new FastPrintBuffer();
     capturedVars = new HashSet<Var>();
     graph = new BufferedJsonArray();
     exprNodeMap = new HashMap<Expr,JsonRecord>();
@@ -158,10 +155,10 @@ public class ExplainExpr extends EnvExpr
 
   protected String decompile(Expr expr) throws Exception
   {
-    outStream.reset();
+    exprText.reset();
     expr.decompile(exprText, capturedVars);
     exprText.flush();
-    String query = outStream.toString();
+    String query = exprText.toString();
     return query;
   }
 

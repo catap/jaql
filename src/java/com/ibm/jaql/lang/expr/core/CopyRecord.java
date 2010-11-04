@@ -1,6 +1,5 @@
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Map.Entry;
 
@@ -12,6 +11,7 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
 
 
 // $.*
@@ -43,11 +43,16 @@ public class CopyRecord extends FieldExpr
     return Bool3.TRUE;
   }
 
+  public Expr recExpr()
+  {
+    return exprs[0];
+  }
+  
   /**
    * 
    */
   @Override
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("(");

@@ -17,17 +17,17 @@ package com.ibm.jaql.io.serialization.text;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 
 import com.ibm.jaql.io.serialization.BasicSerializer;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 /** Basic serializer for character data.
  * 
  * @param <T> type of value to work on
  */
 public abstract class TextBasicSerializer<T extends JsonValue> 
-extends BasicSerializer<InputStream, PrintStream, T>
+extends BasicSerializer<InputStream, FastPrinter, T>
 {
   public T newInstance()
   {
@@ -42,14 +42,14 @@ extends BasicSerializer<InputStream, PrintStream, T>
   }
   
   @Override
-  public void write(PrintStream out, T value) throws IOException
+  public void write(FastPrinter out, T value) throws IOException
   {
     write(out, value, 0);
   }
   
-  public abstract void write(PrintStream out, T value, int indent) throws IOException;
+  public abstract void write(FastPrinter out, T value, int indent) throws IOException;
   
-  public static final void indent(PrintStream out, int indent)
+  public static final void indent(FastPrinter out, int indent) throws IOException
   {
     for (int i=0; i<indent; i++)
     {

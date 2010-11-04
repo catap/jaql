@@ -17,7 +17,6 @@ package com.ibm.jaql.io.serialization.text.def;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.util.EnumMap;
 
 import com.ibm.jaql.io.serialization.text.TextBasicSerializer;
@@ -27,6 +26,7 @@ import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.type.JsonEncoding;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * Jaql's default serializer. This serializer is generic; it does not
@@ -85,7 +85,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
 
   @SuppressWarnings("unchecked")
   @Override
-  public void write(PrintStream out, JsonValue value, int indent) throws IOException {
+  public void write(FastPrinter out, JsonValue value, int indent) throws IOException {
     JsonEncoding encoding = value == null
         ? JsonEncoding.NULL
         : value.getEncoding();

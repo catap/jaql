@@ -24,7 +24,7 @@
 
 
 if [ "$DFLT_HADOOP_VERSION" = "" ]; then
-	DFLT_HADOOP_VERSION=0.20.1
+	DFLT_HADOOP_VERSION=0.20
 fi
 #if [ "$DFLT_HBASE_VERSION" = "" ]; then
 # DFLT_HBASE_VERSION=0.20.0
@@ -103,13 +103,6 @@ CLASSPATH=${CLASSPATH}:$JAVA_HOME/lib/tools.jar
 if [ -d "$HADOOP_HOME/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HADOOP_HOME
 fi
-if [ -d "$HADOOP_HOME/src/webapps" ]; then
-  CLASSPATH=${CLASSPATH}:$HADOOP_HOME/src
-fi
-
-#if [ -d "$HBASE_HOME/src/webapps" ]; then
-#	 CLASSPATH=${CLASSPATH}:$HBASE_HOME/src
-#fi
 
 if [ -e "${JAQL_HOME}/jaql.jar" ]; then
   CLASSPATH=${CLASSPATH}:${JAQL_HOME}/jaql.jar
@@ -131,9 +124,6 @@ fi
 if [ -d "$HADOOP_HOME/build/webapps" ]; then
   CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build
 fi
-#if [ -d "$HBASE_HOME/webapps" ]; then
-#  CLASSPATH=${CLASSPATH}:$HBASE_HOME
-#fi
 if [ -d "$HADOOP_HOME/build/test/classes" ]; then
   CLASSPATH=${CLASSPATH}:$HADOOP_HOME/build/test/classes
 fi

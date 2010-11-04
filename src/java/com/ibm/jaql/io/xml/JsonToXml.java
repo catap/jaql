@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.io.xml;
 
-import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Map.Entry;
 
@@ -30,6 +29,8 @@ import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.util.FastPrintBuffer;
+import com.ibm.jaql.util.FastPrinter;
 
 public class JsonToXml
 {
@@ -44,7 +45,7 @@ public class JsonToXml
     xfactory = XMLOutputFactory.newInstance();
   }
   
-  public void setWriter(Writer writer) throws XMLStreamException
+  public void setWriter(FastPrinter writer) throws XMLStreamException
   {
     xwriter = xfactory.createXMLStreamWriter(writer);
   }
@@ -81,6 +82,11 @@ public class JsonToXml
     xwriter.writeEndDocument();
   }
   
+  public void flush() throws XMLStreamException
+  {
+    xwriter.flush();
+  }
+
   public void close() throws XMLStreamException
   {
     xwriter.close();
@@ -174,7 +180,7 @@ public class JsonToXml
 
   public String toXmlDocumentString(JsonValue value) throws Exception
   {
-    StringWriter writer = new StringWriter(50000);
+    FastPrintBuffer writer = new FastPrintBuffer();
     this.setWriter(writer);
     this.startDocument();
     this.toXml(value);

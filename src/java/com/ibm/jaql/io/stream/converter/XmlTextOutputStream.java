@@ -17,8 +17,6 @@ package com.ibm.jaql.io.stream.converter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 
 import javax.xml.stream.XMLStreamException;
 
@@ -27,6 +25,8 @@ import com.ibm.jaql.io.xml.JsonToXml;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.util.FastPrintStream;
+import com.ibm.jaql.util.FastPrinter;
 
 /**
  * A converter to convert a JSON value to a XML file.
@@ -34,7 +34,7 @@ import com.ibm.jaql.lang.util.JaqlUtil;
 public class XmlTextOutputStream implements JsonToStream<JsonValue> // extends AbstractJsonTextOutputStream
 {
   protected JsonToXml converter = new JsonToXml();
-  protected Writer writer;
+  protected FastPrinter writer;
   protected long line = 0;
   protected boolean isArray = true;
   protected MutableJsonString result = new MutableJsonString();
@@ -67,7 +67,7 @@ public class XmlTextOutputStream implements JsonToStream<JsonValue> // extends A
   {
     try
     {
-      writer = new OutputStreamWriter(out, "UTF-8");
+      writer = new FastPrintStream(out);
       converter.setWriter(writer);
       line = 0;
     }
@@ -106,11 +106,23 @@ public class XmlTextOutputStream implements JsonToStream<JsonValue> // extends A
     }
     catch (Exception e) 
     {
-      throw JaqlUtil.rethrow(e);
+      throw new IOException(e);
     }
   }
   
-  
+  @Override
+  public void flush() throws IOException
+  {
+    try
+    {
+      converter.flush();
+    }
+    catch (XMLStreamException e)
+    {
+      throw new IOException(e);
+    }
+  }
+
   @Override
   public void close() throws IOException
   {
@@ -128,7 +140,7 @@ public class XmlTextOutputStream implements JsonToStream<JsonValue> // extends A
     }
     catch (XMLStreamException e)
     {
-      throw JaqlUtil.rethrow(e);
+      throw new IOException(e);
     }
   }
 }

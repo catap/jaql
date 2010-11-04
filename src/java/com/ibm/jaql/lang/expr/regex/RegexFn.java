@@ -73,7 +73,6 @@ public class RegexFn extends Expr
       return null;
     }
     JsonString flags = (JsonString) exprs[1].eval(context);
-    flags = JsonString.EMPTY;
     return new JsonRegex(regex, flags); // TODO: memory!
   }
 }

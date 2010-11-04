@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.core;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -32,11 +31,14 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.lang.expr.core.CopyField.When;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.nil.NullElementOnEmptyFn;
 import com.ibm.jaql.lang.expr.path.PathExpr;
 import com.ibm.jaql.lang.expr.path.PathReturn;
 import com.ibm.jaql.util.Bool3;
+import com.ibm.jaql.util.FastPrinter;
+
 import static com.ibm.jaql.json.type.JsonType.*;
 
 //TODO: add optimized RecordExpr when all cols are known at compile time
@@ -93,8 +95,32 @@ public class RecordExpr extends Expr
         n++;
       }
     }
+    
     if( n == 0 )
     {
+      for(Expr e: args)
+      {
+        if( e instanceof NameValueBinding )
+        {
+          NameValueBinding f = (NameValueBinding)e;
+          if( f.isRequired() && f.nameExpr() instanceof ConstExpr )
+          {
+            n++;
+          }
+        }
+        else if( e instanceof CopyField )
+        {
+          CopyField f = (CopyField)e;
+          if( f.getWhen() == When.ALWAYS && f.nameExpr() instanceof ConstExpr )
+          {
+            n++;
+          }
+        }
+      }
+      if( n == args.length )
+      {
+        return new FixedRecordExpr(args);
+      }
       return new RecordExpr(args);
     }
 
@@ -323,7 +349,7 @@ public class RecordExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(PrintStream exprText, HashSet<Var> capturedVars)
+  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
     exprText.print("{");
