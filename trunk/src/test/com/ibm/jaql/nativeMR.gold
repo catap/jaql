@@ -50,7 +50,7 @@ fields(loadJobConf("src/test/com/ibm/jaql/data/wordCount.conf")) -> count();
 
 ;//--------------------- RESULT ------------------
 
-139
+140
 
 ;//------------------- TEST-CASE -----------------
 
@@ -129,7 +129,7 @@ nativeMR( conf, {useSessionJar: true} );
 // call a version 1.0 native MR job
 //
 confV1 = {
-  "mapred.jar": "../../../vendor/hadoop/0.20.1/hadoop-0.20.1-examples.jar",
+  "mapred.jar": "../../../vendor/hadoop/0.20/hadoop-0.20.2-examples.jar",
   "mapreduce.map.class": "org.apache.hadoop.examples.WordCount$TokenizerMapper",
   "mapreduce.combine.class": "org.apache.hadoop.examples.WordCount$IntSumReducer",
   "mapreduce.reduce.class": "org.apache.hadoop.examples.WordCount$IntSumReducer",
