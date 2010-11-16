@@ -53,3 +53,9 @@ read(hdfs('data'))
     into { key, n: count($) }
  -> sort by [$]
 ;
+
+// readConf (local client context)
+readConf("mapred.tasktracker.map.tasks.maximum");
+
+// readConf (from MR context)
+read(hdfs('data')) -> transform ( n = readConf("mapred.tasktracker.map.tasks.maximum"), $.key + toNumber(n) ) -> group into count($);
