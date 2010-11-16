@@ -256,4 +256,25 @@ read(hdfs('data'))
 ;//------------------- TEST-CASE -----------------
 
 
+// readConf (local client context)
+readConf("mapred.tasktracker.map.tasks.maximum");
+
+;//--------------------- RESULT ------------------
+
+"2"
+
+;//------------------- TEST-CASE -----------------
+
+
+// readConf (from MR context)
+read(hdfs('data')) -> transform ( n = readConf("mapred.tasktracker.map.tasks.maximum"), $.key + toNumber(n) ) -> group into count($);
+
+;//--------------------- RESULT ------------------
+
+[
+  101
+]
+
+;//------------------- TEST-CASE -----------------
+
 ;//------------------- TEST-DONE -----------------
