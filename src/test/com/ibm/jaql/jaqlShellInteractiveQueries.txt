@@ -3,4 +3,9 @@
 [1,2,3];
 {name: "beijing", no: 1};
 [1, 2, 3] -> filter $ > 2;
+a="IBM";
+a;
+b=12;
+c=13;
+b+c;
 quit;

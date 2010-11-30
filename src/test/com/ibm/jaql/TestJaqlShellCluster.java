@@ -23,4 +23,13 @@ public class TestJaqlShellCluster extends JaqlShellBaseTestCase {
   public void options() {
     verify("jaqlShellOptions", new String[]{"-c", "-b", "-o", "del"});
   }
+  
+  /**
+   * Tests batch mode.
+   */
+  @Test
+  public void batch() {
+    verify("jaqlShellBatch", new String[]{"-c","-b"});
+  }
+  
 }

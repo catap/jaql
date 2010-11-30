@@ -25,5 +25,17 @@ jaql>
 ]
 
 jaql> 
+a="IBM";
+jaql> 
+a;"IBM"
+
+jaql> 
+b=12;
+jaql> 
+c=13;
+jaql> 
+b+c;25
+
+jaql> 
 quit;
 Shutting down jaql.
