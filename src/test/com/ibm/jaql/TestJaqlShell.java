@@ -30,6 +30,14 @@ public class TestJaqlShell extends JaqlShellBaseTestCase {
   }
   
   /**
+   * Test options.
+   */
+  @Test
+  public void options() {
+    verify("jaqlShellOptions", new String[]{"-b", "-o", "del"});
+  }
+  
+  /**
    * Tests batch mode.
    */
   @Test
