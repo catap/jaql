@@ -151,4 +151,28 @@ nativeMR( confV1, { apiVersion: "1.0" } );
 
 ;//------------------- TEST-CASE -----------------
 
+
+confV1b = {
+  //"mapred.jar": "../../../vendor/hadoop/0.20/hadoop-0.20.2-examples.jar",
+  "mapreduce.map.class": "com.acme.extensions.mr.WordCountV1$TokenizerMapperWithJson",
+  "mapreduce.combine.class": "com.acme.extensions.mr.WordCountV1$IntSumReducer",
+  "mapreduce.reduce.class": "com.acme.extensions.mr.WordCountV1$IntSumReducer",
+  "mapred.output.key.class": "org.apache.hadoop.io.Text",
+  "mapred.output.value.class": "org.apache.hadoop.io.IntWritable",
+  "mapred.input.dir": "jaql-overview.html",
+  "mapred.output.dir": "wordCount-resultV1b.txt"
+};
+;//------------------- TEST-CASE -----------------
+
+
+nativeMR( confV1b, { apiVersion: "1.0", useSessionJar: true} );
+
+;//--------------------- RESULT ------------------
+
+{
+  "status": true
+}
+
+;//------------------- TEST-CASE -----------------
+
 ;//------------------- TEST-DONE -----------------
