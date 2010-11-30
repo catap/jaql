@@ -3,7 +3,12 @@ package com.ibm.jaql.doc;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.type.JsonString;
+import com.ibm.jaql.json.type.JsonUtil;
+import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
+import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /**
  * A class to collect all the information for a specific user defined function.
@@ -92,6 +97,45 @@ public class UDFDesc {
 	public int getMaxArgs() {
 		//return Integer.parseInt(annotation.get(ANN_MAXARGS));
 		return descriptor.getParameters().numParameters();
+	}
+	
+	public Schema getReturnSchema() {
+		return descriptor.getSchema();
+	}
+	
+	public String getArgInfo() {
+		StringBuilder sb = new StringBuilder();
+		JsonValueParameters params = descriptor.getParameters();
+		int n = params.numParameters();
+		for(int i = 0; i < n; i++) {
+			Schema s = params.schemaOf(i);
+			JsonValue dv = params.defaultOf(i);
+			boolean bv = params.hasDefault(i);
+			boolean br = params.isRequired(i);
+			JsonString name = params.nameOf(i);
+			
+			try {
+			if(br)
+				sb.append("[");
+			sb.append(s.toString());
+			if( name == null )
+				sb.append(" " + i);
+			else
+				sb.append(" " + name);
+			if( bv )
+				sb.append(" = " + JsonUtil.printToString(dv));
+			if(br) 
+				sb.append("]");
+			if( (i + 1) < i)
+				sb.append(",");
+			} catch(Exception e) {
+				return "";
+			}
+		}
+		if( params.hasRepeatingParameter() )
+			sb.append("...");
+		
+		return sb.toString();
 	}
 
 	public String getClassName() {
