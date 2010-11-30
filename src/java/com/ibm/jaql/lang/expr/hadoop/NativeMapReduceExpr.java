@@ -186,12 +186,14 @@ public class NativeMapReduceExpr extends Expr
     
     boolean status = true;
     
-    Job job = new Job(conf);
+    Job job = null;
     // set the jar if needed
     if( useSessionJarDefault.get() ) {
     	File jFile = ClassLoaderMgr.getExtensionJar();
     	conf.set("mapred.jar", jFile.getAbsolutePath());
+    	job = new Job(conf);
     } else {
+    	job = new Job(conf);
     	job.setJarByClass(NativeMapReduceExpr.class);
     }
     
