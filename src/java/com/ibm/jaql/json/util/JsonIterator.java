@@ -15,6 +15,7 @@
  */
 package com.ibm.jaql.json.util;
 
+import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 
@@ -26,6 +27,7 @@ import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.util.FastPrintStream;
 import com.ibm.jaql.util.FastPrinter;
 
 /** Iterator over a list of {@link JsonValue}s. This iterator is meant to be accessed either 
@@ -183,8 +185,18 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   {
     this.print(out, 0, SchemaFactory.anySchema());
   }
+  
+  public final void print(PrintStream out) throws Exception
+  {
+    this.print(out, 0, SchemaFactory.anySchema());
+  }
 
   public final void print(FastPrinter out, int indent) throws Exception
+  {
+    this.print(out, indent, SchemaFactory.anySchema());
+  }
+  
+  public final void print(PrintStream out, int indent) throws Exception
   {
     this.print(out, indent, SchemaFactory.anySchema());
   }
@@ -264,5 +276,11 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
       }
       out.print("]");
     }
+  }
+  public final void print(PrintStream out, int indent, Schema valueSchema) throws Exception
+  {
+	  FastPrintStream str = new FastPrintStream(out);
+	  this.print(str, indent, valueSchema);
+	  str.close();
   }
 }

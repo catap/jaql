@@ -96,6 +96,9 @@ public class WikiProcessor implements DataProcessor {
 				out.println("  _*Parameters*_ (" + desc.getMinArgs() + " - " + desc.getMaxArgs() +")");
 			}
 		}
+		
+		out.println( "input: {{{" + desc.getArgInfo() + "}}}");
+		out.println(" output: {{{" + desc.getReturnSchema() + "}}}");
 		/*if(!desc.PARAMETERS.getTagData().isEmpty()) {
 			for (FnParamTag param : desc.PARAMETERS.getTagData()) {
 				out.println("      # " + param.getText());
