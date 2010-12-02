@@ -102,23 +102,14 @@ public class PathNotFields extends PathFields
    * Since a subset of the fields are excluded, we do the mapping as following:
    * 	1) add a generic mapping record that matches any field, i.e., ($ --mapsTo--> $). This record has SafeMapping flag set to True.
    *    2) add one mapping record for each of the excluded fields that overrides the generic mapping record. These records have SafeMapping flag set to False.
+   *  Since excluded fields have mapping entries with SafeMapping flag set to false, then any conditions on these fields will not be pushed down.
+   *  Conditions on the included fields will match the generic mapping record and will be pushed down. 
    */
   @Override
   public MappingTable getMappingTable()
   {
 	  MappingTable mt = new MappingTable();
-	  if( true )
-	  {
-	    return mt;
-	  }
-	  
-	  // (KSB) This code is buggy so I disabled it.
-	  // It raises an exception on a computed excluded name, eg ${*-(cf)}
-	  // It also looked like it was mapping the excluded names instead of the included names.
-	  //   X := range(1000) -> transform { x: $ };
-	  //   X -> transform ${*-.($)} -> filter $.x > 0;
-	  // TODO: restore field mappings on excluded fields. 
-	  
+	    
 	  //Find the iteration variable used outside the PathALLFields
 	  Var bindVar = null;
 	  Expr parent = this.parent(); 
@@ -143,10 +134,20 @@ public class PathNotFields extends PathFields
 	  mt.add(peL, peR, true);
 	  
 	  //Loop over the excluded fields and add one record with SafeMapping flag set to False.
+	  ConstExpr fName = null;
 	  for(int i = 0 ; i < exprs.length - 1 ; i++)
 	  {
 		  PathOneField f = (PathOneField)exprs[i];
-		  ConstExpr fName = (ConstExpr)f.nameExpr();
+		  if (f.nameExpr() instanceof ConstExpr)
+		  {
+			  fName = (ConstExpr)f.nameExpr();
+		  }
+		  else
+		  {
+			  //the column name to be excluded is not static. In this case, we should not do any mapping
+			  mt.clear();
+			  return mt;
+		  }
 		  
 		  //Construct the L.H.S of the mapping	
 		  veL = new VarExpr(new Var(MappingTable.DEFAULT_PIPE_VAR));
