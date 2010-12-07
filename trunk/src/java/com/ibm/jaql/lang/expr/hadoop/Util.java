@@ -36,7 +36,7 @@ public class Util {
 	
 	public final static Logger STATUS_LOG = Logger.getLogger("com.ibm.jaql.status.MapReduce");
 	public final static Logger        LOG = Logger.getLogger(Util.class.getName());
-	public final static String FETCH_SYSLOG_PROP = "jaql.mapred.fetchsyslog";
+	public final static String FETCH_SYSLOG_PROP = "jaql.mapred.fetchlogs";
 
 	private static String mapReduceStatusFmt = "{class: %1$s, msg: %2$s}";
 	private static String mapReduceInfoFmt = "{class: %1$s, msg: %2$s, id: %3$s, name: %4$s, url: %5$s}";
@@ -92,12 +92,10 @@ public class Util {
 		}
 
 		try {
-			if( System.getProperty(FETCH_SYSLOG_PROP, "false").toLowerCase().equals("true") ) {
-				if( rj.isSuccessful() ) {
-					logAllTaskSyslogs(rj, true);
-				} else {
-					logAllTaskSyslogs(rj, false);
-				}
+			if( rj.isSuccessful() ) {
+				logAllTaskSyslogs(rj, true);
+			} else {
+				logAllTaskSyslogs(rj, false);
 			}
 		} catch(Throwable t) {
 			// log it, but do not stop the world for this
@@ -114,8 +112,8 @@ public class Util {
 	}	
     
 	public static void logAllTaskSyslogs(RunningJob rj, boolean onlySuccessful) throws Exception {
-		String fetch = System.getProperty("jaql.cluster.fetchlogs");
-		if( fetch != null && fetch.equals("false"))
+		String fetch = System.getProperty(FETCH_SYSLOG_PROP, "false");
+		if( fetch.equals("false"))
 			return;
 		TaskCompletionEvent[] events = rj.getTaskCompletionEvents(0);
 		for(TaskCompletionEvent event : events) {
