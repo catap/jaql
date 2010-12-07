@@ -36,6 +36,7 @@ public class Util {
 	
 	public final static Logger STATUS_LOG = Logger.getLogger("com.ibm.jaql.status.MapReduce");
 	public final static Logger        LOG = Logger.getLogger(Util.class.getName());
+	public final static String FETCH_SYSLOG_PROP = "jaql.mapred.fetchsyslog";
 
 	private static String mapReduceStatusFmt = "{class: %1$s, msg: %2$s}";
 	private static String mapReduceInfoFmt = "{class: %1$s, msg: %2$s, id: %3$s, name: %4$s, url: %5$s}";
@@ -91,10 +92,12 @@ public class Util {
 		}
 
 		try {
-			if( rj.isSuccessful() ) {
-				logAllTaskSyslogs(rj, true);
-			} else {
-				logAllTaskSyslogs(rj, false);
+			if( System.getProperty(FETCH_SYSLOG_PROP, "false").toLowerCase().equals("true") ) {
+				if( rj.isSuccessful() ) {
+					logAllTaskSyslogs(rj, true);
+				} else {
+					logAllTaskSyslogs(rj, false);
+				}
 			}
 		} catch(Throwable t) {
 			// log it, but do not stop the world for this
