@@ -294,7 +294,7 @@ jaql> read(hdfs("test"))
            "var": string,
            "schema": schematype,
            "isTable": boolean
-         } \* 
+         } 
        ]}}}
 
 == perf() ==
