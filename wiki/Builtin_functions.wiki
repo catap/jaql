@@ -16,33 +16,37 @@
  range(1,10) -> batch(3);
  ==> [ [1,2,3], [4,5,6], [7,8,9], [10] ]
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == exec() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == externalfn() ==
 
   _*Description*_ An expression that constructs a JSON value for a Java UDF
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == ls() ==
 
   _*Description*_ ls(glob)
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == R() ==
 
@@ -61,9 +65,10 @@ input: {{{[schema any arg0]}}}
  
  // TODO: need jaql.conf
 
-  _*Parameters*_ (1 - 8)
-input: {{{[schema string fn]schema [ * ]? args = nullschema [ * ]? inSchema = nullschema schematype? outSchema = nullschema string? init = nullschema boolean initInline = trueschema boolean binary = falseschema boolean flexible = false}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 8 inputs)
+ Input Types: {{{( fn, required: schema string),( args = null: schema [ * ]?),( inSchema = null: schema [ * ]?),( outSchema = null: schema schematype?),( init = null: schema string?),( initInline = true: schema boolean),( binary = false: schema boolean),( flexible = false: schema boolean)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =pragma=
@@ -71,55 +76,107 @@ input: {{{[schema string fn]schema [ * ]? args = nullschema [ * ]? inSchema = nu
 
   _*Description*_ This is a pragma function to force const evaluation.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == inline() ==
 
   _*Description*_ This is a pragma function to force let/global inlining.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == unrollLoop() ==
 
   _*Description*_ A pragma to encourage loop unrolling.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =core=
 == catch() ==
 
-  _*Description*_ Wrap this expression around any child expression that needs to be guarded
- for exceptions. Usage is as follows:
+  _*Description*_ Wrap any expression with catch to guard against exceptions.
+ Usage:
  
- catch(child expr, { errThresh: long } opts);
+ T1|null catch( T1 e1, { errThresh: long } | null, T2 e2);
  
- Note the following consequences of this expression:
- 1. It is blocking: all values produced by child must be valid, 
-                    which precludes streaming computation to the caller of "catch"
- 2. If an error occurs in the child, the exception handling options determine what happens next.
-    The errThresh lets the user specify how many errors can happen at the call-site of the specific
-    catch expression. If the number of exceptions exceeds errThresh, then the exception is
-    propagated up. Otherwise, the exception is simply logged. By default, if opts is not specified,
-    errThresh is set to 0, e.g., exceptions propagate up.
+ Wrap the catch expression around the first argument, e1, that needs to be guarded
+ for exceptions. 
+ 
+ The second argument is optional. It specifies an exception handling policy. If unspecified or null, the default
+ exception handling policy is used. By default, if an exception occurs, it is propagated
+ (which typically results in aborted execution). This default can be overridden globally
+ using the registerExceptionHandler function, or at can be overridden per usage of catch
+ by using the second argument. Such an override allows catch to throw an exception errThresh
+ times before propagating the exception. Thus, the default has errThresh set to 0.
+ 
+ The third argument, e2, is optional and is used to specify an expression whose value is logged when an exception
+ is thrown.
+ 
+ Catch returns the result of evaluating e1 (whose type is T1). If an exception is thrown, but
+ skipped, then null is returned.
+ 
+ Note that catch s a "blocking" call: the result of e1 will be materialized. If e1 could
+ be streamed (e.g., read(...)), when used in the context of catch, its result will be entirely
+ materialized.
 
-  _*Parameters*_ (1 - 3)
-input: {{{[schema any arg0]schema any arg1 = nullschema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any),( arg2 = null: schema any)}}}
 
+ _*Output*_ {{{schema any}}}
+
+  _*Examples*_ 
+{{{
+jaql> data = [ ["a",0], ["a",1], ["b",0], ["c",0], ["c",1], ["c",2]];
+
+jaql> data -> write(hdfs("test"));
+
+jaql> read(hdfs("test"))
+      -> transform catch(if ($[0] == "a") ($.badFieldAccess) // cause exceptions on ["a", 0] and ["a", 1]
+                         else ($), 
+                         { errThresh: 1000 }) 
+      -> group by g = $[0] 
+         into { g: g, 
+                num: count($), 
+                err: catch(if(g == "b") (g.badFieldAccess) // cause exception/null on the "b" group
+                           else ("ok"), 
+                           { errThresh: 1000 }) 
+              }; 
+[
+ {
+   "err": "ok",
+   "g": null,
+   "num": 2
+  },
+  {
+   "err": null,
+   "g": "b",
+   "num": 1
+  },
+  {
+   "err": "ok",
+   "g": "c",
+   "num": 3
+  }
+]
+
+}}}
 == compare() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any x][schema any y]}}}
- output: {{{schema long}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( x, required: schema any),( y, required: schema any)}}}
+
+ _*Output*_ {{{schema long}}}
 
 == daisyChain() ==
 
@@ -135,9 +192,10 @@ input: {{{[schema any x][schema any y]}}}
  A compose function that returns a function is easily created from this one:
    compose = fn(fns) fn(input) daisyChain(input, fns)
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == diamondTag() ==
 
@@ -150,33 +208,37 @@ input: {{{[schema any arg0][schema any arg1]}}}
    e -> expand union( [$] -> f0() -> transform [0,$], ..., 
                       [$] -> fn() -> transform [n,$] )
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == expectException() ==
 
   _*Description*_ This function is used by tests to mask expected exceptions.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == getHdfsPath() ==
 
   _*Description*_ return the absolute path in HDFS
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == getOptions() ==
 
   _*Description*_ Return the system options record.
 
-  _*Parameters*_ (0)
-input: {{{}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 inputs)
+ Input Types: {{{}}}
+
+ _*Output*_ {{{schema any}}}
 
 == groupCombine() ==
 
@@ -185,9 +247,10 @@ input: {{{}}}
     partialFn = fn($k,$P) => $P
     finalFn = fn($k,$P) => $Y
 
-  _*Parameters*_ (4)
-input: {{{[schema any arg0][schema any arg1][schema any arg2][schema any arg3]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (4 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any),( arg3, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == index() ==
 
@@ -195,9 +258,10 @@ input: {{{[schema any arg0][schema any arg1][schema any arg2][schema any arg3]}}
  case that doesn't use path expressions. array[index] is transformed to use the
  element function for better performance.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == jump() ==
 
@@ -212,18 +276,20 @@ input: {{{[schema any arg0][schema any arg1]}}}
    else if( i == n ) en
    else raise error
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == listVariables() ==
 
   _*Description*_ List the active global variables.
    [{ var: string, schema: schema, isTable: boolean }...]
 
-  _*Parameters*_ (0)
-input: {{{}}}
- output: {{{schema [
+  _*Parameters*_ (0 inputs)
+ Input Types: {{{}}}
+
+ _*Output*_ {{{schema [
          {
            "var": string,
            "schema": schematype,
@@ -236,25 +302,28 @@ input: {{{}}}
   _*Description*_ DEPRECATED: is this used anywhere?
  Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == perf() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == perPartition() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == range() ==
 
@@ -266,20 +335,47 @@ input: {{{[schema any arg0][schema any arg1]}}}
  range(size,null,skip) = if skip > 0 then for(i = 0, i < size, i += skip)
                          else error
 
-  _*Parameters*_ (1 - 3)
-input: {{{[schema long? startOrSize]schema long? end = nullschema long by = 1}}}
- output: {{{schema [
+  _*Parameters*_ (1 - 3 inputs)
+ Input Types: {{{( startOrSize, required: schema long?),( end = null: schema long?),( by = 1: schema long)}}}
+
+ _*Output*_ {{{schema [
          long * 
        ]}}}
 
 == registerExceptionHandler() ==
 
-  _*Description*_ 
+  _*Description*_ Register a default exception handling policy.
+ Usage:
+ 
+ bool registerExceptionHandler( { errThresh: long } );
+ 
+ This function allows the default exception handling policy to be overridden.
+ Currently, the policy can specify how many exceptions to skip before propagating
+ the exception up the call stack. This is specified by the errThresh field of the
+ input. By default, errThresh is set to 0, meaning that no exceptions are skipped.
+ 
+ When an exception is skipped, the enclosing expression decides what to do. If the
+ exception occurs in the catch function, then it returns null and logs the results of
+ a user supplied expression. If the exception occurs in a transform, then the result is
+ skipped and logged.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
 
+ _*Output*_ {{{schema any}}}
+
+  _*Examples*_ 
+{{{
+jaql> registerExceptionHandler({errThresh: 5});
+
+jaql> data = [ ["a",0], ["a",1], ["b",0], ["c",0], ["c",1], ["c",2]];
+
+jaql> data -> write(hdfs("test"));
+
+jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
+ []
+
+}}}
 == retag() ==
 
   _*Description*_ This function is used internally during the rewriting of tee().  
@@ -290,17 +386,19 @@ input: {{{[schema any arg0]}}}
  Exactly the same as:
    e -> expand ( jump($[0], f1, ..., fn)( [$[1]] ) -> transform[i,$[0]] )
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == setOptions() ==
 
   _*Description*_ Set system options.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == skipUntil() ==
 
@@ -311,9 +409,10 @@ input: {{{[schema any arg0]}}}
  
  input: [T...]? -> skipUntil( when: fn(T): bool, inclusive:bool = true ): [T...]
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema [ * ]? input][schema function when]schema boolean? inclusive = true}}}
- output: {{{schema [ * ]}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( when, required: schema function),( inclusive = true: schema boolean?)}}}
+
+ _*Output*_ {{{schema [ * ]}}}
 
 == streamSwitch() ==
 
@@ -342,9 +441,10 @@ input: {{{[schema [ * ]? input][schema function when]schema boolean? inclusive =
      -> expand each p fi( p -> transform $[1] ) // where i is p[j][0] for all j in the window
  )
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == tag() ==
 
@@ -356,9 +456,10 @@ input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
  Exactly the same as:
    e -> transform [i,$]
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == tagFlatten() ==
 
@@ -380,9 +481,10 @@ input: {{{[schema any arg0][schema any arg1]}}}
   ==
    [ [0,a], [1,b], [2,c], [3,d] ]
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == tagSplit() ==
 
@@ -401,25 +503,28 @@ input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
      read(t0) -> f0(), ...
      read(tn) -> fn() )
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == tee() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == timeout() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == until() ==
 
@@ -429,9 +534,10 @@ input: {{{[schema any arg0]schema any arg1 = null}}}
  
  input: [T...]? -> until( when: fn(T): bool, inclusive:bool = true ): [T...]
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema [ * ]? input][schema function when]schema boolean? inclusive = true}}}
- output: {{{schema [ * ]}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( when, required: schema function),( inclusive = true: schema boolean?)}}}
+
+ _*Output*_ {{{schema [ * ]}}}
 
 ----
 =hadoop=
@@ -449,9 +555,10 @@ input: {{{[schema [ * ]? input][schema function when]schema boolean? inclusive =
   })
  -> model
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == chainedMap() ==
 
@@ -466,34 +573,38 @@ input: {{{[schema any arg0]}}}
   })
  -> state
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == loadJobConf() ==
 
   _*Description*_ Usage: { name: string } loadJobConf( string? filename )
  if filename to conf is not specified, then the default JobConf is loaded
 
-  _*Parameters*_ (0 - 1)
-input: {{{schema any arg0 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 - 1 inputs)
+ Input Types: {{{( arg0 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == mapReduce() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == mrAggregate() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == nativeMR() ==
 
@@ -503,17 +614,19 @@ input: {{{[schema any arg0]}}}
  
  Example: { status: true } nativeMR( loadJobConf( "myJob.conf" ) );
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == readConf() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =io=
@@ -521,33 +634,37 @@ input: {{{[schema any arg0]schema any arg1 = null}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == del() ==
 
   _*Description*_ An expression that constructs an I/O descriptor for HDFS file access.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == expandFD() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == file() ==
 
   _*Description*_ An expression that constructs an I/O descriptor for local file access.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == fileSplitToRecord() ==
 
@@ -556,18 +673,20 @@ input: {{{[schema any arg0]schema any arg1 = null}}}
  fileSplitToRecord( split: { class: string, split: binary, * } ):
    { path: string, start: long, length: long, locations: [string...] }
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == HadoopTemp() ==
 
   _*Description*_ Creates a file descriptor for temporary files used by Jaql. Takes a schema argument that
  describes the schema of the individual values written to the file.
 
-  _*Parameters*_ (0 - 1)
-input: {{{schema schematype schema = schema any}}}
- output: {{{schema { * }}}}
+  _*Parameters*_ (0 - 1 inputs)
+ Input Types: {{{( schema = schema any: schema schematype)}}}
+
+ _*Output*_ {{{schema { * }}}}
 
 == hbaseRead() ==
 
@@ -582,91 +701,102 @@ input: {{{schema schematype schema = schema any}}}
  or more ExprPairs. Each ExprPair p is generated by using the column name for
  p.name and the value for p.value
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == hbaseWrite() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == hdfs() ==
 
   _*Description*_ An expression that constructs an I/O descriptor for HDFS file access.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == hdfsShell() ==
 
   _*Description*_ An expression for running HDFS shell. It is equivalent to <i>hadoop fs</i>.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == http() ==
 
   _*Description*_ An expression that constructs an I/O descriptor for local file access.
 
-  _*Parameters*_ (1 - 3)
-input: {{{[schema any arg0]schema any arg1 = nullschema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == httpGet() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 3)
-input: {{{[schema any arg0]schema any arg1 = nullschema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == inputSplits() ==
 
   _*Description*_ Take a i/o descriptor and return a list of raw splits:
     [{ class: string, split: binary, locations: [string...] }...]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == jaqltemp() ==
 
   _*Description*_ An expression that constructs an I/O descriptor for jaqls temp file access.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == lines() ==
 
   _*Description*_ An expression that constructs an I/O descriptor for HDFS file access.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == localRead() ==
 
   _*Description*_ An expression used for reading data into jaql. The only different between
  localRead and Read is that localRead is disabled for mapReduce rewirte.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == localWrite() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == makeFileSplit() ==
 
@@ -675,9 +805,10 @@ input: {{{[schema any arg0][schema any arg1]}}}
  makeFileSplit( file: string, start: long, length: long, hosts: [string...] ):
    { class: string, split: binary, locations:[string...] }
 
-  _*Parameters*_ (4)
-input: {{{[schema any arg0][schema any arg1][schema any arg2][schema any arg3]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (4 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any),( arg3, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == read() ==
 
@@ -699,9 +830,10 @@ input: {{{[schema any arg0][schema any arg1][schema any arg2][schema any arg3]}}
  will be used. If there are duplicate names, then the query options will be
  used as an override.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == readAdapterRegistry() ==
 
@@ -709,17 +841,19 @@ input: {{{[schema any arg0]}}}
  
  readAdapterRegistry(string filename) returns file name
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == readSplit() ==
 
   _*Description*_ An expression used for reading data from a single split into jaql.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == registerAdapter() ==
 
@@ -727,9 +861,10 @@ input: {{{[schema any arg0][schema any arg1]}}}
  
  registerAdapter({type: string, inOptions: {}, outOptions: {}})
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == unregisterAdapter() ==
 
@@ -737,9 +872,10 @@ input: {{{[schema any arg0]}}}
  
  unregisterAdapter(string key) returns key
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == write() ==
 
@@ -766,9 +902,10 @@ input: {{{[schema any arg0]}}}
  then the union of option fields will be used. If there are duplicate names,
  then the query options will be used as an override.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == writeAdapterRegistry() ==
 
@@ -776,9 +913,10 @@ input: {{{[schema any arg0][schema any arg1]}}}
  
  writeAdapterRegistry(string filename) returns null
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =array=
@@ -790,57 +928,64 @@ input: {{{[schema any arg0]}}}
  append(null, null) be null? it would break any unnest definition... Push
  unnest into ListExpr?
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == arrayToRecord() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == asArray() ==
 
   _*Description*_ This function ensures that input returns an array.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == columnwise() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == deempty() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == distinct() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == enumerate() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == exists() ==
 
@@ -848,9 +993,10 @@ input: {{{[schema any arg0]schema any arg1 = null}}}
  has at least one element (even a null) exists(...) = true, when the argument
  is not an array or a null
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == lag1() ==
 
@@ -864,9 +1010,10 @@ input: {{{[schema any arg0]}}}
 
  eg: [1,2,3] -> lag1()  ==  [ { prev: 1, cur: 2 }, { prev: 2, cur: 3 } ]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == merge() ==
 
@@ -874,9 +1021,10 @@ input: {{{[schema any arg0]}}}
  Union multiple arrays into one array in arbitrary order without
  removing duplicates (like SQL's UNION ALL)
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == nextElement() ==
 
@@ -893,25 +1041,28 @@ input: {{{[schema any arg0]schema any arg1 = null...}}}
     { cur: 2, next: 3 }, 
     { cur: 3 } ]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == pair() ==
 
   _*Description*_ pair(A,B) == [A,B]
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == pairwise() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == powerset() ==
 
@@ -924,9 +1075,10 @@ input: {{{[schema any arg0][schema any arg1]schema any arg2 = null...}}}
 
  eg: [1,2,3] -> powerset() ==  [ [], [1], [2], [1,2], [3], [1,3], [2,3], [1,2,3] ]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == prevAndNextElement() ==
 
@@ -943,9 +1095,10 @@ input: {{{[schema any arg0]}}}
     { cur: 2, prev: 1, next: 3 }, 
     { cur: 3, prev: 2 } ]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == prevElement() ==
 
@@ -962,73 +1115,82 @@ input: {{{[schema any arg0]}}}
     { cur: 2, prev: 1 }, 
     { cur: 3, prev: 2 } ]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == removeElement() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == replaceElement() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == reverse() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == rowwise() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == runningCombine() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (4)
-input: {{{[schema [ * ]? input][schema any init][schema function add][schema function? into]}}}
- output: {{{schema [ * ]}}}
+  _*Parameters*_ (4 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( init, required: schema any),( add, required: schema function),( into, required: schema function?)}}}
+
+ _*Output*_ {{{schema [ * ]}}}
 
 == shift() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == slice() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == slidingWindow() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (3)
-input: {{{[schema [ * ]? input][schema function start][schema function end]}}}
- output: {{{schema [
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( start, required: schema function),( end, required: schema function)}}}
+
+ _*Output*_ {{{schema [
          { * } * 
        ]}}}
 
@@ -1036,9 +1198,10 @@ input: {{{[schema [ * ]? input][schema function start][schema function end]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 4)
-input: {{{[schema [ * ]? input][schema long size]schema long? offset = nullschema boolean exact = false}}}
- output: {{{schema [
+  _*Parameters*_ (2 - 4 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( size, required: schema long),( offset = null: schema long?),( exact = false: schema boolean)}}}
+
+ _*Output*_ {{{schema [
          { * } * 
        ]}}}
 
@@ -1048,17 +1211,19 @@ input: {{{[schema [ * ]? input][schema long size]schema long? offset = nullschem
  
  if( $x instanceof type [*<*>]? ) $x else [$x]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == tumblingWindow() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 5)
-input: {{{[schema [ * ]? input][schema function stop]schema function? start = nullschema boolean? firstGroup = trueschema boolean? lastGroup = true}}}
- output: {{{schema [
+  _*Parameters*_ (2 - 5 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( stop, required: schema function),( start = null: schema function?),( firstGroup = true: schema boolean?),( lastGroup = true: schema boolean?)}}}
+
+ _*Output*_ {{{schema [
          [ * ] * 
        ]}}}
 
@@ -1066,18 +1231,20 @@ input: {{{[schema [ * ]? input][schema function stop]schema function? start = nu
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema [ * ]? input][schema long | double | decfloat size]schema boolean? lastGroup = true}}}
- output: {{{schema [ * ]}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( size, required: schema long | double | decfloat),( lastGroup = true: schema boolean?)}}}
+
+ _*Output*_ {{{schema [ * ]}}}
 
 == union() ==
 
   _*Description*_ Union multiple arrays into one array in arbitrary order without
  removing duplicates (like SQL's UNION ALL)
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =index=
@@ -1085,9 +1252,10 @@ input: {{{[schema any arg0]schema any arg1 = null...}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == keyLookup() ==
 
@@ -1107,9 +1275,10 @@ input: {{{[schema any arg0][schema any arg1]}}}
  
    // TODO:support spilling large inners?
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == keyMerge() ==
 
@@ -1123,17 +1292,19 @@ input: {{{[schema any arg0][schema any arg1]}}}
    
  This function only requires a single key from each list to be in memory at a time.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == probeJIndex() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == probeLongList() ==
 
@@ -1156,9 +1327,10 @@ input: {{{[schema any arg0][schema any arg1]}}}
 
  There is currently an implementation limit of 2B values (~16GB of memory).
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == sharedHashtableN() ==
 
@@ -1184,11 +1356,12 @@ input: {{{[schema any arg0][schema any arg1]}}}
  
  If the probe key does not exist in the hashtable, null is returned.
 
-  _*Parameters*_ (4 - 10)
-input: {{{[schema [
+  _*Parameters*_ (4 - 10 inputs)
+ Input Types: {{{( data, required: schema [
          [ * ]? * 
-       ]? data][schema [ * ]? url][schema [ * ]? buildFn][schema [ * ]? buildSchema]schema long age = -1schema long lease = 0schema boolean serverStart = trueschema long serverTimeout = 300000schema string serverMemory = "500M"schema boolean serverThread = false}}}
- output: {{{schema [
+       ]?),( url, required: schema [ * ]?),( buildFn, required: schema [ * ]?),( buildSchema, required: schema [ * ]?),( age = -1: schema long),( lease = 0: schema long),( serverStart = true: schema boolean),( serverTimeout = 300000: schema long),( serverMemory = "500M": schema string),( serverThread = false: schema boolean)}}}
+
+ _*Output*_ {{{schema [
          [
            any,
            any
@@ -1227,9 +1400,10 @@ input: {{{[schema [
  
  <pre>
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == typedXmlToJson() ==
 
@@ -1237,17 +1411,19 @@ input: {{{[schema any arg0]}}}
  This function is similar to xmlToJson, except that it creates typed data, i.e., instead of producing all values as strings, 
  		it tries to cast each value to a closest type.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == xmlToJson() ==
 
   _*Description*_ An expression for converting XML to JSON.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == xpath() ==
 
@@ -1255,9 +1431,10 @@ input: {{{[schema any arg0]}}}
  
  xpath(xml, xpath)
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == xslt() ==
 
@@ -1265,9 +1442,10 @@ input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
  
  xslt(xml, xsl)
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =binary=
@@ -1275,17 +1453,19 @@ input: {{{[schema any arg0][schema any arg1]}}}
 
   _*Description*_ Convert an ascii/utf8 base64 string into a binary string
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == hex() ==
 
   _*Description*_ Convert a hexadecimal string into a binary string
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =internal=
@@ -1293,25 +1473,28 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ An internal method that can be used to print the internal tree of expressions in JSON format.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == hash() ==
 
   _*Description*_ An internal method that can be used to print the internal tree of expressions in JSON format.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == longHash() ==
 
   _*Description*_ An internal method that can be used to print the internal tree of expressions in JSON format.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =regex=
@@ -1319,49 +1502,55 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ Create a regular expression (regex) value.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == regex_extract() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == regex_extract_all() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == regex_match() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == regex_spans() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == regex_test() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =date=
@@ -1369,33 +1558,37 @@ input: {{{[schema any arg0][schema any arg1]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == dateMillis() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == dateParts() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == now() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (0)
-input: {{{}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 inputs)
+ Input Types: {{{}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =nil=
@@ -1403,49 +1596,55 @@ input: {{{}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == emptyOnNull() ==
 
   _*Description*_ emptyOnNull(e) == firstNonNull(e, [])
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == firstNonNull() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (0 - 1)
-input: {{{schema any arg0 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 - 1 inputs)
+ Input Types: {{{( arg0 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == nullElementOnEmpty() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == nullOnEmpty() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == onEmpty() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =catalog=
@@ -1454,34 +1653,38 @@ input: {{{[schema any arg0][schema any arg1]}}}
   _*Description*_ An expression to insert an entry into catalog. It is an error if an entry
  with the same key already exists.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == catalogLookup() ==
 
   _*Description*_ An expression to read the entry identified by a key in catalog.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == catalogUpdate() ==
 
   _*Description*_ An expression to update catalog entry. It can only add records or fields. No
  old records or fields will be overwritten.
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == updateComment() ==
 
   _*Description*_ An expression that updates comment field of entry in catalog.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =number=
@@ -1489,89 +1692,100 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == decfloat() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == div() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == double() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == exp() ==
 
   _*Description*_ raise base of natural log (e) to arg: e^a pow(x,y) = exp( y * ln(x) )
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == ln() ==
 
   _*Description*_ natural logarithm
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == long() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == mod() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == number() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == pow() ==
 
   _*Description*_ raise a number to power
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == toNumber() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =module=
@@ -1579,25 +1793,28 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == listExports() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == test() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =random=
@@ -1605,49 +1822,55 @@ input: {{{[schema any arg0]schema any arg1 = null}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (0 - 1)
-input: {{{schema any arg0 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 - 1 inputs)
+ Input Types: {{{( arg0 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == randomLong() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (0 - 1)
-input: {{{schema any arg0 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 - 1 inputs)
+ Input Types: {{{( arg0 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == registerRNG() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == sample01RNG() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == sampleRNG() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == uuid() ==
 
   _*Description*_ Generate a type 4 UUID (random method)
 
-  _*Parameters*_ (0)
-input: {{{}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 inputs)
+ Input Types: {{{}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =record=
@@ -1655,74 +1878,83 @@ input: {{{}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == fields() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == names() ==
 
   _*Description*_ names($rec) == for $k,$v in $rec return $k == fields($rec)[*][0];
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == record() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == remap() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == removeFields() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == renameFields() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == replaceFields() ==
 
   _*Description*_ Replace fields in oldRec with fields in newRec only if the field name exists in oldRec.
  Unlike remap, this only replaces existing fields.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == values() ==
 
   _*Description*_ values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =del=
@@ -1732,9 +1964,10 @@ input: {{{[schema any arg0]}}}
  <p>
  <code>jsonToDel({schema: '...', delimiter: '...', quoted: '...', escape: '...'})</code> .
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =schema=
@@ -1743,18 +1976,20 @@ input: {{{[schema any arg0]schema any arg1 = null}}}
   _*Description*_ Returns its first argument and adds the schema information given in the second argument
  without validation. Use carefully!
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == check() ==
 
   _*Description*_ Checks whether the first argument matches the schema given in the second argument. If so,
  returns the first argument. Otherwise, throws an expection.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == dataGuide() ==
 
@@ -1772,58 +2007,65 @@ input: {{{[schema any arg0][schema any arg1]}}}
  For atomic types:
      yield ":" + the type name, eg, ":string", ":null"
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == elementsOf() ==
 
   _*Description*_ elementsOf(schema): if schema is (potentially) an array schema, return the schema of its elements (if any)
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == fieldsOf() ==
 
   _*Description*_ elementsOf(schema): if schema is (potentially) an record schema, return a table describing its known fields:
      [{ name: string, schema: schema, index: long }...]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == isNullable() ==
 
   _*Description*_ isNullable(schema): true if schema might match null, false otherwise
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == schemaof() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == sqlTypeCode() ==
 
   _*Description*_ sqlTypeCode(schema): return the sql type code for schema
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == typeof() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =agg=
@@ -1831,57 +2073,64 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ Picks any value. If there is at least one non-null values, picks a non-null value.
 
-  _*Parameters*_ (1)
-input: {{{[schema [ * ]? a]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( a, required: schema [ * ]?)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == argmax() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema [ * ]? a][schema function f]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( a, required: schema [ * ]?),( f, required: schema function)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == argmin() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema [ * ]? a][schema function f]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( a, required: schema [ * ]?),( f, required: schema function)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == array() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == avg() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == combine() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == count() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == covStats() ==
 
@@ -1892,9 +2141,10 @@ input: {{{[schema any arg0]}}}
        ...                                          ,
                                          sum(xn*xn) ]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == expSmooth() ==
 
@@ -1903,19 +2153,21 @@ input: {{{[schema any arg0]}}}
    s[i] = a * x[i] + (1-a) * s[i-1]
  The numbers are cast to a double and the result is always a double.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == icebergCubeInMemory() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (3 - 4)
-input: {{{[schema [ * ]? input][schema [
+  _*Parameters*_ (3 - 4 inputs)
+ Input Types: {{{( input, required: schema [ * ]?),( columns, required: schema [
          string * 
-       ] columns][schema function perGroupFn]schema long | double | decfloat minSupport = 1}}}
- output: {{{schema [
+       ]),( perGroupFn, required: schema function),( minSupport = 1: schema long | double | decfloat)}}}
+
+ _*Output*_ {{{schema [
          [ * ] * 
        ]}}}
 
@@ -1923,49 +2175,55 @@ input: {{{[schema [ * ]? input][schema [
 
   _*Description*_ Infer a schema that describes all of the elements.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == javauda() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema string class]schema any args = null...}}}
- output: {{{schema function}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( class, required: schema string),( args = null: schema any)...}}}
+
+ _*Output*_ {{{schema function}}}
 
 == javaudacall() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema [ * ]? array][schema string class]schema any args = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( array, required: schema [ * ]?),( class, required: schema string),( args = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == max() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == min() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == pickN() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == singleton() ==
 
@@ -1974,49 +2232,55 @@ input: {{{[schema any arg0][schema any arg1]}}}
    If the pipe has one item then that item
    If the pipe has more than one item then error
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == sum() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == topN() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == uda() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (4)
-input: {{{[schema function init][schema function accumulate][schema function combine][schema function final]}}}
- output: {{{schema function}}}
+  _*Parameters*_ (4 inputs)
+ Input Types: {{{( init, required: schema function),( accumulate, required: schema function),( combine, required: schema function),( final, required: schema function)}}}
+
+ _*Output*_ {{{schema function}}}
 
 == udacall() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (5)
-input: {{{[schema [ * ]? array][schema function init][schema function accumulate][schema function combine][schema function final]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (5 inputs)
+ Input Types: {{{( array, required: schema [ * ]?),( init, required: schema function),( accumulate, required: schema function),( combine, required: schema function),( final, required: schema function)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == vectorSum() ==
 
   _*Description*_ vectorSum(array x) = [sum(x1), sum(x2), ..., sum(xn)]
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =db=
@@ -2024,9 +2288,10 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =span=
@@ -2034,33 +2299,37 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == span_begin() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == span_contains() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == span_end() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == span_extract() ==
 
@@ -2070,33 +2339,37 @@ input: {{{[schema any arg0]}}}
  Current implementation uses SubJsonString. If the caller modifies the input string at
  some later point, the result of this call will be invalid.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == span_overlaps() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == span_select() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == tokenize() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =string=
@@ -2105,49 +2378,55 @@ input: {{{[schema any arg0]}}}
   _*Description*_ Converts an input value (string, array of strings or record with string values) to 
  the specified types.
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == endsWith() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == json() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == serialize() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == startsWith() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strcat() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (0 - 1)
-input: {{{schema any arg0 = null...}}}
- output: {{{schema any}}}
+  _*Parameters*_ (0 - 1 inputs)
+ Input Types: {{{( arg0 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strJoin() ==
 
@@ -2156,82 +2435,92 @@ input: {{{schema any arg0 = null...}}}
  Nulls are removed, without any separator.
  If you want nulls, use firstNonNull(e,'how nulls appear').
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strLen() ==
 
   _*Description*_ Usage: long strLen(string str)
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strPos() ==
 
   _*Description*_ Usage: long strPos(string str, string toFind, long startIndex=0)
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strPosList() ==
 
   _*Description*_ Usage: long StrPosFn(string str, string toFind, long startIndex=0)
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strReplace() ==
 
   _*Description*_ Usage: [string] strReplace(string val, regex pattern, string replacement)
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strSplit() ==
 
   _*Description*_ Usage: [string] strSplit(string val, string delimitter)
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strSplitN() ==
 
   _*Description*_ strSplitN(string src, string sep, int n) ==> [string1, string2, ..., stringn]
  sep is a string of one charater.
 
-  _*Parameters*_ (3)
-input: {{{[schema any arg0][schema any arg1][schema any arg2]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strToLowerCase() ==
 
   _*Description*_ Convert a string to lower case.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == strToUpperCase() ==
 
   _*Description*_ Convert a string to upper case.
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == substring() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2 - 3)
-input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 - 3 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =function=
@@ -2239,33 +2528,37 @@ input: {{{[schema any arg0][schema any arg1]schema any arg2 = null}}}
 
   _*Description*_ Add jars to the classpath
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == fence() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == fencePush() ==
 
   _*Description*_ 
 
-  _*Parameters*_ (2)
-input: {{{[schema any arg0][schema any arg1]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 == javaudf() ==
 
   _*Description*_ An expression that constructs a JSON value for a Java UDF
 
-  _*Parameters*_ (1)
-input: {{{[schema any arg0]}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 inputs)
+ Input Types: {{{( arg0, required: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
 =net=
@@ -2273,8 +2566,9 @@ input: {{{[schema any arg0]}}}
 
   _*Description*_ 
 
-  _*Parameters*_ (1 - 2)
-input: {{{[schema any arg0]schema any arg1 = null}}}
- output: {{{schema any}}}
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
+
+ _*Output*_ {{{schema any}}}
 
 ----
