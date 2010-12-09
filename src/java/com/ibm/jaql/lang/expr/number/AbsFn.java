@@ -26,6 +26,16 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Return the absolute value of a numeric value
+ * 
+ * Usage:
+ * number abs(number)
+ * 
+ * @jaqlExample abs(-100);
+ * 100
+ * 
+ * @jaqlExample abs(-3.14)
+ * 3.14
  * 
  */
 public class AbsFn extends Expr

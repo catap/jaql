@@ -27,7 +27,11 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * natural logarithm
+ * @jaqlDescription Return the natural logarithm of a numeric value
+ * 
+ * Usage:
+ * number abs(number)
+ * 
  */
 public class LnFn extends AbstractRealFn
 {

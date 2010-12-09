@@ -25,8 +25,8 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * Usage: long strLen(string str)
- *
+ * long strLen(string str)
+ * return the lenght of the given string
  */
 public class StrLenFn extends Expr
 {

@@ -25,7 +25,22 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Find the minimum value in an array.
+ * Usage:
  * 
+ * any max( [ any ] );
+ * 
+ * Max takes an array as input and returns the minimum value from the array. The type of the array's elements is not restricted.
+ *
+ * @jaqlExample min([1,2,3]);
+ * 1
+ *
+ * @jaqlExample min(["a","b","c"]);
+ * "a"
+ *
+ * @jaqlExample read(hdfs("someFileOfLongs")) -> group into min($);
+ *
+ * @jaqlExample read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSecond: min($[*][1]) };
  */
 public final class MinAgg extends AlgebraicAggregate
 {

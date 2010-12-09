@@ -22,7 +22,9 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * 
+ *  bool startsWith(string target, string prefix)
+ *  Check if a target string starts with a given prefix, return true or false 
+ *  
  */
 public class StartsWithFn extends Expr
 {

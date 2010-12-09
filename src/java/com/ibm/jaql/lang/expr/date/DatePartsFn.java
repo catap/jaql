@@ -30,6 +30,28 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
+/**
+ * 
+ * @jaqlDescription Return a record which stores all readable fields of a date, including year, montch, day, dayofweek ... e.g. 
+ * 
+ * Usage:
+ * 
+ * record dateParts(date d)
+ * 
+ * @jaqlExample dateParts(date('2000-01-01T12:00:00Z'));
+ * {
+ * "day": 1,
+ * "dayOfWeek": 6,
+ * "hour": 12,
+ * "millis": 946728000000,
+ * "minute": 0,
+ * "month": 1,
+ * "second": 0,
+ * "year": 2000,
+ * "zoneOffset": 0
+ * }
+ * 
+ */
 public class DatePartsFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11

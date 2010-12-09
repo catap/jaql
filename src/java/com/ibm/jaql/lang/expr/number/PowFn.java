@@ -30,7 +30,14 @@ import com.ibm.jaql.lang.expr.core.MathExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * raise a number to power
+ * @jaqlDescription Raise a number to power
+ * 
+ * Usage:
+ * number pow(number a , number b)
+ * 
+ * @jaqlExample mod(3,2)
+ * 1
+ *  
  */
 public class PowFn extends Expr
 {
