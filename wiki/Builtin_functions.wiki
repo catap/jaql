@@ -299,8 +299,7 @@ jaql> read(hdfs("test"))
 
 == mergeContainers() ==
 
-  _*Description*_ DEPRECATED: is this used anywhere?
- Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
+  _*Description*_ 
 
   _*Parameters*_ (1 - 2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
