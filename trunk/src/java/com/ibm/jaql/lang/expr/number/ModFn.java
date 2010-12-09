@@ -29,7 +29,14 @@ import com.ibm.jaql.lang.expr.core.MathExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Return the modulus of a and b, both a and b are numeric values 
  * 
+ * Usage:
+ * number mod(number a, number b)
+ * 
+ * @jaqlExample mod(3,2)
+ * 1
+ *  
  */
 public class ModFn extends Expr
 {

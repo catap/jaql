@@ -25,7 +25,13 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- *  Convert an ascii/utf8 base64 string into a binary string
+ *  @jaqlDescription Convert an ascii/utf8 base64 string into a binary string.
+ *  
+ *  Usage:
+ *  binary base64(string str)
+ *  
+ *  @jaqlExample base64("utf8string");
+ *  hex('BAD7FCB2DAE20000')
  */
 public class Base64Fn extends Expr
 {

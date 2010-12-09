@@ -28,6 +28,9 @@ import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /**
+ * @jaqlDescription Range generates a continuous array of numbers
+ * 
+ * Usage:
  * range(size)      = [0,size-1]
  * range(size,null) = [0,size-1]
  * range(start,end) = [start,end]

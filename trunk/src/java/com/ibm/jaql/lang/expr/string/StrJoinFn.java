@@ -25,10 +25,13 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
- * string strJoin(array items, string sep) 
- * Build a string that concatentates all the items, adding sep between each item.
+ * @jaqlDescription Build a string that concatentates all the items, adding sep between each item.
  * Nulls are removed, without any separator.
  * If you want nulls, use firstNonNull(e,'how nulls appear').
+ * 
+ * Usage:
+ * string strJoin(array items, string sep) 
+ * 
  * 
  */
 public class StrJoinFn extends Expr // TODO: make Aggregate?

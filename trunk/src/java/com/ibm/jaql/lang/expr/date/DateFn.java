@@ -27,6 +27,16 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
+/**
+ * @jaqlDescription Format a string to date value.
+ * 
+ * Usage:
+ * date date(string datestr)
+ * 
+ * @jaqlExample date('2000-01-01T11:59:59Z');
+ * date('2000-01-01T12:00:00.000Z');
+ *
+ */
 public class DateFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par12

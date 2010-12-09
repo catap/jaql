@@ -29,7 +29,20 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Parse the given atom value to long value
  * 
+ * Usage:
+ * long long(anyatom)
+ * 
+ * @jaqlExample long(3.14)
+ * 3
+ * 
+ * @jaqlExample long(3)
+ * 3
+ * 
+ * @jaqlExample long(true)
+ * 1
+ *  
  */
 public class LongFn extends Expr
 {

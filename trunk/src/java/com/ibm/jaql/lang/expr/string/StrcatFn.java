@@ -28,6 +28,10 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Concats one or more strings to a new string
+ * 
+ * Usage:
+ * string strcat(string ... str)
  * 
  */
 public class StrcatFn extends Expr

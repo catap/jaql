@@ -31,6 +31,30 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 // TODO: RegexExec: support regex () submatch  captures a la http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Guide:Working_with_Regular_Expressions:Using_Parenthesized_Substring_Matches
 
 /**
+ * @jaqlDescription Capture every first substrings which match each group (A group is a pair of parentheses used to 
+ * group subpatterns.) specified in the regular expression. Return a string array like :
+ *  ["match_group1", "match_group2" , "match_group3" ...]
+ * 
+ * Usage:
+ * [string] regex_extract(regex reg, string text)
+ * 
+ * reg is the regular expression, text is the target string. For example, given a regular expression
+ *   (a(b*))+(c*)
+ * it contains 3 groups:
+ *   group 1: (a(b*)) 
+ *   group 2: (b*) 
+ *   group 3: (c*)
+ * if input is "abbabcd", by use of regex_extract function, substrings matches each group(1-3) will be captured, this function
+ * will return a string array, like
+ *   [ "ab", "b", "c"]
+ * where "ab" is the first hit matches group 1, as well as "b" to group 2, "c" to group 3.
+ * 
+ * @jaqlExample regex_extract(regex("(a(b*))+(c*)"),"abbabcd");
+ * [ "ab", "b", "c"]
+ * 
+ * @jaqlExample regex_extract(regex("(a(b*))"),"abbabcd");
+ * [ "abb", "bb"]
+ * 
  * 
  */
 public class RegexExtractFn extends Expr

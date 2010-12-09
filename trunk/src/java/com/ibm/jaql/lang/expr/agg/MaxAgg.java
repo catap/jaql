@@ -25,8 +25,24 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Find the max value in an array.
+ * Usage:
  * 
+ * any max( [ any ] );
+ * 
+ * Max takes an array as input and returns the max value from the array. The type of the array's elements is not restricted.
+ *
+ * @jaqlExample max([1,2,3]);
+ * 3
+ *
+ * @jaqlExample max(["a","b","c"]);
+ * "c"
+ *
+ * @jaqlExample read(hdfs("someFileOfLongs")) -> group into max($);
+ *
+ * @jaqlExample read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, maxSecond: max($[*][1]) };
  */
+
 public final class MaxAgg extends AlgebraicAggregate
 {
   private JsonValue max;

@@ -26,7 +26,17 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
 
 /**
- * Create a regular expression (regex) value.
+ * @jaqlDescription Create a regular expression (regex).
+ * 
+ * Usage:
+ * regex regex(string reg)
+ * 
+ * regex(string reg) defines a regular expression, specified by a string, the regular-expression constructs complies
+ * with standard java.
+ * 
+ * @jaqlExample reg = regex("[a-z]+"); regex_match(reg,"abc bcd");
+ * ["abc"]
+ * 
  */
 public class RegexFn extends Expr
 {
