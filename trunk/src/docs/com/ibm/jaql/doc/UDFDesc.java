@@ -115,9 +115,8 @@ public class UDFDesc {
 			JsonString name = params.nameOf(i);
 			
 			try {
-			if(br)
-				sb.append("[");
-			sb.append(s.toString());
+			
+			sb.append("(");
 			if( name == null )
 				sb.append(" " + i);
 			else
@@ -125,8 +124,11 @@ public class UDFDesc {
 			if( bv )
 				sb.append(" = " + JsonUtil.printToString(dv));
 			if(br) 
-				sb.append("]");
-			if( (i + 1) < i)
+				sb.append(", required");
+			sb.append(": " + s.toString());		
+			
+			sb.append(")");
+			if( (i + 1) < n)
 				sb.append(",");
 			} catch(Exception e) {
 				return "";

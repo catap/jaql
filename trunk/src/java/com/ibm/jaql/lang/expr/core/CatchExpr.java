@@ -34,19 +34,63 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
- * Wrap this expression around any child expression that needs to be guarded
- * for exceptions. Usage is as follows:
+ * @jaqlDescription Wrap any expression with catch to guard against exceptions.
+ * Usage:
  * 
- * catch(child expr, { errThresh: long } opts);
+ * T1|null catch( T1 e1, { errThresh: long } | null, T2 e2);
  * 
- * Note the following consequences of this expression:
- * 1. It is blocking: all values produced by child must be valid, 
- *                    which precludes streaming computation to the caller of "catch"
- * 2. If an error occurs in the child, the exception handling options determine what happens next.
- *    The errThresh lets the user specify how many errors can happen at the call-site of the specific
- *    catch expression. If the number of exceptions exceeds errThresh, then the exception is
- *    propagated up. Otherwise, the exception is simply logged. By default, if opts is not specified,
- *    errThresh is set to 0, e.g., exceptions propagate up. 
+ * Wrap the catch expression around the first argument, e1, that needs to be guarded
+ * for exceptions. 
+ * 
+ * The second argument is optional. It specifies an exception handling policy. If unspecified or null, the default
+ * exception handling policy is used. By default, if an exception occurs, it is propagated
+ * (which typically results in aborted execution). This default can be overridden globally
+ * using the registerExceptionHandler function, or at can be overridden per usage of catch
+ * by using the second argument. Such an override allows catch to throw an exception errThresh
+ * times before propagating the exception. Thus, the default has errThresh set to 0.
+ * 
+ * The third argument, e2, is optional and is used to specify an expression whose value is logged when an exception
+ * is thrown.
+ * 
+ * Catch returns the result of evaluating e1 (whose type is T1). If an exception is thrown, but
+ * skipped, then null is returned.
+ * 
+ * Note that catch s a "blocking" call: the result of e1 will be materialized. If e1 could
+ * be streamed (e.g., read(...)), when used in the context of catch, its result will be entirely
+ * materialized. 
+ * 
+ * @jaqlExample data = [ ["a",0], ["a",1], ["b",0], ["c",0], ["c",1], ["c",2]];
+ * 
+ * @jaqlExample data -> write(hdfs("test"));
+ * 	 
+ * @jaqlExample read(hdfs("test"))
+ *      -> transform catch(if ($[0] == "a") ($.badFieldAccess) // cause exceptions on ["a", 0] and ["a", 1]
+ *                         else ($), 
+ *                         { errThresh: 1000 }) 
+ *      -> group by g = $[0] 
+ *         into { g: g, 
+ *                num: count($), 
+ *                err: catch(if(g == "b") (g.badFieldAccess) // cause exception/null on the "b" group
+ *                           else ("ok"), 
+ *                           { errThresh: 1000 }) 
+ *              }; 
+ *[
+ * {
+ *   "err": "ok",
+ *   "g": null,
+ *   "num": 2
+ *  },
+ *  {
+ *   "err": null,
+ *   "g": "b",
+ *   "num": 1
+ *  },
+ *  {
+ *   "err": "ok",
+ *   "g": "c",
+ *   "num": 3
+ *  }
+ *]
  */
 public class CatchExpr extends Expr {
 	

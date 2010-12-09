@@ -88,17 +88,18 @@ public class WikiProcessor implements DataProcessor {
 		
 		//Print Parameters with number of arguments
 		if(desc.getMinArgs() == desc.getMaxArgs()) {
-			out.println("  _*Parameters*_ (" + desc.getMinArgs()+")");
+			out.println("  _*Parameters*_ (" + desc.getMinArgs()+" inputs)");
 		} else {
 			if(desc.getMaxArgs() == Integer.MAX_VALUE) {
-				out.println("  _*Parameters*_ (" + desc.getMinArgs() + " - ...)");
+				out.println("  _*Parameters*_ (" + desc.getMinArgs() + " - ... inputs)");
 			} else {
-				out.println("  _*Parameters*_ (" + desc.getMinArgs() + " - " + desc.getMaxArgs() +")");
+				out.println("  _*Parameters*_ (" + desc.getMinArgs() + " - " + desc.getMaxArgs() +" inputs)");
 			}
 		}
 		
-		out.println( "input: {{{" + desc.getArgInfo() + "}}}");
-		out.println(" output: {{{" + desc.getReturnSchema() + "}}}");
+		out.println(" Input Types: {{{" + desc.getArgInfo() + "}}}");
+		out.println();
+		out.println(" _*Output*_ {{{" + desc.getReturnSchema() + "}}}");
 		/*if(!desc.PARAMETERS.getTagData().isEmpty()) {
 			for (FnParamTag param : desc.PARAMETERS.getTagData()) {
 				out.println("      # " + param.getText());
