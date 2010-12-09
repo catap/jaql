@@ -31,6 +31,39 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
+ * @jaqlDescription Capture all the substrings which match each group (A group is a pair of parentheses used to 
+ * group subpatterns.) specified in the regular expression. Return a string array like 
+ *  [[match1_group1, match1_group2 ...] , [match2_group1, match2_group2] ... ]
+ * 
+ * Usage:
+ * [string] regex_extract(regex reg, string text)
+ * 
+ * regex_extract_all(regex("(a(b*))"),"abbabcd");
+ * 
+ * reg is the regular expression, text is the target string. For example, given a regular expression
+ *   (a(b*))
+ * it contains 3 groups:
+ *   group 1: (a(b*)) 
+ *   group 2: (b*) 
+ * if input is "abbabcd", by use of regex_extract function, substrings matches each group(1-2) will be captured, this function
+ * will return a string array, like
+ *  [ 
+ *   ["abb","bb"],
+ *   ["ab","b"]
+ *  ]
+ *
+ * where "abb" and "bb" is the first match of group 1 and 2 when scaning the text, "ab" and "b" is the second(last) match. 
+ * 
+ * @jaqlExample regex_extract_all(regex("(a(b*))+(c*)"),"abbabcd");
+ * [ 
+ *  [ "ab", "b", "c"]
+ * ]
+ * 
+ * @jaqlExample regex_extract_all(regex("(a(b*))"),"abbabcd");
+ *  [ 
+ *   ["abb","bb"],
+ *   ["ab","b"]
+ *  ]
  * 
  */
 public class RegexExtractAllFn extends IterExpr

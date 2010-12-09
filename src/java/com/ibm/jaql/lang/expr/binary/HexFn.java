@@ -25,7 +25,10 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- *  Convert a hexadecimal string into a binary string
+ *  @jaqlDescription Convert a hexadecimal string into a binary string.
+ *  
+ *  Usage:
+ *  binary hex(string str)
  */
 public class HexFn extends Expr
 {

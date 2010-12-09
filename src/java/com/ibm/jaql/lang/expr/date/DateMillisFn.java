@@ -24,6 +24,18 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
+/**
+ * 
+ * @jaqlDescription Represent the date using milliseconds.
+ * 
+ * Usage:
+ * long dateMillis(date d)
+ * 
+ * the argument is restricted with date type, or it causes bad casting exception. 
+ * 
+ * @jaqlExample dateMillis(date('2000-01-01T12:00:00Z'));
+ * 946728000000
+ */
 public class DateMillisFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11

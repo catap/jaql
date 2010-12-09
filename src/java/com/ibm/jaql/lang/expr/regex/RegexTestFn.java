@@ -25,7 +25,18 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Check if the target string contains substring matches given regular expression. 
+ * If exist at least 1 match, return true, else return false
  * 
+ * Usage:
+ * bool regex_test(regex reg , string text)
+ *  
+ * @jaqlExample regex_test(regex("[a-z]?"),"abbabcd");
+ * true
+ * 
+ * @jaqlExample regex_test(regex("aaa"),"abbabcd");
+ * false
+ *
  */
 public class RegexTestFn extends Expr
 {

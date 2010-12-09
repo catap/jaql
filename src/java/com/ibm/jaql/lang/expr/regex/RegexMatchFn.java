@@ -29,6 +29,19 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 // TODO: RegexExec: support regex () submatch  captures a la http://developer.mozilla.org/en/docs/Core_JavaScript_1.5_Guide:Working_with_Regular_Expressions:Using_Parenthesized_Substring_Matches
 
 /**
+ * @jaqlDescription Returns the first substring in input that matches the pattern against the regular expression.
+ * 
+ * Usage:
+ * 
+ * regex_match(regex reg , string text)
+ * 
+ * reg is the regular expression, text is the target string. 
+ * 
+ * @jaqlExample regex_match(regex("[a-z]?"),"abbabcd");
+ * "a" //this example performs a non-greedy matching
+ * 
+ * @jaqlExample regex_match(regex("[a-z]*"),"abbabcd");
+ * "abbabcd"//this example performs a greedy matching
  * 
  */
 public class RegexMatchFn extends IterExpr

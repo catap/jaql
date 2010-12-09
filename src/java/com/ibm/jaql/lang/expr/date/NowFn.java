@@ -26,6 +26,10 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Return current system date time.
+ * 
+ * Usage:
+ * date now()
  * 
  */
 public class NowFn extends Expr
