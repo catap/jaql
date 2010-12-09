@@ -297,15 +297,6 @@ jaql> read(hdfs("test"))
          } * 
        ]}}}
 
-== mergeContainers() ==
-
-  _*Description*_ 
-
-  _*Parameters*_ (1 - 2 inputs)
- Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
-
- _*Output*_ {{{schema any}}}
-
 == perf() ==
 
   _*Description*_ 
