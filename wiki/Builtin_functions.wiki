@@ -327,7 +327,10 @@ jaql> read(hdfs("test"))
 
 == range() ==
 
-  _*Description*_ range(size)      = [0,size-1]
+  _*Description*_ Range generates a continuous array of numbers
+ 
+ Usage:
+ range(size)      = [0,size-1]
  range(size,null) = [0,size-1]
  range(start,end) = [start,end]
  range(start,end,skip) = if skip > 0 then for(i = start, i <= end, i += skip)
@@ -1451,16 +1454,28 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 =binary=
 == base64() ==
 
-  _*Description*_ Convert an ascii/utf8 base64 string into a binary string
+  _*Description*_ Convert an ascii/utf8 base64 string into a binary string.
+  
+  Usage:
+  binary base64(string str)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> base64("utf8string");
+  hex('BAD7FCB2DAE20000')
+
+}}}
 == hex() ==
 
-  _*Description*_ Convert a hexadecimal string into a binary string
+  _*Description*_ Convert a hexadecimal string into a binary string.
+  
+  Usage:
+  binary hex(string str)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
@@ -1500,40 +1515,127 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 =regex=
 == regex() ==
 
-  _*Description*_ Create a regular expression (regex) value.
+  _*Description*_ Create a regular expression (regex).
+ 
+ Usage:
+ regex regex(string reg)
+ 
+ regex(string reg) defines a regular expression, specified by a string, the regular-expression constructs complies
+ with standard java.
 
   _*Parameters*_ (1 - 2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> reg = regex("[a-z]+"); regex_match(reg,"abc bcd");
+ ["abc"]
+
+}}}
 == regex_extract() ==
 
-  _*Description*_ 
+  _*Description*_ Capture every first substrings which match each group (A group is a pair of parentheses used to 
+ group subpatterns.) specified in the regular expression. Return a string array like :
+  ["match_group1", "match_group2" , "match_group3" ...]
+ 
+ Usage:
+ [string] regex_extract(regex reg, string text)
+ 
+ reg is the regular expression, text is the target string. For example, given a regular expression
+   (a(b*))+(c*)
+ it contains 3 groups:
+   group 1: (a(b*)) 
+   group 2: (b*) 
+   group 3: (c*)
+ if input is "abbabcd", by use of regex_extract function, substrings matches each group(1-3) will be captured, this function
+ will return a string array, like
+   [ "ab", "b", "c"]
+ where "ab" is the first hit matches group 1, as well as "b" to group 2, "c" to group 3.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> regex_extract(regex("(a(b*))+(c*)"),"abbabcd");
+ [ "ab", "b", "c"]
+
+jaql> regex_extract(regex("(a(b*))"),"abbabcd");
+ [ "abb", "bb"]
+
+}}}
 == regex_extract_all() ==
 
-  _*Description*_ 
+  _*Description*_ Capture all the substrings which match each group (A group is a pair of parentheses used to 
+ group subpatterns.) specified in the regular expression. Return a string array like 
+  [[match1_group1, match1_group2 ...] , [match2_group1, match2_group2] ... ]
+ 
+ Usage:
+ [string] regex_extract(regex reg, string text)
+ 
+ regex_extract_all(regex("(a(b*))"),"abbabcd");
+ 
+ reg is the regular expression, text is the target string. For example, given a regular expression
+   (a(b*))
+ it contains 3 groups:
+   group 1: (a(b*)) 
+   group 2: (b*) 
+ if input is "abbabcd", by use of regex_extract function, substrings matches each group(1-2) will be captured, this function
+ will return a string array, like
+  [ 
+   ["abb","bb"],
+   ["ab","b"]
+  ]
+
+ where "abb" and "bb" is the first match of group 1 and 2 when scaning the text, "ab" and "b" is the second(last) match.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> regex_extract_all(regex("(a(b*))+(c*)"),"abbabcd");
+ [ 
+  [ "ab", "b", "c"]
+ ]
+
+jaql> regex_extract_all(regex("(a(b*))"),"abbabcd");
+  [ 
+   ["abb","bb"],
+   ["ab","b"]
+  ]
+
+}}}
 == regex_match() ==
 
-  _*Description*_ 
+  _*Description*_ Returns the first substring in input that matches the pattern against the regular expression.
+ 
+ Usage:
+ 
+ regex_match(regex reg , string text)
+ 
+ reg is the regular expression, text is the target string.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> regex_match(regex("[a-z]?"),"abbabcd");
+ "a" //this example performs a non-greedy matching
+
+jaql> regex_match(regex("[a-z]*"),"abbabcd");
+ "abbabcd"//this example performs a greedy matching
+
+}}}
 == regex_spans() ==
 
   _*Description*_ 
@@ -1545,45 +1647,101 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == regex_test() ==
 
-  _*Description*_ 
+  _*Description*_ Check if the target string contains substring matches given regular expression. 
+ If exist at least 1 match, return true, else return false
+ 
+ Usage:
+ bool regex_test(regex reg , string text)
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> regex_test(regex("[a-z]?"),"abbabcd");
+ true
+
+jaql> regex_test(regex("aaa"),"abbabcd");
+ false
+
+}}}
 ----
 =date=
 == date() ==
 
-  _*Description*_ 
+  _*Description*_ Format a string to date value.
+ 
+ Usage:
+ date date(string datestr)
 
   _*Parameters*_ (1 - 2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> date('2000-01-01T11:59:59Z');
+ date('2000-01-01T12:00:00.000Z');
+
+}}}
 == dateMillis() ==
 
-  _*Description*_ 
+  _*Description*_ Represent the date using milliseconds.
+ 
+ Usage:
+ long dateMillis(date d)
+ 
+ the argument is restricted with date type, or it causes bad casting exception.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> dateMillis(date('2000-01-01T12:00:00Z'));
+ 946728000000
+
+}}}
 == dateParts() ==
 
-  _*Description*_ 
+  _*Description*_ Return a record which stores all readable fields of a date, including year, montch, day, dayofweek ... e.g. 
+ 
+ Usage:
+ 
+ record dateParts(date d)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> dateParts(date('2000-01-01T12:00:00Z'));
+ {
+ "day": 1,
+ "dayOfWeek": 6,
+ "hour": 12,
+ "millis": 946728000000,
+ "minute": 0,
+ "month": 1,
+ "second": 0,
+ "year": 2000,
+ "zoneOffset": 0
+ }
+
+}}}
 == now() ==
 
-  _*Description*_ 
+  _*Description*_ Return current system date time.
+ 
+ Usage:
+ date now()
 
   _*Parameters*_ (0 inputs)
  Input Types: {{{}}}
@@ -1690,13 +1848,25 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 =number=
 == abs() ==
 
-  _*Description*_ 
+  _*Description*_ Return the absolute value of a numeric value
+ 
+ Usage:
+ number abs(number)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> abs(-100);
+ 100
+
+jaql> abs(-3.14)
+ 3.14
+
+}}}
 == decfloat() ==
 
   _*Description*_ 
@@ -1735,7 +1905,10 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == ln() ==
 
-  _*Description*_ natural logarithm
+  _*Description*_ Return the natural logarithm of a numeric value
+ 
+ Usage:
+ number abs(number)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
@@ -1744,22 +1917,46 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == long() ==
 
-  _*Description*_ 
+  _*Description*_ Parse the given atom value to long value
+ 
+ Usage:
+ long long(anyatom)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> long(3.14)
+ 3
+
+jaql> long(3)
+ 3
+
+jaql> long(true)
+ 1
+
+}}}
 == mod() ==
 
-  _*Description*_ 
+  _*Description*_ Return the modulus of a and b, both a and b are numeric values 
+ 
+ Usage:
+ number mod(number a, number b)
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> mod(3,2)
+ 1
+
+}}}
 == number() ==
 
   _*Description*_ 
@@ -1771,13 +1968,22 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == pow() ==
 
-  _*Description*_ raise a number to power
+  _*Description*_ Raise a number to power
+ 
+ Usage:
+ number pow(number a , number b)
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> mod(3,2)
+ 1
+
+}}}
 == toNumber() ==
 
   _*Description*_ 
@@ -2200,22 +2406,58 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == max() ==
 
-  _*Description*_ 
+  _*Description*_ Find the max value in an array.
+ Usage:
+ 
+ any max( [ any ] );
+ 
+ Max takes an array as input and returns the max value from the array. The type of the array's elements is not restricted.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> max([1,2,3]);
+ 3
+
+jaql> max(["a","b","c"]);
+ "c"
+
+jaql> read(hdfs("someFileOfLongs")) -> group into max($);
+
+jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, maxSecond: max($[*][1]) };
+
+}}}
 == min() ==
 
-  _*Description*_ 
+  _*Description*_ Find the minimum value in an array.
+ Usage:
+ 
+ any max( [ any ] );
+ 
+ Max takes an array as input and returns the minimum value from the array. The type of the array's elements is not restricted.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> min([1,2,3]);
+ 1
+
+jaql> min(["a","b","c"]);
+ "a"
+
+jaql> read(hdfs("someFileOfLongs")) -> group into min($);
+
+jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSecond: min($[*][1]) };
+
+}}}
 == pickN() ==
 
   _*Description*_ 
@@ -2412,7 +2654,8 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == startsWith() ==
 
-  _*Description*_ 
+  _*Description*_ bool startsWith(string target, string prefix)
+  Check if a target string starts with a given prefix, return true or false
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
@@ -2421,7 +2664,10 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == strcat() ==
 
-  _*Description*_ 
+  _*Description*_ Concats one or more strings to a new string
+ 
+ Usage:
+ string strcat(string ... str)
 
   _*Parameters*_ (0 - 1 inputs)
  Input Types: {{{( arg0 = null: schema any)...}}}
@@ -2430,10 +2676,12 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == strJoin() ==
 
-  _*Description*_ string strJoin(array items, string sep) 
- Build a string that concatentates all the items, adding sep between each item.
+  _*Description*_ Build a string that concatentates all the items, adding sep between each item.
  Nulls are removed, without any separator.
  If you want nulls, use firstNonNull(e,'how nulls appear').
+ 
+ Usage:
+ string strJoin(array items, string sep)
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
@@ -2442,7 +2690,8 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == strLen() ==
 
-  _*Description*_ Usage: long strLen(string str)
+  _*Description*_ long strLen(string str)
+ return the lenght of the given string
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
