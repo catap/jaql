@@ -32,6 +32,31 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
+/**
+ * @jaqlDescription Register a default exception handling policy.
+ * Usage:
+ * 
+ * bool registerExceptionHandler( { errThresh: long } );
+ * 
+ * This function allows the default exception handling policy to be overridden.
+ * Currently, the policy can specify how many exceptions to skip before propagating
+ * the exception up the call stack. This is specified by the errThresh field of the
+ * input. By default, errThresh is set to 0, meaning that no exceptions are skipped.
+ * 
+ * When an exception is skipped, the enclosing expression decides what to do. If the
+ * exception occurs in the catch function, then it returns null and logs the results of
+ * a user supplied expression. If the exception occurs in a transform, then the result is
+ * skipped and logged.
+ * 
+ * @jaqlExample registerExceptionHandler({errThresh: 5});
+ * 
+ * @jaqlExample data = [ ["a",0], ["a",1], ["b",0], ["c",0], ["c",1], ["c",2]];
+ * 
+ * @jaqlExample data -> write(hdfs("test"));
+ * 	 
+ * @jaqlExample read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
+ * []
+ */
 public class RegisterExceptionHandler extends Expr {
 
 	public static final String		ERROR_THRESH_NAME = "errThresh";
