@@ -28,9 +28,24 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 // TODO: redefine this for JSON; add empty()
 /**
- * exists(null) = null exists([]) = false exists([...]) = true, when the array
- * has at least one element (even a null) exists(...) = true, when the argument
- * is not an array or a null
+ * @jaqlDescription 
+ * Usage : bool exists(any);
+ * If the argument is null, return null ,
+ * If the argument is a empty array , return false ,
+ * If the argument is an array with at least one element, return true ,
+ * If the argument is not an array or a null, return true. 
+ * 
+ * @jaqlExample exists(null);
+ * null 
+ * 
+ * @jaqlExample exists([]);
+ * false 
+ * 
+ * @jaqlExample exists([...]);
+ * true //when the array has at least one element (even a null) 
+ *      
+ * @jaqlExample exists(...);
+ * true //when the argument is not an array or a null
  */
 public class ExistsFn extends Expr
 {

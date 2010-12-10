@@ -29,8 +29,17 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
- * Usage: [string] strReplace(string val, regex pattern, string replacement)
- *
+ * @jaqlDescription Replace a substring with the replacement only if it matches the given regular expression (regex).
+ * Usage: 
+ * [string] strReplace(string val, regex pattern, string replacement)
+ * 
+ * @jaqlExample 
+ * reg=regex("[a-z]+"); // define a regular expression, match at least one character.
+ * val = "<abc>,<bcd>,<cde>"; // deine a string 
+ * strReplace(str,reg,"a"); // replace all the match substrings with "a"
+ * 
+ * "<a>,<a>,<a>"
+ * 
  */
 public class StrReplaceFn extends Expr
 {

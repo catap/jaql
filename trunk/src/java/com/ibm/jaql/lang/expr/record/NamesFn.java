@@ -25,7 +25,11 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Extract all the keys in a record and return as an array.
  * names($rec) == for $k,$v in $rec return $k == fields($rec)[*][0];
+ * 
+ * @jaqlExample names({a:1, b:2, c:3});
+ * [ "a","b","c" ]
  */
 public class NamesFn extends IterExpr
 {

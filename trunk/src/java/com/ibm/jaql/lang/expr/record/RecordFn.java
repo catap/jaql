@@ -28,7 +28,19 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Convert a array to a single record. 
  * 
+ * Usage:
+ * record record(array arr);
+ * 
+ * the argument arr will be like [record1,record2,record3...], it has restricted format since a record can not contain any 
+ * duplicate keys, so this function asserts record1, record2 ... contains no same keys. 
+ * 
+ * @jaqlExample record([{A:11},{B:22}]);
+ * {
+ *  "A": 11,
+ *  "B": 22
+ * }
  */
 public class RecordFn extends Expr // TODO: make into an aggregate?
 {

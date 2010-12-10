@@ -23,7 +23,13 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Replace an element of the target array with a given value.
  * 
+ * Usage :
+ * array replaceElement( array arr , int  position, value v );
+ * 
+ * @jaqlExample replaceElement([1,2,3],2,100);
+ * [ 1,2,100 ]
  */
 public class ReplaceElementFn extends IterExpr
 {

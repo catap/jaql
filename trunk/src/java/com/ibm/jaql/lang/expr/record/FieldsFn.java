@@ -27,7 +27,16 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Convert each key-value pair of a record to a [key,value] array.
  * 
+ * Usage:
+ * array fields(record r)
+ * 
+ * @jaqlExample fields({a:1, b:2, c:3});
+ * [ ["a",1] , ["b",2] , ["c",3] ]
+ * 
+ * @jaqlExample fields({a:1, b:2, c:3}) -> transform $[0];
+ * [ "a","b","c" ] //this example indicates a way to extract all the key values in a record.
  */
 public final class FieldsFn extends IterExpr
 {

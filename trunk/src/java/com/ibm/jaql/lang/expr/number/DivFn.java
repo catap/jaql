@@ -29,7 +29,10 @@ import com.ibm.jaql.lang.expr.core.MathExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription div(A,B) divides A by B, return a numric value.
  * 
+ * @jaqlExample div(4,2);
+ * 2
  */
 public class DivFn extends Expr
 {
