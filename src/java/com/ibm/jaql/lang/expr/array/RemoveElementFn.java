@@ -24,6 +24,15 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
+ * @jaqlDescription Remove element from array in the given position.
+ * 
+ * Usage:
+ * array removeElement( array arr , int position);
+ * 
+ * 
+ * @jaqlExample removeElement([1,2,3],0);
+ * [ 2,3 ]
+ * 
  */
 public class RemoveElementFn extends IterExpr
 {

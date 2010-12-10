@@ -27,6 +27,15 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
  * 
+ * @jaqlDescription Replace the key of the target record with newName only if whose key equals with oldName.
+ * Usage:
+ * record renameFields(record target, record {oldName : newName , ...} );
+ * 
+ * @jaqlExample renameFields({a:1,b:2},{"a":"AAA" , "b":'BBB'});
+ * {
+ *  "AAA": 1,
+ *  "BBB": 2
+ * }
  */
 public class RenameFieldsFn extends Expr
 {

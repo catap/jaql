@@ -23,7 +23,18 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Combine two arrays (A,B) into one array C, assume A = [ a1,a2,a3 ... ] , B = [ b1,b2,b3 ...] , pairwise combines every
+ * elements in the same position in each array, produces C = [ [a1,b1] , [a2,b2] , [a3,c3] ... ].
  * 
+ * Usage:
+ * array pairwise( array A , array B );
+ * 
+ * @jaqlExample pairwise([1,2],[3,4]);
+ * [
+ *  [1,3],
+ *  [2,4]
+ * ]
+ *   
  */
 public class PairwiseFn extends IterExpr
 {

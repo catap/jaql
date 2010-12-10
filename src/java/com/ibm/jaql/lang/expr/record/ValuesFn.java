@@ -25,7 +25,11 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
+ *  @jaqlDescription Extract all the values in a record and return as an array.
+ *  values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
+ *  
+ *  @jaqlExample values({a:1, b:2, c:3});
+ *  [ 1,2,3 ] 
  */
 public class ValuesFn extends IterExpr
 {

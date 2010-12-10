@@ -27,7 +27,13 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
- * Usage: [string] strSplit(string val, string delimitter)
+ * 
+ * @jaqlDescription Split a string with given delimiter.
+ * Usage:
+ * [string] strSplit(string val, string delimiter);
+ * 
+ * @jaqlExample strSplit("a,b,c,d",",");
+ * [ "a","b","c","d" ]
  *
  */
 public class StrSplitFn extends Expr

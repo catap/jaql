@@ -33,7 +33,18 @@ import com.ibm.jaql.lang.expr.function.VarParameter;
 import com.ibm.jaql.lang.expr.function.VarParameters;
 
 /**
+ * @jaqlDescription Reverse an array
  * 
+ * Usage:
+ * array reverse(array arr)
+ * 
+ * @jaqlExample range(1,10) -> reverse();
+ *  [ 10,9,8,7,6,5,4,3,2,1 ]
+ * 
+ * @jaqlExample [[0],[1,2],[3,4,5],[6,7,8,9]] -> transform reverse($)->reverse();
+ * [ [9,8,7,6] , [5,4,3] , [2,1], [0] ] // reverse sequence
+ * 
+ *  
  */
 public class ReverseFn extends MacroExpr
 {

@@ -25,7 +25,14 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
 
 /**
- * Convert a string to upper case.
+ * @jaqlDescription Convert a string to upper case.
+ * 
+ * Usage:
+ * string strToUpperCase(string val)
+ * 
+ * @jaqlExample strToUpperCase("abcDEFgHijk");
+ * "ABCDEFGHIJK"
+ * 
  */
 public class StrToUpperCaseFn extends Expr
 {

@@ -26,7 +26,13 @@ import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription List distinct values from an array, remove duplicates.
  * 
+ * Usage:
+ * [any] distinct( [any] )
+ * 
+ * @jaqlExample distinct( [1, 1d, 1m, 1.5d, 1.5m, 1.50d, 1.50m ] ) -> sort by [$];
+ * [ 1,1.5 ]
  */
 public class DistinctFn extends MacroExpr
 {

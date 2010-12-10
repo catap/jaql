@@ -28,6 +28,17 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Remove fields of a record by keys.
+ * 
+ * Usage:
+ * record removeFields(record target, array names);
+ * 
+ * names is an array with one or more string key names, removeFields will remove fields in target record if its key appears in names.
+ * 
+ * @jaqlExample removeFields({a:1,b:2},["a"]);
+ * {
+ *  "b":2
+ * }
  * 
  */
 public class RemoveFieldsFn extends Expr

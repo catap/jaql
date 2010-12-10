@@ -22,6 +22,13 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Return the size of a record.
+ * 
+ * Usage :
+ * long arity(record r);
+ * 
+ * @jaqlExample arity({a:1,b:2,c:3});
+ * 3
  * 
  */
 public class ArityFn extends Expr

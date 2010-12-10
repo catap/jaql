@@ -25,7 +25,14 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.Bool3;
 
 /**
- * Convert a string to lower case.
+ * @jaqlDescription Convert a string to lower case.
+ * 
+ * Usage:
+ * string strToLowerCase(string val)
+ * 
+ * @jaqlExample strToLowerCase("aBcDEFgHiJ");
+ * "abcdefghij"
+ * 
  */
 public class StrToLowerCaseFn extends Expr
 {

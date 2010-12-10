@@ -23,7 +23,16 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 // TODO: introduce macro exprs that always rewrite into something else
 /**
- * pair(A,B) == [A,B]
+ * @jaqlDescription Combines two values to an array. 
+ * 
+ * Usage:
+ * array pair( any , any ); 
+ * 
+ * The arguments can be any type of date, each of them will be one element of the return array. 
+ * 
+ * @jaqlExample pair("element1", "element2");
+ * [ "element1" , "element2" ]
+ * 
  */
 public class PairFn extends IterExpr // TODO: rewrite into [A,B]
 {
