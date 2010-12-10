@@ -123,6 +123,43 @@ public class MyClazz2 {
 }
 }}}
 
+==== Define / evaluate jaql functions ====
+public void sampleFunction() {
+	try {
+		JaqlQuery jaql = new JaqlQuery("samplefn=fn(a,b)(a+b);");
+		FunctionArgs args = new FunctionArgs();
+		args.setArgument("a", 1200); // set argument by name
+		args.setArgument("b", 1200);
+                //alternatively，set argument by sequence
+                //args.setArguments(1200,1200);
+		JsonValue v = jaql.evaluate("samplefn", args); // got 2400
+		jaql.close();
+	} catch (Exception ex) {
+		fail(ex.getMessage());
+	}
+}
+
+==== Multiple statements in one query ====
+public void batchQuery(){
+	try{
+		JaqlQuery q = new JaqlQuery();
+		q.setQueryString("1+1;2+2;3+3;");
+		int[] expected = {2,4,6};
+		int i = 0;
+		while(q.moveNextQuery()){
+			JsonIterator it = q.currentQuery(); 
+			while(it.moveNext()){
+				JsonValue v = it.current(); // 2 - 4 - 6
+				assertEquals(new JsonLong(expected[i]), (JsonLong)v); 
+				}
+				i++;
+			}
+			q.close();
+		}catch(Exception ex){
+			fail(ex.getMessage());
+		}
+	}
+
 ----
 
 ==Embedding Jaql in Python==
