@@ -23,7 +23,20 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Get a certain substring of a string, start from beginIdx , end to endIdx. If endIdx is not given or larger 
+ * than the lenght of the string, return the substring from beginIdx to the end of the string.
  * 
+ * Usage:
+ * string substring(string val, int beginIdx, int endIndx ?);
+ * 
+ * @jaqlExample substring("I love the game", 2, 7);
+ * "love"
+ * 
+ * @jaqlExample substring("I love the game", 2);
+ * "love the game"
+ * 
+ * @jaqlExample substring("I love the game", 2, 20);
+ * "love the game"
  */
 public class SubstringFn extends Expr
 {

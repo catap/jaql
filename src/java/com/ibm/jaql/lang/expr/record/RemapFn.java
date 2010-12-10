@@ -26,7 +26,19 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Join two records.
  * 
+ * Usage:
+ * record remap(record old, record new)
+ * 
+ * remap joins two records, old and new together, produce a new record and return, remove duplicate key-values of old record. 
+ * 
+ * @jaqlExample remap({a:1,b:2},{a:3,d:4});
+ * {
+ *   "a" : 3, 
+ *   "b" : 2,
+ *   "d" : 4
+ * }
  */
 public class RemapFn extends Expr
 {

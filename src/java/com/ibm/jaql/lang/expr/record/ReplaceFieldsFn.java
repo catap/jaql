@@ -26,8 +26,11 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * Replace fields in oldRec with fields in newRec only if the field name exists in oldRec.
+ * @jaqlDescription Replace fields in oldRec with fields in newRec only if the field name exists in oldRec.
  * Unlike remap, this only replaces existing fields.
+ * 
+ * @jaqlExample
+ *
  */
 public class ReplaceFieldsFn extends Expr
 {

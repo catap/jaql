@@ -28,7 +28,22 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Get the double value of a numric value.
  * 
+ * Usage:
+ * double double(number A);
+ * 
+ * @jaqlExample 22d instanceof schema double;
+ * true
+ * 
+ * @jaqlExample double(5);
+ * 5.0
+ * 
+ * @jaqlExample double(5m);
+ * 5.0
+ * 
+ * @jaqlExample double(5d);
+ * 5.0
  */
 public class DoubleFn extends Expr
 {

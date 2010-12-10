@@ -28,7 +28,15 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Define a decfloat value
  * 
+ * @jaqlExample decfloat(5m);
+ * 5m
+ * 
+ * @jaqlExample 5m instanceof schema decfloat(value=5m);
+ * true
+ * 
+ *  
  */
 public class DecfloatFn extends Expr
 {
