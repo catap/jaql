@@ -124,6 +124,7 @@ public class MyClazz2 {
 }}}
 
 ==== Define / evaluate jaql functions ====
+{{{
 public void sampleFunction() {
 	try {
 		JaqlQuery jaql = new JaqlQuery("samplefn=fn(a,b)(a+b);");
@@ -138,8 +139,10 @@ public void sampleFunction() {
 		fail(ex.getMessage());
 	}
 }
+}}}
 
 ==== Multiple statements in one query ====
+{{{
 public void batchQuery(){
 	try{
 		JaqlQuery q = new JaqlQuery();
@@ -159,6 +162,7 @@ public void batchQuery(){
 			fail(ex.getMessage());
 		}
 	}
+}}}
 
 ----
 
