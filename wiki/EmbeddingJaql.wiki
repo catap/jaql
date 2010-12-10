@@ -91,6 +91,29 @@ public void sampleFunction() {
 }
 }}}
 
+==== Import modules ====
+{{{
+public void importModule(){
+	try{
+                String BASE_DIR = "YOUR_JAQL_HOME";
+		JaqlQuery q = new JaqlQuery();
+		String path = BASE_DIR+"/src/test/com/ibm/jaql/modules";
+		File p = new File (path);
+		if(!p.isDirectory()){
+			return;
+		}
+		q.setModuleSeachPath(path);
+		q.setQueryString("import fuzzy_join;");
+		q.evaluate();
+		q.setQueryString("fuzzy_join::cleanTitle('XY');");
+		JsonValue v = q.evaluate(); // XY
+		q.close();
+	}catch(Exception ex){
+		ex.printStackTrace();
+	}
+}
+}}}
+
 ==== Multiple statements in one query ====
 {{{
 public void batchQuery(){
