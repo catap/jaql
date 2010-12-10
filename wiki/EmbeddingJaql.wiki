@@ -33,92 +33,42 @@ This chapter introduces you several simple examples using Jaql for you to start,
 First you are going to initialize a JaqlQuery instance by its constructor `JaqlQuery()`, then use `setQueryString()` to set input for jaql context, at last use `evaluate()` to evaluate the query statement, this function will return you a JsonValue. Alternatively, `iterator()` can also evaluate the statement but return you a JsonIterator.
 Notice that, you can set variable holders in the input parameter, by means of Jaql syntax, it's $varname, then use `setVar()` to set its value at runtime.
 You can try out below examples.
-==== Define JSON data ====
-{{{
-package myclazz;
-
-public interface IConstants {
-	
-	public static String publishers = "[{name: 'Scholastic', country: 'USA'}, "
-		+ "{name: 'Grosset', country: 'UK'}, "
-		+ "{name: 'Writers Publishing House', country: 'China'}]";
-
-}
-}}}
 
 ==== Write data into HDFS ====
 {{{
-package myclazz;
-
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.JaqlQuery;
-
-/**
- * This sample program demonstrates how to persist data into HDFS.
- * */
-public class MyClazz1 implements IConstants{
-	
-	public static void main(String[] args) {
-		try{
-			MyClazz1 mc = new MyClazz1();
-			mc.writePublishers();
-		}catch(Exception ex){
-			ex.printStackTrace();
-		}
-	}
-	/**
-	 * persists publishers data into HDFS
-	 * */
-	public void writePublishers() throws Exception {
-		JaqlQuery jaql = new JaqlQuery();
-		jaql.setQueryString(publisher + " -> write(hdfs('publishers'));");
-		JsonIterator it = jaql.iterate();
-		while(it.moveNext()){
-			JsonValue v = it.current();
-			System.out.println(v);
-		}
-		jaql.close();
+public void writePublishers(){
+	String PUBLISHERS = "[{name: 'Scholastic', country: 'USA'}, "
+        + "{name: 'Grosset', country: 'UK'}, "
+        + "{name: 'Writers Publishing House', country: 'China'}]";
+	String LOCATION = "publishers";
+	try{
+		JaqlQuery q = new JaqlQuery();
+		q.setQueryString("$publishers -> write(hdfs($location));");	
+		q.setArray("$publishers", PUBLISHERS); 
+		q.setVar("$location", LOCATION);
+		q.evaluate();
+		q.close();
+	}catch(Exception ex){
+		ex.printStackTrace();
 	}
 }
 }}}
 
 ==== Read data from HDFS, and retrieve JsonValue data ====
 {{{
-package myclazz;
-
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.JaqlQuery;
-
-/**
- * This sample program finds the country of a specified 
- * publishing house.
- * */
-public class MyClazz2 {
-
-	public static void main(String[] args) {
-		try{
-			MyClazz2 mc = new MyClazz2();
-			JsonValue v = mc.getCountry("Scholastic");
-			System.out.println(v);
-		}catch(Exception ex){
-			ex.printStackTrace();
-		}
-	}
-	
-	/**
-	 * returns the country name of the specified publisher.
-	 * 
-	 * @param publisher The name of publishing house
-	 * @return JsonValue
-	 * */
-	private JsonValue getCountry(String publisher) throws Exception {
-		JaqlQuery jaql = new JaqlQuery();
-		jaql.setQueryString("read(hdfs('publishers')) -> filter $.name == $name -> transform $.country;");
-		jaql.setVar("$name", publisher);
+public static void readData(){
+	String pName="Scholastic";
+	String location = "publishers";
+	try{
+	        JaqlQuery jaql = new JaqlQuery();
+		jaql.setQueryString("read(hdfs($location)) -> filter $.name == $name -> transform $.country;");
+		jaql.setVar("$name", pName);
+		jaql.setVar("$location", location);
 		JsonValue jv = jaql.evaluate();
+		System.out.println(jv); // USA
 		jaql.close();
-		return jv;
+	    }catch(Exception ex){
+		ex.printStackTrace();
 	}
 }
 }}}
