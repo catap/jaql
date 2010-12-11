@@ -22,6 +22,23 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.MacroExpr;
 
 /** An expression that constructs a JSON value for a Java UDF */
+/**
+ * @jaqlDescription construct a jaql function from a given class
+ * Usage:
+ * fn javaudf( string className );
+ * 
+ * The javaudf function constructs a function that knows how to evaluate itself
+ * given a className that specifies its body. The function can then be assigned
+ * to a variable (like any other value) and invoked (like any other function). 
+ * This is the primary means by which users can supply user-defined functions.
+ * 
+ * @jaqlExample split = javaudf("com.acme.extensions.fn.Split1"); // define the function and assign it to the variable split
+   
+   @jaqlExample path = '/home/mystuff/stuff';
+
+   @jaqlExample split1(path, "/"); // invoke the split function
+ *
+ */
 public class JavaUdfExpr extends MacroExpr {
 	public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
 	{

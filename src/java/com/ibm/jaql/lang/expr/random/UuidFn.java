@@ -29,7 +29,9 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
- * Generate a type 4 UUID (random method)
+ * @jaqlDescription Generate a type 4 UUID (random method)
+ * Usage:
+ * binary uuid()
  */
 public class UuidFn extends Expr
 {

@@ -22,6 +22,9 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription test whether a string has a given suffix
+ * Usage:
+ * bool endsWith( string s, string suffix )
  * 
  */
 public class EndsWithFn extends Expr

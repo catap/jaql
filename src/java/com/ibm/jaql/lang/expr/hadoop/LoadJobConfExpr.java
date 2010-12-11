@@ -37,8 +37,11 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
- * Usage: { name: string } loadJobConf( string? filename )
- * if filename to conf is not specified, then the default JobConf is loaded
+ * @jaqlDescription load a Hadoop JobConf into a record
+ * Usage: 
+ * { *: string, * } loadJobConf( string? filename )
+ * 
+ * If filename to conf is not specified, then the default JobConf is loaded.
  */
 public class LoadJobConfExpr extends Expr
 {

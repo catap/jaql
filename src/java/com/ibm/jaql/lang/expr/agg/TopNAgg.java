@@ -34,7 +34,24 @@ import com.ibm.jaql.lang.expr.function.JaqlFunction;
 import com.ibm.jaql.util.Pair;
 
 /**
+ * @jaqlDescription compute the top N values from an array
+ * Usage:
+ * [T] topN( [T], long n, cmp(x) );
  * 
+ * Given an input array, a limit n, and a comparator function, compute the top n elements
+ * of the input array. This implementation uses a heap to efficiently use memory and lower
+ * the network traffic that is needed for aggregation.
+ * 
+ * @jaqlExample [1,2,3] -> write(hdfs("test1"));
+ * 
+ * @jaqlExample read(hdfs("test1")) -> topN( 2, cmp(x) [x desc ] ); // Simplest example
+ * [ 1, 2 ]
+ * 
+ * @jaqlExample read(hdfs("test1")) -> group into topN( $, 2, cmp(x) [ x desc ] ); // Now, with group by (this uses map-reduce)
+ * 
+ * @jaqlExample [ [ 1, 1 ], [1, 2], [2, 0], [2, 11], [3, 3], [3, 4], [3, 5] ] -> write(hdfs("test2"));
+ * 
+ * @jaqlExample read(hdfs("test2")) -> group by n = $[0] into { num: n, top: topN($[*][1], 1, cmp(x) [ x desc ]) }; // Complex data
  */
 public final class TopNAgg extends AlgebraicAggregate
 {

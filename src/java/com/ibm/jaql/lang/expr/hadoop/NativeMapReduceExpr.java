@@ -43,11 +43,22 @@ import com.ibm.jaql.util.ClassLoaderMgr;
 // TODO: add an async option and return a handle. add an additional expression to manage an MR handle.
 //       it will be able to do things like kill the job, report on its status, etc.
 /**
- * Usage: { status: boolean } nativeMR( { job conf settings } conf , { apiVersion: "0.0" | "1.0" } options );
+ * @jaqlDescription launch a natively specified MapReduce job
+ * Usage: 
+ * { status: boolean } nativeMR( { job conf } conf , { apiVersion: "0.0" | "1.0", useSessionJar: boolean } options );
  * 
  * Launch a stand-alone map-reduce job that is exclusively described by job conf settings.
+ * The conf can be obtained using loadJobConf or it can be specified using a record literal
+ * that lists the needed name/value pairs for the job. If apiVersion is set to "0.0", then
+ * the old Hadoop MapReduce API is used. Otherwise, the new API is used.
  * 
- * Example: { status: true } nativeMR( loadJobConf( "myJob.conf" ) );
+ * The useSessionJar is convenient for those native MapReduce jobs that use jaql libraries.
+ * Since the jaql client already packages up jars when submitting jobs to Hadoop's MapReduce,
+ * the useSessionJar is used to specify that the job's jar should use the client's currently
+ * packaged jar.
+ * 
+ * @jaqlExample nativeMR( loadJobConf( "myJob.conf" ) );
+ * { status: true } 
  */
 public class NativeMapReduceExpr extends Expr
 {

@@ -37,7 +37,14 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
+ * @jaqlDescription compute the sum of an array of numbers
+ * Usage:
+ * number sum( [ number ] );
  * 
+ * Note that sum is currently evaluated using a sequential plan.
+ * To get parallelism, use group by:
+ * 
+ * @jaqlExample read(hdfs("someNumbers")) -> group into sum($);
  */
 public final class SumAgg extends AlgebraicAggregate
 {

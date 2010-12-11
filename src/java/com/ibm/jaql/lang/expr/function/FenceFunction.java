@@ -52,6 +52,22 @@ import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
 import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.ClassLoaderMgr;
 
+/**
+ * @jaqlDescription evaluate a function in a separate process
+ * Usage:
+ * [T2] fence( [T1],  T2 fn(T1 x) );
+ *
+ * The fence function applies the function argument to each element of
+ * the input array to produce the output array. In particular, the fence
+ * function is evaluated in a separate process. A common use of fence is
+ * to shield the Jaql interpreter from user-defined functions that exhaust
+ * memory, for example.
+ * 
+ * @jaqlExample [1,2,3] -> write(hdfs("test"));
+ * 
+ * @jaqlExample read(hdfs("test")) -> fence( fn(i) i + 1 );
+ * [2,3,4]
+ */
 public class FenceFunction extends IterExpr {
 	
 	protected BinaryFullSerializer serde = BinaryFullSerializer.getDefault();
