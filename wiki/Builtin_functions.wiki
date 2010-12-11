@@ -2780,43 +2780,90 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 }}}
 == pickN() ==
 
-  _*Description*_ 
+  _*Description*_ select N elements from an array
+ Usage:
+ [T] pickN( [T], long n );
+ 
+ Select n elements from the input array.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> pickN( [1,2,3], 2 )
+ [1,2]
+
+}}}
 == singleton() ==
 
-  _*Description*_ Convert a pipe to a simple value:
-   If the pipe is empty then null
-   If the pipe has one item then that item
-   If the pipe has more than one item then error
+  _*Description*_ ensure that an array has only one element, otherwise, throw an exception
+ Usage:
+ T singleton( [T] );
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> [1] -> singleton
+ 1
+
+jaql> [1,2] -> singleton // throws an exception
+
+}}}
 == sum() ==
 
-  _*Description*_ 
+  _*Description*_ compute the sum of an array of numbers
+ Usage:
+ number sum( [ number ] );
+ 
+ Note that sum is currently evaluated using a sequential plan.
+ To get parallelism, use group by:
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> read(hdfs("someNumbers")) -> group into sum($);
+
+}}}
 == topN() ==
 
-  _*Description*_ 
+  _*Description*_ compute the top N values from an array
+ Usage:
+ [T] topN( [T], long n, cmp(x) );
+ 
+ Given an input array, a limit n, and a comparator function, compute the top n elements
+ of the input array. This implementation uses a heap to efficiently use memory and lower
+ the network traffic that is needed for aggregation.
 
   _*Parameters*_ (3 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> [1,2,3] -> write(hdfs("test1"));
+
+jaql> read(hdfs("test1")) -> topN( 2, cmp(x) [x desc ] ); // Simplest example
+ [ 1, 2 ]
+
+jaql> read(hdfs("test1")) -> group into topN( $, 2, cmp(x) [ x desc ] ); // Now, with group by (this uses map-reduce)
+
+jaql> [ [ 1, 1 ], [1, 2], [2, 0], [2, 11], [3, 3], [3, 4], [3, 5] ] -> write(hdfs("test2"));
+
+jaql> read(hdfs("test2")) -> group by n = $[0] into { num: n, top: topN($[*][1], 1, cmp(x) [ x desc ]) }; // Complex data
+
+}}}
 == uda() ==
 
   _*Description*_ 
@@ -2937,8 +2984,9 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 =string=
 == convert() ==
 
-  _*Description*_ Converts an input value (string, array of strings or record with string values) to 
- the specified types.
+  _*Description*_ Converts an input value (string, array of strings or record with string values) to the specified types. 
+ Usage:
+ T convert( string s, schema T );
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
@@ -2947,7 +2995,9 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 
 == endsWith() ==
 
-  _*Description*_ 
+  _*Description*_ test whether a string has a given suffix
+ Usage:
+ bool endsWith( string s, string suffix )
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
@@ -2956,16 +3006,26 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 
 == json() ==
 
-  _*Description*_ 
+  _*Description*_ convert a string in json format into jaql's data model
+ Usage:
+ any json( string json );
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> json( "[1,2,3]" );
+ [1,2,3]
+
+}}}
 == serialize() ==
 
-  _*Description*_ 
+  _*Description*_ return a sctring representation of any value
+ Usage:
+ string serialze( value );
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
@@ -3157,7 +3217,7 @@ jaql> substring("I love the game", 2, 20);
 
 == fence() ==
 
-  _*Description*_ evaluate a function in a seperate process
+  _*Description*_ evaluate a function in a separate process
  Usage:
  [T2] fence( [T1],  T2 fn(T1 x) );
 
@@ -3174,29 +3234,64 @@ jaql> substring("I love the game", 2, 20);
 
   _*Examples*_ 
 {{{
-jaql> 
+jaql> [1,2,3] -> write(hdfs("test"));
 
-jaql> 
+jaql> read(hdfs("test")) -> fence( fn(i) i + 1 );
+ [2,3,4]
 
 }}}
 == fencePush() ==
 
-  _*Description*_ 
+  _*Description*_ evaluate a function in a separate process
+ Usage:
+ T2 fencePush( T1 e,  T2 fn(T1 x) );
+
+ The fencePush function applies the function argument to e to produce the output. 
+ In particular, the fencePush function is evaluated in a separate process. 
+ In contrast to fence, where all of the input is consumed, fencePush is designed
+ to be pushed one value at a time (e.g., as in the case of transform). For such
+ cases, the fencePush process will be re-used between calls.
+ A common use of fencePush is to shield the Jaql interpreter from user-defined 
+ functions that exhaust memory, for example.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> [1,2,3] -> write(hdfs("test"));
+
+jaql> read(hdfs("test")) -> transform fencePush( $, fn(i) i + 1 );
+ [2,3,4]
+
+}}}
 == javaudf() ==
 
-  _*Description*_ An expression that constructs a JSON value for a Java UDF
+  _*Description*_ construct a jaql function from a given class
+ Usage:
+ fn javaudf( string className );
+ 
+ The javaudf function constructs a function that knows how to evaluate itself
+ given a className that specifies its body. The function can then be assigned
+ to a variable (like any other value) and invoked (like any other function). 
+ This is the primary means by which users can supply user-defined functions.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> split = javaudf("com.acme.extensions.fn.Split1"); // define the function and assign it to the variable split
+
+jaql> path = '/home/mystuff/stuff';
+
+jaql> split1(path, "/"); // invoke the split function
+
+}}}
 ----
 =net=
 == jaqlGet() ==
