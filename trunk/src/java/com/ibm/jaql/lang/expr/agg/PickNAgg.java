@@ -25,7 +25,14 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription select N elements from an array
+ * Usage:
+ * [T] pickN( [T], long n );
  * 
+ * Select n elements from the input array.
+ * 
+ * @jaqlExample pickN( [1,2,3], 2 )
+ * [1,2]
  */
 public final class PickNAgg extends AlgebraicAggregate // TODO: should this preserve nulls?
 {

@@ -25,6 +25,13 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescption read a value from jaql's current Hadoop JobConf
+ * Usage:
+ * string readConf(string name, string? dflt);
+ * 
+ * Jaql stores the JobConf that is associated with the current
+ * map-reduce job. This function reads name from this JobConf and
+ * returns its value, otherwise it returns the dflt value.
  * 
  */
 public class ReadConfExpr extends Expr

@@ -22,10 +22,14 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 
 /**
- * Convert a pipe to a simple value:
- *   If the pipe is empty then null
- *   If the pipe has one item then that item
- *   If the pipe has more than one item then error
+ * @jaqlDescription ensure that an array has only one element, otherwise, throw an exception
+ * Usage:
+ * T singleton( [T] );
+ * 
+ * @jaqlExample [1] -> singleton
+ * 1
+ * 
+ * @jaqlExample [1,2] -> singleton // throws an exception
  *
  */
 public final class SingletonAgg extends AlgebraicAggregate // TODO: should this preserve nulls?

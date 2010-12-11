@@ -35,7 +35,11 @@ import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
+ * @jaqlDescription return a uniformly distributed double value between 0.0 (inclusive) and 1.0 (exclusive) from a registered RNG
+ * Usage:
+ * double sample01RNG( string key )
  * 
+ * An RNG associated with key must have been previously registered using registerRNG.
  */
 public class Sample01RNGExpr extends Expr
 {

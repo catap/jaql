@@ -16,13 +16,27 @@
 package com.ibm.jaql.lang.expr.core;
 
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
+/**
+ * @jaqlDescription Wrap any expression to limit the amount of time it will run.
+ * Usage:
+ * 
+ * T timeout(T e, long millis);
+ *
+ * Given an arbitrary expression e (of type T), all it to be evaluated 
+ * for now more than millis ms. If e completes in less than millis time,
+ * then its value is returned. Otherwise, an exception is thrown.
+ * 
+ * @jaqlExample sleep = javaudf("com.ibm.jaql.fail.fn.SleepFn"); // simple function where we can control its evaluation time
+ * 
+ * @jaqlExample timeout(sleep(10000), 5000); // this should throw an exception
+ * 
+ * @jaqlExample timeout(sleep(5000), 10000)); // this should complete successfully in 5 seconds
+ */
 public class TimeoutExpr extends Expr {
 
   public static long DEFAULT_TIMEOUT = 10000;

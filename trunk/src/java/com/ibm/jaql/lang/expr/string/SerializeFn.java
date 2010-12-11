@@ -25,7 +25,9 @@ import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.util.FastPrintBuffer;
 
 /**
- * 
+ * @jaqlDescription return a sctring representation of any value
+ * Usage:
+ * string serialze( value );
  */
 public class SerializeFn extends Expr
 {

@@ -24,8 +24,11 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
-/** Converts an input value (string, array of strings or record with string values) to 
- * the specified types. */
+/** 
+ * @jaqlDescription Converts an input value (string, array of strings or record with string values) to the specified types. 
+ * Usage:
+ * T convert( string s, schema T );
+ */
 public class ConvertFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22
