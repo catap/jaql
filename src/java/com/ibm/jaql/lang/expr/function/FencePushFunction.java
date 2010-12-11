@@ -34,6 +34,24 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 
+/**
+ * @jaqlDescription evaluate a function in a separate process
+ * Usage:
+ * T2 fencePush( T1 e,  T2 fn(T1 x) );
+ *
+ * The fencePush function applies the function argument to e to produce the output. 
+ * In particular, the fencePush function is evaluated in a separate process. 
+ * In contrast to fence, where all of the input is consumed, fencePush is designed
+ * to be pushed one value at a time (e.g., as in the case of transform). For such
+ * cases, the fencePush process will be re-used between calls.
+ * A common use of fencePush is to shield the Jaql interpreter from user-defined 
+ * functions that exhaust memory, for example.
+ * 
+ * @jaqlExample [1,2,3] -> write(hdfs("test"));
+ * 
+ * @jaqlExample read(hdfs("test")) -> transform fencePush( $, fn(i) i + 1 );
+ * [2,3,4]
+ */
 public class FencePushFunction extends Expr {
 	
 	public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par22

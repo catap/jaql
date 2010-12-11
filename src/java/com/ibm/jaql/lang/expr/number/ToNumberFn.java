@@ -30,7 +30,15 @@ import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription convert a value to number
+ * Usage:
+ * number toNumber( e );
  * 
+ * Currently, this function converts booleans and strings.
+ * If a number is given as input, it returned verbatim.
+ * 
+ * @jaqlExamlpe toNumber( "3" );
+ * 3
  */
 public class ToNumberFn extends Expr
 {

@@ -23,7 +23,11 @@ import com.ibm.jaql.lang.expr.function.Function;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
+ * @jaqlDescription register a random number generator
+ * Usage:
+ * key registerRNG( key, long seed );
  * 
+ * Register an RNG with a given name, key, and a seed.
  */
 public class RegisterRNGExpr extends Expr
 {

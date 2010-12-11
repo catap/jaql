@@ -10,6 +10,15 @@ import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
+
+/**
+ * @jaqlDescription convert a string in json format into jaql's data model
+ * Usage:
+ * any json( string json );
+ *
+ * @jaqlExample json( "[1,2,3]" );
+ * [1,2,3]
+ */
 public class JsonFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11

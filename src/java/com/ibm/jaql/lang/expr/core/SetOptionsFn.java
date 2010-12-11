@@ -8,7 +8,23 @@ import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
-/** Set system options. */
+
+/**
+ * @jaqlDescription Set Jaql's options as a record
+ * Usage:
+ * 
+ * bool setOptions( {*: any, *} );
+ * 
+ * Jaql maintains globally accessible options, e.g., name-value pairs.
+ * These options are represented as a record; the setOptions function
+ * modified these options. Note that if you set the field "conf" with
+ * a record, those options are overlaid onto Hadoop's JobConf when a 
+ * MapReduce job is run. Using getOptions and setOptions, one can 
+ * override settings in the default JobConf.
+ * 
+ * @jaqlExample setOptions( { conf: { "io.sort.factor": 20  }} );
+ *
+ */
 public class SetOptionsFn extends Expr
 {
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11

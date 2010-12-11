@@ -34,7 +34,11 @@ import com.ibm.jaql.lang.registry.RNGStore;
 import com.ibm.jaql.lang.util.JaqlUtil;
 
 /**
+ * @jaqlDescription return a uniformly distributed long value from a registered RNG
+ * Usage:
+ * long sampleRNG( string key )
  * 
+ * An RNG associated with key must have been previously registered using registerRNG.
  */
 public class SampleRNGExpr extends Expr
 {

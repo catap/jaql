@@ -27,7 +27,12 @@ import com.ibm.jaql.lang.expr.core.VarExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription remove nulls from a given array
+ * Usage:
+ * [T] denull([T]);
  * 
+ * @jaqlExample denull( [1, null, 3] );
+ * [ 1, 3 ]
  */
 public class DenullFn extends MacroExpr
 {

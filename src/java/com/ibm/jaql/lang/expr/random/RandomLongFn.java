@@ -29,7 +29,16 @@ import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription return a uniformly distributed long value 
+ * Usage:
+ * long randomLong( long? seed )
  * 
+ * The optional seed parameter is used to seed the internally used random number generator.
+ * 
+ * Note: randomLong will produce a pseudo-random sequence of longs when called in sequence.
+ * If its called by multiple processes, in parallel (as done in MapReduce), then there are no
+ * guarantees (and in fact, if all sequential instances use the same seed, you'll get common
+ * prefixes). 
  */
 public class RandomLongFn extends Expr
 {
