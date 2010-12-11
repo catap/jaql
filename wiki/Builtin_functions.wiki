@@ -233,13 +233,33 @@ jaql> read(hdfs("test"))
 
 == getOptions() ==
 
-  _*Description*_ Return the system options record.
+  _*Description*_ Return Jaql's options as a record
+ Usage:
+ 
+ { *: any, *} getOptions();
+ 
+ Jaql maintains globally accessible options, e.g., name-value pairs.
+ These options are represented as a record; the getOptions function
+ returns these options. Note that if you set the field "conf" with
+ a record, those options are overlaid onto Hadoop's JobConf when a 
+ MapReduce job is run. Using getOptions and setOptions, one can 
+ override settings in the default JobConf.
 
   _*Parameters*_ (0 inputs)
  Input Types: {{{}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> getOptions();
+ {
+   "conf": {
+     "io.sort.factor": 20
+   }
+ }
+
+}}}
 == groupCombine() ==
 
   _*Description*_ groupCombine(input $X, initialFn, partialFn, finalFn) => $Y
@@ -294,8 +314,18 @@ jaql> read(hdfs("test"))
            "var": string,
            "schema": schematype,
            "isTable": boolean
-         } 
+         } * 
        ]}}}
+
+== mergeContainers() ==
+
+  _*Description*_ DEPRECATED: is this used anywhere?
+ Merge a set of arrays into one array in order, or a set of records into one record.  Nulls are ignored.
+
+  _*Parameters*_ (1 - 2 inputs)
+ Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)...}}}
+
+ _*Output*_ {{{schema any}}}
 
 == perf() ==
 
@@ -386,13 +416,28 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == setOptions() ==
 
-  _*Description*_ Set system options.
+  _*Description*_ Set Jaql's options as a record
+ Usage:
+ 
+ bool setOptions( {*: any, *} );
+ 
+ Jaql maintains globally accessible options, e.g., name-value pairs.
+ These options are represented as a record; the setOptions function
+ modified these options. Note that if you set the field "conf" with
+ a record, those options are overlaid onto Hadoop's JobConf when a 
+ MapReduce job is run. Using getOptions and setOptions, one can 
+ override settings in the default JobConf.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> setOptions( { conf: { "io.sort.factor": 20  }} );
+
+}}}
 == skipUntil() ==
 
   _*Description*_ Skip the first elements of input (in order) until the predicate is true,
@@ -512,13 +557,29 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == timeout() ==
 
-  _*Description*_ 
+  _*Description*_ Wrap any expression to limit the amount of time it will run.
+ Usage:
+ 
+ T timeout(T e, long millis);
+
+ Given an arbitrary expression e (of type T), all it to be evaluated 
+ for now more than millis ms. If e completes in less than millis time,
+ then its value is returned. Otherwise, an exception is thrown.
 
   _*Parameters*_ (1 - 2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> sleep = javaudf("com.ibm.jaql.fail.fn.SleepFn"); // simple function where we can control its evaluation time
+
+jaql> timeout(sleep(10000), 5000); // this should throw an exception
+
+jaql> timeout(sleep(5000), 10000)); // this should complete successfully in 5 seconds
+
+}}}
 == until() ==
 
   _*Description*_ Return the first elements of input (in order) until the predicate is true.
@@ -573,8 +634,11 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == loadJobConf() ==
 
-  _*Description*_ Usage: { name: string } loadJobConf( string? filename )
- if filename to conf is not specified, then the default JobConf is loaded
+  _*Description*_ load a Hadoop JobConf into a record
+ Usage: 
+ { *: string, * } loadJobConf( string? filename )
+ 
+ If filename to conf is not specified, then the default JobConf is loaded.
 
   _*Parameters*_ (0 - 1 inputs)
  Input Types: {{{( arg0 = null: schema any)}}}
@@ -601,17 +665,31 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == nativeMR() ==
 
-  _*Description*_ Usage: { status: boolean } nativeMR( { job conf settings } conf , { apiVersion: "0.0" | "1.0" } options );
+  _*Description*_ launch a natively specified MapReduce job
+ Usage: 
+ { status: boolean } nativeMR( { job conf } conf , { apiVersion: "0.0" | "1.0", useSessionJar: boolean } options );
  
  Launch a stand-alone map-reduce job that is exclusively described by job conf settings.
+ The conf can be obtained using loadJobConf or it can be specified using a record literal
+ that lists the needed name/value pairs for the job. If apiVersion is set to "0.0", then
+ the old Hadoop MapReduce API is used. Otherwise, the new API is used.
  
- Example: { status: true } nativeMR( loadJobConf( "myJob.conf" ) );
+ The useSessionJar is convenient for those native MapReduce jobs that use jaql libraries.
+ Since the jaql client already packages up jars when submitting jobs to Hadoop's MapReduce,
+ the useSessionJar is used to specify that the job's jar should use the client's currently
+ packaged jar.
 
   _*Parameters*_ (1 - 2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1 = null: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> nativeMR( loadJobConf( "myJob.conf" ) );
+ { status: true }
+
+}}}
 == readConf() ==
 
   _*Description*_ 
@@ -964,13 +1042,22 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == distinct() ==
 
-  _*Description*_ 
+  _*Description*_ List distinct values from an array, remove duplicates.
+ 
+ Usage:
+ [any] distinct( [any] )
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> distinct( [1, 1d, 1m, 1.5d, 1.5m, 1.50d, 1.50m ] ) -> sort by [$];
+ [ 1,1.5 ]
+
+}}}
 == enumerate() ==
 
   _*Description*_ 
@@ -982,15 +1069,32 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == exists() ==
 
-  _*Description*_ exists(null) = null exists([]) = false exists([...]) = true, when the array
- has at least one element (even a null) exists(...) = true, when the argument
- is not an array or a null
+  _*Description*_ Usage : bool exists(any);
+ If the argument is null, return null ,
+ If the argument is a empty array , return false ,
+ If the argument is an array with at least one element, return true ,
+ If the argument is not an array or a null, return true.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> exists(null);
+ null
+
+jaql> exists([]);
+ false
+
+jaql> exists([...]);
+ true //when the array has at least one element (even a null)
+
+jaql> exists(...);
+ true //when the argument is not an array or a null
+
+}}}
 == lag1() ==
 
   _*Description*_ lag1(arr) 
@@ -1041,22 +1145,46 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == pair() ==
 
-  _*Description*_ pair(A,B) == [A,B]
+  _*Description*_ Combines two values to an array. 
+ 
+ Usage:
+ array pair( any , any ); 
+ 
+ The arguments can be any type of date, each of them will be one element of the return array.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> pair("element1", "element2");
+ [ "element1" , "element2" ]
+
+}}}
 == pairwise() ==
 
-  _*Description*_ 
+  _*Description*_ Combine two arrays (A,B) into one array C, assume A = [ a1,a2,a3 ... ] , B = [ b1,b2,b3 ...] , pairwise combines every
+ elements in the same position in each array, produces C = [ [a1,b1] , [a2,b2] , [a3,c3] ... ].
+ 
+ Usage:
+ array pairwise( array A , array B );
 
   _*Parameters*_ (2 - 3 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)...}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> pairwise([1,2],[3,4]);
+ [
+  [1,3],
+  [2,4]
+ ]
+
+}}}
 == powerset() ==
 
   _*Description*_ powerset<T>([T...]? arr) returns [ [T...]... ] 
@@ -1115,31 +1243,61 @@ jaql> read(hdfs("test")) -> filter $[1] == 0 -> transform $.badTypeAssumption;
 
 == removeElement() ==
 
-  _*Description*_ 
+  _*Description*_ Remove element from array in the given position.
+ 
+ Usage:
+ array removeElement( array arr , int position);
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> removeElement([1,2,3],0);
+ [ 2,3 ]
+
+}}}
 == replaceElement() ==
 
-  _*Description*_ 
+  _*Description*_ Replace an element of the target array with a given value.
+ 
+ Usage :
+ array replaceElement( array arr , int  position, value v );
 
   _*Parameters*_ (3 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> replaceElement([1,2,3],2,100);
+ [ 1,2,100 ]
+
+}}}
 == reverse() ==
 
-  _*Description*_ 
+  _*Description*_ Reverse an array
+ 
+ Usage:
+ array reverse(array arr)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> range(1,10) -> reverse();
+  [ 10,9,8,7,6,5,4,3,2,1 ]
+
+jaql> [[0],[1,2],[3,4,5],[6,7,8,9]] -> transform reverse($)->reverse();
+ [ [9,8,7,6] , [5,4,3] , [2,1], [0] ] // reverse sequence
+
+}}}
 == rowwise() ==
 
   _*Description*_ 
@@ -1742,13 +1900,21 @@ jaql> dateParts(date('2000-01-01T12:00:00Z'));
 =nil=
 == denull() ==
 
-  _*Description*_ 
+  _*Description*_ remove nulls from a given array
+ Usage:
+ [T] denull([T]);
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> denull( [1, null, 3] );
+ [ 1, 3 ]
+
+}}}
 == emptyOnNull() ==
 
   _*Description*_ emptyOnNull(e) == firstNonNull(e, [])
@@ -1859,31 +2025,64 @@ jaql> abs(-3.14)
 }}}
 == decfloat() ==
 
-  _*Description*_ 
+  _*Description*_ Define a decfloat value
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> decfloat(5m);
+ 5m
+
+jaql> 5m instanceof schema decfloat(value=5m);
+ true
+
+}}}
 == div() ==
 
-  _*Description*_ 
+  _*Description*_ div(A,B) divides A by B, return a numric value.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> div(4,2);
+ 2
+
+}}}
 == double() ==
 
-  _*Description*_ 
+  _*Description*_ Get the double value of a numric value.
+ 
+ Usage:
+ double double(number A);
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> 22d instanceof schema double;
+ true
+
+jaql> double(5);
+ 5.0
+
+jaql> double(5m);
+ 5.0
+
+jaql> double(5d);
+ 5.0
+
+}}}
 == exp() ==
 
   _*Description*_ raise base of natural log (e) to arg: e^a pow(x,y) = exp( y * ln(x) )
@@ -1976,7 +2175,12 @@ jaql> mod(3,2)
 }}}
 == toNumber() ==
 
-  _*Description*_ 
+  _*Description*_ convert a value to number
+ Usage:
+ number toNumber( e );
+ 
+ Currently, this function converts booleans and strings.
+ If a number is given as input, it returned verbatim.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
@@ -2016,7 +2220,16 @@ jaql> mod(3,2)
 =random=
 == randomDouble() ==
 
-  _*Description*_ 
+  _*Description*_ return a uniformly distributed double value between 0.0 (inclusive) and 1.0 (exclusive)
+ Usage:
+ double randomDouble( long? seed )
+ 
+ The optional seed parameter is used to seed the internally used random number generator.
+ 
+ Note: randomDouble will produce a pseudo-random sequence of doubles when called in sequence.
+ If its called by multiple processes, in parallel (as done in MapReduce), then there are no
+ guarantees (and in fact, if all sequential instances use the same seed, you'll get common
+ prefixes).
 
   _*Parameters*_ (0 - 1 inputs)
  Input Types: {{{( arg0 = null: schema any)}}}
@@ -2025,7 +2238,16 @@ jaql> mod(3,2)
 
 == randomLong() ==
 
-  _*Description*_ 
+  _*Description*_ return a uniformly distributed long value 
+ Usage:
+ long randomLong( long? seed )
+ 
+ The optional seed parameter is used to seed the internally used random number generator.
+ 
+ Note: randomLong will produce a pseudo-random sequence of longs when called in sequence.
+ If its called by multiple processes, in parallel (as done in MapReduce), then there are no
+ guarantees (and in fact, if all sequential instances use the same seed, you'll get common
+ prefixes).
 
   _*Parameters*_ (0 - 1 inputs)
  Input Types: {{{( arg0 = null: schema any)}}}
@@ -2034,7 +2256,11 @@ jaql> mod(3,2)
 
 == registerRNG() ==
 
-  _*Description*_ 
+  _*Description*_ register a random number generator
+ Usage:
+ key registerRNG( key, long seed );
+ 
+ Register an RNG with a given name, key, and a seed.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
@@ -2043,7 +2269,11 @@ jaql> mod(3,2)
 
 == sample01RNG() ==
 
-  _*Description*_ 
+  _*Description*_ return a uniformly distributed double value between 0.0 (inclusive) and 1.0 (exclusive) from a registered RNG
+ Usage:
+ double sample01RNG( string key )
+ 
+ An RNG associated with key must have been previously registered using registerRNG.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
@@ -2052,7 +2282,11 @@ jaql> mod(3,2)
 
 == sampleRNG() ==
 
-  _*Description*_ 
+  _*Description*_ return a uniformly distributed long value from a registered RNG
+ Usage:
+ long sampleRNG( string key )
+ 
+ An RNG associated with key must have been previously registered using registerRNG.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
@@ -2062,6 +2296,8 @@ jaql> mod(3,2)
 == uuid() ==
 
   _*Description*_ Generate a type 4 UUID (random method)
+ Usage:
+ binary uuid()
 
   _*Parameters*_ (0 inputs)
  Input Types: {{{}}}
@@ -2072,67 +2308,149 @@ jaql> mod(3,2)
 =record=
 == arity() ==
 
-  _*Description*_ 
+  _*Description*_ Return the size of a record.
+ 
+ Usage :
+ long arity(record r);
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> arity({a:1,b:2,c:3});
+ 3
+
+}}}
 == fields() ==
 
-  _*Description*_ 
+  _*Description*_ Convert each key-value pair of a record to a [key,value] array.
+ 
+ Usage:
+ array fields(record r)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> fields({a:1, b:2, c:3});
+ [ ["a",1] , ["b",2] , ["c",3] ]
+
+jaql> fields({a:1, b:2, c:3}) -> transform $[0];
+ [ "a","b","c" ] //this example indicates a way to extract all the key values in a record.
+
+}}}
 == names() ==
 
-  _*Description*_ names($rec) == for $k,$v in $rec return $k == fields($rec)[*][0];
+  _*Description*_ Extract all the keys in a record and return as an array.
+ names($rec) == for $k,$v in $rec return $k == fields($rec)[*][0];
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> names({a:1, b:2, c:3});
+ [ "a","b","c" ]
+
+}}}
 == record() ==
 
-  _*Description*_ 
+  _*Description*_ Convert a array to a single record. 
+ 
+ Usage:
+ record record(array arr);
+ 
+ the argument arr will be like [record1,record2,record3...], it has restricted format since a record can not contain any 
+ duplicate keys, so this function asserts record1, record2 ... contains no same keys.
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> record([{A:11},{B:22}]);
+ {
+  "A": 11,
+  "B": 22
+ }
+
+}}}
 == remap() ==
 
-  _*Description*_ 
+  _*Description*_ Join two records.
+ 
+ Usage:
+ record remap(record old, record new)
+ 
+ remap joins two records, old and new together, produce a new record and return, remove duplicate key-values of old record.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> remap({a:1,b:2},{a:3,d:4});
+ {
+   "a" : 3, 
+   "b" : 2,
+   "d" : 4
+ }
+
+}}}
 == removeFields() ==
 
-  _*Description*_ 
+  _*Description*_ Remove fields of a record by keys.
+ 
+ Usage:
+ record removeFields(record target, array names);
+ 
+ names is an array with one or more string key names, removeFields will remove fields in target record if its key appears in names.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> removeFields({a:1,b:2},["a"]);
+ {
+  "b":2
+ }
+
+}}}
 == renameFields() ==
 
-  _*Description*_ 
+  _*Description*_ Replace the key of the target record with newName only if whose key equals with oldName.
+ Usage:
+ record renameFields(record target, record {oldName : newName , ...} );
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> renameFields({a:1,b:2},{"a":"AAA" , "b":'BBB'});
+ {
+  "AAA": 1,
+  "BBB": 2
+ }
+
+}}}
 == replaceFields() ==
 
   _*Description*_ Replace fields in oldRec with fields in newRec only if the field name exists in oldRec.
@@ -2143,15 +2461,27 @@ jaql> mod(3,2)
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> 
+
+}}}
 == values() ==
 
-  _*Description*_ values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
+  _*Description*_ Extract all the values in a record and return as an array.
+  values($rec) == for $k,$v in $rec return $v == fields($rec)[*][1];
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> values({a:1, b:2, c:3});
+  [ 1,2,3 ]
+
+}}}
 ----
 =del=
 == jsonToDel() ==
@@ -2708,22 +3038,41 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 
 == strReplace() ==
 
-  _*Description*_ Usage: [string] strReplace(string val, regex pattern, string replacement)
+  _*Description*_ Replace a substring with the replacement only if it matches the given regular expression (regex).
+ Usage: 
+ [string] strReplace(string val, regex pattern, string replacement)
 
   _*Parameters*_ (3 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> reg=regex("[a-z]+"); // define a regular expression, match at least one character.
+ val = "<abc>,<bcd>,<cde>"; // deine a string 
+ strReplace(str,reg,"a"); // replace all the match substrings with "a"
+ 
+ "<a>,<a>,<a>"
+
+}}}
 == strSplit() ==
 
-  _*Description*_ Usage: [string] strSplit(string val, string delimitter)
+  _*Description*_ Split a string with given delimiter.
+ Usage:
+ [string] strSplit(string val, string delimiter);
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> strSplit("a,b,c,d",",");
+ [ "a","b","c","d" ]
+
+}}}
 == strSplitN() ==
 
   _*Description*_ strSplitN(string src, string sep, int n) ==> [string1, string2, ..., stringn]
@@ -2737,30 +3086,64 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 == strToLowerCase() ==
 
   _*Description*_ Convert a string to lower case.
+ 
+ Usage:
+ string strToLowerCase(string val)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> strToLowerCase("aBcDEFgHiJ");
+ "abcdefghij"
+
+}}}
 == strToUpperCase() ==
 
   _*Description*_ Convert a string to upper case.
+ 
+ Usage:
+ string strToUpperCase(string val)
 
   _*Parameters*_ (1 inputs)
  Input Types: {{{( arg0, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> strToUpperCase("abcDEFgHijk");
+ "ABCDEFGHIJK"
+
+}}}
 == substring() ==
 
-  _*Description*_ 
+  _*Description*_ Get a certain substring of a string, start from beginIdx , end to endIdx. If endIdx is not given or larger 
+ than the lenght of the string, return the substring from beginIdx to the end of the string.
+ 
+ Usage:
+ string substring(string val, int beginIdx, int endIndx ?);
 
   _*Parameters*_ (2 - 3 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any),( arg2 = null: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> substring("I love the game", 2, 7);
+ "love"
+
+jaql> substring("I love the game", 2);
+ "love the game"
+
+jaql> substring("I love the game", 2, 20);
+ "love the game"
+
+}}}
 ----
 =function=
 == addClassPath() ==
@@ -2774,13 +3157,28 @@ jaql> read(hdfs("someFileOfPairs")) -> group by g = $[0] into { first: g, minSec
 
 == fence() ==
 
-  _*Description*_ 
+  _*Description*_ evaluate a function in a seperate process
+ Usage:
+ [T2] fence( [T1],  T2 fn(T1 x) );
+
+ The fence function applies the function argument to each element of
+ the input array to produce the output array. In particular, the fence
+ function is evaluated in a separate process. A common use of fence is
+ to shield the Jaql interpreter from user-defined functions that exhaust
+ memory, for example.
 
   _*Parameters*_ (2 inputs)
  Input Types: {{{( arg0, required: schema any),( arg1, required: schema any)}}}
 
  _*Output*_ {{{schema any}}}
 
+  _*Examples*_ 
+{{{
+jaql> 
+
+jaql> 
+
+}}}
 == fencePush() ==
 
   _*Description*_ 
