@@ -1,0 +1,15 @@
+Jaql's types and schema language.
+
+= Data Model =
+
+Jaql's data model is based on !JavaScript Object Notation or [http://www.json.org/ JSON].
+When using literal values in the language (e.g., 42 or "a string" as used in the expressions x = 42 and y == "a string"), the values are specified as JSON. In addition, Jaql has extended JSON with several commonly needed data types. Thus, Jaql accepts valid JSON data but it may not produce valid JSON when non-JSON types are used. 
+
+Jaql also includes a powerful schema language to describe data. It includes ideas from [http://json-schema.org/ JSON Schema], [http://www.w3.org/XML/Schema XML schema], and [http://www.relaxng.org/ RELAX NG], but tailored to Jaql's syntax. Jaql schema is used as a constraint on data and to improve efficiency where applicable.
+
+Jaql's [#Types types] are first described, followed by its [Schema_Language schema language].
+
+
+= Types =
+
+= Schema Language =
