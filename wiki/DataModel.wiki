@@ -49,7 +49,7 @@ Examples:
   { a: [1,2,3], b: "val" }
 }}}
 
-=Atomic Types
+=Atomic Types=
 ==null==
 Just like SQL as well as JSON, jaql's data model includes {{{null}}}.
 
