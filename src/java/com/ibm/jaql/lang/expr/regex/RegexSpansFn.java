@@ -27,6 +27,18 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Match a subset of the input, return a [begin,end] pair that indexes into the 
+ * original string, where begin indicates the start index of the previous match, as well as end 
+ * indicates the offset after the last character matched.
+ * 
+ * Usage:
+ * [string] regex_extract(regex reg, string text);
+ * 
+ * @jaqlExample regex_spans(regex("bcd"),"abbabcd");
+ * [ span(4,6) ]
+ * 
+ * @jaqlExample regex_spans(regex("[a-z]+"),"abbabcd");
+ * [ span(0,6) ]
  * 
  */
 public class RegexSpansFn extends IterExpr

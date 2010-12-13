@@ -29,6 +29,15 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 
 /**
+ * @jaqlDescription Take an input an array of any type and returns an array of pairs, one pair per input value. 
+ * Each pair will list the ordinal value of the array value (e.g., its index in the array), along with the value 
+ * of the array.
+ * 
+ * Usage:
+ * [ [long, T],* ] enumerate( [ T, * ] )
+ * 
+ * @jaqlExample enumerate( ["a", "b", "c"]);
+ * [ [ 0, "a"] , [1, "b"], [2, "c"] ]
  * 
  */
 public final class EnumerateExpr extends IterExpr
