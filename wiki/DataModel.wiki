@@ -11,9 +11,8 @@ Jaql's [#Types types] are first described, followed by its [#Schema_Language sch
 
 
 = Types =
-<wiki:toc max_depth="2" />
-=Complex Types=
-== array ==
+==Complex Types==
+=== array ===
 An array is a list of values. It corresponds to JSON's array type.
 
 Examples:
@@ -31,7 +30,7 @@ Examples:
   [ 1, ["a", "b"], [["a", "b"]], ["a", ["b", ["c"]]], {name: "value"}, 2 ]
 }}}
 
-== record ==
+=== record ===
 A record is a mapping from names to values. It corresponds to JSON's object type.
 
 Examples:
@@ -49,8 +48,8 @@ Examples:
   { a: [1,2,3], b: "val" }
 }}}
 
-=Atomic Types=
-==null==
+== Atomic Types ==
+=== null ===
 Just like SQL as well as JSON, jaql's data model includes {{{null}}}.
 
 Examples:
@@ -62,7 +61,7 @@ Examples:
   { a: null, b: 1 }
 }}}
 
-==boolean==
+== boolean ==
 The literal values for the boolean type are {{{true, false}}}. This is the same
 as in JSON.
 
@@ -77,7 +76,7 @@ Examples:
   // an array with two boolean values included
   [ 1, true, 3, false, 4 ]
 
-==string==
+== string ==
 Strings are specified much the same way as in JSON. The only exception is that jaql's
 parser permits single quotes, in addition to the double quotes that are specified by 
 the JSON standard.
@@ -92,12 +91,12 @@ Examples:
 
   "some string with an embedded \\u1234 unicode char"
 }}}
-==long==
-==double==
-==decfloat==
-==binary==
-==date==
-==schematype==
-==function==
+== long ==
+== double ==
+== decfloat ==
+== binary ==
+== date ==
+== schematype ==
+== function ==
 
 = Schema Language =
