@@ -11,6 +11,10 @@ Jaql's [#Types types] are first described, followed by its [#Schema_Language sch
 
 
 = Types =
+  * [#Complex_Types Complex Types]
+    * [#record record]
+    * [#array array]
+
 ==Complex Types==
 === array ===
 An array is a list of values. It corresponds to JSON's array type.
