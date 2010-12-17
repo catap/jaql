@@ -55,7 +55,7 @@ public class NullOnEmptyFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator iter = exprs[0].iter(context);
     boolean hasNext = iter.moveNext();
@@ -67,7 +67,7 @@ public class NullOnEmptyFn extends IterExpr
     return new JsonIterator() {    
       boolean firstMove = true;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (firstMove) {
           firstMove = false;

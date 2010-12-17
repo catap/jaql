@@ -87,7 +87,7 @@ public class PrevElementFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final BufferedJsonRecord rec = new BufferedJsonRecord(0);
     
@@ -98,7 +98,7 @@ public class PrevElementFn extends IterExpr
       final JsonIterator iter = exprs[0].iter(context);
       int numFields = 1;
       
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( numFields > 1 )
         {

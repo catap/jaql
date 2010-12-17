@@ -60,9 +60,11 @@ public class AsArrayElimination extends Rewrite
     Schema schema = input.getSchema();
 
     // asArray(null) -> []
-    if (schema.is(NULL).always())
+	if (schema.is(NULL).always())
     {
-      expr.replaceInParent(new ArrayExpr());
+	  ArrayExpr replaceBy = new ArrayExpr();
+      expr.replaceInParent(replaceBy);
+      setOrigin(replaceBy,expr);
       return true;
     }
 
@@ -70,6 +72,7 @@ public class AsArrayElimination extends Rewrite
     if (schema.is(ARRAY).always())
     {
       expr.replaceInParent(input);
+      setOrigin(input,expr);
       return true;
     }
     
@@ -88,6 +91,7 @@ public class AsArrayElimination extends Rewrite
               && expr.parent() == ((GroupByExpr)gp).inBinding() ) )
       {
         expr.replaceInParent(input);
+        setOrigin(input,expr);
         return true;
       }
     }
@@ -96,12 +100,16 @@ public class AsArrayElimination extends Rewrite
     if( expr.parent() instanceof ForExpr )
     {
       expr.replaceInParent(input);
+      setOrigin(input,expr);
       return true;
     }
 
     if (schema.is(ARRAY,NULL).always() )
     {
-      expr.replaceInParent(new EmptyOnNullFn(input));
+      EmptyOnNullFn replaceBy = new EmptyOnNullFn(input);
+	  expr.replaceInParent(replaceBy);
+	  setOrigin(replaceBy,expr);
+      
       return true;
     }
 
@@ -110,27 +118,35 @@ public class AsArrayElimination extends Rewrite
     {
       IfExpr ifExpr = (IfExpr) input;
       expr.replaceInParent(ifExpr); // remove asArray
-
+      setOrigin(ifExpr,expr);
       Expr e = ifExpr.trueExpr();
       schema = e.getSchema();
       if (schema.is(NULL).always())
       {
-        e.replaceInParent(new ArrayExpr());
+    	ArrayExpr replaceBy = new ArrayExpr();
+        e.replaceInParent(replaceBy);
+        setOrigin(replaceBy,e);
       }
       else if (!(schema.is(ARRAY).always()))
       {
-        ifExpr.setChild(1, new AsArrayFn(e));
+    	Expr af=new AsArrayFn(e);
+        ifExpr.setChild(1, af);
+        setOrigin(af,e);
       }
 
       e = ifExpr.falseExpr();
       schema = e.getSchema();
       if (schema.is(NULL).always())
       {
-        e.replaceInParent(new ArrayExpr());
+      	ArrayExpr replaceBy = new ArrayExpr();
+        e.replaceInParent(replaceBy);
+        setOrigin(replaceBy,e);
       }
       else if (!(schema.is(ARRAY).always()))
       {
-        ifExpr.setChild(2, new AsArrayFn(e));
+    	Expr af=new AsArrayFn(e);
+        ifExpr.setChild(2, af);
+        setOrigin(af,e);
       }
 
       return true;

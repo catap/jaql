@@ -50,7 +50,7 @@ public class SplitIterExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     // evaluate this expression's input.
     JsonValue sValue = exprs[0].eval(context);
@@ -76,7 +76,7 @@ public class SplitIterExpr extends IterExpr
       int  n    = splits.length;
 
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (i < n)
         {

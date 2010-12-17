@@ -36,7 +36,7 @@ public class SingleJsonValueIterator extends JsonIterator
    * 
    * @see com.ibm.jaql.json.util.Iter#next()
    */
-  public boolean moveNext()
+  protected boolean moveNextRaw()
   {
     if (moved) 
     {

@@ -73,7 +73,7 @@ public class StrReplaceFn extends Expr
   }
   
 
-  public JsonString eval(final Context context) throws Exception
+  protected JsonString evalRaw(final Context context) throws Exception
   {
     JsonString jstr = (JsonString)exprs[0].eval(context);
     if( jstr == null )

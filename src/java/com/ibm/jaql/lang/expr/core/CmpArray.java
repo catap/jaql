@@ -54,7 +54,7 @@ public class CmpArray extends CmpExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print(kw("cmp") + " [");
@@ -62,7 +62,7 @@ public class CmpArray extends CmpExpr
     for(Expr e: exprs)
     {
       exprText.print(sep);      
-      e.decompile(exprText, capturedVars);
+      e.decompile(exprText, capturedVars,emitLocation);
       sep = ", ";
     }
     exprText.print(" ]");
@@ -75,7 +75,7 @@ public class CmpArray extends CmpExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     if( array == null )
     {

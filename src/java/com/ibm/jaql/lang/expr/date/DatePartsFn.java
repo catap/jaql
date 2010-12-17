@@ -120,7 +120,7 @@ public class DatePartsFn extends Expr
   }
 
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     JsonDate d = (JsonDate)exprs[0].eval(context);
     if( d == null )

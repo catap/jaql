@@ -193,7 +193,7 @@ public class JavaUdaCallFn extends AlgebraicAggregate
    * If you override this function, you need to override processInitial as well.
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     init(context);
     accumulate(exprs[0].iter(context));

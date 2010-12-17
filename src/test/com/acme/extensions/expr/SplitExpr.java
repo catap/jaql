@@ -49,7 +49,7 @@ public class SplitExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     // evaluate this expression's input.
     JsonValue sValue = exprs[0].eval(context);

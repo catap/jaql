@@ -70,7 +70,7 @@ public class ReverseFn extends MacroExpr
    * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
    */
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     // exprs[0] -> enumerate() -> sort by ($[0] desc) -> emit $[1] 
     Expr e = new EnumerateExpr(exprs[0]);

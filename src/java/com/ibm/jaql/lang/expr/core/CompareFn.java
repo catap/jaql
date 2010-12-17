@@ -59,7 +59,7 @@ public class CompareFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     JsonValue value1 = exprs[0].eval(context);
     JsonValue value2 = exprs[1].eval(context);

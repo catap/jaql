@@ -86,7 +86,7 @@ public class ArgumentExpr extends Expr
   }
   
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     // construct the function argument
    for (int i=0; i<exprs.length; i++)

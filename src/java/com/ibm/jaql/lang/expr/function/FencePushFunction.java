@@ -89,7 +89,7 @@ public class FencePushFunction extends Expr {
 	}
 	
 	@Override
-	public JsonValue eval(Context context) throws Exception {
+	protected JsonValue evalRaw(Context context) throws Exception {
 		// the data
 		final JsonValue val = exprs[0].eval(context);
 	    if( val == null )

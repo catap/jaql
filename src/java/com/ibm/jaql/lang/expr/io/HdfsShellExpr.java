@@ -47,7 +47,7 @@ public class HdfsShellExpr extends Expr
 
 
   @Override
-  public JsonLong eval(Context context) throws Exception
+  protected JsonLong evalRaw(Context context) throws Exception
   {
     JsonValue cmd = exprs[0].eval(context);
     String cmdStr = ((JsonString) cmd).toString();

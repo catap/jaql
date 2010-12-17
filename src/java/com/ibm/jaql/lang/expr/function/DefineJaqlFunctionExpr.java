@@ -243,7 +243,7 @@ public final class DefineJaqlFunctionExpr extends Expr
   }
   
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     JaqlFunction f = getFunction();    
@@ -263,7 +263,7 @@ public final class DefineJaqlFunctionExpr extends Expr
     // clone parameters and body, using fresh variables for the parameters 
     VarParameter[] newPars = cloneParameters(varMap);
     Expr newBody = body().clone(varMap);
-    return new DefineJaqlFunctionExpr(new VarParameters(newPars), schema, newBody);
+    return cloneOrigin(new DefineJaqlFunctionExpr(new VarParameters(newPars), schema, newBody));
   }
   
   /** Clone the parameters and their default values. */
@@ -291,7 +291,7 @@ public final class DefineJaqlFunctionExpr extends Expr
   
   
   @Override
-  public JaqlFunction eval(Context context) throws Exception
+  protected JaqlFunction evalRaw(Context context) throws Exception
   {
     annotate();
     JaqlFunction f = getFunction();

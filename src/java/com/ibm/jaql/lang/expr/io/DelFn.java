@@ -74,7 +74,7 @@ public class DelFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     BufferedJsonRecord descriptor = new BufferedJsonRecord();
     descriptor.add(Adapter.TYPE_NAME, getType());

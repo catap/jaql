@@ -18,7 +18,7 @@ public class TestFn extends Expr {
 	}
 
 	@Override
-	public JsonValue eval(Context context) throws Exception {
+	protected JsonValue evalRaw(Context context) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -52,7 +52,7 @@ public class TestFn extends Expr {
 //	}
 //
 //	@Override
-//	public JsonValue eval(Context context) throws Exception {
+//	protected JsonValue evalRaw(Context context) throws Exception {
 //		String name = ((JsonString)exprs[0].eval(context)).toString();
 //		Namespace namespace = Namespace.get(name);
 //		Module module = namespace.getModule();

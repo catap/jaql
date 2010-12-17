@@ -143,7 +143,7 @@ public class JIndexReader implements Closeable
     return new JsonIterator(tuple)
     {
       @Override
-      public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
       {
         try
         {

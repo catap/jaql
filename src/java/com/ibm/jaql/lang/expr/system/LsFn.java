@@ -98,7 +98,7 @@ public class LsFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonString glob = (JsonString)exprs[0].eval(context);
     // Configuration conf = context.getConfiguration();
@@ -136,7 +136,7 @@ public class LsFn extends IterExpr
       int i = 0;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( i >= stats.length )
         {

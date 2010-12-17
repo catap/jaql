@@ -132,7 +132,7 @@ public class HadoopTempExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.Expr#eval(com.ibm.jaql.lang.Context)
    */
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     String filename = "jaqltemp_" + System.nanoTime();     // FIXME: figure out where this should go
     BufferedJsonRecord r = new BufferedJsonRecord();

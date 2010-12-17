@@ -110,7 +110,7 @@ public class GroupCombineFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     initialFn = getFunction(context, initialExpr());
     partialFn = getFunction(context, partialExpr());
@@ -200,7 +200,7 @@ public class GroupCombineFn extends IterExpr
       JsonHashTable.Iterator tempIter = initialHT.iter();
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {
@@ -231,7 +231,7 @@ public class GroupCombineFn extends IterExpr
       JsonHashTable.Iterator tempIter = partialHT.iter();
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {
@@ -261,7 +261,7 @@ public class GroupCombineFn extends IterExpr
       Merger merger = new Merger(spillFileHandle);
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {
@@ -349,7 +349,7 @@ public class GroupCombineFn extends IterExpr
      * Returns the next value with the same key
      */
     @Override
-    public boolean moveNext() throws Exception
+    protected boolean moveNextRaw() throws Exception
     {
       while( true )
       {

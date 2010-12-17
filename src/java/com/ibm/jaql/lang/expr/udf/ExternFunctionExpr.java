@@ -50,7 +50,7 @@ public class ExternFunctionExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonString className = JaqlUtil.enforceNonNull((JsonString) exprs[1].eval(context));
     ClassLoaderMgr.resolveClass(className.toString());

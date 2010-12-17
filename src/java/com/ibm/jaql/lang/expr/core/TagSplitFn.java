@@ -102,13 +102,13 @@ public class TagSplitFn extends Expr
   }
 
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     return evalUntilLast(context).eval(context);
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return evalUntilLast(context).iter(context);
   }

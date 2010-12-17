@@ -57,23 +57,23 @@ public class SplitExpr extends Expr
   }
 
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     BindingExpr b = binding();
-    b.exprs[0].decompile(exprText, capturedVars);
+    b.exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print("\n-> " + kw("split") + " " + kw("each") + " ");
     exprText.print(b.var.taggedName());
     for(int i = 1 ; i < exprs.length ; i++)
     {
-      exprs[i].decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars,emitLocation);
       exprText.println();
     }
     capturedVars.remove(b.var);
   }
 
   @Override
-  public JsonValue eval(final Context context) throws Exception // TODO: sinks should not return anything
+  protected JsonValue evalRaw(final Context context) throws Exception // TODO: sinks should not return anything
   {
     // TODO: this and tee could/should fork threads to eval branches without temping
     BindingExpr b = (BindingExpr)exprs[0];

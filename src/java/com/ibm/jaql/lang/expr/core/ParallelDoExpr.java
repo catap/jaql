@@ -74,7 +74,7 @@ public class ParallelDoExpr extends DoExpr
       JaqlStage s = new JaqlStage(g, context, exprs[i]);
       exprText.reset();
       capturedVars.clear();
-      exprs[i].decompile(exprText, capturedVars); // TODO: separate captures from decompile
+      exprs[i].decompile(exprText, capturedVars,false); // TODO: separate captures from decompile
       for( Var v: capturedVars )
       {
         JaqlStage r = outMap.get(v);
@@ -103,7 +103,7 @@ public class ParallelDoExpr extends DoExpr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     runNonReturned(context);
     return exprs[exprs.length-1].eval(context);
@@ -111,7 +111,7 @@ public class ParallelDoExpr extends DoExpr
   }
   
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     runNonReturned(context);
     return exprs[exprs.length-1].iter(context);

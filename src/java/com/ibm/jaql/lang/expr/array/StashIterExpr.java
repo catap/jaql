@@ -69,7 +69,7 @@ public class StashIterExpr extends IterExpr
   }
 
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     System.err.println("warning: StashedIterExpr was decompiled, but it cannot be recompiled!");
@@ -83,7 +83,7 @@ public class StashIterExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     if( iter == null )
     {

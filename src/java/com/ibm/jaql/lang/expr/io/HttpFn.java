@@ -74,7 +74,7 @@ public class HttpFn extends AbstractHandleFn
    * @see com.ibm.jaql.lang.expr.io.AbstractHandleFn#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     BufferedJsonRecord rec = new BufferedJsonRecord();
     rec.add(Adapter.TYPE_NAME, getType());

@@ -122,20 +122,20 @@ public final class PathExpr extends Expr
   /**
    * 
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
   throws Exception
   {
     exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
   }
 
   /* (non-Javadoc)
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     PathStep s = firstStep();
     s.input = input().eval(context);
@@ -146,7 +146,7 @@ public final class PathExpr extends Expr
    * 
    */
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     PathStep s = firstStep();
     s.input = input().eval(context);

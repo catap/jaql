@@ -91,7 +91,7 @@ public class FirstNonNullFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     for (int i = 0; i < exprs.length; i++)
     {
@@ -109,7 +109,7 @@ public class FirstNonNullFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     for (int i = 0; i < exprs.length; i++)
     {

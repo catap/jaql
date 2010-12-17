@@ -48,7 +48,7 @@ public class TeeExpr extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonValue[] args = new JsonValue[1]; // TODO: memory
     args[0] = exprs[0].eval(context); // TODO: stream into each function!

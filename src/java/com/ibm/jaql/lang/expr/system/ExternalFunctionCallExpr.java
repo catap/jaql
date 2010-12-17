@@ -144,7 +144,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
      * java.util.HashSet)
      */
     @Override
-    public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+    protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
             throws Exception {
         exprText.print("system::externalfn(");
         TextFullSerializer.getDefault().write(exprText, rec);
@@ -152,7 +152,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
         String sep = "( ";
         for (Expr e : exprs) {
             exprText.print(sep);
-            e.decompile(exprText, capturedVars);
+            e.decompile(exprText, capturedVars,emitLocation);
             sep = ", ";
         }
         exprText.print(" )");
@@ -185,14 +185,14 @@ public class ExternalFunctionCallExpr extends IterExpr {
     @Override
     public Expr clone(VarMap varMap) {
         try {
-            return new ExternalFunctionCallExpr(rec, cloneChildren(varMap));
+            return cloneOrigin(new ExternalFunctionCallExpr(rec, cloneChildren(varMap)));
         } catch (Exception ex) {
             throw new UndeclaredThrowableException(ex);
         }
     }
 
     @Override
-    public JsonIterator iter(Context context) throws Exception {
+    protected JsonIterator iterRaw(Context context) throws Exception {
         try {
             initProcess(context);
 
@@ -209,7 +209,7 @@ public class ExternalFunctionCallExpr extends IterExpr {
                     InputHelper helper = new InputHelper();
 
                     @Override
-                    public boolean moveNext() throws Exception {
+					protected boolean moveNextRaw() throws Exception {
                         if (firsttime) {
                             helper.start();
                             firsttime = false;

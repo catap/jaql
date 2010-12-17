@@ -49,7 +49,7 @@ public class StartsWithFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  protected JsonBool evalRaw(final Context context) throws Exception
   {
     JsonString text = (JsonString) exprs[0].eval(context);
     if (text == null)

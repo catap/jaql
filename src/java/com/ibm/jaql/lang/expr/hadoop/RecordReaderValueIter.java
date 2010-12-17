@@ -39,7 +39,7 @@ public class RecordReaderValueIter extends JsonIterator
   }
 
   @Override
-  public boolean moveNext() throws Exception
+protected boolean moveNextRaw() throws Exception
   {
     if( reader.next(key, value) )
     {

@@ -44,7 +44,7 @@ public class AggregateInitialExpr extends AggregateAlgebraicExpr
   }
 
   @Override
-  public JsonArray eval(final Context context) throws Exception
+  protected JsonArray evalRaw(final Context context) throws Exception
   {
     makeWorkingArea();
     evalInitial(context, aggs);

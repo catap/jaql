@@ -160,7 +160,7 @@ public class JdbcInputAdapter extends AbstractInputAdapter
        * @see com.ibm.jaql.io.ItemReader#next(com.ibm.jaql.json.type.Item)
        */
       @Override
-      public boolean moveNext() throws IOException
+	protected boolean moveNextRaw() throws IOException
       {
         {
           try

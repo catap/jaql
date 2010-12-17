@@ -49,7 +49,7 @@ public class SetOptionsFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonRecord rec = (JsonRecord)exprs[0].eval(context);
     context.setOptions(rec);

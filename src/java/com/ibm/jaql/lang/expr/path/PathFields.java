@@ -55,7 +55,7 @@ public abstract class PathFields extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     throw new RuntimeException("PathFields should not be evaluated!");
   }

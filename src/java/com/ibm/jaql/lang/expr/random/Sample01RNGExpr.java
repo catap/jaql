@@ -76,7 +76,7 @@ public class Sample01RNGExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonDouble eval(Context context) throws Exception
+  protected JsonDouble evalRaw(Context context) throws Exception
   {
     JsonValue key = exprs[0].eval(context);
 

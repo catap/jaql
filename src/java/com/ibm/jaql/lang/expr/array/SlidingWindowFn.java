@@ -124,7 +124,7 @@ public class SlidingWindowFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator iter = exprs[ARG_INPUT].iter(context);
     final Function startPred = (Function)exprs[ARG_START].eval(context);
@@ -163,7 +163,7 @@ public class SlidingWindowFn extends IterExpr
     {
       final JsonValue[] args = new JsonValue[2];
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         // Advance the current pointer
         if( ! cur.moveNext() )
@@ -307,7 +307,7 @@ public class SlidingWindowFn extends IterExpr
     }
 
     @Override
-    public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
     {
       if( item == null )
       {

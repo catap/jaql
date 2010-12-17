@@ -170,7 +170,7 @@ public class BindingExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print(var.taggedName());
@@ -181,7 +181,7 @@ public class BindingExpr extends Expr
     }
     else
     {
-      exprs[0].decompile(exprText, capturedVars);
+      exprs[0].decompile(exprText, capturedVars,emitLocation);
     }
     // throw new RuntimeException("BindingExpr should never be decompiled");
   }
@@ -192,7 +192,7 @@ public class BindingExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
     var.setEval(exprs[0], context); // TODO: set var.usage
@@ -204,7 +204,7 @@ public class BindingExpr extends Expr
    * to each element. 
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     //throw new RuntimeException("BindingExpr should never be evaluated");
     var.undefine();
@@ -212,7 +212,7 @@ public class BindingExpr extends Expr
     return new JsonIterator()
     {
       @Override
-      public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
       {
         if (iter.moveNext()) {
           currentValue = iter.current();
@@ -232,10 +232,10 @@ public class BindingExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
    */
-  public BindingExpr clone(VarMap varMap)
+  public Expr clone(VarMap varMap)
   {
-    return new BindingExpr(type, varMap.remap(var), varMap.remap(var2),
-        preserve, cloneChildren(varMap));
+    return cloneOrigin(new BindingExpr(type, varMap.remap(var), varMap.remap(var2),
+        preserve, cloneChildren(varMap)));
   }
 
   /**

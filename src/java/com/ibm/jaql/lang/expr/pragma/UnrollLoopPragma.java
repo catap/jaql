@@ -54,7 +54,7 @@ public class UnrollLoopPragma extends Pragma
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
@@ -64,7 +64,7 @@ public class UnrollLoopPragma extends Pragma
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     return exprs[0].iter(context);
   }

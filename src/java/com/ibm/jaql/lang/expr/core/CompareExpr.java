@@ -77,9 +77,9 @@ public class CompareExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
    */
-  public CompareExpr clone(VarMap varMap)
+  public Expr clone(VarMap varMap)
   {
-    return new CompareExpr(op, cloneChildren(varMap));
+    return cloneOrigin(new CompareExpr(op, cloneChildren(varMap)));
   }
   
   @Override
@@ -94,15 +94,15 @@ public class CompareExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(") ");
     exprText.print(OP[op]);
     exprText.print(" (");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
@@ -111,7 +111,7 @@ public class CompareExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     JsonValue value1 = exprs[0].eval(context);
     if (value1 == null)

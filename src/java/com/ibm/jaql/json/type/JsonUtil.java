@@ -1,7 +1,6 @@
 package com.ibm.jaql.json.type;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Map.Entry;
 
@@ -10,7 +9,6 @@ import com.ibm.jaql.io.serialization.text.schema.SchemaTextFullSerializer;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.util.FastPrintBuffer;
-import com.ibm.jaql.util.FastPrintStream;
 import com.ibm.jaql.util.FastPrinter;
 
 /** Utility methods for dealing with {@link JsonValue}s and <code>null</code>s. */
@@ -19,27 +17,26 @@ public class JsonUtil
   /**
    * Print <code>value</code in (extended) JSON text format. 
    * 
-   * @param out a FastPrinter
    * @param value a value or <code>null</code>
+   * @param out an output stream
    * @throws Exception
    */
   public static void print(FastPrinter out, JsonValue value) throws IOException {
-    TextFullSerializer serializer = getDefaultSerializer();
-    serializer.write(out, value);
-  }
-  
+	  TextFullSerializer serializer = getDefaultSerializer();
+	  serializer.write(out, value);
+	}
+    
   /**
    * Print <code>value</code in (extended) JSON text format. 
    * 
-   * @param out an output stream
    * @param value a value or <code>null</code>
+   * @param out an output stream
+   * @param emitOrigin emit expression source origins?
    * @throws Exception
    */
-  public static void print(PrintStream out, JsonValue value) throws IOException {
-    FastPrintStream str = new FastPrintStream(out);
-	TextFullSerializer serializer = getDefaultSerializer();
-	serializer.write(str, value);
-	str.close();
+  public static void print(FastPrinter out, JsonValue value, boolean emitOrigin) throws IOException {
+    TextFullSerializer serializer = getDefaultSerializer(emitOrigin);
+    serializer.write(out, value);
   }
   
   /**
@@ -55,26 +52,16 @@ public class JsonUtil
     serializer.write(out, value, indent);
   }
 
-  /**
-   * Print indented <code>value</code in (extended) JSON text format. 
-   * 
-   * @param out a FastPrinter
-   * @param value a value or <code>null</code>
-   * @param indent indentation value
-   * @throws Exception
-   */
-  public static void print(PrintStream out, JsonValue value, int indent) throws IOException {
-	FastPrintStream str = new FastPrintStream(out);
-	TextFullSerializer serializer = getDefaultSerializer();
-	serializer.write(str, value, indent);
-	str.close();
+  public static TextFullSerializer getDefaultSerializer(boolean emitOrigin)
+  {
+    return TextFullSerializer.getDefault(emitOrigin);
   }
   
   public static TextFullSerializer getDefaultSerializer()
   {
     return TextFullSerializer.getDefault();
   }
-  
+
   /** The supplied schema must not be null. */
   public static TextFullSerializer getDefaultSerializer(Schema schema)
   {

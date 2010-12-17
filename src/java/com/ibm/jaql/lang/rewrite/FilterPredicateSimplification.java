@@ -86,6 +86,7 @@ public class FilterPredicateSimplification extends Rewrite
 	  ArrayExpr empty_input = new ArrayExpr();
 	  Expr filter_input = fe.binding().inExpr();
 	  DoExpr  do_expr = new DoExpr(filter_input, empty_input);
+	  setOrigin(do_expr,fe);
 	  fe.replaceInParent(do_expr);
 	  return true;
   }

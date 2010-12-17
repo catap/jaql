@@ -41,9 +41,19 @@ public abstract class TextFullSerializer extends FullSerializer<InputStream, Fas
   // -- default serializer  ----------------------------------------------------------------------
   
   private static TextFullSerializer DEFAULT_SERIALIZER = DefaultTextFullSerializer.getInstance();
+  private static TextFullSerializer DEFAULT_ORIGINEMITTING_SERIALIZER = 
+	  DefaultTextFullSerializer.getEmittingInstance();
   
   public static TextFullSerializer getDefault()
   {
     return DEFAULT_SERIALIZER;
+  }
+  
+  public static TextFullSerializer getDefault(boolean emitOrigin)
+  {
+	if(emitOrigin)
+      return DEFAULT_ORIGINEMITTING_SERIALIZER;
+	else
+	  return DEFAULT_SERIALIZER;	
   }
 }

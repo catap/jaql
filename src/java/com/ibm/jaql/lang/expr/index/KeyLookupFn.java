@@ -88,7 +88,7 @@ public class KeyLookupFn extends IterExpr
 
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final HashMap<JsonValue,JsonValue> inner = new HashMap<JsonValue,JsonValue>();
     final JsonValue[] keyval = new JsonValue[2];
@@ -108,7 +108,7 @@ public class KeyLookupFn extends IterExpr
       JsonIterator iter = exprs[0].iter(context);
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iter.moveNext()) 
         {

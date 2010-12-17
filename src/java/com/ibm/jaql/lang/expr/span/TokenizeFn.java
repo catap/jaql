@@ -55,7 +55,7 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonString text = (JsonString) exprs[0].eval(context);
     if (text == null)
@@ -66,7 +66,7 @@ public class TokenizeFn extends IterExpr // TODO: make much faster and better!
     
     return new JsonIterator(tokText) {
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         JsonSpan span = tokenizer.next();
         if (span == null)

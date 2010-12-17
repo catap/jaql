@@ -37,15 +37,20 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
 
   // -- default instance -------------------------------------------------------
 
-  private final static DefaultTextFullSerializer defaultInstance = new DefaultTextFullSerializer();
+  private final static DefaultTextFullSerializer defaultInstance = new DefaultTextFullSerializer(false);
+  private final static DefaultTextFullSerializer defaultEmittingInstance = new DefaultTextFullSerializer(true);
 
   public static DefaultTextFullSerializer getInstance() {
     return defaultInstance;
   }
 
+  public static DefaultTextFullSerializer getEmittingInstance() {
+    return defaultEmittingInstance;
+  }
+
   // -- construction -----------------------------------------------------------
 
-  public DefaultTextFullSerializer() {
+  public DefaultTextFullSerializer(boolean emitOrigin) {
     assert JsonEncoding.LIMIT == 20; // change when adding the encodings
 
     serializers = new EnumMap<JsonEncoding, TextBasicSerializer<?>>(JsonEncoding.class);
@@ -64,7 +69,7 @@ public final class DefaultTextFullSerializer extends TextFullSerializer {
     serializers.put(JsonEncoding.LONG, new LongSerializer());
     serializers.put(JsonEncoding.DECFLOAT, new DecimalSerializer());
     serializers.put(JsonEncoding.DATE, new DateSerializer());
-    serializers.put(JsonEncoding.FUNCTION, new FunctionSerializer());
+    serializers.put(JsonEncoding.FUNCTION, new FunctionSerializer(emitOrigin));
     serializers.put(JsonEncoding.SCHEMA, new SchemaSerializer());
     serializers.put(JsonEncoding.REGEX, new RegexSerializer(jstringSerializer));
     serializers.put(JsonEncoding.SPAN, new SpanSerializer());

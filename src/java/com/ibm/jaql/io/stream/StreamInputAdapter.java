@@ -103,7 +103,7 @@ public class StreamInputAdapter extends AbstractInputAdapter
       }
 
       @Override
-      public boolean moveNext() throws IOException
+	protected boolean moveNextRaw() throws IOException
       {
         val = formatter.read(val);
         if(val == null)

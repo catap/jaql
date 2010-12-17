@@ -75,7 +75,7 @@ public class RegisterExceptionHandler extends Expr {
 	}
 	
 	@Override
-	public JsonValue eval(Context context) throws Exception {
+	protected JsonValue evalRaw(Context context) throws Exception {
 		JsonRecord opts = (JsonRecord)exprs[0].eval(context);
 		JsonNumber tval = (JsonNumber)opts.get(ERROR_THRESH_FIELD_NAME);
 		if(tval != null) {

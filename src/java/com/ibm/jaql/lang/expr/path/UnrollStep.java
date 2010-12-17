@@ -43,16 +43,16 @@ public abstract class UnrollStep extends Expr // TODO: make PseudoExpr
     super(expr0);
   }
 
-  public abstract void decompile(FastPrinter exprText, HashSet<Var> capturedVars) throws Exception;
+  protected abstract void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation) throws Exception;
 
   /**
    * 
    * @return The item to expand.  It's value is replaced.
    */
-  public abstract JsonValue eval(Context context, JsonValue toExpand) throws Exception;
+  public abstract JsonValue evalRaw(Context context, JsonValue toExpand) throws Exception;
 
   @Override
-  public final JsonValue eval(Context context) throws Exception
+  public final JsonValue evalRaw(Context context) throws Exception
   {
     throw new RuntimeException("ExpandStep "+getClass().getName()+" should not be evaluated");
   }

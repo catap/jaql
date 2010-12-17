@@ -55,7 +55,7 @@ public class DateFn extends Expr
   }
 
   @Override
-  public JsonDate eval(Context context) throws Exception
+  protected JsonDate evalRaw(Context context) throws Exception
   {
     JsonValue val = exprs[0].eval(context);
     if( val instanceof JsonString )

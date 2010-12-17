@@ -68,7 +68,7 @@ public class ExecFn extends IterExpr
    * 
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonString cmd = (JsonString)exprs[1].eval(context);
     if( cmd == null )
@@ -94,7 +94,7 @@ public class ExecFn extends IterExpr
       return new JsonIterator(str)
       {
         @Override
-        public boolean moveNext() throws Exception
+        protected boolean moveNextRaw() throws Exception
         {
           try
           {

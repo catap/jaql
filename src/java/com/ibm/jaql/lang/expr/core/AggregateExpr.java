@@ -127,12 +127,12 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars) // TODO: get rid of captured vars during decompile
+  public void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation) // TODO: get rid of captured vars during decompile
       throws Exception
   {
     // input -> aggregate (each var)? expr
     final BindingExpr in = binding();
-    in.inExpr().decompile(exprText, capturedVars);
+    in.inExpr().decompile(exprText, capturedVars, emitLocation);
     exprText.print("\n-> " + kw("aggregate") + " " + kw("as") + " ");
     exprText.print(in.var.taggedName());
     exprText.print(" ");
@@ -144,7 +144,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
     {
       exprText.print(sep);
       Aggregate agg = agg(i);
-      agg.decompile(exprText, capturedVars);
+      agg.decompile(exprText, capturedVars,emitLocation);
       sep = ", ";
     }
     exprText.print("]");
@@ -198,7 +198,7 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
   }
 
   @Override
-  public abstract JsonArray eval(Context context) throws Exception;
+  protected abstract JsonArray evalRaw(Context context) throws Exception;
   
   /*
    * (non-Javadoc)
@@ -206,8 +206,8 @@ public abstract class AggregateExpr extends IterExpr // TODO: add init/combine/f
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
-    return eval(context).iter();
+    return evalRaw(context).iter();
   }
 }

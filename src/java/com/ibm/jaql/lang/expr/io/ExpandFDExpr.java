@@ -26,7 +26,7 @@ public class ExpandFDExpr extends Expr {
 	}
 
 	@Override
-	public JsonValue eval(Context context) throws Exception {				
+	protected JsonValue evalRaw(Context context) throws Exception {				
 		OutputAdapter adapter = (OutputAdapter) JaqlUtil.getAdapterStore().output.getAdapter(exprs[0].eval(context));
 		return adapter.expand();			
 	}

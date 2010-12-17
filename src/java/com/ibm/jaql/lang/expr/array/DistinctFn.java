@@ -58,7 +58,7 @@ public class DistinctFn extends MacroExpr
    * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
    */
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     // group $inVar in <expr0> by $byVar = $inVar into $intoVar collect [$byVar]
     Var v = env.makeVar("$");

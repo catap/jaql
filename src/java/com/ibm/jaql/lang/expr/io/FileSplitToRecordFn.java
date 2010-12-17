@@ -71,7 +71,7 @@ public class FileSplitToRecordFn extends Expr
   }
 
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     // { path: string, start: long, length: long, locations: [string...] }
     if( in == null )

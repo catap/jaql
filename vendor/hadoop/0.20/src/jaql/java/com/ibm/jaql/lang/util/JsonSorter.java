@@ -136,7 +136,7 @@ public class JsonSorter
     return new JsonIterator() {
 
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iter.next()) 
         {

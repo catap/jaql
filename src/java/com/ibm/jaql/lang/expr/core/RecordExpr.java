@@ -349,7 +349,7 @@ public class RecordExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("{");
@@ -357,7 +357,7 @@ public class RecordExpr extends Expr
     for (int i = 0; i < exprs.length; i++)
     {
       exprText.print(sep);
-      exprs[i].decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars,emitLocation);
       sep = ", ";
     }
     exprText.print(" }");
@@ -368,7 +368,7 @@ public class RecordExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     if (record == null)
     {

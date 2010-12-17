@@ -80,7 +80,7 @@ public abstract class IterExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public abstract JsonIterator iter(Context context) throws Exception;
+  protected abstract JsonIterator iterRaw(Context context) throws Exception;
 
   public Schema getSchema()
   {
@@ -92,7 +92,7 @@ public abstract class IterExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonIterator iter = this.iter(context);
     if (iter.isNull())

@@ -67,7 +67,7 @@ public class RetagFn extends IterExpr
 //  public Schema getSchema()
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final Function[] funcs = new Function[exprs.length-1];
     for(int i = 0 ; i < funcs.length ; i++)
@@ -85,7 +85,7 @@ public class RetagFn extends IterExpr
       final BufferedJsonArray singleton = new BufferedJsonArray(1);
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {

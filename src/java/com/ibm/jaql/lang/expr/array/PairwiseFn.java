@@ -59,7 +59,7 @@ public class PairwiseFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator[] iters = new JsonIterator[exprs.length];
     for (int i = 0; i < exprs.length; i++)

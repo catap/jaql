@@ -43,7 +43,7 @@ public class UpdateCommentFn extends Expr {
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception {
+  protected JsonValue evalRaw(Context context) throws Exception {
 	  Catalog cat = new CatalogImpl();
 	  cat.open();
 	  JsonString key = (JsonString) exprs[0].eval(context);

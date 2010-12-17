@@ -53,7 +53,7 @@ public class ReadSplitFn extends AbstractReadExpr
   }
   
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     // Close the previous adapter, if still open:
     if( adapter != null )

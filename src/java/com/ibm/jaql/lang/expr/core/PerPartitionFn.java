@@ -53,7 +53,7 @@ public class PerPartitionFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     Function fn = (Function)exprs[1].eval(context);
     fn.setArguments(exprs[0]);

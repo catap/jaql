@@ -27,7 +27,7 @@ public final class EmptyIterator extends JsonIterator
   }
 
   /** Returns <code>false</code>. */
-  public boolean moveNext()
+  protected boolean moveNextRaw()
   {
     return false;
   }

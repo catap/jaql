@@ -35,7 +35,7 @@ public class GetHdfsPathFn extends Expr {
 //    }
     
     @Override
-    public JsonString eval(Context context) throws Exception {
+    protected JsonString evalRaw(Context context) throws Exception {
         JsonString inpath = (JsonString)exprs[0].eval(context);
         String outpath;
        

@@ -60,7 +60,7 @@ public class DateMillisFn extends Expr
   }
   
   @Override
-  public JsonLong eval(Context context) throws Exception
+  protected JsonLong evalRaw(Context context) throws Exception
   {
     JsonDate d = (JsonDate)exprs[0].eval(context);
     if( d == null )

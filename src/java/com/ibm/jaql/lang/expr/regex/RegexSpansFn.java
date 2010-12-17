@@ -64,7 +64,7 @@ public class RegexSpansFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonRegex regex = (JsonRegex) exprs[0].eval(context);
     if (regex == null)
@@ -88,7 +88,7 @@ public class RegexSpansFn extends IterExpr
     return new JsonIterator(span) {
       boolean done = false;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (done)
         {

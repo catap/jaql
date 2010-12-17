@@ -59,13 +59,13 @@ public class InjectAboveExpr extends PseudoExpr
   }
 
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("@injectAbove(");
     if( exprs.length > 0 )
     {
-      exprs[0].decompile(exprText, capturedVars);
+      exprs[0].decompile(exprText, capturedVars,emitLocation);
     }
     exprText.print(")");
   }

@@ -83,7 +83,7 @@ public final class FieldsFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonRecord rec = (JsonRecord) exprs[0].eval(context);
     if (rec == null)

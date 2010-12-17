@@ -55,7 +55,14 @@ options {
     
     protected void oops(String msg) throws RecognitionException, TokenStreamException
     { 
-      throw new RecognitionException(msg, getFilename(), LT(1).getColumn(), LT(1).getLine()); 
+      throw new RecognitionException(msg, LT(1).getFilename(), LT(1).getColumn(), LT(1).getLine()); 
+    }
+    
+    protected void oops(String msg,Exception cause) throws RecognitionException, TokenStreamException
+    { 
+      RecognitionException e= new RecognitionException(msg, LT(1).getFilename(), LT(1).getColumn(), LT(1).getLine());
+      e.initCause(cause);
+      throw e; 
     }
     
 //    private Expr inlineGlobalFinalValueVar(Expr e)
@@ -118,6 +125,7 @@ options {
           expr = null;
         }
       }
+      setOrigin(expr);
       return expr;
     } 
 
@@ -251,6 +259,22 @@ options {
       return expr;
       */
     }
+    
+    void setOrigin(Expr expr) {
+    	if(expr != null) { 
+    		ExprOrigin origin;
+    	    try
+         	{
+         		origin=new ExprFromSourceOrigin(LT(1).getFilename(),LT(1).getLine(),LT(1).getColumn());
+    	    }
+    	    catch(TokenStreamException ex)
+        	{
+    	    	origin=new ExprFromSourceOrigin(getFilename());
+    	    }
+    	    expr.setOrigin(origin);
+    	}
+    }
+    
 
 }
 
@@ -259,7 +283,12 @@ options {
 // top-level rule
 parse returns [Expr r=null]
     { Expr s; }
-    : s=stmt { r = env.postParse(s); } ( SEMI | EOF )  
+    : s=stmt 
+      { 
+      	if(s!=null) setOrigin(s); 
+      	r = env.postParse(s); 
+      } 
+      ( SEMI | EOF )  
     | SEMI
     | EOF { done = true; }
     ;
@@ -268,7 +297,8 @@ parse returns [Expr r=null]
 protected stmt returns [Expr r=null]
     : (kwImport id)       => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
-    | (kwExplain)         => kwExplain r=topAssign  { r = r == null ? null : new ExplainExpr(env,r); }
+    | (kwExplain)         => kwExplain r=topAssign  { r = r == null ? null : new ExplainExpr(env,r); 
+                                                      setOrigin(r);}
     | (kwQuit)            => kwQuit { r = null; done = true; }
     | r=topAssign
     ;
@@ -312,7 +342,7 @@ topAssign returns [Expr r=null]
 assign returns [Expr r=null]
     { String v; }
     : (id "=") => v=id "=" r=rvalue  
-                  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); } 
+                  { r = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, r.getSchema()), null, r); setOrigin(r);} 
                 | r=pipe  
     ;
 
@@ -362,16 +392,16 @@ expr returns [Expr r]
     
 orExpr returns [Expr r]
     { Expr s; }
-    : r=andExpr ( kwOr s=andExpr { r = new OrExpr(r,s); } )*
+    : r=andExpr ( kwOr s=andExpr { r = new OrExpr(r,s); setOrigin(r);} )*
     ;
 
 andExpr returns [Expr r]
     { Expr s; }
-    : r=notExpr ( kwAnd s=notExpr { r = new AndExpr(r,s); } )*
+    : r=notExpr ( kwAnd s=notExpr { r = new AndExpr(r,s); setOrigin(r); } )*
     ;
 
 notExpr returns [Expr r]
-    : kwNot r=notExpr  { r = new NotExpr(r); }
+    : kwNot r=notExpr  { r = new NotExpr(r); setOrigin(r);}
     | (kwIsnull)    => r=isnullExpr
     | (kwIsdefined) => r=isdefinedExpr
     | r=inExpr
@@ -379,26 +409,26 @@ notExpr returns [Expr r]
 
 isnullExpr returns [Expr r]
     : kwIsnull r=inExpr
-    { r = new IsnullExpr(r); }
+    { r = new IsnullExpr(r); setOrigin(r);}
     ;
 
 isdefinedExpr returns [Expr r]
     { Expr n; }
     : kwIsdefined r=call n=projName // TODO: this should be a path expression
-    { r = new IsdefinedExpr(r,n); }
+    { r = new IsdefinedExpr(r,n); setOrigin(r);}
     ;
     
 inExpr returns [Expr r = null]
     { Expr s; }
-    : r=compareExpr ( kwIn s=compareExpr  { r = new InExpr(r,s); } )?
+    : r=compareExpr ( kwIn s=compareExpr  { r = new InExpr(r,s); setOrigin(r);} )?
     ;
 
 compareExpr returns [Expr r = null]
     { int c; Expr s; Expr t; }
     : r=instanceofExpr 
-          ( c=compareOp  s=instanceofExpr  { r = new CompareExpr(c,r,s); }
+          ( c=compareOp  s=instanceofExpr  { r = new CompareExpr(c,r,s); setOrigin(r);}
                ( c=compareOp       { s = s.clone(new VarMap()); }  // TODO: introduce a variable?
-                 t=instanceofExpr  { r = new AndExpr( r, new CompareExpr(c,s,t) ); s=t; } 
+                 t=instanceofExpr  { r = new AndExpr( r, new CompareExpr(c,s,t) ); s=t; setOrigin(r); } 
                )*
           )? 
     ;
@@ -418,12 +448,12 @@ compareOp returns [int r = -1]
 instanceofExpr returns [Expr r]
     { Expr s; }
     : r=addExpr 
-      ( kwInstanceof s=addExpr { r = new InstanceOfExpr(r,s); } )? 
+      ( kwInstanceof s=addExpr { r = new InstanceOfExpr(r,s); setOrigin(r);} )? 
     ;
 
 addExpr returns [Expr r]
     { Expr s; int op; }
-    : r=multExpr (op=addOp s=multExpr  { r = new MathExpr(op,r,s); })*
+    : r=multExpr (op=addOp s=multExpr  { r = new MathExpr(op,r,s); setOrigin(r);})*
     ;
 
 // infix additive operators
@@ -434,7 +464,7 @@ addOp returns [int op=0]
 
 multExpr returns [Expr r]
     { Expr s; int op; }
-    : r=unaryAdd ( op=multOp s=unaryAdd  { r = new MathExpr(op,r,s); } )*
+    : r=unaryAdd ( op=multOp s=unaryAdd  { r = new MathExpr(op,r,s); setOrigin(r); } )*
     ;
 
 // infix multiplicative operators
@@ -445,13 +475,13 @@ multOp returns [int op=0]
 
 // TODO: there is a bug handling negative numbers minLong (= -maxLong -1) doesn't parse
 unaryAdd returns [Expr r]
-    : "-" r=typeExpr { r = MathExpr.negate(r); } 
+    : "-" r=typeExpr { r = MathExpr.negate(r); setOrigin(r);} 
     | ("+")? r=typeExpr 
     ;
     
 typeExpr returns [Expr r=null]
     { Schema s; }
-    : (kwSchema (id|kwNull|"["|"{")) => kwSchema s=schema   { r = new ConstExpr(new JsonSchema(s)); }
+    : (kwSchema (id|kwNull|"["|"{")) => kwSchema s=schema   { r = new ConstExpr(new JsonSchema(s)); setOrigin(r);}
     | r=path
     ;   
 
@@ -470,8 +500,19 @@ forExpr returns [Expr r = null]
         BindingExpr e = bs.get(i);
         env.unscope(e.var);
       }
-      MultiForExpr f = new MultiForExpr(bs, null, r /*new ArrayExpr(r)*/); // TODO: eleminate WHERE, array return, make native multifor
-      r = f.expand(env);
+      try {
+        MultiForExpr f = new MultiForExpr(bs, null, r /*new ArrayExpr(r)*/); // TODO: eleminate WHERE, array return, make native multifor
+        r = f.expand(env);
+      }
+      catch(RecognitionException e) {
+      	throw e;
+      }
+      catch(TokenStreamException e) {
+        throw e;
+      }
+      catch(Exception e) {
+        oops("cannot expand multiple fors",e);
+      }
     }
     ;
 
@@ -506,7 +547,8 @@ whileExpr returns [Expr r = null]
            r=expr
         {  
         	env.unscope(var);
-        	r = new WhileExpr(new BindingExpr(BindingExpr.Type.EQ, var, null, i), c, r); 
+        	r = new WhileExpr(new BindingExpr(BindingExpr.Type.EQ, var, null, i), c, r);
+        	setOrigin(r);
         }
     ;
 
@@ -517,7 +559,7 @@ ifExpr returns [Expr r=null]
         kwElse s=expr )?
     {
         r = new IfExpr(p, r, s);
-    }
+        setOrigin(r);   }
     ;
 
 // -- path expressions ----------------------------------------------------------------------------
@@ -526,7 +568,7 @@ ifExpr returns [Expr r=null]
 path returns [Expr r]
     { PathStep s=null; }
     : r=call
-      ( ( step ) => s=step { r = new PathExpr(r,s); }
+      ( ( step ) => s=step { r = new PathExpr(r,s); setOrigin(r);}
                     additionalSteps[s]
                   | ()
       )
@@ -542,19 +584,19 @@ additionalSteps[PathStep p]
 // a step of a path expression
 step returns [PathStep r = null]
     { Expr e; Expr f; ArrayList<PathStep> pn; }
-    : ( e=projName                   { r = new PathFieldValue(e); }
-      | "{" pn=projFields "}"        { r = new PathRecord(pn); } // TODO: all steps after names: {.x.y, .z[2]}
+    : ( e=projName                   { r = new PathFieldValue(e); setOrigin(r);}
+      | "{" pn=projFields "}"        { r = new PathRecord(pn); setOrigin(r);} // TODO: all steps after names: {.x.y, .z[2]}
       | "[" ( e=expr
-                ( /*empty*/       { r = new PathIndex(e); }
-                | ":" ( f=expr    { r = new PathArraySlice(e,f); }
-                      | "*"       { r = new PathArrayTail(e); }
+                ( /*empty*/       { r = new PathIndex(e); setOrigin(r);}
+                | ":" ( f=expr    { r = new PathArraySlice(e,f); setOrigin(r);}
+                      | "*"       { r = new PathArrayTail(e); setOrigin(r);}
               ))
-            | "*" ( /*empty*/     { r = new PathArrayAll(); }
-                  | ":" ( e=expr  { r = new PathArrayHead(e); }
-                        | "*"     { r = new PathArrayAll(); }
+            | "*" ( /*empty*/     { r = new PathArrayAll(); setOrigin(r);}
+                  | ":" ( e=expr  { r = new PathArrayHead(e); setOrigin(r);}
+                        | "*"     { r = new PathArrayAll(); setOrigin(r);}
                 ))
-            | "?"                 { r = new PathToArray(); }
-            | /*empty*/           { r = new PathExpand(); }
+            | "?"                 { r = new PathToArray(); setOrigin(r);}
+            | /*empty*/           { r = new PathExpand(); setOrigin(r);}
           ) // ( "*" { ((PathArray)r).setExpand(true); } )? // TODO: add shorthand to expand?
         "]"
       )
@@ -579,17 +621,17 @@ projFieldsMore[ArrayList<PathStep> names]
 projNotFields returns [PathStep s=null]
     { ArrayList<PathStep> names = null; }
     : "*"
-      ( /* empty */       { s = new PathAllFields(); }
+      ( /* empty */       { s = new PathAllFields(); setOrigin(s);}
       | "-" s=projField   { names = new ArrayList<PathStep>(); names.add(s); }
         ( "," s=projField { names.add(s); }
         )*
-                          { s = new PathNotFields(names); } 
+                          { s = new PathNotFields(names); setOrigin(s);} 
       )
     ;
 
 projField returns [PathOneField r=null]
     { Expr e; }
-    : e=projName  { r = new PathOneField(e); } 
+    : e=projName  { r = new PathOneField(e);setOrigin(r); } 
     ;
 
 projName returns [Expr r=null]
@@ -598,7 +640,7 @@ projName returns [Expr r=null]
     ;
 
 dotName returns [Expr r = null]
-    : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); }
+    : i:DOT_ID     { r = new ConstExpr(new JsonString(i.getText())); setOrigin(r);}
     ;
 
     
@@ -636,12 +678,14 @@ block returns [Expr r=null]
             }
             r = new DoExpr(es);
             // r = new ParallelDoExpr(es); // TODO: parallel
+            setOrigin(r);
         }
       )?
       {
         if( r instanceof BindingExpr )
         {
           r = new DoExpr(r);
+          setOrigin(r);
         }
       }
     ;
@@ -652,10 +696,10 @@ block returns [Expr r=null]
 // expression that can occur after a ->
 op[Expr in] returns [Expr r=null]
     { BindingExpr b=null; Expr a; } 
-    : (kwFilter)       => kwFilter b=each[in] r=expr     { r = new FilterExpr(b, r);    env.unscope(b.var); }
-    | (kwTransform)    => kwTransform b=each[in] r=expr  { r = new TransformExpr(b, r); env.unscope(b.var); }
+    : (kwFilter)       => kwFilter b=each[in] r=expr     { r = new FilterExpr(b, r); setOrigin(r);   env.unscope(b.var); }
+    | (kwTransform)    => kwTransform b=each[in] r=expr  { r = new TransformExpr(b, r); setOrigin(r); env.unscope(b.var); }
     | (kwExpand)       => kwExpand b=each[in] 
-                          ( r=expr | /*empty*/ { r = new VarExpr(b.var); } )
+                          ( r=expr | /*empty*/ { r = new VarExpr(b.var); setOrigin(r); } )
                           { r = new ForExpr(b, r); env.unscope(b.var); }
     | (kwGroup)        => r=groupPipe[in]
     | (kwSort kw)      => r=sort[in]
@@ -676,7 +720,7 @@ each[Expr in] returns [BindingExpr b=null]
       | ()
       )
     { 
-      b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in);
+      b = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, in); setOrigin(b);
     }
     ;
     
@@ -688,9 +732,11 @@ top[Expr in] returns [Expr r=null]
         // TODO: add heap-based top operator
         if( by != null )
         {
-          in = new SortExpr(in, by);
+          in = new SortExpr(in, by); 
+          setOrigin(in);
         }
         r = new PathExpr(in, new PathArrayHead(new MathExpr(MathExpr.MINUS, n, new ConstExpr(JsonLong.ONE))));
+        setOrigin(r);
       }
     ;
     
@@ -702,12 +748,13 @@ unroll returns [Expr r=null]
           // TODO: as name
       {
         r = new UnrollExpr(args);
+        setOrigin(r);
       }
     ;
 
 estep returns [Expr r = null] // TOD: Unify step expressions
-    : r=projName       { r = new UnrollField(r); }
-    | "[" r=expr "]"   { r = new UnrollIndex(r); }
+    : r=projName       { r = new UnrollField(r); setOrigin(r);}
+    | "[" r=expr "]"   { r = new UnrollIndex(r); setOrigin(r);}
     // TODO: add [*], .*
     ;
     
@@ -716,11 +763,11 @@ estep returns [Expr r = null] // TOD: Unify step expressions
 
 constant returns [Expr r=null]
     { String s; JsonNumber n; JsonBool b;}
-    : s=str        { r = new ConstExpr(new JsonString(s)); }
-    | n=numberLit { r = new ConstExpr(n); }
-    | h:HEXSTR     { r = new ConstExpr(new JsonBinary(h.getText())); }
-    | t:DATETIME   { r = new ConstExpr(new JsonDate(t.getText())); }
-    | b=boolLit    { r = new ConstExpr(b); }
+    : s=str        { r = new ConstExpr(new JsonString(s)); setOrigin(r);}
+    | n=numberLit { r = new ConstExpr(n); setOrigin(r);}
+    | h:HEXSTR     { r = new ConstExpr(new JsonBinary(h.getText())); setOrigin(r);}
+    | t:DATETIME   { r = new ConstExpr(new JsonDate(t.getText())); setOrigin(r);}
+    | b=boolLit    { r = new ConstExpr(b); setOrigin(r);}
     | r=nullExpr
     ;
 
@@ -759,7 +806,7 @@ boolLit returns [JsonBool b=null]
     ;
     
 nullExpr returns [Expr r=null]
-    : kwNull   { r = new ConstExpr(null); }
+    : kwNull   { r = new ConstExpr(null); setOrigin(r);}
     ;
     
 record returns [Expr r = null]
@@ -767,7 +814,7 @@ record returns [Expr r = null]
       FieldExpr f; }
     : "{" ( f=field  { args.add(f); } )? ( "," ( f=field  { args.add(f); } )? )*  "}"
     //    { r = new RecordExpr(args.toArray(new Expr[args.size()])); }
-    { r = RecordExpr.make(env, args.toArray(new Expr[args.size()])); }
+    { r = RecordExpr.make(env, args.toArray(new Expr[args.size()])); setOrigin(r);}
     ;
 
 field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
@@ -778,7 +825,7 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
       }
     | e=path ( DOT_STAR    
                { 
-                 f = new CopyRecord(e);
+                 f = new CopyRecord(e); setOrigin(f);
                }
              | ( "?" { required = false; } )?
                ( ":" v=pipe )?
@@ -786,10 +833,12 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
                  if( v != null )
                  {
                     f = new NameValueBinding(e, v, required); 
+                    setOrigin(f);
                  }
                  else if( e instanceof VarExpr )
                  {
                    f = new NameValueBinding( ((VarExpr)e).var(), required );
+                   setOrigin(f);
                  }
                  else if( e instanceof PathExpr )
                  {
@@ -800,11 +849,13 @@ field returns [FieldExpr f=null]  // TODO: lexer ID "(" => FN_NAME | keyword ?
                    {
                      step.replaceInParent(ret);
                      f = new CopyField(e, step.child(0), required ? CopyField.When.DEFINED : CopyField.When.NONNULL );
+                     setOrigin(f);
                    }
                    else
                    {
                      // ((PathExpr)e).forceRecord();
                      f = new CopyRecord(e);
+                     setOrigin(f);
                    }
                  }
                  else
@@ -825,6 +876,7 @@ fieldValue returns [Expr r=null]
         if( flat )
         {
           r = new FlattenExpr(r);
+          setOrigin(r);
         }
       }
     ;
@@ -872,7 +924,10 @@ splitIf[BindingExpr b, ArrayList<Expr> es]
     { Expr p, e; }
     : kwIf              { b.var.setHidden(false); } 
        "(" p=expr ")"   { b.var.setHidden(true); }
-       e=expr           { es.add(new IfExpr(p,e)); }
+       e=expr           { Expr ife=new IfExpr(p,e); 
+       	                  setOrigin(ife); 
+       	                  es.add(ife); 
+       	                }
        ;
 
 
@@ -904,6 +959,7 @@ cmpArrayFn[String vn] returns [Expr r=null]
     {
       env.unscope(var);
       r = new DefineJaqlFunctionExpr(new Var[]{var}, r); // TODO: DefineCmpFn()? Add Cmp type?
+      setOrigin(r); 
     }
     ;
 
@@ -912,8 +968,10 @@ cmpArray returns [CmpArray r=null]
     : "[" ( cmpSpec[keys] ("," (cmpSpec[keys])? )* )? "]"
     {
       r = new CmpArray(keys);
+      setOrigin(r); 
     }
     ;
+    
 cmpSpec[ArrayList<CmpSpec> keys]
     { Expr e; Expr c=null; CmpSpec.Order o = CmpSpec.Order.ASC; }
     : e=expr 
@@ -929,7 +987,7 @@ cmpSpec[ArrayList<CmpSpec> keys]
 
 sort[Expr in] returns [Expr r=null]
     : kwSort r=sortCmp
-      { r = new SortExpr(in, r); }
+      { r = new SortExpr(in, r); setOrigin(r); }
     ;
 
 sortCmp returns [Expr r=null]
@@ -955,6 +1013,7 @@ group returns [Expr r=null]
       ( (kwEach id kwIn) => kwEach v=id kwIn )?
         { 
           in=new BindingExpr(BindingExpr.Type.IN, env.makeVar(v), null, Expr.NO_EXPRS); 
+          setOrigin(r); 
         }
       by=groupIn[in,by,as] ( "," by=groupIn[in,by,as] )*
         { if( by.var != Var.UNUSED ) env.scope(by.var); } 
@@ -974,6 +1033,7 @@ group returns [Expr r=null]
             env.unscope(av);
           }
           r = new GroupByExpr(in, by, as, c, opt, ret);
+          setOrigin(r); 
         }
     ;
 
@@ -1029,6 +1089,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
             var = env.makeVar(v);
         }
         b = new BindingExpr(BindingExpr.Type.EQ, var, null, e);
+        setOrigin(b); 
       }
       else if( v == null || (by.var != Var.UNUSED && by.var.taggedName().equals(v)) )
       {
@@ -1043,7 +1104,7 @@ groupBy[BindingExpr by] returns [BindingExpr b=null]
     ;
 
 groupReturn returns [Expr r=null]
-    : kwInto r=expr    { r = new ArrayExpr(r); }
+    : kwInto r=expr    { r = new ArrayExpr(r); setOrigin(r); }
     | kwExpand r=expr
     //| r=aggregate[new VarExpr(pipeVar)] 
     //    { if(numInputs != 1) throw new RuntimeException("cannot use aggregate with cogroup"); } 
@@ -1066,6 +1127,7 @@ groupPipe[Expr in] returns [Expr r=null]
           if( by.var != Var.UNUSED ) env.unscope(by.var);
           env.unscope(asVar);
           r = new GroupByExpr(b, by, asVar, cmp, opt, ret);
+          setOrigin(r); 
         }
     ;
 
@@ -1081,11 +1143,11 @@ aggregate[Expr in] returns [Expr r=null]
            //b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v, in.getSchema().elements()), null, in); 
            b = new BindingExpr(BindingExpr.Type.EQ, env.scope(v), null, in);
          }
-      ( kwInto    r=expr        { r = new AggregateGeneralExpr(b, r); }
-      | kwFull    a=aggList     { r = new AggregateFullExpr(b, a); }
-      | kwInitial a=algAggList { r = new AggregateInitialExpr(b, a); }
-      | kwPartial a=algAggList { r = new AggregatePartialExpr(b, a); }
-      | kwFinal   a=algAggList { r = new AggregateFinalExpr(b, a); }
+      ( kwInto    r=expr        { r = new AggregateGeneralExpr(b, r); setOrigin(r); }
+      | kwFull    a=aggList     { r = new AggregateFullExpr(b, a); setOrigin(r); }
+      | kwInitial a=algAggList { r = new AggregateInitialExpr(b, a); setOrigin(r); }
+      | kwPartial a=algAggList { r = new AggregatePartialExpr(b, a); setOrigin(r); }
+      | kwFinal   a=algAggList { r = new AggregateFinalExpr(b, a); setOrigin(r); }
       )
       { env.unscope(b.var); }
     ;
@@ -1171,7 +1233,7 @@ join returns [Expr r=null]
       }
       kwWhere p=expr
       ( (kwOptions) => kwOptions opt=expr )?
-      ( kwInto r=expr     { r = new ArrayExpr(r); }
+      ( kwInto r=expr     { r = new ArrayExpr(r); setOrigin(r); }
       | kwExpand r=expr )
       {
         for( BindingExpr b2: in )
@@ -1180,6 +1242,7 @@ join returns [Expr r=null]
         }
         // r = new MultiJoinExpr(in, p, opt, r).expand(env);  
         r = new MultiJoinExpr(in, p, opt, r);  
+        setOrigin(r);      
       }
     ;
 
@@ -1196,10 +1259,10 @@ joinIn returns [BindingExpr b=null]
 // A pipe must end with a binding, with the name still in scope
 vpipe returns [BindingExpr r=null]
     { String v; Expr e=null; }
-    : v=id  ( /*empty*/   { e = new VarExpr(env.inscope(v)); }
+    : v=id  ( /*empty*/   { e = new VarExpr(env.inscope(v)); setOrigin(r); }
             | kwIn e=expr  
             )
-    { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e); }
+    { r = new BindingExpr(BindingExpr.Type.IN, env.scope(v), null, e); setOrigin(r); }
     ;    
 
 equijoin returns [Expr r=null]
@@ -1222,6 +1285,7 @@ equijoin returns [Expr r=null]
       | kwExpand r=expr )
     {
       r = new JoinExpr(in,on,opt,r); // TODO: add comparator
+      setOrigin(r); 
       for( BindingExpr b: in )
       {
         env.unscope(b.var);
@@ -1250,6 +1314,7 @@ fn returns [Expr r = null]
       r=pipe
       { 
         r = new DefineJaqlFunctionExpr(vs, es, s, r);
+        setOrigin(r);
         for( Var v: vs )
         {
           env.unscope(v);
@@ -1269,6 +1334,7 @@ pipeFn returns [Expr r=null]
         ArrayList<Var> p = new ArrayList<Var>();
         p.add(v);
         r = new DefineJaqlFunctionExpr(p, r); // TODO: use a diff class
+        setOrigin(r);
     }
     ;
     
@@ -1289,6 +1355,7 @@ registerFunction returns [Expr e = null]
           String name = env.eval(varName).toString();
           Var var = env.scopeGlobalVal(name, SchemaFactory.functionSchema());
           e = new AssignExpr(env, var, new JavaUdfExpr(className).expand(env));
+          setOrigin(e);
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
       }
@@ -1362,6 +1429,7 @@ callPipe[Expr in] returns [Expr r=null]
           // TODO: eliminate need for parse-time inlining...
           new QueryExpr(env, fc);
           r = fc.inlineIfPossible();
+          setOrigin(r);
         }
       r=callRepeat[r, positionalArgs, namedArgs]
     ;
@@ -1377,6 +1445,7 @@ callRepeat[Expr f, List<Expr> positionalArgs, Map<JsonString, Expr> namedArgs] r
                     // TODO: eliminate need for parse-time inlining...
                     new QueryExpr(env, fc);
                     r = fc.inlineIfPossible();
+                    setOrigin(r);
                  }
                  r = callRepeat[r, positionalArgs, namedArgs]
                | () 
@@ -1435,12 +1504,11 @@ schemaTerm returns [Schema s = null]
       )?
     ;
 
-aSchema returns [Schema s = null]
+aSchema returns [Schema s = null; PathStep p=null;]
     : s=atomSchema
     | s=arraySchema
     | s=recordSchema
     ;
-
 
 // -- schema: atomic values -----------------------------------------------------------------------
 
@@ -1459,6 +1527,7 @@ atomSchemaArgs[JsonValueParameters d] returns [ JsonRecord args=null ]
     : ( "(" ) => args[positionalArgs,namedArgs]
                  { 
                    ArgumentExpr e = new ArgumentExpr(d, positionalArgs, namedArgs);
+                   setOrigin(e);
                    args = e.constEval(env); 
                  }
                | ()
@@ -1554,7 +1623,7 @@ recordSchemaField returns [RecordSchema.Field s = null]
     
 recordSchemaFieldSchema returns [Schema s = null]
     : /*empty*/   { s = SchemaFactory.anySchema(); }
-    | ":" s=schema
+    | ":" s=schema 
     ;
 
 recordSchemaFieldName returns [String s=null]
@@ -2047,7 +2116,18 @@ options {
     {
         return literals.containsKey(new ANTLRHashString(s, this));
     }
+
+    protected Token makeToken(int t) {
+    	Token tok=super.makeToken(t);
+     
+        if(tok!=Token.badToken)
+          tok.setFilename(inputState.getFilename());
+     
+        return tok; 
+    }
+
 }
+
 
 protected DIGIT
   : '0'..'9'
@@ -2094,7 +2174,8 @@ ML_COMMENT
         {$setType(Token.SKIP);}
     ;
 
-
+LOCATION
+    : "#(" ((fd:DQSTR|fs:SQSTR) "," )? l:INT "," c:INT ")" {fd=fd==null?fs:fd;if(fd!=null) setFilename(fd.getText()); if(l!=null) setLine(Integer.parseInt(l.getText())); setColumn(Integer.parseInt(c.getText()));$setType(Token.SKIP);};
     
 protected BLOCK_LINE1
     : (' '! (~('\n'|'\r'))*)? NL

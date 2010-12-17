@@ -105,7 +105,7 @@ public final class BufferedJsonArray extends JsonArray
       int i = 0;
 
       @Override
-      public boolean moveNext()
+	protected boolean moveNextRaw()
       {
         if (i < size)
         {

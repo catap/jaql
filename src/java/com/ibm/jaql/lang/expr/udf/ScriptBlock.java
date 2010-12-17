@@ -36,7 +36,7 @@ public class ScriptBlock extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     throw new UnsupportedOperationException("scripting is disabled");
   }

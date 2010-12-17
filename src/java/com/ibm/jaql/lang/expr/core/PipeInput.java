@@ -56,7 +56,7 @@ public class PipeInput extends IterExpr
   }
   
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     assert exprs[0] instanceof VarExpr;
@@ -64,7 +64,7 @@ public class PipeInput extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     return exprs[0].iter(context);
   }

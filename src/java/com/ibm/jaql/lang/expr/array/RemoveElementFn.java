@@ -60,7 +60,7 @@ public class RemoveElementFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator tmpIter = exprs[0].iter(context);
     final JsonLong indexLong = (JsonLong) exprs[1].eval(context);
@@ -72,7 +72,7 @@ public class RemoveElementFn extends IterExpr
       long index    = 0;
       long toDelete = indexLong.get();
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         boolean hasNext = tmpIter.moveNext();
         if (hasNext && index==toDelete) {

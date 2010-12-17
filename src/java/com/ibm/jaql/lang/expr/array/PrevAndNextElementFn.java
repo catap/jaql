@@ -89,7 +89,7 @@ public class PrevAndNextElementFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator iter = exprs[0].iter(context);
     
@@ -111,7 +111,7 @@ public class PrevAndNextElementFn extends IterExpr
       final JsonString[] names = new JsonString[] { CUR, PREV, NEXT };
       final JsonValue[] values = new JsonValue[3];
       
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( !hasNext )
         {

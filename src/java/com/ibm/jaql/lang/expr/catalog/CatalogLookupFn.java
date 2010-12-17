@@ -39,7 +39,7 @@ public class CatalogLookupFn extends Expr {
   }
 
   @Override
-  public JsonRecord eval(final Context context) throws Exception
+  protected JsonRecord evalRaw(final Context context) throws Exception
   {
 	  JsonRecord val = (JsonRecord) exprs[0].eval(context);
 	  JsonString key = (JsonString) exprs[1].eval(context);

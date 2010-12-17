@@ -88,7 +88,7 @@ public class SliceFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonNumber jlow  = (JsonNumber)exprs[1].eval(context);
     JsonNumber jhigh = (JsonNumber)exprs[2].eval(context);
@@ -109,7 +109,7 @@ public class SliceFn extends IterExpr
     {
       long index = low;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( index <= high && iter.moveNext())
         {

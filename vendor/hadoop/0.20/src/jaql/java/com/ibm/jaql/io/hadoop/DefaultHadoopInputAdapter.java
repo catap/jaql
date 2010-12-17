@@ -267,7 +267,7 @@ public class DefaultHadoopInputAdapter<K,V> implements HadoopInputAdapter
        * 
        * @see com.ibm.jaql.io.ItemReader#next(com.ibm.jaql.json.type.Item)
        */
-      public boolean moveNext() throws IOException
+      protected boolean moveNextRaw() throws IOException
       {
         while (true)
         {

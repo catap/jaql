@@ -51,7 +51,7 @@ public class RegisterAdapterExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonValue rValue = exprs[0].eval(context);
     JsonRecord registry = (JsonRecord) rValue;

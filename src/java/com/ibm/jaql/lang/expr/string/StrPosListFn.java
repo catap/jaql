@@ -60,7 +60,7 @@ public class StrPosListFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonString str = (JsonString)exprs[0].eval(context);
     if( str == null )
@@ -83,7 +83,7 @@ public class StrPosListFn extends IterExpr
       protected int index = startIndex;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         index = str.indexOf(toFind, index);
         if( index < 0 )

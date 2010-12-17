@@ -62,7 +62,7 @@ public class ColumnwiseFn extends Expr
    * 
    */
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     JsonIterator iter = exprs[0].iter(context);
     if( iter.isNull() )

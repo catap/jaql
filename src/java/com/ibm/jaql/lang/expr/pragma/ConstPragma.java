@@ -43,7 +43,7 @@ public class ConstPragma extends MacroExpr
   }
 
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     // we should check for compile time computability here; this is currently commented out
     // because it blocks function defs of form (a=5, fn() a)    

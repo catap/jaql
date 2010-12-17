@@ -65,7 +65,7 @@ public class TagFn extends IterExpr
 //  public Schema getSchema()
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonNumber jnum = (JsonNumber)exprs[1].eval(context);
     final BufferedJsonArray pair = new BufferedJsonArray(2);
@@ -76,7 +76,7 @@ public class TagFn extends IterExpr
       JsonIterator iter = exprs[0].iter(context);
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( iter.moveNext() )
         {

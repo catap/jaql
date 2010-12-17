@@ -38,7 +38,7 @@ public abstract class MacroExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public final JsonValue eval(final Context context) throws Exception
+  public final JsonValue evalRaw(final Context context) throws Exception
   {
     throw new RuntimeException("macro must be expanded before evaluation");
   }
@@ -48,7 +48,7 @@ public abstract class MacroExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public final JsonIterator iter(final Context context) throws Exception
+  public final JsonIterator iterRaw(final Context context) throws Exception
   {
     throw new RuntimeException("macro must be expanded before evaluation");
   }
@@ -58,5 +58,17 @@ public abstract class MacroExpr extends Expr
    * @return
    * @throws Exception
    */
-  abstract public Expr expand(Env env) throws Exception;
+  public final Expr expand(Env env) throws Exception
+  {
+    Expr ret=expandRaw(env);
+    ret.setOrigin(new ExprFromMacroOrigin(this));
+    return ret;
+  }
+  
+  /**
+   * @param env
+   * @return
+   * @throws Exception
+   */
+  abstract protected Expr expandRaw(Env env) throws Exception;
 }

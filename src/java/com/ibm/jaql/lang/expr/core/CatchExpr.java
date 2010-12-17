@@ -111,7 +111,7 @@ public class CatchExpr extends Expr {
 	}
 
 	@Override
-	public JsonValue eval(Context context) throws Exception {
+	protected JsonValue evalRaw(Context context) throws Exception {
 		JsonValue v = null;
 		if(!configured) {
 			if(exprs[1] != null && exprs[1].getSchema().is(JsonType.RECORD).bool()) {

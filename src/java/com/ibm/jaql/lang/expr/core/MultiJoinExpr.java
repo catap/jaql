@@ -172,7 +172,7 @@ public class MultiJoinExpr extends MacroExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     // TODO: fix this
@@ -190,25 +190,25 @@ public class MultiJoinExpr extends MacroExpr
       }
       exprText.print(b.var.taggedName());
       exprText.print(" " + kw("in") + " (");
-      b.inExpr().decompile(exprText, capturedVars);
+      b.inExpr().decompile(exprText, capturedVars,emitLocation);
       exprText.print(")");
       sep = ",\n     ";
     }
     
     exprText.println("\n  " + kw("where") + " (");
-    whereExpr().decompile(exprText, capturedVars);
+    whereExpr().decompile(exprText, capturedVars,emitLocation);
     exprText.println(")");
     
     Expr opts = optionsExpr();
     if( opts.getSchema().is(NULL).maybeNot() )
     {
       exprText.println(" " + kw("options") + " (");
-      opts.decompile(exprText, capturedVars);
+      opts.decompile(exprText, capturedVars,emitLocation);
       exprText.println(")");
     }
     
     exprText.println(" " + kw("expand") + " ");
-    projectExpr().decompile(exprText, capturedVars);
+    projectExpr().decompile(exprText, capturedVars,emitLocation);
 
     for (int i = 0; i < n; i++)
     {
@@ -223,7 +223,7 @@ public class MultiJoinExpr extends MacroExpr
     }
   }
 
-  public Expr expand(Env env) // throws Exception
+  protected Expr expandRaw(Env env) // throws Exception
   {
     // Build the basic join graph from the join key variables
     // Raise error if the join graph is not connected 

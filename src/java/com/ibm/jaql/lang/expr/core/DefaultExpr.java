@@ -34,12 +34,12 @@ public class DefaultExpr extends PseudoExpr
   }
 
 //  @Override
-//  public Item eval(Context context) throws Exception
+//  protected Item evalRaw(Context context) throws Exception
 //  {
 //    return Item.nil;
 //  }
   
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars) throws Exception
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation) throws Exception
   {
     exprText.print("default");
   }

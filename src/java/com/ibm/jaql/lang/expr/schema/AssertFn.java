@@ -25,7 +25,7 @@ public class AssertFn extends CheckFn
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonSchema schemaValue = (JsonSchema)exprs[1].eval(context);
     if (schemaValue == null)

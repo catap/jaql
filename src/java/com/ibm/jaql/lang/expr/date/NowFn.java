@@ -77,7 +77,7 @@ public class NowFn extends Expr
    * @return
    * @throws Exception
    */
-  public JsonDate eval(final Context context) throws Exception
+  protected JsonDate evalRaw(final Context context) throws Exception
   {
     return new JsonDate(System.currentTimeMillis()); // TODO: memory
   }

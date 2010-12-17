@@ -67,7 +67,7 @@ public class RecordFn extends Expr // TODO: make into an aggregate?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(final Context context) throws Exception
+  protected JsonRecord evalRaw(final Context context) throws Exception
   {
     if (rec == null)
     {

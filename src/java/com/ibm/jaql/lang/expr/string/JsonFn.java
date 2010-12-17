@@ -35,7 +35,7 @@ public class JsonFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonString in = (JsonString)exprs[0].eval(context);
     if (in == null) return in;
@@ -44,7 +44,7 @@ public class JsonFn extends Expr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     JsonString in = (JsonString)exprs[0].eval(context);
     if (in == null) return JsonIterator.NULL;

@@ -89,7 +89,7 @@ public abstract class MapReduceBaseExpr extends Expr
   
   
   protected static final Logger LOG = Logger.getLogger(MapReduceFn.class.getName());
-
+ 
   protected int                 numInputs;
   protected JobConf             conf;
   protected JsonValue           outArgs;
@@ -268,8 +268,8 @@ public abstract class MapReduceBaseExpr extends Expr
           + numArgs + " positional argument(s)");
     }
     try
-    {
-      JsonUtil.print(out, fn);
+    { 	
+      JsonUtil.print(out, fn, true);
     } catch (IOException e)
     {
       throw new UndeclaredThrowableException(e);
@@ -322,6 +322,7 @@ public abstract class MapReduceBaseExpr extends Expr
       {
         // System.err.println("compiling: "+exprText);
         JaqlLexer lexer = new JaqlLexer(new StringReader(exprText));
+        lexer.setTokenObjectClass(com.ibm.jaql.lang.parser.JaqlToken.class.getName());
         JaqlParser parser = new JaqlParser(lexer);
         Expr expr = parser.parse();
         Function fn = JaqlUtil.enforceNonNull((Function) expr.eval(context));

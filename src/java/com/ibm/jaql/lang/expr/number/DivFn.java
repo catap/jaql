@@ -57,7 +57,7 @@ public class DivFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonNumber eval(final Context context) throws Exception
+  protected JsonNumber evalRaw(final Context context) throws Exception
   {
     JsonNumber value1 = (JsonNumber)exprs[0].eval(context);
     if (value1 == null)

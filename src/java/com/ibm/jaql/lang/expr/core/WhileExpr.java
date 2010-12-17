@@ -62,25 +62,25 @@ public class WhileExpr extends Expr
   }
 
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print( "\n" );
     exprText.print( kw("while") );
     exprText.print( "( " );
     BindingExpr b = binding();
-    b.decompile(exprText, capturedVars);
+    b.decompile(exprText, capturedVars,emitLocation);
     exprText.print( ",\n       " );
-    condition().decompile(exprText, capturedVars);
+    condition().decompile(exprText, capturedVars,emitLocation);
     exprText.print( ")\n(\n" );
-    body().decompile(exprText, capturedVars);
+    body().decompile(exprText, capturedVars,emitLocation);
     exprText.print( ")\n" );
     capturedVars.remove(b.var);
   }
 
   
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     BindingExpr b = (BindingExpr)exprs[0];
     Expr cond = exprs[1];

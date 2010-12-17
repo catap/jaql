@@ -35,7 +35,7 @@ public class UdaFn extends MacroExpr
   }
   
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {   
     Var var = env.makeVar("$");
     Expr body = new UdaCallFn(new VarExpr(var), exprs[0], exprs[1], exprs[2], exprs[3]);

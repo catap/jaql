@@ -40,7 +40,7 @@ public class MergeFn extends MacroExpr
   }
   
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     return new UnionFn(exprs);
   }

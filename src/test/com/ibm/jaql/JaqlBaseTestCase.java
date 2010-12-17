@@ -185,7 +185,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 				captures.clear();
 				System.err.println("\nDecompiled query:");
 				FastPrintBuffer exprText = new FastPrintBuffer();
-				expr.decompile(exprText, captures);
+				expr.decompile(exprText, captures,false);
 				exprText.writeTo(System.err);
 				System.err.println("\n;\nEnd decompiled query\n");
 
@@ -329,7 +329,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 		try {
 			Expr dexpr = expr;
 			if (!(expr instanceof AssignExpr)) {
-				expr.decompile(tmpStr, new HashSet<Var>());
+				expr.decompile(tmpStr, new HashSet<Var>(),false);
 				tmpStr.close();
 				// System.err.println("REAL DECOMP:"+buf);
 				// parse it and eval
@@ -362,7 +362,7 @@ public abstract class JaqlBaseTestCase extends TestCase {
 			captures.clear();
 			System.err.println("\nRewritten query:");
 			FastPrintBuffer exprText = new FastPrintBuffer();
-			expr.decompile(exprText, captures);
+			expr.decompile(exprText, captures, false);
 			exprText.writeTo(System.err);
 			System.err.println("\n;\nEnd rewritten query");
 			context.reset();

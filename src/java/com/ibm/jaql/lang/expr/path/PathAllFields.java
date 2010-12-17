@@ -94,11 +94,11 @@ public class PathAllFields extends PathFields
   /**
    * 
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
   throws Exception
   {
     exprText.print("*");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
   }
 
   /* (non-Javadoc)

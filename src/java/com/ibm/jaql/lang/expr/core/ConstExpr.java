@@ -76,7 +76,7 @@ public final class ConstExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     boolean annotate = 
@@ -96,7 +96,7 @@ public final class ConstExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     return value;
   }
@@ -125,9 +125,9 @@ public final class ConstExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
    */
-  public ConstExpr clone(VarMap varMap)
+  public Expr clone(VarMap varMap)
   {
-    return new ConstExpr(value);
+    return cloneOrigin(new ConstExpr(value));
   }
   
   public Schema getSchema()

@@ -104,12 +104,12 @@ public class SortExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print("\n  -> " + kw("sort") + " " + kw("using") + " (");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
@@ -118,7 +118,7 @@ public class SortExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JaqlFunction cmpFn = (JaqlFunction)cmpExpr().eval(context);
     if( cmpFn.getParameters().numParameters() != 1 || !(cmpFn.body() instanceof CmpExpr) )

@@ -60,7 +60,7 @@ public final class BatchIterator extends JsonIterator
   }
   
   @Override
-  public boolean moveNext() throws Exception
+protected boolean moveNextRaw() throws Exception
   {
     if( numReturned >= batchSize )
     {

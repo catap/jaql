@@ -47,11 +47,11 @@ public class UnrollField extends UnrollStep
   /**
    * 
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
   throws Exception
   {
     exprText.print(".(");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
@@ -59,7 +59,7 @@ public class UnrollField extends UnrollStep
    * @see com.ibm.jaql.lang.expr.core.ExpandStep#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context, JsonValue recValue) throws Exception
+  public JsonValue evalRaw(Context context, JsonValue recValue) throws Exception
   {
     JsonRecord rec = (JsonRecord)recValue;
     if( rec == null )

@@ -35,7 +35,7 @@ public class SelectSourceExpr extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)

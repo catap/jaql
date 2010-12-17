@@ -143,7 +143,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("\n");
@@ -161,9 +161,9 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       }
       exprText.print(b.var.taggedName());
       exprText.print(" " + kw("in") + " (");
-      b.inExpr().decompile(exprText, capturedVars);
+      b.inExpr().decompile(exprText, capturedVars,emitLocation);
       exprText.print(") " + kw("on") + " (");
-      onExpr(i).decompile(exprText, capturedVars);
+      onExpr(i).decompile(exprText, capturedVars,emitLocation);
       exprText.print(")");
       sep = ",\n     ";
     }
@@ -172,12 +172,12 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
     if( opts.getSchema().is(NULL).maybeNot() )
     {
       exprText.println(" " + kw("options") + " (");
-      opts.decompile(exprText, capturedVars);
+      opts.decompile(exprText, capturedVars,emitLocation);
       exprText.println(")");
     }
     
     exprText.print("\n" + kw("expand") + " (");
-    collectExpr().decompile(exprText, capturedVars);
+    collectExpr().decompile(exprText, capturedVars,emitLocation);
     exprText.println(")");
 
     for (int i = 0; i < n; i++)
@@ -261,7 +261,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
     final int n = numBindings();
@@ -315,7 +315,7 @@ public class JoinExpr extends IterExpr // TODO: rename to equijoin
       JsonIterator collectIter = nullKeyResults.iter();
       int firstNonEmpty = n;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {

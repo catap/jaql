@@ -51,10 +51,10 @@ public class CmpSingle extends CmpExpr // TODO: merge CmpSingle and CmpSpec?
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
   }
 
   /*
@@ -62,7 +62,7 @@ public class CmpSingle extends CmpExpr // TODO: merge CmpSingle and CmpSpec?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }

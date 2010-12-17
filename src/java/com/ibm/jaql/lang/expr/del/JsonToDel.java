@@ -439,7 +439,7 @@ public class JsonToDel {
   public JsonIterator convertToJsonIterator(final JsonIterator it) {
     return new JsonIterator() {
       @Override
-      public boolean moveNext() throws Exception {
+	protected boolean moveNextRaw() throws Exception {
         boolean moveNext = it.moveNext();
         if (moveNext) {
           JsonValue v = it.current();

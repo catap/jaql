@@ -55,7 +55,7 @@ public class ElementsOfFn extends Expr
     return Bool3.TRUE;
   }
 
-  public JsonSchema eval(final Context context) throws Exception
+  protected JsonSchema evalRaw(final Context context) throws Exception
   {
     JsonSchema jschema = (JsonSchema)exprs[0].eval(context);
     if( jschema == null )

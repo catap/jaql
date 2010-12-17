@@ -75,7 +75,7 @@ public class EveryType
       MutableJsonLong         lng  = new MutableJsonLong();
       MutableJsonDouble dbl = new MutableJsonDouble();
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!vals.moveNext())
         {

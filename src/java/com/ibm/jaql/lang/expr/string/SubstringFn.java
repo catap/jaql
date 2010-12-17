@@ -63,7 +63,7 @@ public class SubstringFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonString eval(final Context context) throws Exception
+  protected JsonString evalRaw(final Context context) throws Exception
   {
     JsonString text = (JsonString) exprs[0].eval(context);
     if (text == null)

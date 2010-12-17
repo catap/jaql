@@ -55,7 +55,7 @@ public class SqlTypeCodeFn extends Expr
     return Bool3.TRUE;
   }
 
-  public JsonLong eval(final Context context) throws Exception
+  protected JsonLong evalRaw(final Context context) throws Exception
   {
     JsonSchema jschema = (JsonSchema)exprs[0].eval(context);
     if( jschema == null )

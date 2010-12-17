@@ -99,7 +99,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("(");
@@ -107,7 +107,7 @@ public class DoExpr extends Expr
     for(Expr e: exprs)
     {
       exprText.print(sep);
-      e.decompile(exprText, capturedVars);
+      e.decompile(exprText, capturedVars,emitLocation);
       sep = ",\n  ";
     }
     exprText.println("\n)");
@@ -126,7 +126,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)
@@ -138,7 +138,7 @@ public class DoExpr extends Expr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     int n = exprs.length - 1;
     for(int i = 0 ; i < n ; i++)

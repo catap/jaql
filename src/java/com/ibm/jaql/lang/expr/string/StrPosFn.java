@@ -60,7 +60,7 @@ public class StrPosFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonLong eval(final Context context) throws Exception
+  protected JsonLong evalRaw(final Context context) throws Exception
   {
     JsonString str = (JsonString)exprs[0].eval(context);
     if( str == null )

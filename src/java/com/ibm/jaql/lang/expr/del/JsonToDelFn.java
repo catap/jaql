@@ -42,7 +42,7 @@ public class JsonToDelFn extends IterExpr {
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception {
+  protected JsonIterator iterRaw(Context context) throws Exception {
     initToDel(context);
     final JsonIterator it = exprs[0].iter(context);
     return toDel.convertToJsonIterator(it);

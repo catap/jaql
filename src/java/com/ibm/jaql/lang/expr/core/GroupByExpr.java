@@ -458,7 +458,7 @@ public class GroupByExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emit)
       throws Exception
   {
     int n = numInputs(); // TODO: special case n==1 to do e -> group
@@ -472,7 +472,7 @@ public class GroupByExpr extends IterExpr
     {
       exprText.print(sep);
       exprText.print("(");
-      in.child(i).decompile(exprText, capturedVars);
+      in.child(i).decompile(exprText, capturedVars,emit);
       exprText.print(")");
       exprText.print(" " + kw("by") + " ");
       if( i == 0 ) // if( byBinding.var != Var.unused )
@@ -481,7 +481,7 @@ public class GroupByExpr extends IterExpr
         exprText.print(" = ");
       }
       exprText.print("(");
-      by.child(i).decompile(exprText, capturedVars);
+      by.child(i).decompile(exprText, capturedVars,emit);
       exprText.print(")");
       exprText.print(" as ");
       exprText.print(getAsVar(i).taggedName()); 
@@ -492,7 +492,7 @@ public class GroupByExpr extends IterExpr
     if( using.getSchema().is(NULL).maybeNot() )
     {
       exprText.println(" " + kw("using") + " (");
-      using.decompile(exprText, capturedVars);
+      using.decompile(exprText, capturedVars,emit);
       exprText.println(")");
     }
 
@@ -500,12 +500,12 @@ public class GroupByExpr extends IterExpr
     if( opts.getSchema().is(NULL).maybeNot() )
     {
       exprText.println(" " + kw("options") + " (");
-      opts.decompile(exprText, capturedVars);
+      opts.decompile(exprText, capturedVars,emit);
       exprText.println(")");
     }
 
     exprText.println(" " + kw("expand") + " (");
-    collectExpr().decompile(exprText, capturedVars);
+    collectExpr().decompile(exprText, capturedVars,emit);
     exprText.println(")");
     
     capturedVars.remove(in.var);
@@ -521,7 +521,7 @@ public class GroupByExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
     final int n = numInputs();
@@ -546,7 +546,7 @@ public class GroupByExpr extends IterExpr
     return new JsonIterator() {
       JsonIterator collectIter = JsonIterator.EMPTY;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while (true)
         {

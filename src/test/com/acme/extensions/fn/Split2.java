@@ -45,7 +45,7 @@ public class Split2
     return new JsonIterator(resultStr) {
       int             i         = 0;
       
-      public boolean moveNext()
+      protected boolean moveNextRaw()
       {
         if (i >= splits.length)
         {

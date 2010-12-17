@@ -85,7 +85,7 @@ public class PowersetFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonArray input1 = (JsonArray)exprs[0].eval(context);
     if( input1 == null )
@@ -103,7 +103,7 @@ public class PowersetFn extends IterExpr
     {
       int selected = 0;
       
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( selected >= powerSize )
         {

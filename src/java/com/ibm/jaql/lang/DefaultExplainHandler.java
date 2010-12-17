@@ -56,7 +56,7 @@ public class DefaultExplainHandler extends ExplainHandler
     }
     FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
-    expr.decompile(exprText, capturedVars);
+    expr.decompile(exprText, capturedVars,false);
     if( !capturedVars.isEmpty() )
     {
       Iterator<Var> iter = capturedVars.iterator();

@@ -71,7 +71,7 @@ public class DecfloatFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonDecimal eval(final Context context) throws Exception
+  protected JsonDecimal evalRaw(final Context context) throws Exception
   {
     JsonValue val = exprs[0].eval(context);
     if (val == null)

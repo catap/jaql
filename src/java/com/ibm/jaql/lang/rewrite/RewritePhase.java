@@ -141,7 +141,7 @@ public class RewritePhase
                   System.err.println();
 //                  VarTagger.tag(start);
                   FastPrintBuffer exprText = new FastPrintBuffer();
-                  start.decompile(exprText, new HashSet<Var>());
+                  start.decompile(exprText, new HashSet<Var>(),false);
                   System.err.println(exprText.toString());
                   System.err.println();
                 }

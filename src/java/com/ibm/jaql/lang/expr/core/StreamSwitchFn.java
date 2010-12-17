@@ -79,7 +79,7 @@ public class StreamSwitchFn extends IterExpr
 //  }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final Function fns[] = new Function[exprs.length - 1];
     for(int i = 1 ; i < exprs.length ; i++)
@@ -94,7 +94,7 @@ public class StreamSwitchFn extends IterExpr
       JsonIterator inner = JsonIterator.EMPTY;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {
@@ -169,7 +169,7 @@ public class StreamSwitchFn extends IterExpr
     }
     
     @Override
-    public boolean moveNext() throws Exception
+    protected boolean moveNextRaw() throws Exception
     {
       if( state == State.IN_GROUP )
       {

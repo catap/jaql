@@ -79,6 +79,7 @@ public class FlattenTagSplit extends Rewrite
                       split.child(0), 
                       new ConstExpr(new JsonLong(i-1)),
                       new ConstExpr(new JsonLong(m)));
+                  setOrigin(flatten,fi);
                   split.setChild(0, flatten);
                   return true;
                 }

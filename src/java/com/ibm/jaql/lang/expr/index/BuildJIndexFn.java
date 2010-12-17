@@ -42,7 +42,7 @@ public class BuildJIndexFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonRecord fd = (JsonRecord)exprs[1].eval(context);
     if( fd == null )

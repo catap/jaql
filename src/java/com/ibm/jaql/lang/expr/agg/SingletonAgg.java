@@ -149,7 +149,7 @@ public final class SingletonAgg extends AlgebraicAggregate // TODO: should this 
 //   * 
 //   * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
 //   */
-//  public Item eval(final Context context) throws Exception
+//  protected Item evalRaw(final Context context) throws Exception
 //  {
 //    Iter iter = exprs[0].iter(context);
 //    Item item = iter.next();

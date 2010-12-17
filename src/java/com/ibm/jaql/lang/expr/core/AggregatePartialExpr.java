@@ -51,7 +51,7 @@ public class AggregatePartialExpr extends AggregateAlgebraicExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonArray eval(final Context context) throws Exception
+  protected JsonArray evalRaw(final Context context) throws Exception
   {
     makeWorkingArea();
     evalPartial(context);

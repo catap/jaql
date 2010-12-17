@@ -60,6 +60,7 @@ public class DiamondTagExpand extends Rewrite
       Expr g = diamond.child(i+1);
       Expr call = new FunctionCallExpr(g, new ArrayExpr(new VarExpr(forVar)));
       args[i] = new TagFn(call, new ConstExpr(i));
+      setOrigin(args[i],g);
 //      Expr pair = new ArrayExpr(new ConstExpr(i), new VarExpr(trVar));
 //      args[i] = new TransformExpr(trVar, call, pair);;
     }
@@ -70,6 +71,7 @@ public class DiamondTagExpand extends Rewrite
 
     // replace diamond
     diamond.replaceInParent(expr);
+    setOrigin(expr,diamond);
     return true;
   }
 

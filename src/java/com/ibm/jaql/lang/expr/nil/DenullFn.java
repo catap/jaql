@@ -66,7 +66,7 @@ public class DenullFn extends MacroExpr
    * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
    */
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     Var var = env.makeVar("$denull");
     Expr test = new NotExpr(new IsnullExpr(new VarExpr(var)));

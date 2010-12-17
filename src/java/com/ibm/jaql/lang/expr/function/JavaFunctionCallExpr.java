@@ -165,7 +165,7 @@ public class JavaFunctionCallExpr extends Expr
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     /// exprText.print(kw("builtin") + "('com.ibm.jaql.lang.expr.function.JavaUdfExpr$Descriptor')('" + instance.getClass().getName() + "')");
@@ -174,7 +174,7 @@ public class JavaFunctionCallExpr extends Expr
     for (Expr e : exprs)
     {
       exprText.print(sep);
-      e.decompile(exprText, capturedVars);
+      e.decompile(exprText, capturedVars,emitLocation);
       sep = ", ";
     }
     exprText.print(" )");
@@ -224,10 +224,10 @@ public class JavaFunctionCallExpr extends Expr
   {
     try
     {
-      return new JavaFunctionCallExpr(method, cloneChildren(varMap));
+      return cloneOrigin(new JavaFunctionCallExpr(method, cloneChildren(varMap)));
     }
     catch (Exception ex)
-    {
+    { //TODO: document why cloning can raise exceptions
       throw new UndeclaredThrowableException(ex);
     }
   }
@@ -285,7 +285,7 @@ public class JavaFunctionCallExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     Object result = makeCall(context);
     if (result == null)
@@ -322,7 +322,7 @@ public class JavaFunctionCallExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     Object result = makeCall(context);
 

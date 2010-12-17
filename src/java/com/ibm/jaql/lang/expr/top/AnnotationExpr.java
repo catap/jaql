@@ -50,27 +50,27 @@ public class AnnotationExpr extends Expr
     return exprs[1].getSchema();
   }
   
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     assert exprs[0] instanceof RecordExpr || 
          ( exprs[0] instanceof ConstExpr && 
              ((ConstExpr)exprs[0]).value instanceof JsonRecord );
     exprText.print("@");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print("(");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
   
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     return exprs[0].iter(context);
   }

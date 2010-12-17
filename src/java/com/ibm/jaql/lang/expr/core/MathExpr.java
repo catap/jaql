@@ -127,13 +127,13 @@ public class MathExpr extends Expr
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")" + OP_STR[op] + "(");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
@@ -144,7 +144,7 @@ public class MathExpr extends Expr
    */
   public Expr clone(VarMap varMap)
   {
-    return new MathExpr(op, exprs[0].clone(varMap), exprs[1].clone(varMap));
+    return cloneOrigin(new MathExpr(op, exprs[0].clone(varMap), exprs[1].clone(varMap)));
   }
 
   
@@ -160,7 +160,7 @@ public class MathExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonValue value1 = exprs[0].eval(context);
     JsonValue value2 = exprs[1].eval(context);
@@ -461,7 +461,8 @@ public class MathExpr extends Expr
     
     if (result == null)
     {
-      throw new RuntimeException("Operation " + OP_STR[op] + " not defined for input types.");
+      //throw new RuntimeException("Operation " + OP_STR[op] + " not defined for input types.");
+      return SchemaFactory.anySchema();    
     }
     return result;
   }

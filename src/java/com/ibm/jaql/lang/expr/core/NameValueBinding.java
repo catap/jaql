@@ -138,9 +138,9 @@ public class NameValueBinding extends FieldExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
    */
-  public NameValueBinding clone(VarMap varMap)
+  public Expr clone(VarMap varMap)
   {
-    return new NameValueBinding(required, cloneChildren(varMap));
+    return cloneOrigin(new NameValueBinding(required, cloneChildren(varMap)));
   }
 
   public JsonString staticName()
@@ -262,18 +262,18 @@ public class NameValueBinding extends FieldExpr
    * @see com.ibm.jaql.lang.expr.core.FieldExpr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
     if (!required)
     {
       exprText.print("?");
     }
     exprText.print(":(");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 

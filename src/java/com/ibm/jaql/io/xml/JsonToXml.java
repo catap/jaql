@@ -50,11 +50,6 @@ public class JsonToXml
     xwriter = xfactory.createXMLStreamWriter(writer);
   }
   
-  public void setWriter(Writer writer) throws XMLStreamException
-  {
-	xwriter = xfactory.createXMLStreamWriter(writer);
-  }
-  
   public void setWriter(Writer writer, String encoding, String version) throws XMLStreamException
   {
     xwriter = xfactory.createXMLStreamWriter(writer);    

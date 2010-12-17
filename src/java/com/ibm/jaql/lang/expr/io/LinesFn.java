@@ -62,7 +62,7 @@ public class LinesFn extends AbstractHandleFn
   }
   
   @Override
-  public JsonRecord eval(Context context) throws Exception {
+  protected JsonRecord evalRaw(Context context) throws Exception {
     BufferedJsonRecord options = null;
     JsonValue customOptions = exprs[1].eval(context);
     if (customOptions != null) {

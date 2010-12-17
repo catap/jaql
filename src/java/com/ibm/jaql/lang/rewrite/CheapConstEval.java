@@ -82,12 +82,21 @@ public class CheapConstEval extends Rewrite
       {
         return fired;
       }
-
-      JsonValue value = expr.compileTimeEval();
+      JsonValue value;
+      try {
+        value = expr.compileTimeEval();
+      }
+      catch(Throwable t)
+      { // if there are run-time errors, defer expr evaluation to run-time
+        // to avoid expressions like this failing although there are no problems:
+        // if(false) (runtime-error-producing expression) else x
+        return fired;
+      }
       ConstExpr c = new ConstExpr(value);
       expr.replaceInParent(c);
-      expr = c;
-      fired = true;
+      setOrigin(c,expr);
+      expr = c;      
+      fired = true;      
     }
   }
 }

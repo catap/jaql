@@ -161,7 +161,7 @@ implements Iterable<Entry<JsonString, JsonValue>>
   public static JsonIterator keyIter(final Iterator<Entry<JsonString, JsonValue>> iterator)
   {
     return new JsonIterator() {
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iterator.hasNext())
         {
@@ -178,7 +178,7 @@ implements Iterable<Entry<JsonString, JsonValue>>
   public static JsonIterator valueIter(final Iterator<Entry<JsonString, JsonValue>> iterator)
   {
     return new JsonIterator() {
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iterator.hasNext())
         {
@@ -196,7 +196,7 @@ implements Iterable<Entry<JsonString, JsonValue>>
   {
     final BufferedJsonArray pair = new BufferedJsonArray(2);
     return new JsonIterator(pair) {
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iterator.hasNext())
         {

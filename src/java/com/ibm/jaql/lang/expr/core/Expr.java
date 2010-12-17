@@ -33,6 +33,7 @@ import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.ExprEvalException;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.SystemNamespace;
@@ -49,6 +50,7 @@ import com.ibm.jaql.util.Bool3;
 import com.ibm.jaql.util.FastPrintBuffer;
 import com.ibm.jaql.util.FastPrinter;
 
+
 /** Superclass for all JAQL expressions.
  * 
  */
@@ -63,6 +65,9 @@ public abstract class Expr
   /** list of subexpressions (e.g., arguments) */
   protected Expr[]           exprs           = NO_EXPRS;
   protected Module module;
+  
+  /** where did this expr object originate? (source, rewritten other expr) */
+  protected ExprOrigin origin;
 
   /**
    * Every Expr can have annotations in the form of a JsonRecord.
@@ -111,15 +116,28 @@ public abstract class Expr
   /** Decompiles this expression. The resulting JSON code is written to <tt>exprText</tt>
    * stream and all variables referenced by this expression are added <tt>capturedVars</tt>.
    * 
+   * 
    * <p> The default implementation only works for built-in functions that do not capture
    * variables (over the ones used in their arguments). It must be overridden for non-functions 
    * and functions that capture variables.
    * 
    * @param exprText
-   * @param capturedVars
+ * @param capturedVars
+ * @param emitOrigin If set to true, decompile will emit source code references (via getOrigin()) into the printed code
    * @throws Exception
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  public final void decompile(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitOrigin) throws Exception
+  {
+	  decompileRaw(exprText,capturedVars,emitOrigin);
+	  if(emitOrigin && origin != null)
+		exprText.print(origin.toJaqlLocator());
+  }
+  /** Decompiles this expression.
+   * 
+   * Derived classes must override this method instead of decompile().
+   * decompile calls this function and manages handling of origin information. 
+   */
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitOrigin)
       throws Exception
   {
   	BuiltInFunctionDescriptor d = BuiltInFunction.getDescriptor(this.getClass());
@@ -129,7 +147,7 @@ public abstract class Expr
         exprs[0].getSchema().is(ARRAY).always() ) // TODO: this should be if this function expects an array
     {
       exprText.print("( ");
-      exprs[0].decompile(exprText, capturedVars);
+      exprs[0].decompile(exprText, capturedVars, emitOrigin);
       exprText.print("\n-> ");
       i++;
       end = " )";
@@ -154,7 +172,7 @@ public abstract class Expr
       if (i<p.numRequiredParameters() || p.hasRepeatingParameter())
       {
         exprText.print(sep);
-        exprs[i].decompile(exprText, capturedVars);
+        exprs[i].decompile(exprText, capturedVars, emitOrigin);
         sep = ", ";
       }
       else
@@ -167,7 +185,7 @@ public abstract class Expr
             exprText.print(sep);
             exprText.print(p.nameOf(i));
             exprText.print("=");
-            exprs[i].decompile(exprText, capturedVars);
+            exprs[i].decompile(exprText, capturedVars, emitOrigin);
             sep = ", ";
           }
         }
@@ -176,7 +194,7 @@ public abstract class Expr
           exprText.print(sep);
           exprText.print(p.nameOf(i));
           exprText.print("=");
-          exprs[i].decompile(exprText, capturedVars);
+          exprs[i].decompileRaw(exprText, capturedVars, emitOrigin);
           sep = ", ";
         }
       }
@@ -288,7 +306,7 @@ public abstract class Expr
     HashSet<Var> capturedVars = new HashSet<Var>();
     try
     {
-      this.decompile(exprText, capturedVars); // TODO: capturedVars should be optional
+      this.decompile(exprText, capturedVars, false); // TODO: capturedVars should be optional
       return exprText.toString();
     }
     catch (Exception e)
@@ -297,18 +315,61 @@ public abstract class Expr
     }
   }
 
-  /** Evaluates this expression and return the result as a value. 
-   * 
+  /** 
+   * Evaluates this expression and return the result as a value. 
+   * Wraps any exception thrown by abstract eval into a ExprEvalException 
    * @param context
    * @return
    * @throws Exception
    */
-  public abstract JsonValue eval(Context context) throws Exception;
+  public final JsonValue eval(Context context) throws Exception {
+	  try {
+		  return evalRaw(context);
+	  }
+	  catch(ExprEvalException ex) {
+		    throw ex;
+      }
+	  catch(InterruptedException ex) {
+		    throw ex;
+      }
+	  catch(Exception t) {
+	    throw new ExprEvalException(this, t);
+	  }
+  }
 
+  /** 
+   * Evaluates expression and returns result as single Json value.
+   * The subclass implementations may throw any exceptions,
+   * which get wrapped by @s 
+   * @param context
+   * @return
+   * @throws Exception
+   */
+  protected abstract JsonValue evalRaw(Context context) throws Exception;
+
+  
   //  public void write(Context context, TableWriter writer) throws Exception
   //  {
   //    writer.write(eval(context));
   //  }
+
+  public final JsonIterator iter(Context context) throws Exception {
+	  try {
+		JsonIterator it=iterRaw(context);  
+		if(it.getOriginatingExpr()==null)
+		  it.setOriginatingExpr(this);
+	    return it;
+	  }
+	  catch(ExprEvalException ex) {
+	    throw ex;
+	  }
+	  catch(InterruptedException ex) {
+		throw ex;
+      }
+	  catch(Exception t) {
+	    throw new ExprEvalException(this, t);
+	  }
+  }
 
   /**
    * Evaluates this expression. If it produces an array, this method returns an iterator
@@ -319,7 +380,7 @@ public abstract class Expr
    * @return
    * @throws Exception
    */
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     JsonValue value = eval(context);
     if (value == null)
@@ -799,7 +860,7 @@ public abstract class Expr
     {
       Constructor<? extends Expr> cons = this.getClass().getConstructor(
           Expr[].class);
-      return cons.newInstance(new Object[]{es});
+      return cloneOrigin(cons.newInstance(new Object[]{es}));
     }
     catch (Exception e)
     {
@@ -860,7 +921,7 @@ public abstract class Expr
     HashSet<Var> capturedVars = new HashSet<Var>();
     try
     {
-      decompile(exprText, capturedVars);
+      decompile(exprText, capturedVars, false);
     }
     catch (Exception e)
     {
@@ -1097,4 +1158,23 @@ public abstract class Expr
 	  return  EMPTY_MAPPING;
   }
 
+  /**
+   * @return where was this expr created
+   */
+  public ExprOrigin getOrigin() {
+  	if(origin==null && parent!=null)
+ 		return parent.getOrigin();
+  	else
+  		return origin;
+  }
+
+  public void setOrigin(ExprOrigin origin) {
+	  this.origin = origin;
+  }
+  
+  protected final Expr cloneOrigin(Expr target) {
+    target.setOrigin(this.origin);
+    return target;
+  }
+  
 }

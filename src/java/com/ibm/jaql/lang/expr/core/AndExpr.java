@@ -67,13 +67,13 @@ public class AndExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars,boolean emitLocation)
       throws Exception
   {
     exprText.print('(');
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(") " + kw("and") + "(");
-    exprs[1].decompile(exprText, capturedVars);
+    exprs[1].decompile(exprText, capturedVars,emitLocation);
     exprText.print(')');
   }
 
@@ -82,7 +82,7 @@ public class AndExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBool eval(final Context context) throws Exception
+  public JsonBool evalRaw(final Context context) throws Exception
   {
     JsonBool b1 = (JsonBool)exprs[0].eval(context);
     if (b1 != null && b1.get() == false)

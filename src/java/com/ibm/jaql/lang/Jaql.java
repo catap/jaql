@@ -179,6 +179,7 @@ public class Jaql implements CoreJaql
     lexer = new JaqlLexer(in);
     parser = new JaqlParser(lexer);
     parser.env = env;
+    lexer.setTokenObjectClass(com.ibm.jaql.lang.parser.JaqlToken.class.getName());
     lexer.setFilename(filename);
   }
   
@@ -187,6 +188,7 @@ public class Jaql implements CoreJaql
     lexer = new JaqlLexer(in);
     parser = new JaqlParser(lexer);
     parser.env = env;
+    lexer.setTokenObjectClass(com.ibm.jaql.lang.parser.JaqlToken.class.getName());
     lexer.setFilename(filename);
   }
   

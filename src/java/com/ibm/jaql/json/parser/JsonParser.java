@@ -86,7 +86,7 @@ public class JsonParser implements JsonParserConstants {
     {
       boolean atStart = true;
 
-      public boolean moveNext() throws ParseException
+      protected boolean moveNextRaw() throws ParseException
       {
         currentValue = atStart ? ArrayFirst() : ArrayNext();
         atStart = false;

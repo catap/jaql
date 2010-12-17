@@ -69,12 +69,12 @@ public class PairFn extends IterExpr // TODO: rewrite into [A,B]
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return new JsonIterator() {
       int index = 0;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (index < exprs.length)
         {

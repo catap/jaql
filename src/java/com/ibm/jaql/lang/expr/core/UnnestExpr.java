@@ -54,11 +54,11 @@ public class UnnestExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print(kw("unnest") + " (");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
@@ -67,7 +67,7 @@ public class UnnestExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator iter = exprs[0].iter(context);
     if (iter.isNull())
@@ -78,7 +78,7 @@ public class UnnestExpr extends IterExpr
     return new JsonIterator() {
       JsonIterator inner = JsonIterator.EMPTY;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while (true)
         {

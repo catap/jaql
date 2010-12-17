@@ -52,7 +52,7 @@ public class ArrayReadExpr extends MacroExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
    */
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     NameValueBinding tField = new NameValueBinding(Adapter.TYPE_NAME,
         new ConstExpr(new JsonString("array")));

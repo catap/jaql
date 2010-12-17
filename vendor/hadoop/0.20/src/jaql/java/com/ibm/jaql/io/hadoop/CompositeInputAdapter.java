@@ -149,7 +149,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
         int        idx        = 0;
 
         @Override
-        public boolean moveNext() throws Exception
+        protected boolean moveNextRaw() throws Exception
         {
           while (true)
           {
@@ -184,7 +184,7 @@ public class CompositeInputAdapter implements HadoopInputAdapter
         int        idx        = 0;
 
         @Override
-        public boolean moveNext() throws Exception
+        protected boolean moveNextRaw() throws Exception
         {
           while (true)
           {

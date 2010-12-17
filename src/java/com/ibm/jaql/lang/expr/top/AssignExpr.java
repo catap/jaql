@@ -60,14 +60,14 @@ public class AssignExpr extends EnvExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print(var.taggedName()); // TODO: expr -> $var when var is pipe var
     exprText.print(" := ");
     if (numChildren() > 0)
     {
-      exprs[0].decompile(exprText, capturedVars);
+      exprs[0].decompile(exprText, capturedVars,emitLocation);
     }
     else
     {
@@ -78,7 +78,7 @@ public class AssignExpr extends EnvExpr
   public Expr clone(VarMap varMap)
   {
     Var newVar = varMap.remap(var);
-    return new AssignExpr(env, newVar, exprs[0].clone(varMap));
+    return cloneOrigin(new AssignExpr(env, newVar, exprs[0].clone(varMap)));
   }
   
   /*
@@ -86,7 +86,7 @@ public class AssignExpr extends EnvExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     // FIXME: this check should be in setValue, 
     // and we should add another setValueUnchecked when the schema is known safe.

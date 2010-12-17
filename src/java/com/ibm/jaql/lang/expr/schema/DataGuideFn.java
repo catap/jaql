@@ -114,7 +114,7 @@ public class DataGuideFn extends IterExpr
   // State
   protected SpilledJsonArray result;
 
-  public JsonArray eval(final Context context) throws Exception
+  protected JsonArray evalRaw(final Context context) throws Exception
   {
     if( result == null )
     {
@@ -133,9 +133,9 @@ public class DataGuideFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
-    JsonArray arr = eval(context);
+    JsonArray arr = evalRaw(context);
     return arr.iter();
   }
 }

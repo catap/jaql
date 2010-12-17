@@ -153,7 +153,7 @@ public class ArrayExpr extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("[");
@@ -162,7 +162,7 @@ public class ArrayExpr extends IterExpr
     for (int i = 0; i < n; i++)
     {
       exprText.print(sep);
-      exprs[i].decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars,emitLocation);
       sep = ", ";
     }
     exprText.print("]");
@@ -173,7 +173,7 @@ public class ArrayExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception // TODO: generalize for other tuple-like exprs?
+  protected JsonValue evalRaw(Context context) throws Exception // TODO: generalize for other tuple-like exprs?
   {
     if (exprs.length == 0)
     {
@@ -196,7 +196,7 @@ public class ArrayExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     if (exprs.length == 0)
     {
@@ -205,7 +205,7 @@ public class ArrayExpr extends IterExpr
     return new JsonIterator() {
       int i = 0;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while (true)
         {

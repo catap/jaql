@@ -93,7 +93,7 @@ public final class ListVariablesFn extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     EnvExpr root = getEnvExpr();
     if( root == null )
@@ -117,7 +117,7 @@ public final class ListVariablesFn extends IterExpr
     {
       Iterator<Var> vars = env.globals().listVariables(false).iterator();
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( vars.hasNext() )
         {

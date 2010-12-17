@@ -83,7 +83,7 @@ public class UnionFn extends IterExpr // TODO: add intersect, difference
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return new JsonIterator()
     {
@@ -91,7 +91,7 @@ public class UnionFn extends IterExpr // TODO: add intersect, difference
       JsonIterator iter = JsonIterator.EMPTY;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {

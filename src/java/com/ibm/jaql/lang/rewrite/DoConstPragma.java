@@ -49,6 +49,7 @@ public class DoConstPragma extends Rewrite
     JsonValue value = expr.getEnvExpr().getEnv().eval(expr);
     ConstExpr c = new ConstExpr(value);
     expr.replaceInParent(c);
+    setOrigin(c,expr);
     return true;
   }
 }

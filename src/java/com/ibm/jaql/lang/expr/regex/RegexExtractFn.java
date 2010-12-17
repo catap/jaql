@@ -89,7 +89,7 @@ public class RegexExtractFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonArray eval(final Context context) throws Exception
+  protected JsonArray evalRaw(final Context context) throws Exception
   {
     final JsonRegex regex = (JsonRegex) exprs[0].eval(context);
     if (regex == null)

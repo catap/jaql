@@ -56,18 +56,18 @@ public final class UnrollExpr extends IterExpr
 
   
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print(kw("unroll") + " ");
     for(int i = 0 ; i < exprs.length ; i++)
     {
-      exprs[i].decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars,emitLocation);
     }
   }
   
 
-  public final JsonIterator iter(final Context context) throws Exception
+  protected final JsonIterator iterRaw(final Context context) throws Exception
   {
     // Share as much of input item as possible
     // but copy the expanded part so we can modify it.
@@ -80,7 +80,7 @@ public final class UnrollExpr extends IterExpr
     path[0] = value;
     for(int i = 1 ; i < exprs.length ; i++)
     {
-      path[i] = ((UnrollStep)exprs[i]).eval(context, path[i-1]);
+      path[i] = ((UnrollStep)exprs[i]).evalRaw(context, path[i-1]);
       if( path[i] == null ) // input item doesn't have our path
       {
         return new SingleJsonValueIterator(value);
@@ -103,7 +103,7 @@ public final class UnrollExpr extends IterExpr
     return new JsonIterator()
     {
       @Override
-      public boolean moveNext() throws Exception // TODO: somethign seems wrong here: lastHole is updated but not used
+	protected boolean moveNextRaw() throws Exception // TODO: somethign seems wrong here: lastHole is updated but not used
       {
         while( true )
         {

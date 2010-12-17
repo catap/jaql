@@ -82,7 +82,7 @@ public class KeyMergeFn extends IterExpr
 
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonValue[] keyval = new JsonValue[2];
     final BufferedJsonArray resultArray = new BufferedJsonArray(3);
@@ -96,7 +96,7 @@ public class KeyMergeFn extends IterExpr
       JsonValue val1;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iter0.moveNext()) 
         {

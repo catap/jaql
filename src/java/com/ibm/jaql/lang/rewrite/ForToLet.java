@@ -58,15 +58,20 @@ public class ForToLet extends Rewrite
     Expr ret = fe.collectExpr();
     if (ret.getSchema().is(ARRAY,NULL).maybeNot())
     {
-      ret = new AsArrayFn(ret);
+      Expr newret=new AsArrayFn(ret);	
+      setOrigin(newret,ret);
+      ret = newret;
     }
     else if (ret.getSchema().is(NULL).maybe())
     {
-      ret = new EmptyOnNullFn(ret);
+      Expr newret = new EmptyOnNullFn(ret);
+      setOrigin(newret,ret);
+      ret = newret;
     }
     bind.type = BindingExpr.Type.EQ;
     bind.setChild(0, elem);
     Expr doExpr = new DoExpr(bind, ret);
+    setOrigin(doExpr,fe);
     fe.replaceInParent(doExpr);
     return true;
   }

@@ -46,7 +46,7 @@ public class ExpectExceptionFn extends Expr
   }
   
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     try
     {

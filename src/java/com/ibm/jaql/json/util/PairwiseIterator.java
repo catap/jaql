@@ -37,7 +37,7 @@ public final class PairwiseIterator extends JsonIterator
   };
   
   @Override
-  public boolean moveNext() throws Exception
+protected boolean moveNextRaw() throws Exception
   {
     boolean foundOne = false;
     for (int i = 0; i < iters.length; i++)

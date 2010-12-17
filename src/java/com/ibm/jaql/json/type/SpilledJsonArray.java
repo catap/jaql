@@ -188,7 +188,7 @@ public class SpilledJsonArray extends JsonArray
       DataInput input = null;
       boolean   eof   = false;
 
-      public boolean moveNext() throws IOException {
+      protected boolean moveNextRaw() throws IOException {
         if (eof) {
           return false;
         }

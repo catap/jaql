@@ -54,7 +54,7 @@ public class ExternalFnExpr extends MacroExpr {
     // }
     //  
     // @Override
-    // public ExternalFnFunction eval(Context context) throws Exception {
+    // protected ExternalFnFunction evalRaw(Context context) throws Exception {
     // ExternalFnFunction f = new
     // ExternalFnFunction(((JsonString)exprs[0].eval(context)).toString());
     // return f;
@@ -65,7 +65,7 @@ public class ExternalFnExpr extends MacroExpr {
      * time.
      */
     @Override
-    public Expr expand(Env env) throws Exception {
+    public Expr expandRaw(Env env) throws Exception {
         Expr e = exprs[0];
 
         if (!(e instanceof RecordExpr)) {

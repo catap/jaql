@@ -274,14 +274,14 @@ public class JaqlFunction extends Function
     FastPrintBuffer exprText = new FastPrintBuffer();
     try
     {
-      body.decompile(exprText, capturedVars);
+      body.decompile(exprText, capturedVars,false);
       for (int i=0; i<parameters.numParameters(); i++)
       {
         VarParameter par = parameters.get(i);
         capturedVars.remove(par.getVar());
         if (par.isOptional())
         {
-          par.getDefaultValue().decompile(exprText, capturedVars);
+          par.getDefaultValue().decompile(exprText, capturedVars,false);
         }
       }
       capturedVars.removeAll(localBindings.keySet());

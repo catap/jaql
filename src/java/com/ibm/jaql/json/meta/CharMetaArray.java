@@ -75,7 +75,7 @@ public class CharMetaArray extends MetaArray
       int   i     = 0;      
 
       @Override
-      public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
       {
         if (i < arr.length)
         {

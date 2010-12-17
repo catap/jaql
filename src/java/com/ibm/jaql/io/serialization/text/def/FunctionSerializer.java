@@ -39,7 +39,13 @@ import com.ibm.jaql.util.FastPrinter;
 
 public class FunctionSerializer extends TextBasicSerializer<Function>
 {
-
+  protected boolean emitOrigin;
+  
+  FunctionSerializer(boolean emit)
+  {
+	  emitOrigin=emit;
+  }
+  
   @Override
   public void write(FastPrinter out, Function value, int indent)
       throws IOException
@@ -98,14 +104,14 @@ public class FunctionSerializer extends TextBasicSerializer<Function>
           if (par.isOptional())
           {
             out.print("=");
-            par.getDefaultValue().decompile(out, capturedVars);
+            par.getDefaultValue().decompile(out, capturedVars, emitOrigin);
           }
           del = ", ";
         }
         out.print(") (");
         
         // write body
-        f.body().decompile(out, capturedVars);
+        f.body().decompile(out, capturedVars, emitOrigin);
         out.print(")");
         
         // endig parens for captures

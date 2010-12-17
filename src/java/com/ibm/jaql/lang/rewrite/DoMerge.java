@@ -90,6 +90,7 @@ public class DoMerge extends Rewrite // TODO: rename to Var inline
       Expr e3 = doExpr.child(n-1);
       new BindingExpr(BindingExpr.Type.EQ, b.var, null, e3.injectAbove()); // (e2, ..., v = e3)
       b.replaceInParent(doExpr.children(), 0, n);
+      
       return true;
     }
 

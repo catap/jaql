@@ -70,7 +70,7 @@ public class MakeFileSplitFn extends Expr
   }
 
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     if( out == null )
     {

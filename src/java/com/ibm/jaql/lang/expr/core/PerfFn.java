@@ -44,7 +44,7 @@ public class PerfFn extends Expr
   }
   
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     Expr e = exprs[0];
     long start = System.currentTimeMillis();

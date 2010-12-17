@@ -45,7 +45,7 @@ public class QueryExpr extends EnvExpr
   @Override
   public Expr clone(VarMap varMap)
   {
-    return new QueryExpr(env, cloneChildren(varMap));
+    return cloneOrigin(new QueryExpr(env, cloneChildren(varMap)));
   }
 
   /*
@@ -55,10 +55,10 @@ public class QueryExpr extends EnvExpr
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
   }
 
   @Override
@@ -80,7 +80,7 @@ public class QueryExpr extends EnvExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
@@ -91,7 +91,7 @@ public class QueryExpr extends EnvExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     return exprs[0].iter(context);
   }

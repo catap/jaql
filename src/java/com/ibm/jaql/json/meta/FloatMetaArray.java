@@ -76,7 +76,7 @@ public class FloatMetaArray extends MetaArray
       
 
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (i < arr.length)
         {

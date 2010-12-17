@@ -28,7 +28,7 @@ public class AggregateGeneralExpr extends MacroExpr
   }
   
   @Override
-  public Expr expand(Env env) throws Exception
+  protected Expr expandRaw(Env env) throws Exception
   {
     return AggregateFullExpr.make(env, (BindingExpr)exprs[0], exprs[1]);
   }

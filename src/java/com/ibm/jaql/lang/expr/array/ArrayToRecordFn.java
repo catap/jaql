@@ -64,7 +64,7 @@ public class ArrayToRecordFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(final Context context) throws Exception
+  protected JsonRecord evalRaw(final Context context) throws Exception
   {
     JsonArray jnames  = (JsonArray)exprs[0].eval(context);
     JsonArray jvalues = (JsonArray)exprs[1].eval(context);

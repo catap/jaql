@@ -108,7 +108,7 @@
 //    // "partition" v=eachVar ("by" (bn=avar "=")? e=sexpr )?
 //    final BindingExpr in = inBinding();
 //    final BindingExpr by = byBinding();
-//    in.inExpr().decompile(exprText, capturedVars);
+//    in.inExpr().decompile(exprText, capturedVars,emitLocation);
 //    exprText.print("\n -> partition each ");
 //    exprText.print(in.var.name());
 //    exprText.print(" by ");
@@ -117,9 +117,9 @@
 //      exprText.print(by.var.name());
 //      exprText.print(" = ");
 //    }
-//    by.eqExpr().decompile(exprText, capturedVars);
+//    by.eqExpr().decompile(exprText, capturedVars,emitLocation);
 //    exprText.print("\n( ");
-//    into().decompile(exprText, capturedVars);
+//    into().decompile(exprText, capturedVars,emitLocation);
 //    exprText.print(" )\n");
 //    capturedVars.remove(in.var);
 //    capturedVars.remove(by.var);

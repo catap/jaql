@@ -60,7 +60,7 @@ public class StrJoinFn extends Expr // TODO: make Aggregate?
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonString eval(Context context) throws Exception
+  protected JsonString evalRaw(Context context) throws Exception
   {
     if( text == null )
     {

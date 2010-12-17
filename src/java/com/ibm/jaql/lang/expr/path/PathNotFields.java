@@ -64,7 +64,7 @@ public class PathNotFields extends PathFields
   /**
    * 
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  public void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars,boolean emit)
   throws Exception
   {
     exprText.print("* -");
@@ -73,7 +73,7 @@ public class PathNotFields extends PathFields
     for(int i = 0 ; i < n ; i++)
     {
       exprText.print(sep);
-      exprs[i].decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars,emit);
       sep = ", ";
     }
   }

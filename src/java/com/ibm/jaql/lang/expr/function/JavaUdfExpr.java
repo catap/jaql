@@ -67,7 +67,7 @@ public class JavaUdfExpr extends MacroExpr {
 //  }
 //  
 //  @Override
-//  public JavaUdfFunction eval(Context context) throws Exception {
+//  protected JavaUdfFunction evalRaw(Context context) throws Exception {
 //    JavaUdfFunction f = new JavaUdfFunction(((JsonString)exprs[0].eval(context)).toString());
 //    return f;
 //  }
@@ -76,7 +76,7 @@ public class JavaUdfExpr extends MacroExpr {
    * JavaUdf is a MacroExpr to ensure that it is a literal class at parse time.
    */
   @Override
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     Expr e = exprs[0];
     if( !(e instanceof ConstExpr) )

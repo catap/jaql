@@ -72,7 +72,7 @@ public abstract class FieldExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public abstract void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected abstract void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitOrigin)
       throws Exception;
   
   /**
@@ -94,7 +94,7 @@ public abstract class FieldExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     throw new RuntimeException("FieldExpr should never be evaluated!");
   }

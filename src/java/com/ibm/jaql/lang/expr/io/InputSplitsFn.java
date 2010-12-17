@@ -58,7 +58,7 @@ public class InputSplitsFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     JsonValue iod = exprs[0].eval(context);
 
@@ -87,7 +87,7 @@ public class InputSplitsFn extends IterExpr
       int i = 0;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( i >= splits.length )
         {

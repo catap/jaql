@@ -286,9 +286,12 @@ public class FilterPushDown extends Rewrite
 		  //Create the new filter
 		  Expr branch = input_expr.child(child_ids.get(i));
 		  BindingExpr new_filter_input = new BindingExpr(Type.IN, newVar, null, branch);
+		  setOrigin(new_filter_input,branch);
 		  FilterExpr new_fe = new FilterExpr(new_filter_input, predClone_list);
 		  //new_fe.replaceVarInPredicates(filter_pipe_var, new_filter_input.var);
+		  setOrigin(new_fe,branch);
 		  input_expr.setChild(child_ids.get(i), new_fe);
+		  
 	  }
 	  
 	  filter_expr.replaceInParent(input_expr);
@@ -389,7 +392,9 @@ public class FilterPushDown extends Rewrite
 	  for (int i = 0; i < child_cnt; i++)
 	  {
 		  BindingExpr new_filter_input = new BindingExpr(Type.IN, new Var(filter_pipe_var.name()), null, grp_input.child(i));
+		  setOrigin(new_filter_input,grp_input.child(i));
 		  FilterExpr new_fe = new FilterExpr(new_filter_input, pushed_to_child[i]);
+		  setOrigin(new_fe,grp_input.child(i));
 		  grp_input.setChild(i, new_fe);
 
 		  //Make sure the VARs under the FilterExpr are correct. 
@@ -471,7 +476,9 @@ public class FilterPushDown extends Rewrite
 		  //plugin_filter_below_expand(pushed_pred, filter_pipe_var, for_expr);
 		  BindingExpr for_input = for_expr.binding();	  
 		  BindingExpr new_filter_input = new BindingExpr(Type.IN, filter_pipe_var, null, for_input.child(0));
+		  setOrigin(new_filter_input,for_input.child(0));
 		  FilterExpr new_fe = new FilterExpr(new_filter_input, pushed_pred);
+		  setOrigin(new_fe,for_input.child(0));
 		  for_input.setChild(0, new_fe);
 
 		  //Make sure the VARs under the FilterExpr are correct. 

@@ -120,6 +120,7 @@ public class ConstFieldAccess extends Rewrite
       if (replaceBy == null)
       {
         replaceBy = new ConstExpr(null);
+        setOrigin(replaceBy,expr);
       }
     }
     expr.replaceInParent(replaceBy);

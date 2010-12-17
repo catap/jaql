@@ -81,11 +81,11 @@ public class ExplainExpr extends EnvExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print(kw("explain") + " ");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
   }
 
   /*
@@ -94,11 +94,11 @@ public class ExplainExpr extends EnvExpr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   // FIXME: Now done by ExplainHandler
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     FastPrintBuffer exprText = new FastPrintBuffer();
     HashSet<Var> capturedVars = new HashSet<Var>();
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,false);
     if (!capturedVars.isEmpty()) // FIXME: change root expr from NoopExpr to QueryStmt
     {
       Iterator<Var> iter = capturedVars.iterator();
@@ -156,7 +156,7 @@ public class ExplainExpr extends EnvExpr
   protected String decompile(Expr expr) throws Exception
   {
     exprText.reset();
-    expr.decompile(exprText, capturedVars);
+    expr.decompile(exprText, capturedVars,false);
     exprText.flush();
     String query = exprText.toString();
     return query;

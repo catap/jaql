@@ -75,7 +75,7 @@ public class RegexFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRegex eval(final Context context) throws Exception
+  protected JsonRegex evalRaw(final Context context) throws Exception
   {
     JsonString regex = (JsonString) exprs[0].eval(context);
     if (regex == null)

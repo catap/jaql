@@ -127,14 +127,14 @@ public class CopyField extends FieldExpr
    * 
    */
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("(");
-    recExpr().decompile(exprText, capturedVars);
+    recExpr().decompile(exprText, capturedVars,emitLocation);
     exprText.print(").");
     exprText.print("(");
-    nameExpr().decompile(exprText, capturedVars);
+    nameExpr().decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
   }
 
@@ -268,9 +268,9 @@ public class CopyField extends FieldExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
    */
-  public CopyField clone(VarMap varMap)
+  public Expr clone(VarMap varMap)
   {
-    return new CopyField(cloneChildren(varMap), when);
+    return cloneOrigin(new CopyField(cloneChildren(varMap), when));
   }
 
 }

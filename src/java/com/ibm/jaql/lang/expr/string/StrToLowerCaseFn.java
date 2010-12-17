@@ -64,7 +64,7 @@ public class StrToLowerCaseFn extends Expr
   }
 
   @Override
-  public JsonString eval(Context context) throws Exception
+  protected JsonString evalRaw(Context context) throws Exception
   {
     JsonString s = (JsonString)exprs[0].eval(context);
     if( s == null )

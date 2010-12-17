@@ -71,7 +71,7 @@ public class UuidFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonBinary eval(final Context context) throws Exception
+  protected JsonBinary evalRaw(final Context context) throws Exception
   {
     UUID uuid = UUID.randomUUID();
     long a = uuid.getMostSignificantBits();

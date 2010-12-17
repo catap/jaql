@@ -65,7 +65,7 @@ public class BatchFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonNumber jnum = (JsonNumber)exprs[1].eval(context);
     final int batchSize = jnum.intValue();
@@ -87,7 +87,7 @@ public class BatchFn extends IterExpr
       boolean atEnd = false;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         block.clear();
         if( atEnd || ! input.moveNext() )

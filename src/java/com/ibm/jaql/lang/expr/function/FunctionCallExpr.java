@@ -202,11 +202,11 @@ public class FunctionCallExpr extends Expr
   }
   
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("(");
-    fnExpr().decompile(exprText, capturedVars);
+    fnExpr().decompile(exprText, capturedVars,emitLocation);
     exprText.print(")");
     exprText.print("(");
     char sep = ' ';
@@ -219,7 +219,7 @@ public class FunctionCallExpr extends Expr
         exprText.print("=");
       }
       exprText.print("(");
-      arg(i).decompile(exprText, capturedVars);
+      arg(i).decompile(exprText, capturedVars,emitLocation);
       exprText.print(")");
       sep = ',';
     }
@@ -303,7 +303,7 @@ public class FunctionCallExpr extends Expr
   // -- evaluation --------------------------------------------------------------------------------
   
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     Function fn = (Function)exprs[0].eval(context);
     if( fn == null )
@@ -393,7 +393,7 @@ public class FunctionCallExpr extends Expr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     Function fn = (Function)exprs[0].eval(context);
     if( fn == null )
@@ -428,7 +428,7 @@ public class FunctionCallExpr extends Expr
     }
     
     @Override
-    public JsonValue eval(Context context) 
+	protected JsonValue evalRaw(Context context) 
     {
       return null; // means positional
     }

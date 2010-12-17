@@ -103,7 +103,7 @@ public class FenceFunction extends IterExpr {
 	}
 	
 	@Override
-	public JsonIterator iter(Context context) throws Exception {
+	protected JsonIterator iterRaw(Context context) throws Exception {
 
 		// the data
 		JsonIterator iter = exprs[0].iter(context);
@@ -135,7 +135,7 @@ public class FenceFunction extends IterExpr {
 		return new ClosableJsonIterator() {
 			
 			@Override
-			public boolean moveNext() throws Exception {
+			protected boolean moveNextRaw() throws Exception {
 				
 				boolean hasVal = true;
 				try {

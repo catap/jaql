@@ -28,7 +28,7 @@ public final class NullIterator extends JsonIterator
   
   /** Returns <code>false</code> */
   @Override
-  public boolean moveNext()
+  protected boolean moveNextRaw()
   {
     return false;
   }

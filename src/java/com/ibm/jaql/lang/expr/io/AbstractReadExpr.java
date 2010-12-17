@@ -121,7 +121,7 @@ public abstract class AbstractReadExpr extends IterExpr
 
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     // Close the previous reader, if still open:
     if( reader != null )
@@ -147,7 +147,7 @@ public abstract class AbstractReadExpr extends IterExpr
     
     return new JsonIterator() {
       @Override
-      public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
       {
         if( reader == null )
         {

@@ -24,5 +24,6 @@ public class DefaultExceptionHandler extends ExceptionHandler
   public void handleException(Throwable ex, JsonValue ctx)
   {
     ex.printStackTrace();
+	System.out.println(ex.toString());  
   }
 }

@@ -53,7 +53,7 @@ public class CatalogUpdateFn extends Expr
 	   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
 	   */
 	  
-	  public JsonRecord eval(final Context context) throws Exception
+	  protected JsonRecord evalRaw(final Context context) throws Exception
 	  {
 		  JsonRecord val = (JsonRecord) exprs[0].eval(context);
 		  JsonString key = (JsonString) exprs[1].eval(context);

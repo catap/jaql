@@ -274,7 +274,7 @@ public class ToMapReduce extends Rewrite
     expr.replaceVar(group.byVar(), keyVar);
     expr.replaceVar(group.inBinding().var, valVar);
     group.replaceInParent(expr);
-
+    setOrigin(expr,group);
     Expr output;
     Expr lastExpr = groupSeg.root;
     boolean writing = lastExpr instanceof WriteFn;
@@ -311,7 +311,7 @@ public class ToMapReduce extends Rewrite
         new NameValueBinding(MapReduceFn.OPTIONS_KEY, group.optionsExpr())
     );
     Expr mr = new MRAggregate(args);
-    
+    setOrigin(mr,group);
     if (writing)
     {
       expr = mr;
@@ -321,6 +321,7 @@ public class ToMapReduce extends Rewrite
     else
     {
       expr = new ReadFn(mr);
+      setOrigin(expr,group);
       groupSeg.type = Segment.Type.MAP; // NOW: group(group(T)) bug INLINE_MAP?
       groupSeg.root = expr;
       groupSeg.firstChild = new Segment(Segment.Type.MAPREDUCE,
@@ -529,7 +530,7 @@ public class ToMapReduce extends Rewrite
           groupSeg.firstChild);
       groupSeg.firstChild.root = groupSeg.firstChild.primaryExpr = mr;
     }
-
+    setOrigin(expr,group);
     topParent.setChild(topSlot, expr);
     modified = true;
   }
@@ -604,7 +605,7 @@ public class ToMapReduce extends Rewrite
         ),
         new NameValueBinding(MapReduceFn.OUTPUT_KEY, output)
     ));
-
+    setOrigin(expr,lastExpr);
     mapSeg.type = Segment.Type.MAPREDUCE;
     mapSeg.root = expr;
 
@@ -614,7 +615,7 @@ public class ToMapReduce extends Rewrite
       //      mapSeg.firstChild = new Segment(Segment.Type.MAPREDUCE, mapSeg.firstChild);
       //      groupSeg.firstChild.root = groupSeg.firstChild.primaryExpr = mr;
     }
-
+    setOrigin(expr,lastExpr);
     topParent.setChild(topSlot, expr);
     modified = true;
   }
@@ -813,6 +814,7 @@ public class ToMapReduce extends Rewrite
     int slot = root.getChildSlot();
     Expr tmp = new WriteFn(root, new HadoopTempExpr(new ConstExpr(new JsonSchema(root.getSchema().elements()))));
     Expr read = new ReadFn(tmp);
+    setOrigin(read,root);
     parent.setChild(slot, read);
     if (seg.type == Segment.Type.GROUP || seg.type == Segment.Type.COMBINE)
     {

@@ -64,7 +64,7 @@ public class StrSplitNFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonArray eval(final Context context) throws Exception
+  protected JsonArray evalRaw(final Context context) throws Exception
   {
     // TODO: need a way to avoid recomputing const exprs...
     JsonString sep = JaqlUtil.enforceNonNull((JsonString)exprs[1].eval(context));

@@ -74,7 +74,7 @@ public class RemapFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     JsonRecord oldRec = (JsonRecord) exprs[0].eval(context);
     JsonRecord newRec = (JsonRecord) exprs[1].eval(context);

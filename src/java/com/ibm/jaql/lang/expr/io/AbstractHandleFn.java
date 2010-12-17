@@ -71,7 +71,7 @@ public abstract class AbstractHandleFn extends Expr implements PotentialMapReduc
   }
 
   @Override
-  public JsonRecord eval(Context context) throws Exception
+  protected JsonRecord evalRaw(Context context) throws Exception
   {
     BufferedJsonRecord rec = new BufferedJsonRecord();
     rec.add(Adapter.TYPE_NAME, getType());

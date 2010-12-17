@@ -23,7 +23,7 @@ public class ListExportsFn extends Expr {
 	}
 	
 	@Override
-	public JsonValue eval(Context context) throws Exception {
+	protected JsonValue evalRaw(Context context) throws Exception {
 		String module = ((JsonString)exprs[0].eval(context)).toString();
 		Namespace namespace = Namespace.get(module);
 		Set<String> exports = namespace.exports();

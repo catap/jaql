@@ -47,7 +47,7 @@ public class SpanFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonSpan eval(final Context context) throws Exception
+  protected JsonSpan evalRaw(final Context context) throws Exception
   {
     JsonLong begin = (JsonLong) exprs[0].eval(context);
     JsonLong end = (JsonLong) exprs[1].eval(context);

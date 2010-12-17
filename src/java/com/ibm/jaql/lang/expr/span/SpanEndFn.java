@@ -49,7 +49,7 @@ public class SpanEndFn extends MacroExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
    */
-  public Expr expand(Env env) throws Exception
+  public Expr expandRaw(Env env) throws Exception
   {
     return new SpanSelectFn(new Expr[] { exprs[0], END_EXPR});
   }

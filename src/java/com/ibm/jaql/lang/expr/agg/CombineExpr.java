@@ -193,7 +193,7 @@ public final class CombineExpr extends AlgebraicAggregate // extends PushAggExpr
   //   z = using(x,y)
   //   assert z != null
   //   put z into the input
-  //  public Item eval(final Context context) throws Exception
+  //  protected Item evalRaw(final Context context) throws Exception
   //  {
   //    BindingExpr b = (BindingExpr)exprs[0];
   //    Iter iter = b.child(0).iter(context);

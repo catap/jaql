@@ -123,7 +123,7 @@ public class SlidingWindowBySizeFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
     final JsonIterator iter = inputExpr().iter(context);
@@ -152,7 +152,7 @@ public class SlidingWindowBySizeFn extends IterExpr
 
         return new JsonIterator(result) 
         {
-          public boolean moveNext() throws Exception
+          protected boolean moveNextRaw() throws Exception
           {
             if( iter.moveNext() )
             {
@@ -230,7 +230,7 @@ public class SlidingWindowBySizeFn extends IterExpr
       protected long nextDelay = exact ? 0 : startDelay - size;
       protected boolean eof = false;
       
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( eof )
         {

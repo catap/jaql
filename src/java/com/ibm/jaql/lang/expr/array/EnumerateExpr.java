@@ -95,7 +95,7 @@ public final class EnumerateExpr extends IterExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonNumber jstart = exprs.length <= 1 ? null : (JsonNumber)exprs[1].eval(context);
     long start = jstart == null ? 0 : jstart.longValueExact();
@@ -105,7 +105,7 @@ public final class EnumerateExpr extends IterExpr
     pair.set(0, counter);
 
     return new JsonIterator(pair) {
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iter.moveNext()) {
           return false;

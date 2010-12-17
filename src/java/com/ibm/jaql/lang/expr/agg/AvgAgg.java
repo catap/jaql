@@ -126,7 +126,7 @@ public class AvgAgg extends AlgebraicAggregate
 //   * @see com.ibm.jaql.lang.expr.core.MacroExpr#expand(com.ibm.jaql.lang.core.Env)
 //   */
 //  @Override
-//  public Expr expand(Env env) throws Exception
+//  public Expr expandRaw(Env env) throws Exception
 //  {
 //    // TODO: expand should be done by a transformation
 //    return new SumAgg(exprs[0].clone(varMap)
@@ -152,7 +152,7 @@ public class AvgAgg extends AlgebraicAggregate
 //   * return agg; }
 //   */
 //
-//  //  public Item eval(final Context context) throws Exception
+//  //  protected Item evalRaw(final Context context) throws Exception
 //  //  {
 //  //    boolean sawLong = false;
 //  //    long count = 0;

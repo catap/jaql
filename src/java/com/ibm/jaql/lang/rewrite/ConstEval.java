@@ -50,10 +50,17 @@ public class ConstEval extends Rewrite
     {
       return false;
     }
-
-    JsonValue value = expr.getEnvExpr().getEnv().eval(expr);
-    ConstExpr c = new ConstExpr(value);
-    expr.replaceInParent(c);
+    try {
+      JsonValue value = expr.getEnvExpr().getEnv().eval(expr);
+      ConstExpr c = new ConstExpr(value);
+      expr.replaceInParent(c);
+      setOrigin(c,expr);
+    }
+    finally
+    { // if there are run-time errors, defer expr evaluation to run-time
+      // to avoid expressions like this failing although there are no problems
+      // if(false) (runtime-error-producing expression) else x
+    }
     // context.reset(); // TODO: need to wrap up parse, eval, cleanup into one class and use everywhere
     return true;
   }

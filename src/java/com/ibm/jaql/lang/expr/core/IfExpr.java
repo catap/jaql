@@ -112,17 +112,17 @@ public final class IfExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     exprText.print("\n" + kw("if") + "( ");
-    testExpr().decompile(exprText, capturedVars);
+    testExpr().decompile(exprText, capturedVars,emitLocation);
     exprText.print(" )\n( ");
-    trueExpr().decompile(exprText, capturedVars);
+    trueExpr().decompile(exprText, capturedVars,emitLocation);
     if (falseExpr().getSchema().is(NULL).maybeNot())
     {
       exprText.print(" )\n" + kw("else") + " ( ");
-      falseExpr().decompile(exprText, capturedVars);
+      falseExpr().decompile(exprText, capturedVars,emitLocation);
     }
     exprText.println(" )");
   }
@@ -132,7 +132,7 @@ public final class IfExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     boolean b = JaqlUtil.ebv(exprs[0].eval(context));
     JsonValue value;
@@ -152,7 +152,7 @@ public final class IfExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     boolean b = JaqlUtil.ebv(exprs[0].eval(context));
     JsonIterator iter;

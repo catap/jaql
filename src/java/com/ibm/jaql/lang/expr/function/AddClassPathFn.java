@@ -43,7 +43,7 @@ public class AddClassPathFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception 
+  protected JsonValue evalRaw(Context context) throws Exception 
   {
     // TODO: make this a MacroExpr to load classes immediately? Otherwise explain of javaudf will not work...
     JsonArray jarray = (JsonArray)exprs[0].eval(context);

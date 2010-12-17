@@ -60,7 +60,7 @@ public class HexFn extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonBinary eval(Context context) throws Exception
+  protected JsonBinary evalRaw(Context context) throws Exception
   {
     JsonString hexString = (JsonString)exprs[0].eval(context);
     if( hexString == null )

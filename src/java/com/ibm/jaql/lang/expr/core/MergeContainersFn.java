@@ -71,7 +71,7 @@ public class MergeContainersFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     int i;
     JsonValue value = null;
@@ -138,7 +138,7 @@ public class MergeContainersFn extends Expr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return new JsonIterator()
     {
@@ -146,7 +146,7 @@ public class MergeContainersFn extends Expr
       JsonIterator iter = JsonIterator.EMPTY;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while( true )
         {

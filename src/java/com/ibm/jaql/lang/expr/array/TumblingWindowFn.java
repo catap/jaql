@@ -164,7 +164,7 @@ public class TumblingWindowFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator iter = exprs[ARG_INPUT].iter(context);
     final Function stopfn = (Function)exprs[ARG_STOP_PRED].eval(context);
@@ -219,7 +219,7 @@ public class TumblingWindowFn extends IterExpr
       boolean hasNext = true;
       JsonValue last = null;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( !hasNext )
         {

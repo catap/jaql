@@ -97,7 +97,7 @@ public class RandomDoubleFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonDouble eval(final Context context) throws Exception
+  protected JsonDouble evalRaw(final Context context) throws Exception
   {
     if (rng == null)
     {

@@ -49,7 +49,9 @@ public class ConstArrayAccess extends Rewrite
     
     if( array.getSchema().is(NULL).always() )
     {
-      ie.replaceInParent(new ConstExpr(null));
+      Expr c=new ConstExpr(null); 	
+      ie.replaceInParent(c);
+      setOrigin(c,ie);
       return true;
     }
     
@@ -77,6 +79,7 @@ public class ConstArrayAccess extends Rewrite
       if (i < 0 || i >= array.numChildren())
       {
         replaceBy = new ConstExpr(null);
+        setOrigin(replaceBy,c);
       }
       else
       {

@@ -28,9 +28,6 @@ import com.ibm.jaql.lang.expr.function.JsonValueParameter;
 import com.ibm.jaql.lang.expr.function.JsonValueParameters;
 
 /**
- * @jaqlDescription Range generates a continuous array of numbers
- * 
- * Usage:
  * range(size)      = [0,size-1]
  * range(size,null) = [0,size-1]
  * range(start,end) = [start,end]
@@ -130,7 +127,7 @@ public class RangeExpr extends IterExpr // TODO: rename to RangeFn
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonNumber jstartOrSize = (JsonNumber) exprs[0].eval(context);
     if (jstartOrSize == null)
@@ -163,7 +160,7 @@ public class RangeExpr extends IterExpr // TODO: rename to RangeFn
     result.set(start - skip);
     return new JsonIterator(result) 
     {
-      public boolean moveNext()
+      protected boolean moveNextRaw()
       {
         long next = result.get() + skip;
         if( next <= end )

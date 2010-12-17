@@ -167,11 +167,11 @@
 //    //      exprText.print(sep);      
 //    //      exprText.print(b.var.name);
 //    //      exprText.print(" = ");
-//    //      b.eqExpr().decompile(exprText, capturedVars);      
+//    //      b.eqExpr().decompile(exprText, capturedVars,emitLocation);      
 //    //      sep = ",\n     ";
 //    //    }
 //    //    exprText.println(")");
-//    //    returnExpr().decompile(exprText, capturedVars);
+//    //    returnExpr().decompile(exprText, capturedVars,emitLocation);
 //
 //    exprText.println("(");
 //    int n = exprs.length - 1;
@@ -181,11 +181,11 @@
 //      exprText.print("    ");
 //      exprText.print(b.var.name);
 //      exprText.print(" = ");
-//      b.eqExpr().decompile(exprText, capturedVars);
+//      b.eqExpr().decompile(exprText, capturedVars,emitLocation);
 //      exprText.println(",");
 //    }
 //    exprText.println();
-//    returnExpr().decompile(exprText, capturedVars);
+//    returnExpr().decompile(exprText, capturedVars,emitLocation);
 //    exprText.println(")");
 //
 //    for (int i = 0; i < n; i++)
@@ -227,7 +227,7 @@
 //   * 
 //   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
 //   */
-//  public Item eval(Context context) throws Exception
+//  protected Item evalRaw(Context context) throws Exception
 //  {
 //    evalLets(context);
 //    Item item = returnExpr().eval(context);

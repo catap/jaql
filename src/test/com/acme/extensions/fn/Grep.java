@@ -87,7 +87,7 @@ public class Grep
     return new JsonIterator(resultStr) {
       private boolean needInput = true;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         while (true)
         {

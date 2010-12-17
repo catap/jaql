@@ -113,7 +113,7 @@ public class IcebergCubeInMemory extends Expr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     JsonArray colNamesArray = (JsonArray)exprs[ARG_COLUMNS].eval(context);
     colNames = new JsonString[(int)colNamesArray.count()];

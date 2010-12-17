@@ -134,7 +134,7 @@ public class IndexExpr extends Expr // TODO: rename to IndexFn
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     // TODO: support multiple indexes? $a[3 to 7], $a[ [3,4,5,6,7] ]
     // TODO: support array slices?  $a[3:7]

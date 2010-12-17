@@ -72,7 +72,7 @@ public class ShiftFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     // TODO: the ItemHashtable is a real quick and dirty prototype.  We need to spill to disk, etc...
     final JsonIterator iter = inputExpr().iter(context);
@@ -135,7 +135,7 @@ public class ShiftFn extends IterExpr
       boolean eof = false;
       long tail = after;
       
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!eof) {
           eof = !iter.moveNext();
@@ -206,7 +206,7 @@ public class ShiftFn extends IterExpr
         int i = end + 1;
         
         @Override
-        public boolean moveNext() throws Exception
+        protected boolean moveNextRaw() throws Exception
         {
           if( i == buffer.length )
           {

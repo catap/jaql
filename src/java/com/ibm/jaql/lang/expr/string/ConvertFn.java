@@ -63,7 +63,7 @@ public class ConvertFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     JsonSchema schema = JaqlUtil.enforceNonNull((JsonSchema)exprs[1].eval(context));
     if (schema.get() != this.schema)

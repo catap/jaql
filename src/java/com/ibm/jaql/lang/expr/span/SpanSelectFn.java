@@ -70,7 +70,7 @@ public class SpanSelectFn extends Expr
 	 * 
 	 * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
 	 */
-	public JsonLong eval(final Context context) throws Exception
+	protected JsonLong evalRaw(final Context context) throws Exception
 	{
 		// get the span to select from
 		JsonSpan spn = (JsonSpan) exprs[0].eval(context);

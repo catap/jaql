@@ -76,7 +76,7 @@ public class TypedXmlToJsonFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     if( parser == null )
     {

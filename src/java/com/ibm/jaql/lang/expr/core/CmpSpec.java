@@ -77,12 +77,12 @@ public class CmpSpec extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     boolean parens = !( exprs[0] instanceof FieldExpr );
     if( parens ) exprText.print("(");
-    exprs[0].decompile(exprText, capturedVars);
+    exprs[0].decompile(exprText, capturedVars,emitLocation);
     if( parens ) exprText.print(")");
     if( order == Order.DESC )
     {
@@ -95,7 +95,7 @@ public class CmpSpec extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     return exprs[0].eval(context);
   }
@@ -109,7 +109,7 @@ public class CmpSpec extends Expr
   public Expr clone(VarMap varMap)
   {
     Expr[] es = cloneChildren(varMap);
-    return new CmpSpec(es[0], order);
+    return cloneOrigin(new CmpSpec(es[0], order));
   }
 
   /**

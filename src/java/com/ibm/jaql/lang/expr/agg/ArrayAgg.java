@@ -39,7 +39,7 @@ public final class ArrayAgg extends AlgebraicAggregate
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonIterator iter = exprs[0].iter(context);
     init(context);

@@ -98,7 +98,7 @@ public class JaqlGetFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonParser parser = fetch(context);
     JsonValue value = parser.TopVal();
@@ -110,7 +110,7 @@ public class JaqlGetFn extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     final JsonParser parser = fetch(context);
     return new JsonIterator() {
@@ -118,7 +118,7 @@ public class JaqlGetFn extends Expr
       boolean checkedEOF = false;
 
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (nextValue == JsonParser.NIL)
         {

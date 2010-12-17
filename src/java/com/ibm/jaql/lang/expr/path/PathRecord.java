@@ -66,7 +66,7 @@ public class PathRecord extends PathStep
   /**
    * 
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
   throws Exception
   {
     exprText.print("{");
@@ -75,11 +75,11 @@ public class PathRecord extends PathStep
     for(int i = 0 ; i < m ; i++)
     {
       exprText.print(sep);
-      exprs[i].decompile(exprText, capturedVars);
+      exprs[i].decompile(exprText, capturedVars,emitLocation);
       sep = ", ";
     }
     exprText.print(" }");
-    exprs[m].decompile(exprText, capturedVars);
+    exprs[m].decompile(exprText, capturedVars,emitLocation);
   }
 
   /**
@@ -103,7 +103,7 @@ public class PathRecord extends PathStep
    * @see com.ibm.jaql.lang.expr.core.PathExpr#eval(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonValue eval(Context context) throws Exception
+protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonRecord oldRec = (JsonRecord)input;
     if( oldRec == null )

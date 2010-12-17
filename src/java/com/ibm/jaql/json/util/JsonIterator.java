@@ -15,7 +15,6 @@
  */
 package com.ibm.jaql.json.util;
 
-import java.io.PrintStream;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Iterator;
 
@@ -27,11 +26,12 @@ import com.ibm.jaql.json.schema.SchemaTransformation;
 import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.util.FastPrintStream;
+import com.ibm.jaql.lang.ExprEvalException;
+import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.util.FastPrinter;
 
 /** Iterator over a list of {@link JsonValue}s. This iterator is meant to be accessed either 
- * via the {@link #moveNext()} and {@link #current()} methods or via 
+ * via the {@link #moveNextRaw()} and {@link #current()} methods or via 
  * <code>foreach</code> statements.
  * 
  * <code>JsonIterator</code> implements {@link Iterator} and {@link Iterable} for convenience, 
@@ -59,29 +59,57 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   public static final JsonIterator NULL   = NullIterator.getInstance();
 
   
+ 
   // -- constructors ------------------------------------------------------------------------------
-
   protected JsonIterator() {
+	  this.originatingExpr=null;
   }
   
   protected JsonIterator(JsonValue initialValue) {
-    this.currentValue = initialValue;
+	  this.currentValue = initialValue;
+ 	  this.originatingExpr=null;
   }
-  
   
   // -- protected variables -----------------------------------------------------------------------
 
   /** The current value as returned by {@link #current()}. */
   protected JsonValue currentValue;
   
+  /**
+   * The expression which created this iterator.
+   */
+  protected Expr originatingExpr;
   
   //-- Jaql-style iteration -----------------------------------------------------------------------
   
-  /** Returns the current value if the last call to {@link #moveNext()} or {@link #moveN()}
+  /** Returns the current value if the last call to {@link #moveNextRaw()} or {@link #moveN()}
    * returned <code>true</code>. Otherwise, the return value is undefined and no exception
    * is produced. */
   public final JsonValue current() {
     return currentValue;
+  }
+  /** Moves to the next value, if any, and sets {@link #currentValue} to this value. 
+   * 
+   * @return whether there has been a next value 
+   * @throws Exception
+   */
+  public final boolean moveNext() throws Exception {
+    try
+    {
+      return moveNextRaw();
+    }
+    catch(ExprEvalException ex) {
+	    throw ex;
+	}
+	catch(InterruptedException ex) {
+	  throw ex;
+    }
+	catch(Exception t) {
+	  if(originatingExpr == null)
+		throw t;
+	  else
+	    throw new ExprEvalException(originatingExpr, t);
+	}
   }
   
   /** Moves to the next value, if any, and sets {@link #currentValue} to this value. 
@@ -89,7 +117,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
    * @return whether there has been a next value 
    * @throws Exception
    */
-  public abstract boolean moveNext() throws Exception;
+  protected abstract boolean moveNextRaw() throws Exception;
   
   /** Moves to the next non-null value, if any, and sets {@link #currentValue} to this value. 
    * 
@@ -119,7 +147,7 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   public boolean moveN(long n) throws Exception
   {
     for (long i=0; i<n; i++) {
-      if (!moveNext()) return false;
+      if (!moveNextRaw()) return false;
     }
     return true;
   }
@@ -139,14 +167,14 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
 
   // -- Java-style iteration ---------------------------------------------------------------------
   
-  /** Equivalent to {@link JsonIterator#moveNext()}. This method is marked deprecated because it 
+  /** Equivalent to {@link JsonIterator#moveNextRaw()}. This method is marked deprecated because it 
    * diverts slightly from the standard Java iterator contract. It will not be removed in 
    * future versions. */
   @Deprecated
   public final boolean hasNext() {
     try
     {
-      return moveNext();
+      return moveNextRaw();
     } catch (Exception e)
     {
       throw new UndeclaredThrowableException(e);
@@ -185,18 +213,8 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
   {
     this.print(out, 0, SchemaFactory.anySchema());
   }
-  
-  public final void print(PrintStream out) throws Exception
-  {
-    this.print(out, 0, SchemaFactory.anySchema());
-  }
 
   public final void print(FastPrinter out, int indent) throws Exception
-  {
-    this.print(out, indent, SchemaFactory.anySchema());
-  }
-  
-  public final void print(PrintStream out, int indent) throws Exception
   {
     this.print(out, indent, SchemaFactory.anySchema());
   }
@@ -277,10 +295,18 @@ public abstract class JsonIterator implements Iterator<JsonValue>, Iterable<Json
       out.print("]");
     }
   }
-  public final void print(PrintStream out, int indent, Schema valueSchema) throws Exception
-  {
-	  FastPrintStream str = new FastPrintStream(out);
-	  this.print(str, indent, valueSchema);
-	  str.close();
+  /**
+   * @param originatingExpr the originatingExpr to set
+   */
+  public void setOriginatingExpr(Expr originatingExpr) {
+	this.originatingExpr = originatingExpr;
   }
+
+/**
+   * @return the originatingExpr
+   */
+  public Expr getOriginatingExpr() {
+	return originatingExpr;
+  }
+
 }

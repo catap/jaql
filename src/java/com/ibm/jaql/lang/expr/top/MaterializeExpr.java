@@ -62,7 +62,7 @@
 //    exprText.print(kw("materialize") + " ");
 //    exprText.print("::" + var.taggedName());
 //    exprText.print(" = ");
-//    exprs[0].decompile(exprText, capturedVars);
+//    exprs[0].decompile(exprText, capturedVars,emitLocation);
 //  }
 //  
 //  @Override
@@ -76,7 +76,7 @@
 //   * 
 //   * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
 //   */
-//  public JsonString eval(Context context) throws Exception
+//  protected JsonString evalRaw(Context context) throws Exception
 //  {
 //    JsonValue value = exprs[0].eval(context);
 //    // FIXME: this check should be in setValue, 

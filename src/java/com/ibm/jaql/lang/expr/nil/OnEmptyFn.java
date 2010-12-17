@@ -47,13 +47,13 @@ public class OnEmptyFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return new JsonIterator() {
       JsonIterator    iter  = exprs[0].iter(context);
       boolean didIt = false;
 
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (iter.moveNext()) {
           didIt = true;

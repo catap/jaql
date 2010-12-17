@@ -180,13 +180,13 @@ public class DaisyChainFn extends Expr
   }
   
   @Override 
-  public JsonValue eval(final Context context) throws Exception
+  protected JsonValue evalRaw(final Context context) throws Exception
   {
     return composeArguments(context).eval(context);
   }
   
   @Override 
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return composeArguments(context).iter(context);
   }
@@ -211,13 +211,13 @@ public class DaisyChainFn extends Expr
     }
     
     @Override 
-    public JsonValue eval(final Context context) throws Exception
+    protected JsonValue evalRaw(final Context context) throws Exception
     {
       return fn.eval(context);
     }
     
     @Override 
-    public JsonIterator iter(final Context context) throws Exception
+    protected JsonIterator iterRaw(final Context context) throws Exception
     {
       return fn.iter(context);
     }

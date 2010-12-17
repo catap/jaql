@@ -101,7 +101,7 @@ public class SkipUntilFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonValue[] args = new JsonValue[1];
     final JsonIterator iter = exprs[0].iter(context);
@@ -137,7 +137,7 @@ public class SkipUntilFn extends IterExpr
       boolean atFirst = true;
       
       @Override
-      public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
       {
         if( atFirst )
         {

@@ -75,7 +75,7 @@ public class FieldsOfFn extends IterExpr
     return Bool3.TRUE;
   }
 
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonSchema jschema = (JsonSchema)exprs[0].eval(context);
     if( jschema == null )
@@ -106,7 +106,7 @@ public class FieldsOfFn extends IterExpr
       int i = 0;
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( i == fields.size() )
         {

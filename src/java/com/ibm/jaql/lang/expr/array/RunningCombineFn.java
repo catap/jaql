@@ -121,7 +121,7 @@ public class RunningCombineFn extends IterExpr
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final JsonIterator iter = inputExpr().iter(context);
     final JsonValue init = initExpr().eval(context);
@@ -135,7 +135,7 @@ public class RunningCombineFn extends IterExpr
 
     return new JsonIterator() 
     {
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( !iter.moveNext() )
         {

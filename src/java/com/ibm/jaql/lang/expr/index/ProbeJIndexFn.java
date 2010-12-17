@@ -44,7 +44,7 @@ public class ProbeJIndexFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     if( index == null )
     {

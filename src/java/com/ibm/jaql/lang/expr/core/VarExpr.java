@@ -89,7 +89,7 @@ public class VarExpr extends Expr
    * @see com.ibm.jaql.lang.expr.core.Expr#decompile(java.io.PrintStream,
    *      java.util.HashSet)
    */
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     if (var.isGlobal())
@@ -112,10 +112,10 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#clone(com.ibm.jaql.lang.core.VarMap)
    */
-  public VarExpr clone(VarMap varMap)
+  public Expr clone(VarMap varMap)
   {
     Var v = varMap.get(var);
-    return new VarExpr(v);
+    return cloneOrigin(new VarExpr(v));
   }
 
   
@@ -143,7 +143,7 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#eval(com.ibm.jaql.lang.core.Context)
    */
-  public JsonValue eval(Context context) throws Exception
+  protected JsonValue evalRaw(Context context) throws Exception
   {
     JsonValue result = var.getValue(context); 
     return result;
@@ -154,7 +154,7 @@ public class VarExpr extends Expr
    * 
    * @see com.ibm.jaql.lang.expr.core.Expr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(Context context) throws Exception
+  protected JsonIterator iterRaw(Context context) throws Exception
   {
     return var.iter(context);
   }

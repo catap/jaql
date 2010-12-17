@@ -91,18 +91,18 @@ public class MultiForExpr extends MacroExpr
   //          throw new RuntimeException("bad binding type");
   //      }
   //      exprText.print("(");
-  //      b.inExpr().decompile(exprText, capturedVars);
+  //      b.inExpr().decompile(exprText, capturedVars,emitLocation);
   //      exprText.print(")");
   //      sep = ",\n";
   //    }
   //    if( !(ifExpr instanceof TrueExpr) )
   //    {
   //      exprText.print("where (");
-  //      ifExpr.decompile(exprText, capturedVars);
+  //      ifExpr.decompile(exprText, capturedVars,emitLocation);
   //      exprText.println(")");      
   //    }
   //    exprText.print("return (");
-  //    doExpr.decompile(exprText, capturedVars);
+  //    doExpr.decompile(exprText, capturedVars,emitLocation);
   //    exprText.println(")");
   //
   //    for(int i = 2 ; i < exprs.length ; i++)
@@ -120,7 +120,7 @@ public class MultiForExpr extends MacroExpr
    * @param env
    * @return
    */
-  public Expr expand(Env env) // throws Exception
+  protected Expr expandRaw(Env env) // throws Exception
   {
     Expr ifExpr = exprs[0];
     Expr expr = exprs[1]; // doExpr
@@ -165,7 +165,7 @@ public class MultiForExpr extends MacroExpr
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-//  public JsonIterator iter(final Context context) throws Exception
+//  protected JsonIterator iterRaw(final Context context) throws Exception
 //  {
 //    throw new RuntimeException("this should have been expanded!"); // expand it...
 //  }

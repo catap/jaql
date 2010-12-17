@@ -182,7 +182,7 @@ public final class ForExpr extends IterExpr // TODO: rename
    *      java.util.HashSet)
    */
   @Override
-  public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
+  protected void decompileRaw(FastPrinter exprText, HashSet<Var> capturedVars, boolean emitLocation)
       throws Exception
   {
     // TODO: decompile as "for" or "expand"?
@@ -200,11 +200,11 @@ public final class ForExpr extends IterExpr // TODO: rename
 //    }
 //    else
     {
-      b.inExpr().decompile(exprText, capturedVars);
+      b.inExpr().decompile(exprText, capturedVars, emitLocation);
       exprText.print(" -> " + kw("expand") + " " + kw("each") + " ");
       exprText.print(b.var.taggedName());
       exprText.print(" ( ");
-      collectExpr().decompile(exprText, capturedVars);
+      collectExpr().decompile(exprText, capturedVars, emitLocation);
       exprText.println(" )");
     }
     capturedVars.remove(b.var);
@@ -215,7 +215,7 @@ public final class ForExpr extends IterExpr // TODO: rename
    * 
    * @see com.ibm.jaql.lang.expr.core.IterExpr#iter(com.ibm.jaql.lang.core.Context)
    */
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final BindingExpr inBinding = binding();
     final Expr collectExpr = collectExpr();
@@ -226,7 +226,7 @@ public final class ForExpr extends IterExpr // TODO: rename
     {
       JsonIterator inner = JsonIterator.EMPTY;
 
-      public boolean moveNext() throws Exception
+      public boolean moveNextRaw() throws Exception
       {
         while (true)
         {

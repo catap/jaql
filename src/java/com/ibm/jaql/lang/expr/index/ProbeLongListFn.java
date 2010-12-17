@@ -91,7 +91,7 @@ public class ProbeLongListFn extends IterExpr
 
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     final LongArrayDedup build = new LongArrayDedup();
     for (JsonValue v : exprs[1].iter(context))
@@ -113,7 +113,7 @@ public class ProbeLongListFn extends IterExpr
       JsonIterator iter = exprs[0].iter(context);
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if (!iter.moveNext()) 
         {

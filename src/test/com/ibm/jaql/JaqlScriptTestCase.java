@@ -384,6 +384,7 @@ public class JaqlScriptTestCase
     public void handleException(Throwable error, JsonValue ctx) throws Exception
     {
       Throwable cause = error;
+    	  
       while( cause.getCause() != null )
       {
         cause = cause.getCause();

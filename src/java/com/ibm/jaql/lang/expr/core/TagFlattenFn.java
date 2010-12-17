@@ -76,7 +76,7 @@ public class TagFlattenFn extends IterExpr
 //  public Schema getSchema()
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     JsonValue jindex = exprs[1].eval(context);
     JsonValue jsize  = exprs[2].eval(context);
@@ -92,7 +92,7 @@ public class TagFlattenFn extends IterExpr
       JsonValue[] pair = new JsonValue[2];
       
       @Override
-      public boolean moveNext() throws Exception
+      protected boolean moveNextRaw() throws Exception
       {
         if( ! iter.moveNext() )
         {

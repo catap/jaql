@@ -25,6 +25,7 @@ import com.ibm.jaql.lang.expr.array.AsArrayFn;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
+import com.ibm.jaql.lang.expr.core.ExprFromExprOrigin;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.expr.core.VarExpr;
@@ -368,4 +369,10 @@ public abstract class Rewrite
     }
     return expr;
   }
+  
+  protected void setOrigin(Expr newexpr, Expr oldexpr)
+  {
+	  newexpr.setOrigin(new ExprFromRewriteOrigin(oldexpr,this));
+  }
+  
 }

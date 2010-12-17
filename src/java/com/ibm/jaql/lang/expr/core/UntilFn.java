@@ -100,7 +100,7 @@ public class UntilFn extends IterExpr
   }
 
   @Override
-  public JsonIterator iter(final Context context) throws Exception
+  protected JsonIterator iterRaw(final Context context) throws Exception
   {
     return new JsonIterator()
     {
@@ -109,7 +109,7 @@ public class UntilFn extends IterExpr
       JsonValue[] args = new JsonValue[1];
 
       @Override
-      public boolean moveNext() throws Exception
+	protected boolean moveNextRaw() throws Exception
       {
         if( ! iter.moveNext() )
         {
