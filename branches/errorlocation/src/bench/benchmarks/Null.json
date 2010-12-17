@@ -1,0 +1,10 @@
+{	
+	iterations: 7,
+	numberOfRecords: 8000000,
+	resultSchema: "com.ibm.jaql.benchmark.programs.data.Null",
+	data: {
+			jsonConverter: "com.ibm.jaql.benchmark.programs.data.Null",
+			schema: "com.ibm.jaql.benchmark.programs.data.Null",
+			values: [null, null, null, null, null, null, null, null, null]
+		   }
+}

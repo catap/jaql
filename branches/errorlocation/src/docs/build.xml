@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<project name="jaqldoc" default="wikidocs">
+	<property name="hadoop.version" value="0.20" />
+	  <property name="hadoop.dir" value="${basedir}/../../vendor/hadoop/${hadoop.version}" />
+	  <path id="test.compile.classpath">
+	      <fileset dir="${hadoop.dir}">
+	        <include name="**/*.jar" />
+	        <exclude name="**/excluded" />
+	      </fileset>
+	      <fileset dir="${basedir}/../../lib">
+	        <include name="**/*.jar" />
+	        <exclude name="**/excluded" />
+	      </fileset>
+	      <pathelement location="${basedir}/../../build/classes" />
+	      <pathelement location="${basedir}/../../buildEclipse" />
+	    </path>
+	  <property name="test.compile.classpath.id" value="test.compile.classpath" />
+	
+<target name="wikidocs">
+    <javadoc sourcepath="../java" packagenames="com.ibm.jaql.lang.expr.*" classpathref="${test.compile.classpath.id}" docletpathref="${test.compile.classpath.id}">
+    	<doclet name="com.ibm.jaql.doc.DocReader">
+    		           
+    	        <param name="-udfprocessors" value="com.ibm.jaql.doc.processors.WikiProcessor"/>
+    	        <param name="-wikiout" value="test.wiki"/>
+    	</doclet>
+
+    	<!--<classpath refid="${test.compile.classpath.id}" />-->
+    </javadoc>
+  </target>
+	
+	<target name="htmldocs">
+	    <javadoc sourcepath="../java" packagenames="com.ibm.jaql.lang.expr.*" classpathref="${test.compile.classpath.id}" docletpathref="${test.compile.classpath.id}">
+	      <doclet name="com.ibm.jaql.doc.DocReader">
+	                   
+	              <param name="-udfprocessors" value="com.ibm.jaql.doc.processors.HtmlProcessor"/>
+	              <param name="-htmlout" value="test.html"/>
+	      </doclet>
+
+	      <!--<classpath refid="${test.compile.classpath.id}" />-->
+	    </javadoc>
+	  </target>
+</project>

@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<!-- Put site-specific property overrides in this file. -->
+
+<configuration>
+ <property>
+    <name>mapred.map.tasks</name>
+    <value>1</value>
+    <description>This is set because the memory filesystem does not support splits</description>
+  </property>
+</configuration>

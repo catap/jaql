@@ -1,0 +1,100 @@
+
+;//------------------- TEST-CASE -----------------
+
+// ========== streaming mode =========
+// data
+['I love java', 'you love java ma'] -> write(hdfs('foo'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// define an external call
+external = externalfn({ cmd:'grep ma', perPartition:true, mode:'streaming' });
+;//------------------- TEST-CASE -----------------
+
+
+// verified
+read(hdfs('foo'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoke the call and run in parallel
+read(hdfs('foo')) -> external();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// should be run in parallel
+read(hdfs('foo')) -> perPartition(->external());
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+// =========== push mode ===========
+// data
+data = ['I love java', 'you love java ma'];
+;//------------------- TEST-CASE -----------------
+
+
+// re-define an external call
+external = externalfn({cmd:'grep ma', perPartition:false, mode:'push' });
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+external(data);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// invoke
+data -> transform { result: external($)};
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+
+
+;//------------------- TEST-DONE -----------------

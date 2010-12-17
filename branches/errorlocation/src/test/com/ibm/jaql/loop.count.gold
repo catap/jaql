@@ -1,0 +1,327 @@
+
+;//------------------- TEST-CASE -----------------
+//===========================================================================
+// Test loop constructs
+//===========================================================================
+
+//===========================================================================
+// until function:
+//   Pull from an array in order until the first time that stopcond 
+//   returns true:
+//
+//   array -> until( fn(i) stopcond(i), inclusive=true )
+//
+//===========================================================================
+
+// 0..3
+range(10) -> until( fn(i) i == 3 );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// 0..2
+range(10) -> until( fn(i) i == 3, inclusive=false );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//===========================================================================
+// while expression: unbounded iteration
+//
+// in jaql:
+//
+//   while( i = init, cond<i> ) body<i>
+// 
+// in pseudocode:
+//
+//   set i = init
+//   while( cond<i> )
+//     set i = body(i)
+// 
+//===========================================================================
+
+// a bad way to perform range(5):
+// 0..4
+while( i = [], count(i) < 5 ) append(i,[count(i)]);
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//---------------------------------------------------------------------------
+// some utilities for later (should be in a module):
+//---------------------------------------------------------------------------
+
+setUnion = fn(A,B) 
+   group each i in A by k = i, 
+                   B by     i
+   into k
+;
+;//------------------- TEST-CASE -----------------
+
+
+setEquals = fn(A,B)
+   group each i in A by i, 
+                   B by i
+   expand if( count(A) == 0 or count(B) == 0 ) [false]
+   -> any()
+   -> firstNonNull( true )
+;
+;//------------------- TEST-CASE -----------------
+
+
+// Distinct items in A but not in B
+setDifference = fn(A,B) 
+   group each i in A by k = i, 
+                   B by     i
+   expand if( count(B) == 0 ) [k]
+;
+;//------------------- TEST-CASE -----------------
+
+
+//---------------------------------------------------------------------------
+// Compute a fixpoint of f
+// This keeps sets in memory (or spilled), so don't use it on big data
+// Don't expect a lot of parallelism!
+//---------------------------------------------------------------------------
+
+fix = fn(f)
+(
+  fn(x) 
+  (
+    // i is [prevSet, curSet]
+    // repeat while prevSet != curSet
+    last = 
+      while( i = [x, setUnion(x, f(x))], 
+             not setEquals(i[0],i[1]) )
+         [ i[1], setUnion(i[1], f(i[1])) ],
+    last[0]
+  )
+);
+;//------------------- TEST-CASE -----------------
+
+
+//---------------------------------------------------------------------------
+// Test fix using a family tree
+//---------------------------------------------------------------------------
+
+people = [ 
+                                                                                                                                   { i: 0, n: 'great great grandpappy' },
+                                                                                    { i: 1, p: 0, n: 'great grandpappy' },                                                       { i: 19, p: 0, n: 'great great uncle' },
+                                            { i: 2, p: 1, n: 'grandpappy',  },                                               { i: 14, p:  1, n: 'great uncle' },                 { i: 20, p: 19, n: 'first cousin twice removedA' },
+
+                   { i: 3, p: 2, n: 'pappy', },                           { i: 10, p:  2, n: 'uncle' },                      { i: 15, p: 14, n: 'first cousin once removeA' },   { i: 21, p: 20, n: 'second cousin once removedA' },
+    { i: 4, p: 3, n: 'me' },           { i: 7, p: 3, n: 'brother' },      { i: 11, p: 10, n: 'first cousin' },               { i: 16, p: 15, n: 'second cousin' },               { i: 22, p: 21, n: 'third cousin' },
+    { i: 5, p: 4, n: 'son' },          { i: 8, p: 7, n: 'nephew' },       { i: 12, p: 11, n: 'first cousin once removed' },  { i: 17, p: 16, n: 'second cousin once removed' },  { i: 23, p: 22, n: 'third cousin once removed' },
+    { i: 6, p: 5, n: 'grandson' },     { i: 9, p: 8, n: 'grandnephew' },  { i: 13, p: 12, n: 'first cousin twice removed' }, { i: 18, p: 17, n: 'second cousin twice removed' }, { i: 24, p: 23, n: 'third cousin twice removed' },
+];
+;//------------------- TEST-CASE -----------------
+
+
+children = fn(parents)
+   join p in parents,
+        c in people 
+     where p.i == c.p 
+     into c
+;
+;//------------------- TEST-CASE -----------------
+
+
+descendants = fix(children);
+;//------------------- TEST-CASE -----------------
+
+
+// everyone under pappy
+descendants( [{i:3}] ) -> sort by [$.i];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// everybody
+descendants( [{i:0}] ) -> sort by [$.i];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//---------------------------------------------------------------------------
+// Build a version of fix that uses a file to store each iteration.
+// This implements "dataflow recursion".
+// It automatically parallelizes each iteration, if you're careful,
+// as we are here.
+//---------------------------------------------------------------------------
+
+//
+// Make a list of files into a single file glob.  Assumes relative paths.
+//
+fileJoin = fn(locations) strcat('{',strJoin(locations, ','),'}' );
+;//------------------- TEST-CASE -----------------
+ 
+
+//
+// Write to a temp file in standard hdfs() format (not in temp format).
+// We do this so that the read(hdfs(...)) inside of fileFix works properly --
+// it is assuming hdfs(...) format.  We needed to make that assumption to
+// detect that the read is from a distributed input and to glue all the files
+// into a single read() statement.  Using any union construct is tricky because
+// the number of files are unbounded.  We could choose any _single_ distributed
+// format instead of hdfs(...).
+//
+temp = fn(input) (input -> write( hdfs(HadoopTemp().location) )).location;
+;//------------------- TEST-CASE -----------------
+
+
+
+//
+// Returns a function that computes a fixpoint of f using
+// a file to store each iteration.  The initial set is also a file.
+// If f is guaranteed to never return the same node twice (ie, walking a tree,
+// or if it is a DAG and you're ok with it walking every path) then
+// set dedup=false to avoid the cost of deduplication on each iteration.
+//
+fileFix = fn(f, dedup=true)
+(
+  // A function to enforce dedup.
+  condense = 
+    if(dedup) ( fn(delta, files) setDifference( delta, read(hdfs(fileJoin(files))) ) )
+    else      ( fn(delta, files) delta ),
+
+  fn(startFile)
+  (
+    // files is a list of all the files, in reverse order of generation.
+    // repeat until the last delta is empty.
+    while( files = [startFile], 
+           exists( read(hdfs(files[0])) ) )
+    (
+       newFile = read(hdfs(files[0])) -> f() -> condense(files) -> temp(),
+       append( [newFile], files )
+    )
+  )
+);
+;//------------------- TEST-CASE -----------------
+
+
+//---------------------------------------------------------------------------
+// Test fileFix using our family tree
+//---------------------------------------------------------------------------
+
+//
+// Write the tree to a file.
+//
+people -> write(hdfs('peeps'));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// A version of children that reads a file.  The old definition will
+// not induce parallism.
+//
+fileChildren = fn(parents)
+   join p in parents,
+        c in read(hdfs('peeps'))
+     where p.i == c.p 
+     into c
+;
+;//------------------- TEST-CASE -----------------
+
+
+//
+// A potentially better join for our case:
+//
+memoryJoin = fn(outer, outerKeyFn, inner, innerKeyFn, projectFn) 
+(
+  outer
+    -> transform [outerKeyFn($), $]
+    -> keyLookup( inner -> transform [innerKeyFn($), $] )
+    -> filter not isnull($[2])
+    -> transform projectFn($[1], $[2])
+);
+;//------------------- TEST-CASE -----------------
+
+
+//
+// A version of children that uses memory join instead of redistribution join.
+//
+fileChildren = fn(parents)
+  memoryJoin( read(hdfs('peeps')), fn(c) c.p,
+              parents,             fn(p) p.i,
+              fn(c,p) c )
+;
+;//------------------- TEST-CASE -----------------
+
+
+//
+// A function to compute descendants using files.
+// It expects a file descriptor as input and returns a 
+// list of file names.
+//
+fileDescendants = fileFix( fileChildren, dedup=false);
+;//------------------- TEST-CASE -----------------
+
+
+//
+// A little wrapper to hide the files
+//
+descendants = fn( ancestors ) 
+(
+  files = fileDescendants( ancestors -> temp() ),
+  read(hdfs(fileJoin(files)))
+);
+;//------------------- TEST-CASE -----------------
+
+
+//
+// Compute descendants of my pappy. It should have a map-only job 
+// for each iteration.
+//
+descendants( [{i:3}] ) -> sort by [$.i];
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 3,
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+;//------------------- TEST-DONE -----------------
