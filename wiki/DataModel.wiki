@@ -26,6 +26,7 @@ Jaql's [#Types types] are first described, followed by its [#Schema_Language sch
     * [#date date]
     * [#schematype schematype]
     * [#function function]
+    * [#comparator comparator]
     
 
 ==Complex Types==
@@ -110,12 +111,63 @@ Examples:
   "some string with an embedded \\u1234 unicode char"
 }}}
 === Numeric Types ===
+The numeric types that are supported include {{{long}}}, {{{double}}} and {{{decfloat}}} (e.g., Decimal). The {{{decfloat}}} type corresponds to JSON's numeric type whereas {{{long}}} and {{{double}}} are explicitly supported for performance and convenience.
+
 === long ===
+A 64-bit signed integer. If a number can be of type long, then it will be represented as a long by default.
+
+Examples:
+{{{
+  1;
+
+  -1;
+
+  104;
+}}}
 === double ===
+A 64-bit base-2 floating point value. If a number can be of type double, and is not a long, then it will be represented as a double by default. A number can be coerced to be a double by using a 'd' suffix.
+
+Examples:
+{{{
+  1.0;
+
+  3.5;
+
+  3d;
+
+  100e-2;
+}}}
 === decfloat ===
+A 128-bit base-10 floating point value. A number can be specified to be a decimal only if suffixed by 'm'. The current implementation of decimal handling has lead us to use longs and doubles where possible.
+
+Examples:
+{{{
+  1.0m;
+
+  3.5m;
+
+  3dm;
+
+  100e-2m;
+}}}
 === binary ===
+Binary values are represented as hexadecimal strings and constructed with the {{{hex}}} constructor. Note that binary values are provided as a convenience and are not directly supported by JSON.
+
+Examples:
+{{{
+  hex('F0A0DDEE');
+}}}
 === date ===
-=== schematype ===
-=== function ===
+Date values are represented using the following string format: 
+{{{"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"}}}. If an alternative format is needed,
+the format can be specified as the second argument to {{{date}}}.
+
+Examples:
+{{{
+  date('2001-07-04T12:08:56.000Z');
+}}}
+== schematype ==
+== function ==
+== comparator ==
 
 = Schema Language =
