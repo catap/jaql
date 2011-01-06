@@ -167,7 +167,69 @@ Examples:
   date('2001-07-04T12:08:56.000Z');
 }}}
 == schematype ==
+Schemata are represented in Jaql with the {{{schema}}} type. The basic
+pattern to follow is {{{schema <schema expression>}}}. What follows are
+several simple examples of schema values; the section on [#Schema_Language schema language] discusses {{{<schema expression>}}} options in more detail:
+
+Examples:
+{{{
+  schema null;
+
+  schema boolean;
+
+  schema long|date;
+
+  schema [ long, boolean * ];
+
+  schema { a: long, b: null };
+
+  schema schematype;
+}}}
 == function ==
+Functions are part of Jaql's data types. They are specified using the following
+pattern: {{{fn( <param>* ) <body>}}} where {{{<param>}}} is {{{ [schema] name[=val] }}}.
+That is, a {{{param}}} can have an optional schema and an optional default
+value associated. The <body> is defined by any Jaql expression. Since functions are simply values, they can be assigned to variables which can be invoked.
+
+Examples:
+{{{
+  fn() 1+2; // creates a function value
+
+  (fn() 1+2 )(); // invokes an anonymous function
+
+  x = fn() 1+2; // creates a function and assigns it to the variable x
+
+  x(); // invokes a function that returns 3
+
+  y = fn(a,b) a + b;
+
+  y(3,5);
+
+  y = fn(schema long a, schema long b) a + b; // specify parameter schema
+
+  y = fn(a=1, b=1) a + b; // specify default values
+
+  y(); // invocation will use default values
+
+  y(2); // bind 2 to a and use b's default value (yields 3)
+
+  y(2,3); // override the default values
+
+  y(b=2, a=3); // use the parameter name to explicitly bind to parameter value
+
+  y = fn(schema long a=1, schema long b=1) a + b; // combine schemas and default values
+}}}
 == comparator ==
+A comparator is similar to a function except that it is used specifically to construct a comparator. In particular, it is used by {{{sort}}} and {{{top}}}. The built-in function {{{topN}}} explicitly exposes comparators. For the most part, however, comparators are used for Jaql built-in and core operator implementations. 
+
+A comparator is specified as follows: {{{cmp( <param> ) [ <body> asc | desc ]}}}. Essentially, a comparator specifies how a single value ({{{param}}}) is to be transformed ({{{<body>}}}) and compared against other transformed values. The {{{asc}}} and {{{desc}}}
+keywords determine whether the comparator can be used to sort in ascending or descending order. 
+
+Examples:
+{{{
+  cmp(x) [ x desc ]; // compares x values in descending order
+
+  cmp(x) [ x.someField asc ]; // assumes x is a record and compares values associated with someField in ascending order
+}}}
 
 = Schema Language =
