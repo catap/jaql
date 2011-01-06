@@ -189,7 +189,7 @@ Examples:
 Functions are part of Jaql's data types. They are specified using the following
 pattern: {{{fn( <param>* ) <body>}}} where {{{<param>}}} is {{{ [schema] name[=val] }}}.
 That is, a {{{param}}} can have an optional schema and an optional default
-value associated. The <body> is defined by any Jaql expression. Since functions are simply values, they can be assigned to variables which can be invoked.
+value associated. The {{{<body>}}} is defined by any Jaql expression. Since functions are simply values, they can be assigned to variables which can be invoked.
 
 Examples:
 {{{
