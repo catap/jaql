@@ -254,6 +254,7 @@ So, {{{long?}}} really translates to {{{long|null}}}. In addition, some schema v
 * [#Record_Schema record]
 * [#Null_Schema null]
 * [#Nonnull_Schema nonnull]
+* [#Any_Schema any]
 * [#Boolean_Schema boolean]
 * [#String_Schema string]
 * [#Long_Schema long]
@@ -261,33 +262,132 @@ So, {{{long?}}} really translates to {{{long|null}}}. In addition, some schema v
 * [#Decfloat_Schema decfloat]
 * [#Binary_Schema binary]
 * [#Date_Schema date]
-* [#SchemaType schematype]
+* [#Schematype schematype]
 * [#Function_Schema function]
 
 == Array Schema ==
 
+Example:
+{{{
+  schema [];
+
+  schema [ long(value=1), string(value="a"), boolean ];
+
+  schema [ long, boolean * ];
+}}}
 == Record Schema ==
 
+Example:
+{{{
+  schema {};
+
+  schema { a };
+
+  schema { a? };
+
+  schema { a: long };
+
+  schema { a: long, b: null, c: nonnull };
+
+  schema { * };
+
+  schema { a: long, * };
+
+  schema { a: long, *: long };
+}}}
 == Null Schema ==
 
+Example:
+{{{
+  schema null;
+}}}
 == Nonnull Schema ==
 
+Example:
+{{{
+  schema nonnull;
+}}}
+
+== Any Schema ==
+
+Example:
+{{{
+  schema any;
+}}}
 == Boolean Schema ==
 
+Example:
+{{{
+  schema boolean;
+
+  schema boolean(true);
+}}}
 == String Schema ==
 
+Example:
+{{{
+  schema string;
+  
+  schema string(5);
+
+  schema string(value="baab");
+}}}
 == Long Schema ==
 
+Example:
+{{{
+  schema long;
+
+  schema long(5);
+}}}
 == Double Schema ==
 
+Example:
+{{{
+  schema double;
+
+  schema double(5d);
+}}}
 == Decfloat Schema ==
 
+Example:
+{{{
+  schema decfloat;
+
+  schema decfloat(5m);
+}}}
 == Binary Schema ==
 
+Example:
+{{{
+  schema binary;
+
+  schema binary(5);
+
+  schema binary(value=hex('001122'));
+}}}
 == Date Schema ==
 
-== SchemaType Schema ==
+Example:
+{{{
+  schema date;
+
+  schema date(date('2000-01-01T12:00:00Z'));
+}}}
+== Schematype Schema ==
+
+Example:
+{{{
+  schema schematype;
+
+  schema schematype(value=schema long);
+}}}
 == Function Schema ==
+
+Example:
+{{{
+  schema function;
+}}}
 
 Examples:
 {{{
