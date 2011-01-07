@@ -266,14 +266,20 @@ So, {{{long?}}} really translates to {{{long|null}}}. In addition, some schema v
   * [#Function_Schema function]
 
 == Array Schema ==
+An array can be described by constraining the types of its elements and their cardinality.
+When an array's length is fixed, its called a *closed* array. Otherwise, the array's length is unbounded, in which case its referred to as an *open* array.
 
 Example:
 {{{
-  schema [];
+  schema []; // describes only the empty array
 
-  schema [ long(value=1), string(value="a"), boolean ];
+  schema [*]; // describes any array
 
-  schema [ long, boolean * ];
+  schema [ long(value=1), string(value="a"), boolean ]; // describes a closed array, in this case a triple, whose elements are constrained by the given types
+
+  schema [ long, boolean * ]; // an open array where the first element is a long and the remaining elements, if present, must be booleans
+
+  schema [ long, boolean, * ]; // and open array where the first element is a long, the second is a boolean, and the remaining elements are of any type
 }}}
 == Record Schema ==
 
