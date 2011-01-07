@@ -233,3 +233,65 @@ Examples:
 }}}
 
 = Schema Language =
+Jaql's schema language specifies the type for values. The type can be precise (e.g., x is a {{{long}}}), it can be entirely open (e.g., x is {{{any}}} type), or it can be partially specified (e.g., x is a {{{ { a: long, b: any, * } }}}). The example for partial specification can be read as: "x is a record with at least two fields, a and b, plus potentially other fields. Field a is a long and field b is of any type".
+
+Schemas are used as constraints on the data and to optimize how data is processed and stored. In general, Jaql will have more opportunities for optimization when more detailed schema information is provided. However, there are many cases, in particular when exploring new data sets, where partial or no schema specification is more convenient.
+
+The expression {{{schema <schema expression>}}} constructs a schema value. The {{{<schema expression>}}} is defined as follows:
+{{{
+  <schema expression> ::= <basic> '?'? ('|' <schema expression>)*
+  <basic> ::= <atom> | <array> | <record> | 'nonull' | 'any'
+  <atom>  ::= 'string' | 'double' | 'null' | ...
+  <array> ::= '[' ( <schema expression (',' <schema expression>)* '...'?)? ']'
+  <record> ::= '{' ( <field> (',' <field>)*)? '}'
+  <field> ::= (<name> '?'? | '*') (':' <schema expression>)?
+}}}
+
+Essentially, a schema value is the OR of one or more schema values (e.g., {{{ long|string}}}. The {{{?}}} is used as a short-hand for the null schema.
+So, {{{long?}}} really translates to {{{long|null}}}. In addition, some schema values support value-based constraints (e.g., {{{long(5)}}}. Below, we describe Jaql's schema types in detail: 
+
+* [#Array_Schema array]
+* [#Record_Schema record]
+* [#Null_Schema null]
+* [#Nonnull_Schema nonnull]
+* [#Boolean_Schema boolean]
+* [#String_Schema string]
+* [#Long_Schema long]
+* [#Double_Schema double]
+* [#Decfloat_Schema decfloat]
+* [#Binary_Schema binary]
+* [#Date_Schema date]
+* [#SchemaType schematype]
+* [#Function_Schema function]
+
+== Array Schema ==
+
+== Record Schema ==
+
+== Null Schema ==
+
+== Nonnull Schema ==
+
+== Boolean Schema ==
+
+== String Schema ==
+
+== Long Schema ==
+
+== Double Schema ==
+
+== Decfloat Schema ==
+
+== Binary Schema ==
+
+== Date Schema ==
+
+== SchemaType Schema ==
+== Function Schema ==
+
+Examples:
+{{{
+
+}}}
+
+Finally, schema values can be used in Jaql scripts as constraints on the data.
