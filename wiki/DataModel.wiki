@@ -282,32 +282,36 @@ Example:
   schema [ long, boolean, * ]; // and open array where the first element is a long, the second is a boolean, and the remaining elements are of any type
 }}}
 == Record Schema ==
+A record is described by constraining its fields, which in turn are constrained on their name and type. Like arrays, there are *open* and *closed* records where the fields are either fixed or unbounded, respectively. In addition, fields can be specified to be optional (e.g., {{{ { a? } }}}).
 
 Example:
 {{{
-  schema {};
+  schema {}; // the empty record
 
-  schema { a };
+  schema { a }; // a closed record with a field called "a" of any type
 
-  schema { a? };
+  schema { a? }; // the "a" field is optional
 
-  schema { a: long };
+  schema { a: long }; // the "a" field must be of type long
 
-  schema { a: long, b: null, c: nonnull };
+  schema { a: long, b: null, c: nonnull }; // a closed record with 3 fields
 
-  schema { * };
+  schema { * }; // an open record with any number of fields
 
-  schema { a: long, * };
+  schema { a: long, * }; // an open record that must contain an "a" field of type long
 
-  schema { a: long, *: long };
+  schema { a: long, *: long }; // a closed record whose second field can be named anything
 }}}
 == Null Schema ==
+Matches only the null value.
 
 Example:
 {{{
   schema null;
 }}}
+
 == Nonnull Schema ==
+Matches any type except for null.
 
 Example:
 {{{
@@ -315,12 +319,15 @@ Example:
 }}}
 
 == Any Schema ==
+Matches any type, including null.
 
 Example:
 {{{
   schema any;
 }}}
 == Boolean Schema ==
+A value can be constrained to be of type boolean and it can also have its value
+constrained to either true or false.
 
 Example:
 {{{
@@ -329,12 +336,13 @@ Example:
   schema boolean(true);
 }}}
 == String Schema ==
+A string value can be constrained by its length or a specific value.
 
 Example:
 {{{
   schema string;
   
-  schema string(5);
+  schema string(5); // matches any string of length 5
 
   schema string(value="baab");
 }}}
@@ -363,6 +371,7 @@ Example:
   schema decfloat(5m);
 }}}
 == Binary Schema ==
+Like strings, binary values can be constrained by their length or a specific value.
 
 Example:
 {{{
