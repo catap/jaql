@@ -250,20 +250,20 @@ The expression {{{schema <schema expression>}}} constructs a schema value. The {
 Essentially, a schema value is the OR of one or more schema values (e.g., {{{ long|string}}}. The {{{?}}} is used as a short-hand for the null schema.
 So, {{{long?}}} really translates to {{{long|null}}}. In addition, some schema values support value-based constraints (e.g., {{{long(5)}}}. Below, we describe Jaql's schema types in detail: 
 
-* [#Array_Schema array]
-* [#Record_Schema record]
-* [#Null_Schema null]
-* [#Nonnull_Schema nonnull]
-* [#Any_Schema any]
-* [#Boolean_Schema boolean]
-* [#String_Schema string]
-* [#Long_Schema long]
-* [#Double_Schema double]
-* [#Decfloat_Schema decfloat]
-* [#Binary_Schema binary]
-* [#Date_Schema date]
-* [#Schematype schematype]
-* [#Function_Schema function]
+  * [#Array_Schema array]
+  * [#Record_Schema record]
+  * [#Null_Schema null]
+  * [#Nonnull_Schema nonnull]
+  * [#Any_Schema any]
+  * [#Boolean_Schema boolean]
+  * [#String_Schema string]
+  * [#Long_Schema long]
+  * [#Double_Schema double]
+  * [#Decfloat_Schema decfloat]
+  * [#Binary_Schema binary]
+  * [#Date_Schema date]
+  * [#Schematype schematype]
+  * [#Function_Schema function]
 
 == Array Schema ==
 
