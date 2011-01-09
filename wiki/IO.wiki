@@ -12,7 +12,7 @@ With regards to query processing, the IO functions also inform Jaql about whethe
 
 There are times, however, when a data store is needed but it only supports serial access. Examples of such data sources include standard, local file systems and web services. Jaql supports such serial IO but does not attempt to parallelize expressions that use them.
 
-The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{write( [T], fd )}}}. That is, {{{read}}} produces an array of type {{{T}}} and {{{write}}} consumes an array of type {{{T}}}. The file descriptor, {{{fd}}} is simply a JSON record that determines whether access is parallel or serial as well as formatting, location, and other options. File descriptors can be specified explicitly or through the use of helper functions that construct appropriate, useful file descriptors. Here, we describe the supported data stores and formats. For further discussion regarding how to plug-in your own data stores and formats, see the discussion of IOArchitecture and IOExtensibility.
+The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{fd write( [T], fd )}}}. That is, {{{read}}} produces an array of type {{{T}}} and {{{write}}} consumes an array of type {{{T}}}. The file descriptor, {{{fd}}} is simply a JSON record that determines whether access is parallel or serial as well as formatting, location, and other options. File descriptors can be specified explicitly or through the use of helper functions that construct appropriate, useful file descriptors. Here, we describe the supported data stores and formats. For further discussion regarding how to plug-in your own data stores and formats, see the discussion of IOArchitecture and IOExtensibility.
 
   * [#Parallel_IO Parallel IO]
     * [#Text_Files Text Files] 
@@ -29,20 +29,131 @@ The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{write(
 
 === Text Files ===
 
-Reading: {{{ [ string, * ] read(lines( fname )) }}}
+Reading: {{{ [ string * ] read(lines( fname )) }}}
 
-Read a file of string lines. Each line is represented as a single string element of the array that is returned by {{{read}}}. By default, the newline terminator is {{{\n}}}.
-
-The input lines can be converted to a given type if the {{{schema}}} option is passed in, e.g., {{{read(lines( fname, { schema: schema long } ))}}}.
+Read a file of string lines. Each line is represented as a single string element of the array that is returned by {{{read}}}. By default, the newline terminator is {{{\n}}}. Consider the following files:
 
 Example:
 {{{
-cat file1
-
-cat file2
+% cat file1.txt
+here is the first line of the file
+"here is another line, but with quotes"
+1001
 }}}
 
-Writing:
+Using {{{read(lines('file1.txt'))}}, we get:
+
+{{{
+jaql> read(lines('file1.txt'));
+[
+  "here is the first line of the file",
+  "\"here is another line, but with quotes\"",
+  "1001"
+]
+
+jaql> read(lines('file1.txt')) -> transform strlen($);
+[
+  34,
+  39,
+  4
+]
+}}}
+
+Note that while the last line is a number ({{{1001}}}), it get converted to a string by default. Where appropriate, each line can be converted to a given schema type if the {{{schema}}} option is passed in, e.g., {{{read(lines( fname, { schema: schema long } ))}}}. Given the following file of numbers:
+
+{{{
+% cat file2.txt
+123
+-1
+42
+901
+}}}
+
+We can convert this file into an array of longs as follows:
+{{{
+jaql> read(lines("file2.txt", { schema: schema long }));
+[
+  123,
+  -1,
+  42,
+  901
+]
+}}}
+
+Writing (default): {{{ fd write([T] ,lines( fname )); }}}
+
+Writing (with conversion): {{{ fd write([ T ], lines( fname, { schema: schematype } )); }}}
+
+Write consumes the input array {{{[ T ]}}} and writes the file {{{fname}}}, outputting one line per element of {{{[ T ]}}}. Optionally, the lines can be converted according to the specified schema, {{{ { schema: schematype } }}}. Write outputs the file descriptor {{{fd}}} that can be used to read the file that was just written. Consider the following examples:
+
+{{{
+// write a file with the array [1,2,3]
+jaql> write([1,2,3], lines( "file3.txt" ));
+{
+  "location": "file3.txt",
+  "type": "lines"
+}
+
+// or write "file3.txt" using the piping syntax
+jaql> [1,2,3] -> write(lines( "file3.txt" ));
+{
+  "location": "file3.txt",
+  "type": "lines"
+}
+
+// read the contents back (note the implicit conversion to strings)
+jaql> read(lines("file3.txt"));
+[
+  "1",
+  "2",
+  "3"
+]
+
+// or, exploit the return value of write
+jaql> x = [1,2,3] -> write(lines( "file3.txt" ));
+
+// and read it in via the fd that is bound to x
+jaql> read(x);
+[
+  "1",
+  "2",
+  "3"
+]
+
+// finally, here is an example that retains the long input types
+jaql> [1,2,3] -> write(lines( "file4.txt", {schema: schema long}));
+{
+  "inoptions": {
+    "schema": schema long
+  },
+  "location": "file4.txt",
+  "type": "lines"
+}
+
+// if we can that file, we get:
+% cat file4.txt
+1
+2
+3
+
+// if we just read in this file using default lines, we lose the type info
+jaql> read(lines( "file4.txt" ));
+[
+  "1",
+  "2",
+  "3"
+]
+
+// but if we use the fd produced by the write of file4.txt, we get back what we intended
+jaql> y = [1,2,3] -> write(lines( "file4.txt", {schema: schema long}));
+
+jaql> read(y);
+[
+  1,
+  2,
+  3
+]
+}}}
 
 === Delimited Files ===
 === JSON Sequence Files ===
