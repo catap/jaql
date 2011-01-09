@@ -14,16 +14,16 @@ There are times, however, when a data store is needed but it only supports seria
 
 The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{write( [T], fd )}}}. That is, {{{read}}} produces an array of type {{{T}}} and {{{write}}} consumes an array of type {{{T}}}. The file descriptor, {{{fd}}} is simply a JSON record that determines whether access is parallel or serial as well as formatting, location, and other options. File descriptors can be specified explicitly or through the use of helper functions that construct appropriate, useful file descriptors. Here, we describe the supported data stores and formats. For further discussion regarding how to plug-in your own data stores and formats, see the discussion of IOArchitecture and IOExtensibility.
 
-  [#Parallel_IO Parallel IO]
-    [#Text_Files Text Files] 
-    [#Delimited_Files Delimited Files]
-    [#JSON_Sequence_Files JSON Sequence Files]
-    [#JSON_Sequence_Files_(schema) JSON Sequence Files (schema)]
-    [#JSON_Text_Files JSON Text Files]
-    [#Task_List Task List]
-  [#Serial_IO Serial IO]
-    [#File JSON Files]
-    [#URI JSON Net Data]
+  *[#Parallel_IO Parallel IO]
+    *[#Text_Files Text Files] 
+    *[#Delimited_Files Delimited Files]
+    *[#JSON_Sequence_Files JSON Sequence Files]
+    *[#JSON_Sequence_Files_(schema) JSON Sequence Files (schema)]
+    *[#JSON_Text_Files JSON Text Files]
+    *[#Task_List Task List]
+  *[#Serial_IO Serial IO]
+    *[#File JSON Files]
+    *[#URI JSON Net Data]
 
 Input and output are handled through read/write expressions.
 For example, {{{hdfsRead, hdfsWrite}}} access 
