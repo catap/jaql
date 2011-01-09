@@ -263,6 +263,23 @@ jaql> read(del( "file6.txt", { schema: schema { a: long, b: long, c: long } }));
 
 Writing delimited files.
 
+{{{
+jaql> x = [ [1,2,3], [-1,-2,-3], [100, 200, 300] ];
+
+jaql> x -> write(del("file7.txt"));
+{
+  "location": "file7.txt",
+  "type": "del"
+}
+
+% cat file7.txt
+1,2,3
+-1,-2,-3
+100,200,300
+
+jaql> 
+}}}
+
 Additional options for reading and writing delimited files:
 
 === JSON Sequence Files ===
