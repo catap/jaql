@@ -30,7 +30,7 @@ The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{fd wri
 
 === Text Line Files ===
 
-Reading: {{{ [ string * ] read(lines( fname )) }}}
+*Reading:* {{{ [ string * ] read(lines( fname )) }}}
 
 Read a file of string lines. Each line is represented as a single string element of the array that is returned by {{{read}}}. By default, the newline terminator is {{{\n}}}. Consider the following files:
 
@@ -81,9 +81,9 @@ jaql> read(lines("file2.txt", { schema: schema long }));
 ]
 }}}
 
-Writing (default): {{{ fd write([T] ,lines( fname )); }}}
+*Writing (default):* {{{ fd write([T] ,lines( fname )); }}}
 
-Writing (with conversion): {{{ fd write([ T ], lines( fname, { schema: schematype } )); }}}
+*Writing (with conversion):* {{{ fd write([ T ], lines( fname, { schema: schematype } )); }}}
 
 Write consumes the input array {{{[ T ]}}} and writes the file {{{fname}}}, outputting one line per element of {{{[ T ]}}}. Optionally, the lines can be converted according to the specified schema, {{{ { schema: schematype } }}}. Write outputs the file descriptor {{{fd}}} that can be used to read the file that was just written. Consider the following examples:
 
@@ -160,7 +160,7 @@ jaql> read(y);
 
 Jaql supports converters ({{{del}}}) that make easy to read and write text files that are organized using field and record delimiters. Examples of such files include CSV and DEL (useful for importing and exporting data between DB2 and text files). In contrast to {{{lines}}} which is used to produce an array of atomic types, typically of type {{{string}}}, {{{del}}} is used to produce arrays of records or arrays that are nested only one-level deep. We first consider the more commonly used cases, then go over additional options that are supported by {{{del}}}.
 
-Reading: {{{[ [ string * ] ] read(del(fname));}}}
+*Reading:* {{{[ [ string * ] ] read(del(fname));}}}
 
 In its simplest form, {{{read(del( ... ))}}} returns an array of elements, one element per line. The size of the element array depends on the number of fields in the lines of {{{fname}}}. Note that each input line must have the same number of fields.
 
@@ -190,7 +190,7 @@ jaql> read(del("file5.txt"));
 ]
 }}}
 
-Reading (with schema): {{{ [ schematype * ] read(del(fname, {schema: [ schematype ]}));}}}
+*Reading (with schema):* {{{ [ schematype * ] read(del(fname, {schema: [ schematype ]}));}}}
 
 With an optional schema, {{{read(del(...))}}} converts its input to the specified schema.
 For example:
@@ -260,6 +260,10 @@ jaql> read(del( "file6.txt", { schema: schema { a: long, b: long, c: long } }));
   }
 ]
 }}}
+
+Writing delimited files.
+
+Additional options for reading and writing delimited files:
 
 === JSON Sequence Files ===
 === JSON Sequence Files (schema) ===
