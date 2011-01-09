@@ -28,6 +28,22 @@ The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{write(
 == Parallel IO ==
 
 === Text Files ===
+
+Reading: {{{ [ string, * ] read(lines( fname )) }}}
+
+Read a file of string lines. Each line is represented as a single string element of the array that is returned by {{{read}}}. By default, the newline terminator is {{{\n}}}.
+
+The input lines can be converted to a given type if the {{{schema}}} option is passed in, e.g., {{{read(lines( fname, { schema: schema long } ))}}}.
+
+Example:
+{{{
+cat file1
+
+cat file2
+}}}
+
+Writing:
+
 === Delimited Files ===
 === JSON Sequence Files ===
 === JSON Sequence Files (schema) ===
