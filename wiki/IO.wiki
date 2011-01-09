@@ -20,6 +20,7 @@ The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{fd wri
     * [#JSON_Sequence_Files JSON Sequence Files]
     * [#JSON_Sequence_Files_(schema) JSON Sequence Files (schema)]
     * [#JSON_Text_Files JSON Text Files]
+    * [#Globbing_Patterns File Name Globbing Patterns]
     * [#Task_List Task List]
   * [#Serial_IO Serial IO]
     * [#File JSON Files]
@@ -156,10 +157,171 @@ jaql> read(y);
 }}}
 
 === Delimited Files ===
+
+Jaql supports converters ({{{del}}}) that make easy to read and write text files that are organized using field and record delimiters. Examples of such files include CSV and DEL (useful for importing and exporting data between DB2 and text files). In contrast to {{{lines}}} which is used to produce an array of atomic types, typically of type {{{string}}}, {{{del}}} is used to produce arrays of records or arrays that are nested only one-level deep. We first consider the more commonly used cases, then go over additional options that are supported by {{{del}}}.
+
+Reading: {{{[ [ string * ] ] read(del(fname));}}}
+
+In its simplest form, {{{read(del( ... ))}}} returns an array of elements, one element per line. The size of the element array depends on the number of fields in the lines of {{{fname}}}. Note that each input line must have the same number of fields.
+
+{{{
+% cat file5.txt
+a,b,c
+1,2,3
+"hi","there","!"
+
+jaql> read(del("file5.txt"));
+[
+  [
+    "a",
+    "b",
+    "c"
+  ],
+  [
+    "1",
+    "2",
+    "3"
+  ],
+  [
+    "hi",
+    "there",
+    "!"
+  ]
+]
+}}}
+
+Reading (with schema): {{{ [ schematype * ] read(del(fname, {schema: [ schematype ]}));}}}
+
+With an optional schema, {{{read(del(...))}}} converts its input to the specified schema.
+For example:
+{{{
+cat file6.txt
+1,2,3
+-1,-2,-3
+100,200,300
+
+// without schema information
+jaql> read(del("file6.txt"));
+[
+  [
+    "1",
+    "2",
+    "3"
+  ],
+  [
+    "-1",
+    "-2",
+    "-3"
+  ],
+  [
+    "100",
+    "200",
+    "300"
+  ]
+]
+
+// with schema information: array of three longs for each element
+jaql> read(del( "file6.txt", { schema: schema [ long, long, long ] }));
+[
+  [
+    1,
+    2,
+    3
+  ],
+  [
+    -1,
+    -2,
+    -3
+  ],
+  [
+    100,
+    200,
+    300
+  ]
+]
+
+// to return records instead, specify the appropriate schema
+jaql> read(del( "file6.txt", { schema: schema { a: long, b: long, c: long } }));
+[
+  {
+    "a": 1,
+    "b": 2,
+    "c": 3
+  },
+  {
+    "a": -1,
+    "b": -2,
+    "c": -3
+  },
+  {
+    "a": 100,
+    "b": 200,
+    "c": 300
+  }
+]
+}}}
+
 === JSON Sequence Files ===
 === JSON Sequence Files (schema) ===
 === JSON Text Files ===
 === Task List ===
+=== Globbing Patterns ===
+
+Hadoop supports file name [http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/fs/FileSystem.html#globStatus%28org.apache.hadoop.fs.Path%29 globbing] so Jaql users can take advantage of this feature directly. The value of the {{{location}}} field is passed verbatim to Hadoop's FileSystem API's so all globbing patterns that Hadoop supports are also available to jaql users. 
+
+Consider a directory structure that starts at {{{data}}}, includes sub-directories named by their creation date, that in turn include sub-directories, one per source of data (e.g., database, logger, etc.). Example paths to consider are as follows:
+
+  * data/04_27_2010/logs/machine1.log
+  * data/04_27_2010/db/t1.dat
+  * data/0.4_28_2010/logs/machine1.log
+
+To read machine1's data for 04/27/2010, simply issue:
+{{{
+  read(hdfs("data/04_27_2010/logs/machine1.log"));
+}}}
+
+To read all data collected on 04/27/2010:
+{{{
+  read(hdfs("data/04_27_2010/*/*"));
+}}}
+
+When piped to further jaql expressions, the above examples allow you to operate on subsets of the data, effectively eliminating data that is not of current interest.
+If needed, all data can be processed by using:
+{{{
+  read(hdfs("data/*/*/*"));
+}}}
+
+In some cases, certain paths may be of interest that cannot be easily expressed
+using globbing patterns. For example, consider the simple case of needing to
+read {{{data/04_27_2010/db/t1.dat}}} and {{{data/0.4_28_2010/logs/machine1.log}}}.
+More generally, one can have an arbitrary collection of paths, modeled as an array
+(e.g., ["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"]). To convert
+this to a globbing pattern appropriate for hadoop, use:
+
+{{{
+  makeGlob = fn(ps) (
+
+    strcat("/{", ps 
+                 -> transform strcat(".",$) 
+                 -> strJoin(","), 
+           "}")
+
+  );
+}}}
+
+For example:
+{{{
+  makeGlob(["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"]);
+  // returns
+  "/{.data/04_27_2010/db/t1.dat,.data/0.4_28_2010/logs/machine1.log}"
+}}}
+
+And can be used in conjunction with {{{read}}} as follows:
+
+{{{
+  paths = ["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"];
+  read(hdfs(makeGlob(paths)));
+}}}
 
 == Serial IO ==
 
@@ -305,61 +467,7 @@ The defaults for Jaql are {{{SequenceFileInputFormat}}} and {{{SequenceFileOutpu
 
 === Using Globbing Patterns to your Advantage ===
 
-Hadoop supports file name [http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/fs/FileSystem.html#globStatus%28org.apache.hadoop.fs.Path%29 globbing] so Jaql users can take advantage of this feature directly. The value of the {{{location}}} field is passed verbatim to Hadoop's FileSystem API's so all globbing patterns that Hadoop supports are also available to jaql users. 
 
-Consider a directory structure that starts at {{{data}}}, includes sub-directories named by their creation date, that in turn include sub-directories, one per source of data (e.g., database, logger, etc.). Example paths to consider are as follows:
-
-  * data/04_27_2010/logs/machine1.log
-  * data/04_27_2010/db/t1.dat
-  * data/0.4_28_2010/logs/machine1.log
-
-To read machine1's data for 04/27/2010, simply issue:
-{{{
-  read(hdfs("data/04_27_2010/logs/machine1.log"));
-}}}
-
-To read all data collected on 04/27/2010:
-{{{
-  read(hdfs("data/04_27_2010/*/*"));
-}}}
-
-When piped to further jaql expressions, the above examples allow you to operate on subsets of the data, effectively eliminating data that is not of current interest.
-If needed, all data can be processed by using:
-{{{
-  read(hdfs("data/*/*/*"));
-}}}
-
-In some cases, certain paths may be of interest that cannot be easily expressed
-using globbing patterns. For example, consider the simple case of needing to
-read {{{data/04_27_2010/db/t1.dat}}} and {{{data/0.4_28_2010/logs/machine1.log}}}.
-More generally, one can have an arbitrary collection of paths, modeled as an array
-(e.g., ["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"]). To convert
-this to a globbing pattern appropriate for hadoop, use:
-
-{{{
-  makeGlob = fn(ps) (
-
-    strcat("/{", ps 
-                 -> transform strcat(".",$) 
-                 -> strJoin(","), 
-           "}")
-
-  );
-}}}
-
-For example:
-{{{
-  makeGlob(["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"]);
-  // returns
-  "/{.data/04_27_2010/db/t1.dat,.data/0.4_28_2010/logs/machine1.log}"
-}}}
-
-And can be used in conjunction with {{{read}}} as follows:
-
-{{{
-  paths = ["data/04_27_2010/db/t1.dat", "data/0.4_28_2010/logs/machine1.log"];
-  read(hdfs(makeGlob(paths)));
-}}}
 
 
 
