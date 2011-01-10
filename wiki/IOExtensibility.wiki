@@ -1,4 +1,4 @@
-#Extending Jaql's IO Capability
+#summary Extending Jaql's IO Capability
 
 == Text-based Input/Output Format ==
 
