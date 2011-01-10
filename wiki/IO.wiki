@@ -12,7 +12,9 @@ With regards to query processing, the IO functions also inform Jaql about whethe
 
 There are times, however, when a data store is needed but it only supports serial access. Examples of such data sources include standard, local file systems and web services. Jaql supports such serial IO but does not attempt to parallelize expressions that use them.
 
-The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{fd write( [T], fd )}}}. That is, {{{read}}} produces an array of type {{{T}}} and {{{write}}} consumes an array of type {{{T}}}. The file descriptor, {{{fd}}} is simply a JSON record that determines whether access is parallel or serial as well as formatting, location, and other options. File descriptors can be specified explicitly or through the use of helper functions that construct appropriate, useful file descriptors. Here, we describe the supported data stores and formats. For further discussion regarding how to plug-in your own data stores and formats, see the discussion of IOArchitecture and IOExtensibility.
+The general form of Jaql's IO functions is: {{{[ T ] read( fd )}}} and {{{fd write( [T], fd )}}}. That is, {{{read}}} produces an array of type {{{T}}} and {{{write}}} consumes an array of type {{{T}}}. The file descriptor, {{{fd}}} is simply a JSON record that determines whether access is parallel or serial as well as formatting, location, and other options. File descriptors can be specified explicitly or through the use of helper functions that construct appropriate, useful file descriptors. Consider the {{{del}}} file descriptor constructor: {{{del( string fileName )}}}. It requires one argument, {{{fileName}}} but can be given additional arguments: {{{del( string fileName, { * ) options )}}} to override default behavior.
+
+Here, we describe the supported data stores and formats. For further discussion regarding how to plug-in your own data stores and formats, see the discussion of IOArchitecture and IOExtensibility.
 
   * [#Parallel_IO Parallel IO]
     * [#Text_Line_Files Text Line Files] 
@@ -60,7 +62,9 @@ jaql> read(lines('file1.txt')) -> transform strlen($);
 ]
 }}}
 
-Note that while the last line is a number ({{{1001}}}), it get converted to a string by default. Where appropriate, each line can be converted to a given schema type if the {{{schema}}} option is passed in, e.g., {{{read(lines( fname, { schema: schema long } ))}}}. Given the following file of numbers:
+*Reading (with schema):* {{{read(lines( fname, { schema: schema long } ))}}}
+
+Note that while the last line is a number ({{{1001}}}), it get converted to a string by default. Where appropriate, each line can be converted to a given schema type if the {{{schema}}} option is passed in:
 
 {{{
 % cat file2.txt
@@ -261,7 +265,7 @@ jaql> read(del( "file6.txt", { schema: schema { a: long, b: long, c: long } }));
 ]
 }}}
 
-Writing delimited files.
+*Writing delimited files*
 
 {{{
 jaql> x = [ [1,2,3], [-1,-2,-3], [100, 200, 300] ];
@@ -292,6 +296,8 @@ jaql> y -> write(del( "file9.txt", { schema: schema { b, a }}));
 20,10
 
 }}}
+
+*Additional options:*
 
 In addition to schema, {{{del}}} has additional options to control delimiters, quotes, etc. Here is a full list of options, specified as name, value pairs that need to be specified in {{{del's}}} options record.
 
