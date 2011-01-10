@@ -411,10 +411,35 @@ jaql> read(jaqltemp( "orders.bin", schm ));
 }}}
 
 === JSON Text Files ===
-The last parallel file format that is discussed is for reading and writing Jaql's text representation of Jaql types. When the types are restricted to JSON types, the text format is JSON (e.g., no dates, binaries, functions, etc.). Two ways of managing such JSON data has become relatively common: (1) store each JSON value of an array in a Text value of a Sequence File record, and (2) use Hadoop's Text Input and Output formats to store each JSON value per line. Since neither of these formats has been wrapped by a file descriptor constructor, we illustrate how to read and write using explicit file descriptors.
+The last parallel file format that is discussed is for reading and writing Jaql's text representation of Jaql types. When the types are restricted to JSON types, the text format is JSON (e.g., no dates, binaries, functions, etc.). Two ways of managing such JSON data has become relatively common: (1) store each JSON value of an array in a Text value of a Sequence File record, and (2) use Hadoop's Text Input and Output formats to store each JSON value per line. Since neither of these formats has been wrapped by a file descriptor constructor, we illustrate how to read and write by overriding several default options of Jaql's native binary format.
 
 {{{
+// Options needed to write data as JSON to Hadoop Text File
+jaql> txtOutOpt = {format: "org.apache.hadoop.mapred.TextOutputFormat", 
+                   converter: "com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter"};
 
+// Options needed to read data as JSON from Hadoop Text File
+jaql> txtInOpt = {format: "org.apache.hadoop.mapred.TextInputFormat", 
+                  converter: "com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter"};
+
+// write data to Hadoop Text File
+jaql> data -> write(hdfs( "file10.txt", txtOutOpt ));
+
+// read data back
+jaql> read(hdfs( "file10.txt", txtInOpt ));
+
+// Options needed to write data as JSON to Hadoop Sequence File
+jaql> seqOutOpt = {converter: 'com.ibm.jaql.io.hadoop.converter.ToJsonTextConverter', 
+                   configurator: 'com.ibm.jaql.io.hadoop.TextFileOutputConfigurator'};
+
+// Options needed to read data as JSON from Hadoop Sequence File
+jaql> seqInOpt = { converter: 'com.ibm.jaql.io.hadoop.converter.FromJsonTextConverter' };
+
+// write data to Hadoop Sequence File
+jaql> data -> write(hdfs( "file11.seq", seqOutOpt ));
+
+// read data back
+jaql> read(hdfs( "file11.seq", seqInOpt ));
 }}}
 
 === Task List ===
