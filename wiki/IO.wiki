@@ -349,7 +349,66 @@ new data sets, intermediate file manipulation is often done with more efficient 
   read(hdfs('orders.dat'));
 }}}
 
+Note: Jaql's binary format is not designed for long term persistence that spans multiple versions of Jaql. For long term persistence, either use Jaql's text-based formats or other formats designed for long-term persistence.
+
 === Binary Files (schema) ===
+When writing binary files, if schema is available, Jaql's binary format with schema stores data much more compactly than the self-describing binary format (e.g., record field names are not repeated per record if declared in the schema). Similar to the self-describing binary format, Hadoop's Sequence Files represent an array and each element is stored in a single record value. Jaql uses this format for temporary files such as those serialized between the map and reduce steps. However, you can use this format as well to save on performance and disk space. Here are several examples:
+
+{{{
+jaql> data = [
+    {order: 1, cust: 'c1', items: [ 
+      {item: 1, qty: 2},
+      {item: 3, qty: 6},
+      {item: 5, qty: 10}]},
+    {order: 2, cust: 'c2', items: [
+      {item: 2, qty: 1},
+      {item: 5, qty: 2},
+      {item: 7, qty: 3}]},
+    {order: 3, cust: 'c1', items: [
+      {item: 1, qty: 2},
+      {item: 7, qty: 14},
+      {item: 5, qty: 10}]} 
+  ];
+
+jaql> schm = schema {
+         "order": long,
+         "cust": string,
+         "items": [
+                    {
+                      "item": long,
+                      "qty": long
+                    } * 
+                  ]
+       };
+
+jaql> data -> write(jaqltemp( "orders.bin", schm );
+
+// note the file size when using self-decribing binary
+% ls -l orders.dat
+351
+
+// now, the file is much smaller when schema information is provided
+% ls -l orders.bin
+167
+
+// read back the data
+jaql> read(jaqltemp( "orders.bin", schm ));
+[
+    {order: 1, cust: 'c1', items: [ 
+      {item: 1, qty: 2},
+      {item: 3, qty: 6},
+      {item: 5, qty: 10}]},
+    {order: 2, cust: 'c2', items: [
+      {item: 2, qty: 1},
+      {item: 5, qty: 2},
+      {item: 7, qty: 3}]},
+    {order: 3, cust: 'c1', items: [
+      {item: 1, qty: 2},
+      {item: 7, qty: 14},
+      {item: 5, qty: 10}]} 
+  ];
+}}}
+
 === JSON Text Files ===
 === Task List ===
 === Globbing Patterns ===
