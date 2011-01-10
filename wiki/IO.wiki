@@ -24,6 +24,7 @@ Here, we describe the supported data stores and formats. For further discussion 
     * [#JSON_Text_Files JSON Text Files]
     * [#Globbing_Patterns File Name Globbing Patterns]
     * [#Task_List Task List]
+    * [#HBase HBase]
   * [#Serial_IO Serial IO]
     * [#File JSON Files]
     * [#URI JSON Net Data]
@@ -410,7 +411,16 @@ jaql> read(jaqltemp( "orders.bin", schm ));
 }}}
 
 === JSON Text Files ===
+The last parallel file format that is discussed is for reading and writing Jaql's text representation of Jaql types. When the types are restricted to JSON types, the text format is JSON (e.g., no dates, binaries, functions, etc.). Two ways of managing such JSON data has become relatively common: (1) store each JSON value of an array in a Text value of a Sequence File record, and (2) use Hadoop's Text Input and Output formats to store each JSON value per line. Since neither of these formats has been wrapped by a file descriptor constructor, we illustrate how to read and write using explicit file descriptors.
+
+{{{
+
+}}}
+
 === Task List ===
+=== HBase ===
+Parallel reading and writing of HBase tables was supported at one point but has gone stale. It is currently under development.
+
 === Globbing Patterns ===
 
 Hadoop supports file name [http://hadoop.apache.org/common/docs/current/api/org/apache/hadoop/fs/FileSystem.html#globStatus%28org.apache.hadoop.fs.Path%29 globbing] so Jaql users can take advantage of this feature directly. The value of the {{{location}}} field is passed verbatim to Hadoop's FileSystem API's so all globbing patterns that Hadoop supports are also available to jaql users. 
