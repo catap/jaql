@@ -277,10 +277,47 @@ jaql> x -> write(del("file7.txt"));
 -1,-2,-3
 100,200,300
 
-jaql> 
+// for records, a schema is required to determine the order of output fields
+jaql> y = [ { a: 1, b: 2}, { a: 10, b: 20 } ];
+
+jaql> y -> write(del( "file8.txt", { schema: schema { a, b }}));
+
+% cat file8.txt
+1,2
+10,20
+
+// now, reverse the field order by specifying { b, a } instead of { a, b }
+jaql> y -> write(del( "file9.txt", { schema: schema { b, a }}));
+2,1
+20,10
+
 }}}
 
-Additional options for reading and writing delimited files:
+In addition to schema, {{{del}}} has additional options to control delimiters, quotes, etc. Here is a full list of options, specified as name, value pairs that need to be specified in {{{del's}}} options record.
+
+{{{
+  schema: schema [ <value schema> ] { <fields> }
+
+    For reads, both record and array schemas are supported. Schema values must be atomic
+    and record and arrays must be closed, that is no optional fields are supported.
+    For writes, only record schemas are used to control the order of fields in the output.
+    
+  delimiter: string of length 1
+
+    Used to override the field delimiter to char other than ",".
+
+  quoted: boolean
+
+    Controls whether strings should be quoted.
+
+  ddquote: boolean
+
+    Controls whether the escape character is a double-quote (true) or backslash (false).
+
+  escape: boolean
+
+    Controls whether characters are escaped.
+}}}
 
 === JSON Sequence Files ===
 === JSON Sequence Files (schema) ===
