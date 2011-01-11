@@ -13,7 +13,7 @@ Jaql is built from several core expressions that are designed to operate on larg
   * [#Top Top]
 
 =Filter=
-The `filter` expression takes as input an array of elements of type `T` and outputs a an array of the same type, retaining those elements for which a predicate evaluates to `true`. It is Jaql's equivalent to SQL's `WHERE` clause.
+The `filter` expression filters away elements from its input array. It takes as input an array of elements of type `T` and outputs an array of the same type, retaining those elements for which a predicate evaluates to `true`. It is Jaql's equivalent to SQL's `WHERE` clause.
 
 ==Syntax==
 {{{
@@ -80,33 +80,63 @@ employees -> filter each emp (emp.mgr or emp.income > 30000);
 
 
 =Transform=
-With the `transform` operator you can realize an projection or apply a function to all items of an input.
+The `transform` expression transforms each element of its input array. It takes as input an array of type `T1` and outputs an array of the same size of type `T2`. The `transform` expression is Jaql's syntax for *map* or SQL's `SELECT` clause.
 
 ==Syntax==
-`$input -> transform <expression>;`
+{{{ 
+  A -> transform <expr> ;
+}}}
+
+  * input: A of type `[ T1 ]` (e.g., array of type `T1`)
+  * output: A' of type `[ T2 ]`, `count(A') == count(A)`
+  * `<expr>`: expression that returns type `T2`
+  * `transform` binds a default iteration variable, `$`, that is bound to each element of the input. The type of `$` is `T1` and it is often used as input to `<expr>`.
+  * `<expr>` is often expressed using type constructors such as record `{ ... }` and array `[ ... ]` constructors.
+
+{{{
+  A -> transform each <var> <expr> ;
+}}}
+
+  * `<var>` is now the iteration variable, replacing the role of `$`
+
 The input will be processed item by item. The variable $ will be bound to each item the input, so you can access values from records with `$.key` or from arrays with `$[n]`. When copying a value from a record, you can omit the key. It will automatically be copied to the result.
 
 ==Example==
 {{{
-$input = [
+recs = [
   {a: 1, b: 4},
   {a: 2, b: 5},
   {a: -1, b: 4}
 ];
 
-$input -> transform {sum: $.a + $.b};
+// use $ as the iteration variable. Construct an output record of type { sum: long }
+// from each input record, of type { a: long, b: long }
+recs -> transform {sum: $.a + $.b};
+[
+  {
+    "sum": 5
+  },
+  {
+    "sum": 7
+  },
+  {
+    "sum": 3
+  }
+]
 
->[
->  {
->    "sum": 5
->  },
->  {
->    "sum": 7
->  },
->  {
->    "sum": 3
->  }
->]
+// use 'r' as the iteration variable
+recs -> transform each r {sum: r.a + r.b};
+[
+  {
+    "sum": 5
+  },
+  {
+    "sum": 7
+  },
+  {
+    "sum": 3
+  }
+]
 }}}
 
 =Expand=
