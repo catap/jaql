@@ -1,45 +1,81 @@
-#summary Description of the core functionality of jaql
+#summary Description Jaql's Core Expressions
 =Introduction=
-On this page, all core functions of jaql are explained. Each function's syntax is shown and clarified by an example. In these examples, lines starting with `>` are the output produced by jaql. All other lines are meant to be user input.
+Jaql is built from several core expressions that are designed to operate on large arrays through parallelization. All of the core expressions can operate on nested arrays, but its the large, top-level arrays that are in particular targeted for scalable processing.
 
-_Item_ is used to refer to either an array element or a field of a record, if a function can be applied to both an array or a record.
-
-<wiki:toc max_depth="1" />
+  * [#Filter Filter]
+  * [#Transform Transform]
+  * [#Expand Expand]
+  * [#Group Group]
+  * [#Join Join]
+  * [#Union Union]
+  * [#Tee Tee]
+  * [#Sort Sort]
+  * [#Top Top]
 
 =Filter=
-The filter keyword is used to limit the number of output items to those matching a given condition. It is jaql's equivalent to the SQL WHERE clause.
+The `filter` expression takes as input an array of elements of type `T` and outputs a an array of the same type, retaining those elements for which a predicate evaluates to `true`. It is Jaql's equivalent to SQL's `WHERE` clause.
 
 ==Syntax==
-`$input -> filter <boolean expression>;`
+{{{
+  A -> filter <predicate> ;
+}}}
 
- * In `<boolean expression>` the variable $ is bound to each item of the input.
- * The `<boolean expression>` can be composed of the relations ==, !=, >, >=, <, <=.
- * Complex expressions can be created with `not`, `and`, `or` which are evaluated in this order.
- * If the `<boolean expression>` evaluates to `true`, the item from the input is included in the output.
+  * input: A of type `[ T ]` (e.g., array of type `T`)
+  * output: A' of type `[ T ]`, `count(A') <= count(A)`
+  * `<predicate>`: expression that returns a `boolean`
+  * `filter` binds a default iteration variable, `$`, that is bound to each element of the input. The type of `$` is `T` and it is often used as input to `<predicate>`.
+  * `<predicate>` is often expressed using standard boolean operators such as `==, !=, >, >=, <, <=, not, and, or`.
+ 
+As with most of the core expressions, the default iteration variable `$` can be renamed as follows:
+
+{{{
+  A -> filter each <var> <predicate> ;
+}}}
+
+  * `<var>` is now the iteration variable, replacing the role of `$`
 
 ==Example==
 {{{
-$employees = [
+employees = [
  {name: "Jon Doe", income: 20000, mgr: false},
  {name: "Vince Wayne", income: 32500, mgr: false},
  {name: "Jane Dean", income: 72000, mgr: true},
  {name: "Alex Smith", income: 25000, mgr: false}
 ];
 
-$employees -> filter $.mgr or $.income > 30000;
+// use $ as the iteration variable
+employees -> filter $.mgr or $.income > 30000;
+[
+  {
+    "income": 32500,
+    "mgr": false,
+    "name": "Vince Wayne"
+  },
+  {
+    "income": 72000,
+    "mgr": true,
+    "name": "Jane Dean"
+  }
+]
 
->[
->  {
->    "income": 32500,
->   "mgr": false,
->    "name": "Vince Wayne"
->  },
->  {
->    "income": 72000,
->    "mgr": true,
->    "name": "Jane Dean"
->  }
->]
+// use 'emp' as the iteration variable
+employees -> filter each emp emp.mgr or emp.income > 30000;
+[
+  {
+    "income": 32500,
+    "mgr": false,
+    "name": "Vince Wayne"
+  },
+  {
+    "income": 72000,
+    "mgr": true,
+    "name": "Jane Dean"
+  }
+]
+
+// Use parents to separate the variable declaration from the <predicate>
+// to make the statement easier to read
+employees -> filter each emp (emp.mgr or emp.income > 30000);
 }}}
 
 
@@ -69,6 +105,78 @@ $input -> transform {sum: $.a + $.b};
 >  },
 >  {
 >    "sum": 3
+>  }
+>]
+}}}
+
+=Expand=
+
+* PLEASE NOTE *
+
+In the current svn trunk, as well as in the download package, `unroll` is broken, see http://code.google.com/p/jaql/issues/detail?id=24
+
+
+The `expand` keyword takes an array as input and places specified elements of this array in one resulting array.
+With the additional `unroll` keyword, all other elements than the array to be unrolled will be kept in the result, one copy for each element in the unrolled array.
+
+==Syntax==
+`$input -> expand [<items>];`
+
+In `[<items>]`, `$` is bound to each element of the input, so with `$.item` you can access fields of a record, while `$[n]` produces fields of an array.
+
+`$input -> expand unroll <item>`
+
+==Example==
+{{{
+$movies_owned = [{name:"Jon Doe", movie_ids:[3,65,8,72]}, {name:"Jane Dean", movie_ids:[5,98,2,65]}];
+
+$movies_owned -> expand $.movie_ids;
+
+>[
+>  3,
+>  65
+>  8,
+>  72
+>  5,
+>  98
+>  2,
+>  65
+>]
+
+$movies_owned -> expand unroll $.movie_ids;
+
+>[
+>  {
+>    "movie_ids": 3,
+>    "name": "Jon Doe"
+>  },
+>  {
+>    "movie_ids": 65,
+>    "name": "Jon Doe"
+> },
+>  {
+>    "movie_ids": 8,
+>    "name": "Jon Doe"
+>  },
+>  {
+>    "movie_ids": 72,
+>    "name": "Jon Doe"
+>  },
+>  {
+>    "movie_ids": 5,
+>    "name": "Jane Dean"
+>  },
+> {
+>    "movie_ids": 98,
+>   "name": "Jane Dean"
+>  },
+>  {
+>    "movie_ids": 2,
+>    "name": "Jane Dean"
+> },
+>  {
+>    "movie_ids": 65,
+>    "name": "Jane Dean"
 >  }
 >]
 }}}
@@ -212,77 +320,5 @@ $unsorted -> sort by [$[0], $[1] desc];
 >    1,
 >    "third"
 >  ]
->]
-}}}
-
-=Expand=
-
-* PLEASE NOTE *
-
-In the current svn trunk, as well as in the download package, `unroll` is broken, see http://code.google.com/p/jaql/issues/detail?id=24
-
-
-The `expand` keyword takes an array as input and places specified elements of this array in one resulting array.
-With the additional `unroll` keyword, all other elements than the array to be unrolled will be kept in the result, one copy for each element in the unrolled array.
-
-==Syntax==
-`$input -> expand [<items>];`
-
-In `[<items>]`, `$` is bound to each element of the input, so with `$.item` you can access fields of a record, while `$[n]` produces fields of an array.
-
-`$input -> expand unroll <item>`
-
-==Example==
-{{{
-$movies_owned = [{name:"Jon Doe", movie_ids:[3,65,8,72]}, {name:"Jane Dean", movie_ids:[5,98,2,65]}];
-
-$movies_owned -> expand $.movie_ids;
-
->[
->  3,
->  65
->  8,
->  72
->  5,
->  98
->  2,
->  65
->]
-
-$movies_owned -> expand unroll $.movie_ids;
-
->[
->  {
->    "movie_ids": 3,
->    "name": "Jon Doe"
->  },
->  {
->    "movie_ids": 65,
->    "name": "Jon Doe"
-> },
->  {
->    "movie_ids": 8,
->    "name": "Jon Doe"
->  },
->  {
->    "movie_ids": 72,
->    "name": "Jon Doe"
->  },
->  {
->    "movie_ids": 5,
->    "name": "Jane Dean"
->  },
-> {
->    "movie_ids": 98,
->   "name": "Jane Dean"
->  },
->  {
->    "movie_ids": 2,
->    "name": "Jane Dean"
-> },
->  {
->    "movie_ids": 65,
->    "name": "Jane Dean"
->  }
 >]
 }}}
