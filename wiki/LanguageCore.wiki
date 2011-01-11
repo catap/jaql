@@ -36,7 +36,7 @@ As with most of the core expressions, the default iteration variable `$` can be 
 
 ==Example==
 {{{
-employees = [
+jaql> employees = [
  {name: "Jon Doe", income: 20000, mgr: false},
  {name: "Vince Wayne", income: 32500, mgr: false},
  {name: "Jane Dean", income: 72000, mgr: true},
@@ -44,7 +44,7 @@ employees = [
 ];
 
 // use $ as the iteration variable
-employees -> filter $.mgr or $.income > 30000;
+jaql> employees -> filter $.mgr or $.income > 30000;
 [
   {
     "income": 32500,
@@ -59,7 +59,7 @@ employees -> filter $.mgr or $.income > 30000;
 ]
 
 // use 'emp' as the iteration variable
-employees -> filter each emp emp.mgr or emp.income > 30000;
+jaql> employees -> filter each emp emp.mgr or emp.income > 30000;
 [
   {
     "income": 32500,
@@ -103,7 +103,7 @@ The input will be processed item by item. The variable $ will be bound to each i
 
 ==Example==
 {{{
-recs = [
+jaql> recs = [
   {a: 1, b: 4},
   {a: 2, b: 5},
   {a: -1, b: 4}
@@ -111,7 +111,7 @@ recs = [
 
 // use $ as the iteration variable. Construct an output record of type { sum: long }
 // from each input record, of type { a: long, b: long }
-recs -> transform {sum: $.a + $.b};
+jaql> recs -> transform {sum: $.a + $.b};
 [
   {
     "sum": 5
@@ -125,7 +125,7 @@ recs -> transform {sum: $.a + $.b};
 ]
 
 // use 'r' as the iteration variable
-recs -> transform each r {sum: r.a + r.b};
+jaql> recs -> transform each r {sum: r.a + r.b};
 [
   {
     "sum": 5
@@ -140,75 +140,139 @@ recs -> transform each r {sum: r.a + r.b};
 }}}
 
 =Expand=
-
-* PLEASE NOTE *
-
-In the current svn trunk, as well as in the download package, `unroll` is broken, see http://code.google.com/p/jaql/issues/detail?id=24
-
-
-The `expand` keyword takes an array as input and places specified elements of this array in one resulting array.
-With the additional `unroll` keyword, all other elements than the array to be unrolled will be kept in the result, one copy for each element in the unrolled array.
+The `expand` expression flattens nested arrays. It takes as input an array of nested arrays `[ [ T ] ]` and produces an output array `[ T ]`, by promoting the elements of each nested array to the top-level output array. In addition, `expand` can be used in a manner similar to `transform`, whereby an expression is applied to each nested array. Note that the expression must return an array. For such use, `expand` takes as input `[ [ T1 ] ]` and outputs `[ T2 ]`.
 
 ==Syntax==
-`$input -> expand [<items>];`
+{{{
+  A -> expand ;
+}}}
+  * input: A of type `[ [ T ] ]` (e.g., array of nested arrays of type `[ T ]`)
+  * output: A' of type `[ T ]`
 
-In `[<items>]`, `$` is bound to each element of the input, so with `$.item` you can access fields of a record, while `$[n]` produces fields of an array.
+{{{
+  A -> expand <expr>
+}}}
+  * input: A of type `[ [ T1 ] ]` (e.g., array of nested arrays of type `[ T1 ]`)
+  * output: A' of type `[ T2 ]`
+  * `<expr>`: expression that returns type `[ T2 ]`
+  * `expand` binds a default iteration variable, `$`, that is bound to each element of the input. The type of `$` is `[ T1 ]` and it is often used as input to `<expr>`.
+  * a common `<expr>` used with `expand` is `unroll`, which repeats the parent of a nested array for each element of the nested array.
 
-`$input -> expand unroll <item>`
+{{{
+  A -> expand each <var> <expr>
+}}}
+
+  * `<var>` is now the iteration variable, replacing the role of `$`
 
 ==Example==
 {{{
-$movies_owned = [{name:"Jon Doe", movie_ids:[3,65,8,72]}, {name:"Jane Dean", movie_ids:[5,98,2,65]}];
+jaql> nestedData = [
+  [3,65,8,72],
+  [5,98,2,65]
+];
 
-$movies_owned -> expand $.movie_ids;
+// flatten the nested array
+jaql> nestedData -> expand;
+[
+  3,
+  65,
+  8,
+  72,
+  5,
+  98,
+  2,
+  65
+]
 
->[
->  3,
->  65
->  8,
->  72
->  5,
->  98
->  2,
->  65
->]
+// flatten and transform the nested data
+// the first $ is bound to each nested array
+// the second $ is bound to each element of each nested array
+jaql> nestedData -> expand ($ -> transform $ * 2);
+[
+  6,
+  130,
+  16,
+  144,
+  10,
+  196,
+  4,
+  130
+]
 
-$movies_owned -> expand unroll $.movie_ids;
+// repeat the expression above, but with explicitly declared iteration variables
+jaql> nestedData -> expand each arr (arr -> transform each n (n * 2));
+[
+  6,
+  130,
+  16,
+  144,
+  10,
+  196,
+  4,
+  130
 
->[
->  {
->    "movie_ids": 3,
->    "name": "Jon Doe"
->  },
->  {
->    "movie_ids": 65,
->    "name": "Jon Doe"
-> },
->  {
->    "movie_ids": 8,
->    "name": "Jon Doe"
->  },
->  {
->    "movie_ids": 72,
->    "name": "Jon Doe"
->  },
->  {
->    "movie_ids": 5,
->    "name": "Jane Dean"
->  },
-> {
->    "movie_ids": 98,
->   "name": "Jane Dean"
->  },
->  {
->    "movie_ids": 2,
->    "name": "Jane Dean"
-> },
->  {
->    "movie_ids": 65,
->    "name": "Jane Dean"
->  }
->]
+// alternatively, expand composes with transform
+jaql> nestedData -> expand -> transform $ * 2;
+[
+  6,
+  130,
+  16,
+  144,
+  10,
+  196,
+  4,
+  130
+]
+
+// example of projecting and expanding arrays that are nested in records
+jaql> moviesOwned = [
+  {name:"Jon Doe", movie_ids:[3,65,8,72]}, 
+  {name:"Jane Dean", movie_ids:[5,98,2]}
+];
+
+jaql> moviesOwned -> expand $.movie_ids;
+[
+  3,
+  65,
+  8,
+  72,
+  5,
+  98,
+  2
+]
+
+// example of unroll (multiply each parent by the arity of its nested child array)
+moviesOwned -> expand unroll $.movie_ids;
+[
+  {
+    "movie_ids": 3,
+    "name": "Jon Doe"
+  },
+  {
+    "movie_ids": 65,
+    "name": "Jon Doe"
+  },
+  {
+    "movie_ids": 8,
+    "name": "Jon Doe"
+  },
+  {
+    "movie_ids": 72,
+    "name": "Jon Doe"
+  },
+  {
+    "movie_ids": 5,
+    "name": "Jane Dean"
+  },
+  {
+    "movie_ids": 98,
+    "name": "Jane Dean"
+  },
+  {
+    "movie_ids": 2,
+    "name": "Jane Dean"
+  }
+]
 }}}
 
 =Group=
