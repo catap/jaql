@@ -277,10 +277,36 @@ moviesOwned -> expand unroll $.movie_ids;
 
 =Group=
 
-With the group keyword, you can group items of an input together, depending on criteria you specify. It is also used to calculate aggregate functions.
-To group all items of an input together, skip the `by ... = ...` part.
+The `group` expression groups one or more input arrays on a grouping key and applies
+an aggregate function per group. When evaluated by a MapReduce job, a `group` expression's grouping key is extracted in the map phase and the per-group aggregate function is evaluated in the reduce phase. If the aggregate function is an algebraic aggregate function, then it will be evaluated using the map, combine, and reduce phases.
+The combine phase computes partial aggregates which allows more computation to take place in the mapper processes, potentially reducing network traffic when transferring intermediate data between mapper and reducer processes. Jaql's `group` expression is similar to SQL's `GROUP BY` clause when specified for a single input array. When multiple input arrays are specified, `group` is similar to PigLatin's co-group operator.
 
 ==Syntax==
+
+Single input, create single, global aggregate:
+{{{
+  A -> group into <aggrExpr> ;
+}}}
+
+Single input, partition into groups, and apply a function group:
+{{{
+  A -> group by <groupKeyVar> = <groupExpr> into <aggrExpr> ;
+}}}
+
+Single input, but rename all default variables:
+{{{
+  A -> group each <elementVar> by <groupKeyVar> <groupExpr> as <groupVar> into <aggrExpr> ;
+}}}
+
+Multiple inputs:
+{{{
+  group A1 by <groupKeyVar> = <groupExpr1> as <groupVar1>,
+        A2 by <groupKeyVar> = <groupExpr2> as <groupVar2>,
+        ...
+        An by <groupKeyVar> = <groupExprN> as <groupVarN>
+  into <aggrExpr> ;
+}}}
+
 `$input -> group by <variable> = <grouping items> into <expression>;`
 
   * `<variable>` is a jaql variable that will hold the `<grouping items>` while `<expression>` is evaluated.
@@ -380,6 +406,10 @@ join preserve $users, $pages where $users.id==$pages.userid into {$users.name, $
 >]
 }}}
 
+=Union=
+
+=Tee=
+
 =Sort=
 The sort keyword is used to sort an input by one or more fields.
 
@@ -416,3 +446,5 @@ $unsorted -> sort by [$[0], $[1] desc];
 >  ]
 >]
 }}}
+
+=Top=
