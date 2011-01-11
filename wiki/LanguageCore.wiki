@@ -288,15 +288,30 @@ Single input, create single, global aggregate:
   A -> group into <aggrExpr> ;
 }}}
 
+  * input: A of type `[ T1 ]` (e.g., array of type `T1`)
+  * output: A' of type [ T2 ] 
+  * `group` binds the entire input to `$` and places it in scope for `<aggrExpr>`
+  * `<aggrExpr>` produces an output of type `T2`
+
 Single input, partition into groups, and apply a function group:
 {{{
   A -> group by <groupKeyVar> = <groupExpr> into <aggrExpr> ;
 }}}
 
+  * `<groupKeyVar>` is a variable that references the grouping key for a group. It is in scope for `<aggrExpr>`.
+  * `<groupExpr>` is an expression that extracts a grouping key from each element in `A`. As with the other core operators, the `group` expression defines `$` as the iteration variable, binding it to each element of `A`. Thus, `$` is in scope for `<groupExpr>`.
+  * `group` creates arrays of elements, `[ T ]` that are associated with each group.
+  * `<aggrExpr>` is invoked per group. Its outputs a value of type `T2`.
+  * `group` binds `$` per group and places it in scope for `<aggrExpr>`. In addition, `<groupKeyVar>` is in scope for `<aggrExpr>`. Thus, `<aggrExpr>` has access to a given
+group's key and group values.
+
 Single input, but rename all default variables:
 {{{
   A -> group each <elementVar> by <groupKeyVar> <groupExpr> as <groupVar> into <aggrExpr> ;
 }}}
+
+  * The re-definition of `$` for the grouping and aggregate expressions allows for terser expressions but can be confusing to read.
+  * `group` expressions allows both the iteration variable and the group variable to renamed as `<elementVar>` and `<groupVar>`, respectively.
 
 Multiple inputs:
 {{{
@@ -307,16 +322,16 @@ Multiple inputs:
   into <aggrExpr> ;
 }}}
 
-`$input -> group by <variable> = <grouping items> into <expression>;`
+  * The piping syntax is not supported when grouping multiple inputs.
+  * `<groupKeyVar>` must be identical for each input. `<groupExpr>`'s may differ per input.
+  * The group variables, `<groupVar>`'s must be defined and unique per input.
+  * The `<groupKeyVar>` and all `<groupVar>`'s are all in scope for `<aggrExpr>`.
 
-  * `<variable>` is a jaql variable that will hold the `<grouping items>` while `<expression>` is evaluated.
-  * `<grouping items>` are the items of the input you want to group together. This can be a record or an array if you want to group by multiple items.
-  * the `by <variable> = <grouping items>` part is optional. If omitted, the whole input is grouped together into a single array.
-  * ` <expression> ` defines the output of the grouping. To include the items you grouped on, use `<variable>`. $ is bound to the grouped items. To get an array of all values for an item that are aggregated into one group, use `$[*].key` or `$[*][n]`, which returns an array of all those values. This is also the way to apply aggregate functions such as sum, avg, or count.
+For `<aggrExpr>`, it is most common to combine value constructors, such as records and array constructors, with aggregate functions. Refer to [Builtin_functions#agg aggregates] for a list of supported aggregate functions.
 
 ==Example==
 {{{
-$employees = [
+jaql> employees = [
   {id:1, dept: 1, income:12000},
   {id:2, dept: 1, income:13000},
   {id:3, dept: 2, income:15000},
@@ -324,24 +339,91 @@ $employees = [
   {id:5, dept: 3, income:8000},
   {id:6, dept: 2, income:5000},
   {id:7, dept: 1, income:24000}
+];
+
+// Compute an aggregate over all employee recs. All recs are bound to $. 
+jaql> employees -> group into count($);
+[
+  7
 ]
 
-$employees -> group by $dept_group = $.dept into {$dept_group, total: sum($[*].income)};
+// Compute an aggregate per department. 
+// Note the two uses of $ for both the iteration and group variables.
+// The $[*].income expression projects the income field from group's records, 
+// producing an array of longs.
+// Note that as a short-hand, the first output field (d) has its name constructed from
+// the variable name.
+jaql> employees -> group by d = $.dept 
+                   into {d, total: sum($[*].income)};
+[
+  {
+    "d": 2,
+    "total": 20000
+  },
+  {
+    "d": 1,
+    "total": 59000
+  },
+  {
+    "d": 3,
+    "total": 8000
+  }
+]
 
->[
->  {
->    "dept_group": 1,
->    "total": 59000
->  },
->  {
->    "dept_group": 2,
->    "total": 20000
->  },
->  {
->    "dept_group": 3,
->    "total": 8000
->  }
->]
+// Repeat the query above with variable renamings for iteration and group variables
+jaql> employees -> group each emp by d = emp.dept as deptEmps
+                   into {d, total: sum(deptEmps[*].income)};
+[
+  {
+    "d": 2,
+    "total": 20000
+  },
+  {
+    "d": 1,
+    "total": 59000
+  },
+  {
+    "d": 3,
+    "total": 8000
+  }
+]
+
+jaql> depts = [
+  {did: 1, name: "development"},
+  {did: 2, name: "marketing"},
+  {did: 3, name: "sales"}
+];
+
+// Example that shows off multiple inputs. Note that co-group is more general than join.
+// A join would enumerate the cross-product between emps and deps that share the same
+// dept id. For co-group, direct access to the matching emps and deps, per dept are
+// available to the aggregate expression. In this case, the aggregate expression
+// constructs a single record per group, providing the department id, the name (a 1:n
+// relationship is assumed, which is why it makes sense to look only at the first dept
+// record), the list of matching emp ids, and the count of emps per department.
+jaql> group employees by g = $.dept as es,
+            depts     by g = $.did  as ds
+      into { dept: g, deptName: ds[0].name, emps: es[*].id, numEmps: count(es) };
+[
+  {
+    "dept": 2,
+    "deptName": "marketing",
+    "emps": [3,6],
+    "numEmps": 2
+  },
+  {
+    "dept": 1,
+    "deptName": "development",
+    "emps": [1,2,4,7],
+    "numEmps": 4
+  },
+  {
+    "dept": 3,
+    "deptName": "sales",
+    "emps": [5],
+    "numEmps": 1
+  }
+]
 }}}
 
 =Join=
