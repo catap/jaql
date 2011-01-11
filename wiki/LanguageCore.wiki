@@ -73,7 +73,7 @@ employees -> filter each emp emp.mgr or emp.income > 30000;
   }
 ]
 
-// Use parents to separate the variable declaration from the <predicate>
+// Use parens to separate the variable declaration from the <predicate>
 // to make the statement easier to read
 employees -> filter each emp (emp.mgr or emp.income > 30000);
 }}}
