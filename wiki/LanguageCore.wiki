@@ -552,44 +552,121 @@ jaql> join preserve u in users,
 }}}
 
 =Union=
+Please refer to [http://code.google.com/p/jaql/wiki/Builtin_functions#union%28%29 union].
 
 =Tee=
+Please refer to [http://code.google.com/p/jaql/wiki/Builtin_functions#tee%28%29 tee].
 
 =Sort=
-The sort keyword is used to sort an input by one or more fields.
+
+The `sort` expression re-orders an input array according to a specified order.
 
 ==Syntax==
-`$input -> sort by [<fieldlist>];`
 
-`<fieldlist>` contains one or more fields from the input that shall be used for sorting. Each field can be followed by either `desc` or `asc` to indicate descending or ascending order. The default is ascending, so the `asc` keyword is optional. The input is sorted by all elements in the `<fieldlist>`, in the order they appear.
+{{{
+A -> sort by [<expr desc|asc>, *];`
+}}}
+
+  * input: `A` is an array of type `T`
+  * output: `A'` is also an array of type `T`
+  * `[<expr desc|asc>, *]` constructs a comparator used to sort `A`.
+  * `sort` by default defines `$` to be the iteration variable which is in scope for each comparator expression.
+  * by default, `asc` is used for order the input array in ascending order
 
 ==Example==
 {{{
-$unsorted = [[2,2,"first"],[1,2,"second"],[2,1,"third"],[1,1,"fourth"]];
-$unsorted -> sort by [$[0], $[1] desc];
+jaql> nums = [ 2, 1, 3 ];
 
->[
->  [
->    1,
->    2,
->    "second"
->  ],
->  [
->    1,
->    1,
->    "fourth"
->  ],
->  [
->    2,
->    2,
->    "first"
->  ],
->  [
->    2,
->    1,
->    "third"
->  ]
->]
+// sort an array of longs
+jaql> nums -> sort by [ $ ];
+[
+  1,
+  2,
+  3
+]
+
+// same expression but override the iteration variable
+jaql> nums -> sort each n by [ n ];
+[
+  1,
+  2,
+  3
+]
+
+// sort in descending order
+jaql> nums -> sort by [ $ desc ];
+[
+  3,
+  2,
+  1
+]
+
+jaql> test = [[2,2,"first"],[1,2,"second"],[2,1,"third"],[1,1,"fourth"]];
+
+// sort that uses a complex comparator, where each comparator expression projects values // from the input
+jaql> test -> sort by [$[0], $[1] desc];
+[
+  [
+    1,
+    2,
+    "second"
+  ],
+  [
+    1,
+    1,
+    "fourth"
+  ],
+  [
+    2,
+    2,
+    "first"
+  ],
+  [
+    2,
+    1,
+    "third"
+  ]
+]
 }}}
 
 =Top=
+
+The `top` expression selects the first `k` elements of its input. If a comparator is provided, the output is semantically equivalent to sorting the input, then selecting the first `k` elements.
+
+Note: the current implementation of `top`, when a comparator is specified, uses `sort`. A more efficient implementation is provided by [http://code.google.com/p/jaql/wiki/Builtin_functions#topN%28%29 topN].
+
+==Syntax==
+{{{
+  A -> top <k>
+}}}
+
+  * input: `A` is an array of type `T`
+  * output: the first `<k>` elements from `A'`, which is also an array of type `T`
+
+{{{
+  A -> top <k> by [<expr desc|asc>, *];
+}}}
+
+  * `[<expr desc|asc>, *]` constructs a comparator used to sort `A`.
+  * `top` by default defines `$` to be the iteration variable which is in scope for each comparator expression.
+  * by default, `asc` is used for order the input array in ascending order
+
+
+==Examples==
+{{{
+jaql> nums = [1,2,3];
+
+// select the first two elements from nums, regardless of how nums is ordered.
+jaql> nums -> top 2;
+[
+  2,
+  1
+]
+
+// specify an ordering from the input from which to select 2 elements.
+jaql> nums -> top 2 by [ $ desc ];
+[
+  3,
+  2
+]
+}}}
