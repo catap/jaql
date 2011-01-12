@@ -327,7 +327,7 @@ Multiple inputs:
   * The group variables, `<groupVar>`'s must be defined and unique per input.
   * The `<groupKeyVar>` and all `<groupVar>`'s are all in scope for `<aggrExpr>`.
 
-For `<aggrExpr>`, it is most common to combine value constructors, such as records and array constructors, with aggregate functions. Refer to [Builtin_functions#agg aggregates] for a list of supported aggregate functions.
+For `<aggrExpr>`, it is most common to combine value constructors, such as records and array constructors, with aggregate functions. Refer to [http://code.google.com/p/jaql/wiki/Builtin_functions#agg aggregates] for a list of supported aggregate functions.
 
 ==Example==
 {{{
