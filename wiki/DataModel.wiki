@@ -51,6 +51,8 @@ Examples:
 === record ===
 A record is a mapping from names to values. It corresponds to JSON's object type.
 
+Field names must be non-null strings.
+
 Examples:
 {{{
   // record with one field, whose name is "aName" and whose value is "val"
