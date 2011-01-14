@@ -1,0 +1,48 @@
+#summary Jaql Language Reference
+
+= Introduction =
+
+= Top-level Statements =
+
+ * Import (link to Modules)
+ * Assignment
+ * Expression
+ * Explain
+ * Quit
+
+= Assignment =
+
+Define the different types of variables.
+
+= Expression =
+
+== Constructors ==
+Take some of this from the data model section or link to it.
+
+=== Record ===
+
+=== Array ===
+
+== Arithmetic Expressions ==
+TODO
+
+== Boolean Expressions ==
+TODO
+
+== Path Expressions ==
+TODO
+
+== Blocks ==
+TODO
+
+== If-Then-Else ==
+TODO
+
+== Pipe and Function ==
+
+Take from data model section for functions.
+Pipe TODO.
+
+== Partitioned Array Expressions ==
+
+Link to JaqlCore.
