@@ -21,6 +21,36 @@ Take some of this from the data model section or link to it.
 
 === Record ===
 
+Record values are constructed using braces {}. Literal records in JSON notation may be used. 
+The quotes for field names may be omitted if the field name looks like an identifier, i.e. does not contain spaces or symbols.
+
+Instead of literal field names and field values, nested subexpressions may be used. If a field name or field name expression is followed by ?, the field is only added to the record if its value is not null.
+
+For convenience, a number of syntactic shortcuts for common constructs are provided.
+
+ * If an in-scope variable is used in place of a field definition, a field is added to the record with the variable name as field name, and the variable value as field value. 
+ * If a [Path_Expressions path] is used as a field definition, the resulting field will have the name of the final step of the path. 
+ * A path expression that returns a record and is followed by {{{.*}}} will cause all fields of that record  to be copied to the constructed record.
+ * If the : in one or more field definitions is followed by {{{flatten}}}, an array of records will be produced that contains one record for each element of the cross product of the {{{flatten}}}ed values. A record expression like this {{{ { ..., f1: flatten e1, f2 : flatten e2, ... , fn: flatten en,...}}} is equivalent to {{{ for( v1 in e1, v2 in e2, ..., vn in en) {..., f1: v1, f2: v2, ..., fn: vn,...} }}}. 
+
+{{{
+// literal record
+{ x: "value", y: 12, "field with spaces" : 34.2}
+// record with subexpressions for field values
+basename="test";
+{ filename: basename+".txt", size: count(somevariable)};
+// record with subexpressions for field names
+{ ("a"+"field"):  null, (basename) : "hi" }
+// omit null fields (yields {required: null} as a result)
+{ required: null, optional?: null}
+// variable as field (yields { basename: "test"}
+{basename} 
+// path expressions
+x={a: "value", b: "value"};
+{ x.a } // copy field a from x
+{x.*} // copy all fields from x
+}}}
+
 === Array ===
 
 == Arithmetic Expressions ==
