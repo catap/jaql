@@ -45,7 +45,7 @@ here is the first line of the file
 1001
 }}}
 
-Using {{{read(lines('file1.txt'))}}, we get:
+Using {{{read(lines('file1.txt'))}}}, we get:
 
 {{{
 jaql> read(lines('file1.txt'));
