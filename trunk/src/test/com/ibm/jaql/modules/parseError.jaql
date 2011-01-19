@@ -1,0 +1,3 @@
+
+// cause a parse error
+x = "this string is not terminated';

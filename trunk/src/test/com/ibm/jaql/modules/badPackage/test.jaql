@@ -1,0 +1,3 @@
+
+// this module should never get loaded because it's package initializer has an error
+x = 'modules/badPackage/test.jaql';

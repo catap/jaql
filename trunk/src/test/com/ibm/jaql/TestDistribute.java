@@ -19,7 +19,6 @@ import com.ibm.jaql.io.hadoop.Globals;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.core.Module;
-import com.ibm.jaql.lang.core.Namespace;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.expr.io.AbstractReadExpr;
 import com.ibm.jaql.lang.expr.io.AbstractWriteExpr;
@@ -58,7 +57,7 @@ public class TestDistribute extends JaqlScriptTestCase {
           jaqlHome = new File(jaqlHome).getAbsolutePath().toString().replace('\\', '/') + "/";
           
           String scriptDir   = jaqlHome + getScriptDir();
-          String moduleDir   = getModuleDir();
+          String[] moduleDirs   = getModuleDirs();
           String queriesName = scriptDir + script + "Queries.txt";
           String goldName    = scriptDir + testLabel + ".gold";
           
@@ -114,12 +113,10 @@ public class TestDistribute extends JaqlScriptTestCase {
               new PrintWriter(new OutputStreamWriter(System.err, "UTF-8")) );
           queryReader = new EchoedReader( queryReader, resultStream );
 
-          // TODO: These should be on Jaql, not static.
-          Module.setSearchPath(new String[]{moduleDir});
           ClassLoaderMgr.reset();
-          Namespace.clearNamespaces();
           
           Jaql jaql = new Jaql(queriesName, queryReader);
+          jaql.setModulePath(moduleDirs);
           
           if( mode == Mode.COUNT )
           {

@@ -1,0 +1,4 @@
+import a;
+
+x = 'modules/upwardRefs/p/b.jaql';
+ba = a::x;

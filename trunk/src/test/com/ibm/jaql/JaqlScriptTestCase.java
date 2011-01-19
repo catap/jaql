@@ -48,8 +48,6 @@ import com.ibm.jaql.lang.ExplainHandler;
 import com.ibm.jaql.lang.Jaql;
 import com.ibm.jaql.lang.StreamPrinter;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Module;
-import com.ibm.jaql.lang.core.Namespace;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
 import com.ibm.jaql.lang.expr.io.AbstractReadExpr;
@@ -144,7 +142,11 @@ public class JaqlScriptTestCase
 
   protected String getScriptDir() { return "src/test/com/ibm/jaql/" ; }
   
-  protected String getModuleDir() { return getScriptDir() + "modules/"; }
+  protected String[] getModuleDirs()
+  { 
+    String sd = getScriptDir();
+    return new String[] { sd + "modules/", sd + "modules2/" }; 
+  }
   
   protected String getExtensionJar() { return "build/extension.jar"; }
   
@@ -163,7 +165,7 @@ public class JaqlScriptTestCase
       jaqlHome = new File(jaqlHome).getAbsolutePath().toString().replace('\\', '/') + "/";
       
       String scriptDir   = jaqlHome + getScriptDir();
-      String moduleDir   = getModuleDir();
+      String[] moduleDirs   = getModuleDirs();
       String queriesName = scriptDir + script + "Queries.txt";
       String goldName    = scriptDir + testLabel + ".gold";
       
@@ -216,12 +218,10 @@ public class JaqlScriptTestCase
       queryReader = new EchoedReader( queryReader, new FastPrintStream(System.err) );
       queryReader = new EchoedReader( queryReader, resultStream );
 
-      // TODO: These should be on Jaql, not static.
-      Module.setSearchPath(new String[]{moduleDir});
       ClassLoaderMgr.reset();
-      Namespace.clearNamespaces();
       
       Jaql jaql = new Jaql(queriesName, queryReader);
+      jaql.setModulePath( moduleDirs );
       
       if( mode == Mode.COUNT )
       {

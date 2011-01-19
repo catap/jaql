@@ -20,18 +20,10 @@ import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.List;
-
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
 
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Env;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.lang.expr.function.DefineJaqlFunctionExpr;
-import com.ibm.jaql.lang.parser.JaqlLexer;
 
 public interface CoreJaql extends Closeable {
 
@@ -256,8 +248,11 @@ public interface CoreJaql extends Closeable {
 	 */
 	void executeBatch(String batchFile) throws FileNotFoundException;
 
-    void executeBatch(String filename, Reader in) throws FileNotFoundException;
+  void executeBatch(String filename, Reader in) throws FileNotFoundException;
 
-    void setJaqlPrinter(JaqlPrinter printer);
+  void setJaqlPrinter(JaqlPrinter printer);
+
+  /** Set the module search path -- replacing any existing path */
+  void setModulePath(String[] path);
 
 }

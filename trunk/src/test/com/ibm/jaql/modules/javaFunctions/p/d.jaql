@@ -1,0 +1,2 @@
+
+fnD = javaudf("com.ibm.jaql.udf.djar.FunctionD");

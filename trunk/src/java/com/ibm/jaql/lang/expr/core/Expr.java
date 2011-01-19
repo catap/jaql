@@ -34,7 +34,6 @@ import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
-import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.SystemNamespace;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
@@ -62,7 +61,7 @@ public abstract class Expr
   
   /** list of subexpressions (e.g., arguments) */
   protected Expr[]           exprs           = NO_EXPRS;
-  protected Module module;
+  // protected Module module;
 
   /**
    * Every Expr can have annotations in the form of a JsonRecord.
@@ -196,7 +195,7 @@ public abstract class Expr
 
     if (keyword.contains("#")) throw new IllegalArgumentException();
     EnvExpr top = getEnvExpr();
-    if (top == null || top.getEnv().isDefinedLocal(keyword))
+    if (top == null || top.getEnv().findVar(keyword) != null )
     {
       return '#' + keyword;
     }
@@ -438,13 +437,13 @@ public abstract class Expr
     return parent.evaluatesChildOnce(getChildSlot());
   }
   
-  public boolean needsModuleInformation() {
-  	return false;
-  }
-  
-  public void setModule(Module m) {
-  	module = m;
-  }
+//  public boolean needsModuleInformation() {
+//  	return false;
+//  }
+//  
+//  public void setModule(Module m) {
+//  	module = m;
+//  }
 
   /**
    * 

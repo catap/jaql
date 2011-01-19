@@ -27,6 +27,7 @@ import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.core.VarMap;
 import com.ibm.jaql.lang.expr.metadata.MappingTable;
 import com.ibm.jaql.lang.expr.path.PathFieldValue;
+import com.ibm.jaql.lang.expr.top.EnvExpr;
 import com.ibm.jaql.util.FastPrinter;
 
 /** A variable.
@@ -92,18 +93,23 @@ public class VarExpr extends Expr
   public void decompile(FastPrinter exprText, HashSet<Var> capturedVars)
       throws Exception
   {
-    if (var.isGlobal())
+    String name;
+    EnvExpr envExpr = this.getEnvExpr();
+    if( envExpr == null )
     {
-      if (var.getNamespace().getName() == null)
+      // We have an incomplete tree -- can't print module alias
+      // This should only happen in the debugger...
+      name = var.taggedName();
+      if( var.isGlobal() )
       {
-        exprText.print("::");
-      }
-      else
-      {
-        exprText.print(var.getNamespace().getName() + "::");
+        name = "unknown::" + name;
       }
     }
-    exprText.print(var.taggedName());
+    else
+    {
+      name = var.qualfiedName( envExpr.getEnv().globals );
+    }
+    exprText.print(name);
     capturedVars.add(var);
   }
 

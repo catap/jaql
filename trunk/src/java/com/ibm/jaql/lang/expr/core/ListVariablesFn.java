@@ -31,25 +31,32 @@ import com.ibm.jaql.json.type.MutableJsonString;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.core.Var;
 import com.ibm.jaql.lang.expr.function.DefaultBuiltInFunctionDescriptor;
 import com.ibm.jaql.lang.expr.top.EnvExpr;
 
 /**
- * List the active global variables.
- *   [{ var: string, schema: schema, isTable: boolean }...] 
+ * List all global variables that are in scope.
+ *   [{ var: string, schema: schema, isTable: boolean, package, module, alias }...] 
  */
 public final class ListVariablesFn extends IterExpr
 {
-  public final static JsonString VAR_NAME = new JsonString("var");
-  public final static JsonString SCHEMA_NAME = new JsonString("schema");
+  public final static JsonString VAR_NAME     = new JsonString("var");
+  public final static JsonString SCHEMA_NAME  = new JsonString("schema");
   public final static JsonString ISTABLE_NAME = new JsonString("isTable");
+  public final static JsonString PACKAGE_NAME = new JsonString("package");
+  public final static JsonString MODULE_NAME  = new JsonString("module");
+  public final static JsonString ALIAS_NAME   = new JsonString("alias");
 
   public final static ArraySchema schema = new ArraySchema(null,
       new RecordSchema(new RecordSchema.Field[]{
-          new RecordSchema.Field(VAR_NAME, SchemaFactory.stringSchema(), false),
-          new RecordSchema.Field(SCHEMA_NAME, SchemaFactory.schematypeSchema(), false),
+          new RecordSchema.Field(VAR_NAME,     SchemaFactory.stringSchema(), false),
+          new RecordSchema.Field(SCHEMA_NAME,  SchemaFactory.schematypeSchema(), false),
           new RecordSchema.Field(ISTABLE_NAME, SchemaFactory.booleanSchema(), false),
+          new RecordSchema.Field(PACKAGE_NAME, SchemaFactory.stringSchema(), false),
+          new RecordSchema.Field(MODULE_NAME,  SchemaFactory.stringSchema(), false),
+          new RecordSchema.Field(ALIAS_NAME,   SchemaFactory.stringSchema(), false)
       }, null));
 
   public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par00
@@ -69,7 +76,10 @@ public final class ListVariablesFn extends IterExpr
   public final static JsonString[] names = new JsonString[] {
       VAR_NAME,
       SCHEMA_NAME,
-      ISTABLE_NAME
+      ISTABLE_NAME,
+      PACKAGE_NAME,
+      MODULE_NAME,
+      ALIAS_NAME
   };
   
   /**
@@ -106,16 +116,22 @@ public final class ListVariablesFn extends IterExpr
     final MutableJsonString varName = new MutableJsonString();
     final MutableJsonSchema varSchema = new MutableJsonSchema();
     final MutableJsonBool varIsTable = new MutableJsonBool();
+    final MutableJsonString packageName = new MutableJsonString();
+    final MutableJsonString moduleName = new MutableJsonString();
+    final MutableJsonString moduleAlias = new MutableJsonString();
     JsonValue[] values = new JsonValue[] {
         varName,
         varSchema,
-        varIsTable
+        varIsTable,
+        packageName,
+        moduleName,
+        moduleAlias
     };
     rec.set(names , values, names.length);
 
     return new JsonIterator(rec) 
     {
-      Iterator<Var> vars = env.globals().listVariables(false).iterator();
+      Iterator<Var> vars = env.globals.listVariables(true).iterator();
 
       public boolean moveNext() throws Exception
       {
@@ -134,6 +150,10 @@ public final class ListVariablesFn extends IterExpr
                varIsTable.set(true);
              }
            }
+           Module mod = (Module)v.getNamespace();
+           packageName.setCopy( mod.getPackage().getName() );
+           moduleName.setCopy( mod.getName() );
+           moduleAlias.setCopy( v.getModuleAlias(env.globals) );
            return true;
         }
         return false;

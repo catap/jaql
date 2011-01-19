@@ -26,9 +26,9 @@ data -> write(hdfs("bar"));
 read(hdfs("bar")) -> fence( fn(i) ( test(i, ",") ) );
 
 // e. use function from module
-import scripts_and_udf;
-data -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
-read(hdfs("bar")) -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+import fuzzy_join::fuzzy_join as m;
+data -> fence( fn(i) m::qgram(i) ) -> expand -> count();
+read(hdfs("bar")) -> fence( fn(i) m::qgram(i) ) -> expand -> count();
 
 //
 // 2. complex data
@@ -49,8 +49,8 @@ data -> fence( fn(i) ( test(i.b, ",") ) );
 read(hdfs("complex")) -> fence( fn(i) ( test(i.b, ",") ) );
 
 // e. use function from module
-data -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
-read(hdfs("complex")) -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+data -> fence( fn(i) m::qgram(i.b) ) -> expand -> count();
+read(hdfs("complex")) -> fence( fn(i) m::qgram(i.b) ) -> expand -> count();
 
 //
 // Fence in push mode
@@ -76,8 +76,8 @@ data -> transform fencePush( $, fn(i) ( test(i, ",") ) );
 read(hdfs("bar")) -> transform fencePush( $, fn(i) ( test(i, ",") ) );
 
 // e. use function from module
-data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
-read(hdfs("bar")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+data -> transform fencePush( $, fn(i) m::qgram(i) ) -> expand -> count();
+read(hdfs("bar")) -> transform fencePush( $, fn(i) m::qgram(i) ) -> expand -> count();
 
 //
 // 2. complex data
@@ -97,5 +97,5 @@ data -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
 read(hdfs("complex")) -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
 
 // e. use function from module
-data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
-read(hdfs("complex")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+data -> transform fencePush( $, fn(i) m::qgram(i.b) ) -> expand -> count();
+read(hdfs("complex")) -> transform fencePush( $, fn(i) m::qgram(i.b) ) -> expand -> count();

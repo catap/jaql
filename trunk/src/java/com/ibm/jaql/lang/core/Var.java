@@ -87,13 +87,13 @@ public final class Var extends Object
 
   private final Scope scope;
   private final State state;  
-  private final Namespace namespace; 
+  private Namespace namespace; 
 
   /**
    * Construct a new variable with the given value.
    * (Calling constructors might erase the value)
    */
-  private Var(Namespace namespace, String taggedName, Schema schema, Scope scope, State state, Type type, JsonValue value)
+  private Var(Module namespace, String taggedName, Schema schema, Scope scope, State state, Type type, JsonValue value)
   {
     assert schema != null;
     if( scope == Scope.LOCAL )
@@ -128,7 +128,7 @@ public final class Var extends Object
   /**
    * Create a variable in a namespace.
    */
-  public Var(Namespace namespace, String taggedName, Schema schema, Scope scope, State state)
+  public Var(Module namespace, String taggedName, Schema schema, Scope scope, State state)
   {
     this( namespace, taggedName, schema, scope, state, Type.UNDEFINED, null );
   }
@@ -136,7 +136,7 @@ public final class Var extends Object
   /**
    * Create a immutable global variable in a namespace.
    */
-  public Var(Namespace namespace, String taggedName, Schema schema, JsonValue value)
+  public Var(Module namespace, String taggedName, Schema schema, JsonValue value)
   {
     this(namespace, taggedName, schema, Scope.GLOBAL, State.FINAL, Type.VALUE, value);
   }
@@ -552,13 +552,33 @@ public final class Var extends Object
     return namespace;
   }
 
-//  public void setNamespace(Namespace namespace)
-//  {
-//    if (this.namespace != null && this.namespace != namespace)
-//    {
-//      throw new IllegalStateException("variable already has a namespace");
-//    }
-//    this.namespace = namespace;
-//  }
+  public void setNamespace(Namespace namespace)
+  {
+    if (this.namespace != null && this.namespace != namespace)
+    {
+      throw new IllegalStateException("variable already has a namespace");
+    }
+    this.namespace = namespace;
+  }
+
+  public String getModuleAlias(Module inModule)
+  {
+    if( namespace instanceof Module )
+    {
+      return inModule.getModuleAlias( (Module) namespace );
+    }
+    throw new RuntimeException("variable "+taggedName()+" is not imported in a module");
+  }
+
+  public String qualfiedName(Module inModule)
+  {
+    String name = taggedName();
+    if( inModule != null && isGlobal() )
+    {
+      String alias = inModule.getModuleAlias((Module)namespace);
+      name = alias + "::" + name;
+    }
+    return name;
+  }
 
 }

@@ -81,14 +81,15 @@ public class Jaql implements CoreJaql
   public static void run(String filename,
                          Reader in) throws Exception
   {
-    run(filename, in, null, null, false);
+    run(filename, in, null, null, false, null);
   }
   
   public static void run(String filename,
                          Reader reader,
                          OutputAdapter outputAdapter,
                          OutputAdapter logAdapter,
-                         boolean batchMode) throws Exception
+                         boolean batchMode, 
+                         String[] searchPath) throws Exception
   {
     Jaql engine = new Jaql(filename, reader);
     JaqlPrinter printerToClose = null;
@@ -106,9 +107,19 @@ public class Jaql implements CoreJaql
         engine.setExceptionHandler(new JsonWriterExceptionHandler(logAdapter.getWriter()));
     }
     
+    if( searchPath != null )
+    {
+      engine.setModulePath(searchPath);
+    }
+    
     engine.run();
     
     if( printerToClose != null ) printerToClose.close();
+  }
+
+  public void setModulePath(String[] searchPath)
+  {
+    env.globals.getPackage().setModulePath(searchPath);
   }
 
   public static void addExtensionJars(String[] jars) throws Exception
@@ -278,7 +289,7 @@ public class Jaql implements CoreJaql
    */
   public void setVar(String varName, JsonValue value) 
   {
-    parser.env.setOrScopeMutableGlobal(varName, value);    
+    parser.env.globals.setOrScopeMutable(varName, value);    
   }
   
   public void setVar(String varName, JsonIterator iter) {
@@ -643,7 +654,7 @@ public class Jaql implements CoreJaql
      */
     protected Function parseFunction(String fnName) throws Exception 
     {
-      Var var = env.inscopeGlobal(fnName);
+      Var var = env.globals.inscope(fnName);
       JsonValue val = var.getValue(context);
       if( val instanceof Function )
       {
@@ -669,7 +680,7 @@ public class Jaql implements CoreJaql
       }
       
       // Resolve the function
-      Var fnVar = env.inscopeGlobal(fnName);
+      Var fnVar = env.globals.inscope(fnName);
       ArrayList<Expr> posArgs = new ArrayList<Expr>(); 
       HashMap<JsonString, Expr> namedArgs = new HashMap<JsonString, Expr>();
       if (args != null) {

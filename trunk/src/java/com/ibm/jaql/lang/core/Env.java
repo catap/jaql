@@ -22,7 +22,6 @@ import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Var.Scope;
 import com.ibm.jaql.lang.expr.core.BindingExpr;
 import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.DoExpr;
@@ -39,221 +38,279 @@ import com.ibm.jaql.lang.walk.PostOrderExprWalker;
 
 /** An environment is namespace with a separate namespace for global variables. It is used
  * to store the compile-time environment. */
-public class Env extends Namespace
+public class Env // extends Namespace
 {
-  Namespace globals;   // holds global variables and imports
-  Context context;     // compile-time context
+  public Module globals;   // holds global variables and imports   // TODO: make final
+  public final Namespace locals = new Namespace("*locals*"); // holds local variables
+  public final Context context;     // compile-time context
+
 
   // -- construction ------------------------------------------------------------------------------
-  
+
+// TODO: require module to be passed in
+//  public Env(Namespace module, Context context)
+//  {
+//    this.globals = globals;
+//    this.context = context;
+//  }
+
   public Env(Context context)
   {
-    globals = new Namespace(null);
+    this.globals = new Module(new Package(), "", null); // TODO: set script file when known
     this.context = context;
   }
   
   
   // -- imports -----------------------------------------------------------------------------------
   
-  @Override
-  public void importNamespace(Namespace namespace) {
-    globals.importNamespace(namespace);
-  }
-  
-  @Override
-  public void importAllFrom(Namespace namespace) {
-    globals.importAllFrom(namespace);
-  }
-  
-  @Override
-  public void importFrom(Namespace namespace, ArrayList<String> varNames) {
-    globals.importFrom(namespace, varNames);
-  }
 
 
   // -- scoping -----------------------------------------------------------------------------------
   
-  @Override
+  
+  /** Return a local or global variable if it is in scope, else null.  The returned variable may be hidden. */
+  public Var findVar(String taggedName)
+  {
+    Var var = locals.findVar(taggedName);
+    if( var == null )
+    {
+      var = globals.findVar(taggedName);
+      if( var == null )
+      {
+        return null;
+      }
+    }
+    return var;
+  }
+  
+  //@Override
+  /** Find a local or global variable in scope */
   public Var inscope(String taggedName)
   {
-    Var var = findVar(variables, taggedName);
-    if (var == null)
+    Var var = findVar(taggedName);
+    if( var == null )
     {
-      return inscopeGlobal(taggedName);
+      throw new IndexOutOfBoundsException("variable is not defined: " + taggedName);
     }
-    if (var.isHidden()) 
-    {
-      throw new IndexOutOfBoundsException("variable is hidden in this scope: " + var.taggedName());
-    }
-    return var;
-  }
-  
-  @Override
-  public Var inscopeLocal(String taggedName)
-  {
-    Var var = findVar(variables, taggedName);
-    if (var == null)
-    {
-      return globals().inscopeLocal(taggedName);
-    }
-    if (var.isHidden()) 
+    if( var.isHidden() ) 
     {
       throw new IndexOutOfBoundsException("variable is hidden in this scope: " + var.taggedName());
     }
     return var;
   }
-  
-  public boolean isDefinedLocal(String taggedName)
+
+  public void scope(Var var)
   {
-    try
-    {
-      inscopeLocal(taggedName);
-      return true;
-    }
-    catch (Exception e)
-    {
-      return false;
-    }
+    locals.scope(var);
   }
   
-  @Override
-  public Var inscopeImport(String namespace, String varName)
+  public Var scope(String taggedName)
   {
-    return globals.inscopeImport(namespace, varName);
+    return scope(taggedName, SchemaFactory.anySchema());
+  }
+  
+  public Var scope(String taggedName, Schema schema)
+  {
+    Var var = makeVar(taggedName, schema);
+    locals.scope( var );
+    return var;
+  }
+  
+  public void unscope(Var var)
+  {
+    locals.unscope(var);
   }
 
-  public Var inscopeGlobal(String varName)
-  {
-    return globals.inscope(varName);
-  }
-  
-  /** Removes all local variables from this environment. */
-  public void reset()
-  {
-    ensureNotFinal();
-    variables.clear();
-  }
-  
-  /** Return the global variable called taggedName, or null if not found */
-  public Var findGlobal(String taggedName)
-  {
-    return findVar(globals.variables, taggedName);
-  }
-
-  /**
-   * Create a new immutable val variable with the specified name and put it into the global scope. 
-   * The most recent definition of the global variable of the specified name is overwritten.
-   */
-  public Var scopeGlobalVal(String varName, Schema schema)
-  {
-    ensureNotFinal();
-    Var var = findGlobal(varName);
-    if ( var != null )
-    {
-      globals.unscope(var);
-    }
-    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
-    globals.scope(var);
-    return var;
-  }
-  
-  /**
-   * Create a new immutable expr variable with the specified name and put it into the global scope. 
-   * The most recent definition of the global variable of the specified name is shadowed.
-   */
-  public Var scopeGlobalExpr(String varName, Schema schema, Expr expr)
-  {
-    ensureNotFinal();
-    Var var = findGlobal(varName);
-    if ( var != null )
-    {
-      globals.unscope(var);
-    }
-    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
-    try
-    {
-      expr = expandMacros(expr);
-    }
-    catch(Exception ex)
-    {
-      JaqlUtil.rethrow(ex);
-    }
-    var.setExpr(expr);
-    globals.scope(var);
-    return var;
-  }
-  
-  /**
-   * If the varName is bound to a mutable global, return it.
-   * Otherwise create a new mutable var variable with the specified name and puts it into the global scope, 
-   * and the most recent definition of the immutable global variable of the specified name is shadowed.
-   */
-  public Var scopeGlobalMutable(String varName, Schema schema)
-  {
-    ensureNotFinal();
-    Var var = findGlobal(varName);
-    if ( var != null )
-    {
-      var = globals.inscope(varName);
-      if( var.isMutable() )
-      {
-        return var;
-      }
-      globals.unscope(var);
-    }
-    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.MUTABLE);
-    globals.scope(var);
-    return var;
-  }
-  
-  /** 
-   * Creates a new variable with the specified name and puts it into the global scope. 
-   * The most recent definition of the global variable of the specified name is overwritten.
-   * If varName contains a tag, this method will fail.
-   */
-  public Var setOrScopeMutableGlobal(String varName, JsonValue value)
-  {
-    Var var = scopeGlobalMutable(varName, SchemaFactory.anySchema());
-    var.setValue(value);
-    return var;
-  }
-  
-  
   // -- variables ---------------------------------------------------------------------------------
   
-  /** Creates a new variable, scopes it, unscopes it, and returns it. */
+  /** Creates a new unscoped variable, scopes it, unscopes it, and returns it. */
   public Var makeVar(String name) 
   {
     return makeVar(name, SchemaFactory.anySchema());
   }
-
+  
   /** Creates a new variable, scopes it, unscopes it, and returns it. */
   public Var makeVar(String name, Schema schema) 
   {
-    assert schema != null;
-    Var var = scope(name, schema);
-    unscope(var);
-    return var;
+    return new Var(name, schema);
   }
   
+
+  /** Removes all local variables from this environment. */
+  public void reset()
+  {
+    locals.clear();
+  }
+
+
+//  @Override
+//  public Var inscopeLocal(String taggedName)
+//  {
+//    Var var = findVar(variables, taggedName);
+//    if (var == null)
+//    {
+//      return globals().inscopeLocal(taggedName);
+//    }
+//    if (var.isHidden()) 
+//    {
+//      throw new IndexOutOfBoundsException("variable is hidden in this scope: " + var.taggedName());
+//    }
+//    return var;
+//  }
   
+//  public boolean isDefinedLocal(String taggedName)
+//  {
+//    try
+//    {
+//      inscopeLocal(taggedName);
+//      return true;
+//    }
+//    catch (Exception e)
+//    {
+//      return false;
+//    }
+//  }
+//  
+//  @Override
+//  public Var inscopeImport(String namespace, String varName)
+//  {
+//    return globals.inscopeImport(namespace, varName);
+//  }
+//
+//  public Var inscopeGlobal(String varName)
+//  {
+//    return globals.inscope(varName);
+//  }
+//  
+//  /** Removes all local variables from this environment. */
+//  public void reset()
+//  {
+//    locals.clear();
+//  }
+//  
+//  /** Return the global variable called taggedName, or null if not found */
+//  public Var findGlobal(String taggedName)
+//  {
+//    return findVar(globals.variables, taggedName);
+//  }
+//
+//  /**
+//   * Create a new immutable val variable with the specified name and put it into the global scope. 
+//   * The most recent definition of the global variable of the specified name is overwritten.
+//   */
+//  public Var scopeGlobalVal(String varName, Schema schema)
+//  {
+//    ensureNotFinal();
+//    Var var = findGlobal(varName);
+//    if ( var != null )
+//    {
+//      globals.unscope(var);
+//    }
+//    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
+//    globals.scope(var);
+//    return var;
+//  }
+//  
+//  /**
+//   * Create a new immutable expr variable with the specified name and put it into the global scope. 
+//   * The most recent definition of the global variable of the specified name is shadowed.
+//   */
+//  public Var scopeGlobalExpr(String varName, Schema schema, Expr expr)
+//  {
+//    ensureNotFinal();
+//    Var var = findGlobal(varName);
+//    if ( var != null )
+//    {
+//      globals.unscope(var);
+//    }
+//    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.FINAL);
+//    try
+//    {
+//      expr = expandMacros(expr);
+//    }
+//    catch(Exception ex)
+//    {
+//      JaqlUtil.rethrow(ex);
+//    }
+//    var.setExpr(expr);
+//    globals.scope(var);
+//    return var;
+//  }
+//  
+//  /**
+//   * If the varName is bound to a mutable global, return it.
+//   * Otherwise create a new mutable var variable with the specified name and puts it into the global scope, 
+//   * and the most recent definition of the immutable global variable of the specified name is shadowed.
+//   */
+//  public Var scopeGlobalMutable(String varName, Schema schema)
+//  {
+//    ensureNotFinal();
+//    Var var = findGlobal(varName);
+//    if ( var != null )
+//    {
+//      var = globals.inscope(varName);
+//      if( var.isMutable() )
+//      {
+//        return var;
+//      }
+//      globals.unscope(var);
+//    }
+//    var = new Var(globals, varName, schema, Scope.GLOBAL, Var.State.MUTABLE);
+//    globals.scope(var);
+//    return var;
+//  }
+//  
+//  /** 
+//   * Creates a new variable with the specified name and puts it into the global scope. 
+//   * The most recent definition of the global variable of the specified name is overwritten.
+//   * If varName contains a tag, this method will fail.
+//   */
+//  public Var setOrScopeMutableGlobal(String varName, JsonValue value)
+//  {
+//    Var var = scopeGlobalMutable(varName, SchemaFactory.anySchema());
+//    var.setValue(value);
+//    return var;
+//  }
+//  
+//  
+//  // -- variables ---------------------------------------------------------------------------------
+//  
+//  /** Creates a new variable, scopes it, unscopes it, and returns it. */
+//  public Var makeVar(String name) 
+//  {
+//    return makeVar(name, SchemaFactory.anySchema());
+//  }
+//
+//  /** Creates a new variable, scopes it, unscopes it, and returns it. */
+//  public Var makeVar(String name, Schema schema) 
+//  {
+//    assert schema != null;
+//    Var var = scope(name, schema);
+//    unscope(var);
+//    return var;
+//  }
+//  
+//  
+//  // -- misc --------------------------------------------------------------------------------------
+//
+//  /** Returns the global environment. */
+//  public Namespace globals()
+//  {
+//    return globals;
+//  }
+//
+//
+
   // -- compile-time evaluation -------------------------------------------------------------------
-  
+
   /** Evaluate the expression using the environment's context. */
   public JsonValue eval(Expr e) throws Exception
   {
     VarTagger.tag(e);
     return e.eval(context);
   }
-  
-  // -- misc --------------------------------------------------------------------------------------
 
-  /** Returns the global environment. */
-  public Namespace globals()
-  {
-    return globals;
-  }
-
+  //-- post-parse processing -------------------------------------------------------------------------
 
   public Expr postParse(Expr root)
   {
@@ -334,11 +391,11 @@ public class Env extends Namespace
    */
   public Expr expandMacros(Expr root) throws Exception
   {
-    if( root instanceof MacroExpr )
-    {
-      return ((MacroExpr) root).expand(this);
-    }
     // Expand macros
+    while( root instanceof MacroExpr )
+    {
+      root = ((MacroExpr) root).expand(this);
+    }
     PostOrderExprWalker walker = new PostOrderExprWalker(root);
     Expr expr;
     while( (expr = walker.next()) != null )
@@ -356,7 +413,7 @@ public class Env extends Namespace
    * @param query
    * @return
    */
-  public void importGlobals(Expr root)
+  private void importGlobals(Expr root)
   {
     assert root instanceof EnvExpr && root.numChildren() == 1;
     Expr top = root.child(0);

@@ -1,0 +1,7 @@
+import a;
+import b;
+
+x = 'modules/upwardRefs/p/q/d.jaql';
+da = a::x;
+db = b::x;
+dba = b::ba;

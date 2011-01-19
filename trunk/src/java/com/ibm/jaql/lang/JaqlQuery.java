@@ -29,7 +29,6 @@ import com.ibm.jaql.json.type.JsonLong;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Module;
 
 /**
  * This is for Java developers to call JAQL in their Java applications. Typical
@@ -252,7 +251,7 @@ public class JaqlQuery implements Closeable {
      * 
      */
     public void setModuleSeachPath(String[] path) {
-        Module.setSearchPath(path);
+        jq.setModulePath(path);
     }
 
     /**
@@ -264,7 +263,7 @@ public class JaqlQuery implements Closeable {
      * 
      */
     public void setModuleSeachPath(String path) {
-        Module.setSearchPath(new String[] { path });
+        jq.setModulePath(new String[] { path });
     }
 
     /**

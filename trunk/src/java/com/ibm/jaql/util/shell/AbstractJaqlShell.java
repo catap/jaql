@@ -19,7 +19,6 @@ package com.ibm.jaql.util.shell;
 import java.io.Reader;
 
 import com.ibm.jaql.io.OutputAdapter;
-import com.ibm.jaql.lang.core.Module;
 
 /** Base class for version-specific shells. */
 public abstract class AbstractJaqlShell {
@@ -42,12 +41,14 @@ public abstract class AbstractJaqlShell {
   }
 
   /**
+   * @param searchPath 
    * @throws Exception
    */
   public void run(Reader in,
                    OutputAdapter outputAdapter,
                    OutputAdapter logAdapter,
-                   boolean batchMode) throws Exception
+                   boolean batchMode,
+                   String[] searchPath) throws Exception
   {
     try
     {
@@ -55,7 +56,8 @@ public abstract class AbstractJaqlShell {
                                  in,
                                  outputAdapter,
                                  logAdapter,
-                                 batchMode); // TODO: get filename 
+                                 batchMode,
+                                 searchPath); // TODO: get filename 
     }
     catch (Exception e)
     {
@@ -73,9 +75,6 @@ public abstract class AbstractJaqlShell {
     JaqlShellArguments jaqlArgs = JaqlShellArguments.parseArgs(args);
     try
     {
-      //Set module search path
-      Module.setSearchPath(jaqlArgs.searchPath);
-
       if (!jaqlArgs.batchMode) {
         // TODO startup text
         System.out.println("\nInitializing Jaql.");
@@ -100,7 +99,8 @@ public abstract class AbstractJaqlShell {
       shell.run(jaqlArgs.chainedIn, 
                 jaqlArgs.outputAdapter,
                 jaqlArgs.logAdapter,
-                jaqlArgs.batchMode);
+                jaqlArgs.batchMode,
+                jaqlArgs.searchPath);
       if (!jaqlArgs.batchMode) {
         System.out.println("\nShutting down jaql.");
       }

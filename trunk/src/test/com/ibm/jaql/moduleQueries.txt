@@ -1,70 +1,271 @@
-//Test standard import statement
+//-------------------------------------------------------------------
+// 1) A really simple module
+//-------------------------------------------------------------------
 
-//FAIL: Not yet imported
-fuzzy_join::cleanTitle;
+import simple1;
 
-import fuzzy_join;
-//Test imported JavaUDF
-fuzzy_join::cleanTitle("XY");
-//Test imported JaqlFunction
-fuzzy_join::$normalize([{a:"a"},{a:"XY"}],"a");
-//FAIL: Only namespace got imported, not functions
-cleanTitle("AB");
-$normalize([{a:"a"},{a:"XY"}],"a");
+simple1::greeting;
 
-//Test module directory detection
-//Has no namespace file and no scripts directory
-import fail_not_detected;
-//Exports variables that do not exist
-import fail_wrong_exports;
-import fail_invalid_namespace_file;
+// two aliases to the same module is ok
+import simple1 as simple1b;
 
-//Test import all statement
-import scripts_and_udf (*);
-roundUp(0.1);
-qgram("ab");
-pi;
-
-//Test import namespace + functions statement
-import scripts_only (three,four);
-three;
-four;
-//FAIL: not imported
-five;
-//Should work
-scripts_only::five;
+// These refer to the same variable
+simple1::greeting;
+simple1b::greeting;
 
 
-//Test meta modules (reexport variables from other modules)
-import meta;
-meta::cleanTitle("ab");
-meta::$normalize([{a:"a"},{a:"XY"}],"a");
+//-------------------------------------------------------------------
+// 2) Using a module alias
+//-------------------------------------------------------------------
 
-//Test scope & shadowing
-import scripts_with_namespace(*);
-x;
-y;
-::x; //FAIL: doesn't exist
-x=1;
-x;
-::x;
-scripts_with_namespace::x;
+import simple2 as m2;
 
-//Test exports
-//FAIL: It is not exported
-fuzzy_join::qgram; 
-//FAIL: scripts_with_namespaces has this should not be imported
-z;
+m2::greeting;
 
-//Test export lists
-listExports("fuzzy_join") -> sort by [$];
-listExports("meta") -> sort by [$];
-listExports("scripts_and_udf") -> sort by [$];
-listExports("scripts_only") -> sort by [$];
+// error -- alias is used, module name is simply the default alias
+simple2::m2;
 
-//Test reassigning values
-meta::cleanTitle = 2;
+//-------------------------------------------------------------------
+// 3) promotes only greeting into the current namespace
+//-------------------------------------------------------------------
+
+import simple3 (greeting);
+
+// symbol imported so we don't need to explicitly scope variable references
+greeting;
+
+// Can still use longer name
+simple3::greeting;
+
+// This is not in scope: we didn't request it to be imported
+farewell;
+
+// But this works
+simple3::farewell;
 
 
-//Test examples function
-examples("fuzzy_join");
+//-------------------------------------------------------------------
+// 4) promotes all exported variables
+//-------------------------------------------------------------------
+
+import simple4 (*);
+
+// symbol imported so we don't need to explicitly scope variable references
+// Notice that this hid greeting from simple3
+greeting;
+
+// Can still use longer name
+simple4::greeting;
+
+// This is also in scope
+farewell;
+
+// But variables that start with underscore are not exported
+_private;
+
+// non-exported variables can be referenced by full name
+simple4::_private;
+
+// other crazy stuff is not blocked -- modules can shadow each other
+import simple3 as simple4;
+
+// from earlier import of simple3
+simple3::greeting; 
+
+// from latest import of simple3
+simple4::greeting; 
+
+// this still from real simple4 -- no vars imported on latest import
+greeting;
+
+//-------------------------------------------------------------------
+// 5) simple packages
+//     p5/pack/mod5.jaql is loaded
+//-------------------------------------------------------------------
+
+import simplePackage::subPackage::moduleInPackage;
+
+moduleInPackage::x;
+
+//-------------------------------------------------------------------
+// 6) packages with crazy naming (load order is listed)
+//      crazy/           << package
+//         _crazy.jaql   << 1) package initialization module
+//         m.jaql        << 5) module crazy::m
+//         n.jaql        << 4) module crazy::n
+//         m/            << package
+//           _m.jaql     << 2) package initialization module
+//           m.jaql      << 3) module crazy::m::m, imports n_4
+//           m/          << package
+//             _m.jaql   << 6) package initialization module
+//             m.jaql    << 7) module crazy::m::m::m, imports n_8
+//             n.jaql    << 8) module crazy::m::m::n
+//-------------------------------------------------------------------
+
+// 1, 2, 3
+import crazy::m::m as m52;
+// 4, but not 1 again!
+import crazy::m as m51;
+// 5, 6, 7
+import crazy::m::m::m as m53;
+
+// crazy/m
+m51::x;
+// crazy/m/m
+m52::x;
+// crazy/n
+m52::y;
+// crazy/m/m/m
+m53::x;
+// crazy/m/m/n
+m53::y;
+
+
+//-------------------------------------------------------------------
+// 7) packages with upward references
+//      upwardRefs/          << package
+//         _upwardRefs.jaql  << 1) package initialization module
+//         a.jaql            << 7) module upwardRefs::a
+//         p/                << package
+//           _p.jaql         << 2) package initialization module
+//           b.jaql          << 5) module upwardRefs::p::b, imports a (but already loaded)
+//           q/              << package
+//             _q.jaql       << 3) package initialization module
+//             c.jaql        << 4) module upwardRefs::p::q::c, imports a, d, b
+//             d.jaql        << 6) module upwardRefs::p::q::c, imports a,b (but already loaded)
+//-------------------------------------------------------------------
+
+import upwardRefs::p::q::c as m7;
+
+// /p/q/c
+m7::x;
+// /a
+m7::ca;
+// /p/b
+m7::cb;
+// /p/q/d
+m7::cd;
+// /a
+m7::ba;
+// /a
+m7::da;
+// /p/b
+m7::db;
+// /a
+m7::dba;
+
+
+//-------------------------------------------------------------------
+// 8) packages with downward references
+//      downwardRefs/              << package
+//         _downwardRefs.jaql      << 1) package initialization module
+//         a.jaql        << 7) module downwardRefs::a, imports p::b
+//         p/            << package
+//           _p.jaql     << 2) package initialization module
+//           b.jaql      << 5) module downwardRefs::p::b, imports q::c,q::d
+//           q/          << package
+//             _q.jaql   << 3) package initialization module
+//             c.jaql    << 4) module downwardRefs::p::q::c
+//             d.jaql    << 6) module downwardRefs::p::q::c
+//-------------------------------------------------------------------
+
+import downwardRefs::a as m8;
+
+m8::a;
+m8::b;
+m8::c;
+m8::d;
+
+//-------------------------------------------------------------------
+// 9) loading java functions from multiple jars
+//      javaFunctions/            << package
+//         _javaFunctions.jaql    << 1) adds lib/*:lib2/cjar.jar = abjar.jar, ejar.jar, cjar.jar to the class path
+//         abc.jaql               << 3) defines fnA, fnB, fnC, references java FunctionA, FunctionB, FunctionC
+//         e.jaql                 << 4) defines fnE, references java FunctionE
+//         lib/                   << just a directory
+//            abjar.jar           << 2) contains FunctionA.class and FunctionB.class
+//            ejar.jar            << 2) contains FunctionE.class
+//         lib2/                  << just another directory
+//            cjar.jar            << 2) contains FunctionC.class
+//         p/                     << package
+//           _p.jaql              << 5) lib/* = djar.jar to the class path
+//           d.jaql               << 7) defines fnD, references java FunctionD
+//           lib/                 << another jar directory
+//             djar.jar           << 6) contains FunctionD.class
+//          
+//  FunctionA depends on C, C depends on B, B depends on E.
+//    so jars must be loaded together -- order specified doesn't match
+//  Function D depends on A, B and E.
+//    finds the right lib/djar and links with parent package
+//-------------------------------------------------------------------
+
+// loads of abjar.jar, ejar.jar, cjar.jar and defines fn9A, fn9B, fn9C
+import javaFunctions::abc as m9a (param9);
+
+param9;
+m9a::fnA(param9);
+m9a::fnB(param9);
+m9a::fnC(param9);
+
+// defines fn9E
+import javaFunctions::e as m9e (*);
+
+fd := [param9] -> write(hdfs('T'));
+
+// run udfs in parallel
+read(fd) -> transform [m9a::fnA($), m9a::fnB(param9), m9a::fnC($), fnE($), m9e::fnE(m9a::param9)];
+
+// loads of djar.jar and defines fn9D
+import javaFunctions::p::d as m9d;
+
+m9d::fnD(param9);
+
+// run udf in parallel
+read(fd) -> transform [ m9d::fnD($), m9d::fnD(m9a::param9) ];
+
+
+//-------------------------------------------------------------------
+// Errors loading module
+//-------------------------------------------------------------------
+
+// Error while parsing module
+import parseError;
+
+// Error: parseError should not be known
+parseError::x;
+
+// Error while parsing package initialization module
+import badPackage::test;
+
+// Error: test should not be known
+test::x;
+
+
+//-------------------------------------------------------------------
+// Search path tests
+//-------------------------------------------------------------------
+
+// dupModule is in two paths -- not an error 
+import dupModule;
+// this should be module not module2
+dupModule::x;
+
+// dupPackage and dupModule are in in two search paths -- This should find the first one
+import dupPackage::dupModule as d;
+d::x;
+
+// Error: dupPackage resolved to two different packages because onlyIn2 is only in modules2
+import dupPackage::onlyIn2;
+
+
+//-------------------------------------------------------------------
+// fuzzy join
+// TODO: full fuzzy_join module should get tested!
+//-------------------------------------------------------------------
+
+import fuzzy_join::fuzzy_join as fj;
+
+fj::cleanTitle("XY");
+
+fj::normalize([{a:"a"},{a:"XY"}],"a");
+
