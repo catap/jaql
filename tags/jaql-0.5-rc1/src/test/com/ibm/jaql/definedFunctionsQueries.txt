@@ -1,0 +1,414 @@
+//1. agg
+//1.1 exercise count function
+//sanity testing
+count([1,2,3,4]);
+count([false, 12.34, "IBM", true, 21]);
+count([{a:12, b:"IBM"}, false, "IBM", [1,2,3,4,5,6], null, "", 12.345]);
+count([]);
+count([null]);
+count(null);
+count([IBM, false, 12.34]);
+[{a:12, b:"IBM"}, false, "IBM", [1,2,3,4,5,6], null, "", 12.345] -> count();
+null -> count();
+[null] -> count();
+//error condition
+count();
+count(12);
+count("IBM");
+count([false, 12.34, IBM]);
+count({a:1, b:2, c:3});
+//1.2 exercise sum function
+//sanity testing
+sum([1,2,4]);
+sum([]);
+sum([0]);
+[1,2,4] -> sum();
+//error condition
+sum(["IBM","SUN",4]);
+[1,2,4] -> sum([1,3,6]);
+sum({a:1, b:2});
+sum([{a:1, b:2}, {c:23,d:12.3}]);
+//1.3 exercise max function
+//sanity testing
+max([1,2,4,-12, 8, 3]);
+[1,2,4,-12, 8, 3] -> max();
+max([1,2,4,-12, 8, null]);
+max([]);
+//error condition
+max(["IBM","SUN",4);
+max(["IBM","SUN",4]);
+max([{a:12, b:"IBM"}, false, "IBM", [1,2,3,4,5,6], null, "", 12.345]);
+//1.4 exercise count/sum/max from hdfs file system
+[
+  range(1,200),
+  range(300,1000),
+  range(10000,12000),
+  range(-1000,-700)
+  ] -> write(hdfs("agg_test1"));
+read(hdfs("agg_test1")) -> transform each k ({count: count(k), sum:sum(k), max:max(k)});
+[
+  {employee_id:1, dept: "Sales",     age: 20, income:12000, Address: "Wall Street 32"},
+  {employee_id:2, dept: "Sales",     age: 28, income:13000, Address: "Washington Road 92"},
+  {employee_id:3, dept: "PreSales",  age: 35, income:15000, Address: "Beijing Road 92"},
+  {employee_id:4, dept: "Research",  age: 32, income:10000, Address: "East Road 92, Shangdi district"},
+  {employee_id:5, dept: "HR",        age: 29, income:20000, Address: "West Road 120, Shangdi district"},
+  {employee_id:6, dept: "PreSales",  age: 43, income:5000,  Address: "Xi'an Road 33"},
+  {employee_id:7, dept: "Research",  age: 30, income:8000,  Address: "Heping Road 23"}
+  ] -> write(hdfs("agg_test2"));
+read(hdfs("agg_test2")) -> group by $dept_group = $.dept 
+                           into {$dept_group, employee_count:count($[*].income), total_income:sum($[*].income), income_max:max($[*].income)};
+read(hdfs("agg_test2")) -> filter $.age >25 -> group by $dept_group = $.dept 
+                           into {$dept_group, employee_count:count($[*].income), total_income:sum($[*].income), income_max:max($[*].income)};
+
+//2. array
+//2.1 exists
+exists([12,23]);
+exists(12);
+exists({a:12, b:"IBM"})
+exists(false);
+exists(["IBM","SUN",4]);
+["IBM","SUN",4] -> exists();
+exists();
+exists(null);
+exists([null]);
+exists([null, "IBM"]);
+//2.2 distinct
+distinct([1,22,3,4,3,22,7,8,7]);
+[1,22,3,4,3,22,7,8,7] -> distinct();
+distinct(["IBM", false, true, false, 123.34, 456, 809, 123.34, "sun", "ibm", "ibm"]);
+distinct([null, "", false, true]);
+distinct([null, {a:12, b:21},{a:12, b:21}, {a:12, b:"IBM"}, {a:12, b:"IBM"}, ["ibm", "sun", 12.34], ["sun", "ibm", 12.34]]);
+distinct([{c:"ibm", d:"sun"}, {d:"sun",  c:"ibm"}]);
+distinct([["ibm", "sun"], ["sun",  "ibm"], ["SUN", "ibm"]]);
+distinct(12);
+distinct({a:12, b:"IBM"});
+distinct(null);
+distinct([null]);
+//2.3 arrayToRecord
+arrayToRecord(["SUN", "IBM"], [123,345]);
+arrayToRecord();
+arrayToRecord(["SUN", "IBM"]);
+arrayToRecord(["SUN", "IBM"], 123);
+arrayToRecord(["SUN", "IBM", ""], [1,2,3]);
+arrayToRecord(["SUN", "IBM"], [1, 2, 3]);
+arrayToRecord(["SUN", "IBM"], [1]);
+arrayToRecord(["SUN", "IBM"], [1, null]);
+arrayToRecord(range(1,5)->transform(strcat("s",$)), range(1,5));
+arrayToRecord(range(1,255)->transform(strcat("s",$)), range(1,255));
+arrayToRecord(range(1,255)->transform(strcat("s",$)), range(1,255)->transform($/16.00));
+//defect 9567
+arrayToRecord(range(1,1000)->transform(strcat("s",$)), range(1,1000));
+//defect 9379
+arrayToRecord([null,"ibm"],[1,2]);
+arrayToRecord(["SUN", "IBM"], [{price:123},{address:"Beijing"}]);
+arrayToRecord(["SUN", "IBM"], {a:1, b:2});
+arrayToRecord({a:1, b:2}, ["SUN", "IBM"]);
+//2.4 asArray
+//this function only alow array or null as the parameter
+words=asArray([{w:'a'},{w:'b'},{w:'c'}]->transform {$.w});
+//first word
+words[0].w;
+asArray([]);
+asArray(null);
+//2.5 columnwise
+pinfo=[{name:'john',age:23, hobbies: {A:'basketball',b:'football',c:'swimming'}},{name:'mike',age:24,hobbies:{A:'jogging',B:'combat'}}];
+result=columnwise(pinfo);
+result;
+typeof(columnwise([]))=="record";
+//2.6 rowwise
+rowwise(result)==pinfo;
+typeof(rowwise({}))=="array";
+//2.7 deempty
+null->deempty();
+[]->deempty();
+[{type:'array',value:[1,23,4]},{type:'record',value:{a:'a record'}}] -> deempty();
+//2.8 lag1
+range(1,5) -> lag1();
+//2.9 pair
+pair('a','b')==['a','b'];
+pair(1,-1)==[1,-1];
+pair(3.14,-3.14)==[3.14,-3.14];
+pair(true,false)==[true,false];
+pair(null,1)==[null,1];
+pair(null,null)==[null,null];
+//2.10 nextElement
+//normal use
+range(1,3)->nextElement();
+//only one element
+[1]->nextElement();
+//array with record elements 
+[{n:1,v:'n1'},{n:2,v:'n2'},{n:3,v:'n3'}]->nextElement();
+//2.11 prevAndNextElement
+range(1,3)->prevAndNextElement();
+[1]->prevAndNextElement();
+[1,2]->prevAndNextElement();
+//2.12 prevElement
+range(1,3)->prevElement();
+[1]->prevElement();
+//2.13 removeElement
+removeElement([1,2,3],0)==[2,3];
+//out of index
+removeElement([1,2,3],3)==[1,2,3];
+removeElement([1,2,null],2)==[1,2];
+//2.14 replaceElement
+replaceElement([1,2,3],2,100)==[1,2,100];
+replaceElement(['a','b','c'],2,'d')==['a','b','d'];
+//out of index
+replaceElement(['a','b','c'],3,'d')==['a','b','c','d'];
+replaceElement(['a','b','c'],4,'d')==['a','b','c',null,'d']; 
+replaceElement(['a','b','c'],-1,'d')==['a','b','c']; 
+//2.15 reverse
+[1,2,3]->reverse();
+null->reverse();
+[[1],[2,3],[3,4,5],[6,7,8,9]] -> transform reverse($);
+[[1],[2,3],[3,4,5],[6,7,8,9]] -> transform reverse($)->reverse();
+//2.16 shift
+//input, number before, number after
+//no before(after) number is specified.
+shift(range(1,5),0,0);
+//specify before number
+shift(range(1,5),1,0);
+//specify after number
+shift(range(1,5),0,1);
+//if null
+shift([],0,0);
+//2.17 toArray
+[]->toArray();
+{}->toArray();
+null->toArray();
+[1,2,3]->toArray();
+{rcd:1}->toArray();
+1->toArray();
+"letter"->toArray();
+3.14->toArray();
+true->toArray();
+//2.18 union
+union(null)==[];
+union([1,2],[3,4],[5,6])==[1,2,3,4,5,6];
+union([1,2],null,[5,6])==[1,2,5,6];
+
+//3. core
+//3.1 MathExpr
+12*12-(4+10.1)*(-2.01) + 12.2/2 + 234.12 * 0 / 2;
+[1,2,3] * [3,4,5];
+[1,2,3] + [3,4,5];
+//defect 9394
+10 * 2 + null - 18.23;
+{a:1}+{b:2};
+"IBM" + " "+ "SUN" + " " + "Google" + " " + "Microsoft";
+"IBM" + " "+ "SUN" + null ;
+"IBM" * "SUN";
+"IBM" + 12;
+"IBM" * "SUN";
+"IBM" + "";
+//3.2 not
+//defect 9393
+not true;
+not isnull(null);
+//3.3 or
+true or false;
+false or false;
+true of true;
+false or false;
+12 or false;
+12 or true;
+null or true;
+null or false
+"IBM" or "SUN";
+"IBM" or true;
+//3.4 and
+true and false;
+false and false;
+true and true;
+false and false;
+12 and false;
+12 and true;
+null and true;
+null and false
+"IBM" and "SUN";
+"IBM" and true;
+//3.5 exercise composition of or, and
+false or true and false;
+(false or true) and false; 
+false or (true and false);
+false or true or false;
+(false or true) or false;
+false or (true or false);
+
+//4. number
+//4.1 toNumber
+toNumber(false);
+toNumber(true);
+toNumber("1234");
+toNumber("12.34");
+toNumber(null);
+toNumber("IBM");
+toNumber("12" + "34");
+toNumber("12.IBM");
+toNumber(false and true);
+
+//5. record
+//5.1 remap
+remap({a:12, b:22}, {a:1, b:2});
+remap({a:1, b:2}, {a:3, d:4, e:5});
+remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5});
+//names of remap
+names(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}));
+fields(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}));
+values(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}));
+//remap of remap
+remap(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}), {d:4, e:9, f:"SUN"});
+[remap(remap({a:null, b:"SUN"}, {a:"IBM", d:4, e:5}), {c: "Google", d:4, e:9, f:"SUN"})]-> transform (strcat($.a, " ", $.b, " ", $.c, " ", $.d, " ", $.e));
+//exercise transform, group by of remap
+[{Company:"Microsoft", StockPrice:12.54}, {Company: "IBM", StockPrice: 123.21}, {Company:"Apple", StockPrice: 432.98},
+  remap({Company: "IBM", StockPrice: 123.21}, {Company: "IBM", StockPrice: 1221.32}),
+  remap({Company: "Apple", StockPrice: 34.56}, {Company: "Apple", StockPrice: 891.43})
+  ]
+ -> group by $Name=$.Company into {$Name, MaxValue:max($[*].StockPrice)};
+//exercise combination remap, hdfs, max and group by
+[{Company:"Microsoft", StockPrice:12.54}, {Company: "IBM", StockPrice: 123.21}, {Company:"Apple", StockPrice: 432.98},
+  remap({Company: "IBM", StockPrice: 123.21}, {Company: "IBM", StockPrice: 1221.32}),
+  remap({Company: "Apple", StockPrice: 34.56}, {Company: "Apple", StockPrice: 891.43})
+  ] -> write(hdfs("remap_test1"));
+read(hdfs("remap_test1"))-> group by $Name=$.Company into {$Name, MaxValue:max($[*].StockPrice)};
+remap({a:null, b:2, c:3}, {});
+remap({}, {a:null, b:2, c:3});
+remap({}, {a:null, b:2, c:3}, {d:4, e:5});
+remap({a:null, b:2, c:3});
+remap([], {a:null, b:2, c:3});
+remap(null, {a:null, b:2, c:3});
+remap({a:null, b:2, c:3}, null);
+remap({}, {a:null, b:2, c:3}, {d:4, e:5});
+
+//5.2 values
+values({a:1, b:2, c:3});
+values ({d:1, e:2, f:3});
+values({a:"IBM", b:"SUN", c:12});
+values({a:"IBM", b:["SUN","GOOGLE", "MICROSOFT"], c:{c:12, d:"LOGO", e:"ADDRESS"}, f:null});
+//5.3 names
+names({a:1, b:2, c:3});
+names ({d:1, e:2, f:3});
+names({a:"IBM", b:"SUN", c:12});
+names({a:"IBM", b:["SUN","GOOGLE", "MICROSOFT"], c:{c:12, d:"LOGO", e:"ADDRESS"}, f:null});
+//5.4 fields
+fields({a:1, b:2, c:3});
+fields ({d:1, e:2, f:3});
+fields({a:"IBM", b:"SUN", c:12});
+fields({a:"IBM", b:["SUN","GOOGLE", "MICROSOFT"], c:{c:12, d:"LOGO", e:"ADDRESS"}, f:null});
+
+//6. regex
+//6.1 regexExtract
+regex_extract( regex("hi"), "bye, hi, bye, hi" );
+regex_extract( regex(" "), "bye hi bye hi" );
+regex_extract( regex("good"), "good morning everybody, goode afternoon everybody" );
+regex_extract( regex("byebye"), "good morning everybody, goode afternoon everybody" );
+regex_extract( regex(","), "good morning everybody, goode afternoon everybody" );
+
+//7. span
+//7.1 spanExtract
+span_extract("some big string", span(2,4));
+span_extract("some big string", span(2,100));
+span_extract("some big string", span(2,-20));
+span_extract("some big string", span(2,2));
+span_extract("some big string", span(2,12.20));
+span_extract("some big string", span(2, "IBM"));
+span_extract("some big string", span(2));
+span_extract("some big string", span(0,10));
+span_extract("some big string", span(-2,10));
+//defect
+span_extract("some big string", span(null,10));
+span_extract("some big string", span(2,10,20));
+span_extract("some big string", span(null));
+span_extract(12445, span(2,4));
+
+//8. string
+//8.1 strSplit
+strSplit("I love the game", " ");
+strSplit("I love, the game", ",");
+strSplit("I love basketball and football", "e");
+strSplit("Iaa loveaa basketballaa andaa footballaa", "aa");
+strSplit("I love 'basketball' and football", "'");
+strSplit("I love the game", null);
+strSplit("����,����,����,", ",");
+strSplit("������������������", "��");
+
+//8.2 strJoin
+strJoin(["I","love", "the","game","!"], " ");
+strJoin(["I","love", "the","game","!"], " ", 123);
+strJoin(["I","love", "the","game","!"]);
+strJoin(["I","love", "the","game","!"], {a:12});
+strJoin(["����","����", "����"], " ");
+strJoin(["��a��","��b��", "��c��"], "��");
+strJoin(["��a��","��b��", "��c��"], "��!");
+//test unsupported separator type
+strJoin(["I","love", "the","game","!"], {a:1});
+strJoin(["I","love", "the","game","!"], [" "]);
+//8.3 substring
+substring("I love the game", 2, 7);
+substring("I love the game", 2);
+substring("I love the game");
+substring("I love the game", -4);
+substring("I love the game", 2.4);
+substring("I love the game", 2, 100);
+substring("I love the game", "I", 2);
+substring("I love the game", 2, "M");
+substring("I love the game", 0, 7);
+substring("��2��4��6��8��10��12��14��16��18��20��22��24", 0, 1);
+substring("��2��4��6��8��10��12��14��16��18��20��22��24", 0, 2);
+substring("��2��4��6��8��10��12��14��16��18��20��22��24", 0, 3);
+substring("��2��4��6��8��10��12��14��16��18��20��22��24", 0, 4);
+substring("��2��4��6��8��10��12��14��16��18��20��22��24", 16, 22);
+substring("��2��4��6��8��10��12��14��16��18��20��22��24", 15, 22);
+substring("���������������ִ���", 7, 11);
+
+//9. system
+//9.1 ls
+//prepare some testing files
+hdfsShell("-rm ls_test*") * 0;
+hdfsShell("-touchz ls_test1.lsa");
+hdfsShell("-touchz ls_test2.lsb");
+hdfsShell("-touchz ls_test3.lsb");
+hdfsShell("-touchz ls_test3.lsc");
+hdfsShell("-touchz ls_test4.lsc");
+hdfsShell("-touchz ls_test5.lsc");
+hdfsShell("-touchz ls_test6.lsd");
+count(ls(""));
+count(ls("."));
+count(ls("./ls_test*"));
+count(ls("./*.lsc"));
+count(ls("./*.lsa"));
+count(ls("*.lsc"));
+count(ls("*.lsb"));
+count(ls("*ls_non_existing*"));
+ls("*test?.lsc") -> transform each k ({fieldCount: count(names(k)), fieldName:names(k)});
+//file doesn't exist
+count(ls("./*.noexisting"));
+//path doesn't exist
+count(ls("noexisting/"));
+//remove all testing files
+hdfsShell("-rm ls_test*") * 0;
+
+//10. top
+//10.1 top
+[1,3,2] -> top 2 by [$ desc];
+[1,3,2] -> top 2 by [$ asc];
+[1,3,2] -> top 1.5 by [$ desc];
+[1,3,2] -> top 0 by [$ asc];
+[1,3,2] -> top -2 by [$ asc];
+[1,3,2] -> top 100 by [$ asc];
+//record as input, invalidated
+{a:23, b:34} -> top 1;
+//for number
+[1,2,2,3,6,5,8] -> top 2 by [$ asc];
+//for string
+["IBM","Google","Microsoft","Apple","Intel", "ATT", "", null] -> top 5 by [$ asc];
+//composition of number and string
+["IBM","Google","Microsoft","Apple","Intel", "ATT", "", null, 12, 34.3, -12, 0] -> top 8 by [$ asc];
+["IBM","Google","Microsoft","Apple","Intel", "ATT", "", null, 12, 34.3, -12, 0] -> top 28 by [$ asc];
+//composition of number, string, boolean, record and array
+["IBM","Google","Microsoft","", null, 12, 34.3, -12, 0, ["a","bb","bc"], [12,34,-23],{a:23, b:"IPHONE", c:"New York"}, false, true] -> top 14 by [$ asc];
+
+//10.2 explain
+explain [{a:'a'},{a:'b'}]->transform $.a;
+explain val:=1;
+explain extern ext:=1;

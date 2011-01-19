@@ -1,0 +1,6 @@
+{
+// embedded derby database
+ConnectionURL: 'jdbc:derby:catalog;create=true'
+// derby database in server mode
+//  ConnectionURL: 'jdbc:derby://localhost:1527/catalog;create=true'
+}

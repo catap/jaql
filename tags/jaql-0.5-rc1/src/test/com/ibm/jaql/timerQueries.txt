@@ -1,0 +1,63 @@
+// function that sleeps... to test out timer
+sleep = javaudf("com.ibm.jaql.fail.fn.SleepFn");
+
+// function that throws an error
+errFn = javaudf("com.ibm.jaql.fail.fn.ErrorFn");
+
+// function takes less time than the timeout
+timeout(sleep(5000), 10000);
+
+// function takes more time than the timeout
+timeout(sleep(10000), 5000);
+
+// function throws an error
+timeout(errFn("ok", 0, "SHALLOW_ERROR"), 10000);
+
+// catch + function takes less time than the timeout
+catch(timeout(sleep(5000), 10000));
+
+// catch + function takes more time than the timeout
+registerExceptionHandler({errThresh: 1});
+catch(timeout(sleep(10000), 5000));
+
+// some data
+data = [ 1, 2, 3 ];
+data -> write(hdfs("foo"));
+
+// map side + function takes less time than the timeout
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform timeout(sleep(5000), 10000);
+
+// map side + function takes more time than the timeout
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform timeout(sleep(10000), 5000);
+
+// reduce side + function takes less time than the timeout
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(5000), 10000) };
+
+// reduce side + function takes more time than the timeout
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(10000), 5000) };
+
+// catch + map side + function takes less time than the timeout
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform catch(timeout(sleep(5000), 10000));
+
+// catch + map side + function takes more time than the timeout
+registerExceptionHandler({errThresh: 5});
+read(hdfs("foo")) 
+-> transform $ + 1 
+-> transform catch(timeout(sleep(10000), 5000));
+
+// catch + reduce side + function takes less time than the timeout
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(5000), 10000) };
+
+// catch + reduce side + function takes more time than the timeout
+registerExceptionHandler({errThresh: 1});
+read(hdfs("foo"))
+-> group by g = $ into { num: count($), status: timeout(sleep(10000), 5000) };

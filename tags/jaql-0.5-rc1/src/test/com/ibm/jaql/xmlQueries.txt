@@ -1,0 +1,47 @@
+x = fn(v) jsonToXml(v);
+
+// basic types
+"str\nwith\nnl" -> x();
+true -> x();
+null -> x();
+
+// numbers
+17 -> x();
+17.5d -> x();
+17.5m -> x();
+0.0/0.0 -> x();
+1.0/0.0 -> x();
+-1.0/0.0 -> x();
+
+// extension types
+hex('deadbeaf') -> x();
+date('2010-09-11T01:18:38Z') -> x();
+schema { x: long, y: string } -> x();
+x -> x();
+
+// Records
+{} -> x();
+{ name: 1 } -> x();
+{ f1: 1, f2: "two" } -> x();
+{ name: { nested: 1 }} -> x();
+{ name: { f1: 'str1', f2: 2 }} -> x();
+{ name: { f1: 'str1', f2: [10, 11, 12] }} -> x();
+{ name: ['a', 'b'] } -> x();
+{ t: { p: [[1, 2, 3], ['a', 'b', 'c']] }} -> x();
+{ name: 'beijing'} -> x();
+{ name: 'beijing', no: 1} -> x();
+{ desc: [1, 2] } -> x();
+{ desc: [1, 2], type: 'io' } -> x();
+{ desc: [1, 2], type: 'io', meta: {type: 'map', value: 10 }} -> x();
+{ content: [[[{name: 'jaql', age: 2}, {city: 'beijing'}]], 2] } -> x();
+
+// arrays
+[] -> x();
+[1] -> x();
+[1,2] -> x();
+[1, null] -> x();
+['lisp', 'haskell'] -> x();
+[{name: 'beijing', no: 1}] -> x();
+[[]] -> x();
+[[1, 2], [10, 20], 100] -> x();
+range(5) -> transform { a: $, b: strcat('s',$) } -> x();

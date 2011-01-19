@@ -1,0 +1,2 @@
+read({ type: "test" })
+->transform { $.lastname, $.id };

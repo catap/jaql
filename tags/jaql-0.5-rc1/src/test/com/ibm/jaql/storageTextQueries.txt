@@ -1,0 +1,235 @@
+hdfsShell("-copyFromLocal "+DATADIR+"delimited.del delimited.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted.del delimited-quoted.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-quoted-ok.del delimited-quoted-ok.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-ddquote.del delimited-ddquote.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid1.del delimited-invalid1.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid2.del delimited-invalid2.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"delimited-invalid3.del delimited-invalid3.del") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines.txt lines.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-boolean.txt lines-boolean.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-invalid.txt lines-invalid.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-numeric.txt lines-numeric.txt") * 0;
+hdfsShell("-copyFromLocal "+DATADIR+"lines-with-null.txt lines-with-null.txt") * 0;
+
+// test readers
+$f = "delimited.del";
+read(lines($f));
+read(del($f));
+read(del($f, { quoted: false })); // should fail
+read(del($f, { quoted: null })); // should fail
+read(del($f, { delimiter: null })); // should fail
+
+// test field information
+read(del($f, { schema: schema { c1, c2, c3 } }));
+read(del($f, { schema: schema { c3, c1, c2 } }));
+
+read(del($f, { schema: schema { c1, c2 } })); // should fail
+read(del($f, { schema: schema { c1, c2, c3, c4 } })); // should fail
+
+// test quoted delimited file (does not work when not quoting)
+$f = "delimited-quoted.del";
+read(del($f, { quoted: true, escape: true}));
+read(del($f, { quoted: true, escape: false}));
+read(del($f, { quoted: false }));
+
+// test quoted delimited file (works when not quoting)
+$f = "delimited-quoted-ok.del";
+read(del($f, { quoted: true, escape: true }));
+read(del($f, { quoted: true, escape: false }));
+read(del($f, { quoted: false, escape: false }));
+
+// test dquote option
+$f = "delimited-ddquote.del";
+read(del($f, { quoted: true, ddquote: true, escape: false}));
+read(del($f, { quoted: true, ddquote: false, escape: false}));
+read(del($f, { quoted: true, ddquote: false, escape: true}));
+
+// test invalid files
+$f = "delimited-invalid1.del";
+read(del($f));                      // should fail
+read(del($f, { quoted: false }));   // should work
+
+$f = "delimited-invalid2.del";
+read(del($f));                      // should fail
+read(del($f, { quoted: false }));   // should work
+
+$f = "delimited-invalid3.del";
+read(del($f));                      // should fail
+read(del($f, { quoted: false }));   // should fail
+
+// test conversion of atomic types
+convert("1", schema long);
+convert("1.123", schema double);
+convert("1.123", schema decfloat);
+convert("abcd", schema string);
+convert("true", schema boolean);
+convert("1", schema long?);
+convert("1.123", schema double?);
+convert("1.123", schema decfloat?);
+convert("abcd", schema string?);
+convert("true", schema boolean?);
+convert(null, schema long?);
+convert(null, schema double?);
+convert(null, schema decfloat?);
+convert(null, schema string?);
+convert(null, schema boolean?);
+convert(null, schema long); // should fail
+convert("1", schema long(0)); // should fail (for the moment)
+
+// test conversion of arrays
+convert(["a","1"], schema [ string, long ]);
+convert(["a","1"], schema [ string, long ]?);
+convert(null, schema [ string, long ]?);
+convert(["a","1"], schema [ string, long? ]);
+convert(["a",null], schema [ string, long? ]);
+
+convert(["a","1","1"], schema [ string, long ]); // should fail
+convert(["a"], schema [ string, long ]); // should fail
+convert(["a",1], schema [ string, long ]); // should fail
+convert(null, schema [ string, long ]); // should fail
+
+
+// test conversion of records
+convert({a:"a", b:"2"}, schema { a:string, b: long });
+convert({a:"a", b:"2"}, schema { a:string, b: long }?);
+convert(null, schema { a:string, b: long }?);
+convert({a:"a", b:"2"}, schema { a:string, b: long? });
+convert({a:"a", b:null}, schema { a:string, b: long? });
+
+convert({a:"a", b:"2", c:"1"}, schema { a:string, b: long }); // should fail
+convert({a:"a"}, schema { a:string, b: long }); // should fail
+convert({a:"a", b:1}, schema { a:string, b: long }); // should fail
+convert(null, schema { a:string, b: long }); // should fail
+
+// all together
+read(del("delimited.del", { schema: schema [ string?, string?, long? ] }));
+schemaof(read(del("delimited.del", { schema: schema [ string?, string?, long? ] })));
+
+read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } }));
+schemaof(read(del("delimited.del", { schema: schema { c1:string?, c2:string?, c3:long? } })));
+
+read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } }));
+schemaof(read(del("delimited.del", { schema: schema { c2:string?, c1:string?, c3:long? } })));
+
+// Tests for the lines() interface method
+$l = "lines.txt";
+$lb = "lines-boolean.txt";
+$li = "lines-invalid.txt";
+$ln = "lines-numeric.txt";
+$lwn = "lines-with-null.txt";
+
+// Test read(lines()) which should return an array of strings. This should succeed for all the files.
+read(lines($l));
+read(lines($lb));
+read(lines($li));
+read(lines($ln));
+read(lines($lwn));
+
+// Test read(lines()) with the convert option.
+read(lines($l,{schema: schema string})); // Test for the default schema.
+read(lines($l,{schema: schema long})); // This should fail since the file is mixture of multiple types.
+read(lines($li,{schema: schema long})); // This should fail since the file has non-numeric characters.
+read(lines($ln,{schema: schema long}));
+read(lines($ln,{schema: schema double}));
+read(lines($lb,{schema: schema boolean}));
+read(lines($lb,{schema: schema long})); // This should fail since the input file contains booleans.
+read(lines($lwn,{schema: schema string})); // This should fail since the input file has nulls.
+read(lines($lwn,{schema: schema long?}));
+
+// Test for invalid arguments to the convert option.
+read(lines($l,{schema: schema [long]}));
+read(lines($l,{schema: schema {f1: long}}));
+
+$out = "tmpout/out-file.txt";
+
+// Test for write(lines()) and checking whether the written files have data in the specified format
+[1,2,3,4,5,6,7,8,9,10,100,1000,10000,100000] -> write(lines($out));
+read(lines($out,{schema: schema long}));
+read(lines($out,{schema: schema double}));
+
+[true,false,false,false,true,true,false] -> write(lines($out));
+read(lines($out,{schema: schema boolean}));
+
+[1,2,3.4,4,true,6,'Hello',8,'World',0.78] -> write(lines($out));
+read(lines($out));
+
+[1,2,3,4,null,6] -> write(lines($out));
+read(lines($out));
+read(lines($out,{schema: schema long?}));
+read(lines($out,{schema: schema long})); // This should fail since the file contains null.
+
+[true, false, null] -> write(lines($out));
+read(lines($out, {schema: schema boolean?}));
+
+//-- test jsonToDel --
+[[null, 1, null, 2, null]] -> jsonToDel();
+$arrays1 = [[1,2],[3,4]];
+$arrays1 -> jsonToDel({quoted: false});
+$arrays1 -> jsonToDel({quoted: true});
+$arrays2 = [[1.23, 'one','two'],[100, 'three','four']];
+$arrays2 -> jsonToDel({quoted: false});
+$arrays2 -> jsonToDel({quoted: true});
+$arrays3 = [["\"\'\\\b\f\n\r\t", "\na", "1\u007fX", "\u0081-\u009f"]];
+$arrays3 -> jsonToDel({quoted: true, escape: false});
+$arrays3 -> jsonToDel({quoted: true, escape: true});
+$records = [{name: 'mike', age: 10}, {name: 'john', age: 20}];
+$records -> jsonToDel({schema: schema { name, age }});
+$mixed =  [{name: 'mike', age: 10}, [100, 200]];
+$mixed -> jsonToDel({schema: schema { name, age }, delimiter: '='});
+
+// make sure that json string buffers are cleared correctly
+$data1 = [
+ {publisher: 'p1', author: 'J. K. Rowling'},
+ {publisher: 'p2', author: 'xyz'},
+ {publisher: 'p3', author: 'aaaaaaaabbbbbbb'}
+];
+$data2 = [
+    {publisher: 'p4', author: 'J. K. Rowling'},
+    {publisher: 'p5', author: 'xyz'},
+    {publisher: 'p6', author: 'xyz'},
+    {publisher: 'p7', author: 'aaaaaaaabbbbbbb'}
+];
+join $data1, $data2 
+where $data1.author == $data2.author 
+into {a1: $data1.author, a2: $data1.publisher, a3: $data2.author, a4: $data2.publisher} 
+->jsonToDel({schema: schema {a1, a2, a3, a4}});
+
+// unquoted and single json string in a del line
+[["one"], ["two"]] -> jsonToDel({quoted: false});
+["one", "two"] -> jsonToDel({quoted: false});
+[{sn: "one"}, {sn: "two"}] -> jsonToDel({quoted: false, schema: schema {sn}});
+
+// ddquote option
+$ddquoteData = [["\"\"\'\'"], ["a\"\'b"]];
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: true});
+$ddquoteData -> jsonToDel({quoted: true, ddquote: false, escape: false});
+
+//-- testJsonToXml --
+{content: 12} -> jsonToXml();
+{content: {city: "Beijing", no: [1,2,3]}} -> jsonToXml();
+
+// json format
+[[1,2],[3,4]] -> write({type: 'jsonStream'});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'jsonStream'});
+
+// del format
+[[1,2],[3,4]]->write({type: 'delStream'});
+[{lang: 'lisp', no: 1},{lang: 'jaql', no: 2}] -> write({type: 'delStream', outoptions: { schema: schema { lang, no }, delimiter: '='}});
+
+// xml format
+[{root: {content: [1,2,3]}}] -> write({type: 'xmlStream'});
+
+// -- Remove all the temporary files created.
+hdfsShell("-rm delimited.del") * 0;
+hdfsShell("-rm delimited-quoted.del") * 0;
+hdfsShell("-rm delimited-quoted-ok.del") * 0;
+hdfsShell("-rm delimited-ddquote.del") * 0;
+hdfsShell("-rm delimited-invalid1.del") * 0;
+hdfsShell("-rm delimited-invalid2.del") * 0;
+hdfsShell("-rm delimited-invalid3.del") * 0;
+hdfsShell("-rm lines.txt") * 0;
+hdfsShell("-rm lines-boolean.txt") * 0;
+hdfsShell("-rm lines-invalid.txt") * 0;
+hdfsShell("-rm lines-numeric.txt") * 0;
+hdfsShell("-rm lines-with-null.txt") * 0;
+hdfsShell("-rmr tmpout") * 0;

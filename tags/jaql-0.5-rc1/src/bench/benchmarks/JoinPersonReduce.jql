@@ -1,0 +1,10 @@
+(
+$joinFn = fn(schema any $join_on, schema [ { "f"? } * ]? $as_0, schema [ { "l"? } * ]? $as_1) (
+  if( not (isnull ($join_on)) )
+   ( $as_1 -> expand each $b ( 
+				$as_0 -> transform each $a ({ ($a).*, ($b).* }) )
+	) -> transform each $ ({ ("idA"):(($).("f")).("id"), ("idB"):(($).("l")).("id") })),
+
+read({type: "test"})->transform each $a ($joinFn($a[0], $a[1], $a[2]))
+
+);

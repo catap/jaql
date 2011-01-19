@@ -1,0 +1,24 @@
+{	
+	jaqlscript: "ProjectArray.jql",
+	jsonBench: "com.ibm.jaql.benchmark.programs.JsonProjectArray",
+	javaBench: "com.ibm.jaql.benchmark.programs.JavaProjectArray",
+	resultSchema: "com.ibm.jaql.benchmark.programs.data.PersonArrayCompact",
+	iterations: 7,
+	data: {	jsonConverter: "com.ibm.jaql.benchmark.programs.data.PersonArray",
+			schema: "com.ibm.jaql.benchmark.programs.data.PersonArray",
+			numberOfRecords: 48000000,
+			values: [
+				["Hans", "Richter", 100],
+				["Michael", "McKeever", 101],
+				["Simon", "Zaiser", 102],
+				["Adam", "Apfel", 103],
+				["Julia", "Langer", 104],
+				["André", "Zucha", 105],
+				["Herbert", "Hillwig", 106],
+				["Jürgen", "Wolf", 107],
+				["Rudolf", "Renntier", 108],
+				[ "Yu", "Yabiku", 109],
+				["Peter", "Bishop", 110]
+			]
+			}
+}

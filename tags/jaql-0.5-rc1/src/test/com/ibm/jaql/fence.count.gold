@@ -1,0 +1,415 @@
+
+;//------------------- TEST-CASE -----------------
+//
+// Fence in stream mode
+//
+
+//
+// 1. simple data
+
+// a. simple function
+range(1,100) -> fence( fn(i) i + 1 );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+range(1,100) -> write(hdfs("foo"));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// b. map-reduce
+read(hdfs("foo")) -> fence( fn(i) i + 1 );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// c. captures
+x = 3;
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> fence( fn(i) i + x );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// d. use function from jar
+test = javaudf("com.acme.extensions.fn.Split1");
+;//------------------- TEST-CASE -----------------
+
+data = ["hi,there", "bye,now"];
+;//------------------- TEST-CASE -----------------
+
+data -> fence( fn(i) ( test(i, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+data -> write(hdfs("bar"));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> fence( fn(i) ( test(i, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// e. use function from module
+import scripts_and_udf;
+;//------------------- TEST-CASE -----------------
+
+data -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// 2. complex data
+
+// a. simple function
+data = [ { a: 1, b: "hi,there" }, { a: 2, b: "bye,now", c: 23.5 } ];
+;//------------------- TEST-CASE -----------------
+
+data -> fence( fn(i) i.c );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// b. map-reduce
+data -> write(hdfs("complex"));
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.io.WriteFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("complex")) -> fence( fn(i) i.c );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// c. captures
+read(hdfs("complex")) -> fence( fn(i) i.c + x );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// d. use function from jar
+data -> fence( fn(i) ( test(i.b, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("complex")) -> fence( fn(i) ( test(i.b, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// e. use function from module
+data -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("complex")) -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// Fence in push mode
+//
+
+//
+// 1. simple data
+
+// a. simple function
+range(1,100) -> transform fencePush( $, fn(i) i + 1 );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// b. map-reduce
+read(hdfs("foo")) -> transform fencePush( $, fn(i) i + 1 );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// c. captures
+x = 3;
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("foo")) -> transform fencePush( $, fn(i) i + x );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// d. use function from jar
+data = ["hi,there", "bye,now"];
+;//------------------- TEST-CASE -----------------
+
+data -> transform fencePush( $, fn(i) ( test(i, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+read(hdfs("bar")) -> transform fencePush( $, fn(i) ( test(i, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// e. use function from module
+data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("bar")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+//
+// 2. complex data
+
+// a. simple function
+data = [ { a: 1, b: "hi,there" }, { a: 2, b: "bye,now", c: 23.5 } ];
+;//------------------- TEST-CASE -----------------
+
+data -> transform fencePush( $, fn(i) i.c );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// b. map-reduce
+read(hdfs("complex")) -> transform fencePush( $, fn(i) i.c );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// c. captures
+read(hdfs("complex")) -> transform fencePush( $, fn(i) i.c + x );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// d. use function from jar
+data -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("complex")) -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+
+// e. use function from module
+data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+
+}
+
+;//------------------- TEST-CASE -----------------
+
+read(hdfs("complex")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+
+;//------------------- EXPR-COUNTS -----------------
+
+{
+  'com.ibm.jaql.lang.expr.hadoop.MapReduceFn': 1,
+  'com.ibm.jaql.lang.expr.io.ReadFn': 1
+}
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-DONE -----------------

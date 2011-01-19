@@ -1,0 +1,5 @@
+{
+	version: 	1,
+	scripts:	["script.jaql"],
+	export:		["FunctionA", "FunctionB", "FunctionC", "FunctionD", "FunctionE", "$parameter"]
+}

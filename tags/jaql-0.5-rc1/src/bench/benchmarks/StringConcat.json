@@ -1,0 +1,22 @@
+{	
+	jaqlscript: "StringConcat.jql",
+	jsonBench: "com.ibm.jaql.benchmark.programs.JsonStringConcat",
+	javaBench: "com.ibm.jaql.benchmark.programs.JavaStringConcat",
+	iterations: 7,
+	data: {	jsonConverter: "com.ibm.jaql.benchmark.programs.data.StringArray",
+			schema: "com.ibm.jaql.benchmark.programs.data.StringArray",
+			numberOfRecords: 23000000,
+			values: [ ["Hans", "Richter"],
+			["Michael", "McKeever"],
+			["Simon", "Zaiser"],
+			["Adam", "Apfel"],
+			["Julia", "Langer"],
+			["André", "Zucha"],
+			["Herbert", "Hillwig"],
+			["Jürgen", "Wolf"],
+			["Rudolf", "Renntier"],
+			["Yu", "Yabiku"],
+			["Peter", "Bishop"]
+			]
+	}
+}

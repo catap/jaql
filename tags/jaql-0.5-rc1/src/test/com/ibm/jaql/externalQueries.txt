@@ -1,0 +1,34 @@
+
+// ========== streaming mode =========
+// data
+['I love java', 'you love java ma'] -> write(hdfs('foo'));
+
+// define an external call
+external = externalfn({ cmd:'grep ma', perPartition:true, mode:'streaming' });
+
+// verified
+read(hdfs('foo'));
+
+// invoke the call and run in parallel
+read(hdfs('foo')) -> external();
+
+// should be run in parallel
+read(hdfs('foo')) -> perPartition(->external());
+
+
+
+// =========== push mode ===========
+// data
+data = ['I love java', 'you love java ma'];
+
+// re-define an external call
+external = externalfn({cmd:'grep ma', perPartition:false, mode:'push' });
+
+// invoke
+external(data);
+
+// invoke
+data -> transform { result: external($)};
+
+
+
