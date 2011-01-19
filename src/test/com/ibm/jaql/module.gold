@@ -1,13 +1,69 @@
 
 ;//------------------- TEST-CASE -----------------
-//Test standard import statement
+//-------------------------------------------------------------------
+// 1) A really simple module
+//-------------------------------------------------------------------
 
-//FAIL: Not yet imported
-fuzzy_join::cleanTitle;
+import simple1;
+;//------------------- TEST-CASE -----------------
+
+
+simple1::greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple1.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+// two aliases to the same module is ok
+import simple1 as simple1b;
+;//------------------- TEST-CASE -----------------
+
+
+// These refer to the same variable
+simple1::greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple1.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+simple1b::greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple1.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// 2) Using a module alias
+//-------------------------------------------------------------------
+
+import simple2 as m2;
+;//------------------- TEST-CASE -----------------
+
+
+m2::greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple2.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+// error -- alias is used, module name is simply the default alias
+simple2::m2;
 
 ;//----- EXCEPTION -----
 
-// java.lang.IllegalArgumentException
+// java.lang.RuntimeException
 
 ;//------------------- TEST-CASE -----------------
 
@@ -16,36 +72,36 @@ fuzzy_join::cleanTitle;
 ;//------------------- TEST-CASE -----------------
 
 
-import fuzzy_join;
+//-------------------------------------------------------------------
+// 3) promotes only greeting into the current namespace
+//-------------------------------------------------------------------
+
+import simple3 (greeting);
 ;//------------------- TEST-CASE -----------------
 
-//Test imported JavaUDF
-fuzzy_join::cleanTitle("XY");
+
+// symbol imported so we don't need to explicitly scope variable references
+greeting;
 
 ;//--------------------- RESULT ------------------
 
-"XY"
+"hi modules/simple3.jaql"
 
 ;//------------------- TEST-CASE -----------------
 
-//Test imported JaqlFunction
-fuzzy_join::$normalize([{a:"a"},{a:"XY"}],"a");
+
+// Can still use longer name
+simple3::greeting;
 
 ;//--------------------- RESULT ------------------
 
-[
-  {
-    "a": "A"
-  },
-  {
-    "a": "XY"
-  }
-]
+"hi modules/simple3.jaql"
 
 ;//------------------- TEST-CASE -----------------
 
-//FAIL: Only namespace got imported, not functions
-cleanTitle("AB");
+
+// This is not in scope: we didn't request it to be imported
+farewell;
 
 ;//----- EXCEPTION -----
 
@@ -57,7 +113,59 @@ cleanTitle("AB");
 
 ;//------------------- TEST-CASE -----------------
 
-$normalize([{a:"a"},{a:"XY"}],"a");
+
+// But this works
+simple3::farewell;
+
+;//--------------------- RESULT ------------------
+
+"bye modules/simple3.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// 4) promotes all exported variables
+//-------------------------------------------------------------------
+
+import simple4 (*);
+;//------------------- TEST-CASE -----------------
+
+
+// symbol imported so we don't need to explicitly scope variable references
+// Notice that this hid greeting from simple3
+greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple4.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+// Can still use longer name
+simple4::greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple4.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+// This is also in scope
+farewell;
+
+;//--------------------- RESULT ------------------
+
+"bye modules/simple4.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+// But variables that start with underscore are not exported
+_private;
 
 ;//----- EXCEPTION -----
 
@@ -70,97 +178,316 @@ $normalize([{a:"a"},{a:"XY"}],"a");
 ;//------------------- TEST-CASE -----------------
 
 
-//Test module directory detection
-//Has no namespace file and no scripts directory
-import fail_not_detected;
-
-;//----- EXCEPTION -----
-
-// java.lang.RuntimeException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-//Exports variables that do not exist
-import fail_wrong_exports;
-
-;//----- EXCEPTION -----
-
-// java.lang.RuntimeException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-import fail_invalid_namespace_file;
-
-;//----- EXCEPTION -----
-
-// java.lang.RuntimeException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-
-//Test import all statement
-import scripts_and_udf (*);
-;//------------------- TEST-CASE -----------------
-
-roundUp(0.1);
+// non-exported variables can be referenced by full name
+simple4::_private;
 
 ;//--------------------- RESULT ------------------
 
-1
+"shh modules/simple4.jaql"
 
 ;//------------------- TEST-CASE -----------------
 
-qgram("ab");
+
+// other crazy stuff is not blocked -- modules can shadow each other
+import simple3 as simple4;
+;//------------------- TEST-CASE -----------------
+
+
+// from earlier import of simple3
+simple3::greeting;
 
 ;//--------------------- RESULT ------------------
 
-[
-  [
-    "§§a",
-    1
-  ],
-  [
-    "§ab",
-    1
-  ],
-  [
-    "ab§",
-    1
-  ],
-  [
-    "b§§",
-    1
-  ]
-]
+"hi modules/simple3.jaql"
 
 ;//------------------- TEST-CASE -----------------
+ 
 
-pi;
+// from latest import of simple3
+simple4::greeting;
 
 ;//--------------------- RESULT ------------------
 
-3
+"hi modules/simple3.jaql"
+
+;//------------------- TEST-CASE -----------------
+ 
+
+// this still from real simple4 -- no vars imported on latest import
+greeting;
+
+;//--------------------- RESULT ------------------
+
+"hi modules/simple4.jaql"
 
 ;//------------------- TEST-CASE -----------------
 
 
-//Test import namespace + functions statement
-import scripts_only (three,four);
+//-------------------------------------------------------------------
+// 5) simple packages
+//     p5/pack/mod5.jaql is loaded
+//-------------------------------------------------------------------
+
+import simplePackage::subPackage::moduleInPackage;
 ;//------------------- TEST-CASE -----------------
 
-three;
+
+moduleInPackage::x;
+
+;//--------------------- RESULT ------------------
+
+"modules/simplePackage/subPackage/moduleInPackage.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+//-------------------------------------------------------------------
+// 6) packages with crazy naming (load order is listed)
+//      crazy/           << package
+//         _crazy.jaql   << 1) package initialization module
+//         m.jaql        << 5) module crazy::m
+//         n.jaql        << 4) module crazy::n
+//         m/            << package
+//           _m.jaql     << 2) package initialization module
+//           m.jaql      << 3) module crazy::m::m, imports n_4
+//           m/          << package
+//             _m.jaql   << 6) package initialization module
+//             m.jaql    << 7) module crazy::m::m::m, imports n_8
+//             n.jaql    << 8) module crazy::m::m::n
+//-------------------------------------------------------------------
+
+// 1, 2, 3
+import crazy::m::m as m52;
+;//------------------- TEST-CASE -----------------
+
+// 4, but not 1 again!
+import crazy::m as m51;
+;//------------------- TEST-CASE -----------------
+
+// 5, 6, 7
+import crazy::m::m::m as m53;
+;//------------------- TEST-CASE -----------------
+
+
+// crazy/m
+m51::x;
+
+;//--------------------- RESULT ------------------
+
+"module/crazy/m.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// crazy/m/m
+m52::x;
+
+;//--------------------- RESULT ------------------
+
+"module/crazy/m/m.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// crazy/n
+m52::y;
+
+;//--------------------- RESULT ------------------
+
+"module/crazy/n.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// crazy/m/m/m
+m53::x;
+
+;//--------------------- RESULT ------------------
+
+"module/crazy/m/m/m.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// crazy/m/m/n
+m53::y;
+
+;//--------------------- RESULT ------------------
+
+"module/crazy/m/m/n.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// 7) packages with upward references
+//      upwardRefs/          << package
+//         _upwardRefs.jaql  << 1) package initialization module
+//         a.jaql            << 7) module upwardRefs::a
+//         p/                << package
+//           _p.jaql         << 2) package initialization module
+//           b.jaql          << 5) module upwardRefs::p::b, imports a (but already loaded)
+//           q/              << package
+//             _q.jaql       << 3) package initialization module
+//             c.jaql        << 4) module upwardRefs::p::q::c, imports a, d, b
+//             d.jaql        << 6) module upwardRefs::p::q::c, imports a,b (but already loaded)
+//-------------------------------------------------------------------
+
+import upwardRefs::p::q::c as m7;
+;//------------------- TEST-CASE -----------------
+
+
+// /p/q/c
+m7::x;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/p/q/c.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /a
+m7::ca;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/a.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /p/b
+m7::cb;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/p/b.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /p/q/d
+m7::cd;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/p/q/d.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /a
+m7::ba;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/a.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /a
+m7::da;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/a.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /p/b
+m7::db;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/p/b.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+// /a
+m7::dba;
+
+;//--------------------- RESULT ------------------
+
+"modules/upwardRefs/a.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// 8) packages with downward references
+//      downwardRefs/              << package
+//         _downwardRefs.jaql      << 1) package initialization module
+//         a.jaql        << 7) module downwardRefs::a, imports p::b
+//         p/            << package
+//           _p.jaql     << 2) package initialization module
+//           b.jaql      << 5) module downwardRefs::p::b, imports q::c,q::d
+//           q/          << package
+//             _q.jaql   << 3) package initialization module
+//             c.jaql    << 4) module downwardRefs::p::q::c
+//             d.jaql    << 6) module downwardRefs::p::q::c
+//-------------------------------------------------------------------
+
+import downwardRefs::a as m8;
+;//------------------- TEST-CASE -----------------
+
+
+m8::a;
+
+;//--------------------- RESULT ------------------
+
+"modules/downwardRefs/a.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+m8::b;
+
+;//--------------------- RESULT ------------------
+
+"modules/downwardRefs/p/b.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+m8::c;
+
+;//--------------------- RESULT ------------------
+
+"modules/downwardRefs/p/q/c.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+m8::d;
+
+;//--------------------- RESULT ------------------
+
+"modules/downwardRefs/p/q/d.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+//-------------------------------------------------------------------
+// 9) loading java functions from multiple jars
+//      javaFunctions/            << package
+//         _javaFunctions.jaql    << 1) adds lib/*:lib2/cjar.jar = abjar.jar, ejar.jar, cjar.jar to the class path
+//         abc.jaql               << 3) defines fnA, fnB, fnC, references java FunctionA, FunctionB, FunctionC
+//         e.jaql                 << 4) defines fnE, references java FunctionE
+//         lib/                   << just a directory
+//            abjar.jar           << 2) contains FunctionA.class and FunctionB.class
+//            ejar.jar            << 2) contains FunctionE.class
+//         lib2/                  << just another directory
+//            cjar.jar            << 2) contains FunctionC.class
+//         p/                     << package
+//           _p.jaql              << 5) lib/* = djar.jar to the class path
+//           d.jaql               << 7) defines fnD, references java FunctionD
+//           lib/                 << another jar directory
+//             djar.jar           << 6) contains FunctionD.class
+//          
+//  FunctionA depends on C, C depends on B, B depends on E.
+//    so jars must be loaded together -- order specified doesn't match
+//  Function D depends on A, B and E.
+//    finds the right lib/djar and links with parent package
+//-------------------------------------------------------------------
+
+// loads of abjar.jar, ejar.jar, cjar.jar and defines fn9A, fn9B, fn9C
+import javaFunctions::abc as m9a (param9);
+;//------------------- TEST-CASE -----------------
+
+
+param9;
 
 ;//--------------------- RESULT ------------------
 
@@ -168,16 +495,122 @@ three;
 
 ;//------------------- TEST-CASE -----------------
 
-four;
+m9a::fnA(param9);
 
 ;//--------------------- RESULT ------------------
 
-3
+69
 
 ;//------------------- TEST-CASE -----------------
 
-//FAIL: not imported
-five;
+m9a::fnB(param9);
+
+;//--------------------- RESULT ------------------
+
+24
+
+;//------------------- TEST-CASE -----------------
+
+m9a::fnC(param9);
+
+;//--------------------- RESULT ------------------
+
+23
+
+;//------------------- TEST-CASE -----------------
+
+
+// defines fn9E
+import javaFunctions::e as m9e (*);
+;//------------------- TEST-CASE -----------------
+
+
+fd := [param9] -> write(hdfs('T'));
+;//------------------- TEST-CASE -----------------
+
+
+// run udfs in parallel
+read(fd) -> transform [m9a::fnA($), m9a::fnB(param9), m9a::fnC($), fnE($), m9e::fnE(m9a::param9)];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    69,
+    24,
+    23,
+    12,
+    12
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+// loads of djar.jar and defines fn9D
+import javaFunctions::p::d as m9d;
+;//------------------- TEST-CASE -----------------
+
+
+m9d::fnD(param9);
+
+;//--------------------- RESULT ------------------
+
+105
+
+;//------------------- TEST-CASE -----------------
+
+
+// run udf in parallel
+read(fd) -> transform [ m9d::fnD($), m9d::fnD(m9a::param9) ];
+
+;//--------------------- RESULT ------------------
+
+[
+  [
+    105,
+    105
+  ]
+]
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// Errors loading module
+//-------------------------------------------------------------------
+
+// Error while parsing module
+import parseError;
+
+;//----- EXCEPTION -----
+
+// antlr.TokenStreamRecognitionException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// Error: parseError should not be known
+parseError::x;
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+// Error while parsing package initialization module
+import badPackage::test;
 
 ;//----- EXCEPTION -----
 
@@ -189,30 +622,87 @@ five;
 
 ;//------------------- TEST-CASE -----------------
 
-//Should work
-scripts_only::five;
+
+// Error: test should not be known
+test::x;
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// Search path tests
+//-------------------------------------------------------------------
+
+// dupModule is in two paths -- not an error 
+import dupModule;
+;//------------------- TEST-CASE -----------------
+
+// this should be module not module2
+dupModule::x;
 
 ;//--------------------- RESULT ------------------
 
-5
+"module/dupModule.jaql"
 
 ;//------------------- TEST-CASE -----------------
 
 
-
-//Test meta modules (reexport variables from other modules)
-import meta;
+// dupPackage and dupModule are in in two search paths -- This should find the first one
+import dupPackage::dupModule as d;
 ;//------------------- TEST-CASE -----------------
 
-meta::cleanTitle("ab");
+d::x;
 
 ;//--------------------- RESULT ------------------
 
-"AB"
+"module/dupPackage/dupModule.jaql"
 
 ;//------------------- TEST-CASE -----------------
 
-meta::$normalize([{a:"a"},{a:"XY"}],"a");
+
+// Error: dupPackage resolved to two different packages because onlyIn2 is only in modules2
+import dupPackage::onlyIn2;
+
+;//----- EXCEPTION -----
+
+// java.lang.RuntimeException
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+;//------------------- TEST-CASE -----------------
+
+
+
+//-------------------------------------------------------------------
+// fuzzy join
+// TODO: full fuzzy_join module should get tested!
+//-------------------------------------------------------------------
+
+import fuzzy_join::fuzzy_join as fj;
+;//------------------- TEST-CASE -----------------
+
+
+fj::cleanTitle("XY");
+
+;//--------------------- RESULT ------------------
+
+"XY"
+
+;//------------------- TEST-CASE -----------------
+
+
+fj::normalize([{a:"a"},{a:"XY"}],"a");
 
 ;//--------------------- RESULT ------------------
 
@@ -228,170 +718,5 @@ meta::$normalize([{a:"a"},{a:"XY"}],"a");
 ;//------------------- TEST-CASE -----------------
 
 
-//Test scope & shadowing
-import scripts_with_namespace(*);
-;//------------------- TEST-CASE -----------------
-
-x;
-
-;//--------------------- RESULT ------------------
-
-23
-
-;//------------------- TEST-CASE -----------------
-
-y;
-
-;//--------------------- RESULT ------------------
-
-46
-
-;//------------------- TEST-CASE -----------------
-
-::x;
-
-;//----- EXCEPTION -----
-
-// java.lang.IndexOutOfBoundsException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
- //FAIL: doesn't exist
-x=1;
-;//------------------- TEST-CASE -----------------
-
-x;
-
-;//--------------------- RESULT ------------------
-
-1
-
-;//------------------- TEST-CASE -----------------
-
-::x;
-
-;//--------------------- RESULT ------------------
-
-1
-
-;//------------------- TEST-CASE -----------------
-
-scripts_with_namespace::x;
-
-;//--------------------- RESULT ------------------
-
-23
-
-;//------------------- TEST-CASE -----------------
-
-
-//Test exports
-//FAIL: It is not exported
-fuzzy_join::qgram;
-
-;//----- EXCEPTION -----
-
-// java.lang.IllegalArgumentException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
- 
-//FAIL: scripts_with_namespaces has this should not be imported
-z;
-
-;//----- EXCEPTION -----
-
-// java.lang.IndexOutOfBoundsException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-
-//Test export lists
-listExports("fuzzy_join") -> sort by [$];
-
-;//--------------------- RESULT ------------------
-
-[
-  "$fuzzy_join",
-  "$normalize",
-  "cleanTitle"
-]
-
-;//------------------- TEST-CASE -----------------
-
-listExports("meta") -> sort by [$];
-
-;//--------------------- RESULT ------------------
-
-[
-  "$normalize",
-  "cleanTitle",
-  "fuzzy_join"
-]
-
-;//------------------- TEST-CASE -----------------
-
-listExports("scripts_and_udf") -> sort by [$];
-
-;//--------------------- RESULT ------------------
-
-[
-  "cleanTitle",
-  "jaccard",
-  "memHashMap",
-  "nullToZero",
-  "pi",
-  "qgram",
-  "roundUp"
-]
-
-;//------------------- TEST-CASE -----------------
-
-listExports("scripts_only") -> sort by [$];
-
-;//--------------------- RESULT ------------------
-
-[
-  "five",
-  "four",
-  "three"
-]
-
-;//------------------- TEST-CASE -----------------
-
-
-//Test reassigning values
-meta::cleanTitle = 2;
-
-;//----- EXCEPTION -----
-
-// antlr.NoViableAltException
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-;//------------------- TEST-CASE -----------------
-
-
-
-//Test examples function
-examples("fuzzy_join");
-
-;//--------------------- RESULT ------------------
-
-null
-
-;//------------------- TEST-CASE -----------------
 
 ;//------------------- TEST-DONE -----------------

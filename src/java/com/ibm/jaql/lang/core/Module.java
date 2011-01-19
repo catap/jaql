@@ -16,325 +16,393 @@
 package com.ibm.jaql.lang.core;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
-import com.ibm.jaql.json.parser.JsonParser;
-import com.ibm.jaql.json.parser.ParseException;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaFactory;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonNumber;
-import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.Jaql;
-import com.ibm.jaql.lang.util.JaqlUtil;
+import com.ibm.jaql.lang.core.Var.Scope;
+import com.ibm.jaql.lang.expr.core.Expr;
 
-public abstract class Module {
-  public static final long MIN_SUPPORTED_NAMESPACE_VERSION = 1;
-  public static final long MAX_SUPPORTED_NAMESPACE_VERSION = 1;
+
+public class Module extends Namespace
+{
+  protected final Package pack;
+  protected final File script;
+  protected final HashMap<String, Module> modules = new HashMap<String, Module>();
+
   
-	protected static final String JAQL_DIRECTORY = "scripts";
-	protected static final String JAR_DIRECTORY = "jars";
-	protected static final String EXAMPLE_DIRECTORY = "examples";
-	protected static final String TEST_DIRECTORY = "tests";
-	protected static final String NAMESPACE_FILE = "namespace.json";
-	protected static final String MODULE_FILE = "description.json";
-	protected static final JsonString UDF_FN_FIELD = new JsonString("functions");
-	protected static final JsonString SCRIPTS_FIELD = new JsonString("scripts");
-	protected static final JsonString EXPORT_FIELD = new JsonString("export");
-	protected static final JsonString VERSION_FIELD = new JsonString("version");
-	protected static final JsonString IMPORT_FIELD = new JsonString("import");
-	protected static String[] searchPath = defaultSearchPath();
-	protected static Schema namespaceSchema = null;
-	protected static Schema descriptionSchema = null;
-	
-	public static void initSchemas() {
-		try {
-			Module.namespaceSchema = SchemaFactory.parse( 
-			    "{" +
-					VERSION_FIELD + ": long," + "\n" +
-					SCRIPTS_FIELD + "?: [ string ... ]," +"\n" +
-					EXPORT_FIELD  + "?: [ string ... ]," +"\n" +
-					UDF_FN_FIELD  + "?: [ { \"type\"?: string, * } ... ], " + "\n" +
-					IMPORT_FIELD  + "?: [ {\"module\": string, \"vars\": [ string ... ] }|string ... ] " + "\n" +
-				"}");
-			
-			Module.descriptionSchema = SchemaFactory.parse( 
-					"{" +
-					VERSION_FIELD + "?: long," +
-					"date?: date," +
-					"title?: string," +
-					"author?: string | [ string ... ]," +
-					"maintainer?: string | [ string ... ]," +
-					"description?: string," +
-					"license?: string," +
-					"url?: string" +
-					"}");
-		} catch (IOException e) {
-		  throw JaqlUtil.rethrow(e);
-		}
-	}
+  public Module(Package pack, String moduleName, File jaqlFile)
+  {
+    super(moduleName);
+    this.pack = pack;
+    this.script = jaqlFile;
+    
+    this.modules.put("", this);
+    
+    JsonValue jfile = null;
+    JsonValue jdir = null;
+    if( jaqlFile != null )
+    {
+      String p = null;
+      try
+      {
+        p = jaqlFile.getParentFile().getCanonicalPath();
+      }
+      catch( Exception ex )
+      {
+        p = jaqlFile.getParentFile().getAbsolutePath();
+      }
+      jfile = new JsonString(jaqlFile.getName());
+      jdir = new JsonString(p);
+    }
+    
+    scopeVal("_packageName", new JsonString(pack == null ? "" : pack.getName())); // TODO: place SystemNamespace into root package (means multiple instances)
+    scopeVal("_moduleName", new JsonString(moduleName == null ? "" : moduleName));
+    scopeVal("_moduleFile", jfile);
+    scopeVal("_moduleDirectory", jdir);
+    
+    if( !(this instanceof SystemNamespace) )
+    {
+      importModule(SystemNamespace.NAME, SystemNamespace.getInstance());
+      importExportedVariables(SystemNamespace.getInstance());
+    }
+  }
+  
+  public Module getModule(String moduleAlias)
+  {
+    Module ns = modules.get(moduleAlias);
+    if( ns == null )
+    {
+      throw new RuntimeException("module not imported: "+moduleAlias);
+    }
+    return ns;
+  }
 
-	public static boolean addPath(ArrayList<String> searchPath, String path, String morePath)
-	{
-	  if( path == null )
-	  {
-	    return false;
-	  }
-	  if( morePath != null )
-	  {
-	    if( ! path.endsWith("/") )
-	    {
-	      path += "/";
-	    }
-	    while( morePath.startsWith("/") )
-	    {
-	      morePath = morePath.substring(1);
-	    }
-	    path += morePath;
-	  }
-	  while( path.endsWith("/") )
-	  {
-	    path = path.substring(0, path.length() - 1 );
-	  }
-	  File f = new File(path);
-	  if( ! f.isDirectory() )
-	  {
-	    return false;
-	  }
-	  path = f.getAbsolutePath();
-	  searchPath.add(path);
-	  return true;
-	}
-
-	/**
-	 * The default search path is:
-	 *   In the start-up directory:
-	 *       ./jaql/modules
-	 *       ./modules
-	 *       .
-	 *   The -Djaql.modules.dir=... directory specified jvm startup
-	 *   Inside the user's home directory: $HOME/jaql/modules
-	 *   Jaql's installation: $JAQL_HOME/modules
-	 */
-	public static String[] defaultSearchPath()
-	{
-	  ArrayList<String> path = new ArrayList<String>();
-	  String cwd = System.getProperty("user.dir");
-      addPath( path, cwd, "jaql/modules" );
-      addPath( path, cwd, "modules" );
-      addPath( path, cwd, null );
-      addPath( path, System.getProperty("jaql.modules.dir"), null );
-      addPath( path, System.getenv("HOME"), "jaql/modules" );
-      addPath( path, System.getenv(Jaql.ENV_JAQL_HOME), "modules" );
-	  return path.toArray(new String[path.size()]);
-	}
-	
-	public static void setSearchPath(String[] searchPath) {
-		Module.searchPath = searchPath; 
-	}	
-	
-	public static Module findModule(String name) {
-		FileFilter filter = new FileFilter() {
-			@Override
-			public boolean accept(File dir) {
-				if(dir.isDirectory()) {
-					return isModuleDirectory(dir);
-				}
-				return false;
-			}
-		};
-		
-		for (String dir : searchPath) 
-		{
-		  File d = new File(dir);
-		  if(d.isDirectory())
-		  {
-		    if(isModuleDirectory(d))
-		    {
-		      if(dir.equals(name)) {
-		        return new DefaultModule(d);
-		      }
-		    }
-		    else
-		    {
-		      File[] modules = d.listFiles(filter);
-		      for (File module : modules) {
-		        if(name.equals(module.getName()))
-		        {
-		          return new DefaultModule(module);
-		        }
-		      }
-		    }
-		  }
-		}
-		
-		String err = "Could not find module " + name + " in:";
-        for (String dir : searchPath)
+  public void importModule(String moduleAlias, Module module) 
+  {    
+    Module old = this.modules.put(moduleAlias, module);
+    if( old != null )
+    {
+      // error? warning?
+      // this.modules.put(moduleAlias, old);
+      // throw new RuntimeException("module alias already in use: "+moduleAlias);
+    }
+  }
+  
+  public Module importModule(String qualifiedPath, String moduleAlias) 
+  {    
+    Package start = this.pack;
+    if( qualifiedPath.startsWith("::") )
+    {
+      start = this.pack.getRoot();
+      qualifiedPath = qualifiedPath.substring(2);
+    }
+    String path = qualifiedPath.replaceAll("::", "/") + ".jaql";
+    
+    for( Package pack = start ; pack != null ; pack = pack.parent )
+    {
+      for( File dir: pack.searchPath )
+      {
+        if( dir.isDirectory() )
         {
-          err += "\n" + dir;
+          File jaqlFile = new File(dir, path);
+          if( jaqlFile.isFile() )
+          {
+            return loadModule(qualifiedPath, moduleAlias, pack, jaqlFile);
+          }
         }
-		throw new RuntimeException(err);
-	}
-	
-	public static boolean isModuleDirectory(final File f) {
-		if(!f.isDirectory()) {
-			return false;
-		}
-		
-		FilenameFilter moduleFilter = new FilenameFilter() {
-			@Override
-			public boolean accept(File directory, String entry) {
-				if(JAQL_DIRECTORY.equals(entry)) {
-					return true;
-				}
-				if(NAMESPACE_FILE.equals(entry)) {
-					return true;
-				}
-				return false;
-			}
-		};
-		
-		if(f.list(moduleFilter).length > 0) {
-			return true;
-		}
-		
-		return false;
-	}
-	
-	protected JsonRecord parseMetaData(InputStream in) {
-		JsonRecord meta = new BufferedJsonRecord();
-		JsonValue data = null;
-		JsonParser p = null;
-		
+      }
+    }
+    
+    String err = "Could not find module " + qualifiedPath + " in:";
+    for( Package pack = start ; pack != null ; pack = pack.parent )
+    {
+      for( File dir: pack.searchPath )
+      {
+        err += "\n" + dir.getAbsolutePath();
+      }    
+    }
+    throw new RuntimeException(err);
+  }
 
-		try {
-			if(in != null) {
-				p = new JsonParser(in);
-				data = p.JsonVal();
-			}
-		} catch (ParseException e) {
-			throw new RuntimeException("Error in metadata file", e);
-		}
-  	if(data != null) {
-  		meta = (JsonRecord) data;
-  		//Do schema check
-  		boolean matches;
-  		try {
-  		  matches = Module.namespaceSchema.matches(meta);
-  		} catch (Exception e) {
-  		  throw new RuntimeException(e);
-  		}
-  		if( ! matches )
-  		{
-  		  //Do some minimal analysis to see whats wrong.
-  		  if(!meta.containsKey(VERSION_FIELD)) {
-  		    throw new RuntimeException("Namespace files is missing version");
-  		  } else {
-  		    throw new RuntimeException("Namespace file does not match schema");
-  		  }
-  		}
-  		long version = ((JsonNumber)meta.get(VERSION_FIELD)).longValueExact(); 
-        if( version < MIN_SUPPORTED_NAMESPACE_VERSION )
+  protected Module loadModule(String qualifiedPath, String moduleAlias, Package pack, File jaqlFile)
+  {
+    // Walk down the package tree initializing as needed
+    String[] parts = qualifiedPath.split("::");
+    int n = parts.length - 1;
+    for(int i = 0 ; i < n ; i++)
+    {
+      File packDir = jaqlFile.getParentFile();
+      for( int j = n - i - 1 ; j > 0 ; j--)
+      {
+        packDir = packDir.getParentFile();
+      }
+      pack = pack.loadPackage(parts[i], packDir);
+    }
+    
+    String moduleName = parts[n];
+    Module module = pack.modules.get(moduleName);
+    if( module != null )
+    {
+      if( ! module.isFinal )
+      {
+        throw new RuntimeException("circular dependency from module "+this.name+" to "+moduleName);
+      }
+      else if( ! jaqlFile.equals( module.script ) )
+      {
+        throw new RuntimeException("ambiguous reference from module "+this.name+" to "+moduleName 
+                + " " + module.script + " and " + jaqlFile );
+      }
+      // else if module.timestamp != jaqlFile.timestamp, module = null
+    }
+    
+    if( moduleAlias == null )
+    {
+      moduleAlias = moduleName;
+    }
+    if( module == null )
+    {
+      module = pack.parseModule(moduleName, jaqlFile);
+      pack.modules.put(moduleAlias, module);
+    }
+    this.modules.put(moduleAlias, module);
+    return module; 
+  }
+  
+  /** Import the listed variables from the other namespace into this one */
+  public void importVariables(Module namespace, List<String> varNames)
+  {
+    for( String varName: varNames )
+    {
+      Var var = namespace.variables.get(varName);
+      if( var == null )
+      {
+        throw new RuntimeException("Variable "+varName+" not defined in module "+namespace.name);
+      }
+      variables.put(varName, var);
+    }
+  }
+
+  /** imports all all variables exported from another namespace */
+  public void importExportedVariables(Module namespace)
+  {
+    for( Var var: namespace.variables.values() )
+    {
+      if( ! var.name().startsWith("_") )
+      {
+        variables.put(var.name(), var);
+      }
+    }
+  }
+
+  /** returns the names of all exported variables */
+  public Set<String> exports()
+  {
+    HashSet<String> names = new HashSet<String>();
+    for( Var var: variables.values() )
+    {
+      if( ! var.name().startsWith("_") )
+      {
+        names.add(var.taggedName());
+      }
+    }
+    return names;
+  }
+
+  /**
+   * Create a new immutable val variable with the specified name and put it into the global scope. 
+   * The most recent definition of the global variable of the specified name is overwritten.
+   */
+  public final Var scopeVal(String varName, Schema schema)
+  {
+    ensureNotFinal();
+    Var var = findVar(varName);
+    if ( var != null )
+    {
+      unscope(var);
+    }
+    var = new Var(this, varName, schema, Scope.GLOBAL, Var.State.FINAL);
+    scope(var);
+    return var;
+  }
+
+  public final Var scopeVal(String varName, JsonValue value)
+  {
+    ensureNotFinal();
+    Var var = findVar(varName);
+    if ( var != null )
+    {
+      unscope(var);
+    }
+    var = new Var(this, varName, SchemaFactory.schemaOf(value), Scope.GLOBAL, Var.State.FINAL);
+    scope(var);
+    var.setValue(value);
+    return var;
+  }
+
+  /**
+   * Create a new immutable expr variable with the specified name and put it into the global scope. 
+   * The most recent definition of the global variable of the specified name is shadowed.
+   */
+  public Var scopeExpr(String varName, Schema schema, Expr expr)
+  {
+    ensureNotFinal();
+    Var var = findVar(varName);
+    if ( var != null )
+    {
+      unscope(var);
+    }
+    var = new Var(this, varName, schema, Scope.GLOBAL, Var.State.FINAL);
+    //  try
+    //  {
+    //    expr = expandMacros(expr);
+    //  }
+    //  catch(Exception ex)
+    //  {
+    //    JaqlUtil.rethrow(ex);
+    //  }
+    var.setExpr(expr);
+    scope(var);
+    return var;
+  }
+
+  /**
+   * If the varName is bound to a mutable global, return it.
+   * Otherwise create a new mutable var variable with the specified name and puts it into the global scope, 
+   * and the most recent definition of the immutable global variable of the specified name is shadowed.
+   */
+  public Var scopeMutable(String varName, Schema schema)
+  {
+    ensureNotFinal();
+    Var var = findVar(varName);
+    if ( var != null )
+    {
+      var = inscope(varName);
+      if( var.isMutable() )
+      {
+        return var;
+      }
+      unscope(var);
+    }
+    var = new Var(this, varName, schema, Scope.GLOBAL, Var.State.MUTABLE);
+    scope(var);
+    return var;
+  }
+
+  /** 
+   * Creates a new variable with the specified name and puts it into the global scope. 
+   * The most recent definition of the global variable of the specified name is overwritten.
+   * If varName contains a tag, this method will fail.
+   */
+  public Var setOrScopeMutable(String varName, JsonValue value)
+  {
+    Var var = scopeMutable(varName, SchemaFactory.anySchema());
+    var.setValue(value);
+    return var;
+  }
+
+  @Override
+  public Package getPackage()
+  {
+    return pack;
+  }
+
+  @Override
+  public String getQualifiedName()
+  {
+    return pack.getName() + "::" + name;
+  }
+
+  public List<Var> listVariables(boolean includeModules, boolean onlyExtern, boolean includeSystem)
+  {
+    Module system = SystemNamespace.getInstance();
+    TreeMap<String, Var> sortVars = new TreeMap<String, Var>();
+    for( Var v: variables.values() )
+    {
+      if( ( !onlyExtern || v.isMutable() ) &&
+          ( includeSystem || v.getNamespace() != system ) )
+      {
+        sortVars.put(v.name(), v);
+      }
+    }
+    ArrayList<Var> vars = new ArrayList<Var>(sortVars.values());
+    
+    if( includeModules )
+    {
+      TreeMap<String, Collection<Var>> sortMods = new TreeMap<String, Collection<Var>>();
+      for( Module m: modules.values() )
+      {
+        if( includeSystem || m != SystemNamespace.getInstance() )
         {
-          throw new RuntimeException("Module namespace is too old.  Version="+version+
-              " Min Version="+MIN_SUPPORTED_NAMESPACE_VERSION);
+          Collection<Var> mvars = m.listVariables(false, onlyExtern, false);
+          if( ! mvars.isEmpty() )
+          {
+            sortMods.put( m.getQualifiedName(), mvars);
+          }
         }
-        if( version > MAX_SUPPORTED_NAMESPACE_VERSION )
-        {
-          throw new RuntimeException("Module namespace is too new.  Version="+version+
-              " Max Version="+MAX_SUPPORTED_NAMESPACE_VERSION);
-        }
-  	}
-  	
-  	return meta;
-	}
-	
-	protected JsonRecord meta = null;
-	
-	protected void ensureMetaData(){
-		initSchemas();
-		if(meta != null) {
-			return;
-		}
-		
-		meta = parseMetaData(getMetaDataStream());
-	}
-	
+      }
+      for( Collection<Var> mvars: sortMods.values() )
+      {
+        vars.addAll(mvars);
+      }
+    }
+    
+    return vars;
+  }
 
-	public JsonRecord getNamespaceDescription() {
-		ensureMetaData();
-		return meta;
-	}
-	
+  public List<Var> listVariables(boolean includeModules)
+  {
+    return listVariables(includeModules, false, false);
+  }
+  
+  public List<Var> listExternal(boolean includeModules)
+  {
+    return listVariables(includeModules, true, false);
+  }
 
-	public Set<String> exports() {
-		ensureMetaData();
-		if (!meta.containsKey(EXPORT_FIELD)) {
-			return Collections.emptySet();
-		}
-		else 
-		{
-			HashSet<String> ids = new HashSet<String>();
-			JsonArray values = (JsonArray) meta.get(EXPORT_FIELD);
-			for (JsonValue value : values) {
-				ids.add(value.toString());
-			}
-			return Collections.unmodifiableSet(ids);
-		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see com.ibm.jaql.lang.core.IModule#loadImports(com.ibm.jaql.lang.core.NamespaceEnv)
-	 */
-	public void loadImports(Namespace namespace) {
-		ensureMetaData();
-		if(!meta.containsKey(IMPORT_FIELD)) {
-			return;
-		} else {
-			JsonArray imports = (JsonArray) meta.get(IMPORT_FIELD);
-			for (JsonValue i : imports) {
-				if (i instanceof JsonString) 
-				{
-					namespace.importNamespace(Namespace.get(i.toString()));
-				}
-				else if(i instanceof JsonRecord) {
-					JsonRecord rec = (JsonRecord) i;
-					String name = rec.get(new JsonString("module")).toString();
-					namespace.importNamespace(Namespace.get(name.toString()));
-					JsonArray vars = (JsonArray) rec.get(new JsonString("vars"));
-					ArrayList<String> ids = new ArrayList<String>();
-					for (JsonValue id : vars) {
-						ids.add(id.toString());
-					}
-					/*
-					 * There are two cases here, either it is just a record with one entry "*",
-					 * or a list of function names
-					 */
-					if(ids.size() == 1 && ids.get(0).equals("*")) {
-						namespace.importAllFrom(Namespace.get(name));
-					} else {
-						namespace.importFrom(Namespace.get(name), ids);
-					}
-				}
-			}
-		}
-	}
-	
-	public abstract File[] getJaqlFiles();
-	public abstract File[] getJarFiles();
-	public abstract File[] getExampleFiles();
-	public abstract File getTestDirectory();
-	public abstract String[] getTests();
-	public abstract JsonRecord getModuleDescription();
-	protected abstract InputStream getMetaDataStream();
+  public List<File> getModulePath()
+  {
+    ArrayList<File> path = new ArrayList<File>();
+    for( Package p = getPackage() ; p != null ; p = p.parent )
+    {
+      path.addAll( p.searchPath );
+    }
+    return path;
+  }
+
+  public String getModulePathString()
+  {
+    List<File> path = getModulePath();
+    StringBuilder sb = new StringBuilder();
+    String sep = "";
+    for( File f: path )
+    {
+      sb.append( sep );
+      sb.append( f.getAbsolutePath() );
+      sep = ",";
+    }
+    return sb.toString();
+  }
+
+  public String getModuleAlias(Module module)
+  {
+    for( Map.Entry<String,Module> e: this.modules.entrySet() )
+    {
+      if( e.getValue() == module )
+      {
+        return e.getKey();
+      }
+    }
+    throw new RuntimeException("namespace "+module.getQualifiedName()+" is not imported in "+getQualifiedName());
+  }
+  
 }

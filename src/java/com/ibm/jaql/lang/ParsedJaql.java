@@ -16,6 +16,7 @@
 package com.ibm.jaql.lang;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import com.ibm.jaql.json.schema.Schema;
@@ -43,7 +44,8 @@ public class ParsedJaql
   protected int index = 0;
   protected int resultsLeft = 0;
   protected Schema curSchema;
-  
+  protected List<Var> externalVars;
+  protected HashMap<Var,JsonValue> externalDefaults = new HashMap<Var, JsonValue>();
   
   /** Parse but don't evaluate all the statements in the current parser input */
   public ParsedJaql(Jaql jaql, Env env, Context context) throws Exception
@@ -61,6 +63,15 @@ public class ParsedJaql
       }
     }
     resultsLeft = numResults;
+    
+    externalVars = env.globals.listExternal(false);
+    for( Var v: externalVars )
+    {
+      if( v.isDefined() )
+      {
+        externalDefaults.put(v, v.getValue(context));
+      }
+    }
   }
 
   /** Return a list of the external variables.
@@ -70,22 +81,13 @@ public class ParsedJaql
    */
   public List<Var> getExternalVariables() // TODO: make a wrapper to hide the vars? just expose name, type, required to be set/isdefined
   {
-    ArrayList<Var> vars = new ArrayList<Var>();
-    for( Var v: env.globals().listVariables(false) )
-    {
-      if( v.isMutable() )
-      {
-        assert v.isGlobal();
-        vars.add(v);
-      }
-    }
-    return vars;
+    return externalVars;
   }
   
   /** Set an external variable to a value. */
   public void setExternalVariable(String name, JsonValue value)
   {
-    Var var = env.findGlobal(name);
+    Var var = env.globals.findVar(name);
     if( var == null )
     {
       throw new IllegalArgumentException("unknown variable: "+name);
@@ -113,14 +115,19 @@ public class ParsedJaql
   {
     // TODO: anything else to release?  Add method on context for this?
     context.reset();
-    for( Var v: env.listVariables(false) )
+    // TODO: reset all mutable variables to their initial value / undefined
+    for( Var v: externalVars )
     {
-      if( v.isMutable() )
+      if( externalDefaults.containsKey(v) )
       {
-        assert v.isGlobal();
+        v.setValue( externalDefaults.get(v) );
+      }
+      else
+      {
         v.undefine();
       }
     }
+
   }
   
   /** Restart this script from the beginning. 
@@ -194,16 +201,13 @@ public class ParsedJaql
     while( index < exprs.size() )
     {
       Expr expr = exprs.get(index);
-      if( !(expr instanceof QueryExpr) )
-      {
-        index++;
-        expr.eval(context);
-        context.reset();
-      }
-      else
+      if( expr instanceof QueryExpr )
       {
         break;
       }
+      index++;
+      expr.eval(context);
+      context.reset();
     }
   }
 

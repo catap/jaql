@@ -15,19 +15,40 @@
  */
 package com.ibm.jaql.lang.expr.function;
 
-import java.io.File;
-
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonBool;
 import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.lang.core.Context;
+import com.ibm.jaql.lang.core.Env;
+import com.ibm.jaql.lang.expr.core.ConstExpr;
 import com.ibm.jaql.lang.expr.core.Expr;
-import com.ibm.jaql.util.ClassLoaderMgr;
+import com.ibm.jaql.lang.expr.core.MacroExpr;
 
 
-/** Add jars to the classpath */
-public class AddClassPathFn extends Expr
+/** 
+ * Add to the java class path
+ * 
+ *  supports wildcards on classpath items as described here:
+ *     http://download.oracle.com/javase/6/docs/technotes/tools/windows/classpath.html
+ *     
+ *     Class path entries can contain the basename wildcard character *, which is 
+ *     considered equivalent to specifying a list of all the files in the directory 
+ *     with the extension .jar or .JAR. For example, the class path entry foo/* specifies
+ *     all JAR files in the directory named foo. A classpath entry consisting simply 
+ *     of * expands to a list of all the jar files in the current directory.
+ *     
+ *     A class path entry that contains * will not match class files. To match both 
+ *     classes and JAR files in a single directory foo, use either foo;foo/* or foo/*;foo. 
+ *     The order chosen determines whether the classes and resources in foo are 
+ *     loaded before JAR files in foo, or vice versa.
+ *     
+ *     Subdirectories are not searched recursively. For example, foo/* looks for JAR 
+ *     files only in foo, not in foo/bar, foo/baz, etc.
+ *     
+ *     The order in which the JAR files in a directory are enumerated in the expanded 
+ *     class path is not specified and may vary from platform to platform and even 
+ *     from moment to moment on the same machine. A well-constructed application should
+ *     not depend upon any particular order. If a specific order is required then the
+ *     JAR files can be enumerated explicitly in the class path.
+ */
+public class AddClassPathFn extends MacroExpr
 {
 	public static class Descriptor extends DefaultBuiltInFunctionDescriptor.Par11
 	{
@@ -43,18 +64,10 @@ public class AddClassPathFn extends Expr
   }
 
   @Override
-  public JsonValue eval(Context context) throws Exception 
+  public Expr expand(Env env) throws Exception
   {
-    // TODO: make this a MacroExpr to load classes immediately? Otherwise explain of javaudf will not work...
-    JsonArray jarray = (JsonArray)exprs[0].eval(context);
-    int n = (int)jarray.count();
-    File[] files = new File[n];
-    for(int i = 0 ; i < n ; i++)
-    {
-      JsonString jfile = (JsonString)jarray.get(i);
-      files[i] = new File(jfile.toString());
-    }
-    ClassLoaderMgr.addExtensionJars(files);
-	  return JsonBool.TRUE;
+    // TODO: need a way to let any Expr reference the current module
+    String path = env.globals.getModulePathString();
+    return new AddRelativeClassPathFn(new ConstExpr(new JsonString(path)), exprs[0]);
   }
 }

@@ -185,7 +185,7 @@ public class TestJaqlQuery extends TestCase{
 			q.evaluate();
 			q.close();
 		}catch(Exception ex){
-			assertEquals("variable not defined: aa", ex.getMessage());
+			assertEquals("variable is not defined: aa", ex.getMessage());
 		}
 	}
 	
@@ -228,7 +228,7 @@ public class TestJaqlQuery extends TestCase{
 				return;
 			}
 			q.setModuleSeachPath(path);
-			q.setQueryString("import fuzzy_join;");
+			q.setQueryString("import fuzzy_join::fuzzy_join;");
 			q.evaluate();
 			q.setQueryString("fuzzy_join::cleanTitle('XY');");
 			JsonValue v = q.evaluate();

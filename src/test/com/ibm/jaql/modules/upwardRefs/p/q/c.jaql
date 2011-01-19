@@ -1,0 +1,8 @@
+import a;
+import d(da,db,dba);
+import b(ba);
+
+x = 'modules/upwardRefs/p/q/c.jaql';
+ca = a::x;
+cb = b::x;
+cd = d::x;

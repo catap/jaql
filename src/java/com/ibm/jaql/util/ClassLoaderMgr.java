@@ -29,6 +29,7 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 
@@ -387,7 +388,9 @@ final class JarCreator extends Thread {
 			JarOutputStream jout = null;
 			if(baseJar != null) {
 				JarInputStream jin = new JarInputStream(new FileInputStream(baseJar));
-				jout = new JarOutputStream(new FileOutputStream(extendedJarPath), jin.getManifest());
+				FileOutputStream fout = new FileOutputStream(extendedJarPath);
+				Manifest man = jin.getManifest();
+				jout = man == null ? new JarOutputStream(fout) : new JarOutputStream(fout, man);
 				copyJarFile(jin, jout);
 			} else {
 				jout = new JarOutputStream(new FileOutputStream(extendedJarPath));

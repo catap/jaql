@@ -83,13 +83,13 @@ options {
     // checks whether the next token matches the specified weak keyword
     private boolean nextIsWeakKw(String kw) throws TokenStreamException
     {
-        return !env.isDefinedLocal(kw) && kw.equals(LT(1).getText());
+        return env.findVar(kw) == null && kw.equals(LT(1).getText());
     }
     
     private Expr assignGlobal(String name, Schema schema, boolean isValue, Expr expr)
        throws RecognitionException, TokenStreamException
     {
-      Var var = env.findGlobal(name);
+      Var var = env.globals.findVar(name);
       if( var != null && var.isMutable() ) 
       {
       	// replace value of extern variable
@@ -109,12 +109,20 @@ options {
         if( schema == null ) schema = expr.getSchema();
         if( isValue )
         {
-          var = env.scopeGlobalVal(name, schema);
+          var = env.globals.scopeVal(name, schema);
           expr = new AssignExpr(env, var, expr);
         }
         else
         {
-          var = env.scopeGlobalExpr(name, schema, expr);
+          try
+          {
+              expr = env.expandMacros(expr);
+          }
+          catch( Exception ex )
+          {
+          	  throw com.ibm.jaql.lang.util.JaqlUtil.rethrow(ex);
+          }
+          var = env.globals.scopeExpr(name, schema, expr);
           expr = null;
         }
       }
@@ -124,14 +132,14 @@ options {
     private Expr materializeGlobal(String name, Schema schema, Expr expr)
        throws RecognitionException, TokenStreamException
     {
-      Var var = env.findGlobal(name);
+      Var var = env.globals.findVar(name);
       if( var != null && var.isMutable() ) 
       {
         oops("cannot materialize an extern variable: "+name);
       }
       if( expr == null )
       {
-        var = env.inscopeGlobal(name);
+        var = env.globals.inscope(name);
         if( var.type() == Var.Type.EXPR ) 
         {
           expr = new AssignExpr(env, var, var.undefineExpr());
@@ -144,7 +152,7 @@ options {
       else
       {
       	if( schema == null ) schema = SchemaFactory.anySchema();
-        var = env.scopeGlobalExpr(name, schema, expr);
+        var = env.globals.scopeExpr(name, schema, expr);
         expr = new AssignExpr(env, var, expr);
       }
       return expr;
@@ -153,7 +161,7 @@ options {
     private Expr makeExternVar(String name, Schema schema, Expr expr)
        throws RecognitionException, TokenStreamException
     {
-      Var var = env.findGlobal(name);
+      Var var = env.globals.findVar(name);
       if( var != null )  // variable already in scope
       {
         if( schema == null  ) 
@@ -175,7 +183,7 @@ options {
           // shadow an exising non-extern
           // preserved existing value
           // if( expr != null ) warn extern default ignored ?
-          Var var2 = env.scopeGlobalMutable(name, schema);
+          Var var2 = env.globals.scopeMutable(name, schema);
           expr = new AssignExpr(env, var2, new VarExpr(var) );
         }
         else
@@ -219,7 +227,7 @@ options {
       else // new name
       {
         if( schema == null ) schema = SchemaFactory.anySchema();
-        var = env.scopeGlobalMutable(name, schema);
+        var = env.globals.scopeMutable(name, schema);
         if( expr != null )
         {
           expr = new AssignExpr(env, var, expr);
@@ -266,7 +274,7 @@ parse returns [Expr r=null]
 
 // a statement without statement delimiter
 protected stmt returns [Expr r=null]
-    : (kwImport id)       => r=importExpr
+    : (kwImport (id | NAMESPACE_ID))  => r=importExpr
     | (kwQuit)            => kwQuit { r = null; done = true; }
     | (kwExplain)         => kwExplain r=topAssign  { r = r == null ? null : new ExplainExpr(env,r); }
     | (kwQuit)            => kwQuit { r = null; done = true; }
@@ -275,23 +283,25 @@ protected stmt returns [Expr r=null]
 
 // namespace import
 importExpr returns [Expr r=null]
-    { String v; String var; 
-      ArrayList<String> names = new ArrayList<String>();}
-    : kwImport v=id (
-          { env.importNamespace(Namespace.get(v)); } 
-        | "(" (
-            "*" ")" {
-                env.importNamespace(Namespace.get(v));
-                env.importAllFrom(Namespace.get(v));
-            }
-            | var=id {names.add(var);} ("," var=id {names.add(var);})* ")" {
-                env.importNamespace(Namespace.get(v));
-                env.importFrom(Namespace.get(v), names);
-            }
+    { String v; String var; ArrayList<String> names=null; Module ns; }
+    : kwImport ns=moduleName
+        ( /* no symbols */
+        | "(" 
+             ( "*"              { env.globals.importExportedVariables(ns);     }
+             | var=id           { names = new ArrayList<String>(); names.add(var); } 
+               ( "," var=id     { names.add(var);} 
+               )*               { env.globals.importVariables(ns, names);     }
+             )
+          ")"
         )
-    )
     ;
-    
+
+moduleName returns [Module ns=null]
+    { String n = null; String a = null; }
+    : ( n=id | m:NAMESPACE_ID { n = m.getText(); } )
+      ( kwAs a=id )?
+    { ns = env.globals.importModule(n, a); } // TODO: parse id (:: id)*
+    ;
     
 // top level assignment, creates global variables and inlines referenced globals
 topAssign returns [Expr r=null]
@@ -1277,7 +1287,7 @@ builtinFunction returns [Expr e = null]
     { Expr c; }
     : kwBuiltin "(" c=expr ")" { e=new BuiltInExpr(c); }; 
         
-// backwards compatibility, registerFunction("f", e) is now written as f=javaudf(e)
+// backwards compatibility, registerFunction("f", e) is now written as f=javaudf(e) // TODO: remove
 registerFunction returns [Expr e = null]
     { Expr varName, className; }
     : kwRegisterFunction "(" varName=expr "," className=expr ")" {
@@ -1287,7 +1297,7 @@ registerFunction returns [Expr e = null]
             throw new IllegalArgumentException("variable name has to be a constant");
           }
           String name = env.eval(varName).toString();
-          Var var = env.scopeGlobalVal(name, SchemaFactory.functionSchema());
+          Var var = env.globals.scopeVal(name, SchemaFactory.functionSchema());
           e = new AssignExpr(env, var, new JavaUdfExpr(className).expand(env));
         } catch(Exception ex) {
             throw new RuntimeException(ex); 
@@ -1738,16 +1748,14 @@ idExpr returns [Expr e=null]
 var returns [Var v = null]
     { String s; }
     : s=id              { v = env.inscope(s); }
-    | m:NAMESPACE_ID    { s = m.getText(); 
-                          String[] parts = s.split("::"); // known to occur precisely once
-                          if (parts[0].isEmpty())
+    | m:NAMESPACE_ID    { s = m.getText(); // TODO: parse as id '::' id
+                          String[] parts = s.split("::");
+                          Module ns = env.globals;
+                          if( parts.length != 2 )
                           {
-                            v = env.globals().inscopeLocal(parts[1]);
+                          	oops("only alias::var supported");
                           }
-                          else
-                          {
-                            v = env.inscopeImport(parts[0], parts[1]);
-                          } 
+                          v = ns.getModule(parts[0]).inscope(parts[1]);
                         }
     ;
 
@@ -2201,14 +2209,14 @@ KEYWORD options { testLiterals=true; }
     ;  
   
 ID
-    : ( IDWORD ':' ':' IDWORD ) => IDWORD ':' ':' IDWORD  { $setType(NAMESPACE_ID); }
+    : ( IDWORD ':' ':' IDWORD ) => IDWORD (':' ':' IDWORD)+  { $setType(NAMESPACE_ID); }
     | ( IDWORD TAG ) => IDWORD TAG
     | ( IDWORD (WS)* ('?' (WS)* ':' | ':' ) ) => IDWORD   
     | IDWORD /* those IDs might also be keywords */       { _ttype = testLiteralsTable(_ttype); }
     ;
     
 NAMESPACE_ID
-    : ':' ':' IDWORD
+    : (':' ':' IDWORD)+
     ;
     
 SYM

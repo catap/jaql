@@ -1,0 +1,4 @@
+
+// this is an intentional error to cause an error during package initialization
+x = y;
+

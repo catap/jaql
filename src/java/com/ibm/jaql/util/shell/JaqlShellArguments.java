@@ -46,7 +46,6 @@ import com.ibm.jaql.json.type.BufferedJsonRecord;
 import com.ibm.jaql.json.type.JsonRecord;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.lang.JaqlQuery;
-import com.ibm.jaql.lang.core.Module;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.EchoedReader;
 
@@ -59,7 +58,7 @@ public class JaqlShellArguments {
   boolean useExistingCluster = false;
   String[] jars = new String[0];
   OutputAdapter outputAdapter;
-  String[] searchPath = Module.defaultSearchPath();
+  String[] searchPath = null;
   String hdfsDir = DEFAULT_HDFS_DIR;
   int numNodes = DEFAULT_NUM_NODES;
   ChainedReader chainedIn = new ChainedReader();

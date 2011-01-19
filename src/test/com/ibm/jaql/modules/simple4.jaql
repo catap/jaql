@@ -1,0 +1,3 @@
+greeting = 'hi modules/simple4.jaql';
+farewell = 'bye modules/simple4.jaql';
+_private = 'shh modules/simple4.jaql';

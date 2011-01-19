@@ -1,0 +1,2 @@
+
+addClassPath('lib/*:lib2/cjar.jar');

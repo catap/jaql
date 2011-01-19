@@ -1,0 +1,3 @@
+import p::b(b,c,d);
+
+a = 'modules/downwardRefs/a.jaql';

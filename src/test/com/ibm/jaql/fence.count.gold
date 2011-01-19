@@ -100,10 +100,10 @@ read(hdfs("bar")) -> fence( fn(i) ( test(i, ",") ) );
 
 
 // e. use function from module
-import scripts_and_udf;
+import fuzzy_join::fuzzy_join as m;
 ;//------------------- TEST-CASE -----------------
 
-data -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+data -> fence( fn(i) m::qgram(i) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -113,7 +113,7 @@ data -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
 
 ;//------------------- TEST-CASE -----------------
 
-read(hdfs("bar")) -> fence( fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+read(hdfs("bar")) -> fence( fn(i) m::qgram(i) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -203,7 +203,7 @@ read(hdfs("complex")) -> fence( fn(i) ( test(i.b, ",") ) );
 
 
 // e. use function from module
-data -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+data -> fence( fn(i) m::qgram(i.b) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -213,7 +213,7 @@ data -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
 
 ;//------------------- TEST-CASE -----------------
 
-read(hdfs("complex")) -> fence( fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+read(hdfs("complex")) -> fence( fn(i) m::qgram(i.b) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -301,7 +301,7 @@ read(hdfs("bar")) -> transform fencePush( $, fn(i) ( test(i, ",") ) );
 
 
 // e. use function from module
-data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+data -> transform fencePush( $, fn(i) m::qgram(i) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -311,7 +311,7 @@ data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> c
 
 ;//------------------- TEST-CASE -----------------
 
-read(hdfs("bar")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i) ) -> expand -> count();
+read(hdfs("bar")) -> transform fencePush( $, fn(i) m::qgram(i) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -391,7 +391,7 @@ read(hdfs("complex")) -> transform fencePush( $, fn(i) ( test(i.b, ",") ) );
 
 
 // e. use function from module
-data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+data -> transform fencePush( $, fn(i) m::qgram(i.b) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -401,7 +401,7 @@ data -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand ->
 
 ;//------------------- TEST-CASE -----------------
 
-read(hdfs("complex")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.b) ) -> expand -> count();
+read(hdfs("complex")) -> transform fencePush( $, fn(i) m::qgram(i.b) ) -> expand -> count();
 
 ;//------------------- EXPR-COUNTS -----------------
 
@@ -411,5 +411,6 @@ read(hdfs("complex")) -> transform fencePush( $, fn(i) scripts_and_udf::qgram(i.
 }
 
 ;//------------------- TEST-CASE -----------------
+
 
 ;//------------------- TEST-DONE -----------------

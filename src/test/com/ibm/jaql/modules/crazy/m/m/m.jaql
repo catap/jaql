@@ -1,0 +1,5 @@
+import n;
+
+x = 'module/crazy/m/m/m.jaql';
+y = n::x;
+

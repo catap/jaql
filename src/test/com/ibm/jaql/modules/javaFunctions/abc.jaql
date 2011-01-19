@@ -1,0 +1,6 @@
+
+param9 = 2;
+
+fnA = javaudf("com.ibm.jaql.udf.abjar.FunctionA");
+fnB = javaudf("com.ibm.jaql.udf.abjar.FunctionB");
+fnC = javaudf("com.ibm.jaql.udf.cjar.FunctionC");

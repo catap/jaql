@@ -109,9 +109,10 @@ import com.ibm.jaql.lang.expr.date.DatePartsFn;
 import com.ibm.jaql.lang.expr.date.NowFn;
 import com.ibm.jaql.lang.expr.db.JdbcExpr;
 import com.ibm.jaql.lang.expr.del.JsonToDelFn;
+import com.ibm.jaql.lang.expr.function.AddClassPathFn;
+import com.ibm.jaql.lang.expr.function.AddRelativeClassPathFn;
 import com.ibm.jaql.lang.expr.function.BuiltInFunction;
 import com.ibm.jaql.lang.expr.function.BuiltInFunctionDescriptor;
-import com.ibm.jaql.lang.expr.function.AddClassPathFn;
 import com.ibm.jaql.lang.expr.function.FenceFunction;
 import com.ibm.jaql.lang.expr.function.FencePushFunction;
 import com.ibm.jaql.lang.expr.function.JavaUdfExpr;
@@ -156,9 +157,6 @@ import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.UnregisterAdapterExpr;
 import com.ibm.jaql.lang.expr.io.WriteAdapterRegistryExpr;
 import com.ibm.jaql.lang.expr.io.WriteFn;
-import com.ibm.jaql.lang.expr.module.ExamplesFn;
-import com.ibm.jaql.lang.expr.module.ListExportsFn;
-import com.ibm.jaql.lang.expr.module.TestFn;
 import com.ibm.jaql.lang.expr.net.JaqlGetFn;
 import com.ibm.jaql.lang.expr.nil.DenullFn;
 import com.ibm.jaql.lang.expr.nil.EmptyOnNullFn;
@@ -247,7 +245,7 @@ import com.ibm.jaql.lang.expr.xml.XsltFn;
 
 
 /** The system namespace. Treated specially, always present. */
-public final class SystemNamespace extends Namespace {
+public final class SystemNamespace extends Module {
   public static final String NAME = "system";
   
 	/** implementing class name to built in function */
@@ -270,8 +268,7 @@ public final class SystemNamespace extends Namespace {
 
 	private SystemNamespace()
 	{
-	  super();
-	  this.name = NAME;
+	  super(new Package(), NAME, null);
 	  registerAll();
 	  makeFinal();
 	}
@@ -313,7 +310,7 @@ public final class SystemNamespace extends Namespace {
     BuiltInFunction f = new BuiltInFunction(descriptor);
     Var var = new Var(this, descriptor.getName(), SchemaFactory.schemaOf(f), f);
     variables.put(var.name(), var);
-    exportedVariables.add(var.name());
+    // exportedVariables.add(var.name());
     implementationMap.put(descriptor.getImplementingClass(), descriptor);
   }
   
@@ -548,10 +545,7 @@ public final class SystemNamespace extends Namespace {
     register(new DataGuideFn.Descriptor());
     register(new JavaUdfExpr.Descriptor());
     register(new AddClassPathFn.Descriptor());
-    register(new ExamplesFn.Descriptor());
-    //register(new TestFn.Descriptor());
-    register(new ListExportsFn.Descriptor());
-    register(new TestFn.Descriptor());
+    register(new AddRelativeClassPathFn.Descriptor());
     register(new CatchExpr.Descriptor());
     register(new TimeoutExpr.Descriptor());
     register(new RegisterExceptionHandler.Descriptor());

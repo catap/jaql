@@ -145,11 +145,12 @@ public class DefaultBuiltInFunctionDescriptor implements BuiltInFunctionDescript
     try
     {
       Expr e = constructor.newInstance(new Object[] { positionalArgs });
-      if (e instanceof MacroExpr)
-      {
-        // should be rare because variables are usually inlined
-        e = ((MacroExpr)e).expand(new Env(null)); // FIXME: ksb: This doesn't look healthy.  A new Env? No Context? Maybe expand shouldn't get an Env (which means eliminating env.makeVar())
-      }
+// Macros are handled handled later.
+//      if (e instanceof MacroExpr)
+//      {
+//        // should be rare because variables are usually inlined
+//        e = ((MacroExpr)e).expand(new Env(null)); // FIXME: ksb: This doesn't look healthy.  A new Env? No Context? Maybe expand shouldn't get an Env (which means eliminating env.makeVar())
+//      }
       return e;
     } catch (Exception e)
     {
