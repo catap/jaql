@@ -17,7 +17,7 @@ and run unit tests.
 The Jaql shell is a very simple way to run Jaql queries.
 Currently, it can run in local mode, your own cluster, or with a Hadoop !MiniCluster.
 
-To get up and running, you can either download a binary or build from source.
+To get up and running, you can either download a binary or build from source. The instructions below show you how to run the Jaql shell from a terminal. Alternatively, you can also [RunningFromEclipse run the Jaql shell from Eclipse].
 
 == Using a binary ==
 
