@@ -106,7 +106,21 @@ public class Module extends Namespace
       start = this.pack.getRoot();
       qualifiedPath = qualifiedPath.substring(2);
     }
-    String path = qualifiedPath.replaceAll("::", "/") + ".jaql";
+    String basePath = qualifiedPath.replaceAll("::", "/");
+    String modName;
+    int p = basePath.lastIndexOf('/');
+    if( p < 0 )
+    {
+      modName = basePath;
+    }
+    else
+    {
+      modName = basePath.substring(p+1);
+    }
+    
+    String path = basePath + ".jaql";
+    String qualifiedPath2 = qualifiedPath + "::" + qualifiedPath;
+    String path2 = basePath + "/" + modName + ".jaql";
     
     for( Package pack = start ; pack != null ; pack = pack.parent )
     {
@@ -114,10 +128,17 @@ public class Module extends Namespace
       {
         if( dir.isDirectory() )
         {
+          // a::b::c ==> .../a/b/c.jaql
           File jaqlFile = new File(dir, path);
           if( jaqlFile.isFile() )
           {
             return loadModule(qualifiedPath, moduleAlias, pack, jaqlFile);
+          }
+          // a::b::c ==> .../a/b/c/c.jaql
+          jaqlFile = new File(dir, path2);
+          if( jaqlFile.isFile() )
+          {
+            return loadModule(qualifiedPath2, moduleAlias, pack, jaqlFile);
           }
         }
       }

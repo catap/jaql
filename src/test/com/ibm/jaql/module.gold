@@ -683,6 +683,66 @@ import dupPackage::onlyIn2;
 ;//------------------- TEST-CASE -----------------
 
 
+// For:
+//    import X;
+// It can resolve to .../X.jaql or .../X/X.jaql
+// In the latter case, this resolves to the same module as as X::X.
+
+// This has modInPackage/modInPackage.jaql
+//  but not modInPackage.jaql
+// So these are aliases of each other:
+
+import modInPackage as m10;
+;//------------------- TEST-CASE -----------------
+
+import modInPackage::modInPackage as m11;
+;//------------------- TEST-CASE -----------------
+
+
+m10::x;
+
+;//--------------------- RESULT ------------------
+
+"modules/modInPackage/modInPackage.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+m11::x;
+
+;//--------------------- RESULT ------------------
+
+"modules/modInPackage/modInPackage.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+
+// This has modAbovePackage.jaql
+//      and modAbovePackage/modAbovePackage.jaql
+// So these are different:
+
+import modAbovePackage as m12;
+;//------------------- TEST-CASE -----------------
+
+import modAbovePackage::modAbovePackage as m13;
+;//------------------- TEST-CASE -----------------
+
+
+m12::x;
+
+;//--------------------- RESULT ------------------
+
+"modules/modAbovePackage.jaql"
+
+;//------------------- TEST-CASE -----------------
+
+m13::x;
+
+;//--------------------- RESULT ------------------
+
+"modules/modAbovePackage/modAbovePackage.jaql"
+
+;//------------------- TEST-CASE -----------------
+
 
 //-------------------------------------------------------------------
 // fuzzy join

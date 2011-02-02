@@ -257,6 +257,30 @@ d::x;
 // Error: dupPackage resolved to two different packages because onlyIn2 is only in modules2
 import dupPackage::onlyIn2;
 
+// For:
+//    import X;
+// It can resolve to .../X.jaql or .../X/X.jaql
+// In the latter case, this resolves to the same module as as X::X.
+
+// This has modInPackage/modInPackage.jaql
+//  but not modInPackage.jaql
+// So these are aliases of each other:
+
+import modInPackage as m10;
+import modInPackage::modInPackage as m11;
+
+m10::x;
+m11::x;
+
+// This has modAbovePackage.jaql
+//      and modAbovePackage/modAbovePackage.jaql
+// So these are different:
+
+import modAbovePackage as m12;
+import modAbovePackage::modAbovePackage as m13;
+
+m12::x;
+m13::x;
 
 //-------------------------------------------------------------------
 // fuzzy join
