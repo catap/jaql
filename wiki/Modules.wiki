@@ -100,7 +100,7 @@ Jaql packages correspond to directories (similar to Python's package design). A 
 
 Four modules are defined in three packages. The `p1` package includes a module (`p1::simple1`) and a package that includes a module (`p1::p2::simple2`). In addition, `p1` includes some initialization statements (`_p1.jaql`) that are evaluated before any sub-module is imported. The convention is to name the initialization file by prepending the package name with a `_`. The most common use of the initialization file is to register jars that are needed by module udf's. The way that jars are registered is as follows:
 {{{
-  addClasspath( "<path1>:<path2>:...:<pathN>" );
+  addClassPath( "<path1>:<path2>:...:<pathN>" );
 }}}
 
 The path is a `:` delimited string of jar paths relative to the package directory. Often, a package is used to factor out all of the java jars that are needed by package modules.
