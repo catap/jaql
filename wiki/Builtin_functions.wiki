@@ -2576,7 +2576,7 @@ jaql> read(hdfs("someNumbers")) -> group into sum($);
 jaql> [1,2,3] -> write(hdfs("test1"));
 
 jaql> read(hdfs("test1")) -> topN( 2, cmp(x) [x desc ] ); // Simplest example
- [ 1, 2 ]
+ [ 3, 2 ]
 
 jaql> read(hdfs("test1")) -> group into topN( $, 2, cmp(x) [ x desc ] ); // Now, with group by (this uses map-reduce)
 
