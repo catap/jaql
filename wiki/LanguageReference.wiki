@@ -255,4 +255,31 @@ Note that {{{->}}} binds the output of its left-hand-side to the first function 
 
 == Partitioned Array Expressions ==
 
-See [JaqlCore].
+See [LanguageCore].
+
+= Explain =
+If any expression is preceded by {{{explain}}}, Jaql prints out a lower level plan that results from automatic rewrites. Using {{{explain}}}, one can determine, for example, if a map-reduce based plan was found.
+
+{{{
+  // explain an expression 
+  //
+  explain read(hdfs("test")) -> transform $ + 1;
+  // the output below shows a mapReduce job which is a map-only job.
+  (
+  $fd_0 = system::mapReduce({ ("input"):(system::const({
+    "type": "hdfs",
+    "location": "test"
+  })), ("map"):(fn(schema [ * ] $mapIn) ($mapIn
+-> transform each $ (($)+(1))
+-> transform each $fv ([null, $fv]))), ("schema"):(system::const({
+    "key": schema null,
+    "value": schema long | double | decfloat | null
+  })), ("output"):(system::HadoopTemp(schema=schema long | double | decfloat | null)) }),
+  system::read($fd_0)
+)
+;
+
+}}} 
+
+= Quit =
+Exit the interpreter.
