@@ -2,6 +2,27 @@
 
 = Introduction =
 
+Jaql is a functional language that is specialized for processing large collections of semi-structured data. The DataModel describes the values, as well as the schema constraints that are supported by Jaql. Every type has a textual representation that is based on JSON. There are many other representations available for (de)serializing values to and from byte streams (see IO). The textual representation is used as a convenient way to show results to the user in the shell and it is used to construct new values:
+
+{{{
+  // 1. print the result of the function 'range'
+  jaql> range(1,3);
+  [ 1,2,3 ]
+
+  // 2. make a new array of records
+  jaql> [ { a: 1 }, { a: 2 }, { a: 3 } ];
+  [ { a: 1 }, { a: 2 }, { a: 3 } ]
+
+  // 3. do the same by creating a record for each input element
+  jaql> range(1,3) -> transform { a: $ };
+  [ { a: 1 }, { a: 2 }, { a: 3 } ]
+}}}
+
+The example above also shows how to call a function ({{{range}}})
+and how to operate on collections, which are interchangeably referred to as arrays ({{{transform}}}). For a comprehensive list of functions
+that Jaql supports, see Builtin_functions (and Builtin_functions_experimental). For a comprehensive list of operators that are specifically designed to process large arrays, please see LanguageCore. If further extensions are required, Jaql can easily be 
+extended with Jaql Functions, java functions, or arbitrary executables ([Builtin_functions#externalfn() externalfn] ).
+
 = Top-level Statements =
 
  * Import (link to Modules)
