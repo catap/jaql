@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Jaql is a functional language that is specialized for processing large collections of semi-structured data. The DataModel describes the values, as well as the schema constraints that are supported by Jaql. Every type has a textual representation that is based on JSON. There are many other representations available for (de)serializing values to and from byte streams (see IO). The textual representation is used as a convenient way to show results to the user in the shell and it is used to construct new values:
+Jaql is a functional language that is specialized for processing large collections of semi-structured data. The DataModel describes the values, as well as the schema constraints that are supported by Jaql. Every type has a textual representation that is based on JSON. There are many other representations available for (de)serializing values to and from byte streams (see [IO]). The textual representation is used as a convenient way to show results to the user in the shell and it is used to construct new values:
 
 {{{
   // 1. print the result of the function 'range'
@@ -20,20 +20,58 @@ Jaql is a functional language that is specialized for processing large collectio
 
 The example above also shows how to call a function ({{{range}}})
 and how to operate on collections, which are interchangeably referred to as arrays ({{{transform}}}). For a comprehensive list of functions
-that Jaql supports, see Builtin_functions (and Builtin_functions_experimental). For a comprehensive list of operators that are specifically designed to process large arrays, please see LanguageCore. If further extensions are required, Jaql can easily be 
-extended with Jaql Functions, java functions, or arbitrary executables ([Builtin_functions#externalfn() externalfn] ).
+that Jaql supports, see [Builtin_functions builtins] (and [Builtin_functions_experimental experimental builtins]). For a comprehensive list of operators that are specifically designed to process large arrays, please see LanguageCore. If further extensions are required, Jaql can easily be 
+extended with Jaql [Functions], Java functions, or arbitrary [Builtin_functions#externalfn() executables]. Such extensions can be bundled into separate Jaql scripts called [Modules modules] which can be re-used.
+
+In this document, we review Jaql's top-level statements and expressions.
 
 = Top-level Statements =
 
- * Import (link to Modules)
+ * Import
  * Assignment
  * Expression
  * Explain
  * Quit
 
+= Import =
+The {{{import}}} statement is used for loading modules into the current session's context. Following the {{{import}}} statement, all of the imported module's variables can be used. See [Modules modules] for more information.
+
 = Assignment =
 
-Define the different types of variables.
+Jaql allows variables to be declared and assigned to either expressions or values. If a variable is assigned to an expression, there is no guarantee as to whether that expression has been evaluated (lazy evaluation or views). If a variable is assigned to a value, that value is materialized and stored in the session process's memory. Note that assignment is only as top-level statements; they are not permitted within function blocks, for example. Here are some examples:
+
+{{{
+  // assign a to the 'read' expression. no data is actually read.
+  a = read(del("very_big_file"));
+
+  // assign b to the value 1.
+  b := 1;
+}}}
+
+If a variable is assigned to another variable, e.g., {{{x = y;}}}, {{{x}}} is assigned to the value or expression that {{{y}}} references.
+For example:
+
+{{{
+  x = 1;
+  y = x;
+  x = 2;
+  y; // prints out 1
+  x; // prints out 2
+}}}
+
+In addition, Jaql supports {{{extern}}} variables that can be undefined. If an undefined variable is used, an error is thrown.
+
+{{{
+  extern x := 1;
+}}}
+
+Finally, types can be specified for variables:
+
+{{{
+  x: string = "foo";
+
+  x: long := 1;
+}}}
 
 = Expression =
 
