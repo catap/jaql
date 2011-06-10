@@ -21,7 +21,7 @@ JSON data in parallel using Hadoop's map/reduce framework.
 Along the way, we will refer to Jaql's [LanguageCore core operators], 
 [Builtin_functions builtin functions] and show how Jaql's [Functions function]
 and [IO] libraries can be extended. To get started with the examples below,
-you can [http://jaql.googlecode.com/files/jaql-0.5.2_12_07_10.tgz download] the most recent release of Jaql and fire up a Jaql interpreter following these [Running instructions].
+you can [http://jaql.googlecode.com/files/jaql-0.5.1_12_07_10.tgz download] the most recent release of Jaql and fire up a Jaql interpreter following these [Running instructions].
 
 _Note:_ Jaql is still in early development, 
 so beware that it is likely to change over the next few months.
