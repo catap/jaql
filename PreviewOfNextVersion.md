@@ -1,0 +1,3 @@
+We are completely revamping the Jaql syntax in the next release. The notation is heavily inspired by Unix pipes, and therefore, Jaql is quickly understood by almost any programmer. The goal is to simplify the language and also to make the parallel performance more obvious.
+
+The [Jaql Pipes presentation](http://jaql.googlecode.com/files/Jaql-Pipes-Intro.ppt) provides an introduction to the new syntax.
