@@ -27,4 +27,6 @@ src/java/com/ibm/jaql/lang/parser/*.smap
 src/java/com/ibm/jaql/lang/parser/*.txt
 jaqlTest/*
 
+.idea/
+
 !.gitignore
