@@ -15,31 +15,15 @@
  */
 package com.ibm.jaql.jdbc;
 
+import com.ibm.jaql.lang.Jaql;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.ParameterMetaData;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
-
-import com.ibm.jaql.lang.Jaql;
 
 /**
  * NOT YET IMPLEMENTED
@@ -738,6 +722,18 @@ public class JaqlJdbcCallableStatement implements CallableStatement
   {
     // TODO Auto-generated method stub
 
+  }
+
+  @Override
+  public <T> T getObject(int parameterIndex, Class<T> type) throws SQLException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public <T> T getObject(String parameterName, Class<T> type) throws SQLException {
+    // TODO Auto-generated method stub
+    return null;
   }
 
   @Override
@@ -1500,6 +1496,16 @@ public class JaqlJdbcCallableStatement implements CallableStatement
   public boolean isPoolable() throws SQLException
   {
     // TODO Auto-generated method stub
+    return false;
+  }
+
+  @Override
+  public void closeOnCompletion() throws SQLException {
+
+  }
+
+  @Override
+  public boolean isCloseOnCompletion() throws SQLException {
     return false;
   }
 

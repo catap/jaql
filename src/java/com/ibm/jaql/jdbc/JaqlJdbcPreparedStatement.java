@@ -15,38 +15,18 @@
  */
 package com.ibm.jaql.jdbc;
 
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.type.*;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.lang.core.Var;
+import com.ibm.jaql.util.BaseUtil;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
-
-import com.ibm.jaql.json.schema.RecordSchema;
-import com.ibm.jaql.json.type.JsonBinary;
-import com.ibm.jaql.json.type.JsonBool;
-import com.ibm.jaql.json.type.JsonDate;
-import com.ibm.jaql.json.type.JsonDecimal;
-import com.ibm.jaql.json.type.JsonDouble;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.core.Var;
-import com.ibm.jaql.util.BaseUtil;
 
 
 public class JaqlJdbcPreparedStatement extends JaqlJdbcStatement implements PreparedStatement
@@ -476,5 +456,16 @@ public class JaqlJdbcPreparedStatement extends JaqlJdbcStatement implements Prep
       throws SQLException
   {
     throw new SQLException("setUnicodeStream NYI");
+  }
+
+  @Override
+  public void closeOnCompletion() throws SQLException {
+    // TODO Auto-generated method stub
+  }
+
+  @Override
+  public boolean isCloseOnCompletion() throws SQLException {
+    // TODO Auto-generated method stub
+    return false;
   }
 }

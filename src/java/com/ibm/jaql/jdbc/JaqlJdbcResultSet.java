@@ -15,6 +15,12 @@
  */
 package com.ibm.jaql.jdbc;
 
+import com.ibm.jaql.json.schema.RecordSchema;
+import com.ibm.jaql.json.type.JsonRecord;
+import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.util.JsonIterator;
+import org.hsqldb.lib.StringInputStream;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
@@ -22,30 +28,9 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.Date;
-import java.sql.NClob;
-import java.sql.Ref;
-import java.sql.ResultSet;
-import java.sql.RowId;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Statement;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.Calendar;
 import java.util.Map;
-
-import org.hsqldb.lib.StringInputStream;
-
-import com.ibm.jaql.json.schema.RecordSchema;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.util.JsonIterator;
 
 
 public class JaqlJdbcResultSet implements ResultSet
@@ -1143,6 +1128,18 @@ public class JaqlJdbcResultSet implements ResultSet
       throws SQLException
   {
     throw new SQLFeatureNotSupportedException("updates");
+  }
+
+  @Override
+  public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+    // TODO Auto-generated method stub
+    return null;
+  }
+
+  @Override
+  public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+    // TODO Auto-generated method stub
+    return null;
   }
 
   @Override

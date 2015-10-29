@@ -15,13 +15,6 @@
  */
 package com.ibm.jaql.jdbc;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
-
 import com.ibm.jaql.json.schema.RecordSchema;
 import com.ibm.jaql.json.schema.Schema;
 import com.ibm.jaql.json.schema.SchemaTransformation;
@@ -30,6 +23,8 @@ import com.ibm.jaql.json.type.JsonType;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.ParsedJaql;
 import com.ibm.jaql.util.BaseUtil;
+
+import java.sql.*;
 
 public class JaqlJdbcStatement implements Statement
 {
@@ -340,6 +335,17 @@ public class JaqlJdbcStatement implements Statement
   @Override
   public boolean isPoolable() throws SQLException
   {
+    return false;
+  }
+
+  @Override
+  public void closeOnCompletion() throws SQLException {
+    // TODO Auto-generated method stub
+  }
+
+  @Override
+  public boolean isCloseOnCompletion() throws SQLException {
+    // TODO Auto-generated method stub
     return false;
   }
 
