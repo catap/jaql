@@ -41,6 +41,6 @@ import org.junit.runners.Suite;
   TestStorageTemp.class,
   TestStorageText.class
 })
-public class JaqlScriptTestSuite
+public abstract class JaqlScriptTestSuite
 {
 }

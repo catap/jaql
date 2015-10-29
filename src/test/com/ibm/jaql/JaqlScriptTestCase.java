@@ -15,38 +15,12 @@
  */
 package com.ibm.jaql;
 
-import static com.ibm.jaql.json.type.JsonType.ARRAY;
-import static com.ibm.jaql.json.type.JsonType.NULL;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.io.Reader;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UnixUserGroupInformation;
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.ibm.jaql.io.hadoop.Globals;
 import com.ibm.jaql.json.type.JsonString;
 import com.ibm.jaql.json.type.JsonUtil;
 import com.ibm.jaql.json.type.JsonValue;
 import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.lang.DefaultExplainHandler;
-import com.ibm.jaql.lang.ExceptionHandler;
-import com.ibm.jaql.lang.ExplainHandler;
-import com.ibm.jaql.lang.Jaql;
-import com.ibm.jaql.lang.StreamPrinter;
+import com.ibm.jaql.lang.*;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.hadoop.MapReduceBaseExpr;
@@ -55,15 +29,25 @@ import com.ibm.jaql.lang.expr.io.AbstractWriteExpr;
 import com.ibm.jaql.lang.expr.io.RegisterAdapterExpr;
 import com.ibm.jaql.lang.expr.top.QueryExpr;
 import com.ibm.jaql.lang.walk.PostOrderExprWalker;
-import com.ibm.jaql.util.ClassLoaderMgr;
-import com.ibm.jaql.util.EchoedReader;
-import com.ibm.jaql.util.FastPrintStream;
-import com.ibm.jaql.util.FastPrintWriter;
-import com.ibm.jaql.util.FastPrinter;
+import com.ibm.jaql.util.*;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UnixUserGroupInformation;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.*;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static com.ibm.jaql.json.type.JsonType.ARRAY;
+import static com.ibm.jaql.json.type.JsonType.NULL;
 
 
 // @RunWith(Parameterized.class)
-public class JaqlScriptTestCase
+public abstract class JaqlScriptTestCase
 {
   public static final String DATADIR_NAME = "DATADIR";
   public static final String DATADIR_DIR = "../../../src/test/com/ibm/jaql/data/";

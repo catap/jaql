@@ -15,32 +15,21 @@
  */
 package com.ibm.jaql.lang.expr.index;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.Closeable;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
+import com.ibm.jaql.io.serialization.binary.temp.TempBinaryFullSerializer;
+import com.ibm.jaql.json.schema.ArraySchema;
+import com.ibm.jaql.json.schema.Schema;
+import com.ibm.jaql.json.type.*;
+import com.ibm.jaql.json.util.JsonIterator;
+import com.ibm.jaql.util.BaseUtil;
+import com.ibm.jaql.util.ProcessRunner;
+
+import java.io.*;
 import java.net.ConnectException;
 import java.net.ProtocolException;
 import java.net.Socket;
 import java.net.URL;
 import java.util.Properties;
-
-import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
-import com.ibm.jaql.io.serialization.binary.temp.TempBinaryFullSerializer;
-import com.ibm.jaql.json.schema.ArraySchema;
-import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.JsonArray;
-import com.ibm.jaql.json.type.JsonLong;
-import com.ibm.jaql.json.type.JsonSchema;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonValue;
-import com.ibm.jaql.json.type.SpilledJsonArray;
-import com.ibm.jaql.json.util.JsonIterator;
-import com.ibm.jaql.util.BaseUtil;
-import com.ibm.jaql.util.ProcessRunner;
 
 public class HashtableClient implements HashtableConstants, Closeable
 {
@@ -107,6 +96,9 @@ public class HashtableClient implements HashtableConstants, Closeable
         HashtableListener.class.getCanonicalName(),
         Integer.toString(port),
         Long.toString(timeout) );
+    // unset environment variables that jvm dump to stderr
+    pb.environment().remove("_JAVA_OPTIONS");
+    pb.environment().remove("JAVA_TOOL_OPTIONS");
     System.err.println("starting hashtable server");
     new ProcessRunner("hashtableServer", pb).start();
   }

@@ -15,18 +15,13 @@
  */
 package com.ibm.jaql;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import junit.framework.TestCase;
+
+import java.io.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
-
-import junit.framework.TestCase;
 
 public class TestPyJaql extends TestCase {
 
@@ -54,6 +49,7 @@ public class TestPyJaql extends TestCase {
 			// variables to JVM runtime
 			// variables
 		}
+		list.add("PYTHONPATH=src/python/pyJaql ");
 		String[] env = new String[list.size()];
 		System.arraycopy(list.toArray(), 0, env, 0, list.size());
 		try {

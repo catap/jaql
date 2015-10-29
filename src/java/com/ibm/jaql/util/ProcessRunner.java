@@ -34,6 +34,9 @@ public class ProcessRunner extends Thread
     try
     {
       procBuilder.redirectErrorStream(true);
+      // unset environment variables that jvm dump to stderr
+      procBuilder.environment().remove("_JAVA_OPTIONS");
+      procBuilder.environment().remove("JAVA_TOOL_OPTIONS");
       Process proc = procBuilder.start();
       InputStream in = proc.getInputStream();
       byte[] buf = new byte[1024];

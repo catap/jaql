@@ -288,6 +288,9 @@ public abstract class JaqlShellBaseTestCase {
         executable = cmd;
       }
       pb = new ProcessBuilder(executable);
+      // unset environment variables that jvm dump to stderr
+      pb.environment().remove("_JAVA_OPTIONS");
+      pb.environment().remove("JAVA_TOOL_OPTIONS");
       pb.redirectErrorStream(true);
     }
 

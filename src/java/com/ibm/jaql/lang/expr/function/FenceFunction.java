@@ -15,42 +15,21 @@
  */
 package com.ibm.jaql.lang.expr.function;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.List;
-import java.util.Map;
-
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.serialization.binary.BinaryFullSerializer;
-import com.ibm.jaql.io.serialization.text.TextFullSerializer;
-import com.ibm.jaql.io.serialization.text.def.DefaultTextFullSerializer;
 import com.ibm.jaql.json.schema.ArraySchema;
 import com.ibm.jaql.json.schema.Schema;
-import com.ibm.jaql.json.type.BufferedJsonRecord;
-import com.ibm.jaql.json.type.JsonRecord;
-import com.ibm.jaql.json.type.JsonString;
-import com.ibm.jaql.json.type.JsonUtil;
-import com.ibm.jaql.json.type.JsonValue;
+import com.ibm.jaql.json.type.*;
 import com.ibm.jaql.json.util.JsonIterator;
 import com.ibm.jaql.lang.core.Context;
 import com.ibm.jaql.lang.expr.core.Expr;
 import com.ibm.jaql.lang.expr.core.ExprProperty;
 import com.ibm.jaql.lang.expr.core.IterExpr;
-import com.ibm.jaql.lang.expr.hadoop.MapReduceFn;
-import com.ibm.jaql.util.BaseUtil;
 import com.ibm.jaql.util.ClassLoaderMgr;
+
+import java.io.*;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Map;
 
 /**
  * @jaqlDescription evaluate a function in a separate process
@@ -209,7 +188,11 @@ public class FenceFunction extends IterExpr {
 			//BaseUtil.LOG.info(jvmCmd +" | " + llevName+llevVal + " | " + cpName + " | " + cpVal + " | " + evaluator + " | " + argsStr);
 			
 			ProcessBuilder pb = new ProcessBuilder(jvmCmd, /**ldirName+ldirVal,*/ llevName+llevVal, cpName, cpVal, evaluator, argsStr);
-			
+
+			// unset environment variables that jvm dump to stderr
+			pb.environment().remove("_JAVA_OPTIONS");
+			pb.environment().remove("JAVA_TOOL_OPTIONS");
+
 			return pb.start();
 		}
 		

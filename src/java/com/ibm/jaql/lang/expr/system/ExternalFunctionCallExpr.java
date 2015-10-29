@@ -15,19 +15,6 @@
  */
 package com.ibm.jaql.lang.expr.system;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.hadoop.conf.Configuration;
-
 import com.ibm.jaql.io.ClosableJsonIterator;
 import com.ibm.jaql.io.ClosableJsonWriter;
 import com.ibm.jaql.io.InputAdapter;
@@ -53,6 +40,17 @@ import com.ibm.jaql.lang.expr.core.IterExpr;
 import com.ibm.jaql.lang.util.JaqlUtil;
 import com.ibm.jaql.util.Bool3;
 import com.ibm.jaql.util.FastPrinter;
+import org.apache.hadoop.conf.Configuration;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class ExternalFunctionCallExpr extends IterExpr {
 
@@ -305,6 +303,10 @@ public class ExternalFunctionCallExpr extends IterExpr {
 
         File directory = new File(cfg.get("mapred.local.dir", "."));
         pb.directory(directory);
+
+        // unset environment variables that jvm dump to stderr
+        pb.environment().remove("_JAVA_OPTIONS");
+        pb.environment().remove("JAVA_TOOL_OPTIONS");
 
         process = pb.start();
 
